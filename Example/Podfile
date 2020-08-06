@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'REES46_Example' do
+  pod 'REES46', :path => '../'
+
+  target 'REES46_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
