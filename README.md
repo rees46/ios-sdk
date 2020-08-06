@@ -22,9 +22,13 @@ pod 'REES46'
 
 ## Swift Package Manager
 
-To install click the upside menu 'File' -> 'Swift Packages' -> 'Add package dependency'. Next insert this url:
+If you are using Xcode 11 or later:
+1. Click `File`
+2. `Swift Packages`
+3. `Add Package Dependency...`
+4. Specify the git URL for REES46.
 
-```ruby
+```swift
 https://github.com/rees46/ios-sdk.git
 ```
 
