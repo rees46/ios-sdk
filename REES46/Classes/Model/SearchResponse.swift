@@ -8,80 +8,85 @@
 import Foundation
 
 public struct SearchResponse {
-    // TODO
-    var categories: [Category]
-    var products: [Product]
-    var productsTotal: Int
-    var queries: [Query]
-    
+    public var categories: [Category]
+    public var products: [Product]
+    public var productsTotal: Int
+    public var queries: [Query]
+
     init(json: [String: Any]) {
-        let cats = json["categories"] as! [[String:Any]]
+        let cats = json["categories"] as! [[String: Any]]
         var catsTemp = [Category]()
-        for item in cats{
+        for item in cats {
             catsTemp.append(Category(json: item))
         }
-        self.categories = catsTemp
-        
-        let prods = json["products"] as! [[String:Any]]
+        categories = catsTemp
+
+        let prods = json["products"] as! [[String: Any]]
         var prodsTemp = [Product]()
-        for item in prods{
+        for item in prods {
             prodsTemp.append(Product(json: item))
         }
-        self.products = prodsTemp
-        
-        let quers = json["queries"] as! [[String:Any]]
+        products = prodsTemp
+
+        let quers = json["queries"] as! [[String: Any]]
         var quersTemp = [Query]()
-        for item in quers{
+        for item in quers {
             quersTemp.append(Query(json: item))
         }
-        self.queries = quersTemp
-        
-        self.productsTotal = json["products_total"] as! Int
+        queries = quersTemp
+
+        productsTotal = json["products_total"] as! Int
     }
 }
 
 public struct Product {
-    var brand: String
-    var id: String
-    var name: String
-    var oldPrice: Double
-    var picture: String
-    var price: Double
-    var priceFormatted: String
-    var url: String
-    
+    public var id: String
+    public var name: String
+    public var brand: String
+    public var price: Double
+    public var oldPrice: Double
+    public var picture: String
+    public var priceFormatted: String
+    public var url: String
+    public var currency: String
+    public var isNew: Bool?
+    public var barcode: String?
+    public var params: [[String: Any]]?
+
     init(json: [String: Any]) {
-        self.brand = json["brand"] as! String
-        self.id = json["id"] as! String
-        self.name = json["name"] as! String
-        self.oldPrice = json["old_price"] as! Double
-        self.picture = json["picture"] as! String
-        self.price = json["price"] as! Double
-        self.priceFormatted = json["price_formatted"] as! String
-        self.url = json["url"] as! String
+        id = json["id"] as! String
+        name = json["name"] as! String
+        brand = json["brand"] as! String
+        price = json["price"] as! Double
+        oldPrice = json["old_price"] as! Double
+        priceFormatted = json["price_formatted"] as! String
+        picture = json["picture"] as! String
+        url = json["url"] as! String
+        currency = json["currency"] as! String
+        isNew = json["is_new"] as? Bool
+        barcode = json["barcode"] as? String
+        params = json["params"] as? [[String: Any]]
     }
 }
 
 public struct Query {
-    
-    var name: String
-    var url: String
-    
+    public var name: String
+    public var url: String
+
     init(json: [String: Any]) {
-        self.name = json["name"] as! String
-        self.url = json["url"] as! String
+        name = json["name"] as! String
+        url = json["url"] as! String
     }
 }
 
 public struct Category {
-    var id: String
-    var name: String
-    var url: String
-    
-    
+    public var id: String = ""
+    public var name: String = ""
+    public var url: String?
+
     init(json: [String: Any]) {
-        self.id = json["id"] as! String
-        self.name = json["name"] as! String
-        self.url = json["url"] as! String
+        id = json["id"] as! String
+        name = json["name"] as! String
+        url = json["url"] as? String
     }
 }

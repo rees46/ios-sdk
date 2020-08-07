@@ -9,7 +9,6 @@
 import Foundation
 
 class SimplePersonaizationSDK: PersonalizationSDK {
-    
     var shopId: String
     var userSession: String
     var userSeance: String
@@ -29,12 +28,12 @@ class SimplePersonaizationSDK: PersonalizationSDK {
 
     init(shopId: String, userId: String? = nil, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil) {
         self.shopId = shopId
-        
+
         self.userId = userId
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
-        
+
         // Generate seance
         userSeance = UUID().uuidString
         // Trying to fetch user session (permanent user ID)
@@ -45,11 +44,11 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             self.sendInitRequest { initResult in
                 switch initResult {
                 case .success:
-                    self.semaphore.signal()
                     let res = try! initResult.get()
                     self.userInfo = res
                     self.userSeance = res.seance
                     self.userSession = res.ssid
+                    self.semaphore.signal()
                 case .failure:
                     print("PersonalizationSDK error: SDK INIT FAIL")
                     break
@@ -62,7 +61,11 @@ class SimplePersonaizationSDK: PersonalizationSDK {
     func getSSID() -> String {
         return userSession
     }
-    
+
+    func getSession() -> String {
+        return userSeance
+    }
+
     func setPushTokenNotification(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "mobile_push_tokens"
@@ -70,19 +73,19 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "ssid": self.userSession,
                 "token": token,
-                "platform":"ios"
+                "platform": "ios",
             ]
             self.postRequest(path: path, params: params, completion: { result in
-                switch result{
-                case .success(_):
+                switch result {
+                case .success:
                     completion(.success(Void()))
-                case .failure(let error):
+                case let .failure(error):
                     completion(.failure(error))
                 }
             })
         }
     }
-    
+
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "push_attributes"
@@ -110,8 +113,8 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             ]
 
             self.postRequest(path: path, params: params, completion: { result in
-                switch result{
-                case .success(let successResult):
+                switch result {
+                case let .success(successResult):
                     let resJSON = successResult
                     let status = resJSON["status"] as! String
                     if status == "success" {
@@ -119,7 +122,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                     } else {
                         completion(.failure(.responseError))
                     }
-                case .failure(let error):
+                case let .failure(error):
                     completion(.failure(error))
                 }
             })
@@ -170,8 +173,8 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             }
             params["event"] = paramEvent
             self.postRequest(path: path, params: params, completion: { result in
-                switch result{
-                case .success(let successResult):
+                switch result {
+                case let .success(successResult):
                     let resJSON = successResult
                     let status = resJSON["status"] as! String
                     if status == "success" {
@@ -179,7 +182,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                     } else {
                         completion(.failure(.responseError))
                     }
-                case .failure(let error):
+                case let .failure(error):
                     completion(.failure(error))
                 }
             })
@@ -196,15 +199,16 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                 "recommender_type": "dynamic",
                 "recommender_code": blockId,
                 "segment": Bool.random() ? "A" : "B",
+                "extended": "true",
             ]
 
             self.getRequest(path: path, params: params) { result in
-                switch result{
-                case .success(let successResult):
+                switch result {
+                case let .success(successResult):
                     let resJSON = successResult
                     let resultResponse = RecommenderResponse(json: resJSON)
                     completion(.success(resultResponse))
-                case .failure(let error):
+                case let .failure(error):
                     completion(.failure(error))
                 }
             }
@@ -221,13 +225,14 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                 "type": searchType == .full ? "full_search" : "instant_search",
                 "search_query": query,
             ]
+
             self.getRequest(path: path, params: params) { result in
-                switch result{
-                case .success(let successResult):
+                switch result {
+                case let .success(successResult):
                     let resJSON = successResult
                     let resultResponse = SearchResponse(json: resJSON)
                     completion(.success(resultResponse))
-                case .failure(let error):
+                case let .failure(error):
                     completion(.failure(error))
                 }
             }
@@ -242,13 +247,13 @@ class SimplePersonaizationSDK: PersonalizationSDK {
 
         getRequest(path: path, params: params, true) { result in
 
-            switch result{
-            case .success(let successResult):
+            switch result {
+            case let .success(successResult):
                 let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
                 UserDefaults.standard.set(resultResponse.ssid, forKey: "personalization_ssid")
                 completion(.success(resultResponse))
-            case .failure(let error):
+            case let .failure(error):
                 completion(.failure(error))
             }
         }
