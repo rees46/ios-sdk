@@ -144,7 +144,7 @@ sdk.recommend(blockId: "block_id", currentProductId: "1") { recomendResult in
 
 Output:
 
-recomended = [Sting] - products ids array; 
+recomended = [Recomend] - products array; 
 title = String - title block recomend
 
 ## Search
