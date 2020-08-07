@@ -21,58 +21,161 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
         
         print("1. Testing tracking")
-        sdk.track(event: .productView(id: "123")) { _ in
+        sdk.track(event: .productView(id: "123")) { trackResponse in
             print("   Product view callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track product view is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("     track product view is failure")
+            }
         }
-        sdk.track(event: .categoryView(id: "123")) { _ in
+        sdk.track(event: .categoryView(id: "123")) { trackResponse in
             print("   Category view callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track category view is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track category view is failure")
+            }
         }
-        sdk.track(event: .productAddedToFavorities(id: "123")) { _ in
+        sdk.track(event: .productAddedToFavorities(id: "123")) { trackResponse in
             print("   Product added to favorities callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track product add to favorite is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track product add to favorite is failure")
+            }
         }
-        sdk.track(event: .productRemovedToFavorities(id: "123")) { _ in
+        sdk.track(event: .productRemovedToFavorities(id: "123")) { trackResponse in
             print("   Product removed from favorities callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track product removed from favorities is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track product removed from favorities is failure")
+            }
         }
-        sdk.track(event: .productAddedToCart(id: "123")) { _ in
+        sdk.track(event: .productAddedToCart(id: "123")) { trackResponse in
             print("   Product added to cart callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track product added to cart is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track product added to cart is failure")
+            }
         }
-        sdk.track(event: .productRemovedFromCart(id: "123")) { _ in
+        sdk.track(event: .productRemovedFromCart(id: "123")) { trackResponse in
             print("   Product removed from cart callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track product removed from cart is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track product removed from cart is failure")
+            }
         }
-        sdk.track(event: .syncronizeCart(ids: ["1", "2"])) { _ in
+        sdk.track(event: .syncronizeCart(ids: ["1", "2"])) { trackResponse in
             print("   Cart syncronized callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track cart syncronized is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track cart syncronized is failure")
+            }
         }
-        sdk.track(event: .orderCreated(orderId: "123", totalValue: 33.3, products: [(id: "1", amount: 3), (id: "2", amount: 1)])) { _ in
+        sdk.track(event: .orderCreated(orderId: "123", totalValue: 33.3, products: [(id: "1", amount: 3), (id: "2", amount: 1)])) { trackResponse in
             print("   Order created callback")
+            switch trackResponse{
+            case .success(let response):
+                print("     track order created is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    track order created is failure")
+            }
         }
 
         print("===")
 
         print("2. Testing product recommendations")
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", currentProductId: "1") { recomendResult in
+        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", currentProductId: "1") { recomendResponse in
             print("   Recommendations requested callback")
+            switch recomendResponse{
+            case .success(let response):
+                print("     recommend with prodcut id is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    recommend with prodcut id is failure")
+            }
         }
         
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172") { recomendResult in
+        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172") { recomendResponse in
             print("   Recommendations requested callback")
+            switch recomendResponse{
+            case .success(let response):
+                print("     recommend is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    recommend is failure")
+            }
         }
         
         print("===")
 
         print("3. Testing search")
-        sdk.search(query: "iphone", searchType: .instant) { searchResult in
+        sdk.search(query: "iphone", searchType: .instant) { searchResponse in
             print("   Instant search callback")
+            switch searchResponse{
+            case .success(let response):
+                print("     instant search is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    instant search is failure")
+            }
         }
-        sdk.search(query: "iphone", searchType: .full) { searchResult in
+        sdk.search(query: "iphone", searchType: .full) { searchResponse in
             print("   Full search callback")
+            switch searchResponse{
+            case .success(let response):
+                print("     full search is success")
+                //print("Response: ", response) //uncomment it if you want to see response
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    full search is failure")
+            }
         }
         print("===")
         
         
         print("4. Set user Settings")
         
-        sdk.setProfileData(userEmail: "email") { (profileresponse) in
+        sdk.setProfileData(userEmail: "email") { (profileResponse) in
             print("   Profile data set callback")
+            switch profileResponse{
+            case .success():
+                print("     setProfileData is success")
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    setProfileData is failure")
+            }
         }
         
         print("===")
@@ -80,7 +183,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("5. Set push token")
         
         sdk.setPushTokenNotification(token: "testToken") { (tokenResponse) in
-            print("     Token set response")
+            print("   Token set response")
+            switch tokenResponse{
+            case .success():
+                print("     setPushTokenNotification is success")
+            case .failure(let error):
+                print("Error: ", error.localizedDescription)
+                fatalError("    setPushTokenNotification is failure")
+            }
         }
         
         print("===")

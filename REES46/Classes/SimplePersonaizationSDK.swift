@@ -23,14 +23,18 @@ class SimplePersonaizationSDK: PersonalizationSDK {
 
     var userInfo: InitResponse = InitResponse()
 
-    // Create a dispatch queue
-    let mySerialQueue = DispatchQueue(label: "myQueue", qos: .background)
+    private let mySerialQueue = DispatchQueue(label: "myQueue", qos: .background)
 
-    // Create a semaphore
-    let semaphore = DispatchSemaphore(value: 0)
+    private let semaphore = DispatchSemaphore(value: 0)
 
     init(shopId: String, userId: String? = nil, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil) {
         self.shopId = shopId
+        
+        self.userId = userId
+        self.userEmail = userEmail
+        self.userPhone = userPhone
+        self.userLoyaltyId = userLoyaltyId
+        
         // Generate seance
         userSeance = UUID().uuidString
         // Trying to fetch user session (permanent user ID)
@@ -39,15 +43,15 @@ class SimplePersonaizationSDK: PersonalizationSDK {
         urlSession = URLSession.shared
         mySerialQueue.async {
             self.sendInitRequest { initResult in
-                self.semaphore.signal()
                 switch initResult {
                 case .success:
+                    self.semaphore.signal()
                     let res = try! initResult.get()
                     self.userInfo = res
                     self.userSeance = res.seance
                     self.userSession = res.ssid
                 case .failure:
-                    print("SDK INIT FAIL")
+                    print("PersonalizationSDK error: SDK INIT FAIL")
                     break
                 }
             }
@@ -69,11 +73,11 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                 "platform":"ios"
             ]
             self.postRequest(path: path, params: params, completion: { result in
-                do {
-                    let _ = try result.get()
+                switch result{
+                case .success(_):
                     completion(.success(Void()))
-                } catch {
-                    completion(.failure(.initializationFailed))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
             })
         }
@@ -106,16 +110,17 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             ]
 
             self.postRequest(path: path, params: params, completion: { result in
-                do {
-                    let resJSON = try result.get()
+                switch result{
+                case .success(let successResult):
+                    let resJSON = successResult
                     let status = resJSON["status"] as! String
                     if status == "success" {
                         completion(.success(Void()))
                     } else {
                         completion(.failure(.responseError))
                     }
-                } catch {
-                    completion(.failure(.initializationFailed))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
             })
         }
@@ -165,16 +170,17 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             }
             params["event"] = paramEvent
             self.postRequest(path: path, params: params, completion: { result in
-                do {
-                    let resJSON = try result.get()
+                switch result{
+                case .success(let successResult):
+                    let resJSON = successResult
                     let status = resJSON["status"] as! String
                     if status == "success" {
                         completion(.success(Void()))
                     } else {
                         completion(.failure(.responseError))
                     }
-                } catch {
-                    completion(.failure(.initializationFailed))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
             })
         }
@@ -193,12 +199,13 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             ]
 
             self.getRequest(path: path, params: params) { result in
-                do {
-                    let resJSON = try result.get()
+                switch result{
+                case .success(let successResult):
+                    let resJSON = successResult
                     let resultResponse = RecommenderResponse(json: resJSON)
                     completion(.success(resultResponse))
-                } catch {
-                    completion(.failure(.initializationFailed))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
             }
         }
@@ -215,12 +222,13 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                 "search_query": query,
             ]
             self.getRequest(path: path, params: params) { result in
-                do {
-                    let resJSON = try result.get()
+                switch result{
+                case .success(let successResult):
+                    let resJSON = successResult
                     let resultResponse = SearchResponse(json: resJSON)
                     completion(.success(resultResponse))
-                } catch {
-                    completion(.failure(.initializationFailed))
+                case .failure(let error):
+                    completion(.failure(error))
                 }
             }
         }
@@ -233,13 +241,15 @@ class SimplePersonaizationSDK: PersonalizationSDK {
         ]
 
         getRequest(path: path, params: params, true) { result in
-            do {
-                let resJSON = try result.get()
+
+            switch result{
+            case .success(let successResult):
+                let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
                 UserDefaults.standard.set(resultResponse.ssid, forKey: "personalization_ssid")
                 completion(.success(resultResponse))
-            } catch {
-                completion(.failure(.initializationFailed))
+            case .failure(let error):
+                completion(.failure(error))
             }
         }
     }
@@ -322,7 +332,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                         completion(.failure(.decodeError))
                     }
                 case .failure:
-                    completion(.failure(.invalidResponse))
+                    completion(.failure(.responseError))
                 }
             }.resume()
         } else {
