@@ -193,7 +193,7 @@ sdk.setProfileData(userEmail: "email", userPhone: "123", userLoyaltyId: "1", bir
 
 ## Author
 
-Avsi222, «dorogin.arseniy@yandex.ru»
+REES46, «desk@rees46.com»
 
 ## License
 
