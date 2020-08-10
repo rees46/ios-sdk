@@ -1,8 +1,8 @@
 
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '1.0.0'
-  s.summary          = 'A short description of shoprees46Test.'
+  s.version          = '1.0.1'
+  s.summary          = 'REES46 iOS SDK: all-in-one marketing stack for eCommerce'
 
 # This description is used to generate tags and improve search results.
 #   * Think: What does it do? Why did you write it? What is the focus?
@@ -11,15 +11,15 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-TODO: Add long description of the pod here.
+
                        DESC
 
   s.homepage         = 'https://github.com/rees46/ios-sdk'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-  s.author           = { 'Avsi222' => '«dorogin.arseniy@yandex.ru»' }
+  s.author           = { 'REES46' => '«desk@rees46.com»' }
  
-  s.source       = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "1.0.0",
+  s.source       = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "1.0.1",
   :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
