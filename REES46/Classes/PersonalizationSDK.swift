@@ -34,6 +34,7 @@ public protocol PersonalizationSDK {
     func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
     func search(query: String, searchType: SearchType, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func getSSID() -> String
+    func getSession() -> String
     func setPushTokenNotification(token: String, completion: @escaping(Result<Void, SDKError>) -> Void)
 }
 

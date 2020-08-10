@@ -28,7 +28,7 @@ If you are using Xcode 11 or later:
 3. `Add Package Dependency...`
 4. Specify the git URL for REES46.
 
-```swift
+```ruby
 https://github.com/rees46/ios-sdk.git
 ```
 
@@ -144,7 +144,7 @@ sdk.recommend(blockId: "block_id", currentProductId: "1") { recomendResult in
 
 Output:
 
-recomended = [Sting] - products ids array; 
+recomended = [Recomend] - products array; 
 title = String - title block recomend
 
 ## Search

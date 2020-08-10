@@ -17,9 +17,8 @@ struct InitResponse: Codable {
         self.search = Search(json: search)
         webPushSettings = WebPushSet(json: webPushSet)
     }
-    
+
     init() {
-        
     }
 }
 
@@ -34,7 +33,7 @@ struct Search: Codable {
         let settings = json["settings"] as! [String: Any]
         self.settings = Settings(json: settings)
     }
-    
+
     init() {
     }
 }
@@ -57,7 +56,7 @@ struct Settings: Codable {
         suggestionTitles = json["suggestions_title"] as! String
         showAllTitle = json["show_all_title"] as! String
     }
-    
+
     init() {
     }
 }
@@ -70,7 +69,7 @@ struct WebPushSet: Codable {
         safariEnable = json["safari_enabled"] as! Int
         safariId = json["safari_id"] as! String
     }
-    
+
     init() {
     }
 }
