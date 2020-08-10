@@ -11,7 +11,7 @@ Pod::Spec.new do |s|
 #   * Finally, don't worry about the indent, CocoaPods strips it!
 
   s.description      = <<-DESC
-
+This is iOS SDK for REES46 platform. Read documentation here: https://github.com/rees46/ios-sdk
                        DESC
 
   s.homepage         = 'https://github.com/rees46/ios-sdk'
