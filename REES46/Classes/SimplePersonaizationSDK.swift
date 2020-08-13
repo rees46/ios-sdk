@@ -271,16 +271,18 @@ class SimplePersonaizationSDK: PersonalizationSDK {
     }()
 
     private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
-        var url = baseURL + path + "?"
+        
+        let urlString = baseURL + path
 
-        for (index, item) in params.enumerated() {
-            if index == params.count - 1 {
-                url += item.key + "=" + item.value
-            } else {
-                url += item.key + "=" + item.value + "&"
-            }
+        var url = URLComponents(string: urlString)
+
+        var queryItems = [URLQueryItem]()
+        for item in params{
+            queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
-        if let endUrl = URL(string: url) {
+        url?.queryItems = queryItems
+        
+        if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
                 case .success(let (response, data)):
