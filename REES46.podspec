@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '1.0.3'
+  s.version          = '1.0.4'
   s.summary          = 'REES46 iOS SDK: all-in-one marketing stack for eCommerce'
 
 # This description is used to generate tags and improve search results.
@@ -19,7 +19,7 @@ This is iOS SDK for REES46 platform. Read documentation here: https://github.com
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'REES46' => '«desk@rees46.com»' }
  
-  s.source       = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "1.0.3",
+  s.source       = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "1.0.4",
   :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 

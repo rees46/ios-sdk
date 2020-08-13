@@ -29,7 +29,7 @@
 
 /* Begin PBXFileReference section */
 		4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.release.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.release.xcconfig"; sourceTree = "<group>"; };
-		53578CC38C4B3A4AA9973CCC /* REES46.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = REES46.podspec; path = ../REES46.podspec; sourceTree = "<group>"; };
+		53578CC38C4B3A4AA9973CCC /* REES46.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = REES46.podspec; path = ../REES46.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		5AE5CCEEB00A5EF1E5E39AFF /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		5B3153E7655CDB2AFCC17D25 /* Pods_REES46_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD01AFB9204008FA782 /* REES46_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = REES46_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
