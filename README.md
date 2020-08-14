@@ -161,7 +161,7 @@ sdk.suggest(query: "iphone") { searchResult in
 Full search: 
 
 ```swift
-sdk.search(query: "ноутбук", limit: nil, offset: nil, categoryLimit: nil, categories: nil, extended: nil, sortBy: nil, sortDic: nil, locations: nil, brands: nil, filters: nil, priceMin: nil, priceMax: nil, colors: nil, exclude: nil, email:  nil) { searchResult in
+sdk.search(query: "laptop", limit: nil, offset: nil, categoryLimit: nil, categories: nil, extended: nil, sortBy: nil, sortDic: nil, locations: nil, brands: nil, filters: nil, priceMin: nil, priceMax: nil, colors: nil, exclude: nil) { searchResult in
     print("   Full search callback")
 }
 ```
