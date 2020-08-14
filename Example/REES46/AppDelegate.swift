@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
+        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749")
         
         print("1. Testing tracking")
         sdk.track(event: .productView(id: "123")) { trackResponse in
@@ -113,7 +113,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("===")
 
         print("2. Testing product recommendations")
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", currentProductId: "1") { recomendResponse in
+        
+        sdk.recommend(blockId: "928f0061e9b548f96d16917390ab6732", currentProductId: "1") { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse{
             case .success(let response):
@@ -125,7 +126,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
         
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172") { recomendResponse in
+        sdk.recommend(blockId: "1b51f5790e8cf2db2b94571c99e1ea12") { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse{
             case .success(let response):
@@ -140,7 +141,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("===")
 
         print("3. Testing search")
-        sdk.search(query: "iphone", searchType: .instant) { searchResponse in
+        sdk.suggest(query: "iphone") { searchResponse in
             print("   Instant search callback")
             switch searchResponse{
             case .success(let response):
@@ -151,7 +152,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    instant search is failure")
             }
         }
-        sdk.search(query: "iphone", searchType: .full) { searchResponse in
+        sdk.search(query: "ноутбук",sortBy: "popular", locations: "10",filters: ["максимальная диагональ ноутбука, дюйм":["15.6"]]) { searchResponse in
             print("   Full search callback")
             switch searchResponse{
             case .success(let response):
