@@ -32,7 +32,8 @@ public protocol PersonalizationSDK {
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func track(event: Event, completion: @escaping (Result<Void, SDKError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
-    func search(query: String, searchType: SearchType, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
+    func suggest(query: String, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDic: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func getSSID() -> String
     func getSession() -> String
     func setPushTokenNotification(token: String, completion: @escaping(Result<Void, SDKError>) -> Void)
@@ -46,6 +47,10 @@ public extension PersonalizationSDK {
     
     func recommend(blockId: String, currentProductId: String? = nil, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         recommend(blockId: blockId, currentProductId: currentProductId, completion: completion)
+    }
+    
+    func search(query: String, limit: Int? = nil, offset: Int? = nil, categoryLimit: Int? = nil, categories: String? = nil, extended: String? = nil, sortBy: String? = nil, sortDic: String? = nil, locations: String? = nil, brands: String? = nil, filters: [String: Any]? = nil, priceMin: Double? = nil, priceMax: Double? = nil, colors: String? = nil, exclude: String? = nil, email: String? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {
+        search(query: query, limit: limit, offset: offset, categoryLimit: categoryLimit, categories: categories, extended: extended, sortBy: sortBy, sortDic: sortDic, locations: locations, brands: brands, filters: filters, priceMin: priceMin, priceMax: priceMax, colors: colors, exclude: exclude, email: email, completion: completion)
     }
     
 }

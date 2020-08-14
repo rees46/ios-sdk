@@ -153,7 +153,7 @@ Get search response for qeury in two statament ( partial search and full search)
 Partial search: 
 
 ```swift
-sdk.search(query: "iphone", searchType: .instant) { searchResult in
+sdk.suggest(query: "iphone") { searchResult in
     print("   Instant search callback")
 }
 ```
@@ -161,7 +161,7 @@ sdk.search(query: "iphone", searchType: .instant) { searchResult in
 Full search: 
 
 ```swift
-sdk.search(query: "iphone", searchType: .full) { searchResult in
+sdk.search(query: "ноутбук", limit: nil, offset: nil, categoryLimit: nil, categories: nil, extended: nil, sortBy: nil, sortDic: nil, locations: nil, brands: nil, filters: nil, priceMin: nil, priceMax: nil, colors: nil, exclude: nil, email:  nil) { searchResult in
     print("   Full search callback")
 }
 ```

@@ -9,6 +9,7 @@
 import Foundation
 
 class SimplePersonaizationSDK: PersonalizationSDK {
+    
     var shopId: String
     var userSession: String
     var userSeance: String
@@ -37,7 +38,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
         // Generate seance
         userSeance = UUID().uuidString
         // Trying to fetch user session (permanent user ID)
-        userSession = UserDefaults.standard.string(forKey: "personalization_ssid") ?? ""
+        userSession = "d701d1af-8cee-48e6-a3ea-e42accd7fc7e"//UserDefaults.standard.string(forKey: "personalization_ssid") ?? ""
 
         urlSession = URLSession.shared
         mySerialQueue.async {
@@ -215,14 +216,92 @@ class SimplePersonaizationSDK: PersonalizationSDK {
         }
     }
 
-    func search(query: String, searchType: SearchType, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDic: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "search"
+            var params: [String: String] = [
+                "shop_id": self.shopId,
+                "ssid": self.userSession,
+                "seance": self.userSeance,
+                "type": "full_search",
+                "search_query": query,
+            ]
+            if let limit = limit{
+                params["limit"] = String(limit)
+            }
+            if let offset = offset{
+                params["offset"] = String(offset)
+            }
+            if let categoryLimit = categoryLimit{
+                params["category_limit"] = String(categoryLimit)
+            }
+            if let categories = categories{
+                params["categories"] = categories
+            }
+            if let extended = extended{
+                params["extended"] = extended
+            }
+            if let sortBy = sortBy{
+                params["sort_by"] = String(sortBy)
+            }
+            if let limit = limit{
+                params["sort_dic"] = String(limit)
+            }
+            if let locations = locations{
+                params["locations"] = locations
+            }
+            if let brands = brands{
+                params["brands"] = brands
+            }
+            if let filters = filters{
+                if let theJSONData = try? JSONSerialization.data(
+                    withJSONObject: filters,
+                    options: []) {
+                    let theJSONText = String(data: theJSONData,
+                                             encoding: .utf8)
+                    params["filters"] = theJSONText
+                }
+            }
+            if let priceMin = priceMin{
+                params["price_min"] = String(priceMin)
+            }
+            if let priceMax = priceMax{
+                params["price_max"] = String(priceMax)
+            }
+            if let colors = colors{
+                params["colors"] = colors
+            }
+            if let exclude = exclude{
+                params["exclude"] = exclude
+            }
+            if let email = email{
+                params["email"] = email
+            }
+                
+
+            self.getRequest(path: path, params: params) { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let resultResponse = SearchResponse(json: resJSON)
+                    completion(.success(resultResponse))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    
+    func suggest(query: String, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+        
         mySerialQueue.async {
             let path = "search"
             let params = [
                 "shop_id": self.shopId,
                 "ssid": self.userSession,
                 "seance": self.userSeance,
-                "type": searchType == .full ? "full_search" : "instant_search",
+                "type": "instant_search",
                 "search_query": query,
             ]
 
@@ -271,16 +350,18 @@ class SimplePersonaizationSDK: PersonalizationSDK {
     }()
 
     private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
-        var url = baseURL + path + "?"
+        
+        let urlString = baseURL + path
 
-        for (index, item) in params.enumerated() {
-            if index == params.count - 1 {
-                url += item.key + "=" + item.value
-            } else {
-                url += item.key + "=" + item.value + "&"
-            }
+        var url = URLComponents(string: urlString)
+
+        var queryItems = [URLQueryItem]()
+        for item in params{
+            queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
-        if let endUrl = URL(string: url) {
+        url?.queryItems = queryItems
+        
+        if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
                 case .success(let (response, data)):
