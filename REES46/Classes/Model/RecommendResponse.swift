@@ -9,16 +9,16 @@ import Foundation
 
 public struct RecommenderResponse {
     public var recommended: [Recommended] /// products  array
-    public var title: String ///title block recommendation
+    public var title: String = "" ///title block recommendation
 
     init(json: [String: Any]) {
-        let recs = json["recommends"] as! [[String: Any]]
+        let recs = json["recommends"] as? [[String: Any]] ?? []
         var recsTemp = [Recommended]()
         for item in recs {
             recsTemp.append(Recommended(json: item))
         }
         recommended = recsTemp
-        title = json["title"] as! String
+        title = (json["title"] as? String) ?? ""
     }
 }
 
