@@ -14,28 +14,28 @@ public struct SearchResponse {
     public var queries: [Query]
 
     init(json: [String: Any]) {
-        let cats = json["categories"] as! [[String: Any]]
+        let cats = json["categories"] as? [[String: Any]] ?? []
         var catsTemp = [Category]()
         for item in cats {
             catsTemp.append(Category(json: item))
         }
         categories = catsTemp
 
-        let prods = json["products"] as! [[String: Any]]
+        let prods = json["products"] as? [[String: Any]] ?? []
         var prodsTemp = [Product]()
         for item in prods {
             prodsTemp.append(Product(json: item))
         }
         products = prodsTemp
 
-        let quers = json["queries"] as! [[String: Any]]
+        let quers = json["queries"] as? [[String: Any]] ?? []
         var quersTemp = [Query]()
         for item in quers {
             quersTemp.append(Query(json: item))
         }
         queries = quersTemp
 
-        productsTotal = json["products_total"] as! Int
+        productsTotal = (json["products_total"] as? Int) ?? 0
     }
 }
 
