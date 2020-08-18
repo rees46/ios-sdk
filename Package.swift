@@ -1,11 +1,4 @@
-// swift-tools-version:5.2
-//
 //  Package.swift
-//  shoprees46Test
-//
-//  Created by Арсений Дорогин on 04.08.2020.
-//
-
 
 import PackageDescription
 
@@ -30,4 +23,3 @@ let package = Package(
         )
     ]
 )
-

@@ -1,15 +1,12 @@
 
 //
 //  SimplePersonaliztionSDK.swift
-//  shopTest
-//
-//  Created by Арсений Дорогин on 29.07.2020.
 //
 
 import Foundation
 
-class SimplePersonaizationSDK: PersonalizationSDK {
-    
+class SimplePersonalizationSDK: PersonalizationSDK {
+
     var shopId: String
     var userSession: String
     var userSeance: String
@@ -166,7 +163,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
                 params["order_id"] = orderId
                 params["total_value"] = "\(totalValue)"
                 paramEvent = "purchase"
-            case let .syncronizeCart(ids):
+            case let .synchronizeCart(ids):
                 for (index, item) in ids.enumerated() {
                     params["item_id[\(index)]"] = item
                 }
@@ -216,7 +213,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
         }
     }
 
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDic: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "search"
             var params: [String: String] = [
@@ -277,7 +274,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             if let email = email{
                 params["email"] = email
             }
-                
+
 
             self.getRequest(path: path, params: params) { result in
                 switch result {
@@ -291,10 +288,10 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             }
         }
     }
-    
-    
+
+
     func suggest(query: String, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
-        
+
         mySerialQueue.async {
             let path = "search"
             let params = [
@@ -350,7 +347,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
     }()
 
     private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
-        
+
         let urlString = baseURL + path
 
         var url = URLComponents(string: urlString)
@@ -360,7 +357,7 @@ class SimplePersonaizationSDK: PersonalizationSDK {
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
         url?.queryItems = queryItems
-        
+
         if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
