@@ -241,8 +241,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let sortBy = sortBy{
                 params["sort_by"] = String(sortBy)
             }
-            if let limit = limit{
-                params["sort_dic"] = String(limit)
+            if let sortDir = sortDir{
+                params["sort_dir"] = String(sortDir)
             }
             if let locations = locations{
                 params["locations"] = locations

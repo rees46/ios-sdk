@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '1.0.7'
+  s.version          = '1.0.8'
   s.summary          = 'REES46 iOS SDK: all-in-one marketing stack for eCommerce'
 
 # This description is used to generate tags and improve search results.
