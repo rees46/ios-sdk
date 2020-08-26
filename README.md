@@ -5,6 +5,8 @@
 [![License](https://img.shields.io/cocoapods/l/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)
 [![Platform](https://img.shields.io/cocoapods/p/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)
 
+![REES46](https://rees46.com/static-images/cocoapods/r46_ios_sdk_cocoapods_cover.png)
+
 ## Installation
 
 REES46 SDK is available through [CocoaPods](https://cocoapods.org). To install it, simply add the following line to your Podfile:
