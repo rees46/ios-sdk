@@ -27,7 +27,7 @@ public enum SDKError: Error {
 
 public protocol PersonalizationSDK {
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func track(event: Event, completion: @escaping (Result<Void, SDKError>) -> Void)
+    func track(event: Event, recommendedBy: String?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
     func suggest(query: String, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
