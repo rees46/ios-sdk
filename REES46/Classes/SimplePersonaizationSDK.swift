@@ -127,7 +127,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func track(event: Event, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func track(event: Event, recommendedBy: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "push"
             var paramEvent = ""
@@ -170,6 +170,22 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramEvent = "cart"
             }
             params["event"] = paramEvent
+            
+            // Process recommendedBy parameter
+            if let recommendedBy = recommendedBy {
+                switch recommendedBy {
+                case let "instant_search":
+                    params["recommended_by"] = "instant_search"
+                case let "full_search":
+                    params["recommended_by"] = "full_search"
+                default:
+                    if recommendedBy != "" {
+                        params["recommended_by"] = "dynamic"
+                        params["recommended_code"] = recommendedBy
+                    }
+                }
+            }
+            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
