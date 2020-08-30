@@ -35,7 +35,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Generate seance
         userSeance = UUID().uuidString
         // Trying to fetch user session (permanent user ID)
-        userSession = "d701d1af-8cee-48e6-a3ea-e42accd7fc7e"//UserDefaults.standard.string(forKey: "personalization_ssid") ?? ""
+        userSession = UserDefaults.standard.string(forKey: "personalization_ssid") ?? ""
 
         urlSession = URLSession.shared
         mySerialQueue.async {
@@ -174,9 +174,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             // Process recommendedBy parameter
             if let recommendedBy = recommendedBy {
                 switch recommendedBy {
-                case let "instant_search":
+                case "instant_search":
                     params["recommended_by"] = "instant_search"
-                case let "full_search":
+                case "full_search":
                     params["recommended_by"] = "full_search"
                 default:
                     if recommendedBy != "" {
@@ -206,7 +206,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "recommend"
-            let params = [
+            var params = [
                 "shop_id": self.shopId,
                 "ssid": self.userSession,
                 "seance": self.userSeance,
@@ -216,6 +216,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "extended": "true",
             ]
 
+            if let productId = currentProductId {
+                params["item_id"] = productId
+            }
+            
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):

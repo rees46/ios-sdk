@@ -49,8 +49,14 @@ public extension PersonalizationSDK {
     func search(query: String, limit: Int? = nil, offset: Int? = nil, categoryLimit: Int? = nil, categories: String? = nil, extended: String? = nil, sortBy: String? = nil, sortDir: String? = nil, locations: String? = nil, brands: String? = nil, filters: [String: Any]? = nil, priceMin: Double? = nil, priceMax: Double? = nil, colors: String? = nil, exclude: String? = nil, email: String? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {
         search(query: query, limit: limit, offset: offset, categoryLimit: categoryLimit, categories: categories, extended: extended, sortBy: sortBy, sortDir: sortDir, locations: locations, brands: brands, filters: filters, priceMin: priceMin, priceMax: priceMax, colors: colors, exclude: exclude, email: email, completion: completion)
     }
-
+    
+    func track(event: Event, recommendedBy: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        track(event: event, recommendedBy: recommendedBy, completion: completion)
+    }
+    
+    
 }
+
 public func createPersonalizationSDK(shopId: String, userId: String? = nil, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil) -> PersonalizationSDK{
     let sdk = SimplePersonalizationSDK(shopId: shopId, userId: userId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId)
     return sdk
