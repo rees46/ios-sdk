@@ -212,7 +212,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "seance": self.userSeance,
                 "recommender_type": "dynamic",
                 "recommender_code": blockId,
-                "segment": Bool.random() ? "A" : "B",
                 "extended": "true",
             ]
 
