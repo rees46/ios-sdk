@@ -11,7 +11,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userSession: String
     var userSeance: String
     
-    var baseUrl: String
+    var baseURL: String
 
     var userEmail: String?
     var userPhone: String?
