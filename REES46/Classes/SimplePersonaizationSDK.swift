@@ -10,8 +10,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var shopId: String
     var userSession: String
     var userSeance: String
+    
+    var baseUrl: String
 
-    var userId: String?
     var userEmail: String?
     var userPhone: String?
     var userLoyaltyId: String?
@@ -24,10 +25,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     private let semaphore = DispatchSemaphore(value: 0)
 
-    init(shopId: String, userId: String? = nil, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil) {
+    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String ) {
         self.shopId = shopId
-
-        self.userId = userId
+        
+        self.baseURL = "https://" + apiDomain + "/"
+        
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
@@ -97,7 +99,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "ssid": self.userSession,
                 "seance": self.userSeance,
-                "attributes[id]": self.userId ?? "",
                 "attributes[gender]": gender == .male ? "m" : "f",
                 "attributes[birthday]": birthdayString,
                 "attributes[age]": age ?? "",
@@ -353,8 +354,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
-
-    private let baseURL = "https://api.rees46.com/"
 
     private let jsonDecoder: JSONDecoder = {
         let jsonDecoder = JSONDecoder()

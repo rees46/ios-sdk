@@ -57,7 +57,7 @@ public extension PersonalizationSDK {
     
 }
 
-public func createPersonalizationSDK(shopId: String, userId: String? = nil, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil) -> PersonalizationSDK{
-    let sdk = SimplePersonalizationSDK(shopId: shopId, userId: userId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId)
+public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com") -> PersonalizationSDK{
+    let sdk = SimplePersonalizationSDK(shopId: shopId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, apiDomain: apiDomain)
     return sdk
 }
