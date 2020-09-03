@@ -214,6 +214,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "recommender_type": "dynamic",
                 "recommender_code": blockId,
                 "extended": "true",
+                "resize_image": "180",
             ]
 
             if let productId = currentProductId {
