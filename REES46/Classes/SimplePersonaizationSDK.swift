@@ -16,6 +16,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userEmail: String?
     var userPhone: String?
     var userLoyaltyId: String?
+    
+    var segment: String
 
     var urlSession: URLSession
 
@@ -36,6 +38,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
         // Generate seance
         userSeance = UUID().uuidString
+        
+        // Generate segment
+        segment = ["A", "B"].randomElement()!
+        
         // Trying to fetch user session (permanent user ID)
         userSession = UserDefaults.standard.string(forKey: "personalization_ssid") ?? ""
 
@@ -136,6 +142,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "ssid": self.userSession,
                 "seance": self.userSeance,
+                "segment": self.segment
             ]
             switch event {
             case let .categoryView(id):
@@ -215,6 +222,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "recommender_code": blockId,
                 "extended": "true",
                 "resize_image": "180",
+                "segment": self.segment
             ]
 
             if let productId = currentProductId {
@@ -243,6 +251,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "seance": self.userSeance,
                 "type": "full_search",
                 "search_query": query,
+                "segment": self.segment
             ]
             if let limit = limit{
                 params["limit"] = String(limit)
@@ -321,6 +330,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "seance": self.userSeance,
                 "type": "instant_search",
                 "search_query": query,
+                "segment": self.segment
             ]
 
             self.getRequest(path: path, params: params) { result in
