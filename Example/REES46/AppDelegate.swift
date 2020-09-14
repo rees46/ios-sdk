@@ -18,8 +18,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749")
+        //sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749")
         
+        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749", { (error) in
+            print(error)
+        })
+
         print("1. Testing tracking")
         sdk.track(event: .productView(id: "123")) { trackResponse in
             print("   Product view callback")

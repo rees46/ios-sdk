@@ -27,7 +27,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     private let semaphore = DispatchSemaphore(value: 0)
 
-    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String ) {
+    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
         
         self.baseURL = "https://" + apiDomain + "/"
@@ -55,8 +55,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.userSeance = res.seance
                     self.userSession = res.ssid
                     self.semaphore.signal()
-                case .failure:
+                    if let completion = completion {
+                        completion(nil)
+                    }
+                case .failure(let error):
                     print("PersonalizationSDK error: SDK INIT FAIL")
+                    if let completion = completion {
+                        completion(error)
+                    }
                     break
                 }
             }
