@@ -272,12 +272,12 @@ These method are used for debug tasks. You don't need it for common tasks.
 ### Get session ID
 
 ```swift
-let ssid = sdk.getSSID()
+let deviceID = sdk.getDeviceID()
 ```
 
 ## Author
 
-REES46, desk@rees46.com»
+REES46, desk@rees46.com
 
 ## License
 

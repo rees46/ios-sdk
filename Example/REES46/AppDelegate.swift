@@ -18,14 +18,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        //sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749")
+        //sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
         
-        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749", { (error) in
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", { (error) in
             print(error)
         })
 
         print("1. Testing tracking")
-        sdk.track(event: .productView(id: "123")) { trackResponse in
+        sdk.track(event: .productView(id: "17515")) { trackResponse in
             print("   Product view callback")
             switch trackResponse{
             case .success(let response):
@@ -36,7 +36,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("     track product view is failure")
             }
         }
-        sdk.track(event: .categoryView(id: "123")) { trackResponse in
+        sdk.track(event: .categoryView(id: "17515")) { trackResponse in
             print("   Category view callback")
             switch trackResponse{
             case .success(let response):
@@ -47,7 +47,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track category view is failure")
             }
         }
-        sdk.track(event: .productAddedToFavorities(id: "123")) { trackResponse in
+        sdk.track(event: .productAddedToFavorities(id: "17515")) { trackResponse in
             print("   Product added to favorities callback")
             switch trackResponse{
             case .success(let response):
@@ -58,7 +58,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track product add to favorite is failure")
             }
         }
-        sdk.track(event: .productRemovedToFavorities(id: "123")) { trackResponse in
+        sdk.track(event: .productRemovedToFavorities(id: "17515")) { trackResponse in
             print("   Product removed from favorities callback")
             switch trackResponse{
             case .success(let response):
@@ -69,7 +69,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track product removed from favorities is failure")
             }
         }
-        sdk.track(event: .productAddedToCart(id: "123")) { trackResponse in
+        sdk.track(event: .productAddedToCart(id: "17515")) { trackResponse in
             print("   Product added to cart callback")
             switch trackResponse{
             case .success(let response):
@@ -80,7 +80,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track product added to cart is failure")
             }
         }
-        sdk.track(event: .productRemovedFromCart(id: "123")) { trackResponse in
+        sdk.track(event: .productRemovedFromCart(id: "17515")) { trackResponse in
             print("   Product removed from cart callback")
             switch trackResponse{
             case .success(let response):
@@ -91,7 +91,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track product removed from cart is failure")
             }
         }
-        sdk.track(event: .synchronizeCart(ids: ["1", "2"])) { trackResponse in
+        sdk.track(event: .synchronizeCart(ids: ["17515", "784"])) { trackResponse in
             print("   Cart syncronized callback")
             switch trackResponse{
             case .success(let response):
@@ -102,7 +102,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track cart syncronized is failure")
             }
         }
-        sdk.track(event: .orderCreated(orderId: "123", totalValue: 33.3, products: [(id: "1", amount: 3), (id: "2", amount: 1)])) { trackResponse in
+        sdk.track(event: .orderCreated(orderId: "123", totalValue: 33.3, products: [(id: "17515", amount: 3), (id: "784", amount: 1)])) { trackResponse in
             print("   Order created callback")
             switch trackResponse{
             case .success(let response):
@@ -118,7 +118,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         print("2. Testing product recommendations")
         
-        sdk.recommend(blockId: "928f0061e9b548f96d16917390ab6732", currentProductId: "1") { recomendResponse in
+        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", currentProductId: "17515") { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse{
             case .success(let response):
@@ -130,7 +130,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
         
-        sdk.recommend(blockId: "1b51f5790e8cf2db2b94571c99e1ea12") { recomendResponse in
+        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172") { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse{
             case .success(let response):
@@ -156,7 +156,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    instant search is failure")
             }
         }
-        sdk.search(query: "ноутбук",sortBy: "popular", locations: "10",filters: ["максимальная диагональ ноутбука, дюйм":["15.6"]]) { searchResponse in
+        sdk.search(query: "coat",sortBy: "popular", locations: "10",filters: ["максимальная диагональ ноутбука, дюйм":["15.6"]]) { searchResponse in
             print("   Full search callback")
             switch searchResponse{
             case .success(let response):

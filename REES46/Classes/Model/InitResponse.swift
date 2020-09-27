@@ -1,14 +1,14 @@
 
 
 struct InitResponse: Codable {
-    var ssid: String = ""
+    var deviceID: String = ""
     var seance: String = ""
     var currency: String = ""
     var search: Search = Search()
     var webPushSettings: WebPushSet = WebPushSet()
 
     init(json: [String: Any]) {
-        ssid = json["ssid"] as! String
+        deviceID = json["did"] as! String
         seance = json["seance"] as! String
         currency = json["currency"] as! String
         let search = json["search"] as! [String: Any]

@@ -8,7 +8,7 @@ import Foundation
 class SimplePersonalizationSDK: PersonalizationSDK {
 
     var shopId: String
-    var userSession: String
+    var deviceID: String
     var userSeance: String
     
     var baseURL: String
@@ -43,7 +43,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         segment = ["A", "B"].randomElement()!
         
         // Trying to fetch user session (permanent user ID)
-        userSession = UserDefaults.standard.string(forKey: "personalization_ssid") ?? ""
+        deviceID = UserDefaults.standard.string(forKey: "device_id") ?? ""
 
         urlSession = URLSession.shared
         mySerialQueue.async {
@@ -53,7 +53,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     let res = try! initResult.get()
                     self.userInfo = res
                     self.userSeance = res.seance
-                    self.userSession = res.ssid
+                    self.deviceID = res.deviceID
                     self.semaphore.signal()
                     if let completion = completion {
                         completion(nil)
@@ -70,8 +70,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func getSSID() -> String {
-        return userSession
+    func getDeviceID() -> String {
+        return deviceID
     }
 
     func getSession() -> String {
@@ -83,7 +83,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
-                "ssid": self.userSession,
+                "did": self.deviceID,
                 "token": token,
                 "platform": "ios",
             ]
@@ -109,7 +109,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             let params: [String: String] = [
                 "shop_id": self.shopId,
-                "ssid": self.userSession,
+                "did": self.deviceID,
                 "seance": self.userSeance,
                 "attributes[gender]": gender == .male ? "m" : "f",
                 "attributes[birthday]": birthdayString,
@@ -146,7 +146,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             var paramEvent = ""
             var params = [
                 "shop_id": self.shopId,
-                "ssid": self.userSession,
+                "did": self.deviceID,
                 "seance": self.userSeance,
                 "segment": self.segment
             ]
@@ -222,7 +222,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "recommend"
             var params = [
                 "shop_id": self.shopId,
-                "ssid": self.userSession,
+                "did": self.deviceID,
                 "seance": self.userSeance,
                 "recommender_type": "dynamic",
                 "recommender_code": blockId,
@@ -253,7 +253,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "search"
             var params: [String: String] = [
                 "shop_id": self.shopId,
-                "ssid": self.userSession,
+                "did": self.deviceID,
                 "seance": self.userSeance,
                 "type": "full_search",
                 "search_query": query,
@@ -326,18 +326,22 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
 
-    func suggest(query: String, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func suggest(query: String, locations: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
 
         mySerialQueue.async {
             let path = "search"
-            let params = [
+            var params = [
                 "shop_id": self.shopId,
-                "ssid": self.userSession,
+                "did": self.deviceID,
                 "seance": self.userSeance,
                 "type": "instant_search",
                 "search_query": query,
                 "segment": self.segment
             ]
+            
+            if let locations = locations{
+                params["locations"] = locations
+            }
 
             self.getRequest(path: path, params: params) { result in
                 switch result {
@@ -353,7 +357,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
-        let path = "init_script"
+        let path = "init"
         let params = [
             "shop_id": shopId,
         ]
@@ -364,7 +368,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .success(successResult):
                 let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
-                UserDefaults.standard.set(resultResponse.ssid, forKey: "personalization_ssid")
+                UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
                 completion(.success(resultResponse))
             case let .failure(error):
                 completion(.failure(error))

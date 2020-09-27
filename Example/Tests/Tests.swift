@@ -1,15 +1,15 @@
 import XCTest
 import REES46
 
-class SsidSaveTest: XCTestCase {
+class DeviceIDSaveTest: XCTestCase {
     
-    //Сначала запускаем приложение чтобы сохранился ssid, потом запускаем этот тест
-    func test_is_ssid_haved_second_run() {
-        let ssid = UserDefaults.standard.string(forKey: "personalization_ssid") ?? "" //Получаем из хранилища SSID
-        if ssid.isEmpty{
-            XCTAssert(false, "ssid bad, init sdk, rerun test")
+    //Сначала запускаем приложение чтобы сохранился deviceID, потом запускаем этот тест
+    func test_is_device_id_haved_second_run() {
+        let deviceID = UserDefaults.standard.string(forKey: "device_id") ?? "" //Получаем из хранилища DeviceID
+        if deviceID.isEmpty{
+            XCTAssert(false, "deviceID bad, init sdk, rerun test")
         }else{
-            XCTAssert(true, "ssid good")
+            XCTAssert(true, "deviceID good")
         }
     }
 }
@@ -27,29 +27,29 @@ class Tests: XCTestCase {
         super.tearDown()
     }
     
-    func test_ssid_initialization() {
+    func test_device_id_initialization() {
         if let sdk = sdk {
             sdk.track(event: .productView(id: "123")) { (response) in
-                let ssid = sdk.getSSID()
-                if ssid.isEmpty{
-                    XCTAssert(false, "ssid bad")
+                let deviceID = sdk.getDeviceID()
+                if deviceID.isEmpty{
+                    XCTAssert(false, "deviceID bad")
                 }else{
-                    XCTAssert(true, "ssid good")
+                    XCTAssert(true, "deviceID good")
                 }
             }
         }
     }
     
-    func test_ssid_rewrite() {
-        let oldSsid = sdk?.getSSID() //получаем старый сохраненный ссид
+    func test_device_id_rewrite() {
+        let oldDeviceID = sdk?.getDeviceID() //получаем старый сохраненный deviceID
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") //переиницализируем сдк ( как будто пергружаем приложение)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in
-                let ssid = sdk.getSSID()
-                if oldSsid == ssid{
-                    XCTAssert(true, "ssid bad")
+                let deviceID = sdk.getDeviceID()
+                if oldDeviceID == deviceID {
+                    XCTAssert(true, "deviceID bad")
                 }else{
-                    XCTAssert(false, "ssid good")
+                    XCTAssert(false, "deviceID good")
                 }
             }
         }else{
