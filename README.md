@@ -265,6 +265,25 @@ sdk.setPushTokenNotification(token: "TOKEN_STRING") { (tokenResponse) in
 }
 ```
 
+## Save review
+
+```swift
+sdk.review(rate: 5, channel: "ios_app", category: "delivery", comment: "Nice application, thank you!") { (reviewResponse) in
+  print("Review is saved")
+}
+```
+
+Parameters list:
+
+Parameter | Required | Description
+--------- | ------- | -----------
+rate | true | Score of the rated process. Value between 0 - 10
+channel | true | NPS channel code
+category | true | NPS process category code
+comment | false | Optional answer to the follow-up question
+orderId | false | Order ID, related to the current survey
+
+
 ## Utilities
 
 These method are used for debug tasks. You don't need it for common tasks.
