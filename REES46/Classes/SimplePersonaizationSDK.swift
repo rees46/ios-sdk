@@ -97,6 +97,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
+    
+    func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "nps/create"
+            let params: [String : String] = [
+                "did": self.deviceID,
+                "shop_id": self.shopId,
+                "rate": String(rate),
+                "channel": channel,
+                "category": category,
+                "order_id": orderId ?? "",
+                "comment": comment ?? ""
+            ]
+            if rate < 1 || rate > 10 {
+                completion(.failure(.custom(error: "Error: rating can be between 1 and 10 only")))
+                return //выходим из review
+            }
+            self.postRequest(path: path, params: params) { (result) in
+                switch result {
+                case .success:
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
 
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
@@ -440,6 +467,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 switch result {
                 case .success(let (response, data)):
                     guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
+                        if let json = try? JSONSerialization.jsonObject(with: data) {
+                            if let jsonObject = json as? [String:Any] {
+                                if let status = jsonObject["status"] as? String, status == "error" {
+                                    if let errorMessage = jsonObject["message"] as? String {
+                                        completion(.failure(.custom(error: errorMessage)))
+                                    }
+                                }
+                            }
+                        }
                         completion(.failure(.invalidResponse))
                         return
                     }

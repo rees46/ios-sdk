@@ -22,6 +22,7 @@ public enum SDKError: Error {
     case responseError
     case invalidResponse
     case decodeError
+    case custom(error: String)
 }
 
 
@@ -34,9 +35,14 @@ public protocol PersonalizationSDK {
     func getDeviceID() -> String
     func getSession() -> String
     func setPushTokenNotification(token: String, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
 }
 
 public extension PersonalizationSDK {
+    
+    func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
+    }
 
     func setProfileData(userEmail: String, userPhone: String? = nil, userLoyaltyId: String? = nil, birthday: Date? = nil, age: String? = nil, firstName: String? = nil, secondName: String? = nil, lastName: String? = nil, location: String? = nil, gender: Gender? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, secondName: secondName, lastName: lastName, location: location, gender: gender, completion: completion)
