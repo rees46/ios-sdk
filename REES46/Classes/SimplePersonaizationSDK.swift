@@ -110,8 +110,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "order_id": orderId ?? "",
                 "comment": comment ?? ""
             ]
-            if rate < 0 || rate > 10 {
-                completion(.failure(.custom(error: "Ошибка: Значение рейтинга должно быть от 0 до 10")))
+            if rate < 1 || rate > 10 {
+                completion(.failure(.custom(error: "Error: rating can be between 1 and 10 only")))
                 return //выходим из review
             }
             self.postRequest(path: path, params: params) { (result) in

@@ -277,7 +277,7 @@ Parameters list:
 
 Parameter | Required | Description
 --------- | ------- | -----------
-rate | true | Score of the rated process. Value between 0 - 10
+rate | true | Score of the rated process. Value between 1 - 10
 channel | true | NPS channel code
 category | true | NPS process category code
 comment | false | Optional answer to the follow-up question

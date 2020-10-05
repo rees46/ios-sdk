@@ -211,7 +211,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    instant search is failure")
             }
         }
-        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["максимальная диагональ ноутбука, дюйм": ["15.6"]]) { searchResponse in
+        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]]) { searchResponse in
             print("   Full search callback")
             switch searchResponse {
             case let .success(response):
@@ -272,7 +272,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         print("6. Send review")
 
-        sdk.review(rate: 5, channel: "ios_app", category: "delivery", comment: "Nice application, thank you!") { reviewResponse in
+        sdk.review(rate: 1, channel: "ios_app", category: "delivery", comment: "Nice application, thank you!") { reviewResponse in
             print("   Send review response")
             switch reviewResponse {
             case .success():
