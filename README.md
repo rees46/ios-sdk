@@ -52,7 +52,7 @@ var sdk = createPersonalizationSDK(shopId: "API_KEY")
 Or with completion to handle problems:
 
 ```swift
-import PersonaClick
+import REES46
 .....
 sdk = createPersonalizationSDK(shopId: "API_KEY", { (error) in
     print(error)
