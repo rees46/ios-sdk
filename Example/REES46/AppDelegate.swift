@@ -23,8 +23,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print(error)
         })
         
-    
-        
         print("1. Testing tracking")
         
         sdk.trackSource(source: .chain, code: "123123")
@@ -47,7 +45,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
         
-        /*
+        
         
         print("1. Testing tracking")
         sdk.track(event: .productView(id: "644")) { trackResponse in
@@ -291,7 +289,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    setPushTokenNotification is failure")
             }
         }
-         */
         
         print("===")
         
