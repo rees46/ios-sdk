@@ -167,7 +167,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func track(event: Event, recommendedBy: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "push"
             var paramEvent = ""
@@ -214,18 +214,26 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             // Process recommendedBy parameter
             if let recommendedBy = recommendedBy {
-                switch recommendedBy {
-                case "instant_search":
-                    params["recommended_by"] = "instant_search"
-                case "full_search":
-                    params["recommended_by"] = "full_search"
-                default:
-                    if recommendedBy != "" {
-                        params["recommended_by"] = "dynamic"
-                        params["recommended_code"] = recommendedBy
-                    }
+                let recomendedParams = recommendedBy.getParams()
+                for item in recomendedParams {
+                    params[item.key] = item.value
                 }
             }
+            
+            // Check source tracker params
+            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
+            let nowTimeValue = Date().timeIntervalSince1970
+            let diff = nowTimeValue - timeValue
+            if diff > 48*60*60 {
+                // Recomended params is invalidate
+                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
+                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
+            }else{
+                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
+                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
+                params["source"] = "{\"from\": \"\(savedType)\" , \"code\": \"\(savedCode)\" }"
+            }
+            
             
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -242,6 +250,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             })
         }
+    }
+    
+    func trackSource(source: RecommendedByCase, code: String) {
+        UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "timeStartSave")
+        UserDefaults.standard.setValue(code, forKey: "recomendedCode")
+        UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
     }
 
     func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {

@@ -17,12 +17,35 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
-
+        
+        print("0. Init SDK")
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", { error in
             print(error)
         })
         
-        /*
+        print("1. Testing tracking")
+        
+        sdk.trackSource(source: .chain, code: "123123")
+        
+        let rec = RecomendedBy(type: .dynamic, code: "beb620922934b6ba2d6a3fb82b8b3271")
+        sdk.track(event: .productView(id: "644"), recommendedBy: rec) { trackResponse in
+            print("   Product view callback")
+            switch trackResponse {
+            case let .success(response):
+                print("     track product view is success")
+            // print("Response: ", response) //uncomment it if you want to see response
+            case let .failure(error):
+                switch error {
+                case .custom(let customError):
+                    print("Error: ", customError)
+                default:
+                    print("Error: ", error.localizedDescription)
+                }
+                fatalError("     track product view is failure")
+            }
+        }
+        
+        
         
         print("1. Testing tracking")
         sdk.track(event: .productView(id: "644")) { trackResponse in
@@ -266,7 +289,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    setPushTokenNotification is failure")
             }
         }
-         */
         
         print("===")
         

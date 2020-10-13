@@ -50,3 +50,45 @@ public struct Recommended {
         currency = json["currency"] as! String
     }
 }
+
+
+public enum RecommendedByCase: String {
+    case dynamic = "dynamic"
+    case chain = "chain"
+    case transactional = "transactional"
+    case fullSearch = "full_search"
+    case instantSearch = "instant_search"
+    case digestMail = "digest_mail"
+    case webPushDigest = "web_push_digest"
+    case mobilePushBulk = "mobile_push_bulk"
+    
+    func getCodeField() -> String {
+        switch self {
+        case .digestMail:
+            return "digest_mail_code"
+        case .webPushDigest:
+            return "web_push_digest_code"
+        default:
+            return "recommender_code"
+        }
+    }
+}
+
+public class RecomendedBy {
+    
+    var code: String = ""
+    var type: RecommendedByCase = .chain
+    
+    public init(type: RecommendedByCase, code: String) {
+        self.type = type
+        self.code = code
+    }
+    
+    func getParams() -> [String: String] {
+        let params = [
+            "recommended_by": type.rawValue,
+            "\(type.getCodeField())": code
+        ]
+        return params
+    }
+}

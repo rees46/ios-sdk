@@ -28,7 +28,8 @@ public enum SDKError: Error {
 
 public protocol PersonalizationSDK {
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func track(event: Event, recommendedBy: String?, completion: @escaping (Result<Void, SDKError>) -> Void)
+    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void)
+    func trackSource(source: RecommendedByCase, code: String)
     func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
     func suggest(query: String, locations: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
@@ -60,7 +61,7 @@ public extension PersonalizationSDK {
         search(query: query, limit: limit, offset: offset, categoryLimit: categoryLimit, categories: categories, extended: extended, sortBy: sortBy, sortDir: sortDir, locations: locations, brands: brands, filters: filters, priceMin: priceMin, priceMax: priceMax, colors: colors, exclude: exclude, email: email, completion: completion)
     }
     
-    func track(event: Event, recommendedBy: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func track(event: Event, recommendedBy: RecomendedBy? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
     
