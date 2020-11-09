@@ -44,7 +44,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         // Trying to fetch user session (permanent user ID)
         deviceID = UserDefaults.standard.string(forKey: "device_id") ?? ""
-
+        
         urlSession = URLSession.shared
         mySerialQueue.async {
             self.sendInitRequest { initResult in
@@ -87,6 +87,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "token": token,
                 "platform": "ios",
             ]
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case .success:
@@ -114,6 +117,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.failure(.custom(error: "Error: rating can be between 1 and 10 only")))
                 return //выходим из review
             }
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params) { (result) in
                 switch result {
                 case .success:
@@ -149,7 +155,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "attributes[loyality_id]": userLoyaltyId ?? "",
                 "attributes[location]": location ?? "",
             ]
-
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
+            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
@@ -258,7 +268,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
     }
 
-    func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(timeOut: Double?, blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "recommend"
             var params = [
@@ -276,6 +286,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["item_id"] = productId
             }
             
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
@@ -289,7 +302,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(timeOut: Double?, query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "search"
             var params: [String: String] = [
@@ -352,7 +365,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["email"] = email
             }
 
-
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
@@ -383,7 +399,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let locations = locations{
                 params["locations"] = locations
             }
-
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
@@ -402,7 +421,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let params = [
             "shop_id": shopId,
         ]
-
+        
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 1
+        self.urlSession = URLSession(configuration: sessionConfig)
         getRequest(path: path, params: params, true) { result in
 
             switch result {
