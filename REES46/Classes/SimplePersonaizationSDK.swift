@@ -258,7 +258,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
     }
 
-    func recommend(blockId: String, currentProductId: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(blockId: String, currentProductId: String?, imageSize: String?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "recommend"
             var params = [
@@ -274,6 +274,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
             if let productId = currentProductId {
                 params["item_id"] = productId
+            }
+            
+            if let imageSize = imageSize {
+                params["resize_image"] = imageSize
             }
             
             self.getRequest(path: path, params: params) { result in
