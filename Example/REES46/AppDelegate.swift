@@ -197,8 +197,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    recommend with prodcut id is failure")
             }
         }
+        
 
-        sdk.recommend(timeOut: 0.5, blockId: "11118fd6807a70903de3553ad480e172") { recomendResponse in
+        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", timeOut: 0.5 ) { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse {
             case let .success(response):
@@ -234,7 +235,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    instant search is failure")
             }
         }
-        sdk.search(timeOut: 0.2, query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]]) { searchResponse in
+        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
             print("   Full search callback")
             switch searchResponse {
             case let .success(response):
