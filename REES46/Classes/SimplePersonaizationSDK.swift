@@ -388,7 +388,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
 
-    func suggest(query: String, locations: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func suggest(query: String, locations: String?, timeOut: Double? , completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
 
         mySerialQueue.async {
             let path = "search"
@@ -405,9 +405,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["locations"] = locations
             }
             
+            
             let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             self.urlSession = URLSession(configuration: sessionConfig)
+            
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
