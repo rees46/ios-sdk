@@ -49,7 +49,7 @@ public extension PersonalizationSDK {
         setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, secondName: secondName, lastName: lastName, location: location, gender: gender, completion: completion)
     }
 
-    func recommend(timeOut: Double?, blockId: String, currentProductId: String? = nil, imageSize: String? = nil, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(timeOut: Double? = nil, blockId: String, currentProductId: String? = nil, imageSize: String? = nil, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         recommend(timeOut: timeOut, blockId: blockId, currentProductId: currentProductId, imageSize: imageSize, completion: completion)
     }
     
