@@ -19,7 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
         
         print("0. Init SDK")
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", { error in
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.r46.technodom.kz", { error in
             print(error)
         })
         
@@ -235,7 +235,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    instant search is failure")
             }
         }
-        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
+        print("===")
+        
+        sdk.search(query: "samsung") { searchResponse in
             print("   Full search callback")
             switch searchResponse {
             case let .success(response):
@@ -251,8 +253,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    full search is failure")
             }
         }
-        print("===")
-
+        
         print("4. Set user Settings")
 
         sdk.setProfileData(userEmail: "email") { profileResponse in
@@ -310,7 +311,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    review is failure")
             }
         }
-
+    
         print("===")
 
         return true
