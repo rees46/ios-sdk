@@ -19,7 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
         
         print("0. Init SDK")
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.r46.technodom.kz", { error in
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", { error in
             print(error)
         })
         
