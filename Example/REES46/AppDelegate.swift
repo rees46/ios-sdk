@@ -237,7 +237,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         print("===")
         
-        sdk.search(query: "samsung") { searchResponse in
+        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
             print("   Full search callback")
             switch searchResponse {
             case let .success(response):
