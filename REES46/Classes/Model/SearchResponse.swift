@@ -2,7 +2,6 @@
 //  SearchResponse.swift
 //  FBSnapshotTestCase
 //
-//  Created by Арсений Дорогин on 31.07.2020.
 //
 
 import Foundation
