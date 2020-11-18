@@ -235,6 +235,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    instant search is failure")
             }
         }
+        print("===")
+        
         sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
             print("   Full search callback")
             switch searchResponse {
@@ -251,8 +253,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    full search is failure")
             }
         }
-        print("===")
-
+        
         print("4. Set user Settings")
 
         sdk.setProfileData(userEmail: "email") { profileResponse in
@@ -310,7 +311,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    review is failure")
             }
         }
-
+    
         print("===")
 
         return true

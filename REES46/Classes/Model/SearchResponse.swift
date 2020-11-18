@@ -6,11 +6,34 @@
 
 import Foundation
 
+public struct Filter {
+    public var count: Int
+    public var values: [String: Int]
+    
+    init(json: [String: Any]) {
+        self.count = json["count"] as? Int ?? 0
+        self.values = json["values"] as? [String: Int] ?? [:]
+    }
+}
+
+public struct PriceRange {
+    public var min: Double
+    public var max: Double
+    
+    init(json: [String: Any]) {
+        self.min = json["min"] as? Double ?? 0
+        self.max = json["max"] as? Double ?? 0
+    }
+}
+
 public struct SearchResponse {
     public var categories: [Category]
     public var products: [Product]
     public var productsTotal: Int
     public var queries: [Query]
+    public var filters: [String: Filter]?
+    public var brands: [String]?
+    public var priceRange: PriceRange?
 
     init(json: [String: Any]) {
         let cats = json["categories"] as? [[String: Any]] ?? []
@@ -35,6 +58,31 @@ public struct SearchResponse {
         queries = quersTemp
 
         productsTotal = (json["products_total"] as? Int) ?? 0
+        
+        if let filtersJSON = json["filters"] as? [String: Any] {
+            var filtersResult = [String: Filter]()
+            for item in filtersJSON {
+                if let dict = item.value as? [String: Any] {
+                    filtersResult[item.key] = Filter(json: dict)
+                }
+            }
+            self.filters = filtersResult
+        }
+        
+        if let brandsJSON = json["brands"] as? [[String: Any]] {
+            var brandsResult = [String]()
+            for item in brandsJSON {
+                if let name = item["name"] as? String {
+                    brandsResult.append(name)
+                }
+            }
+            self.brands = brandsResult
+        }
+        
+        if let priceRangeJSON = json["price_range"] as? [String: Any] {
+            self.priceRange = PriceRange(json: priceRangeJSON)
+        }
+        
     }
 }
 
