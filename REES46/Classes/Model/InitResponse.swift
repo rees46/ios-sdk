@@ -10,9 +10,9 @@ struct InitResponse: Codable {
         deviceID = json["did"] as! String
         seance = json["seance"] as! String
         currency = json["currency"] as! String
-        let search = json["search"] as! [String: Any]
-
-        self.search = Search(json: search)
+        if let search = json["search"] as? [String: Any] {
+            self.search = Search(json: search)
+        }
     }
 
     init() {
