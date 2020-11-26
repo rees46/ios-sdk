@@ -63,6 +63,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     if let completion = completion {
                         completion(error)
                     }
+                    self.semaphore.signal()
                     break
                 }
             }
