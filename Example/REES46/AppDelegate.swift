@@ -19,10 +19,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
         
         print("0. Init SDK")
-        sdk = createPersonalizationSDK(shopId: "", { error in
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", { error in
             print(error)
         })
-        
+        /*
         print("1. Testing tracking")
         
         sdk.trackSource(source: .chain, code: "123123")
@@ -251,6 +251,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                     print("Error: ", error.localizedDescription)
                 }
                 fatalError("    full search is failure")
+            }
+        }
+        */
+        sdk.searchBlank { (searchResponse) in
+            print("   Search blank callback")
+            switch searchResponse {
+            case let .success(response):
+                print("     Search blank is success")
+            // print("Response: ", response) //uncomment it if you want to see response
+            case let .failure(error):
+                switch error {
+                case .custom(let customError):
+                    print("Error: ", customError)
+                default:
+                    print("Error: ", error.localizedDescription)
+                }
+                fatalError("    Search blank is failure")
             }
         }
         

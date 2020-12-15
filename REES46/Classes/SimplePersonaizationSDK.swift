@@ -102,6 +102,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func searchBlank(completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "search/blank"
+            let params: [String : String] = [
+                "did": self.deviceID,
+                "shop_id": self.shopId
+            ]
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
+            self.getRequest(path: path, params: params) { (result) in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let resultResponse = SearchBlankResponse(json: resJSON)
+                    completion(.success(resultResponse))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "nps/create"

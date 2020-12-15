@@ -26,6 +26,48 @@ public struct PriceRange {
     }
 }
 
+public struct Suggest {
+    public var name: String
+    public var url: String
+    
+    init(json: [String: Any]) {
+        self.name = json["name"] as? String ?? ""
+        self.url = json["url"] as? String ?? ""
+    }
+}
+
+public struct SearchBlankResponse {
+    public var lastQueries: [Query]
+    public var suggests: [Suggest]
+    public var lastProducts: Bool
+    public var products: [Product]
+    
+    init(json: [String: Any]) {
+        let lastQueriesTemp = json["last_queries"] as? [[String: Any]] ?? []
+        var quyArr = [Query]()
+        for item in lastQueriesTemp {
+            quyArr.append(Query(json: item))
+        }
+        lastQueries = quyArr
+        
+        let suggestsTemp = json["suggests"] as? [[String: Any]] ?? []
+        var sugArr = [Suggest]()
+        for item in suggestsTemp {
+            sugArr.append(Suggest(json: item))
+        }
+        suggests = sugArr
+        
+        lastProducts = json["last_products"] as? Bool ?? true
+        
+        let productsTemp = json["products"] as? [[String: Any]] ?? []
+        var productArr = [Product]()
+        for item in productsTemp {
+            productArr.append(Product(json: item))
+        }
+        products = productArr
+    }
+}
+
 public struct SearchResponse {
     public var categories: [Category]
     public var products: [Product]
@@ -101,15 +143,15 @@ public struct Product {
     public var params: [[String: Any]]?
 
     init(json: [String: Any]) {
-        id = json["id"] as! String
-        name = json["name"] as! String
-        brand = json["brand"] as! String
-        price = json["price"] as! Double
-        oldPrice = json["old_price"] as! Double
-        priceFormatted = json["price_formatted"] as! String
-        picture = json["picture"] as! String
-        url = json["url"] as! String
-        currency = json["currency"] as! String
+        id = json["id"] as? String ?? ""
+        name = json["name"] as? String ?? ""
+        brand = json["brand"] as? String ?? ""
+        price = json["price"] as? Double ?? 0
+        oldPrice = json["old_price"] as? Double ?? 0
+        priceFormatted = json["price_formatted"] as? String ?? ""
+        picture = json["picture"] as? String ?? ""
+        url = json["url"] as? String ?? ""
+        currency = json["currency"] as? String ?? ""
         isNew = json["is_new"] as? Bool
         barcode = json["barcode"] as? String
         params = json["params"] as? [[String: Any]]
