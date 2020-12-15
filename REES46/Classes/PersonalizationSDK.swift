@@ -37,6 +37,7 @@ public protocol PersonalizationSDK {
     func getSession() -> String
     func setPushTokenNotification(token: String, completion: @escaping(Result<Void, SDKError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func searchBlank(completion: @escaping(Result<SearchBlankResponse, SDKError>) -> Void)
 }
 
 public extension PersonalizationSDK {
