@@ -157,7 +157,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
-            let path = "push_attributes"
+            let path = "profile/set"
             var birthdayString = ""
             if let birthday = birthday {
                 let dateFormatter = DateFormatter()
@@ -453,8 +453,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
         let path = "init"
-        let params = [
+        var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
+        let hours = secondsFromGMT/3600
+        let params: [String: String] = [
             "shop_id": shopId,
+            "tz": String(hours)
         ]
         
         let sessionConfig = URLSessionConfiguration.default
@@ -473,6 +476,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
+    
 
     private let jsonDecoder: JSONDecoder = {
         let jsonDecoder = JSONDecoder()
