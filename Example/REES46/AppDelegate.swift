@@ -194,7 +194,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         print("===")
         print("2. Testing product recommendations")
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", currentProductId: "644") { recomendResponse in
+        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", currentProductId: "1") { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse {
             case let .success(response):
@@ -211,7 +211,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
 
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", timeOut: 0.5) { recomendResponse in
+        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", timeOut: 0.5) { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse {
             case let .success(response):
@@ -283,7 +283,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         print("4. Set user Settings")
 
-        sdk.setProfileData(userEmail: "email") { profileResponse in
+        sdk.setProfileData(userEmail: "arseniydor@yandex.ru") { profileResponse in
             print("   Profile data set callback")
             switch profileResponse {
             case .success():

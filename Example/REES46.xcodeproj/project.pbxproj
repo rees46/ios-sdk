@@ -24,6 +24,7 @@
 		9A7A960325BC416600FFA40A /* ImagesCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9A7A960025BC416600FFA40A /* ImagesCollectionViewCell.xib */; };
 		9A7A961025BC436D00FFA40A /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A960F25BC436D00FFA40A /* NotificationService.swift */; };
 		9A7A961425BC436D00FFA40A /* REESNotificationServiceExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		B571558189DAF9A4085C41A8 /* Pods_REES46_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */; };
 /* End PBXBuildFile section */
 
@@ -93,6 +94,7 @@
 		9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A7A960F25BC436D00FFA40A /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		9A7A961125BC436D00FFA40A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9A7FC75525C0BB69006D8CF9 /* Readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
 		9ADC31BF25A1C2D600D9D1AA /* REES46_Example.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REES46_Example.entitlements; sourceTree = "<group>"; };
 		9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 		9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
@@ -166,8 +168,8 @@
 				607FACF51AFB993E008FA782 /* Podspec Metadata */,
 				607FACD21AFB9204008FA782 /* Example for REES46 */,
 				607FACE81AFB9204008FA782 /* Tests */,
-				9A7A95E125BC40E900FFA40A /* REESNotificationContentExtension */,
-				9A7A960E25BC436D00FFA40A /* REESNotificationServiceExtension */,
+				9A7A95E125BC40E900FFA40A /* NotificationContentExtension */,
+				9A7A960E25BC436D00FFA40A /* NotificationServiceExtension */,
 				607FACD11AFB9204008FA782 /* Products */,
 				4F88B19B361A54409BF39837 /* Pods */,
 				5EF802E6E047FD7F294501D7 /* Frameworks */,
@@ -234,7 +236,7 @@
 			name = "Podspec Metadata";
 			sourceTree = "<group>";
 		};
-		9A7A95E125BC40E900FFA40A /* REESNotificationContentExtension */ = {
+		9A7A95E125BC40E900FFA40A /* NotificationContentExtension */ = {
 			isa = PBXGroup;
 			children = (
 				9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */,
@@ -243,17 +245,18 @@
 				9A7A95FF25BC416600FFA40A /* Product.swift */,
 				9A7A95E425BC40E900FFA40A /* MainInterface.storyboard */,
 				9A7A95E725BC40E900FFA40A /* Info.plist */,
+				9A7FC75525C0BB69006D8CF9 /* Readme.md */,
 			);
-			path = REESNotificationContentExtension;
+			path = NotificationContentExtension;
 			sourceTree = "<group>";
 		};
-		9A7A960E25BC436D00FFA40A /* REESNotificationServiceExtension */ = {
+		9A7A960E25BC436D00FFA40A /* NotificationServiceExtension */ = {
 			isa = PBXGroup;
 			children = (
 				9A7A960F25BC436D00FFA40A /* NotificationService.swift */,
 				9A7A961125BC436D00FFA40A /* Info.plist */,
 			);
-			path = REESNotificationServiceExtension;
+			path = NotificationServiceExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -409,6 +412,7 @@
 			files = (
 				9A7A960325BC416600FFA40A /* ImagesCollectionViewCell.xib in Resources */,
 				9A7A95E625BC40E900FFA40A /* MainInterface.storyboard in Resources */,
+				9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,6 +1,6 @@
 //
 //  NotificationViewController.swift
-//  REESNotificationContentExtension
+//  NotificationContentExtension
 //
 //  Created by Арсений Дорогин on 03.01.2021.
 //  Copyright © 2021 CocoaPods. All rights reserved.

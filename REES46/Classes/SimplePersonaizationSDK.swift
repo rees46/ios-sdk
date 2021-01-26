@@ -155,34 +155,61 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: String?, firstName: String?, secondName: String?, lastName: String?, location: String?, gender: Gender?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "profile/set"
-            var birthdayString = ""
-            if let birthday = birthday {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "YYYY-MM-DD"
-                birthdayString = dateFormatter.string(from: birthday)
-            }
-            let params: [String: String] = [
+            var paramsTemp: [String: String?] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
-                "attributes[gender]": gender == .male ? "m" : "f",
-                "attributes[birthday]": birthdayString,
-                "attributes[age]": age ?? "",
-                "attributes[email]": userEmail,
-                "attributes[first_name]": firstName ?? "",
-                "attributes[middle_name]": secondName ?? "",
-                "attributes[last_name]": lastName ?? "",
-                "attributes[phone]": userPhone ?? "",
-                "attributes[loyality_id]": userLoyaltyId ?? "",
-                "attributes[location]": location ?? "",
+                "loyalty_id": userLoyaltyId,
+                "fb_id": fbID,
+                "vk_id": vkID,
+                "telegram_id": telegramID,
+                "loyalty_card_location": loyaltyCardLocation,
+                "loyalty_status": loyaltyStatus,
+                "gender": gender == .male ? "m" : "f",
+                "email": userEmail,
+                "first_name": firstName,
+                "last_name": lastName,
+                "phone": userPhone,
+                "loyality_id": userLoyaltyId,
+                "location": location
             ]
+            
+            if let birthday = birthday {
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "YYYY-MM-DD"
+                let birthdayString = dateFormatter.string(from: birthday)
+                paramsTemp["birthday"] = birthdayString
+            }
+            
+            if let loyaltyBonuses = loyaltyBonuses {
+                paramsTemp["loyalty_bonuses"] = String(loyaltyBonuses)
+            }
+            
+            if let loyaltyBonusesToNextLevel = loyaltyBonusesToNextLevel {
+                paramsTemp["loyalty_bonuses_to_next_level"] = String(loyaltyBonusesToNextLevel)
+            }
+            
+            if let boughtSomething = boughtSomething {
+                paramsTemp["bought_something"] = boughtSomething == true ? "1" : "0"
+            }
+            
+            if let age = age {
+                paramsTemp["age"] = String(age)
+            }
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             self.urlSession = URLSession(configuration: sessionConfig)
+            
+            var params: [String: String] =  [String: String]()
+            for item in paramsTemp {
+                if let value = item.value {
+                    params[item.key] = value
+                }
+            }
             
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
