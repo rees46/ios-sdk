@@ -251,7 +251,7 @@ sdk.setProfileData(userEmail: "EMAIL@EXAMPLE.COM") { (profileDataResp) in
 Or you can provide more data:
 
 ```swift
-sdk.setProfileData(userEmail: "EMAIL@EXAMPLE.COM", userPhone: "+111111111111", userLoyaltyId: "LOYALTY_CARD_ID", birthday: nil, age: nil, firstName: "Johny", secondName: nil, lastName: "Cash", location: nil, gender: .male) { (profileDataResp) in
+sdk.setProfileData(userEmail: "EMAIL@EXAMPLE.COM", userPhone: "+111111111111", userLoyaltyId: "LOYALTY_CARD_ID", birthday: nil, age: nil, firstName: "Johny", lastName: "Cash", location: nil, gender: .male) { (profileDataResp) in
   print("Profile data callback")
  }
 ```
