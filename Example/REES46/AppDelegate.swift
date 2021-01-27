@@ -8,6 +8,7 @@
 
 import REES46
 import UIKit
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -16,17 +17,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var sdk: PersonalizationSDK!
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
         
         print("0. Init SDK")
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", { error in
-            print(error)
+            print(error ?? .initializationFailed)
         })
-        /*
+
+        print("0.1. Registr push")
+
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.badge, .alert, .sound]) { _, _ in }
+        UIApplication.shared.registerForRemoteNotifications()
+        let options: UNAuthorizationOptions = [.alert]
+        UNUserNotificationCenter.current().requestAuthorization(options: options) { authorized, _ in
+            if authorized {
+                let categoryIdentifier = "carousel"
+                let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "След", options: [])
+                let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Пред", options: [])
+
+                let carouselCategory = UNNotificationCategory(identifier: categoryIdentifier, actions: [carouselNext, carouselPrevious], intentIdentifiers: [], options: [])
+                UNUserNotificationCenter.current().setNotificationCategories([carouselCategory])
+            }
+        }
+        print("======")
+        
         print("1. Testing tracking")
-        
+
         sdk.trackSource(source: .chain, code: "123123")
-        
+
         let rec = RecomendedBy(type: .dynamic, code: "beb620922934b6ba2d6a3fb82b8b3271")
         sdk.track(event: .productView(id: "644"), recommendedBy: rec) { trackResponse in
             print("   Product view callback")
@@ -36,7 +54,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -44,9 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("     track product view is failure")
             }
         }
-        
-        
-        
+
         print("1. Testing tracking")
         sdk.track(event: .productView(id: "644")) { trackResponse in
             print("   Product view callback")
@@ -56,7 +72,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -72,7 +88,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -88,7 +104,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -104,7 +120,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -120,7 +136,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -136,7 +152,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -152,7 +168,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -168,7 +184,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -176,12 +192,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track order created is failure")
             }
         }
-
         print("===")
-
         print("2. Testing product recommendations")
-
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", currentProductId: "644") { recomendResponse in
+        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", currentProductId: "1") { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse {
             case let .success(response):
@@ -189,7 +202,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -197,9 +210,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    recommend with prodcut id is failure")
             }
         }
-        
 
-        sdk.recommend(blockId: "11118fd6807a70903de3553ad480e172", timeOut: 0.5 ) { recomendResponse in
+        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", timeOut: 0.5) { recomendResponse in
             print("   Recommendations requested callback")
             switch recomendResponse {
             case let .success(response):
@@ -207,7 +219,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -215,9 +227,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    recommend is failure")
             }
         }
-
         print("===")
-
         print("3. Testing search")
         sdk.suggest(query: "iphone") { searchResponse in
             print("   Instant search callback")
@@ -227,7 +237,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -236,7 +246,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
         print("===")
-        
+
         sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
             print("   Full search callback")
             switch searchResponse {
@@ -245,7 +255,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -253,8 +263,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    full search is failure")
             }
         }
-        */
-        sdk.searchBlank { (searchResponse) in
+
+        sdk.searchBlank { searchResponse in
             print("   Search blank callback")
             switch searchResponse {
             case let .success(response):
@@ -262,7 +272,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // print("Response: ", response) //uncomment it if you want to see response
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -270,17 +280,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    Search blank is failure")
             }
         }
-        
+
         print("4. Set user Settings")
 
-        sdk.setProfileData(userEmail: "email") { profileResponse in
+        sdk.setProfileData(userEmail: "arseniydor@yandex.ru") { profileResponse in
             print("   Profile data set callback")
             switch profileResponse {
             case .success():
                 print("     setProfileData is success")
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -291,26 +301,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         print("===")
 
-        print("5. Set push token")
 
-        sdk.setPushTokenNotification(token: "testToken") { tokenResponse in
-            print("   Token set response")
-            switch tokenResponse {
-            case .success():
-                print("     setPushTokenNotification is success")
-            case let .failure(error):
-                switch error {
-                case .custom(let customError):
-                    print("Error: ", customError)
-                default:
-                    print("Error: ", error.localizedDescription)
-                }
-                fatalError("    setPushTokenNotification is failure")
-            }
-        }
-        
-        print("===")
-        
         print("6. Send review")
 
         sdk.review(rate: 1, channel: "ios_app", category: "delivery", comment: "Nice application, thank you!") { reviewResponse in
@@ -320,7 +311,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("     review is success")
             case let .failure(error):
                 switch error {
-                case .custom(let customError):
+                case let .custom(customError):
                     print("Error: ", customError)
                 default:
                     print("Error: ", error.localizedDescription)
@@ -328,31 +319,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    review is failure")
             }
         }
-    
+
         print("===")
 
         return true
     }
 
-    func applicationWillResignActive(_ application: UIApplication) {
-        // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
-        // Use this method to pause ongoing tasks, disable timers, and throttle down OpenGL ES frame rates. Games should use this method to pause the game.
-    }
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data -> String in
+            String(format: "%02.2hhx", data)
+        }
 
-    func applicationDidEnterBackground(_ application: UIApplication) {
-        // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
-        // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-    }
+        let token = tokenParts.joined()
+        print("Device Token: \(token)")
 
-    func applicationWillEnterForeground(_ application: UIApplication) {
-        // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
-    }
+        print("5. Set push token")
+        sdk.setPushTokenNotification(token: token) { tokenResponse in
+            print("   Token set response")
+            switch tokenResponse {
+            case .success():
+                print("     setPushTokenNotification is success")
+            case let .failure(error):
+                switch error {
+                case let .custom(customError):
+                    print("Error: ", customError)
+                default:
+                    print("Error: ", error.localizedDescription)
+                }
+                // fatalError("    setPushTokenNotification is failure")
+            }
+        }
 
-    func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-    }
-
-    func applicationWillTerminate(_ application: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        print("===")
     }
 }

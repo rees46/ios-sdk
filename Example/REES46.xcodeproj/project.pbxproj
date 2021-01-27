@@ -14,6 +14,17 @@
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
+		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
+		9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */; };
+		9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */; };
+		9A7A95E625BC40E900FFA40A /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9A7A95E425BC40E900FFA40A /* MainInterface.storyboard */; };
+		9A7A95EA25BC40E900FFA40A /* REESNotificationContentExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9A7A960125BC416600FFA40A /* ImagesCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95FE25BC416600FFA40A /* ImagesCollectionViewCell.swift */; };
+		9A7A960225BC416600FFA40A /* Product.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95FF25BC416600FFA40A /* Product.swift */; };
+		9A7A960325BC416600FFA40A /* ImagesCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9A7A960025BC416600FFA40A /* ImagesCollectionViewCell.xib */; };
+		9A7A961025BC436D00FFA40A /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A960F25BC436D00FFA40A /* NotificationService.swift */; };
+		9A7A961425BC436D00FFA40A /* REESNotificationServiceExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		B571558189DAF9A4085C41A8 /* Pods_REES46_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */; };
 /* End PBXBuildFile section */
 
@@ -25,7 +36,36 @@
 			remoteGlobalIDString = 607FACCF1AFB9204008FA782;
 			remoteInfo = REES46;
 		};
+		9A7A95E825BC40E900FFA40A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 607FACC81AFB9204008FA782 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A7A95DD25BC40E900FFA40A;
+			remoteInfo = REESNotificationContentExtension;
+		};
+		9A7A961225BC436D00FFA40A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 607FACC81AFB9204008FA782 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9A7A960C25BC436D00FFA40A;
+			remoteInfo = REESNotificationServiceExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9ADC31D525A1C6B300D9D1AA /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				9A7A95EA25BC40E900FFA40A /* REESNotificationContentExtension.appex in Embed App Extensions */,
+				9A7A961425BC436D00FFA40A /* REESNotificationServiceExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.release.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.release.xcconfig"; sourceTree = "<group>"; };
@@ -44,6 +84,20 @@
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.release.xcconfig"; sourceTree = "<group>"; };
+		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationViewController.swift; sourceTree = "<group>"; };
+		9A7A95E525BC40E900FFA40A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/MainInterface.storyboard; sourceTree = "<group>"; };
+		9A7A95E725BC40E900FFA40A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9A7A95FE25BC416600FFA40A /* ImagesCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImagesCollectionViewCell.swift; sourceTree = "<group>"; };
+		9A7A95FF25BC416600FFA40A /* Product.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Product.swift; sourceTree = "<group>"; };
+		9A7A960025BC416600FFA40A /* ImagesCollectionViewCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ImagesCollectionViewCell.xib; sourceTree = "<group>"; };
+		9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationServiceExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9A7A960F25BC436D00FFA40A /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		9A7A961125BC436D00FFA40A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9A7FC75525C0BB69006D8CF9 /* Readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
+		9ADC31BF25A1C2D600D9D1AA /* REES46_Example.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REES46_Example.entitlements; sourceTree = "<group>"; };
+		9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
 		AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
@@ -66,6 +120,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9A7A95DB25BC40E900FFA40A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */,
+				9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9A7A960A25BC436D00FFA40A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -85,6 +155,8 @@
 			children = (
 				5B3153E7655CDB2AFCC17D25 /* Pods_REES46_Example.framework */,
 				AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */,
+				9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */,
+				9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -92,9 +164,12 @@
 		607FACC71AFB9204008FA782 = {
 			isa = PBXGroup;
 			children = (
+				9ADC31BF25A1C2D600D9D1AA /* REES46_Example.entitlements */,
 				607FACF51AFB993E008FA782 /* Podspec Metadata */,
 				607FACD21AFB9204008FA782 /* Example for REES46 */,
 				607FACE81AFB9204008FA782 /* Tests */,
+				9A7A95E125BC40E900FFA40A /* NotificationContentExtension */,
+				9A7A960E25BC436D00FFA40A /* NotificationServiceExtension */,
 				607FACD11AFB9204008FA782 /* Products */,
 				4F88B19B361A54409BF39837 /* Pods */,
 				5EF802E6E047FD7F294501D7 /* Frameworks */,
@@ -106,6 +181,8 @@
 			children = (
 				607FACD01AFB9204008FA782 /* REES46_Example.app */,
 				607FACE51AFB9204008FA782 /* REES46_Tests.xctest */,
+				9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */,
+				9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -159,6 +236,29 @@
 			name = "Podspec Metadata";
 			sourceTree = "<group>";
 		};
+		9A7A95E125BC40E900FFA40A /* NotificationContentExtension */ = {
+			isa = PBXGroup;
+			children = (
+				9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */,
+				9A7A95FE25BC416600FFA40A /* ImagesCollectionViewCell.swift */,
+				9A7A960025BC416600FFA40A /* ImagesCollectionViewCell.xib */,
+				9A7A95FF25BC416600FFA40A /* Product.swift */,
+				9A7A95E425BC40E900FFA40A /* MainInterface.storyboard */,
+				9A7A95E725BC40E900FFA40A /* Info.plist */,
+				9A7FC75525C0BB69006D8CF9 /* Readme.md */,
+			);
+			path = NotificationContentExtension;
+			sourceTree = "<group>";
+		};
+		9A7A960E25BC436D00FFA40A /* NotificationServiceExtension */ = {
+			isa = PBXGroup;
+			children = (
+				9A7A960F25BC436D00FFA40A /* NotificationService.swift */,
+				9A7A961125BC436D00FFA40A /* Info.plist */,
+			);
+			path = NotificationServiceExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -171,10 +271,13 @@
 				607FACCD1AFB9204008FA782 /* Frameworks */,
 				607FACCE1AFB9204008FA782 /* Resources */,
 				3C85F4A453E1E29EC760D10D /* [CP] Embed Pods Frameworks */,
+				9ADC31D525A1C6B300D9D1AA /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				9A7A95E925BC40E900FFA40A /* PBXTargetDependency */,
+				9A7A961325BC436D00FFA40A /* PBXTargetDependency */,
 			);
 			name = REES46_Example;
 			productName = REES46;
@@ -200,13 +303,47 @@
 			productReference = 607FACE51AFB9204008FA782 /* REES46_Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		9A7A95DD25BC40E900FFA40A /* REESNotificationContentExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9A7A95ED25BC40E900FFA40A /* Build configuration list for PBXNativeTarget "REESNotificationContentExtension" */;
+			buildPhases = (
+				9A7A95DA25BC40E900FFA40A /* Sources */,
+				9A7A95DB25BC40E900FFA40A /* Frameworks */,
+				9A7A95DC25BC40E900FFA40A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = REESNotificationContentExtension;
+			productName = REESNotificationContentExtension;
+			productReference = 9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		9A7A960C25BC436D00FFA40A /* REESNotificationServiceExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9A7A961525BC436D00FFA40A /* Build configuration list for PBXNativeTarget "REESNotificationServiceExtension" */;
+			buildPhases = (
+				9A7A960925BC436D00FFA40A /* Sources */,
+				9A7A960A25BC436D00FFA40A /* Frameworks */,
+				9A7A960B25BC436D00FFA40A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = REESNotificationServiceExtension;
+			productName = REESNotificationServiceExtension;
+			productReference = 9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		607FACC81AFB9204008FA782 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 0830;
+				LastSwiftUpdateCheck = 1220;
 				LastUpgradeCheck = 1150;
 				ORGANIZATIONNAME = CocoaPods;
 				TargetAttributes = {
@@ -216,8 +353,17 @@
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
+						DevelopmentTeam = XEY67KT92L;
 						LastSwiftMigration = 1150;
 						TestTargetID = 607FACCF1AFB9204008FA782;
+					};
+					9A7A95DD25BC40E900FFA40A = {
+						CreatedOnToolsVersion = 12.2;
+						ProvisioningStyle = Automatic;
+					};
+					9A7A960C25BC436D00FFA40A = {
+						CreatedOnToolsVersion = 12.2;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -236,6 +382,8 @@
 			targets = (
 				607FACCF1AFB9204008FA782 /* REES46_Example */,
 				607FACE41AFB9204008FA782 /* REES46_Tests */,
+				9A7A95DD25BC40E900FFA40A /* REESNotificationContentExtension */,
+				9A7A960C25BC436D00FFA40A /* REESNotificationServiceExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -252,6 +400,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		607FACE31AFB9204008FA782 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9A7A95DC25BC40E900FFA40A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A7A960325BC416600FFA40A /* ImagesCollectionViewCell.xib in Resources */,
+				9A7A95E625BC40E900FFA40A /* MainInterface.storyboard in Resources */,
+				9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9A7A960B25BC436D00FFA40A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -343,6 +508,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		9A7A95DA25BC40E900FFA40A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A7A960125BC416600FFA40A /* ImagesCollectionViewCell.swift in Sources */,
+				9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */,
+				9A7A960225BC416600FFA40A /* Product.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9A7A960925BC436D00FFA40A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9A7A961025BC436D00FFA40A /* NotificationService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -350,6 +533,16 @@
 			isa = PBXTargetDependency;
 			target = 607FACCF1AFB9204008FA782 /* REES46_Example */;
 			targetProxy = 607FACE61AFB9204008FA782 /* PBXContainerItemProxy */;
+		};
+		9A7A95E925BC40E900FFA40A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9A7A95DD25BC40E900FFA40A /* REESNotificationContentExtension */;
+			targetProxy = 9A7A95E825BC40E900FFA40A /* PBXContainerItemProxy */;
+		};
+		9A7A961325BC436D00FFA40A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9A7A960C25BC436D00FFA40A /* REESNotificationServiceExtension */;
+			targetProxy = 9A7A961225BC436D00FFA40A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -368,6 +561,14 @@
 				607FACDF1AFB9204008FA782 /* Base */,
 			);
 			name = LaunchScreen.xib;
+			sourceTree = "<group>";
+		};
+		9A7A95E425BC40E900FFA40A /* MainInterface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				9A7A95E525BC40E900FFA40A /* Base */,
+			);
+			name = MainInterface.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -420,7 +621,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -468,7 +669,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -480,11 +681,15 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = REES46_Example.entitlements;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = REES46/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
@@ -495,11 +700,15 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */;
 			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = REES46_Example.entitlements;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = REES46/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MODULE_NAME = ExampleApp;
-				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.demo.$(PRODUCT_NAME:rfc1034identifier)";
+				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
@@ -510,6 +719,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */;
 			buildSettings = {
+				DEVELOPMENT_TEAM = XEY67KT92L;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -532,6 +742,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */;
 			buildSettings = {
+				DEVELOPMENT_TEAM = XEY67KT92L;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -543,6 +754,112 @@
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/REES46_Example.app/REES46_Example";
+			};
+			name = Release;
+		};
+		9A7A95EB25BC40E900FFA40A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = REESNotificationContentExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK.REESNotificationContentExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9A7A95EC25BC40E900FFA40A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = REESNotificationContentExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK.REESNotificationContentExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		9A7A961625BC436D00FFA40A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = REESNotificationServiceExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK.REESNotificationServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		9A7A961725BC436D00FFA40A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				INFOPLIST_FILE = REESNotificationServiceExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK.REESNotificationServiceExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -572,6 +889,24 @@
 			buildConfigurations = (
 				607FACF31AFB9204008FA782 /* Debug */,
 				607FACF41AFB9204008FA782 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9A7A95ED25BC40E900FFA40A /* Build configuration list for PBXNativeTarget "REESNotificationContentExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9A7A95EB25BC40E900FFA40A /* Debug */,
+				9A7A95EC25BC40E900FFA40A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9A7A961525BC436D00FFA40A /* Build configuration list for PBXNativeTarget "REESNotificationServiceExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9A7A961625BC436D00FFA40A /* Debug */,
+				9A7A961725BC436D00FFA40A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

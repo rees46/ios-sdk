@@ -283,7 +283,6 @@ category | true | NPS process category code
 comment | false | Optional answer to the follow-up question
 orderId | false | Order ID, related to the current survey
 
-
 ## Utilities
 
 These method are used for debug tasks. You don't need it for common tasks.
