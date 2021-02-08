@@ -31,7 +31,7 @@ public protocol PersonalizationSDK {
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
     func recommend(blockId: String, currentProductId: String?, locations: String?, imageSize: String?,timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
-    func suggest(query: String, locations: String?, timeOut: Double?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
+    func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, timeOut: Double?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func getDeviceID() -> String
     func getSession() -> String
@@ -54,8 +54,8 @@ public extension PersonalizationSDK {
         recommend(blockId: blockId, currentProductId: currentProductId, locations: locations, imageSize: imageSize, timeOut: timeOut, completion: completion)
     }
     
-    func suggest(query: String, locations: String? = nil, timeOut: Double? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {
-        suggest(query: query, locations: locations, timeOut: timeOut, completion: completion)
+    func suggest(query: String, locations: String? = nil, timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {
+        suggest(query: query, locations: locations, timeOut: timeOut, extended: extended, completion: completion)
     }
 
     func search(query: String, limit: Int? = nil, offset: Int? = nil, categoryLimit: Int? = nil, categories: String? = nil, extended: String? = nil, sortBy: String? = nil, sortDir: String? = nil, locations: String? = nil, brands: String? = nil, filters: [String: Any]? = nil, priceMin: Double? = nil, priceMax: Double? = nil, colors: String? = nil, exclude: String? = nil, email: String? = nil, timeOut: Double? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {

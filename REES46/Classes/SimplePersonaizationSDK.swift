@@ -443,7 +443,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
 
-    func suggest(query: String, locations: String?, timeOut: Double? , completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
 
         mySerialQueue.async {
             let path = "search"
@@ -458,6 +458,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             if let locations = locations{
                 params["locations"] = locations
+            }
+            if let extended = extended{
+                params["extended"] = extended
             }
             
             
