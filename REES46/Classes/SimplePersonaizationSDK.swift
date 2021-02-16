@@ -480,6 +480,38 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
+    
+    // Send tracking event when user clicked mobile push notification
+    func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "web_push_subscriptions/clicked"
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "code": code,
+                "type": type
+            ]
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
+            
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let status = resJSON["status"] as! String
+                    if status == "success" {
+                        completion(.success(Void()))
+                    } else {
+                        completion(.failure(.responseError))
+                    }
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
 
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
         let path = "init"
