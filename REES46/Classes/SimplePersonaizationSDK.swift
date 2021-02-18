@@ -321,13 +321,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func recommend(blockId: String, currentProductId: String?, locations: String?, imageSize: String?, timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         mySerialQueue.async {
-            let path = "recommend"
+            let path = "recommend/\(blockId)"
             var params = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
-                "recommender_type": "dynamic",
-                "recommender_code": blockId,
                 "extended": "true",
                 "resize_image": "180",
                 "segment": self.segment
