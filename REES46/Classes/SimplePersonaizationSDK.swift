@@ -179,7 +179,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             if let birthday = birthday {
                 let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "YYYY-MM-DD"
+                dateFormatter.dateFormat = "yyyy-MM-dd"
                 let birthdayString = dateFormatter.string(from: birthday)
                 paramsTemp["birthday"] = birthdayString
             }
@@ -542,7 +542,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let jsonDecoder = JSONDecoder()
         jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-mm-dd"
+        dateFormatter.dateFormat = "yyyy-MM-dd"
         jsonDecoder.dateDecodingStrategy = .formatted(dateFormatter)
         return jsonDecoder
     }()
