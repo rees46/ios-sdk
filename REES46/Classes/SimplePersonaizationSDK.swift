@@ -40,7 +40,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         userSeance = UUID().uuidString
         
         // Generate segment
-        segment = ["A", "B"].randomElement()!
+        segment = ["A", "B"].randomElement() ?? "A"
         
         // Trying to fetch user session (permanent user ID)
         deviceID = UserDefaults.standard.string(forKey: "device_id") ?? ""
@@ -50,14 +50,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.sendInitRequest { initResult in
                 switch initResult {
                 case .success:
-                    let res = try! initResult.get()
-                    self.userInfo = res
-                    self.userSeance = res.seance
-                    self.deviceID = res.deviceID
-                    self.semaphore.signal()
-                    if let completion = completion {
-                        completion(nil)
+                    if let res = try? initResult.get() {
+                        self.userInfo = res
+                        self.userSeance = res.seance
+                        self.deviceID = res.deviceID
+                        if let completion = completion {
+                            completion(nil)
+                        }
+                    }else{
+                        print("PersonalizationSDK error: SDK DECODE FAIL")
+                        if let completion = completion {
+                            completion(.decodeError)
+                        }
                     }
+                    self.semaphore.signal()
                 case .failure(let error):
                     print("PersonalizationSDK error: SDK INIT FAIL")
                     if let completion = completion {
@@ -215,7 +221,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
-                    let status = resJSON["status"] as! String
+                    let status = resJSON["status"] as? String ?? ""
                     if status == "success" {
                         completion(.success(Void()))
                     } else {
@@ -300,7 +306,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
-                    let status = resJSON["status"] as! String
+                    let status = resJSON["status"] as? String ?? ""
                     if status == "success" {
                         completion(.success(Void()))
                     } else {
@@ -498,7 +504,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
-                    let status = resJSON["status"] as! String
+                    let status = resJSON["status"] as? String ?? ""
                     if status == "success" {
                         completion(.success(Void()))
                     } else {

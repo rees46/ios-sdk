@@ -163,8 +163,8 @@ public struct Query {
     public var url: String
 
     init(json: [String: Any]) {
-        name = json["name"] as! String
-        url = json["url"] as! String
+        name = json["name"] as? String ?? ""
+        url = json["url"] as? String ?? ""
     }
 }
 
@@ -175,8 +175,8 @@ public struct Category {
     public var alias: String?
 
     init(json: [String: Any]) {
-        id = json["id"] as! String
-        name = json["name"] as! String
+        id = json["id"] as? String ?? ""
+        name = json["name"] as? String ?? ""
         url = json["url"] as? String
         alias = json["alias"] as? String
     }
