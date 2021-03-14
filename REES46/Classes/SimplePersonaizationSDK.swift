@@ -242,7 +242,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
-                "segment": self.segment
+                "segment": self.segment,
+                "stream": "ios"
             ]
             switch event {
             case let .categoryView(id):
@@ -375,7 +376,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "seance": self.userSeance,
                 "type": "full_search",
                 "search_query": query,
-                "segment": self.segment
+                "segment": self.segment,
+                "stream": "ios"
             ]
             if let limit = limit{
                 params["limit"] = String(limit)
@@ -457,7 +459,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "seance": self.userSeance,
                 "type": "instant_search",
                 "search_query": query,
-                "segment": self.segment
+                "segment": self.segment,
+                "stream": "ios"
             ]
             
             if let locations = locations{
@@ -523,7 +526,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let hours = secondsFromGMT/3600
         let params: [String: String] = [
             "shop_id": shopId,
-            "tz": String(hours)
+            "tz": String(hours),
+            "stream": "ios"
         ]
         
         let sessionConfig = URLSessionConfiguration.default
