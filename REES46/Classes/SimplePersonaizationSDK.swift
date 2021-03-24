@@ -367,7 +367,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, timeOut: Double?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "search"
             var params: [String: String] = [
@@ -429,6 +429,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             if let email = email{
                 params["email"] = email
+            }
+            if let disableClarification = disableClarification {
+                if disableClarification == true {
+                    params["no_clarification"] = "1"
+                }
             }
 
             
