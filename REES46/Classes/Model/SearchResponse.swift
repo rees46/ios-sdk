@@ -68,6 +68,18 @@ public struct SearchBlankResponse {
     }
 }
 
+public struct Redirect {
+    var query: String = ""
+    var redirectUrl: String = ""
+    var deepLink: String?
+    
+    init(json: [String: Any]) {
+        self.query = json["query"] as? String ?? ""
+        self.redirectUrl = json["redirect_link"] as? String ?? ""
+        self.deepLink = json["deep_link"] as? String
+    }
+}
+
 public struct SearchResponse {
     public var categories: [Category]
     public var products: [Product]
@@ -76,6 +88,7 @@ public struct SearchResponse {
     public var filters: [String: Filter]?
     public var brands: [String]?
     public var priceRange: PriceRange?
+    public var redirect: Redirect?
 
     init(json: [String: Any]) {
         let cats = json["categories"] as? [[String: Any]] ?? []
@@ -125,6 +138,9 @@ public struct SearchResponse {
             self.priceRange = PriceRange(json: priceRangeJSON)
         }
         
+        if let redirectJSON = json["search_query_redirects"] as? [String: Any] {
+            self.redirect = Redirect(json: redirectJSON)
+        }
     }
 }
 
