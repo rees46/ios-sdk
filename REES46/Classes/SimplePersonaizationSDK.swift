@@ -10,6 +10,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var shopId: String
     var deviceID: String
     var userSeance: String
+    var stream: String
     
     var baseURL: String
 
@@ -27,7 +28,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     private let semaphore = DispatchSemaphore(value: 0)
 
-    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, completion: ((SDKError?) -> Void)? = nil) {
+    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
         
         self.baseURL = "https://" + apiDomain + "/"
@@ -35,6 +36,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
+        self.stream = stream
 
         // Generate seance
         userSeance = UUID().uuidString
@@ -92,7 +94,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "token": token,
-                "platform": "ios",
+                "platform": self.stream
             ]
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
@@ -243,7 +245,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceID,
                 "seance": self.userSeance,
                 "segment": self.segment,
-                "stream": "ios"
+                "stream": self.stream
             ]
             switch event {
             case let .categoryView(id):
@@ -286,6 +288,65 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 for item in recomendedParams {
                     params[item.key] = item.value
                 }
+            }
+            
+            // Check source tracker params
+            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
+            let nowTimeValue = Date().timeIntervalSince1970
+            let diff = nowTimeValue - timeValue
+            if diff > 48*60*60 {
+                // Recomended params is invalidate
+                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
+                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
+            }else{
+                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
+                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
+                params["source"] = "{\"from\": \"\(savedType)\" , \"code\": \"\(savedCode)\" }"
+            }
+            
+            
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let status = resJSON["status"] as? String ?? ""
+                    if status == "success" {
+                        completion(.success(Void()))
+                    } else {
+                        completion(.failure(.responseError))
+                    }
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
+    /**
+     * Track custom event.
+     *
+     */
+    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        
+        mySerialQueue.async {
+            let path = "push/custom"
+            var params = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "seance": self.userSeance,
+                "segment": self.segment,
+                "stream": self.stream,
+                "event": event
+            ]
+            
+            if let category = category {
+                params["category"] = category
+            }
+            if let label = label {
+                params["label"] = label
+            }
+            if let value = value {
+                params["value"] = String(value)
             }
             
             // Check source tracker params
@@ -377,7 +438,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "type": "full_search",
                 "search_query": query,
                 "segment": self.segment,
-                "stream": "ios"
+                "stream": self.stream
             ]
             if let limit = limit{
                 params["limit"] = String(limit)
@@ -465,7 +526,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "type": "instant_search",
                 "search_query": query,
                 "segment": self.segment,
-                "stream": "ios"
+                "stream": self.stream
             ]
             
             if let locations = locations{
@@ -532,7 +593,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let params: [String: String] = [
             "shop_id": shopId,
             "tz": String(hours),
-            "stream": "ios"
+            "stream": self.stream
         ]
         
         let sessionConfig = URLSessionConfiguration.default

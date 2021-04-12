@@ -30,6 +30,7 @@ public protocol PersonalizationSDK {
     func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
+    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, locations: String?, imageSize: String?,timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
     func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
@@ -65,6 +66,10 @@ public extension PersonalizationSDK {
     
     func track(event: Event, recommendedBy: RecomendedBy? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         track(event: event, recommendedBy: recommendedBy, completion: completion)
+    }
+    
+    func trackEvent(event: String, category: String? = nil, label: String? = nil, value: Int? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        trackEvent(event: event, category: category, label: label, value: value, completion: completion)
     }
     
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
