@@ -691,6 +691,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         return
                     }
                     do {
+                        if data.isEmpty {
+                            if path.contains("clicked") || path.contains("closed") || path.contains("received") {
+                                completion(.success([:]))
+                                return
+                            }
+                        }
                         let json = try JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             completion(.success(jsonObject))
