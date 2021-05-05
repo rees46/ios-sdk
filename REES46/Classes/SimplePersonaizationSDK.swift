@@ -272,7 +272,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     params["amount[\(index)]"] = "\(item.amount)"
                 }
                 params["order_id"] = orderId
-                params["total_value"] = "\(totalValue)"
+                params["order_price"] = "\(totalValue)"
                 paramEvent = "purchase"
             case let .synchronizeCart(ids):
                 for (index, item) in ids.enumerated() {
