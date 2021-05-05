@@ -278,6 +278,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 for (index, item) in ids.enumerated() {
                     params["item_id[\(index)]"] = item
                 }
+                params["full_cart"] = "true"
                 paramEvent = "cart"
             }
             params["event"] = paramEvent
