@@ -71,7 +71,7 @@ public struct SearchBlankResponse {
 public struct Redirect {
     var query: String = ""
     var redirectUrl: String = ""
-    var deepLink: String?
+    public var deepLink: String?
     
     init(json: [String: Any]) {
         self.query = json["query"] as? String ?? ""
