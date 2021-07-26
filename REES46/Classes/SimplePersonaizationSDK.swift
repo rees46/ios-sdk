@@ -249,7 +249,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             switch event {
             case let .categoryView(id):
-                params["item_id[0]"] = id
+                params["category_id"] = id
                 paramEvent = "category"
             case let .productView(id):
                 params["item_id[0]"] = id

@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '1.5.7'
+  s.version          = '1.5.8'
   s.summary          = 'This is the iOS SDK for REES46 platform — the wide toolset for ecommerce apps. You can integrate all REES46 tools into your iOS app.'
 
   s.description      = <<-DESC
@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   You can integrate all REES46 tools into your iOS app.
                        DESC
 
-  s.homepage         = 'https://github.com/rees46/ios-sdk'
+  s.homepage         = 'https://reference.api.rees46.com/'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'REES46' => '«desk@rees46.com»' }
 
