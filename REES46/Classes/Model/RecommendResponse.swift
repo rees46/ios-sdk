@@ -58,14 +58,11 @@ public enum RecommendedByCase: String {
     case transactional = "transactional"
     case fullSearch = "full_search"
     case instantSearch = "instant_search"
-    case digestMail = "digest_mail"
+    case bulk = "bulk"
     case webPushDigest = "web_push_digest"
-    case mobilePushBulk = "mobile_push_bulk"
     
     func getCodeField() -> String {
         switch self {
-        case .digestMail:
-            return "digest_mail_code"
         case .webPushDigest:
             return "web_push_digest_code"
         default:
