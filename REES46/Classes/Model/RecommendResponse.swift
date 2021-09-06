@@ -40,6 +40,9 @@ public struct Recommended {
     public var discount: Bool = false
     public var relativeSalesRate: Float = 0.0
     public var paramsRaw: [[String: Any]]?
+    public var fashionOriginalSizes: [String] = []
+    public var fashionSizes: [String] = []
+    public var fashionColors: [String] = []
 
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
@@ -64,6 +67,10 @@ public struct Recommended {
             catsTemp.append(Category(json: item))
         }
         categories = catsTemp
+        
+        fashionOriginalSizes = json["fashion_original_sizes"] as? [String] ?? []
+        fashionSizes = json["fashion_sizes"] as? [String] ?? []
+        fashionColors = json["fashion_colors"] as? [String] ?? []
         
         // TODO: convert to objects
         paramsRaw = json["params"] as? [[String: Any]]
