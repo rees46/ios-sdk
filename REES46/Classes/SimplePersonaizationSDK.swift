@@ -6,7 +6,7 @@
 import Foundation
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-
+    
     var shopId: String
     var deviceID: String
     var userSeance: String
@@ -87,7 +87,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return userSeance
     }
     
-    func getSegment() -> String {
+    func getCurrentSegment() -> String {
         return segment
     }
 
