@@ -156,6 +156,7 @@ public struct Product {
     public var currency: String
     public var isNew: Bool?
     public var barcode: String?
+    public var model: String?
     public var params: [[String: Any]]?
 
     init(json: [String: Any]) {
@@ -170,6 +171,7 @@ public struct Product {
         currency = json["currency"] as? String ?? ""
         isNew = json["is_new"] as? Bool
         barcode = json["barcode"] as? String
+        model = json["model"] as? String
         params = json["params"] as? [[String: Any]]
     }
 }
