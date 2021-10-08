@@ -181,7 +181,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "telegram_id": telegramID,
                 "loyalty_card_location": loyaltyCardLocation,
                 "loyalty_status": loyaltyStatus,
-                "gender": gender == .male ? "m" : "f",
                 "email": userEmail,
                 "first_name": firstName,
                 "last_name": lastName,
@@ -189,6 +188,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "loyality_id": userLoyaltyId,
                 "location": location
             ]
+            
+            if gender == .male {
+                paramsTemp["birthday"] = "m"
+            }
+            if gender == .female {
+                paramsTemp["birthday"] = "f"
+            }
             
             if let birthday = birthday {
                 let dateFormatter = DateFormatter()
