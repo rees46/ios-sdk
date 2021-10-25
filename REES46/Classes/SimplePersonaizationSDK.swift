@@ -190,10 +190,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             
             if gender == .male {
-                paramsTemp["birthday"] = "m"
+                paramsTemp["gender"] = "m"
             }
             if gender == .female {
-                paramsTemp["birthday"] = "f"
+                paramsTemp["gender"] = "f"
             }
             
             if let birthday = birthday {
