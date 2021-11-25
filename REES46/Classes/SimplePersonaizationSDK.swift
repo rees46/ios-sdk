@@ -168,7 +168,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, customProperties: [String: String?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "profile/set"
             var paramsTemp: [String: String?] = [
@@ -219,11 +219,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramsTemp["age"] = String(age)
             }
             
+            // Merge custom properties (custom properties overwrite initial values)
+            if let customProperties = customProperties {
+                paramsTemp.merge(customProperties) { (_, new) in new }
+            }
+            
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             self.urlSession = URLSession(configuration: sessionConfig)
             
-            var params: [String: String] =  [String: String]()
+            var params: [String: String] = [String: String]()
             for item in paramsTemp {
                 if let value = item.value {
                     params[item.key] = value
