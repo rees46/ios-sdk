@@ -5,6 +5,8 @@
 //  Created by Arseniy Dorogin on 30.11.2021.
 //
 
+import Foundation
+
 public protocol HTTPLoggerConfigurationType {
     var bodyTrimLength: Int { get }
     func printLog(_ string: String)
