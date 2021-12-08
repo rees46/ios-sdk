@@ -20,7 +20,9 @@ extension HTTPLoggerConfigurationType {
     }
     
     public func printLog(_ string: String) {
-        print(string)
+        if global_EL {
+            print(string)
+        }
     }
     
     public func enableCapture(_ request: URLRequest) -> Bool {

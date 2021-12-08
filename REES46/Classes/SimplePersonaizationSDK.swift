@@ -5,6 +5,8 @@
 
 import Foundation
 
+public var global_EL: Bool = true
+
 class SimplePersonalizationSDK: PersonalizationSDK {
     
     var shopId: String
@@ -28,9 +30,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     private let semaphore = DispatchSemaphore(value: 0)
 
-    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", completion: ((SDKError?) -> Void)? = nil) {
+    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
-        
+        global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
         
         self.userEmail = userEmail
