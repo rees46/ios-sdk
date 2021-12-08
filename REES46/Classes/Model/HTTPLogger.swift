@@ -20,7 +20,7 @@ extension HTTPLoggerConfigurationType {
     }
     
     public func printLog(_ string: String) {
-        if enableLogs {
+        if global_EL {
             print(string)
         }
     }
