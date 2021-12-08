@@ -1,10 +1,3 @@
-//
-//  HTTPLogger.swift
-//  REES46
-//
-//  Created by Arseniy Dorogin on 30.11.2021.
-//
-
 import Foundation
 
 public protocol HTTPLoggerConfigurationType {
