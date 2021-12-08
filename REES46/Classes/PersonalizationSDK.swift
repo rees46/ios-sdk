@@ -4,6 +4,8 @@
 
 import Foundation
 
+let enableLogs: Bool = true
+
 public enum Event {
     case productView (id: String)
     case categoryView (id: String)
