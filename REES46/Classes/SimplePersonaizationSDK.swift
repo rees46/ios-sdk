@@ -294,7 +294,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramEvent = "purchase"
             case let .synchronizeCart(ids):
                 for (index, item) in ids.enumerated() {
-                    params["item_id[\(index)]"] = item
+                    params["item_id[\(index)]"] = item.id
+                    params["amount[\(index)]"] = String(item.quanity)
                 }
                 params["full_cart"] = "true"
                 paramEvent = "cart"

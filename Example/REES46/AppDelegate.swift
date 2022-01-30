@@ -160,7 +160,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 fatalError("    track product removed from cart is failure")
             }
         }
-        sdk.track(event: .synchronizeCart(ids: ["644", "784"])) { trackResponse in
+        sdk.track(event: .synchronizeCart(ids: [CartItem(id: "784")])) { trackResponse in
             print("   Cart syncronized callback")
             switch trackResponse {
             case let .success(response):
