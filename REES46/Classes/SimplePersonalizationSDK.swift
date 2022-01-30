@@ -1,6 +1,6 @@
 
 //
-//  SimplePersonaliztionSDK.swift
+//  SimplePersonalizationSDK.swift
 //
 
 import Foundation
@@ -294,8 +294,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramEvent = "purchase"
             case let .synchronizeCart(ids):
                 for (index, item) in ids.enumerated() {
-                    params["item_id[\(index)]"] = item.id
-                    params["amount[\(index)]"] = String(item.quanity)
+                    params["item_id[\(index)]"] = item.productId
+                    params["amount[\(index)]"] = String(item.quantity)
                 }
                 params["full_cart"] = "true"
                 paramEvent = "cart"
