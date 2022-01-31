@@ -292,14 +292,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["order_id"] = orderId
                 params["order_price"] = "\(totalValue)"
                 paramEvent = "purchase"
-            case let .synchronizeCart(ids):
-                for (index, item) in ids.enumerated() {
+            case let .synchronizeCart(items):
+                for (index, item) in items.enumerated() {
                     params["item_id[\(index)]"] = item.productId
                     params["amount[\(index)]"] = String(item.quantity)
                 }
                 params["full_cart"] = "true"
                 paramEvent = "cart"
             }
+            
             params["event"] = paramEvent
             
             // Process recommendedBy parameter

@@ -1,10 +1,3 @@
-//
-//  CartItem.swift
-//  REES46
-//
-//  Created by Arseniy Dorogin on 30.01.2022.
-//
-
 import Foundation
 
 public struct CartItem {

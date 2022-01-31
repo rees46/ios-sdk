@@ -134,7 +134,7 @@ sdk.track(event: .productRemovedFromCart(id: "PRODUCT_ID")) { _ in
 This method is used to override current state of user's shopping cart. It's easier to sync cart with API using this method, than `productAddedToCart` and `productRemovedFromCart` methods.
 
 ```swift
-sdk.track(event: .synchronizeCart(ids: ["PRODUCT_1_ID", "PRODUCT_2_ID"])) { _ in
+sdk.track(event: .synchronizeCart(items: [CartItem(productId: "784"), CartItem(productId: "785", quantity: 3)]  )) { _ in
   print("Cart is synced callback")
 }
 ```
