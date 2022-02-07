@@ -1,6 +1,6 @@
 
 //
-//  SimplePersonalizationSDK.swift
+//  SimplePersonaliztionSDK.swift
 //
 
 import Foundation
@@ -8,7 +8,7 @@ import Foundation
 public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-    
+
     var shopId: String
     var deviceID: String
     var userSeance: String
@@ -32,6 +32,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
+        
         global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
         
@@ -93,7 +94,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return segment
     }
 
-
     func setPushTokenNotification(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "mobile_push_tokens"
@@ -101,7 +101,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "token": token,
-                "platform": self.stream
+                "platform": self.stream,
             ]
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
@@ -286,7 +286,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramEvent = "remove_wish"
             case let .orderCreated(orderId, totalValue, products):
                 var tempItems: [[String: Any]] = []
-                for (index, item) in products.enumerated() {
+                for (_, item) in products.enumerated() {
                     tempItems.append([
                         "id": item.id,
                         "amount": String(item.amount)
@@ -298,7 +298,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramEvent = "purchase"
             case let .synchronizeCart(items):
                 var tempItems: [[String: Any]] = []
-                for (index, item) in items.enumerated() {
+                for (_, item) in items.enumerated() {
                     tempItems.append([
                         "id": item.productId,
                         "amount": String(item.quantity)
@@ -417,6 +417,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
+    
     
     func trackSource(source: RecommendedByCase, code: String) {
         UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "timeStartSave")
