@@ -276,13 +276,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["items"] = [["id":id]]
                 paramEvent = "cart"
             case let .productAddedToFavorities(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "wish"
             case let .productRemovedFromCart(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "remove_from_cart"
             case let .productRemovedToFavorities(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "remove_wish"
             case let .orderCreated(orderId, totalValue, products):
                 var tempItems: [[String: Any]] = []
@@ -694,19 +694,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let url = URL(string: baseURL + path) {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            if path.contains("push") {
-                do {
-                    request.httpBody = try JSONSerialization.data(withJSONObject: params, options: .prettyPrinted)
-                } catch let error {
-                    completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
-                    return
-                }
-                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.addValue("application/json", forHTTPHeaderField: "Accept")
-            } else{
-                 let postString = getPostString(params: params)
-                 request.httpBody = postString.data(using: .utf8)
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: params, options: .prettyPrinted)
+            } catch let error {
+                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
+                return
             }
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.addValue("application/json", forHTTPHeaderField: "Accept")
             urlSession.postTask(with: request) { result in
                 switch result {
                 case .success(let (response, data)):
