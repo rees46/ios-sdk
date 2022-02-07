@@ -359,7 +359,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         mySerialQueue.async {
             let path = "push/custom"
-            var params = [
+            var params: [String: Any] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
@@ -389,7 +389,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }else{
                 let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
                 let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
-                params["source"] = "{\"from\": \"\(savedType)\" , \"code\": \"\(savedCode)\" }"
+                let sourceParams: [String: Any] = [
+                    "from": savedType,
+                    "code": savedCode
+                ]
+                params["source"] = sourceParams
             }
             
             
