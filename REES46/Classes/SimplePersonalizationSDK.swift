@@ -258,7 +258,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         mySerialQueue.async {
             let path = "push"
             var paramEvent = ""
-            var params = [
+            var params: [String: Any] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
@@ -270,33 +270,41 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["category_id"] = id
                 paramEvent = "category"
             case let .productView(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "view"
             case let .productAddedToCart(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "cart"
             case let .productAddedToFavorities(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "wish"
             case let .productRemovedFromCart(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "remove_from_cart"
             case let .productRemovedToFavorities(id):
-                params["item_id[0]"] = id
+                params["items"] = [["id":id]]
                 paramEvent = "remove_wish"
             case let .orderCreated(orderId, totalValue, products):
+                var tempItems: [[String: Any]] = []
                 for (index, item) in products.enumerated() {
-                    params["item_id[\(index)]"] = item.id
-                    params["amount[\(index)]"] = "\(item.amount)"
+                    tempItems.append([
+                        "id": item.id,
+                        "amount": String(item.amount)
+                    ])
                 }
+                params["items"] = tempItems
                 params["order_id"] = orderId
                 params["order_price"] = "\(totalValue)"
                 paramEvent = "purchase"
             case let .synchronizeCart(items):
+                var tempItems: [[String: Any]] = []
                 for (index, item) in items.enumerated() {
-                    params["item_id[\(index)]"] = item.productId
-                    params["amount[\(index)]"] = String(item.quantity)
+                    tempItems.append([
+                        "id": item.productId,
+                        "amount": String(item.quantity)
+                    ])
                 }
+                params["items"] = tempItems
                 params["full_cart"] = "true"
                 paramEvent = "cart"
             }
@@ -682,13 +690,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    private func postRequest(path: String, params: [String: String], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+    private func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
         if let url = URL(string: baseURL + path) {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            let postString = getPostString(params: params)
-            request.httpBody = postString.data(using: .utf8)
-
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: params, options: .prettyPrinted)
+            } catch let error {
+                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
+                return
+            }
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.addValue("application/json", forHTTPHeaderField: "Accept")
             urlSession.postTask(with: request) { result in
                 switch result {
                 case .success(let (response, data)):
