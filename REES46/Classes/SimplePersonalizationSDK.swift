@@ -170,26 +170,64 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func setProfileData(userEmail: String, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, customProperties: [String: String?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: String?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
+            
             let path = "profile/set"
+            
             var paramsTemp: [String: String?] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
-                "seance": self.userSeance,
-                "loyalty_id": userLoyaltyId,
-                "fb_id": fbID,
-                "vk_id": vkID,
-                "telegram_id": telegramID,
-                "loyalty_card_location": loyaltyCardLocation,
-                "loyalty_status": loyaltyStatus,
-                "email": userEmail,
-                "first_name": firstName,
-                "last_name": lastName,
-                "phone": userPhone,
-                "loyality_id": userLoyaltyId,
-                "location": location
+                "seance": self.userSeance
             ]
+            
+            if let userEmail = userEmail {
+                paramsTemp["email"] = userEmail
+            }
+            
+            if let firstName = firstName {
+                paramsTemp["first_name"] = firstName
+            }
+            
+            if let lastName = lastName {
+                paramsTemp["last_name"] = lastName
+            }
+            
+            if let userPhone = userPhone {
+                paramsTemp["phone"] = userPhone
+            }
+            
+            if let location = location {
+                paramsTemp["location"] = location
+            }
+
+            if let loyaltyCardLocation = loyaltyCardLocation {
+                paramsTemp["loyalty_card_location"] = loyaltyCardLocation
+            }
+
+            if let userLoyaltyId = userLoyaltyId {
+                paramsTemp["loyalty_id"] = userLoyaltyId
+            }
+
+            if let loyaltyStatus = loyaltyStatus {
+                paramsTemp["loyalty_status"] = loyaltyStatus
+            }
+
+            if let fbID = fbID {
+                paramsTemp["fb_id"] = fbID
+            }
+            
+            if let vkID = vkID {
+                paramsTemp["fb_id"] = vkID
+            }
+            
+            if let telegramID = telegramID {
+                paramsTemp["telegram_id"] = telegramID
+            }
+            
+            if let userId = userId {
+                paramsTemp["vk_id"] = userId
+            }
             
             if gender == .male {
                 paramsTemp["gender"] = "m"
