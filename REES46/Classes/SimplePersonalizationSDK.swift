@@ -218,7 +218,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             
             if let vkID = vkID {
-                paramsTemp["fb_id"] = vkID
+                paramsTemp["vk_id"] = vkID
             }
             
             if let telegramID = telegramID {
@@ -226,7 +226,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             
             if let userId = userId {
-                paramsTemp["vk_id"] = userId
+                paramsTemp["id"] = userId
             }
             
             if gender == .male {
