@@ -655,6 +655,88 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
+    
+    
+    func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "subscriptions/subscribe_for_product_price"
+            var params: [String: Any] = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "seance": self.userSeance,
+                "segment": self.segment,
+                "stream": self.stream,
+                "item_id": id,
+                "price": currentPrice
+            ]
+            
+            // If has email
+            if let email = email {
+                params["email"] = email
+            }
+            
+            // If has phone
+            if let phone = phone {
+                params["phone"] = phone
+            }
+
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let status = resJSON["status"] as? String ?? ""
+                    if status == "success" {
+                        completion(.success(Void()))
+                    } else {
+                        completion(.failure(.responseError))
+                    }
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "subscriptions/subscribe_for_product_available"
+            var params: [String: Any] = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "seance": self.userSeance,
+                "segment": self.segment,
+                "stream": self.stream,
+                "item_id": id
+            ]
+            
+            // If has email
+            if let email = email {
+                params["email"] = email
+            }
+            
+            // If has phone
+            if let phone = phone {
+                params["phone"] = phone
+            }
+
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let status = resJSON["status"] as? String ?? ""
+                    if status == "success" {
+                        completion(.success(Void()))
+                    } else {
+                        completion(.failure(.responseError))
+                    }
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
+    
 
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
         let path = "init"
