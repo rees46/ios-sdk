@@ -69,8 +69,8 @@ public struct SearchBlankResponse {
 }
 
 public struct Redirect {
-    var query: String = ""
-    var redirectUrl: String = ""
+    public var query: String = ""
+    public var redirectUrl: String = ""
     public var deepLink: String?
     
     init(json: [String: Any]) {
