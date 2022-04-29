@@ -633,7 +633,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     // Send tracking event when user clicked mobile push notification
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
-            let path = "web_push_subscriptions/clicked"
+            let path = "track/clicked"
             let params: [String: String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
