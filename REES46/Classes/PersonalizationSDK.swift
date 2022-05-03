@@ -25,6 +25,30 @@ public enum SDKError: Error {
     case custom(error: String)
 }
 
+public enum PushEventType: String {
+    case web = "web"
+    case category = "category"
+    case product = "product"
+    case carousel = "carousel"
+    case custom = "custom"
+    
+    static func findType(value: String) -> PushEventType? {
+        switch value {
+        case PushEventType.web.rawValue:
+            return .web
+        case PushEventType.category.rawValue:
+            return .category
+        case PushEventType.product.rawValue:
+            return .product
+        case PushEventType.carousel.rawValue:
+            return .carousel
+        case PushEventType.custom.rawValue:
+            return .custom
+        default:
+            return nil
+        }
+    }
+}
 
 public protocol PersonalizationSDK {
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: String?]?, completion: @escaping (Result<Void, SDKError>) -> Void)
@@ -38,6 +62,7 @@ public protocol PersonalizationSDK {
     func getSession() -> String
     func getCurrentSegment() -> String
     func setPushTokenNotification(token: String, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SDKError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)

@@ -117,6 +117,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "mobile_push_tokens"
+            let params = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "token": token,
+                "platform": "android",
+            ]
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case .success:
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
     func searchBlank(completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "search/blank"
