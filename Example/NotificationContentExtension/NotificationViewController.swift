@@ -20,7 +20,9 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 
     var carouselImages: [Product] = [Product]()
     var currentIndex: Int = 0
-
+    var type: String? = nil
+    var id: String? = nil
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.backgroundColor = .white
@@ -47,7 +49,14 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
         if let bestAttemptContent = bestAttemptContent {
             titleLabel.isHidden = true
             subTitleLabel.isHidden = true
-            print(bestAttemptContent.userInfo)
+            
+            if let type = bestAttemptContent.userInfo["type"] as? String {
+                self.type = type
+            }
+            
+            if let id = bestAttemptContent.userInfo["id"] as? String {
+                self.id = id
+            }
             
             if let aps = bestAttemptContent.userInfo["aps"] as? [String: Any] {
                 if let alert = aps["alert"] as? [String: Any] {
@@ -143,7 +152,13 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
 extension NotificationViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedItem = carouselImages[indexPath.row]
-        if let url = URL(string: selectedItem.deepUrl) {
+        var deepUrl: String = selectedItem.deepUrl
+        if let type = type {
+            if let id = id {
+                deepUrl += "?recommended_by=\(type)&recommended_code=\(id)"
+            }
+        }
+        if let url = URL(string: deepUrl) {
             extensionContext?.open(url, completionHandler: nil)
         }
     }
