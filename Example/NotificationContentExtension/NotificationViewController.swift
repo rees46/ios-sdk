@@ -155,7 +155,7 @@ extension NotificationViewController: UICollectionViewDelegate, UICollectionView
         var deepUrl: String = selectedItem.deepUrl
         if let type = type {
             if let id = id {
-                deepUrl += "?recommended_by=\(type)&recommended_code=\(id)"
+                deepUrl += "?recommended_by=\(type)&mail_code=\(id)"
             }
         }
         if let url = URL(string: deepUrl) {

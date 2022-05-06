@@ -129,9 +129,19 @@ public class NotificationService: NotificationServiceProtocol {
             }
             if let type = userInfo["type"] as? String {
                 if let id = userInfo["id"] as? String {
-                    sdk.notificationClicked(type: type, code: id) { _ in
-                        
-                    }
+                    notificationClicked(type: type, code: id)
+                    return
+                }
+            }
+            guard let src = parseDictionary(key: "src", userInfo: userInfo) else {
+                processingNotSDKPush(userInfo: userInfo)
+                return
+            }
+            
+            if let type = src["type"] as? String {
+                if let id = src["id"] as? String {
+                    notificationClicked(type: type, code: id)
+                    return
                 }
             }
             return
@@ -142,7 +152,7 @@ public class NotificationService: NotificationServiceProtocol {
             return
         }
         var src: [String: Any] = [:]
-        if let srcFromUserInfo =  parseDictionary(key: "src", userInfo: userInfo) {
+        if let srcFromUserInfo = parseDictionary(key: "src", userInfo: userInfo) {
             src = srcFromUserInfo
         } else {
             if let srcID = userInfo["id"] as? String {
@@ -155,9 +165,7 @@ public class NotificationService: NotificationServiceProtocol {
             return
         }
         
-        sdk.notificationClicked(type: eventType, code: srcID) { _ in
-            
-        }
+        notificationClicked(type: eventType, code: srcID)
         
         if eventType != PushEventType.carousel.rawValue {
             guard var eventLink = eventJSON["uri"] as? String else {
@@ -165,12 +173,20 @@ public class NotificationService: NotificationServiceProtocol {
                 return
             }
             if eventLink.contains("https://") {
-                eventLink += "?recommended_by=\(eventType)&recommended_code=\(srcID)"
+                eventLink += "?recommended_by=\(eventType)&mail_code=\(srcID)"
             }
             processingEventType(eventType: eventType, eventLink: eventLink)
         }
         
         
+    }
+    
+    private func notificationClicked(type: String, code: String) {
+        sdk.notificationClicked(type: type, code: code) { _ in
+            self.sdk.track(event: .productView(id: "17520")) { _ in
+                
+            }
+        }
     }
     
     private func processingEventType(eventType: String, eventLink: String) {
