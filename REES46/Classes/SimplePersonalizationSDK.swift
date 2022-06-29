@@ -327,6 +327,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "stream": self.stream
             ]
             switch event {
+            case let .search(query):
+                params["search_query"] = query
+                paramEvent = "search"
             case let .categoryView(id):
                 params["category_id"] = id
                 paramEvent = "category"

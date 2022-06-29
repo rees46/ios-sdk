@@ -11,6 +11,7 @@ public enum Event {
     case productRemovedToFavorities(id: String)
     case productAddedToCart (id: String)
     case productRemovedFromCart (id: String)
+    case search (query: String)
     case synchronizeCart (items: [CartItem])
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int)])
 }

@@ -32,7 +32,7 @@ public class NotificationService: NotificationServiceProtocol {
     
     public init(sdk: PersonalizationSDK) {
         self.sdk = sdk
-        requiereUserPrivacy { res in
+        requireUserPrivacy { res in
             if res {
                 if #available(iOS 10.0, *) {
                     let categoryIdentifier = "carousel"
@@ -108,7 +108,7 @@ public class NotificationService: NotificationServiceProtocol {
         }
     }
     
-    private func requiereUserPrivacy(completion: @escaping (Bool) -> Void) {
+    private func requireUserPrivacy(completion: @escaping (Bool) -> Void) {
         if #available(iOS 10.0, *) {
             let center = UNUserNotificationCenter.current()
             center.requestAuthorization(options: [.badge, .alert, .sound]) { _, _ in }
