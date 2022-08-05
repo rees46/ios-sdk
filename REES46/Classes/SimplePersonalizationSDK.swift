@@ -489,7 +489,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
     }
 
-    func recommend(blockId: String, currentProductId: String?, locations: String?, imageSize: String?, timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "recommend/\(blockId)"
             var params = [
@@ -503,6 +503,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
             if let productId = currentProductId {
                 params["item_id"] = productId
+            }
+            
+            if let categoryId = currentCategoryId {
+                params["categories"] = categoryId
             }
             
             if let imageSize = imageSize {
