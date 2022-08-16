@@ -795,6 +795,28 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    
+    func getStories(completion: @escaping (Result<StoriesResponse, SDKError>) -> Void) {
+        let path = "stories"
+        let params: [String: String] = [
+            "shop_id": shopId,
+        ]
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 1
+        self.urlSession = URLSession(configuration: sessionConfig)
+        getRequest(path: path, params: params, true) { result in
+
+            switch result {
+            case let .success(successResult):
+                let resJSON = successResult
+                let resultResponse = StoriesResponse(json: resJSON)
+                completion(.success(resultResponse))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
 
     private let jsonDecoder: JSONDecoder = {
         let jsonDecoder = JSONDecoder()

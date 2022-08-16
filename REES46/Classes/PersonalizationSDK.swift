@@ -69,6 +69,7 @@ public protocol PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func getStories(completion: @escaping(Result<StoriesResponse, SDKError>) -> Void)
 }
 
 public extension PersonalizationSDK {
@@ -113,6 +114,9 @@ public extension PersonalizationSDK {
         subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
     }
 
+    func getStories() {
+        
+    }
 }
 
 public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com", stream: String = "ios", enableLogs: Bool = false, _ completion: ((SDKError?) -> Void)? = nil) -> PersonalizationSDK{
