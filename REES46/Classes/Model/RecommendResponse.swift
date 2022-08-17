@@ -37,7 +37,7 @@ public struct Recommended {
     public var priceFormatted: String?
     public var priceFull: String?
     public var priceFullFormatted: String?
-    public var oldPrice: String?
+    public var oldPrice: Double = 0
     public var oldPriceFormatted: String?
     public var oldPriceFull: String?
     public var oldPriceFullFormatted: String?
@@ -64,7 +64,7 @@ public struct Recommended {
         priceFormatted = json["price_formatted"] as? String
         priceFull = json["price_full"] as? String
         priceFullFormatted = json["price_full_formatted"] as? String
-        oldPrice = json["oldprice"] as? String
+        oldPrice = json["oldprice"] as? Double ?? 0
         oldPriceFormatted = json["oldprice_formatted"] as? String
         oldPriceFull = json["oldprice_full"] as? String
         oldPriceFullFormatted = json["oldprice_full_formatted"] as? String

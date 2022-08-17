@@ -148,12 +148,12 @@ public struct Product {
     public var id: String
     public var name: String
     public var brand: String
-    public var price: Double
     public var oldPrice: Double
     public var oldPriceFormatted: String
     public var oldPriceFull: String
     public var oldPriceFullFormatted: String
     public var picture: String
+    public var price: Double
     public var priceFormatted: String
     public var priceFull: String
     public var priceFullFormatted: String
