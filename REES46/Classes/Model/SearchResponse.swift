@@ -150,8 +150,13 @@ public struct Product {
     public var brand: String
     public var price: Double
     public var oldPrice: Double
+    public var oldPriceFormatted: String
+    public var oldPriceFull: String
+    public var oldPriceFullFormatted: String
     public var picture: String
     public var priceFormatted: String
+    public var priceFull: String
+    public var priceFullFormatted: String
     public var url: String
     public var currency: String
     public var isNew: Bool?
@@ -163,9 +168,14 @@ public struct Product {
         id = json["id"] as? String ?? ""
         name = json["name"] as? String ?? ""
         brand = json["brand"] as? String ?? ""
-        price = json["price"] as? Double ?? 0
         oldPrice = json["old_price"] as? Double ?? 0
+        oldPriceFormatted = json["oldprice_formatted"] as? String ?? ""
+        oldPriceFull = json["oldprice_full"] as? String ?? ""
+        oldPriceFullFormatted = json["oldprice_full_formatted"] as? String ?? ""
+        price = json["price"] as? Double ?? 0
         priceFormatted = json["price_formatted"] as? String ?? ""
+        priceFull = json["price_full"] as? String ?? ""
+        priceFullFormatted = json["price_full_formatted"] as? String ?? ""
         picture = json["picture"] as? String ?? ""
         url = json["url"] as? String ?? ""
         currency = json["currency"] as? String ?? ""

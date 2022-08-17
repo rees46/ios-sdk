@@ -34,7 +34,13 @@ public struct Recommended {
     public var url: String = ""
     public var categories = [Category]()
     public var price: Double = 0
+    public var priceFormatted: String?
+    public var priceFull: String?
+    public var priceFullFormatted: String?
     public var oldPrice: String?
+    public var oldPriceFormatted: String?
+    public var oldPriceFull: String?
+    public var oldPriceFullFormatted: String?
     public var currency: String = ""
     public var salesRate: Int = 0
     public var discount: Bool = false
@@ -55,7 +61,13 @@ public struct Recommended {
         resizedImageUrl = json["picture"] as? String ?? ""
         url = json["url"] as? String ?? ""
         price = json["price"] as? Double ?? 0
+        priceFormatted = json["price_formatted"] as? String
+        priceFull = json["price_full"] as? String
+        priceFullFormatted = json["price_full_formatted"] as? String
         oldPrice = json["oldprice"] as? String
+        oldPriceFormatted = json["oldprice_formatted"] as? String
+        oldPriceFull = json["oldprice_full"] as? String
+        oldPriceFullFormatted = json["oldprice_full_formatted"] as? String
         currency = json["currency"] as? String ?? ""
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
