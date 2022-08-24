@@ -8,7 +8,17 @@
 import Foundation
 
 public struct StoriesResponse {
+    var stories: [Story]
+    
+    init(json: [String: Any]) {
+        let storiesJSON = json["stories"] as? [[String: Any]] ?? []
+        self.stories = storiesJSON.map({Story(json: $0)})
+    }
+}
+
+public struct Story {
     var id: Int
+    var name: String
     var avatar: String
     var viewed: Bool
     var start_position: Int
@@ -21,6 +31,7 @@ public struct StoriesResponse {
         self.start_position = json["start_position"] as? Int ?? 0
         let slidesJSON = json["slides"] as? [[String: Any]] ?? []
         self.slides = slidesJSON.map({StorySlide(json: $0)})
+        self.name = json["name"] as? String ?? ""
     }
 }
 
@@ -42,9 +53,13 @@ public struct StorySlide {
 public struct StoryElement {
     var type: String
     var link: String
+    var title: String?
+    var background: String?
     
     init(json: [String: Any]) {
         self.type = json["type"] as? String ?? ""
         self.link = json["link"] as? String ?? ""
+        self.title = json["title"] as? String
+        self.background = json["background"] as? String
     }
 }

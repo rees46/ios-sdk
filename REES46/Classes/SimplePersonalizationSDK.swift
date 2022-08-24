@@ -800,6 +800,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let path = "stories"
         let params: [String: String] = [
             "shop_id": shopId,
+            "did": deviceID
         ]
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
