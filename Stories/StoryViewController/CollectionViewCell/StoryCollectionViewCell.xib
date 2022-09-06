@@ -26,10 +26,11 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Zyd-aI-pG7">
-                        <rect key="frame" x="16" y="268" width="270" height="40"/>
+                        <rect key="frame" x="16" y="248" width="270" height="60"/>
                         <constraints>
-                            <constraint firstAttribute="height" constant="40" id="ze9-rQ-ihk"/>
+                            <constraint firstAttribute="height" constant="60" id="ze9-rQ-ihk"/>
                         </constraints>
+                        <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <state key="normal" title="Button"/>
                         <buttonConfiguration key="configuration" style="plain" title="TAP ME"/>
                     </button>

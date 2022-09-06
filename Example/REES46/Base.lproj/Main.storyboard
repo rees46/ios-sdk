@@ -71,10 +71,10 @@
                                 </cells>
                             </collectionView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WVN-UL-gKy" customClass="StoriesView" customModule="REES46">
-                                <rect key="frame" x="20" y="636" width="374" height="100"/>
+                                <rect key="frame" x="20" y="536" width="374" height="200"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="100" id="RRQ-Md-ag9"/>
+                                    <constraint firstAttribute="height" constant="200" id="wqp-TX-QXY"/>
                                 </constraints>
                             </view>
                         </subviews>

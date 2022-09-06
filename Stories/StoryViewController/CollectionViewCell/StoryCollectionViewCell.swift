@@ -8,6 +8,10 @@
 import UIKit
 import AVKit
 
+protocol StoryCollectionViewCellDelegate: AnyObject {
+    func didTapUrlButton(url: String, slide: StorySlide)
+}
+
 class StoryCollectionViewCell: UICollectionViewCell {
     
     @IBOutlet private weak var videoView: UIView!
@@ -15,14 +19,45 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @IBOutlet private weak var button: UIButton!
     
     private var selectedElement: StoryElement?
-
+    private var currentSlide: StorySlide?
+    
+    public weak var delegate: StoryCollectionViewCellDelegate?
+    
+    var player = AVPlayer()
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         self.backgroundColor = .black
         videoView.backgroundColor = .black
+        NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
+    }
+    
+    @objc
+    private func pauseVideo(_ notification: NSNotification) {
+        
+        if let slideID = notification.userInfo?["slideID"] as? Int {
+            if let currentSlide = currentSlide {
+                if currentSlide.id == slideID {
+                    player.pause()
+                }
+            }
+        }
+    }
+    
+    @objc
+    private func playVideo(_ notification: NSNotification) {
+        if let slideID = notification.userInfo?["slideID"] as? Int {
+            if let currentSlide = currentSlide {
+                if currentSlide.id == slideID {
+                    player.play()
+                }
+            }
+        }
     }
     
     public func configure(slide: StorySlide) {
+        self.currentSlide = slide
         if slide.type == "video" {
             videoView.isHidden = false
             imageView.isHidden = true
@@ -33,9 +68,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             }
 
             let videoURL = URL(string: slide.background)
-            let player = AVPlayer(url: videoURL!)
-            player.volume = 1
+            self.player = AVPlayer(url: videoURL!)
             let playerLayer = AVPlayerLayer(player: player)
+            player.volume = 1
             let screenSize = UIScreen.main.bounds.size
             playerLayer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
             playerLayer.name = "VIDEO"
@@ -51,8 +86,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             selectedElement = element
             button.setTitle(element.title, for: .normal)
             button.backgroundColor = .white
-            button.layer.cornerRadius = 10
-            button.setTitleColor(.blue, for: .normal)
+            button.layer.cornerRadius = 13
+            button.setTitleColor(.black, for: .normal)
+            button.setTitleColor(.black, for: .selected)
             button.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
             button.isHidden = false
         } else {
@@ -63,12 +99,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     private func didTapButton() {
         if let link = selectedElement?.link {
-            if let url = URL(string: link) {
-                if #available(iOS 10.0, *) {
-                    UIApplication.shared.open(url)
-                } else {
-                    // Fallback on earlier versions
-                }
+            if let currentSlide = currentSlide {
+                delegate?.didTapUrlButton(url: link, slide: currentSlide)
             }
         }
     }

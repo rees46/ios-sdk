@@ -327,6 +327,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "stream": self.stream
             ]
             switch event {
+            case let .slideView(storyId, slideId):
+                params["story_id"] = storyId
+                params["slide_id"] = slideId
+                paramEvent = "view"
+            case let .slideClick(storyId, slideId):
+                params["story_id"] = storyId
+                params["slide_id"] = slideId
+                paramEvent = "click"
             case let .search(query):
                 params["search_query"] = query
                 paramEvent = "search"

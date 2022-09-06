@@ -11,11 +11,18 @@ import UIKit
 public class StoriesView: UIView {
     
     private var collectionView: UICollectionView = {
-        let testFrame = CGRect(x: 0, y: 0, width: 300, height: 100)
+        let testFrame = CGRect(x: 0, y: 0, width: 300, height: 113)
         let layout = UICollectionViewFlowLayout()
+//        layout.horizontalAlignment = .left
+        layout.minimumLineSpacing = 10
+        layout.minimumInteritemSpacing = 10
         layout.scrollDirection = .horizontal
-        layout.itemSize = CGSize(width: 100, height: 130)
+        
+        layout.itemSize = CGSize(width: 76, height: 113)
+        
         let collectionView = UICollectionView(frame: testFrame, collectionViewLayout: layout)
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.showsVerticalScrollIndicator = false
         return collectionView
     }()
     
@@ -73,7 +80,7 @@ public class StoriesView: UIView {
     }
 }
 
-extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource {
+extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
@@ -93,6 +100,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let currentStory = stories?[indexPath.row] {
             let storyVC = StoryViewController()
+            storyVC.sdk = sdk
             storyVC.stories = stories ?? []
             storyVC.currentPosition = IndexPath(row: currentStory.start_position, section: indexPath.row)
             storyVC.startWithIndexPath = IndexPath(row: currentStory.start_position, section: indexPath.row)

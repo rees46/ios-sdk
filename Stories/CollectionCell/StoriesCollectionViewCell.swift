@@ -11,11 +11,12 @@ class StoriesCollectionViewCell: UICollectionViewCell {
     
     @IBOutlet private weak var storyImage: UIImageView!
     @IBOutlet private weak var storyBackCircle: UIView!
+    @IBOutlet private weak var storyWhiteBackCircle: UIView!
     @IBOutlet private weak var storyAuthorNameLabel: UILabel!
 
     override func awakeFromNib() {
         super.awakeFromNib()
-        storyBackCircle.backgroundColor = .red
+        storyBackCircle.backgroundColor = UIColor(red: 86/255, green: 178/255, blue: 114/255, alpha: 1)
     }
 
     public func configure(story: Story) {
@@ -28,6 +29,7 @@ class StoriesCollectionViewCell: UICollectionViewCell {
         
         storyBackCircle.layer.cornerRadius = storyBackCircle.frame.width/2
         storyImage.layer.cornerRadius = storyImage.frame.width/2
+        storyWhiteBackCircle.layer.cornerRadius = storyWhiteBackCircle.frame.width/2
     }
     
     private func setImage(imagePath: String) {

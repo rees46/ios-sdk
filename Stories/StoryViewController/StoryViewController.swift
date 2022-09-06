@@ -7,7 +7,7 @@
 
 import UIKit
 
-class StoryViewController: UIViewController {
+class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var collectionView: UICollectionView = {
         let testFrame = CGRect(x: 0, y: 0, width: 300, height: 100)
         let layout = UICollectionViewFlowLayout()
@@ -56,12 +56,28 @@ class StoryViewController: UIViewController {
 
     private var currentProgressView: UIProgressView?
     private var currentDuration: Float = 0
+    
+    public var sdk: PersonalizationSDK?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         commonInit()
+        setupLongGestureRecognizerOnCollection()
+        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+    }
+    
+    @objc
+    func willEnterForeground() {
+        print("WILL ENTER")
+        continueTimer()
     }
 
+    @objc
+    func didEnterBackground() {
+        print("DID ENTER")
+        pauseTimer()
+    }
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         timer.invalidate()
@@ -78,12 +94,6 @@ class StoryViewController: UIViewController {
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 0).isActive = true
 
-        closeButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -30).isActive = true
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 60).isActive = true
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
-
         pageIndicator.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -16).isActive = true
@@ -93,6 +103,13 @@ class StoryViewController: UIViewController {
         NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 40).isActive = true
 
         NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 8).isActive = true
+        
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -10).isActive = true
+        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: pageIndicator, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 10).isActive = true
+        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+
 
         configureView()
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
@@ -109,15 +126,8 @@ class StoryViewController: UIViewController {
     
     @objc
     func didSwipeLeft() {
-        if currentPosition.row < stories[currentPosition.section].slides.count - 1 {
-            currentPosition.row += 1
-            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
-            DispatchQueue.main.async {
-                self.updateSlides()
-            }
-        } else if currentPosition.section > stories.count - 1 {
+        if currentPosition.section >= stories.count - 1 {
             self.dismiss(animated: true)
-            // break
         } else if currentPosition.section < stories.count - 1 {
             currentPosition.section += 1
             currentPosition.row = 0
@@ -127,25 +137,52 @@ class StoryViewController: UIViewController {
                 self.updateSlides()
             }
         }
+//        if currentPosition.row < stories[currentPosition.section].slides.count - 1 {
+//            currentPosition.row += 1
+//            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+//            DispatchQueue.main.async {
+//                self.updateSlides()
+//            }
+//        } else if currentPosition.section > stories.count - 1 {
+//            self.dismiss(animated: true)
+//            // break
+//        } else if currentPosition.section < stories.count - 1 {
+//            currentPosition.section += 1
+//            currentPosition.row = 0
+//            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+//
+//            DispatchQueue.main.async {
+//                self.updateSlides()
+//            }
+//        }
     }
     
     @objc
     func didSwipeRight() {
-        if currentPosition.row > 0 {
-            currentPosition.row -= 1
-            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
-            DispatchQueue.main.async {
-                self.updateSlides()
-            }
-        } else if currentPosition.section > 0 {
+        if currentPosition.section > 0 {
             currentPosition.section -= 1
-            currentPosition.row = stories[currentPosition.section].slides.count - 1
+            currentPosition.row = 0
             collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
 
             DispatchQueue.main.async {
                 self.updateSlides()
             }
         }
+//        if currentPosition.row > 0 {
+//            currentPosition.row -= 1
+//            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+//            DispatchQueue.main.async {
+//                self.updateSlides()
+//            }
+//        } else if currentPosition.section > 0 {
+//            currentPosition.section -= 1
+//            currentPosition.row = stories[currentPosition.section].slides.count - 1
+//            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+//
+//            DispatchQueue.main.async {
+//                self.updateSlides()
+//            }
+//        }
     }
 
     private func configureView() {
@@ -170,7 +207,7 @@ class StoryViewController: UIViewController {
             pageIndicator.removeArrangedSubview(view)
         }
         let slides = stories[currentPosition.section].slides
-        for (index, item) in slides.enumerated() {
+        for (index, _) in slides.enumerated() {
             let progressView = UIProgressView()
             progressView.tintColor = .white
             if index == currentPosition.row {
@@ -207,9 +244,8 @@ class StoryViewController: UIViewController {
                 DispatchQueue.main.async {
                     self.updateSlides()
                 }
-            } else if currentPosition.section > stories.count - 1 {
+            } else if currentPosition.section >= stories.count - 1 {
                 self.dismiss(animated: true)
-                // break
             } else if currentPosition.section < stories.count - 1 {
                 currentPosition.section += 1
                 currentPosition.row = 0
@@ -218,6 +254,72 @@ class StoryViewController: UIViewController {
                 DispatchQueue.main.async {
                     self.updateSlides()
                 }
+            }
+        }
+    }
+    
+    private func openUrl(link: String) {
+        if let url = URL(string: link) {
+            if #available(iOS 10.0, *) {
+                pauseTimer()
+                UIApplication.shared.open(url)
+            } else {
+                // Fallback on earlier versions
+            }
+        }
+    }
+    
+    private func pauseTimer() {
+        timer.invalidate()
+    }
+    
+    private func continueTimer() {
+        endTime = Date().addingTimeInterval(timeLeft)
+        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
+    }
+    
+    private func trackViewSlide(index: IndexPath) {
+        let storyId = String(stories[index.section].id)
+        let slideId = String(stories[index.section].slides[index.row].id)
+//        sdk?.track(event: .slideView(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
+//        })
+    }
+    
+    private func trackClickSlide(index: IndexPath) {
+        let storyId = String(stories[index.section].id)
+        let slideId = String(stories[index.section].slides[index.row].id)
+//        sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
+//        })
+        
+    }
+    
+    private func setupLongGestureRecognizerOnCollection() {
+        let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
+        longPressedGesture.minimumPressDuration = 0.2
+        longPressedGesture.delegate = self
+        longPressedGesture.delaysTouchesBegan = true
+        collectionView.addGestureRecognizer(longPressedGesture)
+    }
+
+    @objc func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
+        if gestureRecognizer.state == .ended {
+            let p = gestureRecognizer.location(in: collectionView)
+            if let indexPath = collectionView.indexPathForItem(at: p) {
+                let slide = stories[indexPath.section].slides[indexPath.row]
+                NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
+                continueTimer()
+            }
+            return
+        }
+        if (gestureRecognizer.state != .began) {
+            return
+        } else {
+            let p = gestureRecognizer.location(in: collectionView)
+
+            if let indexPath = collectionView.indexPathForItem(at: p) {
+                let slide = stories[indexPath.section].slides[indexPath.row]
+                NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
+                pauseTimer()
             }
         }
     }
@@ -236,6 +338,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "StoryCollectionViewCell", for: indexPath) as! StoryCollectionViewCell
         let slide = stories[indexPath.section].slides[indexPath.row]
         cell.configure(slide: slide)
+        cell.delegate = self
         return cell
     }
 
@@ -245,13 +348,9 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        print("SWIPE ITEM")
         if let visibleCell = collectionView.indexPathsForVisibleItems.first {
-            print(currentPosition, " = PREV")
             currentPosition = visibleCell
-            print(currentPosition, " = NEW")
             DispatchQueue.main.async {
-                print("START UPDATE SLIDE")
                 self.updateSlides()
             }
         }
@@ -266,42 +365,45 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let slide = stories[indexPath.section].slides[indexPath.row]
-        if let link = slide.elements.first(where: { $0.type == "button" })?.link {
-            if let url = URL(string: link) {
-                if #available(iOS 10.0, *) {
-                    UIApplication.shared.open(url)
-                } else {
-                    // Fallback on earlier versions
-                }
+        if currentPosition.row < stories[currentPosition.section].slides.count - 1 {
+            currentPosition.row += 1
+            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            DispatchQueue.main.async {
+                self.updateSlides()
             }
-        } else {
-            if currentPosition.row < stories[currentPosition.section].slides.count - 1 {
-                currentPosition.row += 1
-                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
-                DispatchQueue.main.async {
-                    self.updateSlides()
-                }
-            } else if currentPosition.section > stories.count - 1 {
-                // break
-            } else if currentPosition.section < stories.count - 1 {
-                currentPosition.section += 1
-                currentPosition.row = 0
-                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+        } else if currentPosition.section >= stories.count - 1 {
+            // break
+            self.dismiss(animated: true)
+        } else if currentPosition.section < stories.count - 1 {
+            currentPosition.section += 1
+            currentPosition.row = 0
+            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
 
-                DispatchQueue.main.async {
-                    self.updateSlides()
-                }
+            DispatchQueue.main.async {
+                self.updateSlides()
             }
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        trackViewSlide(index: indexPath)
         if let startWithIndexPath = startWithIndexPath {
             if collectionView.isValid(indexPath: startWithIndexPath) {
                 self.collectionView.scrollToItem(at: startWithIndexPath, at: .left, animated: false)
             }
             self.startWithIndexPath = nil
+        }
+    }
+}
+extension StoryViewController: StoryCollectionViewCellDelegate {
+    func didTapUrlButton(url: String, slide: StorySlide) {
+        self.openUrl(link: url)
+        for (section, story) in stories.enumerated() {
+            for (row, storySlide) in story.slides.enumerated() {
+                if storySlide.id == slide.id {
+                    self.trackClickSlide(index: IndexPath(row: row, section: section))
+                }
+            }
         }
     }
 }

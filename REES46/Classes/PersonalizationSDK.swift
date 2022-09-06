@@ -13,6 +13,8 @@ public enum Event {
     case productRemovedFromCart (id: String)
     case search (query: String)
     case synchronizeCart (items: [CartItem])
+    case slideView(storyId: String, slideId: String)
+    case slideClick(storyId: String, slideId: String)
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int)])
 }
 
