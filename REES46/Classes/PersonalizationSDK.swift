@@ -69,6 +69,10 @@ public protocol PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    
+    func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    
 }
 
 public extension PersonalizationSDK {
@@ -111,6 +115,14 @@ public extension PersonalizationSDK {
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
+    }
+    
+    func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        addToSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
+    }
+    
+    func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        removeFromSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
     }
 
 }
