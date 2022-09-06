@@ -18,7 +18,7 @@ class ViewController: UIViewController {
     @IBOutlet private weak var updateButton: UIButton!
     
 //    @IBOutlet private weak var storiesBackView: StoriesCollectionView!
-        @IBOutlet private weak var storiesBackView: StoriesView!
+    @IBOutlet private weak var storiesBackView: StoriesView!
 
     override func viewDidLoad() {
         super.viewDidLoad()

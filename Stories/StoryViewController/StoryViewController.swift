@@ -9,13 +9,13 @@ import UIKit
 
 class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var collectionView: UICollectionView = {
-        let testFrame = CGRect(x: 0, y: 0, width: 300, height: 100)
+        let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
         layout.itemSize = CGSize(width: 100, height: 130)
         layout.minimumInteritemSpacing = 0
         layout.minimumLineSpacing = 0
-        let collectionView = UICollectionView(frame: testFrame, collectionViewLayout: layout)
+        let collectionView = UICollectionView(frame: frame, collectionViewLayout: layout)
         collectionView.isPagingEnabled = true
         collectionView.isScrollEnabled = false
         collectionView.backgroundColor = .black

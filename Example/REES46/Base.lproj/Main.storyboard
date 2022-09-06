@@ -5,7 +5,6 @@
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="20020"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
-        <capability name="collection view cell content view" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -47,34 +46,11 @@
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
-                            <collectionView hidden="YES" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="e1A-YK-IZN" customClass="StoriesCollectionView" customModule="REES46">
-                                <rect key="frame" x="20" y="746" width="374" height="100"/>
-                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="100" id="rh0-Cb-0I5"/>
-                                </constraints>
-                                <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="LfT-l9-dTQ">
-                                    <size key="itemSize" width="128" height="128"/>
-                                    <size key="headerReferenceSize" width="0.0" height="0.0"/>
-                                    <size key="footerReferenceSize" width="0.0" height="0.0"/>
-                                    <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
-                                </collectionViewFlowLayout>
-                                <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="L5h-2W-UOA">
-                                        <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <collectionViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="AAw-QH-dJ0">
-                                            <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
-                                            <autoresizingMask key="autoresizingMask"/>
-                                        </collectionViewCellContentView>
-                                    </collectionViewCell>
-                                </cells>
-                            </collectionView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WVN-UL-gKy" customClass="StoriesView" customModule="REES46">
-                                <rect key="frame" x="20" y="536" width="374" height="200"/>
+                                <rect key="frame" x="20" y="632" width="374" height="130"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="200" id="wqp-TX-QXY"/>
+                                    <constraint firstAttribute="height" constant="130" id="wqp-TX-QXY"/>
                                 </constraints>
                             </view>
                         </subviews>
@@ -84,17 +60,14 @@
                             <constraint firstAttribute="trailingMargin" secondItem="Xqd-20-S5Q" secondAttribute="trailing" constant="40" id="6ib-3J-6yM"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="BIB-Ve-qFf"/>
                             <constraint firstItem="WVN-UL-gKy" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="Dqn-MI-dDT"/>
+                            <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="100" id="H7y-BV-oZN"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="top" secondItem="xie-eK-LO0" secondAttribute="bottom" constant="40" id="KOM-98-h4H"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="LbY-Jv-3Yl"/>
-                            <constraint firstItem="e1A-YK-IZN" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="R4M-Zp-ktl"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="top" secondItem="Xqd-20-S5Q" secondAttribute="bottom" constant="40" id="Tgv-NX-s2w"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="awM-uK-1xe"/>
                             <constraint firstAttribute="trailingMargin" secondItem="WVN-UL-gKy" secondAttribute="trailing" id="bFa-0g-Nv4"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="e1A-YK-IZN" secondAttribute="trailing" id="fJO-Mt-GU2"/>
                             <constraint firstItem="xie-eK-LO0" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="lvv-rr-Ema"/>
-                            <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="e1A-YK-IZN" secondAttribute="bottom" constant="16" id="nX2-8y-YlH"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="tHs-pw-VCx"/>
-                            <constraint firstItem="e1A-YK-IZN" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="10" id="v19-Yi-8DF"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="top" secondItem="lyo-LU-rYQ" secondAttribute="bottom" constant="40" id="wOv-fZ-q3z"/>
                             <constraint firstItem="xie-eK-LO0" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="40" id="xZa-gF-MMo"/>
                             <constraint firstAttribute="trailingMargin" secondItem="lyo-LU-rYQ" secondAttribute="trailing" constant="40" id="yQ0-fB-yGm"/>
