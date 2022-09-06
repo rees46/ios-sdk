@@ -712,14 +712,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
+                case .success(_):
+                    completion(.success(Void()))
                 case let .failure(error):
                     completion(.failure(error))
                 }
@@ -751,14 +745,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
+                case .success(_):
+                    completion(.success(Void()))
                 case let .failure(error):
                     completion(.failure(error))
                 }
