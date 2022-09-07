@@ -755,7 +755,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func manageSubscription(email: String? = nil, phone: String? = nil, email_bulk: Bool? = nil, email_chain: Bool? = nil, email_transactional: Bool? = nil, sms_bulk: Bool? = nil, sms_chain: Bool? = nil, sms_transactional: Bool? = nil, web_push_bulk: Bool? = nil, web_push_chain: Bool? = nil, web_push_transactional: Bool? = nil, mobile_push_bulk: Bool? = nil, mobile_push_chain: Bool? = nil, mobile_push_transactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+    func manageSubscription(email: String? = nil, phone: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         
         let path = "subscriptions/manage"
         var params: [String: Any] = [
@@ -776,18 +776,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             params["phone"] = phone
         }
         
-        if let email_bulk               = email_bulk            { params["email_bulk"]              = email_bulk }
-        if let email_chain              = email_chain           { params["email_chain"]             = email_chain }
-        if let email_transactional      = email_transactional   { params["email_transactional"]     = email_transactional }
-        if let sms_bulk                 = sms_bulk              { params["sms_bulk"]                = sms_bulk }
-        if let sms_chain                = sms_chain             { params["sms_chain"]               = sms_chain }
-        if let sms_transactional        = sms_transactional     { params["sms_transactional"]       = sms_transactional }
-        if let web_push_bulk            = web_push_bulk              { params["web_push_bulk"]                = web_push_bulk }
-        if let web_push_chain           = web_push_chain             { params["web_push_chain"]               = web_push_chain }
-        if let web_push_transactional   = web_push_transactional     { params["web_push_transactional"]       = web_push_transactional }
-        if let mobile_push_bulk          = mobile_push_bulk          { params["mobile_push_bulk"]             = mobile_push_bulk }
-        if let mobile_push_chain         = mobile_push_chain         { params["mobile_push_chain"]            = mobile_push_chain }
-        if let mobile_push_transactional = mobile_push_transactional { params["mobile_push_transactional"]    = mobile_push_transactional }
+        if let emailBulk               = emailBulk            { params["email_bulk"]              = emailBulk }
+        if let emailChain              = emailChain           { params["email_chain"]             = emailChain }
+        if let emailTransactional      = emailTransactional   { params["email_transactional"]     = emailTransactional }
+        if let smsBulk                 = smsBulk              { params["sms_bulk"]                = smsBulk }
+        if let smsChain                = smsChain             { params["sms_chain"]               = smsChain }
+        if let smsTransactional        = smsTransactional     { params["sms_transactional"]       = smsTransactional }
+        if let webPushBulk             = webPushBulk          { params["web_push_bulk"]           = webPushBulk }
+        if let webPushChain            = webPushChain         { params["web_push_chain"]          = webPushChain }
+        if let webPushTransactional    = webPushTransactional { params["web_push_transactional"]  = webPushTransactional }
+        if let mobilePushBulk          = mobilePushBulk          { params["mobile_push_bulk"]             = mobilePushBulk }
+        if let mobilePushChain         = mobilePushChain         { params["mobile_push_chain"]            = mobilePushChain }
+        if let mobilePushTransactional = mobilePushTransactional { params["mobile_push_transactional"]    = mobilePushTransactional }
 
         self.postRequest(path: path, params: params, completion: { result in
             switch result {
