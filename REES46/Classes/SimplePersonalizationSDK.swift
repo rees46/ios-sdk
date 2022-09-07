@@ -755,6 +755,51 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func manageSubscription(email: String? = nil, phone: String? = nil, email_bulk: Bool? = nil, email_chain: Bool? = nil, email_transactional: Bool? = nil, sms_bulk: Bool? = nil, sms_chain: Bool? = nil, sms_transactional: Bool? = nil, web_push_bulk: Bool? = nil, web_push_chain: Bool? = nil, web_push_transactional: Bool? = nil, mobile_push_bulk: Bool? = nil, mobile_push_chain: Bool? = nil, mobile_push_transactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        
+        let path = "subscriptions/manage"
+        var params: [String: Any] = [
+            "shop_id": self.shopId,
+            "did": self.deviceID,
+            "seance": self.userSeance,
+            "sid": self.userSeance,
+            "segment": self.segment
+        ]
+        
+        // If has email
+        if let email = email {
+            params["email"] = email
+        }
+        
+        // If has phone
+        if let phone = phone {
+            params["phone"] = phone
+        }
+        
+        if let email_bulk               = email_bulk            { params["email_bulk"]              = email_bulk }
+        if let email_chain              = email_chain           { params["email_chain"]             = email_chain }
+        if let email_transactional      = email_transactional   { params["email_transactional"]     = email_transactional }
+        if let sms_bulk                 = sms_bulk              { params["sms_bulk"]                = sms_bulk }
+        if let sms_chain                = sms_chain             { params["sms_chain"]               = sms_chain }
+        if let sms_transactional        = sms_transactional     { params["sms_transactional"]       = sms_transactional }
+        if let web_push_bulk            = web_push_bulk              { params["web_push_bulk"]                = web_push_bulk }
+        if let web_push_chain           = web_push_chain             { params["web_push_chain"]               = web_push_chain }
+        if let web_push_transactional   = web_push_transactional     { params["web_push_transactional"]       = web_push_transactional }
+        if let mobile_push_bulk          = mobile_push_bulk          { params["mobile_push_bulk"]             = mobile_push_bulk }
+        if let mobile_push_chain         = mobile_push_chain         { params["mobile_push_chain"]            = mobile_push_chain }
+        if let mobile_push_transactional = mobile_push_transactional { params["mobile_push_transactional"]    = mobile_push_transactional }
+
+        self.postRequest(path: path, params: params, completion: { result in
+            switch result {
+            case .success(_):
+                completion(.success(Void()))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+        })
+        
+    }
+    
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             let path = "segments/add"

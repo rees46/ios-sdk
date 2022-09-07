@@ -69,9 +69,10 @@ public protocol PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
-    
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func manageSubscription(email: String?, phone: String?, email_bulk: Bool?, email_chain: Bool?, email_transactional: Bool?, sms_bulk: Bool?, sms_chain: Bool?, sms_transactional: Bool?, web_push_bulk: Bool?, web_push_chain: Bool?, web_push_transactional: Bool?, mobile_push_bulk: Bool?, mobile_push_chain: Bool?, mobile_push_transactional: Bool?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    
     
 }
 
@@ -124,7 +125,11 @@ public extension PersonalizationSDK {
     func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         removeFromSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
     }
-
+    
+    func manageSubscription(email: String? = nil, phone: String? = nil, email_bulk: Bool? = nil, email_chain: Bool? = nil, email_transactional: Bool? = nil, sms_bulk: Bool? = nil, sms_chain: Bool? = nil, sms_transactional: Bool? = nil, web_push_bulk: Bool? = nil, web_push_chain: Bool? = nil, web_push_transactional: Bool? = nil, mobile_push_bulk: Bool? = nil, mobile_push_chain: Bool? = nil, mobile_push_transactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        manageSubscription(email: email, phone: phone, email_bulk: email_bulk, email_chain: email_chain, email_transactional: email_transactional, sms_bulk: sms_bulk, sms_chain: sms_chain, sms_transactional: sms_transactional, web_push_bulk: web_push_bulk, web_push_chain: web_push_chain, web_push_transactional: web_push_transactional, mobile_push_bulk: mobile_push_bulk, mobile_push_chain: mobile_push_chain, mobile_push_transactional: mobile_push_transactional, completion: completion)
+    }
+ 
 }
 
 public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com", stream: String = "ios", enableLogs: Bool = false, _ completion: ((SDKError?) -> Void)? = nil) -> PersonalizationSDK{
