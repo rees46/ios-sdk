@@ -69,13 +69,11 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     
     @objc
     func willEnterForeground() {
-        print("WILL ENTER")
         continueTimer()
     }
 
     @objc
     func didEnterBackground() {
-        print("DID ENTER")
         pauseTimer()
     }
     override func viewWillDisappear(_ animated: Bool) {

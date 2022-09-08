@@ -21,14 +21,14 @@ public struct Story {
     var name: String
     var avatar: String
     var viewed: Bool
-    var start_position: Int
+    var startPosition: Int
     var slides: [StorySlide]
     
     init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? 0
         self.avatar = json["avatar"] as? String ?? ""
         self.viewed = json["viewed"] as? Bool ?? false
-        self.start_position = json["start_position"] as? Int ?? 0
+        self.startPosition = json["start_position"] as? Int ?? 0
         let slidesJSON = json["slides"] as? [[String: Any]] ?? []
         self.slides = slidesJSON.map({StorySlide(json: $0)})
         self.name = json["name"] as? String ?? ""

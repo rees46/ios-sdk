@@ -34,7 +34,6 @@ class StoriesCollectionViewCell: UICollectionViewCell {
     
     private func setImage(imagePath: String) {
         guard let url = URL(string: imagePath) else {
-            print("Failed to present attachment due to an invalid url: ", imagePath)
             return
         }
 

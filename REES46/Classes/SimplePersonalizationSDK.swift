@@ -63,14 +63,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(nil)
                         }
                     }else{
-                        print("PersonalizationSDK error: SDK DECODE FAIL")
                         if let completion = completion {
                             completion(.decodeError)
                         }
                     }
                     self.semaphore.signal()
                 case .failure(let error):
-                    print("PersonalizationSDK error: SDK INIT FAIL")
                     if let completion = completion {
                         completion(error)
                     }

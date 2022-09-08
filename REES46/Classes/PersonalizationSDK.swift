@@ -3,6 +3,7 @@
 //
 
 import Foundation
+import UIKit
 
 public enum Event {
     case productView (id: String)
@@ -114,10 +115,6 @@ public extension PersonalizationSDK {
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
-    }
-
-    func getStories() {
-        
     }
 }
 

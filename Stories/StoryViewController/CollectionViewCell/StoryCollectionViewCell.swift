@@ -74,7 +74,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
             let screenSize = UIScreen.main.bounds.size
             playerLayer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
             playerLayer.name = "VIDEO"
-            print(slide.background)
             self.videoView.layer.addSublayer(playerLayer)
             player.play()
         } else {
@@ -107,7 +106,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     private func setImage(imagePath: String) {
         guard let url = URL(string: imagePath) else {
-            print("Failed to present attachment due to an invalid url: ", imagePath)
             return
         }
 

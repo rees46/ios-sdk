@@ -3,9 +3,6 @@
 ### Step 1 - Add story view to your screen.
 #### Xib integration
 1 - Create view in xib editor. Change class to 'StoriesView'. 
-
-img1
-
 2 - Connect to your viewController.swift. 
 
     @IBOutlet private weak var storiesBackView: StoriesView!

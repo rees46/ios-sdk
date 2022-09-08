@@ -74,7 +74,7 @@ public class StoriesView: UIView {
                     self.collectionView.reloadData()
                 }
             case let .failure(error):
-                print(error)
+                break
             }
         }
     }
@@ -102,8 +102,8 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             let storyVC = StoryViewController()
             storyVC.sdk = sdk
             storyVC.stories = stories ?? []
-            storyVC.currentPosition = IndexPath(row: currentStory.start_position, section: indexPath.row)
-            storyVC.startWithIndexPath = IndexPath(row: currentStory.start_position, section: indexPath.row)
+            storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
+            storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
             storyVC.modalPresentationStyle = .fullScreen
             mainVC?.present(storyVC, animated: true)
         }

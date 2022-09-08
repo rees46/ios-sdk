@@ -17,7 +17,6 @@ class PushPresentViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .white
-        print("IT IS PUSH VC")
         titleLabel.textColor = .black
         titleLabel.numberOfLines = 0
         titleLabel.text = pushTitle
