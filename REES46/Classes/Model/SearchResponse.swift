@@ -145,46 +145,59 @@ public struct SearchResponse {
 }
 
 public struct Product {
-    public var id: String
-    public var name: String
-    public var brand: String
+    public var id: String = ""
+    public var barcode: String = ""
+    public var name: String = ""
+    public var brand: String = ""
+    public var model: String = ""
+    public var description: String = ""
+    public var imageUrl: String = ""
+    public var resizedImageUrl: String = ""
+    public var url: String
 
-    public var oldPrice: Double
-    public var oldPriceFormatted: String
-    public var oldPriceFull: Double
-    public var oldPriceFullFormatted: String
     public var price: Double
     public var priceFormatted: String
     public var priceFull: Double
     public var priceFullFormatted: String
+    public var oldPrice: Double
+    public var oldPriceFormatted: String
+    public var oldPriceFull: Double
+    public var oldPriceFullFormatted: String
 
-    public var picture: String
-    public var url: String
     public var currency: String
     public var isNew: Bool?
-    public var barcode: String?
-    public var model: String?
     public var params: [[String: Any]]?
 
+    // @deprecated Use resizedImageUrl instead (same value)
+    public var picture: String
+    
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
+        barcode = json["barcode"] as? String ?? ""
         name = json["name"] as? String ?? ""
         brand = json["brand"] as? String ?? ""
-        oldPrice = json["old_price"] as? Double ?? 0
-        oldPriceFormatted = json["oldprice_formatted"] as? String ?? ""
-        oldPriceFull = json["oldprice_full"] as? Double ?? 0
-        oldPriceFullFormatted = json["oldprice_full_formatted"] as? String ?? ""
+        model = json["model"] as? String ?? ""
+        description = json["description"] as? String ?? ""
+        imageUrl = json["image_url"] as? String ?? ""
+        resizedImageUrl = json["picture"] as? String ?? ""
+        url = json["url"] as? String ?? ""
+        
         price = json["price"] as? Double ?? 0
         priceFormatted = json["price_formatted"] as? String ?? ""
         priceFull = json["price_full"] as? Double ?? 0
         priceFullFormatted = json["price_full_formatted"] as? String ?? ""
-        picture = json["picture"] as? String ?? ""
-        url = json["url"] as? String ?? ""
+        oldPrice = json["old_price"] as? Double ?? 0
+        oldPriceFormatted = json["oldprice_formatted"] as? String ?? ""
+        oldPriceFull = json["oldprice_full"] as? Double ?? 0
+        oldPriceFullFormatted = json["oldprice_full_formatted"] as? String ?? ""
         currency = json["currency"] as? String ?? ""
         isNew = json["is_new"] as? Bool
-        barcode = json["barcode"] as? String
-        model = json["model"] as? String
         params = json["params"] as? [[String: Any]]
+
+        
+        // @deprecated Use resizedImageUrl instead (same value)
+        picture = json["picture"] as? String ?? ""
+
     }
 }
 
