@@ -63,14 +63,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(nil)
                         }
                     }else{
-                        print("PersonalizationSDK error: SDK DECODE FAIL")
                         if let completion = completion {
                             completion(.decodeError)
                         }
                     }
                     self.semaphore.signal()
                 case .failure(let error):
-                    print("PersonalizationSDK error: SDK INIT FAIL")
                     if let completion = completion {
                         completion(error)
                     }
@@ -328,6 +326,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "segment": self.segment
             ]
             switch event {
+            case let .slideView(storyId, slideId):
+                params["story_id"] = storyId
+                params["slide_id"] = slideId
+                paramEvent = "view"
+            case let .slideClick(storyId, slideId):
+                params["story_id"] = storyId
+                params["slide_id"] = slideId
+                paramEvent = "click"
             case let .search(query):
                 params["search_query"] = query
                 paramEvent = "search"
@@ -883,6 +889,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
                 UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
+                completion(.success(resultResponse))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    
+    func getStories(completion: @escaping (Result<StoriesResponse, SDKError>) -> Void) {
+        let path = "stories"
+        let params: [String: String] = [
+            "shop_id": shopId,
+            "did": deviceID
+        ]
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 1
+        self.urlSession = URLSession(configuration: sessionConfig)
+        getRequest(path: path, params: params, true) { result in
+
+            switch result {
+            case let .success(successResult):
+                let resJSON = successResult
+                let resultResponse = StoriesResponse(json: resJSON)
                 completion(.success(resultResponse))
             case let .failure(error):
                 completion(.failure(error))

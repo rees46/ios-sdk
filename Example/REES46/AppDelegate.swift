@@ -16,6 +16,7 @@ import UserNotifications
 var pushGlobalToken: String = ""
 var fcmGlobalToken: String = ""
 var didToken: String = ""
+var globalSDK: PersonalizationSDK?
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -28,14 +29,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
         print("A. Init firebase sdk")
-        FirebaseApp.configure()
-        Messaging.messaging().delegate = self
+//        FirebaseApp.configure()
+//        Messaging.messaging().delegate = self
         print("======")
 
         print("0. Init SDK")
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
             print("Init error = ", error)
             didToken = self.sdk.getDeviceID()
+            globalSDK = self.sdk
         })
 
         print("0.1. Registr push")

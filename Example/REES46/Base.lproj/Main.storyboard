@@ -46,16 +46,26 @@
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WVN-UL-gKy" customClass="StoriesView" customModule="REES46">
+                                <rect key="frame" x="20" y="632" width="374" height="130"/>
+                                <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="130" id="wqp-TX-QXY"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstAttribute="trailingMargin" secondItem="xie-eK-LO0" secondAttribute="trailing" constant="40" id="3O5-76-N1S"/>
                             <constraint firstAttribute="trailingMargin" secondItem="Xqd-20-S5Q" secondAttribute="trailing" constant="40" id="6ib-3J-6yM"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="BIB-Ve-qFf"/>
+                            <constraint firstItem="WVN-UL-gKy" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="Dqn-MI-dDT"/>
+                            <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="100" id="H7y-BV-oZN"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="top" secondItem="xie-eK-LO0" secondAttribute="bottom" constant="40" id="KOM-98-h4H"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="LbY-Jv-3Yl"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="top" secondItem="Xqd-20-S5Q" secondAttribute="bottom" constant="40" id="Tgv-NX-s2w"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="awM-uK-1xe"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="WVN-UL-gKy" secondAttribute="trailing" id="bFa-0g-Nv4"/>
                             <constraint firstItem="xie-eK-LO0" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="lvv-rr-Ema"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="tHs-pw-VCx"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="top" secondItem="lyo-LU-rYQ" secondAttribute="bottom" constant="40" id="wOv-fZ-q3z"/>
@@ -69,6 +79,7 @@
                         <outlet property="didLabel" destination="lyo-LU-rYQ" id="VoD-CT-Vg4"/>
                         <outlet property="fcmTokenLabel" destination="xie-eK-LO0" id="DxK-4a-Toy"/>
                         <outlet property="pushTokenLabel" destination="Xqd-20-S5Q" id="qJB-Bt-Wl2"/>
+                        <outlet property="storiesBackView" destination="WVN-UL-gKy" id="oXe-tw-v4C"/>
                         <outlet property="updateButton" destination="6qN-Wn-uB2" id="OWr-Ib-ZCP"/>
                     </connections>
                 </viewController>

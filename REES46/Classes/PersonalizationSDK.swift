@@ -3,6 +3,7 @@
 //
 
 import Foundation
+import UIKit
 
 public enum Event {
     case productView (id: String)
@@ -13,6 +14,8 @@ public enum Event {
     case productRemovedFromCart (id: String)
     case search (query: String)
     case synchronizeCart (items: [CartItem])
+    case slideView(storyId: String, slideId: String)
+    case slideClick(storyId: String, slideId: String)
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int)])
 }
 
@@ -69,11 +72,10 @@ public protocol PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func getStories(completion: @escaping(Result<StoriesResponse, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func manageSubscription(email: String?, phone: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping(Result<Void, SDKError>) -> Void)
-    
-    
 }
 
 public extension PersonalizationSDK {
