@@ -1,10 +1,3 @@
-//
-//  StoryViewController.swift
-//  FirebaseCore
-//
-//  Created by Arseniy Dorogin on 17.08.2022.
-//
-
 import UIKit
 
 class StoryViewController: UIViewController, UIGestureRecognizerDelegate {

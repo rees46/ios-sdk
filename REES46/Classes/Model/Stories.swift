@@ -1,10 +1,3 @@
-//
-//  Stories.swift
-//  REES46
-//
-//  Created by Arseniy Dorogin on 16.08.2022.
-//
-
 import Foundation
 
 public struct StoriesResponse {

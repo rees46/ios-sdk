@@ -1,10 +1,3 @@
-//
-//  StoriesCollectionViewCell.swift
-//  FirebaseCore
-//
-//  Created by Arseniy Dorogin on 16.08.2022.
-//
-
 import UIKit
 
 class StoriesCollectionViewCell: UICollectionViewCell {
