@@ -279,15 +279,15 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private func trackViewSlide(index: IndexPath) {
         let storyId = String(stories[index.section].id)
         let slideId = String(stories[index.section].slides[index.row].id)
-//        sdk?.track(event: .slideView(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
-//        })
+        sdk?.track(event: .slideView(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
+        })
     }
     
     private func trackClickSlide(index: IndexPath) {
         let storyId = String(stories[index.section].id)
         let slideId = String(stories[index.section].slides[index.row].id)
-//        sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
-//        })
+        sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
+        })
         
     }
     

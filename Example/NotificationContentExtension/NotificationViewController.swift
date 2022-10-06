@@ -70,6 +70,7 @@ class NotificationViewController: UIViewController, UNNotificationContentExtensi
                     }
                 }
             }
+            
             if let eventJSON = parseDictionary(key: "event", userInfo: bestAttemptContent.userInfo) {
                 if let products = eventJSON["products"] as? [[String: Any]] {
                     var productArr = [Product]()

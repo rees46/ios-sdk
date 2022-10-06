@@ -29,6 +29,7 @@ public class StoriesView: UIView {
     private var stories: [Story]?
     private var sdk: PersonalizationSDK?
     private var mainVC: UIViewController?
+    private var code: String = ""
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -59,14 +60,15 @@ public class StoriesView: UIView {
         collectionView.register(nib, forCellWithReuseIdentifier: "StoriesCollectionViewCell")
     }
     
-    public func configure(sdk: PersonalizationSDK, mainVC: UIViewController) {
+    public func configure(sdk: PersonalizationSDK, mainVC: UIViewController, code: String) {
         self.sdk = sdk
         self.mainVC = mainVC
+        self.code = code
         loadData()
     }
 
     private func loadData() {
-        sdk?.getStories { result in
+        sdk?.getStories(code: code) { result in
             switch result {
             case let .success(response):
                 self.stories = response.stories

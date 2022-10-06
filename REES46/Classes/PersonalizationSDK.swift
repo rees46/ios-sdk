@@ -70,9 +70,10 @@ public protocol PersonalizationSDK {
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SDKError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
+    func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
-    func getStories(completion: @escaping(Result<StoriesResponse, SDKError>) -> Void)
+    func getStories(code: String, completion: @escaping(Result<StoriesResponse, SDKError>) -> Void)
 }
 
 public extension PersonalizationSDK {

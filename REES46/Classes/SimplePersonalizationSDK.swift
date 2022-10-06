@@ -8,7 +8,7 @@ import Foundation
 public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-
+    private var storiesCode: String? = nil
     var shopId: String
     var deviceID: String
     var userSeance: String
@@ -315,7 +315,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
-            let path = "push"
+            var path = "push"
             var paramEvent = ""
             var params: [String: Any] = [
                 "shop_id": self.shopId,
@@ -328,10 +328,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .slideView(storyId, slideId):
                 params["story_id"] = storyId
                 params["slide_id"] = slideId
+                params["code"] = self.storiesCode
+                path = "stories/push"
                 paramEvent = "view"
             case let .slideClick(storyId, slideId):
                 params["story_id"] = storyId
                 params["slide_id"] = slideId
+                params["code"] = self.storiesCode
+                path = "stories/push"
                 paramEvent = "click"
             case let .search(query):
                 params["search_query"] = query
@@ -692,6 +696,32 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    // Send tracking event when user receive mobile push notification
+    func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "track/received"
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "code": code,
+                "type": type
+            ]
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            self.urlSession = URLSession(configuration: sessionConfig)
+            
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case .success:
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
@@ -802,8 +832,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     
-    func getStories(completion: @escaping (Result<StoriesResponse, SDKError>) -> Void) {
-        let path = "stories"
+    func getStories(code: String, completion: @escaping (Result<StoriesResponse, SDKError>) -> Void) {
+        self.storiesCode = code
+        let path = "stories/\(code)"
         let params: [String: String] = [
             "shop_id": shopId,
             "did": deviceID

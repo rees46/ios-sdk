@@ -29,8 +29,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
         print("A. Init firebase sdk")
-//        FirebaseApp.configure()
-//        Messaging.messaging().delegate = self
+        FirebaseApp.configure()
+        Messaging.messaging().delegate = self
         print("======")
 
         print("0. Init SDK")
@@ -366,6 +366,7 @@ extension AppDelegate {
 
         let token = tokenParts.joined()
         pushGlobalToken = token
+        print(pushGlobalToken)
         Messaging.messaging().apnsToken = deviceToken
         // END TEST
         notificationService?.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: deviceToken)
