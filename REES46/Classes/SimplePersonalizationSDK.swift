@@ -199,7 +199,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             var paramsTemp: [String: String?] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
-                "seance": self.userSeance
+                "seance": self.userSeance,
+                "sid": self.userSeance,
             ]
             
             if let userEmail = userEmail {
@@ -321,8 +322,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
-                "segment": self.segment,
-                "stream": self.stream
+                "sid": self.userSeance,
+                "segment": self.segment
             ]
             switch event {
             case let .slideView(storyId, slideId):
@@ -441,9 +442,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
-                "segment": self.segment,
-                "stream": self.stream,
-                "event": event
+                "sid": self.userSeance,
+                "segment": self.segment
             ]
             
             if let category = category {
@@ -506,6 +506,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
+                "sid": self.userSeance,
                 "extended": "true",
                 "resize_image": "180",
                 "segment": self.segment
@@ -551,10 +552,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
+                "sid": self.userSeance,
                 "type": "full_search",
                 "search_query": query,
-                "segment": self.segment,
-                "stream": self.stream
+                "segment": self.segment
             ]
             if let limit = limit{
                 params["limit"] = String(limit)
@@ -639,10 +640,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
+                "sid": self.userSeance,
                 "type": "instant_search",
                 "search_query": query,
-                "segment": self.segment,
-                "stream": self.stream
+                "segment": self.segment
             ]
             
             if let locations = locations{
@@ -730,8 +731,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
+                "sid": self.userSeance,
                 "segment": self.segment,
-                "stream": self.stream,
                 "item_id": id,
                 "price": currentPrice
             ]
@@ -748,14 +749,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
+                case .success(_):
+                    completion(.success(Void()))
                 case let .failure(error):
                     completion(.failure(error))
                 }
@@ -770,8 +765,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
+                "sid": self.userSeance,
                 "segment": self.segment,
-                "stream": self.stream,
                 "item_id": id
             ]
             
@@ -787,14 +782,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
+                case .success(_):
+                    completion(.success(Void()))
                 case let .failure(error):
                     completion(.failure(error))
                 }
@@ -802,7 +791,114 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func manageSubscription(email: String? = nil, phone: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        
+        let path = "subscriptions/manage"
+        var params: [String: Any] = [
+            "shop_id": self.shopId,
+            "did": self.deviceID,
+            "seance": self.userSeance,
+            "sid": self.userSeance,
+            "segment": self.segment
+        ]
+        
+        // If has email
+        if let email = email {
+            params["email"] = email
+        }
+        
+        // If has phone
+        if let phone = phone {
+            params["phone"] = phone
+        }
+        
+        if let emailBulk               = emailBulk            { params["email_bulk"]              = emailBulk }
+        if let emailChain              = emailChain           { params["email_chain"]             = emailChain }
+        if let emailTransactional      = emailTransactional   { params["email_transactional"]     = emailTransactional }
+        if let smsBulk                 = smsBulk              { params["sms_bulk"]                = smsBulk }
+        if let smsChain                = smsChain             { params["sms_chain"]               = smsChain }
+        if let smsTransactional        = smsTransactional     { params["sms_transactional"]       = smsTransactional }
+        if let webPushBulk             = webPushBulk          { params["web_push_bulk"]           = webPushBulk }
+        if let webPushChain            = webPushChain         { params["web_push_chain"]          = webPushChain }
+        if let webPushTransactional    = webPushTransactional { params["web_push_transactional"]  = webPushTransactional }
+        if let mobilePushBulk          = mobilePushBulk          { params["mobile_push_bulk"]             = mobilePushBulk }
+        if let mobilePushChain         = mobilePushChain         { params["mobile_push_chain"]            = mobilePushChain }
+        if let mobilePushTransactional = mobilePushTransactional { params["mobile_push_transactional"]    = mobilePushTransactional }
+
+        self.postRequest(path: path, params: params, completion: { result in
+            switch result {
+            case .success(_):
+                completion(.success(Void()))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+        })
+        
+    }
     
+    func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "segments/add"
+            var params: [String: Any] = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment_id": segmentId
+            ]
+            
+            // If has email
+            if let email = email {
+                params["email"] = email
+            }
+            
+            // If has phone
+            if let phone = phone {
+                params["phone"] = phone
+            }
+
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case .success(_):
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
+    func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        mySerialQueue.async {
+            let path = "segments/remove"
+            var params: [String: Any] = [
+                "shop_id": self.shopId,
+                "did": self.deviceID,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment_id": segmentId
+            ]
+            
+            // If has email
+            if let email = email {
+                params["email"] = email
+            }
+            
+            // If has phone
+            if let phone = phone {
+                params["phone"] = phone
+            }
+
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case .success(_):
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
 
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
         let path = "init"
@@ -810,8 +906,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let hours = secondsFromGMT/3600
         let params: [String: String] = [
             "shop_id": shopId,
-            "tz": String(hours),
-            "stream": self.stream
+            "tz": String(hours)
         ]
         
         let sessionConfig = URLSessionConfiguration.default
@@ -875,6 +970,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         for item in params{
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
+        queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
 
         if let endUrl = url?.url {
@@ -910,11 +1006,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     private func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+        
+        var requestParams : [String: Any] = [
+            "stream": stream
+        ]
+        for (key, value) in params {
+                  requestParams[key] = value
+             }
+
         if let url = URL(string: baseURL + path) {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: params, options: .prettyPrinted)
+                request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
             } catch let error {
                 completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
                 return
@@ -962,13 +1066,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    private func getPostString(params: [String: Any]) -> String {
-        var data = [String]()
-        for (key, value) in params {
-            data.append(key + "=\(value)")
-        }
-        return data.map { String($0) }.joined(separator: "&")
-    }
+    // @DELETE after 2022-09-15
+//    private func getPostString(params: [String: Any]) -> String {
+//        var data = [String]()
+//        for (key, value) in params {
+//            data.append(key + "=\(value)")
+//        }
+//        return data.map { String($0) }.joined(separator: "&")
+//    }
 }
 
 extension URLSession {
