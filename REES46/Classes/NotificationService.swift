@@ -79,7 +79,6 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-        print("Firebase fcm token = \(fcmToken)")
         sdk.setFirebasePushToken(token: fcmToken ?? "") { tokenResponse in
             switch tokenResponse {
             case .success():
@@ -124,8 +123,6 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func pushProcessing(userInfo: [AnyHashable: Any]) {
-        print("PUSH PROCESSING")
-        print(userInfo)
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
             guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
                 processingNotSDKPush(userInfo: userInfo)
@@ -184,8 +181,6 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func pushRetrieved(userInfo: [AnyHashable: Any]) {
-        print("PUSH RETRIEVED")
-        print(userInfo)
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
             guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
                 processingNotSDKPush(userInfo: userInfo)
