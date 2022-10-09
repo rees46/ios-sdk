@@ -71,13 +71,14 @@ public class NotificationService: NotificationServiceProtocol {
     public func didReceiveRemoteNotifications(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void) {
         if application.applicationState == .active {
             // SKIP FOR NOW
-        } else if application.applicationState == .background || application.applicationState == .inactive {
+        } else if application.applicationState == .background {
+            pushRetrieved(userInfo: userInfo)
+        } else if application.applicationState == .inactive {
             pushProcessing(userInfo: userInfo)
         }
     }
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-        print("Firebase fcm token = \(fcmToken)")
         sdk.setFirebasePushToken(token: fcmToken ?? "") { tokenResponse in
             switch tokenResponse {
             case .success():
@@ -122,7 +123,6 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func pushProcessing(userInfo: [AnyHashable: Any]) {
-        print(userInfo)
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
             guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
                 processingNotSDKPush(userInfo: userInfo)
@@ -178,15 +178,77 @@ public class NotificationService: NotificationServiceProtocol {
             }
             processingEventType(eventType: eventType, eventLink: eventLink)
         }
+    }
+    
+    private func pushRetrieved(userInfo: [AnyHashable: Any]) {
+        guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
+            guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
+                processingNotSDKPush(userInfo: userInfo)
+                return
+            }
+            if let type = userInfo["type"] as? String {
+                if let id = userInfo["id"] as? String {
+                    notificationReceived(type: type, code: id)
+                    return
+                }
+            }
+            guard let src = parseDictionary(key: "src", userInfo: userInfo) else {
+                processingNotSDKPush(userInfo: userInfo)
+                return
+            }
+            
+            if let type = src["type"] as? String {
+                if let id = src["id"] as? String {
+                    notificationReceived(type: type, code: id)
+                    return
+                }
+            }
+            return
+        }
+        
+        guard let eventType = eventJSON["type"] as? String else {
+            processingNotSDKPush(userInfo: userInfo)
+            return
+        }
+        var src: [String: Any] = [:]
+        if let srcFromUserInfo = parseDictionary(key: "src", userInfo: userInfo) {
+            src = srcFromUserInfo
+        } else {
+            if let srcID = userInfo["id"] as? String {
+                src["id"] = srcID
+            }
+        }
+        
+        guard let srcID = src["id"] as? String else {
+            processingNotSDKPush(userInfo: userInfo)
+            return
+        }
+        
+        notificationReceived(type: eventType, code: srcID)
+        
+        if eventType != PushEventType.carousel.rawValue {
+            guard var eventLink = eventJSON["uri"] as? String else {
+                processingNotSDKPush(userInfo: userInfo)
+                return
+            }
+            if eventLink.contains("https://") {
+                eventLink += "?recommended_by=\(eventType)&mail_code=\(srcID)"
+            }
+            processingEventType(eventType: eventType, eventLink: eventLink)
+        }
         
         
     }
     
     private func notificationClicked(type: String, code: String) {
         sdk.notificationClicked(type: type, code: code) { _ in
-            self.sdk.track(event: .productView(id: "17520")) { _ in
-                
-            }
+            
+        }
+    }
+    
+    private func notificationReceived(type: String, code: String) {
+        sdk.notificationReceived(type: type, code: code) { _ in
+            
         }
     }
     

@@ -36,7 +36,7 @@ class ViewController: UIViewController {
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken
         if let globalSDK = globalSDK {
-            storiesBackView.configure(sdk: globalSDK, mainVC: self)
+            storiesBackView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
 //        if let globalSDK = globalSDK {
 //
