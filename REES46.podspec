@@ -8,13 +8,16 @@ Pod::Spec.new do |s|
 
   - Personalization engine.
   - Product recommendations.
-  - Personalized site search.
-  - Bulk emails and push-notifications.
-  - Transactional emails and push-notifications.
-  - Drip campaigns (email and push).
+  - Personalized products search engine.
+  - Bulk emails, push-notifications, SMS and Telegram messages.
+  - Transactional emails, push-notifications, Telegram and SMS.
+  - Drip campaigns (email, push, Telegram, SMS).
   - Customizable on-site popups.
-  - CRM and customer segments.
+  - CRM, CDP and customer segments.
   - Net Promoter Score tool for any goal.
+  - Stories.
+  - In-app push.
+  - Loyalty program.
 
   You can integrate all REES46 tools into your iOS app.
                        DESC
