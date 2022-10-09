@@ -1,10 +1,3 @@
-//
-//  NotificationService.swift
-//  REES46
-//
-//  Created by Arseniy Dorogin on 26.03.2022.
-//
-
 import Foundation
 import UserNotifications
 import UIKit
