@@ -153,6 +153,7 @@ public struct Product {
     public var description: String = ""
     public var imageUrl: String = ""
     public var resizedImageUrl: String = ""
+    public var imageUrlResizedArray: [String: String] = [:]
     public var url: String
 
     public var price: Double
@@ -180,6 +181,7 @@ public struct Product {
         description = json["description"] as? String ?? ""
         imageUrl = json["image_url"] as? String ?? ""
         resizedImageUrl = json["picture"] as? String ?? ""
+        imageUrlResizedArray = json["image_url_resized"] as? [String: String] ?? [:]
         url = json["url"] as? String ?? ""
         
         price = json["price"] as? Double ?? 0
