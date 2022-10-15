@@ -51,6 +51,7 @@ public struct Recommended {
     public var fashionOriginalSizes: [String] = []
     public var fashionSizes: [String] = []
     public var fashionColors: [String] = []
+    public var resizedImages: [String: String] = [:]
 
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
@@ -74,6 +75,7 @@ public struct Recommended {
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
         discount = json["discount"] as? Bool ?? false
+        resizedImages = json["image_url_resized"] as? [String: String] ?? [:]
         
         let cats = json["categories"] as? [[String: Any]] ?? []
         var catsTemp = [Category]()
