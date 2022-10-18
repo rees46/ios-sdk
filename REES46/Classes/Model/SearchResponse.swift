@@ -188,7 +188,7 @@ public struct Product {
         priceFormatted = json["price_formatted"] as? String ?? ""
         priceFull = json["price_full"] as? Double ?? 0
         priceFullFormatted = json["price_full_formatted"] as? String ?? ""
-        oldPrice = json["old_price"] as? Double ?? 0
+        oldPrice = json["oldprice"] as? Double ?? 0
         oldPriceFormatted = json["oldprice_formatted"] as? String ?? ""
         oldPriceFull = json["oldprice_full"] as? Double ?? 0
         oldPriceFullFormatted = json["oldprice_full_formatted"] as? String ?? ""
