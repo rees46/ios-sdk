@@ -458,7 +458,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceID,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
-                "segment": self.segment
+                "segment": self.segment,
+                "event": event
             ]
             
             if let category = category {
