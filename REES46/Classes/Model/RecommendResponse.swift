@@ -111,7 +111,7 @@ public enum RecommendedByCase: String {
         case .webPushDigest:
             return "web_push_digest_code"
         default:
-            return "recommender_code"
+            return "recommended_code"
         }
     }
 }
