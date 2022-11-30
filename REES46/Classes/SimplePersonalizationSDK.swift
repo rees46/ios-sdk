@@ -191,12 +191,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: String?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         mySerialQueue.async {
             
             let path = "profile/set"
             
-            var paramsTemp: [String: String?] = [
+            var paramsTemp: [String: Any] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
@@ -204,51 +204,51 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             
             if let userEmail = userEmail {
-                paramsTemp["email"] = userEmail
+                paramsTemp["email"] = String(userEmail)
             }
             
             if let firstName = firstName {
-                paramsTemp["first_name"] = firstName
+                paramsTemp["first_name"] = String(firstName)
             }
             
             if let lastName = lastName {
-                paramsTemp["last_name"] = lastName
+                paramsTemp["last_name"] = String(lastName)
             }
             
             if let userPhone = userPhone {
-                paramsTemp["phone"] = userPhone
+                paramsTemp["phone"] = String(userPhone)
             }
             
             if let location = location {
-                paramsTemp["location"] = location
+                paramsTemp["location"] = String(location)
             }
 
             if let loyaltyCardLocation = loyaltyCardLocation {
-                paramsTemp["loyalty_card_location"] = loyaltyCardLocation
+                paramsTemp["loyalty_card_location"] = String(loyaltyCardLocation)
             }
 
             if let userLoyaltyId = userLoyaltyId {
-                paramsTemp["loyalty_id"] = userLoyaltyId
+                paramsTemp["loyalty_id"] = String(userLoyaltyId)
             }
 
             if let loyaltyStatus = loyaltyStatus {
-                paramsTemp["loyalty_status"] = loyaltyStatus
+                paramsTemp["loyalty_status"] = String(loyaltyStatus)
             }
 
             if let fbID = fbID {
-                paramsTemp["fb_id"] = fbID
+                paramsTemp["fb_id"] = String(fbID)
             }
             
             if let vkID = vkID {
-                paramsTemp["vk_id"] = vkID
+                paramsTemp["vk_id"] = String(vkID)
             }
             
             if let telegramID = telegramID {
-                paramsTemp["telegram_id"] = telegramID
+                paramsTemp["telegram_id"] = String(telegramID)
             }
             
             if let userId = userId {
-                paramsTemp["id"] = userId
+                paramsTemp["id"] = String(userId)
             }
             
             if gender == .male {
@@ -290,10 +290,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             sessionConfig.timeoutIntervalForRequest = 1
             self.urlSession = URLSession(configuration: sessionConfig)
             
-            var params: [String: String] = [String: String]()
+            var params: [String: Any] = [String: Any]()
             for item in paramsTemp {
-                if let value = item.value {
-                    params[item.key] = value
+                if item.value is Date {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "YYYY-MM-dd"
+                    guard let date = item.value as? Date else {continue}
+                    params[item.key] = formatter.string(from: date)
+                } else {
+                    params[item.key] = item.value
                 }
             }
             
