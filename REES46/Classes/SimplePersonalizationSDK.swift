@@ -196,7 +196,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let path = "profile/set"
             
-            var paramsTemp: [String: Any] = [
+            var paramsTemp: [String: Any?] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
                 "seance": self.userSeance,
