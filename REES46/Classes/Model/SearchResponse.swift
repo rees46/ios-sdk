@@ -166,6 +166,9 @@ public struct Product {
     public var oldPriceFullFormatted: String
 
     public var currency: String
+    public var salesRate: Int = 0
+    public var discount: Int = 0
+    public var relativeSalesRate: Float = 0.0
     public var isNew: Bool?
     public var params: [[String: Any]]?
 
@@ -195,7 +198,10 @@ public struct Product {
         currency = json["currency"] as? String ?? ""
         isNew = json["is_new"] as? Bool
         params = json["params"] as? [[String: Any]]
-
+        
+        discount = json["discount"] as? Int ?? 0
+        salesRate = json["sales_rate"] as? Int ?? 0
+        relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
         
         // @deprecated Use resizedImageUrl instead (same value)
         picture = json["picture"] as? String ?? ""

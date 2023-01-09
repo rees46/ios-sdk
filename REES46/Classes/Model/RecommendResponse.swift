@@ -45,7 +45,7 @@ public struct Recommended {
 
     public var currency: String = ""
     public var salesRate: Int = 0
-    public var discount: Bool = false
+    public var discount: Int = 0
     public var relativeSalesRate: Float = 0.0
     public var paramsRaw: [[String: Any]]?
     public var fashionOriginalSizes: [String] = []
@@ -74,7 +74,7 @@ public struct Recommended {
         currency = json["currency"] as? String ?? ""
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
-        discount = json["discount"] as? Bool ?? false
+        discount = json["discount"] as? Int ?? 0
         resizedImages = json["image_url_resized"] as? [String: String] ?? [:]
         
         let cats = json["categories"] as? [[String: Any]] ?? []
