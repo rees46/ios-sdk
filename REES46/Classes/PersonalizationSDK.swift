@@ -16,7 +16,7 @@ public enum Event {
     case synchronizeCart (items: [CartItem])
     case slideView(storyId: String, slideId: String)
     case slideClick(storyId: String, slideId: String)
-    case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
+    case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Int)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
 }
 
 public enum SDKError: Error {

@@ -369,7 +369,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 for (_, item) in products.enumerated() {
                     tempItems.append([
                         "id": item.id,
-                        "amount": String(item.amount)
+                        "amount": String(item.amount),
+                        "price": item.price
                     ])
                 }
                 params["items"] = tempItems
