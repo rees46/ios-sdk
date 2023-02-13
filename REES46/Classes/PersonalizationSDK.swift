@@ -10,7 +10,7 @@ public enum Event {
     case categoryView (id: String)
     case productAddedToFavorities(id: String)
     case productRemovedToFavorities(id: String)
-    case productAddedToCart (id: String)
+    case productAddedToCart (id: String, amount: Int = 1)
     case productRemovedFromCart (id: String)
     case search (query: String)
     case synchronizeCart (items: [CartItem])

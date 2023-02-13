@@ -352,8 +352,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .productView(id):
                 params["items"] = [["id":id]]
                 paramEvent = "view"
-            case let .productAddedToCart(id):
-                params["items"] = [["id":id]]
+            case let .productAddedToCart(id, amount):
+                params["items"] = [["id":id, "amount":amount]]
                 paramEvent = "cart"
             case let .productAddedToFavorities(id):
                 params["items"] = [["id":id]]
