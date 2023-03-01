@@ -1,23 +1,23 @@
 import Foundation
 
 public struct StoriesResponse {
-    var stories: [Story]
+    public var stories: [Story]
     
-    init(json: [String: Any]) {
+    public init(json: [String: Any]) {
         let storiesJSON = json["stories"] as? [[String: Any]] ?? []
         self.stories = storiesJSON.map({Story(json: $0)})
     }
 }
 
 public struct Story {
-    var id: Int
-    var name: String
-    var avatar: String
-    var viewed: Bool
-    var startPosition: Int
-    var slides: [StorySlide]
+    public var id: Int
+    public var name: String
+    public var avatar: String
+    public var viewed: Bool
+    public var startPosition: Int
+    public var slides: [StorySlide]
     
-    init(json: [String: Any]) {
+    public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? 0
         self.avatar = json["avatar"] as? String ?? ""
         self.viewed = json["viewed"] as? Bool ?? false
@@ -29,12 +29,12 @@ public struct Story {
 }
 
 public struct StorySlide {
-    var id: Int
-    var background: String
-    var type: String
-    var elements: [StoryElement]
+    public var id: Int
+    public var background: String
+    public var type: String
+    public var elements: [StoryElement]
     
-    init(json: [String: Any]) {
+    public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? 0
         self.background = json["background"] as? String ?? ""
         self.type = json["type"] as? String ?? ""
@@ -44,12 +44,12 @@ public struct StorySlide {
 }
 
 public struct StoryElement {
-    var type: String
-    var link: String
-    var title: String?
-    var background: String?
+    public var type: String
+    public var link: String
+    public var title: String?
+    public var background: String?
     
-    init(json: [String: Any]) {
+    public init(json: [String: Any]) {
         self.type = json["type"] as? String ?? ""
         self.link = json["link"] as? String ?? ""
         self.title = json["title"] as? String
