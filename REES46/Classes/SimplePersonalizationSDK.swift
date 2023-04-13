@@ -949,7 +949,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     
-    func getStories(code: String, completion: @escaping (Result<StoriesResponse, SDKError>) -> Void) {
+    func getStories(code: String, completion: @escaping (Result<StoryContent, SDKError>) -> Void) {
         self.storiesCode = code
         let path = "stories/\(code)"
         let params: [String: String] = [
@@ -957,15 +957,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             "did": deviceID
         ]
         let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 1
+        sessionConfig.timeoutIntervalForRequest = 10
         self.urlSession = URLSession(configuration: sessionConfig)
         getRequest(path: path, params: params, true) { result in
 
             switch result {
             case let .success(successResult):
-                let resJSON = successResult
-                let resultResponse = StoriesResponse(json: resJSON)
-                completion(.success(resultResponse))
+                let res = StoryContent(json: successResult)
+                completion(.success(res))
             case let .failure(error):
                 completion(.failure(error))
             }
@@ -985,7 +984,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
 
         let urlString = baseURL + path
-
         var url = URLComponents(string: urlString)
 
         var queryItems = [URLQueryItem]()

@@ -2,6 +2,10 @@ import Foundation
 import UserNotifications
 import UIKit
 
+public protocol StoryDelegate : AnyObject {
+    func openStoryWeb(url: String)
+}
+
 public protocol NotificationServicePushDelegate: AnyObject {
     func openCategory(categoryId: String)
     func openProduct(productId: String)
@@ -175,7 +179,8 @@ public class NotificationService: NotificationServiceProtocol {
     
     private func pushRetrieved(userInfo: [AnyHashable: Any]) {
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
-            guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
+            guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
+            //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
                 processingNotSDKPush(userInfo: userInfo)
                 return
             }

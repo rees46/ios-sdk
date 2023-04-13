@@ -73,7 +73,7 @@ public protocol PersonalizationSDK {
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
-    func getStories(code: String, completion: @escaping(Result<StoriesResponse, SDKError>) -> Void)
+    func getStories(code: String, completion: @escaping(Result<StoryContent, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func manageSubscription(email: String?, phone: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping(Result<Void, SDKError>) -> Void)
