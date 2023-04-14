@@ -17,6 +17,7 @@ var pushGlobalToken: String = ""
 var fcmGlobalToken: String = ""
 var didToken: String = ""
 var globalSDK: PersonalizationSDK?
+var globalSDKNotificationName = Notification.Name("globalSDK")
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -38,6 +39,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("Init error = ", error)
             didToken = self.sdk.getDeviceID()
             globalSDK = self.sdk
+            NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
         })
 
         print("0.1. Registr push")
@@ -345,6 +347,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         return true
     }
+    
+    func applicationWillTerminate(_ application: UIApplication) {
+//        removeAllFilesFromTemporaryDirectory()
+    }
+    
+    @available(iOS 13.0, *)
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        if let url = URLContexts.first?.url{
+            print(url)
+        }
+    }
+    
+    func removeAllFilesFromTemporaryDirectory() {
+        let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let fileManager = FileManager.default
+
+        do {
+            let fileURLs = try fileManager.contentsOfDirectory(at: temporaryDirectoryURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+
+            for fileURL in fileURLs {
+                try fileManager.removeItem(at: fileURL)
+            }
+        } catch {
+            print("Ошибка при удалении файлов из временной директории: \(error.localizedDescription)")
+        }
+    }
+
 }
 
 // Firebase notifications

@@ -123,10 +123,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         leftSwipe.direction = .left
         let rightSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeRight))
         rightSwipe.direction = .right
+        let downSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeDown))
+        downSwipe.direction = .down
         let tap = UITapGestureRecognizer(target: self, action: #selector(didTapOnScreen(_:)))
         
         collectionView.addGestureRecognizer(leftSwipe)
         collectionView.addGestureRecognizer(rightSwipe)
+        collectionView.addGestureRecognizer(downSwipe)
         collectionView.addGestureRecognizer(tap)
         
     }
@@ -230,6 +233,11 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
         updateSlides()
     }
+    
+    @objc
+    func didSwipeDown() {
+        dismiss(animated: true)
+    }
 
     @objc
     func didTapCloseButton() {
@@ -267,6 +275,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     }
 
     @objc func updateTime() {
+        return
         if timeLeft > 0 {
             timeLeft = endTime?.timeIntervalSinceNow ?? 0
             currentProgressView?.progress = 1 - Float(timeLeft) / currentDuration
@@ -301,6 +310,10 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 //UIApplication.shared.open(url) //Safari default
             }
         }
+    }
+    
+    private func reloadVideo() {
+        collectionView.reloadData()
     }
     
     private func pauseTimer() {

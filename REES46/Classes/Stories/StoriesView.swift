@@ -3,6 +3,8 @@ import UIKit
 
 public class StoriesView: UIView {
     
+    let cellId = "StoriesCollectionViewPreviewCell"
+    
     private var collectionView: UICollectionView = {
         let testFrame = CGRect(x: 0, y: 0, width: 300, height: 113)
         let layout = UICollectionViewFlowLayout()
@@ -20,9 +22,12 @@ public class StoriesView: UIView {
     }()
     
     private var stories: [Story]?
+    private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
     private var mainVC: UIViewController?
     private var code: String = ""
+    
+    private var isInDownloadMode: Bool = true
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -48,9 +53,7 @@ public class StoriesView: UIView {
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
-        let bundle = Bundle(for: self.classForCoder)
-        let nib = UINib(nibName: "StoriesCollectionViewCell", bundle: bundle)
-        collectionView.register(nib, forCellWithReuseIdentifier: "StoriesCollectionViewCell")
+        collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
     }
     
     public func configure(sdk: PersonalizationSDK, mainVC: UIViewController, code: String) {
@@ -59,16 +62,29 @@ public class StoriesView: UIView {
         self.code = code
         loadData()
     }
+    
+    private func setBgColor(color: String) {
+        let hex = color.hexToRGB()
+        DispatchQueue.main.async {
+            self.collectionView.backgroundColor = UIColor(red: hex.red, green: hex.green, blue: hex.blue, alpha: 1)
+        }
+    }
+    
+    
 
     private func loadData() {
         sdk?.getStories(code: code) { result in
             switch result {
             case let .success(response):
                 self.stories = response.stories
+                self.settings = response.settings
+                self.setBgColor(color: response.settings.background)
                 DispatchQueue.main.async {
+                    self.isInDownloadMode = false
                     self.collectionView.reloadData()
                 }
             case let .failure(error):
+                
                 break
             }
         }
@@ -81,12 +97,14 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        stories?.count ?? 0
+        return isInDownloadMode ? 4 : stories?.count ?? 0
+        
     }
-
+    
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "StoriesCollectionViewCell", for: indexPath) as! StoriesCollectionViewCell
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
         if let currentStory = stories?[indexPath.row] {
+            cell.configureCell(settings: settings, viewed: currentStory.viewed)
             cell.configure(story: currentStory)
         }
         return cell
