@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '3.2.3'
+  s.version          = '3.3.0'
   s.summary          = 'iOS SDK for REES46 platform — the wide toolset for ecommerce apps. You can integrate all REES46 tools into your iOS app.'
 
   s.description      = <<-DESC
@@ -32,7 +32,7 @@ Pod::Spec.new do |s|
   :tag => s.version.to_s }
 
 
-  s.ios.deployment_target = '9.3'
+  s.ios.deployment_target = '11'
 
   s.source_files = 'REES46/Classes/**/*'
   s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
