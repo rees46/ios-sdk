@@ -32,10 +32,9 @@ Pod::Spec.new do |s|
   :tag => s.version.to_s }
 
 
-  s.ios.deployment_target = '11'
+  s.ios.deployment_target = '11.0'
 
   s.source_files = 'REES46/Classes/**/*'
-  s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
-  s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
+  s.resources = 'REES46/**/*.{xcassets,json,png}'
   s.swift_version = '5'
 end
