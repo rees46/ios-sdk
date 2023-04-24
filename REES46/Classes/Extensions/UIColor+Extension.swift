@@ -1,8 +1,9 @@
 //
-//  File.swift
-//  
+//  UIColor+Extension.swift
+//  R
 //
-//  Created by Роман Ковайкин on 15.03.2023.
+//  Created by pp on 2023/04/19.
+//  Copyright © 2023. All rights reserved.
 //
 
 import UIKit

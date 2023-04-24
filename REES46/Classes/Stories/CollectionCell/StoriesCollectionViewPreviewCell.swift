@@ -74,7 +74,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         pinSymbolView.isHidden = !story.pinned
     }
     
-    func configureCell(settings: StoriesSettings?, viewed: Bool) {
+    func configureCell(settings: StoriesSettings?, viewed: Bool , viewedLocalKey: Bool) {
         storyWhiteBackCircle.isHidden = false
         storySuperClearBackCircle.isHidden = false
         layoutIfNeeded()
@@ -93,7 +93,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             let storiesViewdBg = settings.borderViewed.hexToRGB()
             let storiesNotViewBg = settings.borderNotViewed.hexToRGB()
             
-            storyWhiteBackCircle.backgroundColor = viewed ?
+            storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
             UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
             UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
             
@@ -101,14 +101,13 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             storyWhiteBackCircle.layer.masksToBounds = true
             
             if (viewed) {
-                storyImage.alpha = 0.8
+                storyImage.alpha = 0.9
             } else {
                 storyImage.alpha = 1.0
             }
             
-            //storySuperClearBackCircle.backgroundColor = .clear
-            //storySuperClearBackCircle.isHidden = true
-            storySuperClearBackCircle.alpha = 0.8
+            storySuperClearBackCircle.backgroundColor = .white
+            storySuperClearBackCircle.alpha = 1.0
             storySuperClearBackCircle.layer.cornerRadius = storySuperClearBackCircle.frame.width / 2
             storySuperClearBackCircle.layer.masksToBounds = true
         } else {
@@ -150,15 +149,15 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storyWhiteBackCircle.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -1).isActive = true
         storyWhiteBackCircle.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: -1).isActive = true
         
-        storySuperClearBackCircle.topAnchor.constraint(equalTo: storyBackCircle.topAnchor, constant: 5).isActive = true
-        storySuperClearBackCircle.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor, constant: 5).isActive = true
-        storySuperClearBackCircle.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -5).isActive = true
-        storySuperClearBackCircle.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: -5).isActive = true
+        storySuperClearBackCircle.topAnchor.constraint(equalTo: storyBackCircle.topAnchor, constant: 3.8).isActive = true
+        storySuperClearBackCircle.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor, constant: 3.8).isActive = true
+        storySuperClearBackCircle.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -3.8).isActive = true
+        storySuperClearBackCircle.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: -3.8).isActive = true
         
-        storyImage.topAnchor.constraint(equalTo: storyWhiteBackCircle.topAnchor, constant: 5.7).isActive = true
-        storyImage.leadingAnchor.constraint(equalTo: storyWhiteBackCircle.leadingAnchor, constant: 5.7).isActive = true
-        storyImage.trailingAnchor.constraint(equalTo: storyWhiteBackCircle.trailingAnchor, constant: -5.7).isActive = true
-        storyImage.bottomAnchor.constraint(equalTo: storyWhiteBackCircle.bottomAnchor, constant: -5.7).isActive = true
+        storyImage.topAnchor.constraint(equalTo: storyWhiteBackCircle.topAnchor, constant: 5.5).isActive = true
+        storyImage.leadingAnchor.constraint(equalTo: storyWhiteBackCircle.leadingAnchor, constant: 5.5).isActive = true
+        storyImage.trailingAnchor.constraint(equalTo: storyWhiteBackCircle.trailingAnchor, constant: -5.5).isActive = true
+        storyImage.bottomAnchor.constraint(equalTo: storyWhiteBackCircle.bottomAnchor, constant: -5.5).isActive = true
         
         storyAuthorNameLabel.topAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: 8).isActive = true
         storyAuthorNameLabel.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor,constant: 6).isActive = true

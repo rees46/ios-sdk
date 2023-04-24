@@ -28,6 +28,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
         NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
         
+        //NotificationCenter.default.addObserver(self, selector: #selector(playVideoAfterDownload(_:)), name: .init(rawValue: "PreloadVideoDownloaded"), object: nil)
+        
         videoView.contentMode = .scaleToFill
         videoView.isOpaque = true
         videoView.clearsContextBeforeDrawing = true

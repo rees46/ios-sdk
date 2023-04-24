@@ -50,6 +50,9 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var currentProgressView: UIProgressView?
     private var currentDuration: Float = 0
     
+    private var lastContentStoryOffset = CGPoint.zero
+    private var needSaveStoryLocal = true
+    
     public var sdk: PersonalizationSDK?
 
     override func viewDidLoad() {
@@ -58,17 +61,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         setupLongGestureRecognizerOnCollection()
         NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
-        
-        //NotificationCenter.default.addObserver(self, selector: #selector(DOWNVIDEO(_:)), name: .init(rawValue: "DOWNVIDEO"), object: nil)
-        
     }
-    
-    @objc
-    private func DOWNVIDEO(_ notification: NSNotification) {
-    //func DOWNVIDEO() {
-        collectionView.reloadData()
-    }
-      
     
     @objc
     func willEnterForeground() {
@@ -103,7 +96,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         
         let valueDynamicIsland = UIDevice().checkIfHasDynamicIsland()
         if valueDynamicIsland {
-            NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 57).isActive = true }
+            NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 62).isActive = true }
         else {
             NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 40).isActive = true
         }
@@ -142,20 +135,85 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     }
     
     private func handleRightTap() {
+        
+        needSaveStoryLocal = false
+        let storyId = String(stories[currentPosition.section].id)
+        let storyName = "story." + storyId
+        let slideId = String(stories[currentPosition.section].slides[currentPosition.row].id)
+        
+        var watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+            $0.range(of: String(slideId)) != nil
+        })
+        
+        if !watchedStoryIdExists {
+            watchedStoriesArray.append(slideId)
+            UserDefaults.standard.setValue(watchedStoriesArray, for: UserDefaults.Key(storyName))
+            needSaveStoryLocal = true
+        }
+        
         if currentPosition.row < stories[currentPosition.section].slides.count - 1 {
             currentPosition.row += 1
             collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            
             DispatchQueue.main.async {
                 self.updateSlides()
             }
         } else if currentPosition.section >= stories.count - 1 {
-            // break
             self.dismiss(animated: true)
         } else if currentPosition.section < stories.count - 1 {
-            currentPosition.section += 1
-            currentPosition.row = 0
-            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
 
+            currentPosition.row = 0
+            
+            let storyId = String(stories[currentPosition.section + 1].id)
+            let storyName = "story." + storyId
+            let slideId = String(stories[currentPosition.section + 1].slides[currentPosition.row].id)
+            
+            var allStoriesMainArray: [String] = []
+            for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
+                print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
+                allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
+            }
+            
+            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+                $0.range(of: String(slideId)) != nil
+            })
+            
+            if watchedStoryIdExists {
+                let lastWatchedIndexValue = watchedStoriesArray.last
+                var currentDefaultIndex = 0
+                for name in allStoriesMainArray {
+                    if name == lastWatchedIndexValue {
+                        print("Story \(name) for index \(currentDefaultIndex)")
+                        break
+                    }
+                    currentDefaultIndex += 1
+                }
+                
+                if (currentDefaultIndex + 1 < stories[currentPosition.section + 1].slides.count) {
+                    currentPosition.section += 1
+                    currentPosition.row = currentDefaultIndex + 1
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                } else if (currentDefaultIndex + 1 == stories[currentPosition.section + 1].slides.count) {
+                    currentPosition.section += 1
+                    currentPosition.row = currentDefaultIndex
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                } else {
+                    currentPosition.section += 1
+                    currentPosition.row = 0
+                    
+                    scrollToFirstRow()
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                }
+            } else {
+                currentPosition.section += 1
+                currentPosition.row = 0
+                
+                scrollToFirstRow()
+                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            }
+            
             DispatchQueue.main.async {
                 self.updateSlides()
             }
@@ -163,6 +221,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     }
     
     private func handleLeftTap() {
+        
         if currentPosition.row > 0 { 
             currentPosition.row -= 1
             collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
@@ -170,12 +229,69 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 self.updateSlides()
             }
         } else if currentPosition.section == 0 {
-            // break
             self.dismiss(animated: true)
         } else if currentPosition.section >= 1 {
-            currentPosition.section -= 1
+            
             currentPosition.row = 0
-            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            
+            let storyId = String(stories[currentPosition.section - 1].id)
+            let storyName = "story." + storyId
+            let slideId = String(stories[currentPosition.section - 1].slides[currentPosition.row].id)
+            
+            var allStoriesMainArray: [String] = []
+            for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
+                print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
+                allStoriesMainArray.append(String(stories[currentPosition.section - 1].slides[(index)].id))
+            }
+            
+            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+                $0.range(of: String(slideId)) != nil
+            })
+            
+            if watchedStoryIdExists {
+                let lastWatchedIndexValue = watchedStoriesArray.last
+                var currentDefaultIndex = 0
+                for name in allStoriesMainArray {
+                    if name == lastWatchedIndexValue {
+                        print("Story \(name) for index \(currentDefaultIndex)")
+                        break
+                    }
+                    currentDefaultIndex += 1
+                }
+                
+                if (currentDefaultIndex + 1 < stories[currentPosition.section - 1].slides.count) {
+                    if currentDefaultIndex == 0 {
+                        currentPosition.section -= 1
+                        currentPosition.row = currentDefaultIndex
+                        collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                    } else {
+                        print(stories[currentPosition.section - 1].slides.count)
+                        print(stories[currentPosition.section].slides.count)
+                        if (currentDefaultIndex + 1 <= stories[currentPosition.section - 1].slides.count) {
+                            currentPosition.section -= 1
+                            currentPosition.row = currentDefaultIndex + 1
+                            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                        } else {
+                            currentPosition.section -= 1
+                            currentPosition.row = currentDefaultIndex
+                            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                        }
+                    }
+                } else {
+                    currentPosition.section -= 1
+                    currentPosition.row = 0
+                    
+                    scrollToFirstRow()
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                }
+            } else {
+                currentPosition.section -= 1
+                currentPosition.row = 0
+                
+                scrollToFirstRow()
+                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            }
 
             DispatchQueue.main.async {
                 self.updateSlides()
@@ -188,10 +304,57 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         if currentPosition.section >= stories.count - 1{
             dismiss(animated: true)
         } else {
-            currentPosition.section += 1
+            needSaveStoryLocal = false
             currentPosition.row = 0
-            scrollToFirstRow()
-            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            
+            let storyId = String(stories[currentPosition.section + 1].id)
+            let storyName = "story." + storyId
+            let slideId = String(stories[currentPosition.section + 1].slides[currentPosition.row].id)
+            
+            var allStoriesMainArray: [String] = []
+            for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
+                print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
+                allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
+            }
+            
+            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+                $0.range(of: String(slideId)) != nil
+            })
+            
+            if watchedStoryIdExists {
+                let lastWatchedIndexValue = watchedStoriesArray.last
+                var currentDefaultIndex = 0
+                for name in allStoriesMainArray {
+                    if name == lastWatchedIndexValue {
+                        print("Story \(name) for index \(currentDefaultIndex)")
+                        break
+                    }
+                    currentDefaultIndex += 1
+                }
+                
+                if (currentDefaultIndex + 1 < stories[currentPosition.section + 1].slides.count) {
+                    currentPosition.section += 1
+                    currentPosition.row = currentDefaultIndex + 1
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                } else if (currentDefaultIndex + 1 == stories[currentPosition.section + 1].slides.count) {
+                    currentPosition.section += 1
+                    currentPosition.row = 0 //currentDefaultIndex
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                } else {
+                    currentPosition.section += 1
+                    currentPosition.row = 0
+                    
+                    scrollToFirstRow()
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                }
+            } else {
+                needSaveStoryLocal = false
+                currentPosition.section += 1
+                currentPosition.row = 0
+                scrollToFirstRow()
+                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            }
 
             DispatchQueue.main.async {
                 self.updateSlides()
@@ -203,16 +366,66 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         let sectionFrame = collectionView.layoutAttributesForItem(at: IndexPath(item: 0, section: currentPosition.section))?.frame ?? .zero
         print(sectionFrame)
         collectionView.setContentOffset(CGPoint(x: sectionFrame.origin.x - collectionView.contentInset.left, y: 0), animated: false)
-        
     }
     
     @objc
     func didSwipeRight() {
         if currentPosition.section > 0 {
-            currentPosition.section -= 1
             currentPosition.row = 0
-            scrollToFirstRow()
-            collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            
+            let storyId = String(stories[currentPosition.section - 1].id)
+            let storyName = "story." + storyId
+            let slideId = String(stories[currentPosition.section - 1].slides[currentPosition.row].id)
+            
+            var allStoriesMainArray: [String] = []
+            for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
+                print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
+                allStoriesMainArray.append(String(stories[currentPosition.section - 1].slides[(index)].id))
+            }
+            
+            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+                $0.range(of: String(slideId)) != nil
+            })
+            
+            if watchedStoryIdExists {
+                let lastWatchedIndexValue = watchedStoriesArray.last
+                var currentDefaultIndex = 0
+                for name in allStoriesMainArray {
+                    if name == lastWatchedIndexValue {
+                        print("Story \(name) for index \(currentDefaultIndex)")
+                        break
+                    }
+                    currentDefaultIndex += 1
+                }
+                
+                if (currentDefaultIndex + 1 < stories[currentPosition.section - 1].slides.count) {
+                    print(stories[currentPosition.section - 1].slides.count)
+                    print(stories[currentPosition.section].slides.count)
+                    if (currentDefaultIndex + 1 <= stories[currentPosition.section - 1].slides.count) {
+                        currentPosition.section -= 1
+                        currentPosition.row = currentDefaultIndex + 1
+                        collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                    } else {
+                        currentPosition.section -= 1
+                        currentPosition.row = currentDefaultIndex
+                        collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                    }
+                } else {
+                    currentPosition.section -= 1
+                    currentPosition.row = 0
+                    
+                    scrollToFirstRow()
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                }
+            } else {
+                currentPosition.section -= 1
+                currentPosition.row = 0
+                
+                scrollToFirstRow()
+                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+            }
+            
             DispatchQueue.main.async {
                 self.updateSlides()
             }
@@ -273,6 +486,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         } else {
             currentProgressView?.progress = 0
             timer.invalidate()
+            needSaveStoryLocal = true
             if currentPosition.row < stories[currentPosition.section].slides.count - 1 {
                 currentPosition.row += 1
                 collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
@@ -282,9 +496,55 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             } else if currentPosition.section >= stories.count - 1 {
                 self.dismiss(animated: true)
             } else if currentPosition.section < stories.count - 1 {
-                currentPosition.section += 1
+                
                 currentPosition.row = 0
-                collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                
+                let storyId = String(stories[currentPosition.section + 1].id)
+                let storyName = "story." + storyId
+                let slideId = String(stories[currentPosition.section + 1].slides[currentPosition.row].id)
+                
+                var allStoriesMainArray: [String] = []
+                for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
+                    print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
+                    allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
+                }
+                
+                let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+                let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+                    $0.range(of: String(slideId)) != nil
+                })
+                
+                if watchedStoryIdExists {
+                    let lastWatchedIndexValue = watchedStoriesArray.last
+                    var currentDefaultIndex = 0
+                    for name in allStoriesMainArray {
+                        if name == lastWatchedIndexValue {
+                            print("Story \(name) for index \(currentDefaultIndex)")
+                            break
+                        }
+                        currentDefaultIndex += 1
+                    }
+                    
+                    if (currentDefaultIndex + 1 < stories[currentPosition.section + 1].slides.count) {
+                        currentPosition.section += 1
+                        currentPosition.row = currentDefaultIndex + 1
+                        collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                    } else if (currentDefaultIndex + 1 == stories[currentPosition.section + 1].slides.count) {
+                        currentPosition.section += 1
+                        currentPosition.row = currentDefaultIndex
+                        collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                    } else {
+                        currentPosition.section += 1
+                        currentPosition.row = 0
+                        
+                        scrollToFirstRow()
+                        collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                    }
+                } else {
+                    currentPosition.section += 1
+                    currentPosition.row = 0
+                    collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
+                }
 
                 DispatchQueue.main.async {
                     self.updateSlides()
@@ -324,7 +584,22 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         let slideId = String(stories[index.section].slides[index.row].id)
         sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
         })
+    }
+    
+    private func saveStorySlideWatching(index: IndexPath) {
+        let storyId = String(stories[index.section].id)
+        let storyName = "story." + storyId
+        let slideId = String(stories[index.section].slides[index.row].id)
         
+        var watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+            $0.range(of: String(slideId)) != nil
+        })
+        
+        if !watchedStoryIdExists {
+            watchedStoriesArray.append(slideId)
+            UserDefaults.standard.setValue(watchedStoriesArray, for: UserDefaults.Key(storyName))
+        }
     }
     
     private func setupLongGestureRecognizerOnCollection() {
@@ -355,6 +630,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
                 pauseTimer()
             }
+        }
+    }
+    
+    class CustomFlowLayout: UICollectionViewFlowLayout {
+        var currentScrollDirection = ""
+        func currentScroll(direction: String) {
+            currentScrollDirection = direction
         }
     }
 }
@@ -393,6 +675,17 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         if let _cell = cell as? StoryCollectionViewCell {
             _cell.stopPlayer()
+            
+            let currentOffset = collectionView.contentOffset
+            let scrollDirection = (currentOffset.x > lastContentStoryOffset.x) ? "Left" : "Right"
+            if let flowLayout = collectionView.collectionViewLayout as? CustomFlowLayout {
+                flowLayout.currentScroll(direction: scrollDirection)
+            }
+            lastContentStoryOffset = currentOffset
+            //print(needSaveStoryLocal)
+            if (scrollDirection == "Left" && needSaveStoryLocal) {
+                saveStorySlideWatching(index: indexPath)
+            }
         }
     }
 

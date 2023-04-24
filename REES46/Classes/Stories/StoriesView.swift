@@ -70,7 +70,9 @@ public class StoriesView: UIView {
         }
     }
     
-    
+    public func reloadData() {
+        self.collectionView.reloadData()
+    }
 
     private func loadData() {
         sdk?.getStories(code: code) { result in
@@ -84,8 +86,12 @@ public class StoriesView: UIView {
                     self.collectionView.reloadData()
                 }
             case let .failure(error):
-                
-                break
+                switch error {
+                case let .custom(customError):
+                    print("Error: ", customError)
+                default:
+                    print("Error: ", error.localizedDescription)
+                }
             }
         }
     }
@@ -104,8 +110,25 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
         if let currentStory = stories?[indexPath.row] {
-            cell.configureCell(settings: settings, viewed: currentStory.viewed)
-            cell.configure(story: currentStory)
+            
+            let storyId = String(currentStory.id)
+            let storyName = "story." + storyId
+            
+            var allStoriesMainArray: [String] = []
+            for (index, _) in currentStory.slides.enumerated() {
+                print("Story has \(index + 1): \(currentStory.slides[(index)].id)")
+                allStoriesMainArray.append(String(currentStory.slides[(index)].id))
+            }
+            
+            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            //let watchedStoriesArray: [String] = defaults.stringArray(forKey: storyName) ?? []
+            if (watchedStoriesArray.count == allStoriesMainArray.count) {
+                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true)
+                cell.configure(story: currentStory)
+            } else {
+                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false)
+                cell.configure(story: currentStory)
+            }
         }
         return cell
     }
@@ -115,10 +138,42 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             let storyVC = StoryViewController()
             storyVC.sdk = sdk
             storyVC.stories = stories ?? []
-            storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
-            storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
-            storyVC.modalPresentationStyle = .fullScreen
-            mainVC?.present(storyVC, animated: true)
+            
+            let sId = "story." + String(currentStory.id)
+            
+            var allStoriesMainArray: [String] = []
+            for (index, _) in currentStory.slides.enumerated() {
+                allStoriesMainArray.append(String(currentStory.slides[(index)].id))
+            }
+            
+            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
+            let lastWatchedIndexValue = watchedStoriesArray.last
+            
+            var currentDefaultIndex = 0
+            for name in allStoriesMainArray {
+                if name == lastWatchedIndexValue {
+                    //print("Story \(name) for index \(currentDefaultIndex)")
+                    break
+                }
+                currentDefaultIndex += 1
+            }
+            
+            if (currentDefaultIndex + 1 < allStoriesMainArray.count) {
+                storyVC.currentPosition = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
+                storyVC.startWithIndexPath = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
+                storyVC.modalPresentationStyle = .fullScreen
+                mainVC?.present(storyVC, animated: true)
+            } else if (currentDefaultIndex + 1 == allStoriesMainArray.count) {
+                storyVC.currentPosition = IndexPath(row: Int(0), section: indexPath.row)
+                storyVC.startWithIndexPath = IndexPath(row: Int(0), section: indexPath.row)
+                storyVC.modalPresentationStyle = .fullScreen
+                mainVC?.present(storyVC, animated: true)
+            } else {
+                storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
+                storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
+                storyVC.modalPresentationStyle = .fullScreen
+                mainVC?.present(storyVC, animated: true)
+            }
         }
     }
 }
