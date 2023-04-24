@@ -99,8 +99,7 @@ class Slide {
                 case .success(let url):
                     self.videoURL = url
                     print("video for \(self.id) is downloaded")
-                    NotificationCenter.default.post(name: .init(rawValue: "DOWNVIDEO"), object: nil, userInfo: ["slideID": self.id])
-                    //NotificationCenter.default.post(name: Notification.Name("NotificationIdentifier"), object: nil)
+                    //NotificationCenter.default.post(name: .init(rawValue: "PreloadVideoDownloaded"), object: nil, userInfo: ["slideID": self.id])
                 case .failure(let error):
                     print("video for \(self.id) is not downloaded with error \(error.localizedDescription)")
                 }
