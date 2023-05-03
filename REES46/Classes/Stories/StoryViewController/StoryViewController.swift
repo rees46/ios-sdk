@@ -1,5 +1,9 @@
 import UIKit
 
+protocol StoriesViewProtocol: AnyObject {
+    func reloadStoriesSubviews()
+}
+
 class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var collectionView: UICollectionView = {
         let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
@@ -54,6 +58,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var needSaveStoryLocal = true
     
     public var sdk: PersonalizationSDK?
+    weak var delegate: StoriesViewProtocol?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -171,7 +176,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
+                //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
                 allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
             }
             
@@ -185,7 +190,6 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastWatchedIndexValue {
-                        print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -240,7 +244,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
-                print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
+                //print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
                 allStoriesMainArray.append(String(stories[currentPosition.section - 1].slides[(index)].id))
             }
             
@@ -254,7 +258,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastWatchedIndexValue {
-                        print("Story \(name) for index \(currentDefaultIndex)")
+                        //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -313,7 +317,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
+                //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
                 allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
             }
             
@@ -379,7 +383,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
-                print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
+                //print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
                 allStoriesMainArray.append(String(stories[currentPosition.section - 1].slides[(index)].id))
             }
             
@@ -393,7 +397,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastWatchedIndexValue {
-                        print("Story \(name) for index \(currentDefaultIndex)")
+                        //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -446,6 +450,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
 
     @objc
     func didTapCloseButton() {
+        self.delegate?.reloadStoriesSubviews()
         dismiss(animated: true)
     }
 
@@ -505,7 +510,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 
                 var allStoriesMainArray: [String] = []
                 for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                    print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
+                    //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
                     allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
                 }
                 
@@ -519,7 +524,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                     var currentDefaultIndex = 0
                     for name in allStoriesMainArray {
                         if name == lastWatchedIndexValue {
-                            print("Story \(name) for index \(currentDefaultIndex)")
+                            //print("Story \(name) for index \(currentDefaultIndex)")
                             break
                         }
                         currentDefaultIndex += 1
@@ -682,7 +687,6 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
                 flowLayout.currentScroll(direction: scrollDirection)
             }
             lastContentStoryOffset = currentOffset
-            //print(needSaveStoryLocal)
             if (scrollDirection == "Left" && needSaveStoryLocal) {
                 saveStorySlideWatching(index: indexPath)
             }
@@ -713,6 +717,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
         }
     }
 }
+
 extension StoryViewController: StoryCollectionViewCellDelegate {
     func didTapUrlButton(url: String, slide: Slide) {
         self.openUrl(link: url)

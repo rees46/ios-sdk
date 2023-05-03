@@ -1,12 +1,3 @@
-//
-//  NotificationService.swift
-//  NotificationServiceExtension
-//
-//  Created by Арсений Дорогин on 23.01.2021.
-//  Copyright © 2021 CocoaPods. All rights reserved.
-//
-
-
 import UserNotifications
 
 class NotificationService: UNNotificationServiceExtension {

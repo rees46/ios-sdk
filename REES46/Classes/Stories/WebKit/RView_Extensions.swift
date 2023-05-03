@@ -1,10 +1,3 @@
-//
-//  RView_Extensions.swift
-//  R
-//
-//  Created by pp on 2023/04/10.
-//
-
 import UIKit
 
 extension UIView {

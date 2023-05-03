@@ -367,23 +367,19 @@
 				TargetAttributes = {
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = MYA32EHWN4;
 						LastSwiftMigration = 1150;
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = MYA32EHWN4;
 						LastSwiftMigration = 1150;
 						TestTargetID = 607FACCF1AFB9204008FA782;
 					};
 					9A7A95DD25BC40E900FFA40A = {
 						CreatedOnToolsVersion = 12.2;
-						DevelopmentTeam = MYA32EHWN4;
 						ProvisioningStyle = Automatic;
 					};
 					9A7A960C25BC436D00FFA40A = {
 						CreatedOnToolsVersion = 12.2;
-						DevelopmentTeam = MYA32EHWN4;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -721,8 +717,8 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = REES46_Example.entitlements;
-				CURRENT_PROJECT_VERSION = 45;
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				CURRENT_PROJECT_VERSION = 46;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = REES46/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -742,8 +738,8 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = REES46_Example.entitlements;
-				CURRENT_PROJECT_VERSION = 45;
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				CURRENT_PROJECT_VERSION = 46;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = REES46/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
@@ -760,7 +756,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */;
 			buildSettings = {
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -784,7 +780,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */;
 			buildSettings = {
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -812,9 +808,9 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -843,8 +839,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				CURRENT_PROJECT_VERSION = 46;
+				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -871,9 +867,9 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
+				CURRENT_PROJECT_VERSION = 46;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -902,8 +898,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 45;
-				DEVELOPMENT_TEAM = MYA32EHWN4;
+				CURRENT_PROJECT_VERSION = 46;
+				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;

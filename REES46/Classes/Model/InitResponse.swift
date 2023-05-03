@@ -1,5 +1,3 @@
-
-
 struct InitResponse: Codable {
     var deviceID: String = ""
     var seance: String = ""

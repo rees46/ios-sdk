@@ -12,6 +12,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     let pinSymbolView = UIView()
     let pinSymbolLabel = UILabel()
     
+    private var task: URLSessionDataTask?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -68,19 +69,31 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    deinit {
+        task?.cancel()
+    }
+    
     public func configure(story: Story) {
         setImage(imagePath: story.avatar)
         storyAuthorNameLabel.text = "\(story.name)"
         pinSymbolView.isHidden = !story.pinned
     }
     
-    func configureCell(settings: StoriesSettings?, viewed: Bool , viewedLocalKey: Bool) {
+    func configureCell(settings: StoriesSettings?, viewed: Bool, viewedLocalKey: Bool) {
         storyWhiteBackCircle.isHidden = false
         storySuperClearBackCircle.isHidden = false
         layoutIfNeeded()
         
         if let settings = settings {
-            let labelColor = settings.color.hexToRGB()
+            var labelColor = settings.color.hexToRGB()
+            if #available(iOS 12.0, *) {
+                if self.traitCollection.userInterfaceStyle == .dark {
+                    labelColor = "#FFFFFF".hexToRGB()
+                }
+            } else {
+                // Fallback on earlier versions
+            }
+            
             storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
             storyAuthorNameLabel.backgroundColor = .clear
@@ -93,9 +106,21 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             let storiesViewdBg = settings.borderViewed.hexToRGB()
             let storiesNotViewBg = settings.borderNotViewed.hexToRGB()
             
-            storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
-            UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
-            UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
+            if (viewed) {
+                //print("Viewed cache backend")
+                storyWhiteBackCircle.backgroundColor = viewed ?
+                UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
+                UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
+            } else {
+                //print("Viewed cache local")
+                storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
+                UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
+                UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
+            }
+//            //storyWhiteBackCircle.backgroundColor = viewed ?
+//            storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
+//            UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
+//            UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
             
             storyWhiteBackCircle.layer.cornerRadius = storyWhiteBackCircle.frame.width / 2
             storyWhiteBackCircle.layer.masksToBounds = true
@@ -124,17 +149,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         guard let url = URL(string: imagePath) else {
             return
         }
-
-        let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
-            if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
-                DispatchQueue.main.async {
-                    self.storyImage.image = image
-                    self.layoutIfNeeded()
-                }
-            }
-        })
-        task.resume()
+        task = StoriesImageLoader.shared.load(url, into: storyImage)
     }
     
     private func makeConstraints() {

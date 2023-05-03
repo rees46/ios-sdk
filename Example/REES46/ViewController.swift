@@ -24,22 +24,16 @@ class ViewController: UIViewController {
         addObserver()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        storiesBackView.reloadData()
-    }
-    
     func addObserver() {
         NotificationCenter.default.addObserver(self, selector: #selector(updateStories), name: globalSDKNotificationName, object: nil)
     }
     
-    deinit{
+    deinit {
         NotificationCenter.default.removeObserver(self, name: globalSDKNotificationName, object: nil)
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     @objc private func updateStories() {
@@ -55,7 +49,7 @@ class ViewController: UIViewController {
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken
         
-        UserDefaults.resetSpecificStoryDefaults()
+        globalSDK?.resetCachedWatchedStoriesStates()
 
         if let globalSDK = globalSDK {
             storiesBackView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
@@ -63,7 +57,7 @@ class ViewController: UIViewController {
     }
 }
 
-@IBDesignable class UpdateButton: UIButton{
+@IBDesignable class UpdateButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
 
@@ -82,28 +76,5 @@ class ViewController: UIViewController {
         layer.borderWidth = 1.2
         layer.borderColor = UIColor.systemBlue.cgColor
         layer.cornerRadius = frame.size.height / 2
-    }
-}
-
-extension UserDefaults {
-    static func resetSpecificStoryDefaults() {
-        let included_prefixes = ["story."]
-
-        let dict = UserDefaults.standard.dictionaryRepresentation()
-        let keys = dict.keys.filter { key in
-            for prefix in included_prefixes {
-                if key.hasPrefix(prefix) {
-                    return true
-                }
-            }
-            return false
-        }
-        for key in keys {
-            if let value = dict[key] {
-                print("\(key) = \(value)")
-                UserDefaults.standard.removeObject(forKey: key)
-            }
-        }
-        UserDefaults.standard.synchronize()
     }
 }

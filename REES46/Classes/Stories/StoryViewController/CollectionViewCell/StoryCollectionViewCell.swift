@@ -2,6 +2,10 @@ import UIKit
 import AVKit
 import AVFoundation
 
+public protocol StoryLinkDelegate : AnyObject {
+    func openlinkIosStoryWeb(url: String)
+}
+
 protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
 }
@@ -193,7 +197,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
-                delegate?.didTapUrlButton(url: linkIos, slide: currentSlide)
+                (UIApplication.shared.delegate as? StoryLinkDelegate)?.openlinkIosStoryWeb(url: linkIos)
+                print(linkIos, currentSlide)
+                //delegate?.didTapUrlButton(url: linkIos, slide: currentSlide) //Disabled
                 return
             }
         }

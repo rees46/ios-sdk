@@ -175,7 +175,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             if rate < 1 || rate > 10 {
                 completion(.failure(.custom(error: "Error: rating can be between 1 and 10 only")))
-                return //выходим из review
+                return // Exit from review
             }
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1

@@ -3,9 +3,9 @@ import REES46
 
 class DeviceIDSaveTest: XCTestCase {
     
-    //Сначала запускаем приложение чтобы сохранился deviceID, потом запускаем этот тест
+    // First we start the application so that the deviceID is saved, then we run this test
     func test_is_device_id_haved_second_run() {
-        let deviceID = UserDefaults.standard.string(forKey: "device_id") ?? "" //Получаем из хранилища DeviceID
+        let deviceID = UserDefaults.standard.string(forKey: "device_id") ?? "" // Get DeviceID from storage
         if deviceID.isEmpty{
             XCTAssert(false, "deviceID bad, init sdk, rerun test")
         }else{
@@ -41,8 +41,8 @@ class Tests: XCTestCase {
     }
     
     func test_device_id_rewrite() {
-        let oldDeviceID = sdk?.getDeviceID() //получаем старый сохраненный deviceID
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") //переиницализируем сдк ( как будто пергружаем приложение)
+        let oldDeviceID = sdk?.getDeviceID() // Get the old saved deviceID
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in
                 let deviceID = sdk.getDeviceID()
@@ -58,11 +58,11 @@ class Tests: XCTestCase {
     }
     
     func test_session_genterated() {
-        let oldSession = sdk?.getSession() //получаем старый сохраненный ссид
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") //переиницализируем сдк ( как будто пергружаем приложение)
+        let oldSession = sdk?.getSession() // Get the old saved sessionID
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in
-                let session = sdk.getSession() //проверяем сессию
+                let session = sdk.getSession() // Check session
                 if oldSession != session{
                     XCTAssert(false, "session bad")
                 }else{
