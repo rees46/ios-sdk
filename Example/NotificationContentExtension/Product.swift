@@ -1,11 +1,3 @@
-//
-//  Product.swift
-//  NotificationContentExtension
-//
-//  Created by Арсений Дорогин on 06.01.2021.
-//  Copyright © 2021 CocoaPods. All rights reserved.
-//
-
 import Foundation
 
 struct Product {

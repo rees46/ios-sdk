@@ -370,7 +370,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 try fileManager.removeItem(at: fileURL)
             }
         } catch {
-            print("Ошибка при удалении файлов из временной директории: \(error.localizedDescription)")
+            print("Error when deleting files from temporary directory: \(error.localizedDescription)")
         }
     }
 
@@ -410,6 +410,12 @@ extension AppDelegate {
     func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
         notificationService?.didReceiveDeepLink(url: url)
         return true
+    }
+}
+
+extension AppDelegate: StoryLinkDelegate {
+    func openlinkIosStoryWeb(url: String) {
+        print("No Action. Open linkIos url \(url)")
     }
 }
 

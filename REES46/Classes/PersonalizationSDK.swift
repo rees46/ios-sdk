@@ -132,10 +132,32 @@ public extension PersonalizationSDK {
     func manageSubscription(email: String? = nil, phone: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         manageSubscription(email: email, phone: phone, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, completion: completion)
     }
- 
+    
+    func resetCachedWatchedStoriesStates() {
+        let included_prefixes = ["story."]
+
+        let dict = UserDefaults.standard.dictionaryRepresentation()
+        let keys = dict.keys.filter { key in
+            for prefix in included_prefixes {
+                if key.hasPrefix(prefix) {
+                    return true
+                }
+            }
+            return false
+        }
+        for key in keys {
+            if let value = dict[key] {
+                print("Clear local cache for \(key) = \(value)")
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        UserDefaults.standard.synchronize()
+    }
 }
 
-public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com", stream: String = "ios", enableLogs: Bool = false, _ completion: ((SDKError?) -> Void)? = nil) -> PersonalizationSDK{
+
+public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com", stream: String = "ios", enableLogs: Bool = false, _ completion: ((SDKError?) -> Void)? = nil) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(shopId: shopId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, apiDomain: apiDomain, stream: stream, enableLogs: enableLogs, completion: completion)
+    sdk.resetCachedWatchedStoriesStates()
     return sdk
 }

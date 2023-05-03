@@ -1,10 +1,3 @@
-//
-//  RWebViewController.swift
-//  R
-//
-//  Created by pp on 2023/04/10.
-//
-
 import UIKit
 import WebKit
 
@@ -77,8 +70,7 @@ public class RWebViewController:UIViewController {
   override public func viewDidLoad() {
     super.viewDidLoad()
     addPanGestureRecognizer()
-    titleLabel.text = titleHidden ? "" : NSLocalizedString("Загрузка...", comment: "Загрузка...")
-    //titleLabel.text = titleHidden ? "" : NSLocalizedString("Loading...", comment: "Loading...")
+    titleLabel.text = titleHidden ? "" : NSLocalizedString("Loading...", comment: "Loading...")
     rWebView.navigationDelegate = self
     rWebView.load(request)
   }

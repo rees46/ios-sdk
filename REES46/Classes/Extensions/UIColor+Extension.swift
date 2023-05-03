@@ -1,11 +1,3 @@
-//
-//  UIColor+Extension.swift
-//  R
-//
-//  Created by pp on 2023/04/19.
-//  Copyright © 2023. All rights reserved.
-//
-
 import UIKit
 
 extension String {

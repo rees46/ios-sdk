@@ -1,9 +1,3 @@
-//
-//  SearchResponse.swift
-//  FBSnapshotTestCase
-//
-//
-
 import Foundation
 
 public struct Filter {

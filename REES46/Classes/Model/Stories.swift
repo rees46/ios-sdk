@@ -119,7 +119,7 @@ class Slide {
         let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent("\(self.id).mp4")
         let fileManager = FileManager.default
 
-        // Проверяем, существует ли файл
+        // Checking if a file exists
         if fileManager.fileExists(atPath: temporaryFileURL.path) {
             completion(.success(temporaryFileURL))
             return

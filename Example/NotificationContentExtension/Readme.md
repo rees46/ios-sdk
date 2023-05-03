@@ -79,8 +79,8 @@ let options: UNAuthorizationOptions = [.alert]
 UNUserNotificationCenter.current().requestAuthorization(options: options) { authorized, _ in
     if authorized {
         let categoryIdentifier = "carousel"
-        let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "След", options: [])
-        let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Пред", options: [])
+        let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "Next", options: [])
+        let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Previous", options: [])
 
         let carouselCategory = UNNotificationCategory(identifier: categoryIdentifier, actions: [carouselNext, carouselPrevious], intentIdentifiers: [], options: [])
         UNUserNotificationCenter.current().setNotificationCategories([carouselCategory])
