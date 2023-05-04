@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '3.3.2'
+  s.version          = '3.3.3'
   s.summary          = 'iOS SDK for REES46 platform — the wide toolset for ecommerce apps. You can integrate all REES46 tools into your iOS app.'
 
   s.description      = <<-DESC
