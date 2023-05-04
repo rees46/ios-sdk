@@ -18,7 +18,10 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "REES46",
-            path: "REES46/Classes/"
+            path: "REES46",
+            resources: [
+                .process("Resources")
+            ]
         )
     ]
 )
