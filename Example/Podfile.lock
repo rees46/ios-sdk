@@ -99,7 +99,7 @@ PODS:
   - nanopb/decode (2.30908.0)
   - nanopb/encode (2.30908.0)
   - PromisesObjC (2.0.0)
-  - REES46 (3.3.1)
+  - REES46 (3.3.3)
 
 DEPENDENCIES:
   - Firebase
@@ -137,7 +137,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: e0913149f6b0625b553d70dae12b49fc62914fd1
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
   PromisesObjC: 68159ce6952d93e17b2dfe273b8c40907db5ba58
-  REES46: a4a5ebc3bf29386e9b57aa76095f180760f5207b
+  REES46: b7de1269a47a596f1f1f25a84639225185d0b951
 
 PODFILE CHECKSUM: ad0becba8f0fcc3777566cc1b61e635e572c1c39
 

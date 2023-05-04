@@ -441,8 +441,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
-        let bundle = Bundle(for: classForCoder)
-        closeButton.setImage(UIImage(named: "iconStoryClose", in: bundle, compatibleWith: nil), for: .normal)
+        
+        var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        mainBundle = Bundle.module
+#endif
+        let image = UIImage(named: "iconStoryClose", in: mainBundle, compatibleWith: nil)
+        closeButton.setImage(image, for: .normal)
 
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
         updateSlides()

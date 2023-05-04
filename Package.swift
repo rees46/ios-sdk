@@ -21,7 +21,7 @@ let package = Package(
                 name: "REES46",
                 path: "REES46/Classes",
                 resources: [
-                    .process("Assets")
+                    .process("Resources")
                 ]
         )
     ]
