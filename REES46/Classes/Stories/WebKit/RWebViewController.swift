@@ -107,9 +107,14 @@ public class RWebViewController:UIViewController {
   }
     
   private func createImageButton(imageName: String) -> UIButton {
-    let bundle = Bundle(for: classForCoder)
+    var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+      mainBundle = Bundle.module
+#endif
+    let image = UIImage(named: "iconWebKitClose", in: mainBundle, compatibleWith: nil)
+      
     let closeButton = UIButton(type: .custom)
-    closeButton.setImage(UIImage(named: "iconWebKitClose", in: bundle, compatibleWith: nil), for: .normal)
+    closeButton.setImage(image, for: .normal)
     return closeButton
   }
   
