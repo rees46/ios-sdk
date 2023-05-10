@@ -1,6 +1,0 @@
-framework module REES46 {
-  umbrella header "REES46-umbrella.h"
-
-  export *
-  module * { export * }
-}
