@@ -2,12 +2,9 @@ import UIKit
 import AVKit
 import AVFoundation
 
-public protocol StoryLinkDelegate : AnyObject {
-    func openlinkIosStoryWeb(url: String)
-}
-
 protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
+    func didTapOpenLinkIosExternalWeb(url: String, slide: Slide)
 }
 
 class StoryCollectionViewCell: UICollectionViewCell {
@@ -23,16 +20,20 @@ class StoryCollectionViewCell: UICollectionViewCell {
     private var currentSlide: Slide?
     
     public weak var delegate: StoryCollectionViewCellDelegate?
+    
     var player = AVPlayer()
+    private let timeObserverKeyPath: String = "timeControlStatus"
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        
         self.backgroundColor = .black
         videoView.backgroundColor = .black
+        
         NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
         
-        //NotificationCenter.default.addObserver(self, selector: #selector(playVideoAfterDownload(_:)), name: .init(rawValue: "PreloadVideoDownloaded"), object: nil)
+        player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
         
         videoView.contentMode = .scaleToFill
         videoView.isOpaque = true
@@ -100,7 +101,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     @objc
     private func pauseVideo(_ notification: NSNotification) {
-        
         if let slideID = notification.userInfo?["slideID"] as? Int {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -152,6 +152,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 imageView.isHidden = true
 
                 let asset = AVAsset(url: videoURL)
+//                let length = Float(asset.duration.value)/Float(asset.duration.timescale)
+//                if length != 0.0  {
+//                } else {
+//                }
+                
                 let playerItem = AVPlayerItem(asset: asset)
                 self.player = AVPlayer(playerItem: playerItem)
                 let playerLayer = AVPlayerLayer(player: player)
@@ -187,6 +192,49 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+
+//        if keyPath == "timeControlStatus",
+//           let change = change,
+//           let newValue = change[NSKeyValueChangeKey.newKey] as? Int,
+//           let oldValue = change[NSKeyValueChangeKey.oldKey] as? Int {
+//
+//            let oldStatus = AVPlayer.TimeControlStatus(rawValue: oldValue)
+//            let newStatus = AVPlayer.TimeControlStatus(rawValue: newValue)
+//            print(oldStatus?.rawValue)
+//            if newStatus != oldStatus {
+//                if newStatus == .playing {
+//                    player.seek(to: .zero)
+//                    player.removeObserver(self, forKeyPath: timeObserverKeyPath)
+//                    //delegate?.videoLoaded()
+//                } else if newStatus == .waitingToPlayAtSpecifiedRate {
+//                    player.seek(to: .zero)
+//                    player.removeObserver(self, forKeyPath: timeObserverKeyPath)
+//                    player.play()
+//                }
+//            }
+//        }
+        
+//        if object as AnyObject? === videoView.snapVideo.currentItem && keyPath == "status" {
+//            if videoView.status == .readyToPlay  && isViewInFocus && isCompletelyVisible {
+//                videoView.play()
+//                print("StoryCell: Ready to play video")
+//            }
+//        }
+//
+//        if object as AnyObject? === videoView.snapVideo && keyPath == "timeControlStatus" {
+//            if videoView.snapVideo.timeControlStatus == .playing && isViewInFocus && isCompletelyVisible {
+//                print("StoryCell : timeControlStatus == .playing")
+//                var videoDuration: Double = 5
+//                if let currentItem = videoView.snapVideo.currentItem {
+//                    videoDuration = currentItem.duration.seconds
+//                }
+//                startAnimatingStory(duration: videoDuration)
+//                print("StoryCell: Video started animating")
+//            }
+//        }
+    }
+    
     func stopPlayer() {
         player.pause()
     }
@@ -197,9 +245,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
-                (UIApplication.shared.delegate as? StoryLinkDelegate)?.openlinkIosStoryWeb(url: linkIos)
+                delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
                 print(linkIos, currentSlide)
-                //delegate?.didTapUrlButton(url: linkIos, slide: currentSlide) //Disabled
+                
+                //delegate?.didTapUrlButton(url: linkIos, slide: currentSlide) //TEST
+                //(UIApplication.shared.delegate as? StoryLinkDelegate)?.openlinkIosStoryWeb(url: linkIos)
                 return
             }
         }

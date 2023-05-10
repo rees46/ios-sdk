@@ -1,7 +1,9 @@
 import UIKit
+import WebKit
 
 protocol StoriesViewProtocol: AnyObject {
     func reloadStoriesSubviews()
+    func didTapLinkIosOpeningExternal(url: String)
 }
 
 class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
@@ -19,9 +21,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.showsVerticalScrollIndicator = false
         collectionView.showsHorizontalScrollIndicator = false
 //        collectionView.isScrollEnabled = false
-        if #available(iOS 10.0, *) {
-            collectionView.isPrefetchingEnabled = false
-        }
+        collectionView.isPrefetchingEnabled = false
         return collectionView
     }()
 
@@ -77,6 +77,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     func didEnterBackground() {
         pauseTimer()
     }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         timer.invalidate()
@@ -331,7 +332,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastWatchedIndexValue {
-                        print("Story \(name) for index \(currentDefaultIndex)")
+                        //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -485,8 +486,33 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         let duration: Float = Float(timeLeft)
         currentProgressView = progressView
         currentDuration = duration
-        timer.invalidate()
-        timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
+        
+        let storyImageSlideId = String(stories[currentPosition.section].slides[currentPosition.row].id)
+        let prefix = "waitStorySlideCached." + storyImageSlideId
+        let imagesForStoriesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(prefix)) as? [String] ?? []
+        let imageStoryIdDownloaded = imagesForStoriesDownloadedArray.contains(where: {
+            $0.range(of: String(prefix)) != nil
+        })
+        
+        if imageStoryIdDownloaded {
+            timer.invalidate()
+            timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
+        } else {
+            let name = "waitStorySlideCached." + storyImageSlideId
+            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(name), object: nil)
+        }
+    }
+    
+    @objc func updateVisibleCells(notification: NSNotification){
+        DispatchQueue.main.async {
+            if let visibleCell = self.collectionView.indexPathsForVisibleItems.first {
+                self.currentPosition = visibleCell
+                self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
+                DispatchQueue.main.async {
+                    self.updateSlides()
+                }
+            }
+        }
     }
 
     @objc func updateTime() {
@@ -563,13 +589,27 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
+    private func saveStorySlideWatching(index: IndexPath) {
+        let storyId = String(stories[index.section].id)
+        let storyName = "story." + storyId
+        let slideId = String(stories[index.section].slides[index.row].id)
+        
+        var watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        let watchedStoryIdExists = watchedStoriesArray.contains(where: {
+            $0.range(of: String(slideId)) != nil
+        })
+        
+        if !watchedStoryIdExists {
+            watchedStoriesArray.append(slideId)
+            UserDefaults.standard.setValue(watchedStoriesArray, for: UserDefaults.Key(storyName))
+        }
+    }
+    
     private func openUrl(link: String) {
         if let url = URL(string: link) {
-            if #available(iOS 10.0, *) {
-                pauseTimer()
-                present(url: url, completion: nil)
-                //UIApplication.shared.open(url) //Safari default
-            }
+            pauseTimer()
+            present(url: url, completion: nil)
+            //UIApplication.shared.open(url) //Safari default
         }
     }
     
@@ -577,7 +617,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         timer.invalidate()
     }
     
-    private func continueTimer() {
+    @objc private func continueTimer() {
         endTime = Date().addingTimeInterval(timeLeft)
         timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
     }
@@ -594,22 +634,6 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         let slideId = String(stories[index.section].slides[index.row].id)
         sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
         })
-    }
-    
-    private func saveStorySlideWatching(index: IndexPath) {
-        let storyId = String(stories[index.section].id)
-        let storyName = "story." + storyId
-        let slideId = String(stories[index.section].slides[index.row].id)
-        
-        var watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-        let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-            $0.range(of: String(slideId)) != nil
-        })
-        
-        if !watchedStoryIdExists {
-            watchedStoriesArray.append(slideId)
-            UserDefaults.standard.setValue(watchedStoriesArray, for: UserDefaults.Key(storyName))
-        }
     }
     
     private func setupLongGestureRecognizerOnCollection() {
@@ -733,6 +757,12 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
                 }
             }
         }
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("ContinueTimerWebKitClosed"), object: nil)
+    }
+    
+    func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
+        self.delegate?.didTapLinkIosOpeningExternal(url: url)
     }
 }
 

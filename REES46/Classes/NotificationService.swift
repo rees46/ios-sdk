@@ -1,3 +1,11 @@
+//
+//  NotificationService.swift
+//  REES46
+//
+//  Created by REES46
+//  Copyright (c) 2023. All rights reserved.
+//
+
 import Foundation
 import UserNotifications
 import UIKit
@@ -28,14 +36,12 @@ public class NotificationService: NotificationServiceProtocol {
         self.sdk = sdk
         requireUserPrivacy { res in
             if res {
-                if #available(iOS 10.0, *) {
-                    let categoryIdentifier = "carousel"
-                    let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "Next", options: [])
-                    let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Previous", options: [])
+                let categoryIdentifier = "carousel"
+                let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "Next", options: [])
+                let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Previous", options: [])
 
-                    let carouselCategory = UNNotificationCategory(identifier: categoryIdentifier, actions: [carouselNext, carouselPrevious], intentIdentifiers: [], options: [])
-                    UNUserNotificationCenter.current().setNotificationCategories([carouselCategory])
-                }
+                let carouselCategory = UNNotificationCategory(identifier: categoryIdentifier, actions: [carouselNext, carouselPrevious], intentIdentifiers: [], options: [])
+                UNUserNotificationCenter.current().setNotificationCategories([carouselCategory])
             }
         }
     }
@@ -104,14 +110,12 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func requireUserPrivacy(completion: @escaping (Bool) -> Void) {
-        if #available(iOS 10.0, *) {
-            let center = UNUserNotificationCenter.current()
-            center.requestAuthorization(options: [.badge, .alert, .sound]) { _, _ in }
-            UIApplication.shared.registerForRemoteNotifications()
-            let options: UNAuthorizationOptions = [.alert]
-            UNUserNotificationCenter.current().requestAuthorization(options: options) { authorized, _ in
-                completion(authorized)
-            }
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.badge, .alert, .sound]) { _, _ in }
+        UIApplication.shared.registerForRemoteNotifications()
+        let options: UNAuthorizationOptions = [.alert]
+        UNUserNotificationCenter.current().requestAuthorization(options: options) { authorized, _ in
+            completion(authorized)
         }
     }
     

@@ -1,6 +1,9 @@
-
 //
 //  SimplePersonaliztionSDK.swift
+//  REES46
+//
+//  Created by REES46
+//  Copyright (c) 2023. All rights reserved.
 //
 
 import Foundation

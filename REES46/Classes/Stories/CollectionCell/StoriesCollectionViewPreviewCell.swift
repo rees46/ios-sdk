@@ -4,7 +4,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     
     static let cellId = "NewStoriesPreviewCellId"
     
-    let storyImage = UIImageView()
+    var storyImage = UIImageView()
     let storyBackCircle = UIView()
     let storyWhiteBackCircle = UIView()
     let storySuperClearBackCircle = UIView()
@@ -149,7 +149,8 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         guard let url = URL(string: imagePath) else {
             return
         }
-        task = StoriesImageLoader.shared.load(url, into: storyImage)
+        
+        self.storyImage.load.request(with: url)
     }
     
     private func makeConstraints() {

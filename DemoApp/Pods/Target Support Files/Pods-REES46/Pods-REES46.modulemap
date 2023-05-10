@@ -1,0 +1,6 @@
+framework module Pods_REES46 {
+  umbrella header "Pods-REES46-umbrella.h"
+
+  export *
+  module * { export * }
+}

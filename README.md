@@ -1,4 +1,4 @@
-# REES46 iOS SDK
+# REES46 SDK for iOS
 
 [![CI Status](https://img.shields.io/travis/Avsi222/REES46.svg?style=flat)](https://travis-ci.org/Avsi222/REES46)
 [![Version](https://img.shields.io/cocoapods/v/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)

@@ -180,6 +180,10 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 }
 
 extension StoriesView: StoriesViewProtocol {
+    public func didTapLinkIosOpeningExternal(url: String) {
+        print("No Action. Open linkIos url for external \(url)")
+    }
+    
     func reloadStoriesSubviews() {
         UICollectionView.performWithoutAnimation {
             self.collectionView.layoutIfNeeded()
