@@ -1,9 +1,9 @@
 //
 //  PushPresentViewController.swift
-//  REES46_Example
+//  REES46
 //
-//  Created by Arseniy Dorogin on 11.04.2022.
-//  Copyright © 2022 CocoaPods. All rights reserved.
+//  Created by REES46
+//  Copyright (c) 2023. All rights reserved.
 //
 
 import UIKit

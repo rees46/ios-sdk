@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="dLu-uN-GoW">
-    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <device id="retina6_1" orientation="portrait" appearance="dark"/>
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
@@ -11,7 +11,7 @@
         <!--View Controller-->
         <scene sceneID="ufC-wZ-h7g">
             <objects>
-                <viewController storyboardIdentifier="ViewController" id="vXZ-lx-hvc" customClass="ViewController" customModule="REES46_Example" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ViewController" id="vXZ-lx-hvc" customClass="ViewController" customModule="REES46DemoApp" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="jyV-Pf-zRb"/>
                         <viewControllerLayoutGuide type="bottom" id="2fi-mo-0CV"/>
@@ -20,8 +20,12 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6qN-Wn-uB2">
-                                <rect key="frame" x="167" y="351" width="80" height="34.5"/>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6qN-Wn-uB2" customClass="UpdateButton" customModule="REES46DemoApp" customModuleProvider="target">
+                                <rect key="frame" x="167" y="351" width="90" height="40"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="90" id="UHd-0w-1Ht"/>
+                                    <constraint firstAttribute="height" constant="40" id="XGJ-de-EuZ"/>
+                                </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="Update"/>
                             </button>
@@ -62,7 +66,7 @@
                             <constraint firstItem="WVN-UL-gKy" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="Dqn-MI-dDT"/>
                             <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="100" id="H7y-BV-oZN"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="top" secondItem="xie-eK-LO0" secondAttribute="bottom" constant="40" id="KOM-98-h4H"/>
-                            <constraint firstItem="6qN-Wn-uB2" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="LbY-Jv-3Yl"/>
+                            <constraint firstItem="6qN-Wn-uB2" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" constant="5" id="LbY-Jv-3Yl"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="top" secondItem="Xqd-20-S5Q" secondAttribute="bottom" constant="40" id="Tgv-NX-s2w"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="awM-uK-1xe"/>
                             <constraint firstAttribute="trailingMargin" secondItem="WVN-UL-gKy" secondAttribute="trailing" id="bFa-0g-Nv4"/>
@@ -106,6 +110,11 @@
             <point key="canvasLocation" x="-106.40000000000001" y="118.29085457271366"/>
         </scene>
     </scenes>
+    <designables>
+        <designable name="6qN-Wn-uB2">
+            <size key="intrinsicContentSize" width="80" height="34.5"/>
+        </designable>
+    </designables>
     <resources>
         <systemColor name="labelColor">
             <color red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

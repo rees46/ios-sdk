@@ -2,8 +2,8 @@
 //  AppDelegate.swift
 //  REES46
 //
-//  Created by Avsi222 on 08/06/2020.
-//  Copyright (c) 2020 Avsi222. All rights reserved.
+//  Created by REES46
+//  Copyright (c) 2023. All rights reserved.
 //
 
 import Firebase
@@ -36,7 +36,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         print("0. Init SDK")
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-            print("Init error = ", error)
+            print("Init error = ", error?.localizedDescription ?? "NO INIT ERRORS")
             didToken = self.sdk.getDeviceID()
             globalSDK = self.sdk
             NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
@@ -410,12 +410,6 @@ extension AppDelegate {
     func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
         notificationService?.didReceiveDeepLink(url: url)
         return true
-    }
-}
-
-extension AppDelegate: StoryLinkDelegate {
-    func openlinkIosStoryWeb(url: String) {
-        print("No Action. Open linkIos url \(url)")
     }
 }
 

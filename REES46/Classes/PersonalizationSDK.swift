@@ -1,5 +1,9 @@
 //
 //  PersonalizationSDK.swift
+//  REES46
+//
+//  Created by REES46
+//  Copyright (c) 2023. All rights reserved.
 //
 
 import Foundation
@@ -148,6 +152,29 @@ public extension PersonalizationSDK {
         for key in keys {
             if let value = dict[key] {
                 print("Clear local cache for \(key) = \(value)")
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        UserDefaults.standard.synchronize()
+        
+        resetDownloadedStoriesStates()
+    }
+    
+    func resetDownloadedStoriesStates() {
+        let included_prefixes = ["waitStorySlideCached."]
+
+        let dict = UserDefaults.standard.dictionaryRepresentation()
+        let keys = dict.keys.filter { key in
+            for prefix in included_prefixes {
+                if key.hasPrefix(prefix) {
+                    return true
+                }
+            }
+            return false
+        }
+        for key in keys {
+            if let value = dict[key] {
+                //print("Clear local cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }

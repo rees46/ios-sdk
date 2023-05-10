@@ -30,8 +30,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "607FACCF1AFB9204008FA782"
-               BuildableName = "REES46_Example.app"
-               BlueprintName = "REES46_Example"
+               BuildableName = "REES46Demo.app"
+               BlueprintName = "REES46Demo"
                ReferencedContainer = "container:REES46.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "607FACCF1AFB9204008FA782"
-            BuildableName = "REES46_Example.app"
-            BlueprintName = "REES46_Example"
+            BuildableName = "REES46Demo.app"
+            BlueprintName = "REES46Demo"
             ReferencedContainer = "container:REES46.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -80,8 +80,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "607FACCF1AFB9204008FA782"
-            BuildableName = "REES46_Example.app"
-            BlueprintName = "REES46_Example"
+            BuildableName = "REES46Demo.app"
+            BlueprintName = "REES46Demo"
             ReferencedContainer = "container:REES46.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

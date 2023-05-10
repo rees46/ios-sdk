@@ -2,8 +2,8 @@
 //  ViewController.swift
 //  REES46
 //
-//  Created by Avsi222 on 08/06/2020.
-//  Copyright (c) 2020 Avsi222. All rights reserved.
+//  Created by REES46
+//  Copyright (c) 2023. All rights reserved.
 //
 
 import UIKit
@@ -39,7 +39,6 @@ class ViewController: UIViewController {
     @objc private func updateStories() {
         if let globalSDK = globalSDK {
             storiesBackView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
-            
         }
     }
     
@@ -61,16 +60,16 @@ class ViewController: UIViewController {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        updateCornerRadius()
+        updateButtonCornerRadius()
     }
 
     @IBInspectable var rounded: Bool = false {
         didSet {
-            updateCornerRadius()
+            updateButtonCornerRadius()
         }
     }
 
-    func updateCornerRadius() {
+    func updateButtonCornerRadius() {
         layer.backgroundColor = UIColor.white.cgColor
         layer.masksToBounds = true
         layer.borderWidth = 1.2

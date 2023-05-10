@@ -9,7 +9,6 @@ extension String {
         }
         
         if hexFormatted.count != 6 {
-            // Return black as default color
             return (0, 0, 0)
         }
         

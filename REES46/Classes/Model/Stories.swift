@@ -77,6 +77,9 @@ class Slide {
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
+    private let downloadManager = RRDownloadManager.shared
+    var directoryName : String = "CacheDirectory"
+    
     public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? -1
         self.duration = json["duration"] as? Int ?? 10
@@ -91,17 +94,34 @@ class Slide {
             if preview != nil {
                 setImage(imageURL: preview!, isPreview: true)
             } else {
-                print("setImage video for \(self.id) is downloaded")
+                print("Success setImage video for \(self.id) is downloaded")
             }
             
             downloadVideo { result in
                 switch result {
                 case .success(let url):
                     self.videoURL = url
-                    print("video for \(self.id) is downloaded")
-                    //NotificationCenter.default.post(name: .init(rawValue: "PreloadVideoDownloaded"), object: nil, userInfo: ["slideID": self.id])
+                    print("Downloaded video for story id = \(self.id)")
+                    
+                    let storyImageId = String(self.id)
+                    let storyImageDownloadedName = "waitStorySlideCached." + storyImageId
+                    
+                    var watchedStoriesDownloadedArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyImageDownloadedName)) as? [String] ?? []
+                    let watchedStoryIdExists = watchedStoriesDownloadedArr.contains(where: {
+                        $0.range(of: String(storyImageDownloadedName)) != nil
+                    })
+                    
+                    if !watchedStoryIdExists {
+                        watchedStoriesDownloadedArr.append(storyImageDownloadedName)
+                        UserDefaults.standard.setValue(watchedStoriesDownloadedArr, for: UserDefaults.Key(storyImageDownloadedName))
+                    }
+                    
+                    let name = "waitStorySlideCached." + storyImageId
+                    let userInfo = ["url": url] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name(name), object: userInfo)
+                    
                 case .failure(let error):
-                    print("video for \(self.id) is not downloaded with error \(error.localizedDescription)")
+                    print("Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
                 }
             }
         } else if type == .image {
@@ -110,6 +130,7 @@ class Slide {
     }
  
     func downloadVideo(completion: @escaping (Result<URL, Error>) -> Void) {
+        
         guard let url = URL(string: self.background) else {
             completion(.failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil)))
             return
@@ -117,29 +138,64 @@ class Slide {
         
         let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
         let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent("\(self.id).mp4")
+        
         let fileManager = FileManager.default
-
-        // Checking if a file exists
         if fileManager.fileExists(atPath: temporaryFileURL.path) {
             completion(.success(temporaryFileURL))
             return
         }
         
-        let task = URLSession.shared.downloadTask(with: url) { location, response, error in
-            guard let location = location else {
-                completion(.failure(error ?? NSError(domain: "Unknown error", code: -1, userInfo: nil)))
-                return
-            }
+        let request = URLRequest(url: url)
+        
+        let downloadKey = self.downloadManager.downloadFile(withRequest: request,
+                                                           inDirectory: directoryName,
+                                                           onProgress:  { [weak self] (progress) in
+                                                            //let percentage = String(format: "%.1f %", (progress * 100))
+                                                            //self?.progressView.setProgress(Float(progress), animated: true)
+                                                            //self?.progressLabel.text = "\(percentage) %"
             
-            do {
-                try fileManager.moveItem(at: location, to: temporaryFileURL)
-                completion(.success(temporaryFileURL))
-            } catch {
-                completion(.failure(error))
+            let percentageD = String(format: "%.1f %", (progress * 100))
+            //debugPrint("Background download video progress : \(percentageD) for task \(request.debugDescription)")
+        }) { [weak self] (error, url) in
+            
+            if let error = error {
+                print("Error is \(error as NSError)")
+            } else {
+                if let url = url {
+                    //print("Downloaded file's url is \(url.path)")
+                    do {
+                        try fileManager.moveItem(at: url, to: temporaryFileURL)
+                        completion(.success(temporaryFileURL))
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
             }
         }
+        //print("The video with key is downloaded \(downloadKey!)")
         
-        task.resume()
+
+//        // Checking if a file exists
+//        if fileManager.fileExists(atPath: temporaryFileURL.path) {
+//            completion(.success(temporaryFileURL))
+//            return
+//        }
+//
+//        let task = URLSession.shared.downloadTask(with: url) { location, response, error in
+//            guard let location = location else {
+//                completion(.failure(error ?? NSError(domain: "Unknown error", code: -1, userInfo: nil)))
+//                return
+//            }
+//
+//            do {
+//                try fileManager.moveItem(at: location, to: temporaryFileURL)
+//                completion(.success(temporaryFileURL))
+//            } catch {
+//                completion(.failure(error))
+//            }
+//        }
+//
+//        task.resume()
     }
 
     
@@ -162,12 +218,27 @@ class Slide {
                 guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
                 if isPreview {
                     self.previewImage = image
-//                    print("Downloaded preview for image for id = \(self.id)")
+                    //print("Downloaded preview for image for VIDEO story with id = \(self.id)")
                 } else {
                     self.downloadedImage = image
-                    print("Downloaded data for image for id = \(self.id)")
+                    print("Downloaded image for story id = \(self.id)")
+                    
+                    let storyImageId = String(self.id)
+                    let storyImageDownloadedName = "waitStorySlideCached." + storyImageId
+                    var watchedStoriesDownloadedArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyImageDownloadedName)) as? [String] ?? []
+                    let watchedStoryIdExists = watchedStoriesDownloadedArr.contains(where: {
+                        $0.range(of: String(storyImageDownloadedName)) != nil
+                    })
+                    
+                    if !watchedStoryIdExists {
+                        watchedStoriesDownloadedArr.append(storyImageDownloadedName)
+                        UserDefaults.standard.setValue(watchedStoriesDownloadedArr, for: UserDefaults.Key(storyImageDownloadedName))
+                    }
+                    
+                    let name = "waitStorySlideCached." + storyImageId
+                    let userInfo = ["url": url] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name(name), object: userInfo)
                 }
-                
             }
         })
         task.resume()

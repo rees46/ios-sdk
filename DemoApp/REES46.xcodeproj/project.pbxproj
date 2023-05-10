@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5F58342212F8D3343AFF8E73 /* Pods_REES46_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5B3153E7655CDB2AFCC17D25 /* Pods_REES46_Example.framework */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* ViewController.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
+		8DAE5788F532A7CDF6EFB681 /* Pods_REES46.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 889E165DE1C64E041D4E8A6F /* Pods_REES46.framework */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
 		9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */; };
 		9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */; };
@@ -70,22 +70,23 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46.release.xcconfig"; path = "Target Support Files/Pods-REES46/Pods-REES46.release.xcconfig"; sourceTree = "<group>"; };
 		4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.release.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.release.xcconfig"; sourceTree = "<group>"; };
 		53578CC38C4B3A4AA9973CCC /* REES46.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = REES46.podspec; path = ../REES46.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		5AE5CCEEB00A5EF1E5E39AFF /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
-		5B3153E7655CDB2AFCC17D25 /* Pods_REES46_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		607FACD01AFB9204008FA782 /* REES46_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = REES46_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		607FACD01AFB9204008FA782 /* REES46Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = REES46Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		607FACD71AFB9204008FA782 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		607FACDA1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		607FACDC1AFB9204008FA782 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		607FACDF1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
-		607FACE51AFB9204008FA782 /* REES46_Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46_Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		607FACE51AFB9204008FA782 /* REES46Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.release.xcconfig"; sourceTree = "<group>"; };
+		889E165DE1C64E041D4E8A6F /* Pods_REES46.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -99,11 +100,12 @@
 		9A7A960F25BC436D00FFA40A /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		9A7A961125BC436D00FFA40A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9A7FC75525C0BB69006D8CF9 /* Readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = Readme.md; sourceTree = "<group>"; };
-		9ADC31BF25A1C2D600D9D1AA /* REES46_Example.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REES46_Example.entitlements; sourceTree = "<group>"; };
+		9ADC31BF25A1C2D600D9D1AA /* REES46Demo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REES46Demo.entitlements; sourceTree = "<group>"; };
 		9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 		9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
 		9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPresentViewController.swift; sourceTree = "<group>"; };
 		9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PushPresentViewController.xib; sourceTree = "<group>"; };
+		A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46.debug.xcconfig"; path = "Target Support Files/Pods-REES46/Pods-REES46.debug.xcconfig"; sourceTree = "<group>"; };
 		AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
@@ -114,7 +116,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5F58342212F8D3343AFF8E73 /* Pods_REES46_Example.framework in Frameworks */,
+				8DAE5788F532A7CDF6EFB681 /* Pods_REES46.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,6 +154,8 @@
 				4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */,
 				627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */,
 				77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */,
+				A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */,
+				3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -159,10 +163,10 @@
 		5EF802E6E047FD7F294501D7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				5B3153E7655CDB2AFCC17D25 /* Pods_REES46_Example.framework */,
 				AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */,
 				9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */,
 				9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */,
+				889E165DE1C64E041D4E8A6F /* Pods_REES46.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -172,9 +176,9 @@
 			children = (
 				9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */,
 				9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */,
-				9ADC31BF25A1C2D600D9D1AA /* REES46_Example.entitlements */,
+				9ADC31BF25A1C2D600D9D1AA /* REES46Demo.entitlements */,
 				607FACF51AFB993E008FA782 /* Podspec Metadata */,
-				607FACD21AFB9204008FA782 /* Example for REES46 */,
+				607FACD21AFB9204008FA782 /* Rees46Demo */,
 				607FACE81AFB9204008FA782 /* Tests */,
 				9A7A95E125BC40E900FFA40A /* NotificationContentExtension */,
 				9A7A960E25BC436D00FFA40A /* NotificationServiceExtension */,
@@ -187,15 +191,15 @@
 		607FACD11AFB9204008FA782 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				607FACD01AFB9204008FA782 /* REES46_Example.app */,
-				607FACE51AFB9204008FA782 /* REES46_Tests.xctest */,
+				607FACD01AFB9204008FA782 /* REES46Demo.app */,
+				607FACE51AFB9204008FA782 /* REES46Tests.xctest */,
 				9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */,
 				9A7A960D25BC436D00FFA40A /* REESNotificationServiceExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		607FACD21AFB9204008FA782 /* Example for REES46 */ = {
+		607FACD21AFB9204008FA782 /* Rees46Demo */ = {
 			isa = PBXGroup;
 			children = (
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
@@ -206,8 +210,8 @@
 				9AFB9EE328044E4D001462AC /* PushPresent */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
 			);
-			name = "Example for REES46";
-			path = REES46;
+			name = Rees46Demo;
+			path = REES46Demo;
 			sourceTree = "<group>";
 		};
 		607FACD31AFB9204008FA782 /* Supporting Files */ = {
@@ -280,9 +284,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		607FACCF1AFB9204008FA782 /* REES46_Example */ = {
+		607FACCF1AFB9204008FA782 /* REES46Demo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46_Example" */;
+			buildConfigurationList = 607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Demo" */;
 			buildPhases = (
 				FB7AE811FE7BF69ACB99DD12 /* [CP] Check Pods Manifest.lock */,
 				607FACCC1AFB9204008FA782 /* Sources */,
@@ -297,14 +301,14 @@
 				9A7A95E925BC40E900FFA40A /* PBXTargetDependency */,
 				9A7A961325BC436D00FFA40A /* PBXTargetDependency */,
 			);
-			name = REES46_Example;
+			name = REES46Demo;
 			productName = REES46;
-			productReference = 607FACD01AFB9204008FA782 /* REES46_Example.app */;
+			productReference = 607FACD01AFB9204008FA782 /* REES46Demo.app */;
 			productType = "com.apple.product-type.application";
 		};
-		607FACE41AFB9204008FA782 /* REES46_Tests */ = {
+		607FACE41AFB9204008FA782 /* REES46Tests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46_Tests" */;
+			buildConfigurationList = 607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Tests" */;
 			buildPhases = (
 				A02276F97954AA3F0AC14BC0 /* [CP] Check Pods Manifest.lock */,
 				607FACE11AFB9204008FA782 /* Sources */,
@@ -316,9 +320,9 @@
 			dependencies = (
 				607FACE71AFB9204008FA782 /* PBXTargetDependency */,
 			);
-			name = REES46_Tests;
+			name = REES46Tests;
 			productName = Tests;
-			productReference = 607FACE51AFB9204008FA782 /* REES46_Tests.xctest */;
+			productReference = 607FACE51AFB9204008FA782 /* REES46Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		9A7A95DD25BC40E900FFA40A /* REESNotificationContentExtension */ = {
@@ -368,21 +372,21 @@
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
 						LastSwiftMigration = 1150;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
 						LastSwiftMigration = 1150;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 						TestTargetID = 607FACCF1AFB9204008FA782;
 					};
 					9A7A95DD25BC40E900FFA40A = {
 						CreatedOnToolsVersion = 12.2;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 					9A7A960C25BC436D00FFA40A = {
 						CreatedOnToolsVersion = 12.2;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -399,8 +403,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				607FACCF1AFB9204008FA782 /* REES46_Example */,
-				607FACE41AFB9204008FA782 /* REES46_Tests */,
+				607FACCF1AFB9204008FA782 /* REES46Demo */,
+				607FACE41AFB9204008FA782 /* REES46Tests */,
 				9A7A95DD25BC40E900FFA40A /* REESNotificationContentExtension */,
 				9A7A960C25BC436D00FFA40A /* REESNotificationServiceExtension */,
 			);
@@ -452,9 +456,9 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-REES46_Example/Pods-REES46_Example-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-REES46/Pods-REES46-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/FirebaseCore/FirebaseCore.framework",
-				"${BUILT_PRODUCTS_DIR}/FirebaseCoreDiagnostics/FirebaseCoreDiagnostics.framework",
+				"${BUILT_PRODUCTS_DIR}/FirebaseCoreInternal/FirebaseCoreInternal.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseInstallations/FirebaseInstallations.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseMessaging/FirebaseMessaging.framework",
 				"${BUILT_PRODUCTS_DIR}/GoogleDataTransport/GoogleDataTransport.framework",
@@ -466,7 +470,7 @@
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCore.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCoreDiagnostics.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCoreInternal.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseInstallations.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseMessaging.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleDataTransport.framework",
@@ -477,7 +481,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-REES46_Example/Pods-REES46_Example-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-REES46/Pods-REES46-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A02276F97954AA3F0AC14BC0 /* [CP] Check Pods Manifest.lock */ = {
@@ -517,7 +521,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-REES46_Example-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-REES46-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -568,7 +572,7 @@
 /* Begin PBXTargetDependency section */
 		607FACE71AFB9204008FA782 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 607FACCF1AFB9204008FA782 /* REES46_Example */;
+			target = 607FACCF1AFB9204008FA782 /* REES46Demo */;
 			targetProxy = 607FACE61AFB9204008FA782 /* PBXContainerItemProxy */;
 		};
 		9A7A95E925BC40E900FFA40A /* PBXTargetDependency */ = {
@@ -714,20 +718,20 @@
 		};
 		607FACF01AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */;
+			baseConfigurationReference = A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = REES46_Example.entitlements;
+				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_TEAM = "";
-				INFOPLIST_FILE = REES46/Info.plist;
+				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MODULE_NAME = ExampleApp;
+				MODULE_NAME = REES46;
 				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -738,20 +742,20 @@
 		};
 		607FACF11AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */;
+			baseConfigurationReference = 3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = REES46_Example.entitlements;
+				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_TEAM = "";
-				INFOPLIST_FILE = REES46/Info.plist;
+				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MODULE_NAME = ExampleApp;
+				MODULE_NAME = REES46;
 				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -765,7 +769,7 @@
 			baseConfigurationReference = 627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
@@ -783,7 +787,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/REES46_Example.app/REES46_Example";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/REES46DemoApp.app/REES46DemoApp";
 			};
 			name = Debug;
 		};
@@ -792,7 +796,7 @@
 			baseConfigurationReference = 77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
@@ -806,7 +810,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_SWIFT3_OBJC_INFERENCE = Default;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/REES46_Example.app/REES46_Example";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/REES46REES46DemoApp.app/REES46DemoApp";
 			};
 			name = Release;
 		};
@@ -822,8 +826,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 47;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -855,8 +859,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
@@ -885,8 +889,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 47;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -918,8 +922,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 46;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 47;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
@@ -948,7 +952,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46_Example" */ = {
+		607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Demo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				607FACF01AFB9204008FA782 /* Debug */,
@@ -957,7 +961,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46_Tests" */ = {
+		607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Tests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				607FACF31AFB9204008FA782 /* Debug */,
