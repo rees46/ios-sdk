@@ -1,11 +1,18 @@
 import Foundation
 import UIKit
 
-public protocol StoriesViewDelegate: AnyObject {
-    func extendLinkIos(url: String)
+public protocol StoriesAdsService: AnyObject {
+    func openLinkWebKit(url: String)
 }
 
-public class StoriesView: UIView, StoriesViewDelegate {
+public protocol StoriesViewMainProtocol: AnyObject {
+    func extendLinkIos(url: String)
+    func reloadStoriesCollectionSubviews()
+    var storiesDelegate: StoriesViewMainProtocol? { get set }
+    //var adsService: StoriesAdsService? { get set }
+}
+
+public class StoriesView: UIView {
     
     let cellId = "StoriesCollectionViewPreviewCell"
     
@@ -29,7 +36,7 @@ public class StoriesView: UIView, StoriesViewDelegate {
     private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
     
-    public var linkDelegate: StoriesViewDelegate?
+    public var storiesDelegate: StoriesViewMainProtocol?
     
     private var mainVC: UIViewController?
     private var code: String = ""
@@ -68,10 +75,6 @@ public class StoriesView: UIView, StoriesViewDelegate {
         self.mainVC = mainVC
         self.code = code
         loadData()
-    }
-    
-    public func extendLinkIos(url: String) {
-        linkDelegate?.extendLinkIos(url: url)
     }
     
     private func setBgColor(color: String) {
@@ -147,7 +150,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let currentStory = stories?[indexPath.row] {
             let storyVC = StoryViewController()
-            storyVC.linkDelegate = self //linkDelegate
+            storyVC.linkDelegate = self
             storyVC.sdk = sdk
             storyVC.stories = stories ?? []
             
@@ -190,7 +193,11 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 }
 
-extension StoriesView: StoriesViewProtocol {
+extension StoriesView: StoriesViewMainProtocol {
+    public func extendLinkIos(url: String) {
+        print("Open linkIos url for external \(url)")
+    }
+    
     public func didTapLinkIosOpeningExternal(url: String) {
         print("Open linkIos url for external \(url)")
     }

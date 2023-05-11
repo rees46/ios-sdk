@@ -20,6 +20,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     private var currentSlide: Slide?
     
     public weak var delegate: StoryCollectionViewCellDelegate?
+    public weak var mainStoriesDelegate: StoriesViewMainProtocol?
     
     var player = AVPlayer()
     private let timeObserverKeyPath: String = "timeControlStatus"
@@ -280,9 +281,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
                 delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
-                //print(linkIos, currentSlide)
-                //delegate?.didTapUrlButton(url: linkIos, slide: currentSlide) //TEST
-                
+                mainStoriesDelegate?.extendLinkIos(url: linkIos)
                 (UIApplication.shared.delegate as? StoriesAppDelegateProtocol)?.didTapLinkIosOpeningForAppDelegate(url: linkIos)
                 return
             }

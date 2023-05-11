@@ -1,7 +1,7 @@
 import UIKit
 import WebKit
 
-public protocol StoriesViewProtocol: AnyObject {
+public protocol StoryViewControllerProtocol: AnyObject {
     func didTapLinkIosOpeningExternal(url: String)
     func reloadStoriesCollectionSubviews()
 }
@@ -63,7 +63,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var needSaveStoryLocal = true
     
     public var sdk: PersonalizationSDK?
-    public var linkDelegate: StoriesViewProtocol?
+    public var linkDelegate: StoriesViewMainProtocol?
     
     var preloader = StoriesRingView()
 
@@ -695,7 +695,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     }
     
     public func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
-        self.linkDelegate?.didTapLinkIosOpeningExternal(url: url)
+        self.linkDelegate?.extendLinkIos(url: url)
     }
 }
 
@@ -786,7 +786,7 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
     }
     
     public func didTapLinkIosOpeningForAppDelegate(url: String, slide: Slide) {
-        self.linkDelegate?.didTapLinkIosOpeningExternal(url: url)
+    self.linkDelegate?.extendLinkIos(url: url)// extendLinkIos(url: url)// didTapLinkIosOpeningExternal(url: url)
     }
 }
 
