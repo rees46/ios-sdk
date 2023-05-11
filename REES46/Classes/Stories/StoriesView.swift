@@ -1,7 +1,11 @@
 import Foundation
 import UIKit
 
-public class StoriesView: UIView {
+public protocol StoriesViewDelegate: AnyObject {
+    func extendLinkIos(url: String)
+}
+
+public class StoriesView: UIView, StoriesViewDelegate {
     
     let cellId = "StoriesCollectionViewPreviewCell"
     
@@ -24,6 +28,9 @@ public class StoriesView: UIView {
     private var stories: [Story]?
     private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
+    
+    public var linkDelegate: StoriesViewDelegate?
+    
     private var mainVC: UIViewController?
     private var code: String = ""
     
@@ -61,6 +68,10 @@ public class StoriesView: UIView {
         self.mainVC = mainVC
         self.code = code
         loadData()
+    }
+    
+    public func extendLinkIos(url: String) {
+        linkDelegate?.extendLinkIos(url: url)
     }
     
     private func setBgColor(color: String) {
@@ -182,7 +193,6 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 extension StoriesView: StoriesViewProtocol {
     public func didTapLinkIosOpeningExternal(url: String) {
         print("Open linkIos url for external \(url)")
-        //print("No Action")
     }
 
     public func reloadStoriesCollectionSubviews() {

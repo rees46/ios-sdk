@@ -242,7 +242,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     
     private func handleLeftTap() {
         
-        if currentPosition.row > 0 { 
+        if currentPosition.row > 0 {
             currentPosition.row -= 1
             collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
             DispatchQueue.main.async {
