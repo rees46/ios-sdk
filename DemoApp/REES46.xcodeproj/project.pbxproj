@@ -13,7 +13,7 @@
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
-		8DAE5788F532A7CDF6EFB681 /* Pods_REES46.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 889E165DE1C64E041D4E8A6F /* Pods_REES46.framework */; };
+		659CB57ADDE1DDF4137E32F5 /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E405FFE94AC2D2387456FA70 /* Pods_REES46Demo.framework */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
 		9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */; };
 		9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */; };
@@ -27,7 +27,7 @@
 		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */; };
 		9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */; };
-		B571558189DAF9A4085C41A8 /* Pods_REES46_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */; };
+		D9761302D661084E3B6D20D4 /* Pods_REES46Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D625060CEE5B94BF0F97A2D7 /* Pods_REES46Tests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +71,7 @@
 
 /* Begin PBXFileReference section */
 		3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46.release.xcconfig"; path = "Target Support Files/Pods-REES46/Pods-REES46.release.xcconfig"; sourceTree = "<group>"; };
+		40D13F7A61C225C4AA9279B6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
 		4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.release.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.release.xcconfig"; sourceTree = "<group>"; };
 		53578CC38C4B3A4AA9973CCC /* REES46.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = REES46.podspec; path = ../REES46.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		5AE5CCEEB00A5EF1E5E39AFF /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
@@ -85,8 +86,9 @@
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		709A033D4F1D68C450C42B4F /* Pods-REES46Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.release.xcconfig"; sourceTree = "<group>"; };
-		889E165DE1C64E041D4E8A6F /* Pods_REES46.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		80CF46CFF72794AEE45F4623 /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -105,10 +107,12 @@
 		9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
 		9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPresentViewController.swift; sourceTree = "<group>"; };
 		9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PushPresentViewController.xib; sourceTree = "<group>"; };
+		9F59578DAB07F41E9050DA8D /* Pods-REES46Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.release.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.release.xcconfig"; sourceTree = "<group>"; };
 		A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46.debug.xcconfig"; path = "Target Support Files/Pods-REES46/Pods-REES46.debug.xcconfig"; sourceTree = "<group>"; };
-		AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.debug.xcconfig"; sourceTree = "<group>"; };
+		D625060CEE5B94BF0F97A2D7 /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		E405FFE94AC2D2387456FA70 /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,7 +120,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8DAE5788F532A7CDF6EFB681 /* Pods_REES46.framework in Frameworks */,
+				659CB57ADDE1DDF4137E32F5 /* Pods_REES46Demo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,7 +128,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B571558189DAF9A4085C41A8 /* Pods_REES46_Tests.framework in Frameworks */,
+				D9761302D661084E3B6D20D4 /* Pods_REES46Tests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,6 +160,10 @@
 				77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */,
 				A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */,
 				3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */,
+				80CF46CFF72794AEE45F4623 /* Pods-REES46Demo.debug.xcconfig */,
+				9F59578DAB07F41E9050DA8D /* Pods-REES46Demo.release.xcconfig */,
+				709A033D4F1D68C450C42B4F /* Pods-REES46Tests.debug.xcconfig */,
+				40D13F7A61C225C4AA9279B6 /* Pods-REES46Tests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -163,10 +171,10 @@
 		5EF802E6E047FD7F294501D7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				AE4A92BDD2F8652D009221D3 /* Pods_REES46_Tests.framework */,
 				9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */,
 				9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */,
-				889E165DE1C64E041D4E8A6F /* Pods_REES46.framework */,
+				E405FFE94AC2D2387456FA70 /* Pods_REES46Demo.framework */,
+				D625060CEE5B94BF0F97A2D7 /* Pods_REES46Tests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -456,7 +464,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-REES46/Pods-REES46-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-REES46Demo/Pods-REES46Demo-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/FirebaseCore/FirebaseCore.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseCoreInternal/FirebaseCoreInternal.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseInstallations/FirebaseInstallations.framework",
@@ -481,7 +489,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-REES46/Pods-REES46-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-REES46Demo/Pods-REES46Demo-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		A02276F97954AA3F0AC14BC0 /* [CP] Check Pods Manifest.lock */ = {
@@ -499,7 +507,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-REES46_Tests-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-REES46Tests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -521,7 +529,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-REES46-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-REES46Demo-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -662,6 +670,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -709,6 +718,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -718,14 +728,14 @@
 		};
 		607FACF01AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */;
+			baseConfigurationReference = 80CF46CFF72794AEE45F4623 /* Pods-REES46Demo.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 47;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -742,14 +752,14 @@
 		};
 		607FACF11AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */;
+			baseConfigurationReference = 9F59578DAB07F41E9050DA8D /* Pods-REES46Demo.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 47;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -766,7 +776,7 @@
 		};
 		607FACF31AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */;
+			baseConfigurationReference = 709A033D4F1D68C450C42B4F /* Pods-REES46Tests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -793,7 +803,7 @@
 		};
 		607FACF41AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */;
+			baseConfigurationReference = 40D13F7A61C225C4AA9279B6 /* Pods-REES46Tests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -827,7 +837,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 47;
+				CURRENT_PROJECT_VERSION = 49;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -860,7 +870,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 47;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
@@ -890,7 +900,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 47;
+				CURRENT_PROJECT_VERSION = 49;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -923,7 +933,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 47;
+				CURRENT_PROJECT_VERSION = 49;
 				DEVELOPMENT_TEAM = "";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";

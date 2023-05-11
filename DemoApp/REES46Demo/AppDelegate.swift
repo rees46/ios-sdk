@@ -413,6 +413,12 @@ extension AppDelegate {
     }
 }
 
+extension AppDelegate: StoriesAppDelegateProtocol {
+    func didTapLinkIosOpeningForAppDelegate(url: String) {
+        print("AppDelegate received linkIos url \(url)")
+    }
+}
+
 extension AppDelegate: NotificationServicePushDelegate {
     func openCustom(url: String) {
         print("Open custom url \(url)")

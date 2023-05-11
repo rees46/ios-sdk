@@ -33,8 +33,6 @@ public struct HTTPLoggerDefaultConfiguration: HTTPLoggerConfigurationType {
 
 public final class HTTPLogger: URLProtocol, URLSessionDelegate {
     
-    // MARK: - Public
-    
     public static var configuration: HTTPLoggerConfigurationType = HTTPLoggerDefaultConfiguration()
     
     public class func register() {
@@ -50,8 +48,6 @@ public final class HTTPLogger: URLProtocol, URLSessionDelegate {
         config.protocolClasses?.insert(HTTPLogger.self, at: 0)
         return config
     }
-    
-    //MARK: - NSURLProtocol
     
     public override class func canInit(with request: URLRequest) -> Bool {
         
@@ -117,8 +113,6 @@ public final class HTTPLogger: URLProtocol, URLSessionDelegate {
         
     }
     
-    
-    //MARK: - Logging
     
     public func logError(_ error: Error) {
         
@@ -215,7 +209,6 @@ public final class HTTPLogger: URLProtocol, URLSessionDelegate {
         return logString
     }
     
-    // MARK: - Private
     
     fileprivate static let requestHandledKey = "RequestLumberjackHandleKey"
     fileprivate static let requestTimeKey = "RequestLumberjackRequestTime"

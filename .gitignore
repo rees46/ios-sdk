@@ -3,6 +3,7 @@
 /Packages
 /*.xcodeproj
 xcuserdata/
-Example/Pods
+DemoApp/Pods
+DemoApp/Podfile.lock
 .idea
 .swiftpm

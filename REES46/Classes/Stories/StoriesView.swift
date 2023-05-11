@@ -136,7 +136,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let currentStory = stories?[indexPath.row] {
             let storyVC = StoryViewController()
-            storyVC.delegate = self
+            storyVC.linkDelegate = self //linkDelegate
             storyVC.sdk = sdk
             storyVC.stories = stories ?? []
             
@@ -181,10 +181,11 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 
 extension StoriesView: StoriesViewProtocol {
     public func didTapLinkIosOpeningExternal(url: String) {
-        print("No Action. Open linkIos url for external \(url)")
+        print("Open linkIos url for external \(url)")
+        //print("No Action")
     }
-    
-    func reloadStoriesSubviews() {
+
+    public func reloadStoriesCollectionSubviews() {
         UICollectionView.performWithoutAnimation {
             self.collectionView.layoutIfNeeded()
             self.collectionView.reloadData()

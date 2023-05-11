@@ -1,10 +1,11 @@
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '3.3.4'
-  s.summary          = 'iOS SDK for REES46 platform — the wide toolset for ecommerce apps. You can integrate all REES46 tools into your iOS app.'
+  s.version          = '3.3.5'
+  s.summary          = 'REES46 SDK for iOS platform — the wide toolset for ecommerce apps. You can integrate all REES46 SDK tools into your iOS/Android/Web app.'
+
 
   s.description      = <<-DESC
-  This is the iOS SDK for REES46 platform — the wide toolset for ecommerce apps:
+  This is REES46 SDK for iOS platform — the wide toolset for ecommerce apps:
 
   - Personalization engine.
   - Product recommendations.
@@ -22,7 +23,9 @@ Pod::Spec.new do |s|
   You can integrate all REES46 tools into your iOS app.
                        DESC
 
+
   s.homepage         = 'https://reference.api.rees46.com/'
+  s.social_media_url = 'https://rees46.com/'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'REES46' => '«desk@rees46.com»' }
 
@@ -37,4 +40,5 @@ Pod::Spec.new do |s|
   s.resources = 'REES46/**/*.{xcassets,json,png}'
    
   s.swift_version = '5'
+
 end

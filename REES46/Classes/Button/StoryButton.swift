@@ -10,6 +10,8 @@ import UIKit
 
 protocol CustomButtonDelegate: AnyObject {
     func openDeepLink(url: String)
+    func openLinkIosExternal(url: String)
+    func openLinkWebExternal(url: String)
 }
 
 class StoryButton: UIButton {
@@ -26,7 +28,9 @@ class StoryButton: UIButton {
         if let font = buttonData.textBold {
             self.titleLabel?.font = .systemFont(ofSize: 14, weight: font ? .bold : .regular)
         }
+        
         self.setTitle(buttonData.title ?? "", for: .normal)
+        
         if let bgColor = buttonData.background {
             let color = bgColor.hexToRGB()
             self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
@@ -50,10 +54,11 @@ class StoryButton: UIButton {
         self.setTitle("", for: .normal)
     }
     
-    @objc private func didTapOnButton() {
+    @objc public func didTapOnButton() {
         
         if let iosLink = _buttonData?.linkIos {
-            delegate?.openDeepLink(url: iosLink)
+            delegate?.openLinkIosExternal(url: iosLink)
+            //delegate?.openDeepLink(url: iosLink)
             return
         }
         if let link = _buttonData?.link {

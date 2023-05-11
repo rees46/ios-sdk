@@ -151,7 +151,7 @@ public extension PersonalizationSDK {
         }
         for key in keys {
             if let value = dict[key] {
-                print("Clear local cache for \(key) = \(value)")
+                debugPrint("Clear local stories cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }
@@ -173,8 +173,8 @@ public extension PersonalizationSDK {
             return false
         }
         for key in keys {
-            if let value = dict[key] {
-                //print("Clear local cache for \(key) = \(value)")
+            if dict[key] != nil {
+                //debugPrint("Clear waiting cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }

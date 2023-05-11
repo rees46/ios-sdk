@@ -24,14 +24,18 @@ class StoryCollectionViewCell: UICollectionViewCell {
     var player = AVPlayer()
     private let timeObserverKeyPath: String = "timeControlStatus"
     
+    var preloader = StoriesRingView()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        self.backgroundColor = .black
+        self.backgroundColor = .black //.white
         videoView.backgroundColor = .black
         
         NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(showSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerShow"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(hideSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerHide"), object: nil)
         
         player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
         
@@ -48,7 +52,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         addSubview(imageView)
         
         storyButton.translatesAutoresizingMaskIntoConstraints = false
-        storyButton.setTitle("Tap me", for: .normal)
+        storyButton.setTitle("Continue", for: .normal)
         storyButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
         
         addSubview(storyButton)
@@ -58,6 +62,10 @@ class StoryCollectionViewCell: UICollectionViewCell {
 //        muteButton.isHidden = true
 //        muteButton.addTarget(self, action: #selector(didTapOnMute), for: .touchUpInside)
 //        addSubview(muteButton)
+        
+        
+        //preloader = StoriesRingLoader.createStoriesLoader()
+        //preloader.startPreloaderAnimation()
         
         makeConstraints()
     }
@@ -77,10 +85,23 @@ class StoryCollectionViewCell: UICollectionViewCell {
         imageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         imageView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
         
-        storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-        storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-        storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -44).isActive = true
-        storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        let valueDynamicIsland = UIDevice().checkIfHasDynamicIsland()
+        if valueDynamicIsland {
+            storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
+            storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
+            storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18).isActive = true
+            storyButton.heightAnchor.constraint(equalToConstant: 56).isActive = true
+        } else {
+            storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
+            storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
+            storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
+            storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        }
+        
+//        storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
+//        storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
+//        storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -44).isActive = true
+//        storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         
 //        muteButton.topAnchor.constraint(equalTo: topAnchor, constant: 64).isActive = true
 //        muteButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10).isActive = true
@@ -100,6 +121,16 @@ class StoryCollectionViewCell: UICollectionViewCell {
 //    }
     
     @objc
+    private func showSpinnner(_ notification: NSNotification) {
+        //preloader.startPreloaderAnimation()
+    }
+    
+    @objc
+    private func hideSpinnner(_ notification: NSNotification) {
+        //preloader.stopPreloaderAnimation()
+    }
+    
+    @objc
     private func pauseVideo(_ notification: NSNotification) {
         if let slideID = notification.userInfo?["slideID"] as? Int {
             if let currentSlide = currentSlide {
@@ -112,6 +143,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     @objc
     private func playVideo(_ notification: NSNotification) {
+        //preloader.stopPreloaderAnimation()
         if let slideID = notification.userInfo?["slideID"] as? Int {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -175,6 +207,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 }
             }
         } else {
+            //preloader.startPreloaderAnimation()
+            
             //muteButton.isHidden = true
             imageView.isHidden = false
             videoView.isHidden = true
@@ -246,10 +280,10 @@ class StoryCollectionViewCell: UICollectionViewCell {
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
                 delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
-                print(linkIos, currentSlide)
-                
+                //print(linkIos, currentSlide)
                 //delegate?.didTapUrlButton(url: linkIos, slide: currentSlide) //TEST
-                //(UIApplication.shared.delegate as? StoryLinkDelegate)?.openlinkIosStoryWeb(url: linkIos)
+                
+                (UIApplication.shared.delegate as? StoriesAppDelegateProtocol)?.didTapLinkIosOpeningForAppDelegate(url: linkIos)
                 return
             }
         }

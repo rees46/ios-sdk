@@ -1,12 +1,17 @@
 import UIKit
 import WebKit
 
-protocol StoriesViewProtocol: AnyObject {
-    func reloadStoriesSubviews()
+public protocol StoriesViewProtocol: AnyObject {
     func didTapLinkIosOpeningExternal(url: String)
+    func reloadStoriesCollectionSubviews()
+}
+
+public protocol StoriesAppDelegateProtocol: AnyObject {
+    func didTapLinkIosOpeningForAppDelegate(url: String)
 }
 
 class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
+    
     private var collectionView: UICollectionView = {
         let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
         let layout = UICollectionViewFlowLayout()
@@ -58,7 +63,9 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private var needSaveStoryLocal = true
     
     public var sdk: PersonalizationSDK?
-    weak var delegate: StoriesViewProtocol?
+    public var linkDelegate: StoriesViewProtocol?
+    
+    var preloader = StoriesRingView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -110,10 +117,18 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 4).isActive = true
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -10).isActive = true
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: pageIndicator, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 10).isActive = true
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
-        NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+        
+        if valueDynamicIsland {
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -10).isActive = true
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: pageIndicator, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 26).isActive = true
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+        } else {
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -10).isActive = true
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: pageIndicator, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 5).isActive = true
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+            NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
+        }
 
         configureView()
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
@@ -451,12 +466,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         closeButton.setImage(image, for: .normal)
 
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
+        //preloader = StoriesRingLoader.createStoriesLoader()
         updateSlides()
     }
 
     @objc
     func didTapCloseButton() {
-        self.delegate?.reloadStoriesSubviews()
+        self.linkDelegate?.reloadStoriesCollectionSubviews()
         dismiss(animated: true)
     }
 
@@ -497,9 +513,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         if imageStoryIdDownloaded {
             timer.invalidate()
             timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
+            //preloader.stopPreloaderAnimation()
         } else {
             let name = "waitStorySlideCached." + storyImageSlideId
             NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(name), object: nil)
+            
+            //preloader = StoriesRingLoader.createStoriesLoader()
+            //preloader.startAnimation()
         }
     }
     
@@ -673,6 +693,10 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             currentScrollDirection = direction
         }
     }
+    
+    public func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
+        self.linkDelegate?.didTapLinkIosOpeningExternal(url: url)
+    }
 }
 
 extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -761,8 +785,8 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("ContinueTimerWebKitClosed"), object: nil)
     }
     
-    func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
-        self.delegate?.didTapLinkIosOpeningExternal(url: url)
+    public func didTapLinkIosOpeningForAppDelegate(url: String, slide: Slide) {
+        self.linkDelegate?.didTapLinkIosOpeningExternal(url: url)
     }
 }
 
