@@ -1,15 +1,14 @@
 import Foundation
 import UIKit
 
-public protocol StoriesAdsService: AnyObject {
-    func openLinkWebKit(url: String)
+public protocol StoriesCommunicationProtocol: AnyObject {
+    func receiveIosLink(text: String)
 }
 
 public protocol StoriesViewMainProtocol: AnyObject {
     func extendLinkIos(url: String)
     func reloadStoriesCollectionSubviews()
     var storiesDelegate: StoriesViewMainProtocol? { get set }
-    //var adsService: StoriesAdsService? { get set }
 }
 
 public class StoriesView: UIView {
@@ -37,6 +36,7 @@ public class StoriesView: UIView {
     private var sdk: PersonalizationSDK?
     
     public var storiesDelegate: StoriesViewMainProtocol?
+    public weak var communicationDelegate: StoriesCommunicationProtocol?
     
     private var mainVC: UIViewController?
     private var code: String = ""
@@ -195,7 +195,8 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 
 extension StoriesView: StoriesViewMainProtocol {
     public func extendLinkIos(url: String) {
-        print("Open linkIos url for external \(url)")
+        self.communicationDelegate?.receiveIosLink(text: url)
+        print("Receive linkIos url for external \(url)")
     }
     
     public func didTapLinkIosOpeningExternal(url: String) {
