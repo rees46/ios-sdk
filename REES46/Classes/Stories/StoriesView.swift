@@ -105,6 +105,14 @@ public class StoriesView: UIView {
             }
         }
     }
+    
+    public func pauseStoryNow() {
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ExternalActionStoryPause"), object: nil)
+    }
+    
+    public func playStoryNow() {
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ExternalActionStoryPlay"), object: nil)
+    }
 }
 
 extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -140,10 +148,6 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 cell.configure(story: currentStory)
             }
         }
-//        if let currentStory = stories?[indexPath.row] {
-//            cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false)
-//            cell.configure(story: currentStory)
-//        }
         return cell
     }
 

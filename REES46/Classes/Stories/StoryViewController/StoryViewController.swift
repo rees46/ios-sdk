@@ -73,6 +73,9 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         setupLongGestureRecognizerOnCollection()
         NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(pauseTimer), name: .init(rawValue: "ExternalActionStoryPause"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: .init(rawValue: "ExternalActionStoryPlay"), object: nil)
     }
     
     @objc
@@ -633,11 +636,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
+    @objc
     private func pauseTimer() {
         timer.invalidate()
     }
     
-    @objc private func continueTimer() {
+    @objc
+    private func continueTimer() {
         endTime = Date().addingTimeInterval(timeLeft)
         timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
     }
@@ -786,7 +791,7 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
     }
     
     public func didTapLinkIosOpeningForAppDelegate(url: String, slide: Slide) {
-    self.linkDelegate?.extendLinkIos(url: url)// extendLinkIos(url: url)// didTapLinkIosOpeningExternal(url: url)
+        self.linkDelegate?.extendLinkIos(url: url)
     }
 }
 
