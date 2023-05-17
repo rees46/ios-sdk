@@ -664,6 +664,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     private func setupLongGestureRecognizerOnCollection() {
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
         longPressedGesture.minimumPressDuration = 0.2
+        //longPressedGesture.allowableMovement = 10
         longPressedGesture.delegate = self
         longPressedGesture.delaysTouchesBegan = true
         collectionView.addGestureRecognizer(longPressedGesture)
@@ -680,6 +681,13 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
             return
         }
         if (gestureRecognizer.state != .began) {
+            let p = gestureRecognizer.location(in: collectionView)
+
+            if let indexPath = collectionView.indexPathForItem(at: p) {
+                let slide = stories[indexPath.section].slides[indexPath.row]
+                NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
+                pauseTimer()
+            }
             return
         } else {
             let p = gestureRecognizer.location(in: collectionView)
