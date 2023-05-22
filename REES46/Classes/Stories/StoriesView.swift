@@ -24,6 +24,7 @@ public class StoriesView: UIView {
         layout.scrollDirection = .horizontal
         
         layout.itemSize = CGSize(width: 76, height: 113)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
         
         let collectionView = UICollectionView(frame: testFrame, collectionViewLayout: layout)
         collectionView.showsHorizontalScrollIndicator = false
@@ -122,7 +123,10 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return isInDownloadMode ? 4 : stories?.count ?? 0
-        
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 18
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -195,6 +199,39 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             }
         }
     }
+
+//    fileprivate var sectionInsets: UIEdgeInsets {
+//        return .zero
+//    }
+//
+//    fileprivate var itemsPerRow: CGFloat {
+//        return 4
+//    }
+//
+//    fileprivate var interitemSpace: CGFloat {
+//        return 5.0
+//    }
+//
+//    public func collectionView(_ collectionView: UICollectionView,
+//                            layout collectionViewLayout: UICollectionViewLayout,
+//                            sizeForItemAt indexPath: IndexPath) -> CGSize {
+//        let sectionPadding = sectionInsets.left * (itemsPerRow + 1)
+//        let interitemPadding = max(0.0, itemsPerRow - 1) * interitemSpace
+//        let availableWidth = collectionView.bounds.width - sectionPadding - interitemPadding
+//        let widthPerItem = availableWidth / itemsPerRow
+//
+//        return CGSize(width: widthPerItem, height: widthPerItem)
+//    }
+//
+//    public override var intrinsicContentSize: CGSize {
+//        return collectionView.collectionViewLayout.collectionViewContentSize
+//    }
+//
+//    public func collectionView(_ collectionView: UICollectionView,
+//                            layout collectionViewLayout: UICollectionViewLayout,
+//                            insetForSectionAt section: Int) -> UIEdgeInsets {
+//        return sectionInsets
+//    }
 }
 
 extension StoriesView: StoriesViewMainProtocol {

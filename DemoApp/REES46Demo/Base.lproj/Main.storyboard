@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="dLu-uN-GoW">
-    <device id="retina6_1" orientation="portrait" appearance="dark"/>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="dLu-uN-GoW">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -11,7 +11,7 @@
         <!--View Controller-->
         <scene sceneID="ufC-wZ-h7g">
             <objects>
-                <viewController storyboardIdentifier="ViewController" id="vXZ-lx-hvc" customClass="ViewController" customModule="REES46DemoApp" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ViewController" id="vXZ-lx-hvc" customClass="ViewController" customModule="REES46Demo" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="jyV-Pf-zRb"/>
                         <viewControllerLayoutGuide type="bottom" id="2fi-mo-0CV"/>
@@ -20,7 +20,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6qN-Wn-uB2" customClass="UpdateButton" customModule="REES46DemoApp" customModuleProvider="target">
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6qN-Wn-uB2" customClass="UpdateButton" customModule="REES46Demo" customModuleProvider="target">
                                 <rect key="frame" x="167" y="351" width="90" height="40"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="90" id="UHd-0w-1Ht"/>
@@ -51,7 +51,7 @@
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WVN-UL-gKy" customClass="StoriesView" customModule="REES46">
-                                <rect key="frame" x="20" y="632" width="374" height="130"/>
+                                <rect key="frame" x="0.0" y="632" width="414" height="130"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="130" id="wqp-TX-QXY"/>
@@ -63,13 +63,13 @@
                             <constraint firstAttribute="trailingMargin" secondItem="xie-eK-LO0" secondAttribute="trailing" constant="40" id="3O5-76-N1S"/>
                             <constraint firstAttribute="trailingMargin" secondItem="Xqd-20-S5Q" secondAttribute="trailing" constant="40" id="6ib-3J-6yM"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="BIB-Ve-qFf"/>
-                            <constraint firstItem="WVN-UL-gKy" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" id="Dqn-MI-dDT"/>
+                            <constraint firstItem="WVN-UL-gKy" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="-20" id="Dqn-MI-dDT"/>
                             <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="100" id="H7y-BV-oZN"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="top" secondItem="xie-eK-LO0" secondAttribute="bottom" constant="40" id="KOM-98-h4H"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" constant="5" id="LbY-Jv-3Yl"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="top" secondItem="Xqd-20-S5Q" secondAttribute="bottom" constant="40" id="Tgv-NX-s2w"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="awM-uK-1xe"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="WVN-UL-gKy" secondAttribute="trailing" id="bFa-0g-Nv4"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="WVN-UL-gKy" secondAttribute="trailing" constant="-20" id="bFa-0g-Nv4"/>
                             <constraint firstItem="xie-eK-LO0" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="lvv-rr-Ema"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="tHs-pw-VCx"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="top" secondItem="lyo-LU-rYQ" secondAttribute="bottom" constant="40" id="wOv-fZ-q3z"/>
@@ -89,7 +89,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="x5A-6p-PRh" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="832.79999999999995" y="118.29085457271366"/>
+            <point key="canvasLocation" x="831.88405797101461" y="117.85714285714285"/>
         </scene>
         <!--Main-->
         <scene sceneID="kBR-sg-aGd">

@@ -46,7 +46,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         
         storyAuthorNameLabel.textAlignment = .center
         storyAuthorNameLabel.numberOfLines = 2
-        storyAuthorNameLabel.lineBreakMode = .byTruncatingTail
+        storyAuthorNameLabel.lineBreakMode = .byWordWrapping
         storyAuthorNameLabel.font = .systemFont(ofSize: 17)
         storyAuthorNameLabel.translatesAutoresizingMaskIntoConstraints = false
         storyAuthorNameLabel.backgroundColor = bgColor
@@ -90,8 +90,6 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                 if self.traitCollection.userInterfaceStyle == .dark {
                     labelColor = "#FFFFFF".hexToRGB()
                 }
-            } else {
-                // Fallback on earlier versions
             }
             
             storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
@@ -107,26 +105,19 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             let storiesNotViewBg = settings.borderNotViewed.hexToRGB()
             
             if (viewed) {
-                //print("Viewed cache backend")
                 storyWhiteBackCircle.backgroundColor = viewed ?
                 UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
                 UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
             } else {
-                //print("Viewed cache local")
                 storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
                 UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
                 UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
             }
-//            //storyWhiteBackCircle.backgroundColor = viewed ?
-//            storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
-//            UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
-//            UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
-            
             storyWhiteBackCircle.layer.cornerRadius = storyWhiteBackCircle.frame.width / 2
             storyWhiteBackCircle.layer.masksToBounds = true
             
-            if (viewed) {
-                storyImage.alpha = 0.9
+            if (viewed || viewedLocalKey) {
+                storyImage.alpha = 0.75
             } else {
                 storyImage.alpha = 1.0
             }
@@ -176,8 +167,8 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storyImage.bottomAnchor.constraint(equalTo: storyWhiteBackCircle.bottomAnchor, constant: -5.5).isActive = true
         
         storyAuthorNameLabel.topAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: 8).isActive = true
-        storyAuthorNameLabel.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor,constant: 6).isActive = true
-        storyAuthorNameLabel.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -6).isActive = true
+        storyAuthorNameLabel.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor,constant: -10).isActive = true
+        storyAuthorNameLabel.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: 10).isActive = true
         
         pinSymbolView.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor).isActive = true
         pinSymbolView.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -4).isActive = true
