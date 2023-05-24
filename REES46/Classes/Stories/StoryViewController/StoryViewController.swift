@@ -70,7 +70,8 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         commonInit()
-        setupLongGestureRecognizerOnCollection()
+        setupGestureRecognizerOnCollection()
+        
         NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
         
@@ -139,14 +140,12 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         leftSwipe.direction = .left
         let rightSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeRight))
         rightSwipe.direction = .right
-        let tap = UITapGestureRecognizer(target: self, action: #selector(didTapOnScreen(_:)))
         
         collectionView.addGestureRecognizer(leftSwipe)
         collectionView.addGestureRecognizer(rightSwipe)
-        collectionView.addGestureRecognizer(tap)
     }
     
-    @objc private func didTapOnScreen(_ gestureRecognizer: UITapGestureRecognizer) {
+    @objc private func didSingleTapOnScreen(_ gestureRecognizer: UITapGestureRecognizer) {
         let tapLocation = gestureRecognizer.location(in: self.view)
         let halfWidth = self.view.bounds.width / 2.0
         if tapLocation.x < halfWidth {
@@ -659,14 +658,18 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         })
     }
     
-    private func setupLongGestureRecognizerOnCollection() {
+    private func setupGestureRecognizerOnCollection() {
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
-        longPressedGesture.minimumPressDuration = 0.15
-        longPressedGesture.allowableMovement = 70
+        longPressedGesture.minimumPressDuration = 0.20
+        longPressedGesture.allowableMovement = 50
         longPressedGesture.delegate = self
         longPressedGesture.delaysTouchesBegan = true
         longPressedGesture.cancelsTouchesInView = true
         collectionView.addGestureRecognizer(longPressedGesture)
+        
+        let singleTap = UITapGestureRecognizer(target: self, action: #selector(didSingleTapOnScreen(_:)))
+        singleTap.require(toFail: longPressedGesture)
+        collectionView.addGestureRecognizer(singleTap)
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {

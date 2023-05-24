@@ -12,7 +12,7 @@ final public class RRDownloadManager: NSObject {
     private var backgroundSession: URLSession!
     
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
-    public var showLocalNotificationOnBackgroundDownloadDone = true
+    //public var showLocalNotificationOnBackgroundDownloadDone = true
     public var localNotificationText: String?
 
     public static let shared: RRDownloadManager = { return RRDownloadManager() }()
@@ -116,7 +116,6 @@ final public class RRDownloadManager: NSObject {
             }
         }
     }
-    //MARK:- Private methods
     
     private override init() {
         super.init()
@@ -136,29 +135,29 @@ final public class RRDownloadManager: NSObject {
         return (false, nil)
     }
     
-    private func showLocalNotification(withText text:String) {
-        let notificationCenter = UNUserNotificationCenter.current()
-        notificationCenter.getNotificationSettings { (settings) in
-            guard settings.authorizationStatus == .authorized else {
-                debugPrint("Not authorized to schedule notification")
-                return
-            }
-            
-            let content = UNMutableNotificationContent()
-            content.title = text
-            content.sound = UNNotificationSound.default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1,
-                                                            repeats: false)
-            let identifier = "RRDownloadManagerNotification"
-            let request = UNNotificationRequest(identifier: identifier,
-                                                content: content, trigger: trigger)
-            notificationCenter.add(request, withCompletionHandler: { (error) in
-                if let error = error {
-                    debugPrint("Could not schedule notification, error : \(error)")
-                }
-            })
-        }
-    }
+//    private func showLocalNotification(withText text:String) {
+//        let notificationCenter = UNUserNotificationCenter.current()
+//        notificationCenter.getNotificationSettings { (settings) in
+//            guard settings.authorizationStatus == .authorized else {
+//                debugPrint("Not authorized to schedule notification")
+//                return
+//            }
+//
+//            let content = UNMutableNotificationContent()
+//            content.title = text
+//            content.sound = UNNotificationSound.default
+//            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1,
+//                                                            repeats: false)
+//            let identifier = "RRDownloadManagerNotification"
+//            let request = UNNotificationRequest(identifier: identifier,
+//                                                content: content, trigger: trigger)
+//            notificationCenter.add(request, withCompletionHandler: { (error) in
+//                if let error = error {
+//                    debugPrint("Could not schedule notification, error : \(error)")
+//                }
+//            })
+//        }
+//    }
 }
 
 extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
@@ -238,14 +237,14 @@ extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
                         completion()
                     }
                     
-                    if self.showLocalNotificationOnBackgroundDownloadDone {
-                        var notificationText = "Download completed"
-                        if let userNotificationText = self.localNotificationText {
-                            notificationText = userNotificationText
-                        }
-                        
-                        self.showLocalNotification(withText: notificationText)
-                    }
+//                    if self.showLocalNotificationOnBackgroundDownloadDone {
+//                        var notificationText = "Download completed"
+//                        if let userNotificationText = self.localNotificationText {
+//                            notificationText = userNotificationText
+//                        }
+//
+//                        self.showLocalNotification(withText: notificationText)
+//                    }
                     
                     self.backgroundCompletionHandler = nil
                 })
