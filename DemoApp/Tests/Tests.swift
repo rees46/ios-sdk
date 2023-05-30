@@ -8,7 +8,7 @@ class DeviceIDSaveTest: XCTestCase {
         let deviceID = UserDefaults.standard.string(forKey: "device_id") ?? "" // Get DeviceID from storage
         if deviceID.isEmpty{
             XCTAssert(false, "deviceID bad, init sdk, rerun test")
-        }else{
+        } else {
             XCTAssert(true, "deviceID good")
         }
     }
@@ -33,7 +33,7 @@ class Tests: XCTestCase {
                 let deviceID = sdk.getDeviceID()
                 if deviceID.isEmpty{
                     XCTAssert(false, "deviceID bad")
-                }else{
+                } else {
                     XCTAssert(true, "deviceID good")
                 }
             }
@@ -48,11 +48,11 @@ class Tests: XCTestCase {
                 let deviceID = sdk.getDeviceID()
                 if oldDeviceID == deviceID {
                     XCTAssert(true, "deviceID bad")
-                }else{
+                } else {
                     XCTAssert(false, "deviceID good")
                 }
             }
-        }else{
+        } else {
             XCTAssert(false, "use this test when you have inited sdk")
         }
     }
@@ -65,11 +65,11 @@ class Tests: XCTestCase {
                 let session = sdk.getSession() // Check session
                 if oldSession != session{
                     XCTAssert(false, "session bad")
-                }else{
+                } else {
                     XCTAssert(true, "session good")
                 }
             }
-        }else{
+        } else {
             XCTAssert(false, "use this test when you have inited sdk")
         }
     }

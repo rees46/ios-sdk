@@ -16,15 +16,15 @@ class ViewController: UIViewController {
     @IBOutlet private weak var didLabel: UITextView!
     
     @IBOutlet private weak var updateButton: UIButton!
-    @IBOutlet private weak var storiesBackView: StoriesView!
+    @IBOutlet private weak var storiesCollectionView: StoriesView!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         updateButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
-        addObserver()
+        addStoriesObserver()
     }
     
-    func addObserver() {
+    func addStoriesObserver() {
         NotificationCenter.default.addObserver(self, selector: #selector(updateStories), name: globalSDKNotificationName, object: nil)
     }
     
@@ -36,14 +36,15 @@ class ViewController: UIViewController {
         super.didReceiveMemoryWarning()
     }
     
-    @objc private func updateStories() {
+    @objc
+    private func updateStories() {
         if let globalSDK = globalSDK {
-            storiesBackView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
     
     @objc
-    func didTapUpdate() {
+    private func didTapUpdate() {
         pushTokenLabel.text = "PUSHTOKEN = " + pushGlobalToken
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken
@@ -51,15 +52,15 @@ class ViewController: UIViewController {
         globalSDK?.resetCachedWatchedStoriesStates()
 
         if let globalSDK = globalSDK {
-            storiesBackView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
 }
 
+
 @IBDesignable class UpdateButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
-
         updateButtonCornerRadius()
     }
 

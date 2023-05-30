@@ -83,7 +83,7 @@
                         <outlet property="didLabel" destination="lyo-LU-rYQ" id="VoD-CT-Vg4"/>
                         <outlet property="fcmTokenLabel" destination="xie-eK-LO0" id="DxK-4a-Toy"/>
                         <outlet property="pushTokenLabel" destination="Xqd-20-S5Q" id="qJB-Bt-Wl2"/>
-                        <outlet property="storiesBackView" destination="WVN-UL-gKy" id="oXe-tw-v4C"/>
+                        <outlet property="storiesCollectionView" destination="WVN-UL-gKy" id="9wG-wT-MM4"/>
                         <outlet property="updateButton" destination="6qN-Wn-uB2" id="OWr-Ib-ZCP"/>
                     </connections>
                 </viewController>

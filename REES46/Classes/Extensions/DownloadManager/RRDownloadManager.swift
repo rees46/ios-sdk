@@ -12,17 +12,16 @@ final public class RRDownloadManager: NSObject {
     private var backgroundSession: URLSession!
     
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
-    //public var showLocalNotificationOnBackgroundDownloadDone = true
     public var localNotificationText: String?
 
     public static let shared: RRDownloadManager = { return RRDownloadManager() }()
     
-    public func downloadFile(withRequest request: URLRequest,
-                            inDirectory directory: String? = nil,
-                            withName fileName: String? = nil,
-                            shouldDownloadInBackground: Bool = false,
-                            onProgress progressBlock:DownloadProgressBlock? = nil,
-                            onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
+    public func downloadStoryMediaFile(withRequest request: URLRequest,
+                                       inDirectory directory: String? = nil,
+                                       withName fileName: String? = nil,
+                                       shouldDownloadInBackground: Bool = false,
+                                       onProgress progressBlock:DownloadProgressBlock? = nil,
+                                       onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
         
         guard let url = request.url else {
             debugPrint("Request url is empty")
@@ -46,13 +45,13 @@ final public class RRDownloadManager: NSObject {
                                         fileName: fileName,
                                         directoryName: directory)
 
-        let key = self.getDownloadKey(withUrl: url)
+        let key = self.getExDownloadKey(withUrl: url)
         self.ongoingDownloads[key] = download
         downloadTask.resume()
         return key;
     }
     
-    public func getDownloadKey(withUrl url: URL) -> String {
+    public func getExDownloadKey(withUrl url: URL) -> String {
         return url.absoluteString
     }
     
@@ -134,30 +133,6 @@ final public class RRDownloadManager: NSObject {
         }
         return (false, nil)
     }
-    
-//    private func showLocalNotification(withText text:String) {
-//        let notificationCenter = UNUserNotificationCenter.current()
-//        notificationCenter.getNotificationSettings { (settings) in
-//            guard settings.authorizationStatus == .authorized else {
-//                debugPrint("Not authorized to schedule notification")
-//                return
-//            }
-//
-//            let content = UNMutableNotificationContent()
-//            content.title = text
-//            content.sound = UNNotificationSound.default
-//            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1,
-//                                                            repeats: false)
-//            let identifier = "RRDownloadManagerNotification"
-//            let request = UNNotificationRequest(identifier: identifier,
-//                                                content: content, trigger: trigger)
-//            notificationCenter.add(request, withCompletionHandler: { (error) in
-//                if let error = error {
-//                    debugPrint("Could not schedule notification, error : \(error)")
-//                }
-//            })
-//        }
-//    }
 }
 
 extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
@@ -236,15 +211,6 @@ extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
                     if let completion = self.backgroundCompletionHandler {
                         completion()
                     }
-                    
-//                    if self.showLocalNotificationOnBackgroundDownloadDone {
-//                        var notificationText = "Download completed"
-//                        if let userNotificationText = self.localNotificationText {
-//                            notificationText = userNotificationText
-//                        }
-//
-//                        self.showLocalNotification(withText: notificationText)
-//                    }
                     
                     self.backgroundCompletionHandler = nil
                 })

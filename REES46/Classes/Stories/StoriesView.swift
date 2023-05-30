@@ -75,7 +75,7 @@ public class StoriesView: UIView {
         self.sdk = sdk
         self.mainVC = mainVC
         self.code = code
-        loadData()
+        loadStoriesData()
     }
     
     private func setBgColor(color: String) {
@@ -85,7 +85,7 @@ public class StoriesView: UIView {
         }
     }
 
-    private func loadData() {
+    private func loadStoriesData() {
         sdk?.getStories(code: code) { result in
             switch result {
             case let .success(response):
@@ -99,9 +99,9 @@ public class StoriesView: UIView {
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
-                    print("Error: ", customError)
+                    print("Error:", customError)
                 default:
-                    print("Error: ", error.localizedDescription)
+                    print("Error:", error.description)
                 }
             }
         }
@@ -237,11 +237,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 extension StoriesView: StoriesViewMainProtocol {
     public func extendLinkIos(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
-        print("Receive linkIos url for external \(url)")
-    }
-    
-    public func didTapLinkIosOpeningExternal(url: String) {
-        print("Open linkIos url for external \(url)")
+        print("Received linkIos for external use: \(url)")
     }
 
     public func reloadStoriesCollectionSubviews() {

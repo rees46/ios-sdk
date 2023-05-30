@@ -15,7 +15,7 @@ public enum NetworkConnectionType : Equatable, CustomStringConvertible {
         case .ethernet:
             return "Ethernet"
         case .notdetected:
-            return "Cellular not detected"
+            return "AirplaneMode"
         }
     }
 }
