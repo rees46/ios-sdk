@@ -1,8 +1,9 @@
 Pod::Spec.new do |s|
   s.name             = 'REES46'
-  s.version          = '3.3.8'
-  s.summary          = 'REES46 SDK for iOS platform — the wide toolset for ecommerce apps. You can integrate all REES46 SDK tools into your iOS/Android/Web app.'
+  s.version          = '3.3.9'
 
+  s.summary          = 'REES46 SDK for iOS platform — the wide toolset for ecommerce apps. You can integrate all REES46 SDK tools into your iOS/Android/Web app.'
+  s.readme           = 'https://reference.api.rees46.com/#{spec.version.to_s}/README.md'
 
   s.description      = <<-DESC
   This is REES46 SDK for iOS platform — the wide toolset for ecommerce apps:
@@ -31,13 +32,13 @@ Pod::Spec.new do |s|
 
   s.screenshots = ['https://rees46.com/static-images/cocoapods/r46_ios_sdk_cocoapods_cover.png']
 
-  s.source       = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "master",
+  s.source           = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "master",
   :tag => s.version.to_s }
 
   s.ios.deployment_target = '11.0'
 
-  s.source_files = 'REES46/Classes/**/*.swift'
-  s.resources = 'REES46/**/*.{xcassets,json,png}'
+  s.source_files     = 'REES46/Classes/**/*.swift'
+  s.resources        = 'REES46/**/*.{xcassets,json,png}'
    
   s.swift_version = '5'
 

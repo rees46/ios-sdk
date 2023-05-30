@@ -23,14 +23,39 @@ public enum Event {
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
 }
 
-public enum SDKError: Error {
+public enum SDKError: Error, CustomStringConvertible {
+    case noError
     case incorrectAPIKey
     case initializationFailed
-    case noError
     case responseError
     case invalidResponse
     case decodeError
+    case networkOfflineError
+    case airplaneModeError
     case custom(error: String)
+    
+    public var description: String {
+        switch self {
+        case .noError:
+            return "No Errors"
+        case .incorrectAPIKey:
+            return "Incorrect API Key"
+        case .initializationFailed:
+            return "Initialization Failed"
+        case .responseError:
+            return "Response Error"
+        case .invalidResponse:
+            return "Invalid Response"
+        case .decodeError:
+            return "Decode Error"
+        case .networkOfflineError:
+            return "Network Offline"
+        case .airplaneModeError:
+            return "Airplane Mode Error"
+        case .custom(error: let error):
+            return "Custom Error \(error)"
+        }
+    }
 }
 
 public enum PushEventType: String {
@@ -139,7 +164,6 @@ public extension PersonalizationSDK {
     
     func resetCachedWatchedStoriesStates() {
         let included_prefixes = ["story."]
-
         let dict = UserDefaults.standard.dictionaryRepresentation()
         let keys = dict.keys.filter { key in
             for prefix in included_prefixes {
@@ -150,19 +174,17 @@ public extension PersonalizationSDK {
             return false
         }
         for key in keys {
-            if let value = dict[key] {
-                debugPrint("Clear local stories cache for \(key) = \(value)")
+            if dict[key] != nil { //if let value = dict[key] {
+                //print("Clear local stories cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }
         UserDefaults.standard.synchronize()
-        
         resetDownloadedStoriesStates()
     }
     
     func resetDownloadedStoriesStates() {
         let included_prefixes = ["waitStorySlideCached."]
-
         let dict = UserDefaults.standard.dictionaryRepresentation()
         let keys = dict.keys.filter { key in
             for prefix in included_prefixes {
@@ -174,7 +196,6 @@ public extension PersonalizationSDK {
         }
         for key in keys {
             if dict[key] != nil {
-                //debugPrint("Clear waiting cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }

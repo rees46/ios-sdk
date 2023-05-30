@@ -146,23 +146,19 @@ class Slide {
         }
         
         let request = URLRequest(url: url)
-        
-        let downloadKey = self.downloadManager.downloadFile(withRequest: request,
-                                                           inDirectory: directoryName,
-                                                           onProgress:  { [weak self] (progress) in
-                                                            //let percentage = String(format: "%.1f %", (progress * 100))
-                                                            //self?.progressView.setProgress(Float(progress), animated: true)
-                                                            //self?.progressLabel.text = "\(percentage) %"
+        _ = self.downloadManager.downloadStoryMediaFile(withRequest: request,
+                                                        inDirectory: directoryName,
+                                                        shouldDownloadInBackground: false,
+                                                        onProgress: {(progress) in
+            // let percent = String(format: "%.1f %", (progress * 100))
+            // let progressCounter = Float(progress)
+            // print("Background video download progress : \(percent) for task \(request.debugDescription)")
             
-            let percentageD = String(format: "%.1f %", (progress * 100))
-            //debugPrint("Background download video progress : \(percentageD) for task \(request.debugDescription)")
-        }) { [weak self] (error, url) in
-            
+        }) {(error, url) in
             if let error = error {
                 print("Error is \(error as NSError)")
             } else {
                 if let url = url {
-                    //print("Downloaded file's url is \(url.path)")
                     do {
                         try fileManager.moveItem(at: url, to: temporaryFileURL)
                         completion(.success(temporaryFileURL))
@@ -172,32 +168,7 @@ class Slide {
                 }
             }
         }
-        //print("The video with key is downloaded \(downloadKey!)")
-        
-
-//        // Checking if a file exists
-//        if fileManager.fileExists(atPath: temporaryFileURL.path) {
-//            completion(.success(temporaryFileURL))
-//            return
-//        }
-//
-//        let task = URLSession.shared.downloadTask(with: url) { location, response, error in
-//            guard let location = location else {
-//                completion(.failure(error ?? NSError(domain: "Unknown error", code: -1, userInfo: nil)))
-//                return
-//            }
-//
-//            do {
-//                try fileManager.moveItem(at: location, to: temporaryFileURL)
-//                completion(.success(temporaryFileURL))
-//            } catch {
-//                completion(.failure(error))
-//            }
-//        }
-//
-//        task.resume()
     }
-
     
     func getVideoData(from fileURL: URL) -> Data? {
         do {

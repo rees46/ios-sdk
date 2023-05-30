@@ -1,11 +1,16 @@
 # REES46 SDK for iOS
 
-[![CI Status](https://img.shields.io/travis/Avsi222/REES46.svg?style=flat)](https://travis-ci.org/Avsi222/REES46)
 [![Version](https://img.shields.io/cocoapods/v/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)
+![iOS](https://img.shields.io/badge/iOS-release)
+![Release](https://img.shields.io/badge/release-blueviolet)
 [![License](https://img.shields.io/cocoapods/l/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)
-[![Platform](https://img.shields.io/cocoapods/p/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)
 
 ![REES46](https://rees46.com/static-images/cocoapods/r46_ios_sdk_cocoapods_cover.png)
+
+## Description
+
+REES46 SDK for iOS platform - the wide toolset for eCommerce apps.
+This SDK can be used to integrate in your own app for iOS in few steps.
 
 ## Installation
 
@@ -142,7 +147,7 @@ sdk.track(event: .synchronizeCart(items: [CartItem(productId: "784"), CartItem(p
 ### User is made a purchase
 
 ```swift
-sdk.track(event: .orderCreated(orderId: "ORDER_ID", totalValue: 33.3, products: [(id: "PRODUCT_1_ID", amount: 3), (id: "PRODUCT_2_ID", amount: 1)])) { _ in
+sdk.track(event: .orderCreated(orderId: "123", totalValue: 33.3, products: [(id: "PRODUCT_2_ID", amount: 3, price: 500)], deliveryAddress: "Address" , deliveryType: "post", promocode: "999", paymentType: "cash", taxFree: true)) { trackResponse in _ in
   print("Order is created callback")
 }
 ```

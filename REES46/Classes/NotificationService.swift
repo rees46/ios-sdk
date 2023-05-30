@@ -59,9 +59,9 @@ public class NotificationService: NotificationServiceProtocol {
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
-                    print("Error: ", customError)
+                    print("Error:", customError)
                 default:
-                    print("Error: ", error.localizedDescription)
+                    print("Error:", error.description)
                 }
             }
         }
@@ -85,9 +85,9 @@ public class NotificationService: NotificationServiceProtocol {
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
-                    print("Error: ", customError)
+                    print("Error:", customError)
                 default:
-                    print("Error: ", error.localizedDescription)
+                    print("Error:", error.description)
                 }
             }
         }
@@ -121,7 +121,8 @@ public class NotificationService: NotificationServiceProtocol {
     
     private func pushProcessing(userInfo: [AnyHashable: Any]) {
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
-            guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
+            //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
+            guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
                 processingNotSDKPush(userInfo: userInfo)
                 return
             }
@@ -234,8 +235,6 @@ public class NotificationService: NotificationServiceProtocol {
             }
             processingEventType(eventType: eventType, eventLink: eventLink)
         }
-        
-        
     }
     
     private func notificationClicked(type: String, code: String) {
