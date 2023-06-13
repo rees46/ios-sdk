@@ -29,8 +29,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     var userInfo: InitResponse = InitResponse()
 
-    private let mySerialQueue = DispatchQueue(label: "myQueue", qos: .background)
-
+    private let sessionQueue = SessionQueue.manager
+    
     private let semaphore = DispatchSemaphore(value: 0)
 
     init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, completion: ((SDKError?) -> Void)? = nil) {
@@ -54,7 +54,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         deviceID = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
         urlSession = URLSession.shared
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
                 case .success:
@@ -113,7 +113,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func setPushTokenNotification(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
@@ -123,6 +123,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -136,7 +137,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
@@ -146,6 +147,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -159,7 +161,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func searchBlank(completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "search/blank"
             let params: [String : String] = [
                 "did": self.deviceID,
@@ -167,6 +169,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { (result) in
                 switch result {
@@ -182,7 +185,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "nps/create"
             let params: [String : String] = [
                 "did": self.deviceID,
@@ -199,6 +202,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params) { (result) in
                 switch result {
@@ -212,7 +216,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             
             let path = "profile/set"
             
@@ -308,6 +312,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             var params: [String: Any] = [String: Any]()
@@ -340,7 +345,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             var path = "push"
             var paramEvent = ""
             var params: [String: Any] = [
@@ -477,7 +482,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
      */
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "push/custom"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
@@ -541,7 +546,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "recommend/\(blockId)"
             var params = [
                 "shop_id": self.shopId,
@@ -571,6 +576,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
 
             self.getRequest(path: path, params: params) { result in
@@ -587,7 +593,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
                 "shop_id": self.shopId,
@@ -657,6 +663,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { result in
                 switch result {
@@ -674,7 +681,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
 
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "search"
             var params = [
                 "shop_id": self.shopId,
@@ -695,6 +702,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -712,7 +720,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     // Send tracking event when user clicked mobile push notification
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "track/clicked"
             let params: [String: String] = [
                 "shop_id": self.shopId,
@@ -723,6 +731,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
@@ -738,7 +747,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     // Send tracking event when user receive mobile push notification
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "track/received"
             let params: [String: String] = [
                 "shop_id": self.shopId,
@@ -749,6 +758,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
@@ -764,7 +774,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "subscriptions/subscribe_for_product_price"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
@@ -798,7 +808,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "subscriptions/subscribe_for_product_available"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
@@ -876,7 +886,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "segments/add"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
@@ -908,7 +918,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        mySerialQueue.async {
+        sessionQueue.addOperation {
             let path = "segments/remove"
             var params: [String: Any] = [
                 "shop_id": self.shopId,

@@ -308,7 +308,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            switch searchResponse {
 //            case let .success(response):
 //                print("     full search is success")
-//                //print("Response: ", response) //Uncomment it if you want to see response
+//                withExtendedLifetime(response) {
+//                    //print("Response:", response) //Uncomment it if you want to see response
+//                }
 //            case let .failure(error):
 //                switch error {
 //                case let .custom(customError):
