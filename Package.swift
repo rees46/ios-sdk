@@ -20,8 +20,14 @@ let package = Package(
             .target(
                 name: "REES46",
                 path: "REES46/Classes",
+                exclude: ["Resources/Assets.swift"],
                 resources: [
                     .process("Resources")
+                ],
+                linkerSettings: [
+                    .linkedFramework("Foundation"),
+                    .linkedFramework("UIKit", .when(platforms: [.iOS])),
+                    .linkedFramework("AppKit", .when(platforms: [.macOS])),
                 ]
         )
     ]
