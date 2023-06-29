@@ -5,6 +5,8 @@ import AVFoundation
 protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
     func didTapOpenLinkIosExternalWeb(url: String, slide: Slide)
+    func openProductsCarousel(products: [StoriesProduct])
+    func closeProductsCarousel()
 }
 
 class StoryCollectionViewCell: UICollectionViewCell {
@@ -14,6 +16,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     let videoView = UIView()
     let imageView = UIImageView()
     let storyButton = StoryButton()
+    let productsButton = ProductsButton()
 //    let muteButton = UIButton()
     
     private var selectedElement: StoriesElement?
@@ -38,7 +41,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         NotificationCenter.default.addObserver(self, selector: #selector(showSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerShow"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(hideSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerHide"), object: nil)
         
-        player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
+        //player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
         
         videoView.contentMode = .scaleToFill
         videoView.isOpaque = true
@@ -55,15 +58,19 @@ class StoryCollectionViewCell: UICollectionViewCell {
         storyButton.translatesAutoresizingMaskIntoConstraints = false
         storyButton.setTitle("Continue", for: .normal)
         storyButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
-        
         addSubview(storyButton)
+        
+        productsButton.translatesAutoresizingMaskIntoConstraints = false
+        productsButton.setTitle("Continue", for: .normal)
+        productsButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+        addSubview(productsButton)
+        
 //        let bundle = Bundle(for: classForCoder)
 //        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: bundle, compatibleWith: nil), for: .normal)
 //        muteButton.translatesAutoresizingMaskIntoConstraints = false
 //        muteButton.isHidden = true
 //        muteButton.addTarget(self, action: #selector(didTapOnMute), for: .touchUpInside)
 //        addSubview(muteButton)
-        
         
         //preloader = StoriesRingLoader.createStoriesLoader()
         //preloader.startPreloaderAnimation()
@@ -86,16 +93,26 @@ class StoryCollectionViewCell: UICollectionViewCell {
         imageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         imageView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
         
-        if UIDevice().checkIfHasDynamicIsland() {
+        if GlobalHelper.sharedInstance.checkIfHasDynamicIsland() {
             storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
             storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
             storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18).isActive = true
             storyButton.heightAnchor.constraint(equalToConstant: 56).isActive = true
+            
+            productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
+            productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
+            productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
+            productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
         } else {
             storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
             storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
             storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
             storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+            
+            productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
+            productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
+            productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
+            productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
             
             if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
                 storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
@@ -104,16 +121,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 storyButton.heightAnchor.constraint(equalToConstant: 54).isActive = true
             }
         }
-        
-//        storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-//        storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-//        storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -44).isActive = true
-//        storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        
-//        muteButton.topAnchor.constraint(equalTo: topAnchor, constant: 64).isActive = true
-//        muteButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10).isActive = true
-//        muteButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
-//        muteButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
     }
     
 //    @objc private func didTapOnMute() {
@@ -218,8 +225,17 @@ class StoryCollectionViewCell: UICollectionViewCell {
             selectedElement = element
             storyButton.configButton(buttonData: element)
             storyButton.isHidden = false
+            productsButton.isHidden = true
+        } else if let element = slide.elements.first(where: {$0.type == .products}) {
+            selectedElement = element
+            productsButton.layer.cornerRadius = layer.frame.size.height / 2
+            productsButton.layer.masksToBounds = true
+            productsButton.configProductsButton(buttonData: element)
+            storyButton.isHidden = true
+            productsButton.isHidden = false
         } else {
             storyButton.isHidden = true
+            productsButton.isHidden = true
         }
     }
     
@@ -272,6 +288,12 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     @objc
     private func didTapButton() {
+        
+        if let productsList = selectedElement?.products, productsList.count != 0 {
+            let products = productsList
+            delegate?.openProductsCarousel(products: products)
+            return
+        }
         
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {

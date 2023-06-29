@@ -1,11 +1,3 @@
-//
-//  StoryButton.swift
-//  REES46
-//
-//  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
-//
-
 import UIKit
 
 protocol CustomButtonDelegate: AnyObject {
@@ -38,6 +30,9 @@ class StoryButton: UIButton {
             self.backgroundColor = .white
         }
         
+        self.layer.cornerRadius = CGFloat(buttonData.cornerRadius)
+        self.layer.masksToBounds = true
+        
         if let titleColor = buttonData.color {
             let color = titleColor.hexToRGB()
             self.setTitleColor(UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1), for: .normal)
@@ -45,20 +40,23 @@ class StoryButton: UIButton {
             self.setTitleColor(.black, for: .normal)
         }
         
-        self.layer.cornerRadius = CGFloat(buttonData.cornerRadius)
+//        if CGFloat(buttonData.cornerRadius) == 0 {
+//            self.layer.cornerRadius = layer.frame.size.height/2
+//        }
     }
     
     private func setToDefault() {
         self.backgroundColor = .white
         self.setTitleColor(.black, for: .normal)
         self.setTitle("", for: .normal)
+        self.layer.cornerRadius = layer.frame.size.height / 2
+        self.layer.masksToBounds = true
     }
     
     @objc public func didTapOnButton() {
         
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)
-            //delegate?.openDeepLink(url: iosLink)
             return
         }
         if let link = _buttonData?.link {

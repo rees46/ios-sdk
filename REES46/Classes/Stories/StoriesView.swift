@@ -11,7 +11,7 @@ public protocol StoriesViewMainProtocol: AnyObject {
     var storiesDelegate: StoriesViewMainProtocol? { get set }
 }
 
-public class StoriesView: UIView {
+public class StoriesView: UIView, UINavigationControllerDelegate {
     
     let cellId = "StoriesCollectionViewPreviewCell"
     
@@ -185,53 +185,36 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 storyVC.currentPosition = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
-                mainVC?.present(storyVC, animated: true)
+                //mainVC?.present(storyVC, animated: true)
+                
+                let nav = UINavigationController(rootViewController: mainVC!)
+                window?.rootViewController = nav
+                nav.present(storyVC, animated: true, completion: nil)
+                
             } else if (currentDefaultIndex + 1 == allStoriesMainArray.count) {
                 storyVC.currentPosition = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
-                mainVC?.present(storyVC, animated: true)
+                //mainVC?.present(storyVC, animated: true)
+                
+                let nav = UINavigationController(rootViewController: mainVC!)
+                window?.rootViewController = nav
+                nav.present(storyVC, animated: true, completion: nil)
+                
             } else {
                 storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
-                mainVC?.present(storyVC, animated: true)
+                
+                //let navStack = NavigationStackController(rootViewController: storyVC)
+                let nav = UINavigationController(rootViewController: mainVC!)
+                //window?.rootViewController = storyVC
+                window?.rootViewController = nav
+                nav.present(storyVC, animated: true, completion: nil)
+                
             }
         }
     }
-
-//    fileprivate var sectionInsets: UIEdgeInsets {
-//        return .zero
-//    }
-//
-//    fileprivate var itemsPerRow: CGFloat {
-//        return 4
-//    }
-//
-//    fileprivate var interitemSpace: CGFloat {
-//        return 5.0
-//    }
-//
-//    public func collectionView(_ collectionView: UICollectionView,
-//                            layout collectionViewLayout: UICollectionViewLayout,
-//                            sizeForItemAt indexPath: IndexPath) -> CGSize {
-//        let sectionPadding = sectionInsets.left * (itemsPerRow + 1)
-//        let interitemPadding = max(0.0, itemsPerRow - 1) * interitemSpace
-//        let availableWidth = collectionView.bounds.width - sectionPadding - interitemPadding
-//        let widthPerItem = availableWidth / itemsPerRow
-//
-//        return CGSize(width: widthPerItem, height: widthPerItem)
-//    }
-//
-//    public override var intrinsicContentSize: CGSize {
-//        return collectionView.collectionViewLayout.collectionViewContentSize
-//    }
-//
-//    public func collectionView(_ collectionView: UICollectionView,
-//                            layout collectionViewLayout: UICollectionViewLayout,
-//                            insetForSectionAt section: Int) -> UIEdgeInsets {
-//        return sectionInsets
-//    }
 }
 
 extension StoriesView: StoriesViewMainProtocol {
@@ -248,7 +231,24 @@ extension StoriesView: StoriesViewMainProtocol {
     }
 }
 
+extension UIViewController {
+    func embedInNavigationController() -> UINavigationController {
+        return UINavigationController(rootViewController: self)
+    }
+}
+
 extension UIView {
+    func deteectParentViewController() -> UIViewController {
+        var responder: UIResponder? = self
+        while !(responder is UIViewController) {
+            responder = responder?.next
+            if nil == responder {
+                break
+            }
+        }
+        return (responder as? UIViewController)!
+    }
+    
     func fixInView(_ container: UIView!) {
         translatesAutoresizingMaskIntoConstraints = false
         frame = container.frame
