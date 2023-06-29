@@ -5,10 +5,6 @@ public protocol StoryViewControllerProtocol: AnyObject {
     func reloadStoriesCollectionSubviews()
 }
 
-public protocol StoriesAppDelegateProtocol: AnyObject {
-    func didTapLinkIosOpeningForAppDelegate(url: String)
-}
-
 public protocol CarouselCollectionViewCellDelegate: AnyObject {
     func closeProductsCarousel()
     func didTapLinkIosOpeningExternal(url: String)
@@ -771,6 +767,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         self.linkDelegate?.extendLinkIos(url: url)
     }
     
+    public func sendProductStructForExternal(product: StoriesElement) {
+        self.linkDelegate?.structOfSelectedProduct(product: product)
+    }
+    
     public func openProductsCarousel(products: [StoriesProduct]) {
         pauseTimer()
         view.backgroundColor = .clear
@@ -908,10 +908,6 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
         }
         
         NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("ContinueTimerWebKitClosed"), object: nil)
-    }
-    
-    public func didTapLinkIosOpeningForAppDelegate(url: String, slide: Slide) {
-        self.linkDelegate?.extendLinkIos(url: url)
     }
 }
 

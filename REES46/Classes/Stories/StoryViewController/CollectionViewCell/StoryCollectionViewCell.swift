@@ -5,6 +5,8 @@ import AVFoundation
 protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
     func didTapOpenLinkIosExternalWeb(url: String, slide: Slide)
+    func sendProductStructForExternal(product: StoriesElement)
+    
     func openProductsCarousel(products: [StoriesProduct])
     func closeProductsCarousel()
 }
@@ -297,9 +299,13 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
-                delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
+                
+                mainStoriesDelegate?.structOfSelectedProduct(product: selectedElement!)
                 mainStoriesDelegate?.extendLinkIos(url: linkIos)
-                (UIApplication.shared.delegate as? StoriesAppDelegateProtocol)?.didTapLinkIosOpeningForAppDelegate(url: linkIos)
+                
+                delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
+                delegate?.sendProductStructForExternal(product: selectedElement!)
+                
                 return
             }
         }

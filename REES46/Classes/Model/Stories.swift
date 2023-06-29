@@ -217,7 +217,7 @@ class Slide {
 }
 
 // MARK: - Element
-class StoriesElement {
+public class StoriesElement {
     let link: String?
     let type: ElementType
     let color: String?

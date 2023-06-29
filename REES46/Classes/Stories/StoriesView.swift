@@ -3,10 +3,12 @@ import UIKit
 
 public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveIosLink(text: String)
+    func receiveSelectedProductData(products: StoriesElement)
 }
 
 public protocol StoriesViewMainProtocol: AnyObject {
     func extendLinkIos(url: String)
+    func structOfSelectedProduct(product: StoriesElement)
     func reloadStoriesCollectionSubviews()
     var storiesDelegate: StoriesViewMainProtocol? { get set }
 }
@@ -218,6 +220,12 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 }
 
 extension StoriesView: StoriesViewMainProtocol {
+    public func structOfSelectedProduct(product: StoriesElement) {
+        self.communicationDelegate?.receiveSelectedProductData(products: product)
+        print("Received product data for external use:")
+        printObject(objClass: product)
+    }
+    
     public func extendLinkIos(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
         print("Received linkIos for external use: \(url)")
@@ -228,6 +236,12 @@ extension StoriesView: StoriesViewMainProtocol {
             self.collectionView.layoutIfNeeded()
             self.collectionView.reloadData()
         }
+    }
+    
+    func printObject(objClass: StoriesElement) {
+        print("LinkWeb: \(objClass.link ?? "")")
+        print("LinkiOS: \(objClass.linkIos ?? "")")
+        print("LinkAndroid: \(objClass.linkAndroid ?? "")")
     }
 }
 
