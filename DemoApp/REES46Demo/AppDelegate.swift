@@ -37,7 +37,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         print("0. Init SDK")
         
-        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749", apiDomain: "api.r46.technodom.kz", enableLogs: true, { error in
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
             print("SDK Init status =", error?.description ?? SDKError.noError)
             didToken = self.sdk.getDeviceID()
             globalSDK = self.sdk
