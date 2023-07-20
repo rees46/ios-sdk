@@ -1,7 +1,7 @@
 import UIKit
 import UserNotifications
 
-final public class RRDownloadManager: NSObject {
+final public class VideoDownloadManager: NSObject {
     
     public typealias DownloadCompletionBlock = (_ error : Error?, _ fileUrl:URL?) -> Void
     public typealias DownloadProgressBlock = (_ progress : CGFloat) -> Void
@@ -14,7 +14,7 @@ final public class RRDownloadManager: NSObject {
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     public var localNotificationText: String?
 
-    public static let shared: RRDownloadManager = { return RRDownloadManager() }()
+    public static let shared: VideoDownloadManager = { return VideoDownloadManager() }()
     
     public func downloadStoryMediaFile(withRequest request: URLRequest,
                                        inDirectory directory: String? = nil,
@@ -135,7 +135,7 @@ final public class RRDownloadManager: NSObject {
     }
 }
 
-extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
+extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
     
     public func urlSession(_ session: URLSession,
                              downloadTask: URLSessionDownloadTask,
@@ -149,7 +149,7 @@ extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
                 guard statusCode < 400 else {
                     let error = NSError(domain:"HttpError", code:statusCode, userInfo:[NSLocalizedDescriptionKey : HTTPURLResponse.localizedString(forStatusCode: statusCode)])
                     OperationQueue.main.addOperation({
-                        download.completionBlock(error,nil)
+                        download.completionBlock(error, nil)
                     })
                     return
                 }
@@ -162,7 +162,7 @@ extension RRDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
                 let finalFileUrl = fileMovingResult.2
                 
                 OperationQueue.main.addOperation({
-                    (didSucceed ? download.completionBlock(nil,finalFileUrl) : download.completionBlock(error,nil))
+                    (didSucceed ? download.completionBlock(nil, finalFileUrl) : download.completionBlock(error,nil))
                 })
             }
         }

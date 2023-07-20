@@ -2,15 +2,15 @@ import UIKit
 
 class SDDownloadObject: NSObject {
 
-    var completionBlock: RRDownloadManager.DownloadCompletionBlock
-    var progressBlock: RRDownloadManager.DownloadProgressBlock?
+    var completionBlock: VideoDownloadManager.DownloadCompletionBlock
+    var progressBlock: VideoDownloadManager.DownloadProgressBlock?
     let downloadTask: URLSessionDownloadTask
     let directoryName: String?
     let fileName:String?
     
     init(downloadTask: URLSessionDownloadTask,
-         progressBlock: RRDownloadManager.DownloadProgressBlock?,
-         completionBlock: @escaping RRDownloadManager.DownloadCompletionBlock,
+         progressBlock: VideoDownloadManager.DownloadProgressBlock?,
+         completionBlock: @escaping VideoDownloadManager.DownloadCompletionBlock,
          fileName: String?,
          directoryName: String?) {
         

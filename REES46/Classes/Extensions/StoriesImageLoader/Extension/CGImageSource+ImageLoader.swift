@@ -11,7 +11,7 @@ extension CGImageSource {
     internal func process() -> (images: [UIImage], duration: TimeInterval) {
         var images = [UIImage]()
         let count = imageCount
-        let duration: Double = Double(count) * 0.2 // TODO: implementation
+        let duration: Double = Double(count) * 0.2
         for i in 0 ..< count {
             if let cgImage = getCGImage(index: i) {
                 images.append(UIImage(cgImage: cgImage))

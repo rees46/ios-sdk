@@ -54,7 +54,6 @@ extension Loadable where Base: UIImageView {
 
         let task = Task(base, onCompletion: imageCompletion)
 
-        // cancel
         if let requestUrl = base.requestUrl {
             let loader = StoriesImageLoader.manager.getLoader(with: requestUrl)
             loader.operative.remove(task)

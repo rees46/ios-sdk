@@ -5,6 +5,10 @@ import AVFoundation
 protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
     func didTapOpenLinkIosExternalWeb(url: String, slide: Slide)
+    func sendProductStructForExternal(product: StoriesElement)
+    
+    func openProductsCarousel(products: [StoriesProduct])
+    func closeProductsCarousel()
 }
 
 class StoryCollectionViewCell: UICollectionViewCell {
@@ -14,7 +18,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
     let videoView = UIView()
     let imageView = UIImageView()
     let storyButton = StoryButton()
-//    let muteButton = UIButton()
+    let productsButton = ProductsButton()
+    let muteButton = UIButton()
     
     private var selectedElement: StoriesElement?
     private var currentSlide: Slide?
@@ -24,6 +29,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     var player = AVPlayer()
     private let timeObserverKeyPath: String = "timeControlStatus"
+    fileprivate let kMinVolume = 0.00001
+    fileprivate let kMaxVolume = 0.99999
     
     var preloader = StoriesRingView()
     
@@ -38,32 +45,36 @@ class StoryCollectionViewCell: UICollectionViewCell {
         NotificationCenter.default.addObserver(self, selector: #selector(showSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerShow"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(hideSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerHide"), object: nil)
         
-        player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
+        //player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
         
+        // videoView.contentMode = .scaleAspectFill
         videoView.contentMode = .scaleToFill
+        
         videoView.isOpaque = true
         videoView.clearsContextBeforeDrawing = true
         videoView.autoresizesSubviews = true
         videoView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(videoView)
         
+        //imageView.contentMode = .scaleAspectFill
         imageView.contentMode = .scaleAspectFit
+        
         imageView.clipsToBounds = true
+        //imageView.layer.cornerRadius = 5
         imageView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)
         
         storyButton.translatesAutoresizingMaskIntoConstraints = false
         storyButton.setTitle("Continue", for: .normal)
         storyButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
-        
         addSubview(storyButton)
-//        let bundle = Bundle(for: classForCoder)
-//        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: bundle, compatibleWith: nil), for: .normal)
-//        muteButton.translatesAutoresizingMaskIntoConstraints = false
-//        muteButton.isHidden = true
-//        muteButton.addTarget(self, action: #selector(didTapOnMute), for: .touchUpInside)
-//        addSubview(muteButton)
         
+        productsButton.translatesAutoresizingMaskIntoConstraints = false
+        productsButton.setTitle("Continue", for: .normal)
+        productsButton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+        addSubview(productsButton)
+        
+        self.setMuteButtonToDefault()
         
         //preloader = StoriesRingLoader.createStoriesLoader()
         //preloader.startPreloaderAnimation()
@@ -86,16 +97,42 @@ class StoryCollectionViewCell: UICollectionViewCell {
         imageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         imageView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
         
-        if UIDevice().checkIfHasDynamicIsland() {
+        if GlobalHelper.sharedInstance.checkIfHasDynamicIsland() {
             storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
             storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
             storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18).isActive = true
             storyButton.heightAnchor.constraint(equalToConstant: 56).isActive = true
+            
+            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
+            if ds == true {
+                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -90).isActive = true
+                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 90).isActive = true
+                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -96).isActive = true
+                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+            } else {
+                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
+                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
+                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
+                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+            }
         } else {
             storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
             storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
             storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
             storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+            
+            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
+            if ds == true {
+                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
+                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
+                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97).isActive = true
+                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+            } else {
+                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
+                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
+                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
+                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
+            }
             
             if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
                 storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
@@ -105,27 +142,27 @@ class StoryCollectionViewCell: UICollectionViewCell {
             }
         }
         
-//        storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-//        storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-//        storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -44).isActive = true
-//        storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        
-//        muteButton.topAnchor.constraint(equalTo: topAnchor, constant: 64).isActive = true
-//        muteButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10).isActive = true
-//        muteButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
-//        muteButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7).isActive = true
+        muteButton.bottomAnchor.constraint(equalTo: storyButton.bottomAnchor, constant: -70).isActive = true
+        muteButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
+        muteButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
     }
     
-//    @objc private func didTapOnMute() {
-//        let bundle = Bundle(for: classForCoder)
-//        if player.volume == 1.0 {
-//            player.volume = 0.0
-//            muteButton.setImage(UIImage(named: "iconStoryMute", in: bundle, compatibleWith: nil), for: .normal)
-//        } else {
-//            player.volume = 1.0
-//            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: bundle, compatibleWith: nil), for: .normal)
-//        }
-//    }
+    @objc private func didTapOnMute() {
+        var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        mainBundle = Bundle.module
+#endif
+        if player.volume == 1.0 {
+            player.volume = 0.0
+            muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(false, forKey: "soundSetting")
+        } else {
+            player.volume = 1.0
+            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(true, forKey: "soundSetting")
+        }
+    }
     
     @objc
     private func pauseVideo(_ notification: NSNotification) {
@@ -150,13 +187,32 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-//    private func setButtonToDefault() {
-//        let bundle = Bundle(for: classForCoder)
-//        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: bundle, compatibleWith: nil), for: .normal)
-//    }
+    private func setMuteButtonToDefault() {
+        var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        mainBundle = Bundle.module
+#endif
+        
+        let soundSetting : Bool = UserDefaults.standard.bool(forKey: "soundSetting")
+        if soundSetting == true {
+            player.volume = 1
+            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(true, forKey: "soundSetting")
+        } else {
+            player.volume = 0
+            muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(false, forKey: "soundSetting")
+        }
+        
+        muteButton.translatesAutoresizingMaskIntoConstraints = false
+        muteButton.isHidden = true
+        muteButton.addTarget(self, action: #selector(didTapOnMute), for: .touchUpInside)
+        addSubview(muteButton)
+    }
     
     public func configure(slide: Slide) {
 //        setButtonToDefault()
+        
         self.currentSlide = slide
         if slide.type == .video {
 //            if let preview = slide.previewImage {
@@ -176,27 +232,55 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 }
             }
             if let videoURL = slide.videoURL {
-                //muteButton.isHidden = false
                 videoView.isHidden = false
                 imageView.isHidden = true
 
                 let asset = AVAsset(url: videoURL)
-//                let length = Float(asset.duration.value)/Float(asset.duration.timescale)
-//                if length != 0.0  {
-//                } else {
+                let volume = AVAudioSession.sharedInstance().outputVolume
+                print("output volume: \(volume)")
+//                if (volume < Float(kMinVolume)) {
+//                    player.volume = 0
+//                } else if (volume >= Float(kMinVolume)) {
+//                    player.volume = 1
 //                }
                 
                 let playerItem = AVPlayerItem(asset: asset)
                 self.player = AVPlayer(playerItem: playerItem)
                 let playerLayer = AVPlayerLayer(player: player)
-                player.volume = 1
                 let screenSize = UIScreen.main.bounds.size
                 playerLayer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
                 playerLayer.name = "VIDEO"
+                //playerLayer.videoGravity = .resizeAspectFill
+                
+                if playerItem.asset.tracks.filter({$0.mediaType == .audio}).count != 0 {
+                    var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+                    mainBundle = Bundle.module
+#endif
+                    let soundSetting : Bool = UserDefaults.standard.bool(forKey: "soundSetting")
+                    if soundSetting == true {
+                        player.volume = 1
+                        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
+                        UserDefaults.standard.set(true, forKey: "soundSetting")
+                        
+                        do {
+                            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+                        } catch let error {
+                            print("Error in AVAudio Session\(error.localizedDescription)")
+                        }
+                    } else {
+                        player.volume = 0
+                        muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
+                        UserDefaults.standard.set(false, forKey: "soundSetting")
+                    }
+                    muteButton.isHidden = false
+                } else {
+                    muteButton.isHidden = true
+                }
                 self.videoView.layer.addSublayer(playerLayer)
                 player.play()
             } else {
-                //muteButton.isHidden = true
+                muteButton.isHidden = true
                 imageView.isHidden = false
                 videoView.isHidden = true
                 if let preview = slide.previewImage {
@@ -206,20 +290,60 @@ class StoryCollectionViewCell: UICollectionViewCell {
         } else {
             //preloader.startPreloaderAnimation()
             
-            //muteButton.isHidden = true
+            muteButton.isHidden = true
             imageView.isHidden = false
             videoView.isHidden = true
             if let image = slide.downloadedImage {
                 self.imageView.image = image
             }
         }
-
+        
         if let element = slide.elements.first(where: {$0.type == .button}) {
+            
+            UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
+            
             selectedElement = element
             storyButton.configButton(buttonData: element)
             storyButton.isHidden = false
-        } else {
+            productsButton.isHidden = true
+            
+            //TEST
+//            productsButton.layer.cornerRadius = layer.frame.size.height / 2
+//            productsButton.layer.masksToBounds = true
+//
+//            productsButton.configProductsButton(buttonData: element)
+//            productsButton.isHidden = false
+//            makeConstraints()
+            //TEST
+            
+            if let element = slide.elements.first(where: {$0.type == .products}) {
+                UserDefaults.standard.set(true, forKey: "doubleProductsConfig")
+                productsButton.layer.cornerRadius = layer.frame.size.height / 2
+                productsButton.layer.masksToBounds = true
+                productsButton.configProductsButton(buttonData: element)
+                productsButton.isHidden = false
+                makeConstraints()
+                return
+            }
+            
+        } else if let element = slide.elements.first(where: {$0.type == .products}) {
+            UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
+            selectedElement = element
+            productsButton.layer.cornerRadius = layer.frame.size.height / 2
+            productsButton.layer.masksToBounds = true
+            
+            
+            //storyButton.configButton(buttonData: element)
             storyButton.isHidden = true
+            
+            productsButton.configProductsButton(buttonData: element)
+            productsButton.isHidden = false
+            
+            makeConstraints()
+        } else {
+            UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
+            storyButton.isHidden = true
+            productsButton.isHidden = true
         }
     }
     
@@ -273,11 +397,21 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     private func didTapButton() {
         
+        if let productsList = selectedElement?.products, productsList.count != 0 {
+            let products = productsList
+            delegate?.openProductsCarousel(products: products)
+            return
+        }
+        
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
-                delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
+                
+                mainStoriesDelegate?.structOfSelectedProduct(product: selectedElement!)
                 mainStoriesDelegate?.extendLinkIos(url: linkIos)
-                (UIApplication.shared.delegate as? StoriesAppDelegateProtocol)?.didTapLinkIosOpeningForAppDelegate(url: linkIos)
+                
+                delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
+                delegate?.sendProductStructForExternal(product: selectedElement!)
+                
                 return
             }
         }
@@ -314,5 +448,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     private func hideSpinnner(_ notification: NSNotification) {
         //preloader.stopPreloaderAnimation()
+    }
+}
+
+extension AVPlayer {
+    var isAudioAvailable: Bool? {
+        return self.currentItem?.asset.tracks.filter({$0.mediaType == .audio}).count != 0
+    }
+
+    var isVideoAvailable: Bool? {
+        return self.currentItem?.asset.tracks.filter({$0.mediaType == .video}).count != 0
     }
 }

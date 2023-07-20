@@ -3,15 +3,19 @@ import UIKit
 
 public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveIosLink(text: String)
+    func receiveSelectedProductData(products: StoriesElement)
+    func receiveSelectedCarouselProductData(products: StoriesProduct)
 }
 
 public protocol StoriesViewMainProtocol: AnyObject {
     func extendLinkIos(url: String)
+    func structOfSelectedProduct(product: StoriesElement)
+    func structOfSelectedCarouselProduct(product: StoriesProduct)
     func reloadStoriesCollectionSubviews()
     var storiesDelegate: StoriesViewMainProtocol? { get set }
 }
 
-public class StoriesView: UIView {
+public class StoriesView: UIView, UINavigationControllerDelegate {
     
     let cellId = "StoriesCollectionViewPreviewCell"
     
@@ -186,55 +190,49 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 storyVC.startWithIndexPath = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
                 mainVC?.present(storyVC, animated: true)
+                
+//                let nav = UINavigationController(rootViewController: mainVC!)
+//                window?.rootViewController = nav
+//                nav.present(storyVC, animated: true, completion: nil)
+                
             } else if (currentDefaultIndex + 1 == allStoriesMainArray.count) {
                 storyVC.currentPosition = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
                 mainVC?.present(storyVC, animated: true)
+                
+//                let nav = UINavigationController(rootViewController: mainVC!)
+//                window?.rootViewController = nav
+//                nav.present(storyVC, animated: true, completion: nil)
+                
             } else {
                 storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
                 mainVC?.present(storyVC, animated: true)
+                
+//                let nav = UINavigationController(rootViewController: mainVC!)
+//                window?.rootViewController = nav
+//                nav.present(storyVC, animated: true, completion: nil)
+                
             }
         }
     }
-
-//    fileprivate var sectionInsets: UIEdgeInsets {
-//        return .zero
-//    }
-//
-//    fileprivate var itemsPerRow: CGFloat {
-//        return 4
-//    }
-//
-//    fileprivate var interitemSpace: CGFloat {
-//        return 5.0
-//    }
-//
-//    public func collectionView(_ collectionView: UICollectionView,
-//                            layout collectionViewLayout: UICollectionViewLayout,
-//                            sizeForItemAt indexPath: IndexPath) -> CGSize {
-//        let sectionPadding = sectionInsets.left * (itemsPerRow + 1)
-//        let interitemPadding = max(0.0, itemsPerRow - 1) * interitemSpace
-//        let availableWidth = collectionView.bounds.width - sectionPadding - interitemPadding
-//        let widthPerItem = availableWidth / itemsPerRow
-//
-//        return CGSize(width: widthPerItem, height: widthPerItem)
-//    }
-//
-//    public override var intrinsicContentSize: CGSize {
-//        return collectionView.collectionViewLayout.collectionViewContentSize
-//    }
-//
-//    public func collectionView(_ collectionView: UICollectionView,
-//                            layout collectionViewLayout: UICollectionViewLayout,
-//                            insetForSectionAt section: Int) -> UIEdgeInsets {
-//        return sectionInsets
-//    }
 }
 
 extension StoriesView: StoriesViewMainProtocol {
+    public func structOfSelectedProduct(product: StoriesElement) {
+        self.communicationDelegate?.receiveSelectedProductData(products: product)
+        print("Received product data for external use:")
+        printSlideObject(objElementClass: product)
+    }
+    
+    public func structOfSelectedCarouselProduct(product: StoriesProduct) {
+        self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
+        print("Received carousel product data for external use:")
+        printCarouselObject(objProductClass: product)
+    }
+    
     public func extendLinkIos(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
         print("Received linkIos for external use: \(url)")
@@ -245,6 +243,28 @@ extension StoriesView: StoriesViewMainProtocol {
             self.collectionView.layoutIfNeeded()
             self.collectionView.reloadData()
         }
+    }
+    
+    func printSlideObject(objElementClass: StoriesElement) {
+        print("LinkWeb: \(objElementClass.link ?? "")")
+        print("LinkiOS: \(objElementClass.linkIos ?? "")")
+        print("LinkAndroid: \(objElementClass.linkAndroid ?? "")")
+    }
+    
+    func printCarouselObject(objProductClass: StoriesProduct) {
+        print("ProductName: \(objProductClass.name)")
+        print("ProductUrl: \(objProductClass.url)")
+        print("ProductCategory: \(objProductClass.category.name)")
+        print("ProductCategoryUrl: \(objProductClass.category.url)")
+        print("ProductPrice: \(objProductClass.price)")
+        print("ProductPriceFormatted: \(objProductClass.price_formatted)")
+        print("ProductPicture: \(objProductClass.picture)")
+    }
+}
+
+extension UIViewController {
+    func embedInNavigationController() -> UINavigationController {
+        return UINavigationController(rootViewController: self)
     }
 }
 

@@ -1,16 +1,59 @@
 import UIKit
-import WebKit
 
 public protocol StoryViewControllerProtocol: AnyObject {
     func didTapLinkIosOpeningExternal(url: String)
     func reloadStoriesCollectionSubviews()
 }
 
-public protocol StoriesAppDelegateProtocol: AnyObject {
-    func didTapLinkIosOpeningForAppDelegate(url: String)
+public protocol CarouselCollectionViewCellDelegate: AnyObject {
+    func closeProductsCarousel()
+    func didTapLinkIosOpeningExternal(url: String)
+    func sendCarouselProductStructForExternal(product: StoriesProduct)
 }
 
-class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
+public class NavigationStackController: UINavigationController {
+    
+    open weak var stackDelegate: UINavigationControllerDelegate?
+
+    public override init(rootViewController: UIViewController) {
+        super.init(rootViewController: rootViewController)
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+
+    func canBeMadeHeadViewController(viewController: UIViewController) -> Bool {
+        return viewController.isKind(of: StoryViewController.self)
+    }
+
+    func resetNavigationStackWithLatestViewControllerAsHead() {
+        if viewControllers.count > 1 {
+            viewControllers.removeFirst((viewControllers.count - 1))
+        }
+    }
+}
+
+extension NavigationStackController: UINavigationControllerDelegate {
+
+    public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        if canBeMadeHeadViewController(viewController: viewController) {
+            viewController.navigationItem.setHidesBackButton(false, animated: false)
+        }
+    }
+
+    public func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
+        if canBeMadeHeadViewController(viewController: viewController) {
+            resetNavigationStackWithLatestViewControllerAsHead()
+        }
+    }
+}
+
+class StoryViewController: UINavigationController, UINavigationControllerDelegate, UIGestureRecognizerDelegate, CarouselCollectionViewCellDelegate {
     
     private var collectionView: UICollectionView = {
         let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
@@ -66,6 +109,9 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     public var linkDelegate: StoriesViewMainProtocol?
     
     var preloader = StoriesRingView()
+    
+    private let tintBlurView = UIView()
+    private var carouselCollectionView = CarouselCollectionView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -81,7 +127,12 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     
     @objc
     func willEnterForeground() {
-        continueTimer()
+        let ds : Bool = UserDefaults.standard.bool(forKey: "stopTimerSetting")
+        if ds == true {
+            //
+        } else {
+            continueTimer()
+        }
     }
 
     @objc
@@ -92,6 +143,14 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         timer.invalidate()
+    }
+    
+    func applicationWillResignActive(notification: NSNotification) {
+        viewWillDisappear(true) // DEPRECATED
+    }
+    
+    func applicationWillEnterBackground(notification: NSNotification) {
+        viewWillAppear(true) // DEPRECATED
     }
 
     private func commonInit() {
@@ -111,7 +170,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
 
         NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 16).isActive = true
         
-        if UIDevice().checkIfHasDynamicIsland() {
+        if GlobalHelper.sharedInstance.checkIfHasDynamicIsland() {
             NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 62).isActive = true }
         else {
             NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 40).isActive = true
@@ -121,7 +180,7 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        if UIDevice().checkIfHasDynamicIsland() {
+        if GlobalHelper.sharedInstance.checkIfHasDynamicIsland() {
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -10).isActive = true
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: pageIndicator, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 26).isActive = true
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
@@ -666,18 +725,19 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         collectionView.addGestureRecognizer(longPressedGesture)
         collectionView.addGestureRecognizer(singleTap)
         
-        
         let leftSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeLeft))
         leftSwipe.direction = .left
         leftSwipe.require(toFail: longPressedGesture)
         let rightSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeRight))
         rightSwipe.direction = .right
         rightSwipe.require(toFail: longPressedGesture)
+        let downSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeDown))
+        downSwipe.direction = .down
+        downSwipe.require(toFail: longPressedGesture)
         
         collectionView.addGestureRecognizer(leftSwipe)
         collectionView.addGestureRecognizer(rightSwipe)
-        
-        
+        collectionView.addGestureRecognizer(downSwipe)
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -720,8 +780,96 @@ class StoryViewController: UIViewController, UIGestureRecognizerDelegate {
         }
     }
     
+    public func openProductsCarousel(products: [StoriesProduct]) {
+        pauseTimer()
+        view.backgroundColor = .clear
+        
+        tintBlurView.backgroundColor = UIColor(white: 0, alpha: 0.8)
+        tintBlurView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height)
+        view.addSubview(tintBlurView)
+        
+        view.addSubview(self.carouselCollectionView)
+        
+        self.carouselCollectionView.center = CGPoint(x: self.view.center.x,
+                y: self.view.center.y + self.view.frame.size.height)
+        self.view.addSubview(self.carouselCollectionView)
+        self.view.bringSubviewToFront(self.carouselCollectionView)
+        
+        UIView.animate(withDuration: 0.7, delay: 0.0,
+            usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
+            options: .allowAnimatedContent, animations: {
+            self.carouselCollectionView.center = self.view.center
+        }) { (isFinished) in
+            self.view.layoutIfNeeded()
+        }
+        
+        carouselCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        carouselCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        carouselCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0).isActive = true
+        //carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        //self.carouselCollectionView.center.y -= self.carouselCollectionView.frame.height
+        
+        if GlobalHelper.DeviceType.IS_IPHONE_XS {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_14 {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PRO {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_5 {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 380).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_8P {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
+        } else {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        }
+        
+        carouselCollectionView.productsDelegate = self
+        carouselCollectionView.set(cells: products)
+        UserDefaults.standard.set(true, forKey: "stopTimerSetting")
+    }
+    
+    public func closeProductsCarousel() {
+        UIView.animate(withDuration: 0.4, delay: 0.0,
+                       usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
+            options: .allowAnimatedContent, animations: {
+            self.carouselCollectionView.center = CGPoint(x: self.view.center.x,
+            y: self.view.center.y + self.view.frame.size.height)
+        }) { (isFinished) in
+            self.tintBlurView.removeFromSuperview()
+            self.carouselCollectionView.removeFromSuperview()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.continueTimer()
+            }
+        }
+        UserDefaults.standard.set(false, forKey: "stopTimerSetting")
+    }
+    
+    func didTapLinkIosOpeningExternal(url: String) {
+        self.openUrl(link: url)
+    }
+    
     public func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
         self.linkDelegate?.extendLinkIos(url: url)
+    }
+    
+    public func sendProductStructForExternal(product: StoriesElement) {
+        self.linkDelegate?.structOfSelectedProduct(product: product)
+    }
+    
+    public func sendCarouselProductStructForExternal(product: StoriesProduct) {
+        self.linkDelegate?.structOfSelectedCarouselProduct(product: product)
+    }
+    
+    @objc
+    func didSwipeDown() {
+        dismiss(animated: true)
     }
 }
 
@@ -781,7 +929,6 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-
         guard let cell = collectionView.cellForItem(at: indexPath) as? StoryCollectionViewCell else {return}
         cell.stopPlayer()
     }
@@ -810,10 +957,6 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
         
         NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("ContinueTimerWebKitClosed"), object: nil)
     }
-    
-    public func didTapLinkIosOpeningForAppDelegate(url: String, slide: Slide) {
-        self.linkDelegate?.extendLinkIos(url: url)
-    }
 }
 
 extension UICollectionView {
@@ -822,19 +965,5 @@ extension UICollectionView {
               indexPath.row < numberOfItems(inSection: indexPath.section)
         else { return false }
         return true
-    }
-}
-
-extension UIDevice {
-    func checkIfHasDynamicIsland() -> Bool {
-        if let simulatorModelIdentifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] {
-            let nameSimulator = simulatorModelIdentifier
-            return nameSimulator == "iPhone15,2" || nameSimulator == "iPhone15,3" ? true : false
-        }
-        
-        var sysinfo = utsname()
-        uname(&sysinfo)
-        let name =  String(bytes: Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN)), encoding: .ascii)!.trimmingCharacters(in: .controlCharacters)
-        return name == "iPhone15,2" || name == "iPhone15,3" ? true : false
     }
 }
