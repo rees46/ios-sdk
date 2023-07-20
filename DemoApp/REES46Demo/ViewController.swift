@@ -40,13 +40,12 @@ class ViewController: UIViewController {
     @objc
     private func updateStories() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
     
     @objc
     private func didTapUpdate() {
-        
         
         //let navVC = NavigationStackController.init(rootViewController: self)
         //let nav = UINavigationController(rootViewController: navVC)
