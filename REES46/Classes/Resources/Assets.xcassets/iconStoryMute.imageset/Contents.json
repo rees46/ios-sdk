@@ -1,12 +1,11 @@
 {
   "images" : [
     {
-      "filename" : "iconStoryMute_1x.png",
+      "filename" : "iconStorySoundMute_1x.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "iconStoryMute_2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },

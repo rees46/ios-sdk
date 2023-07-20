@@ -36,20 +36,42 @@ protocol CustomProductButtonDelegate: AnyObject {
             
             titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
             setTitle(buttonData.labels?.showCarousel ?? "See all products", for: .normal)
-            setTitleColor(.black, for: .normal)
-            
-            backgroundColor = .white
-            layer.cornerRadius = layer.frame.size.height/2
-            layer.masksToBounds = true
+            //setTitleColor(.white, for: .normal)
             
             var mainBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
             mainBundle = Bundle.module
 #endif
-            let angleUpIcon = UIImage(named: "angleUp", in: mainBundle, compatibleWith: nil)
+            
+            let angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
+            if GlobalHelper.DeviceType.IS_IPHONE_8 || GlobalHelper.DeviceType.IS_IPHONE_8P || GlobalHelper.DeviceType.IS_IPHONE_5 {
+                
+                backgroundColor = .white
+                setTitleColor(.black, for: .normal)
+                
+                //angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
+                //backgroundColor = .clear
+                //setTitleColor(.white, for: .normal)
+            } else {
+                backgroundColor = .white
+                setTitleColor(.black, for: .normal)
+            }
+            
+//            layer.shadowColor = UIColor.black.cgColor
+//            layer.shadowOffset = CGSize(width: 0.0, height: 3.0)
+//            layer.shadowRadius = 3
+//            layer.shadowOpacity = 1.0
+            
+            //backgroundColor = .clear
+            layer.cornerRadius = layer.frame.size.height/2
+            layer.masksToBounds = true
+            
+            //let angleUpIcon = UIImage(named: "angleUpWhite", in: mainBundle, compatibleWith: nil)
             self.addRightIconForProductsBtn(image: angleUpIcon!)
             
         } else {
+            titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+            
             self.layer.cornerRadius = layer.frame.size.height/2
             self.layer.masksToBounds = true
         }

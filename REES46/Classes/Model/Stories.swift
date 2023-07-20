@@ -62,9 +62,9 @@ class Story {
         self.pinned = json["pinned"] as? Bool ?? false
         let _slides = json["slides"] as? [[String: Any]] ?? []
         self.slides = _slides.map({Slide(json: $0)})
-        
     }
 }
+
 
 // MARK: - Slide
 class Slide {
@@ -77,7 +77,7 @@ class Slide {
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
-    private let downloadManager = RRDownloadManager.shared
+    private let downloadManager = VideoDownloadManager.shared
     var directoryName : String = "CacheDirectory"
     
     public init(json: [String: Any]) {
@@ -94,32 +94,14 @@ class Slide {
             if preview != nil {
                 setImage(imageURL: preview!, isPreview: true)
             } else {
-                print("Success setImage video for \(self.id) is downloaded")
+                print("Success video preview for \(self.id) is downloaded")
             }
             
             downloadVideo { result in
                 switch result {
                 case .success(let url):
                     self.videoURL = url
-                    print("Downloaded video for story id = \(self.id)")
-                    
-                    let storyImageId = String(self.id)
-                    let storyImageDownloadedName = "waitStorySlideCached." + storyImageId
-                    
-                    var watchedStoriesDownloadedArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyImageDownloadedName)) as? [String] ?? []
-                    let watchedStoryIdExists = watchedStoriesDownloadedArr.contains(where: {
-                        $0.range(of: String(storyImageDownloadedName)) != nil
-                    })
-                    
-                    if !watchedStoryIdExists {
-                        watchedStoriesDownloadedArr.append(storyImageDownloadedName)
-                        UserDefaults.standard.setValue(watchedStoriesDownloadedArr, for: UserDefaults.Key(storyImageDownloadedName))
-                    }
-                    
-                    let name = "waitStorySlideCached." + storyImageId
-                    let userInfo = ["url": url] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name(name), object: userInfo)
-                    
+                    self.completionCached(slideWithId: self.id, workingSlideUrl: url)
                 case .failure(let error):
                     print("Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
                 }
@@ -142,6 +124,7 @@ class Slide {
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: temporaryFileURL.path) {
             completion(.success(temporaryFileURL))
+            print("Load cached video for story id = \(self.id)")
             return
         }
         
@@ -150,9 +133,6 @@ class Slide {
                                                         inDirectory: directoryName,
                                                         shouldDownloadInBackground: false,
                                                         onProgress: {(progress) in
-            // let percent = String(format: "%.1f %", (progress * 100))
-            // let progressCounter = Float(progress)
-            // print("Background video download progress : \(percent) for task \(request.debugDescription)")
             
         }) {(error, url) in
             if let error = error {
@@ -161,6 +141,7 @@ class Slide {
                 if let url = url {
                     do {
                         try fileManager.moveItem(at: url, to: temporaryFileURL)
+                        print("Downloaded video for story id = \(self.id)")
                         completion(.success(temporaryFileURL))
                     } catch {
                         completion(.failure(error))
@@ -184,37 +165,61 @@ class Slide {
         guard let url = URL(string: imageURL) else {
             return
         }
-        let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
-            if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
-                if isPreview {
-                    self.previewImage = image
-                    //print("Downloaded preview for image for VIDEO story with id = \(self.id)")
-                } else {
-                    self.downloadedImage = image
-                    print("Downloaded image for story id = \(self.id)")
-                    
-                    let storyImageId = String(self.id)
-                    let storyImageDownloadedName = "waitStorySlideCached." + storyImageId
-                    var watchedStoriesDownloadedArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyImageDownloadedName)) as? [String] ?? []
-                    let watchedStoryIdExists = watchedStoriesDownloadedArr.contains(where: {
-                        $0.range(of: String(storyImageDownloadedName)) != nil
-                    })
-                    
-                    if !watchedStoryIdExists {
-                        watchedStoriesDownloadedArr.append(storyImageDownloadedName)
-                        UserDefaults.standard.setValue(watchedStoriesDownloadedArr, for: UserDefaults.Key(storyImageDownloadedName))
-                    }
-                    
-                    let name = "waitStorySlideCached." + storyImageId
-                    let userInfo = ["url": url] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name(name), object: userInfo)
-                }
+        
+        StoryImageCache.image(for: url.absoluteString) { cachedImage in
+            
+            if isPreview {
+                self.previewImage = cachedImage
+                //print("Downloaded preview for image for video story with id = \(self.id)")
+            } else {
+                self.downloadedImage = cachedImage
             }
+            
+            if cachedImage != nil {
+                self.completionCached(slideWithId: self.id, workingSlideUrl: url)
+                print("Load cached image for story id = \(self.id)")
+                
+            } else {
+                let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
+                    if error == nil {
+                        
+                        guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
+                        if isPreview {
+                            self.previewImage = image
+                        } else {
+                            self.downloadedImage = image
+                            
+                            StoryImageCache.save(image, for: url.absoluteString)
+                            self.completionCached(slideWithId: self.id, workingSlideUrl: url)
+                            print("Downloaded image for story id = \(self.id)")
+                        }
+                    }
+                })
+                task.resume()
+            }
+        }
+    }
+    
+    private func completionCached(slideWithId: Int, workingSlideUrl: URL) {
+        let storyImageId = String(slideWithId)
+        let storyImageDownloadedName = "waitStorySlideCached." + storyImageId
+        
+        var watchedStoriesDownloadedArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyImageDownloadedName)) as? [String] ?? []
+        let watchedStoryIdExists = watchedStoriesDownloadedArr.contains(where: {
+            $0.range(of: String(storyImageDownloadedName)) != nil
         })
-        task.resume()
+        
+        if !watchedStoryIdExists {
+            watchedStoriesDownloadedArr.append(storyImageDownloadedName)
+            UserDefaults.standard.setValue(watchedStoriesDownloadedArr, for: UserDefaults.Key(storyImageDownloadedName))
+        }
+        
+        let name = "waitStorySlideCached." + storyImageId
+        let userInfo = ["url": workingSlideUrl] as [String: Any]
+        NotificationCenter.default.post(name:Notification.Name(name), object: userInfo)
     }
 }
+
 
 // MARK: - Element
 public class StoriesElement {
@@ -245,8 +250,8 @@ public class StoriesElement {
         self.products = _products.map({StoriesProduct(json: $0)})
         self.cornerRadius = json["corner_radius"] as? Int ?? 12
     }
-
 }
+
 
 // MARK: - Labels
 class Labels {
@@ -258,26 +263,43 @@ class Labels {
     }
 }
 
+
 // MARK: - Product
-class StoriesProduct {
-    let name, price: String
-    let oldprice: String?
+public class StoriesProduct {
+    let name: String
+    let currency: String
+    let price: Int
+    let price_full: Int
+    let price_formatted, price_full_formatted: String
+    let oldprice: Int?
+    let oldprice_full: Int
+    let oldprice_formatted, oldprice_full_formatted: String
     let url: String
     let picture: String
     let discount: String?
+    let discount_formatted: String?
     let category: StoriesCategory
     
     public init(json: [String:Any]) {
         self.name = json["name"] as? String ?? ""
-        self.price = json["price"] as? String ?? ""
-        self.oldprice = json["oldprice"] as? String ?? ""
+        self.currency = json["currency"] as? String ?? ""
+        self.price = json["price"] as? Int ?? 0
+        self.price_full = json["price_full"] as? Int ?? 0
+        self.price_formatted = json["price_formatted"] as? String ?? ""
+        self.price_full_formatted = json["price_full_formatted"] as? String ?? ""
+        self.oldprice = json["oldprice"] as? Int ?? 0
+        self.oldprice_full = json["oldprice_full"] as? Int ?? 0
+        self.oldprice_formatted = json["oldprice_formatted"] as? String ?? ""
+        self.oldprice_full_formatted = json["oldprice_full_formatted"] as? String ?? ""
         self.url = json["url"] as? String ?? ""
         self.picture = json["picture"] as? String ?? ""
         self.discount = json["discount"] as? String ?? ""
+        self.discount_formatted = json["discount_formatted"] as? String ?? "0%"
         let _category = json["category"] as? [String: Any] ?? [:]
         self.category = StoriesCategory(json: _category)
     }
 }
+
 
 // MARK: - Category
 class StoriesCategory {

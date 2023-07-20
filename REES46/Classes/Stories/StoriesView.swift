@@ -4,11 +4,13 @@ import UIKit
 public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveIosLink(text: String)
     func receiveSelectedProductData(products: StoriesElement)
+    func receiveSelectedCarouselProductData(products: StoriesProduct)
 }
 
 public protocol StoriesViewMainProtocol: AnyObject {
     func extendLinkIos(url: String)
     func structOfSelectedProduct(product: StoriesElement)
+    func structOfSelectedCarouselProduct(product: StoriesProduct)
     func reloadStoriesCollectionSubviews()
     var storiesDelegate: StoriesViewMainProtocol? { get set }
 }
@@ -187,32 +189,31 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 storyVC.currentPosition = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
-                //mainVC?.present(storyVC, animated: true)
+                mainVC?.present(storyVC, animated: true)
                 
-                let nav = UINavigationController(rootViewController: mainVC!)
-                window?.rootViewController = nav
-                nav.present(storyVC, animated: true, completion: nil)
+//                let nav = UINavigationController(rootViewController: mainVC!)
+//                window?.rootViewController = nav
+//                nav.present(storyVC, animated: true, completion: nil)
                 
             } else if (currentDefaultIndex + 1 == allStoriesMainArray.count) {
                 storyVC.currentPosition = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
-                //mainVC?.present(storyVC, animated: true)
+                mainVC?.present(storyVC, animated: true)
                 
-                let nav = UINavigationController(rootViewController: mainVC!)
-                window?.rootViewController = nav
-                nav.present(storyVC, animated: true, completion: nil)
+//                let nav = UINavigationController(rootViewController: mainVC!)
+//                window?.rootViewController = nav
+//                nav.present(storyVC, animated: true, completion: nil)
                 
             } else {
                 storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
+                mainVC?.present(storyVC, animated: true)
                 
-                //let navStack = NavigationStackController(rootViewController: storyVC)
-                let nav = UINavigationController(rootViewController: mainVC!)
-                //window?.rootViewController = storyVC
-                window?.rootViewController = nav
-                nav.present(storyVC, animated: true, completion: nil)
+//                let nav = UINavigationController(rootViewController: mainVC!)
+//                window?.rootViewController = nav
+//                nav.present(storyVC, animated: true, completion: nil)
                 
             }
         }
@@ -223,7 +224,13 @@ extension StoriesView: StoriesViewMainProtocol {
     public func structOfSelectedProduct(product: StoriesElement) {
         self.communicationDelegate?.receiveSelectedProductData(products: product)
         print("Received product data for external use:")
-        printObject(objClass: product)
+        printSlideObject(objElementClass: product)
+    }
+    
+    public func structOfSelectedCarouselProduct(product: StoriesProduct) {
+        self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
+        print("Received carousel product data for external use:")
+        printCarouselObject(objProductClass: product)
     }
     
     public func extendLinkIos(url: String) {
@@ -238,10 +245,20 @@ extension StoriesView: StoriesViewMainProtocol {
         }
     }
     
-    func printObject(objClass: StoriesElement) {
-        print("LinkWeb: \(objClass.link ?? "")")
-        print("LinkiOS: \(objClass.linkIos ?? "")")
-        print("LinkAndroid: \(objClass.linkAndroid ?? "")")
+    func printSlideObject(objElementClass: StoriesElement) {
+        print("LinkWeb: \(objElementClass.link ?? "")")
+        print("LinkiOS: \(objElementClass.linkIos ?? "")")
+        print("LinkAndroid: \(objElementClass.linkAndroid ?? "")")
+    }
+    
+    func printCarouselObject(objProductClass: StoriesProduct) {
+        print("ProductName: \(objProductClass.name)")
+        print("ProductUrl: \(objProductClass.url)")
+        print("ProductCategory: \(objProductClass.category.name)")
+        print("ProductCategoryUrl: \(objProductClass.category.url)")
+        print("ProductPrice: \(objProductClass.price)")
+        print("ProductPriceFormatted: \(objProductClass.price_formatted)")
+        print("ProductPicture: \(objProductClass.picture)")
     }
 }
 
@@ -252,17 +269,6 @@ extension UIViewController {
 }
 
 extension UIView {
-    func deteectParentViewController() -> UIViewController {
-        var responder: UIResponder? = self
-        while !(responder is UIViewController) {
-            responder = responder?.next
-            if nil == responder {
-                break
-            }
-        }
-        return (responder as? UIViewController)!
-    }
-    
     func fixInView(_ container: UIView!) {
         translatesAutoresizingMaskIntoConstraints = false
         frame = container.frame

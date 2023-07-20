@@ -8,6 +8,7 @@ public protocol StoryViewControllerProtocol: AnyObject {
 public protocol CarouselCollectionViewCellDelegate: AnyObject {
     func closeProductsCarousel()
     func didTapLinkIosOpeningExternal(url: String)
+    func sendCarouselProductStructForExternal(product: StoriesProduct)
 }
 
 public class NavigationStackController: UINavigationController {
@@ -126,7 +127,12 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     @objc
     func willEnterForeground() {
-        continueTimer()
+        let ds : Bool = UserDefaults.standard.bool(forKey: "stopTimerSetting")
+        if ds == true {
+            //
+        } else {
+            continueTimer()
+        }
     }
 
     @objc
@@ -137,6 +143,14 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         timer.invalidate()
+    }
+    
+    func applicationWillResignActive(notification: NSNotification) {
+        viewWillDisappear(true) // DEPRECATED
+    }
+    
+    func applicationWillEnterBackground(notification: NSNotification) {
+        viewWillAppear(true) // DEPRECATED
     }
 
     private func commonInit() {
@@ -711,16 +725,19 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         collectionView.addGestureRecognizer(longPressedGesture)
         collectionView.addGestureRecognizer(singleTap)
         
-        
         let leftSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeLeft))
         leftSwipe.direction = .left
         leftSwipe.require(toFail: longPressedGesture)
         let rightSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeRight))
         rightSwipe.direction = .right
         rightSwipe.require(toFail: longPressedGesture)
+        let downSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeDown))
+        downSwipe.direction = .down
+        downSwipe.require(toFail: longPressedGesture)
         
         collectionView.addGestureRecognizer(leftSwipe)
         collectionView.addGestureRecognizer(rightSwipe)
+        collectionView.addGestureRecognizer(downSwipe)
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -763,14 +780,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    public func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
-        self.linkDelegate?.extendLinkIos(url: url)
-    }
-    
-    public func sendProductStructForExternal(product: StoriesElement) {
-        self.linkDelegate?.structOfSelectedProduct(product: product)
-    }
-    
     public func openProductsCarousel(products: [StoriesProduct]) {
         pauseTimer()
         view.backgroundColor = .clear
@@ -797,11 +806,32 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         carouselCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         carouselCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         carouselCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0).isActive = true
-        carouselCollectionView.heightAnchor.constraint(equalToConstant: 410).isActive = true
+        //carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         //self.carouselCollectionView.center.y -= self.carouselCollectionView.frame.height
+        
+        if GlobalHelper.DeviceType.IS_IPHONE_XS {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_14 {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PRO {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_5 {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 380).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true
+        } else if GlobalHelper.DeviceType.IS_IPHONE_8P {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
+        } else {
+            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        }
         
         carouselCollectionView.productsDelegate = self
         carouselCollectionView.set(cells: products)
+        UserDefaults.standard.set(true, forKey: "stopTimerSetting")
     }
     
     public func closeProductsCarousel() {
@@ -818,10 +848,28 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 self.continueTimer()
             }
         }
+        UserDefaults.standard.set(false, forKey: "stopTimerSetting")
     }
     
     func didTapLinkIosOpeningExternal(url: String) {
         self.openUrl(link: url)
+    }
+    
+    public func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
+        self.linkDelegate?.extendLinkIos(url: url)
+    }
+    
+    public func sendProductStructForExternal(product: StoriesElement) {
+        self.linkDelegate?.structOfSelectedProduct(product: product)
+    }
+    
+    public func sendCarouselProductStructForExternal(product: StoriesProduct) {
+        self.linkDelegate?.structOfSelectedCarouselProduct(product: product)
+    }
+    
+    @objc
+    func didSwipeDown() {
+        dismiss(animated: true)
     }
 }
 

@@ -38,7 +38,7 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let oldCostLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 13, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
         label.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -46,7 +46,7 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let costLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 15, weight: .bold)
+        label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -64,23 +64,6 @@ class CarouselCollectionViewCell: UICollectionViewCell {
         return label
     }()
     
-    let needHideButton: UIButton = {
-        let hideButton = UIButton()
-        
-//        hideButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-//        hideButton.backgroundColor = .red
-//        hideButton.layer.cornerRadius = hideButton.layer.frame.size.height / 2
-//        hideButton.layer.borderWidth = 2
-//        hideButton.layer.masksToBounds = true
-//        hideButton.layer.borderColor = UIColor.black.cgColor
-
-        //hideButton.setTitle("See all products", for: .normal)
-        
-        //hideButton.setTitleColor(.black, for: .normal)
-        
-        return hideButton
-    }()
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -91,65 +74,49 @@ class CarouselCollectionViewCell: UICollectionViewCell {
         addSubview(oldCostLabel)
         addSubview(discountLabel)
         addSubview(costLabel)
-        //addSubview(needHideButton)
         
         backgroundColor = .white
+        //backgroundColor = .clear
         
-        // mainImageView constraints
         mainImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         mainImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         mainImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20).isActive = true
         mainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1/2).isActive = true
+        //mainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 3/5).isActive = true
         
-        // nameLabel constraints
         nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
         nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         nameLabel.topAnchor.constraint(equalTo: mainImageView.bottomAnchor, constant: 12).isActive = true
         
-        // smallDescriptionLabel constraints
         //smallDescriptionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
         //smallDescriptionLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8).isActive = true
         //smallDescriptionLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1/2, constant: 10).isActive = true
         
-        //likeImageView constraints
         //likeImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
         //likeImageView.topAnchor.constraint(equalTo: smallDescriptionLabel.bottomAnchor, constant: 30).isActive = true
         //likeImageView.widthAnchor.constraint(equalToConstant: 24).isActive = true
         //likeImageView.heightAnchor.constraint(equalToConstant: 24).isActive = true
         
-        // costLabel constraints
-        
         oldCostLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        oldCostLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 16).isActive = true
-        //oldCostLabel.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor).isActive = true
+        oldCostLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 14).isActive = true
         
         discountLabel.leadingAnchor.constraint(equalTo: oldCostLabel.trailingAnchor, constant: 10).isActive = true
-        discountLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 16).isActive = true
-        //discountLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        discountLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 11).isActive = true
+        discountLabel.heightAnchor.constraint(equalToConstant: 20).isActive = true
         //discountLabel.topAnchor.constraint(equalTo: oldCostLabel.trailingAnchor, constant: 6).isActive = true
         
         costLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        costLabel.topAnchor.constraint(equalTo: oldCostLabel.bottomAnchor, constant: 4).isActive = true
+        costLabel.topAnchor.constraint(equalTo: oldCostLabel.bottomAnchor, constant: 8).isActive = true
         //costLabel.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor).isActive = true
-        
-        
-        //needHideButton.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        //needHideButton.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        //needHideButton.topAnchor.constraint(equalTo: costLabel.bottomAnchor, constant: 16).isActive = true
-        
-        //needHideButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        //needHideButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 20).isActive = true
-        //needHideButton.topAnchor.constraint(equalTo: costLabel.bottomAnchor, constant: 12).isActive = true
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
         
-        self.layer.cornerRadius = 8
-        self.layer.shadowRadius = 9
-        layer.shadowOpacity = 0.3
-        layer.shadowOffset = CGSize(width: 5, height: 8)
-        
+        self.layer.cornerRadius = 7
+        //self.layer.shadowRadius = 9
+        //layer.shadowOpacity = 0.3
+        //layer.shadowOffset = CGSize(width: 5, height: 8)
         self.clipsToBounds = false
     }
     
