@@ -108,8 +108,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     public var sdk: PersonalizationSDK?
     public var linkDelegate: StoriesViewMainProtocol?
     
-    var preloader = StoriesRingView()
-    
     private let tintBlurView = UIView()
     private var carouselCollectionView = CarouselCollectionView()
 
@@ -123,20 +121,26 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         
         NotificationCenter.default.addObserver(self, selector: #selector(pauseTimer), name: .init(rawValue: "ExternalActionStoryPause"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: .init(rawValue: "ExternalActionStoryPlay"), object: nil)
+        UserDefaults.standard.set(false, forKey: "stopTimerSetting")
     }
     
     @objc
     func willEnterForeground() {
         let ds : Bool = UserDefaults.standard.bool(forKey: "stopTimerSetting")
         if ds == true {
-            //
+//            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+//            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+//            continueTimer()
         } else {
+            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             continueTimer()
         }
     }
 
     @objc
     func didEnterBackground() {
+        //UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
         pauseTimer()
     }
     
@@ -781,7 +785,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     public func openProductsCarousel(products: [StoriesProduct]) {
+        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+        NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
+        
         view.backgroundColor = .clear
         
         tintBlurView.backgroundColor = UIColor(white: 0, alpha: 0.8)
@@ -843,11 +850,17 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }) { (isFinished) in
             self.tintBlurView.removeFromSuperview()
             self.carouselCollectionView.removeFromSuperview()
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                self.continueTimer()
-            }
+         
         }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+            self.continueTimer()
+        }
+        //let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+        //NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+        
         UserDefaults.standard.set(false, forKey: "stopTimerSetting")
     }
     

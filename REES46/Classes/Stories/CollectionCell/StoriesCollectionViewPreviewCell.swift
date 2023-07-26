@@ -11,6 +11,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     let storyAuthorNameLabel = UILabel()
     let pinSymbolView = UIView()
     let pinSymbolLabel = UILabel()
+    let indicator = StoriesSupremeCellLoader()
     
     private var task: URLSessionDataTask?
     
@@ -19,11 +20,31 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         
         let bgColor = UIColor(red: 214/255, green: 214/255, blue: 214/255, alpha: 214/255)
         
-        storyBackCircle.backgroundColor = bgColor
+        storyBackCircle.backgroundColor = bgColor//.clear
         storyBackCircle.contentMode = .scaleToFill
         storyBackCircle.isUserInteractionEnabled = true
         storyBackCircle.translatesAutoresizingMaskIntoConstraints = false
+        storyBackCircle.alpha = 1.0
         addSubview(storyBackCircle)
+        
+        //UIView.animate(withDuration: 3.0, animations: {
+            //self.storyBackCircle.alpha = 1
+            //self.storyBackCircle.backgroundColor = bgColor
+        //})
+        
+//        sIndicator.contentMode = .scaleToFill
+//        sIndicator.translatesAutoresizingMaskIntoConstraints = false
+//        sIndicator.animationDuration = Double(Int.random(in: 2..<3))
+//        sIndicator.rotationDuration = 7
+//        sIndicator.numSegments = Int(Double(Int.random(in: 9..<17)))
+//        sIndicator.lineWidth = 3.9
+//        sIndicator.strokeColor = .clear
+//        sIndicator.alpha = 0
+//        storyBackCircle.addSubview(sIndicator)
+//        UIView.animate(withDuration: 2.7, animations: {
+//            self.sIndicator.alpha = 0
+//        })
+//        sIndicator.startAnimating()
         
         storyWhiteBackCircle.backgroundColor = bgColor
         storyWhiteBackCircle.contentMode = .scaleToFill
@@ -36,13 +57,24 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storySuperClearBackCircle.isHidden = true
         storySuperClearBackCircle.translatesAutoresizingMaskIntoConstraints = false
         storyBackCircle.addSubview(storySuperClearBackCircle)
-        
+        storyImage.isHidden = false
         storyImage.backgroundColor = bgColor
         storyImage.alpha = 1.0
         storyImage.contentMode = .scaleAspectFit
         storyImage.layer.masksToBounds = true
         storyImage.translatesAutoresizingMaskIntoConstraints = false
         storySuperClearBackCircle.addSubview(storyImage)
+        
+        indicator.contentMode = .scaleToFill
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.animationDuration = Double(Int.random(in: 2..<3))
+        indicator.rotationDuration = 7
+        indicator.numSegments = Int(Double(Int.random(in: 9..<17)))
+        //indicator.strokeColor = UIColor.randomFrom(from: [.red, .orange, .systemPink, .orange, .cyan])!
+        //indicator.strokeColor = .random
+        indicator.lineWidth = 3.9
+        indicator.alpha = 0
+        storyWhiteBackCircle.addSubview(indicator)
         
         storyAuthorNameLabel.textAlignment = .center
         storyAuthorNameLabel.numberOfLines = 2
@@ -79,7 +111,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         pinSymbolView.isHidden = !story.pinned
     }
     
-    func configureCell(settings: StoriesSettings?, viewed: Bool, viewedLocalKey: Bool) {
+    func configureCell(settings: StoriesSettings?, viewed: Bool, viewedLocalKey: Bool, indicatorId: Int) {
         storyWhiteBackCircle.isHidden = false
         storySuperClearBackCircle.isHidden = false
         layoutIfNeeded()
@@ -91,6 +123,8 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     labelColor = "#FFFFFF".hexToRGB()
                 }
             }
+            
+            indicator.strokeColor = .white
             
             storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
@@ -107,17 +141,23 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             if (viewed) {
                 storyWhiteBackCircle.backgroundColor = viewed ?
                 UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
-                UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
+                UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1)
+                
+                indicator.strokeColor = viewed ?
+                UIColor(red: 255/255, green: 118/255, blue: 0/255, alpha: 1) :
+                UIColor(red: 255/255, green: 118/255, blue: 0/255, alpha: 1)
             } else {
                 storyWhiteBackCircle.backgroundColor = viewedLocalKey ?
                 UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
                 UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
+                
+                indicator.strokeColor = UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1)
             }
             storyWhiteBackCircle.layer.cornerRadius = storyWhiteBackCircle.frame.width / 2
             storyWhiteBackCircle.layer.masksToBounds = true
             
             if (viewed || viewedLocalKey) {
-                storyImage.alpha = 0.75
+                storyImage.alpha = 0.8
             } else {
                 storyImage.alpha = 1.0
             }
@@ -134,6 +174,25 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             storySuperClearBackCircle.backgroundColor = .white
             pinSymbolView.isHidden = true
         }
+        
+        let sId = String(indicatorId)
+        DispatchQueue.onceServiceTech(token: sId) {
+            UIView.animate(withDuration: 0.7, animations: {
+                self.indicator.alpha = 1
+            })
+
+            indicator.startAnimating()
+
+            let preffixStart = Double(Int.random(in: 3..<5))
+            let preffixEnd = Double(Int.random(in: 8..<11))
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(Double.random(in: preffixStart..<preffixEnd))) {
+                UIView.animate(withDuration: 2.7, animations: {
+                    self.indicator.alpha = 0
+                })
+            }
+        }
+        
     }
     
     private func setImage(imagePath: String) {
@@ -161,6 +220,20 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storySuperClearBackCircle.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -3.8).isActive = true
         storySuperClearBackCircle.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: -3.8).isActive = true
         
+        indicator.topAnchor.constraint(equalTo: storyBackCircle.topAnchor, constant: 0).isActive = true
+        indicator.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor, constant: 0).isActive = true
+        indicator.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: 0).isActive = true
+        indicator.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: 0).isActive = true
+        indicator.heightAnchor.constraint(equalTo: storyBackCircle.widthAnchor).isActive = true
+        indicator.heightAnchor.constraint(equalTo: storyBackCircle.widthAnchor).isActive = true
+        
+//        sIndicator.topAnchor.constraint(equalTo: storyBackCircle.topAnchor, constant: 0).isActive = true
+//        sIndicator.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor, constant: 0).isActive = true
+//        sIndicator.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: 0).isActive = true
+//        sIndicator.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: 0).isActive = true
+//        sIndicator.heightAnchor.constraint(equalTo: storyBackCircle.widthAnchor).isActive = true
+//        sIndicator.heightAnchor.constraint(equalTo: storyBackCircle.widthAnchor).isActive = true
+        
         storyImage.topAnchor.constraint(equalTo: storyWhiteBackCircle.topAnchor, constant: 5.5).isActive = true
         storyImage.leadingAnchor.constraint(equalTo: storyWhiteBackCircle.leadingAnchor, constant: 5.5).isActive = true
         storyImage.trailingAnchor.constraint(equalTo: storyWhiteBackCircle.trailingAnchor, constant: -5.5).isActive = true
@@ -179,6 +252,10 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         pinSymbolLabel.centerYAnchor.constraint(equalTo: pinSymbolView.centerYAnchor).isActive = true
     }
     
+    public func showIndicatorOn() {
+        indicator.startAnimating()
+    }
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         storyBackCircle.layer.cornerRadius = storyBackCircle.frame.width / 2
@@ -193,3 +270,47 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     }
 }
 
+extension CGFloat {
+    static var random: CGFloat {
+        return CGFloat(arc4random()) / CGFloat(UInt32.max)
+    }
+}
+
+extension UIColor {
+    static var random: UIColor {
+        return UIColor(red: .random, green: .random, blue: .random, alpha: 1.0)
+    }
+}
+
+extension UIColor {
+    static func randomFrom(from colors: [UIColor]) -> UIColor? {
+        return colors.randomElement()
+    }
+}
+
+public extension DispatchQueue {
+    private static var _onceTracker = [String]()
+    
+    class func onceServiceTech(
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line,
+        block: () -> Void
+    ) {
+        let token = "\(file):\(function):\(line)"
+        onceServiceTech(token: token, block: block)
+    }
+    
+    class func onceServiceTech(
+        token: String,
+        block: () -> Void
+    ) {
+        objc_sync_enter(self)
+        defer { objc_sync_exit(self) }
+        
+        guard !_onceTracker.contains(token) else { return }
+        
+        _onceTracker.append(token)
+        block()
+    }
+}

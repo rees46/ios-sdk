@@ -40,7 +40,7 @@ class ViewController: UIViewController {
     @objc
     private func updateStories() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
         }
     }
     
@@ -60,7 +60,7 @@ class ViewController: UIViewController {
         globalSDK?.resetCachedWatchedStoriesStates()
 
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
         }
     }
 }

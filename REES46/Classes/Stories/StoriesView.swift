@@ -73,6 +73,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
+        UserDefaults.standard.set(false, forKey: "soundSetting")
     }
     
     public func configure(sdk: PersonalizationSDK, mainVC: UIViewController, code: String) {
@@ -149,13 +150,14 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             
             let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
             if (watchedStoriesArray.count == allStoriesMainArray.count) {
-                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true)
+                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, indicatorId: currentStory.id)
                 cell.configure(story: currentStory)
             } else {
-                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false)
+                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false, indicatorId: currentStory.id)
                 cell.configure(story: currentStory)
             }
         }
+        
         return cell
     }
 
@@ -217,6 +219,26 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 
             }
         }
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        //print(indexPath.row)
+    }
+
+    
+    public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        //for cell in collectionView.visibleCells {
+            //let indexPath = collectionView.indexPath(for: cell)
+            //print(indexPath!)
+        //}
+    }
+    
+    
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        //for cell in collectionView.visibleCells {
+            //let indexPath = collectionView.indexPath(for: cell)
+            //print(indexPath!)
+        //}
     }
 }
 

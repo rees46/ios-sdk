@@ -121,12 +121,12 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         button.setTitle("Скрыть товары", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         button.backgroundColor = .clear //.white
-        button.setTitleColor(UIColor.darkGray, for: .normal)
-        
+        button.setTitleColor(UIColor.black, for: .normal)
         //button.layer.cornerRadius = button.frame.size.height / 2
         //button.layer.borderWidth = 1.2
         //button.layer.masksToBounds = true
         //button.layer.borderColor = UIColor.black.cgColor
+        
         button.addTarget(self, action: #selector(self.buttonTapped), for: .touchUpInside)
         
         var mainBundle = Bundle(for: classForCoder)

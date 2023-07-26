@@ -78,7 +78,14 @@ protocol CustomProductButtonDelegate: AnyObject {
         super.layoutSubviews()
     }
     
-    @objc public func didTapOnButton() {
+    @objc public func didTapButton() {
+//        if let productsList = selectedProductsElement?.products, productsList.count != 0 {
+//            UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
+//            let products = productsList
+//            delegate?.openProductsCarousel(products: products)
+//            return
+//        }
+        
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)
             return
@@ -92,7 +99,7 @@ protocol CustomProductButtonDelegate: AnyObject {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setToDefaultProductsButton()
-        //super.layoutSubviews()
+        super.layoutSubviews()
     }
     
     private func setToDefaultProductsButton() {
