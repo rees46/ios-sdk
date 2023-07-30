@@ -48,7 +48,7 @@ protocol CustomProductButtonDelegate: AnyObject {
                 
                 backgroundColor = .white
                 setTitleColor(.black, for: .normal)
-                
+
                 //angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
                 //backgroundColor = .clear
                 //setTitleColor(.white, for: .normal)
@@ -56,13 +56,6 @@ protocol CustomProductButtonDelegate: AnyObject {
                 backgroundColor = .white
                 setTitleColor(.black, for: .normal)
             }
-            
-//            layer.shadowColor = UIColor.black.cgColor
-//            layer.shadowOffset = CGSize(width: 0.0, height: 3.0)
-//            layer.shadowRadius = 3
-//            layer.shadowOpacity = 1.0
-            
-            //backgroundColor = .clear
             layer.cornerRadius = layer.frame.size.height/2
             layer.masksToBounds = true
             
@@ -78,7 +71,8 @@ protocol CustomProductButtonDelegate: AnyObject {
         super.layoutSubviews()
     }
     
-    @objc public func didTapOnButton() {
+    @objc public func didTapButton() {
+        
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)
             return
@@ -92,7 +86,7 @@ protocol CustomProductButtonDelegate: AnyObject {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setToDefaultProductsButton()
-        //super.layoutSubviews()
+        super.layoutSubviews()
     }
     
     private func setToDefaultProductsButton() {

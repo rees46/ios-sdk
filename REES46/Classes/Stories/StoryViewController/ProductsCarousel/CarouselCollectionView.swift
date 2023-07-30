@@ -5,7 +5,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     
     var cells = [StoriesProduct]()
     
-    public weak var productsDelegate: CarouselCollectionViewCellDelegate?
+    public weak var carouselProductsDelegate: CarouselCollectionViewCellDelegate?
     
     init() {
         let layout = UICollectionViewFlowLayout()
@@ -20,8 +20,6 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         
         translatesAutoresizingMaskIntoConstraints = false
         layout.minimumLineSpacing = CarouselConstants.carouselMinimumLineSpacing
-       
-        //mainCarouselProductsDelegate?.storiesDelegate = self
         
         if GlobalHelper.DeviceType.IS_IPHONE_8 {
             contentInset = UIEdgeInsets(top: 0, left: CarouselConstants.leftDistanceToView, bottom: 70, right: CarouselConstants.rightDistanceToView)
@@ -36,17 +34,8 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         stackView.axis = .horizontal
         stackView.distribution = .fill
         stackView.backgroundColor = .clear
-        
         stackView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stackView)
-        
-//        NSLayoutConstraint.activate([
-//            stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 9),
-//            stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -9),
-//            //stackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor),
-//            stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 22),
-//            stackView.heightAnchor.constraint(equalToConstant: 52)
-//        ])
         
         if GlobalHelper.DeviceType.IS_IPHONE_XS {
             NSLayoutConstraint.activate([
@@ -88,7 +77,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
-                stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 18),
+                stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -6),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
         } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
@@ -121,12 +110,12 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         button.setTitle("Скрыть товары", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         button.backgroundColor = .clear //.white
-        button.setTitleColor(UIColor.darkGray, for: .normal)
-        
+        button.setTitleColor(UIColor.black, for: .normal)
         //button.layer.cornerRadius = button.frame.size.height / 2
         //button.layer.borderWidth = 1.2
         //button.layer.masksToBounds = true
         //button.layer.borderColor = UIColor.black.cgColor
+        
         button.addTarget(self, action: #selector(self.buttonTapped), for: .touchUpInside)
         
         var mainBundle = Bundle(for: classForCoder)
@@ -155,7 +144,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     }
     
     @objc func buttonTapped(sender : UIButton) {
-        productsDelegate?.closeProductsCarousel()
+        carouselProductsDelegate?.closeProductsCarousel()
     }
     
     func set(cells: [StoriesProduct]) {
@@ -195,12 +184,15 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedCarouselProduct = cells[indexPath.row]
-        productsDelegate?.sendCarouselProductStructForExternal(product: selectedCarouselProduct)
-        productsDelegate?.didTapLinkIosOpeningExternal(url: cells[indexPath.row].url)
+        carouselProductsDelegate?.sendStructSelectedCarouselProduct(product: selectedCarouselProduct)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: CarouselConstants.carouselItemWidth, height: frame.height * 0.73)
+        if GlobalHelper.DeviceType.IS_IPHONE_5 {
+            return CGSize(width: CarouselConstants.carouselItemSlowWidth, height: frame.height * 0.73)
+        } else {
+            return CGSize(width: CarouselConstants.carouselItemWidth, height: frame.height * 0.73)
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {

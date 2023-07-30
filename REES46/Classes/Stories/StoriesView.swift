@@ -7,12 +7,11 @@ public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveSelectedCarouselProductData(products: StoriesProduct)
 }
 
-public protocol StoriesViewMainProtocol: AnyObject {
-    func extendLinkIos(url: String)
-    func structOfSelectedProduct(product: StoriesElement)
+public protocol StoriesViewLinkProtocol: AnyObject {
+    func linkIosExternalUse(url: String)
+    func sendStructSelectedStorySlide(storySlide: StoriesElement)
     func structOfSelectedCarouselProduct(product: StoriesProduct)
     func reloadStoriesCollectionSubviews()
-    var storiesDelegate: StoriesViewMainProtocol? { get set }
 }
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
@@ -40,7 +39,6 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
     
-    public var storiesDelegate: StoriesViewMainProtocol?
     public weak var communicationDelegate: StoriesCommunicationProtocol?
     
     private var mainVC: UIViewController?
@@ -73,6 +71,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
+        UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
     }
     
     public func configure(sdk: PersonalizationSDK, mainVC: UIViewController, code: String) {
@@ -149,20 +148,21 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             
             let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
             if (watchedStoriesArray.count == allStoriesMainArray.count) {
-                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true)
+                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, storyId: currentStory.id)
                 cell.configure(story: currentStory)
             } else {
-                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false)
+                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false, storyId: currentStory.id)
                 cell.configure(story: currentStory)
             }
         }
+        
         return cell
     }
 
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if let currentStory = stories?[indexPath.row] {
             let storyVC = StoryViewController()
-            storyVC.linkDelegate = self
+            storyVC.sdkLinkDelegate = self
             storyVC.sdk = sdk
             storyVC.stories = stories ?? []
             
@@ -220,22 +220,22 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 }
 
-extension StoriesView: StoriesViewMainProtocol {
-    public func structOfSelectedProduct(product: StoriesElement) {
-        self.communicationDelegate?.receiveSelectedProductData(products: product)
-        print("Received product data for external use:")
-        printSlideObject(objElementClass: product)
+extension StoriesView: StoriesViewLinkProtocol {
+    public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
+        self.communicationDelegate?.receiveSelectedProductData(products: storySlide)
+        print("\n\nSDK Received story slide button tap links for external use:")
+        printSlideObject(objElementClass: storySlide)
     }
     
     public func structOfSelectedCarouselProduct(product: StoriesProduct) {
         self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
-        print("Received carousel product data for external use:")
+        print("\n\nSDK Received carousel selected product link for external use:")
         printCarouselObject(objProductClass: product)
     }
     
-    public func extendLinkIos(url: String) {
+    public func linkIosExternalUse(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
-        print("Received linkIos for external use: \(url)")
+        print("\n\nSDK Received linkIos for external use: \(url)\n\n")
     }
 
     public func reloadStoriesCollectionSubviews() {
@@ -245,20 +245,20 @@ extension StoriesView: StoriesViewMainProtocol {
         }
     }
     
-    func printSlideObject(objElementClass: StoriesElement) {
+    public func printSlideObject(objElementClass: StoriesElement) {
         print("LinkWeb: \(objElementClass.link ?? "")")
         print("LinkiOS: \(objElementClass.linkIos ?? "")")
         print("LinkAndroid: \(objElementClass.linkAndroid ?? "")")
     }
     
-    func printCarouselObject(objProductClass: StoriesProduct) {
+    public func printCarouselObject(objProductClass: StoriesProduct) {
         print("ProductName: \(objProductClass.name)")
         print("ProductUrl: \(objProductClass.url)")
         print("ProductCategory: \(objProductClass.category.name)")
         print("ProductCategoryUrl: \(objProductClass.category.url)")
         print("ProductPrice: \(objProductClass.price)")
         print("ProductPriceFormatted: \(objProductClass.price_formatted)")
-        print("ProductPicture: \(objProductClass.picture)")
+        print("ProductPicture: \(objProductClass.picture)\n\n")
     }
 }
 

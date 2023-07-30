@@ -17,7 +17,6 @@ class ViewController: UIViewController {
     
     @IBOutlet private weak var updateButton: UIButton!
     @IBOutlet private weak var storiesCollectionView: StoriesView!
-    //@IBOutlet private weak var sss: Storyv!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,13 +45,6 @@ class ViewController: UIViewController {
     
     @objc
     private func didTapUpdate() {
-        
-        //let navVC = NavigationStackController.init(rootViewController: self)
-        //let nav = UINavigationController(rootViewController: navVC)
-        //self.window?.rootViewController = nav
-        //self.navigationController?.pushViewController(nav, animated: true)
-        //return
-        
         pushTokenLabel.text = "PUSHTOKEN = " + pushGlobalToken
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken

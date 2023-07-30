@@ -1,24 +1,24 @@
 import Foundation
 import UIKit
 
-public struct StoriesImageLoader {
+public struct StoriesCollectionCellLoader {
 
     @discardableResult
     public static func request(with url: URLLiteralConvertible, onCompletion: @escaping (UIImage?, Error?, FetchOperation) -> Void) -> Loader? {
-        guard let storiesImageLoaderUrl = url.storiesImageLoaderURL else { return nil }
+        guard let storiesCollectionCellLoaderUrl = url.storiesCollectionCellLoaderURL else { return nil }
 
         let task = Task(nil, onCompletion: onCompletion)
-        let loader = StoriesImageLoader.session.getLoader(with: storiesImageLoaderUrl, task: task)
+        let loader = StoriesCollectionCellLoader.session.getLoader(with: storiesCollectionCellLoaderUrl, task: task)
         loader.resume()
 
         return loader
     }
 
-    static var session: StoriesImageLoader.Session {
+    static var session: StoriesCollectionCellLoader.Session {
         return Session.shared
     }
 
-    static var manager: StoriesImageLoader.LoaderManager {
+    static var manager: StoriesCollectionCellLoader.LoaderManager {
         return Session.manager
     }
 
@@ -43,11 +43,11 @@ public struct StoriesImageLoader {
 
         func getLoader(with dataTask: URLSessionTask) -> Loader? {
             guard let url = dataTask.originalRequest?.url else { return nil }
-            return StoriesImageLoader.manager.storage[url]
+            return StoriesCollectionCellLoader.manager.storage[url]
         }
 
         func getLoader(with url: URL, task: Task) -> Loader {
-            let loader = StoriesImageLoader.manager.getLoader(with: url)
+            let loader = StoriesCollectionCellLoader.manager.getLoader(with: url)
             loader.operative.update(task)
             return loader
         }
@@ -60,7 +60,7 @@ public struct StoriesImageLoader {
         var disk = Disk()
 
         init(configuration: URLSessionConfiguration = .default) {
-            self.session = URLSession(configuration: .default, delegate: StoriesImageLoader.session, delegateQueue: nil)
+            self.session = URLSession(configuration: .default, delegate: StoriesCollectionCellLoader.session, delegateQueue: nil)
         }
 
         func getLoader(with url: URL) -> Loader {

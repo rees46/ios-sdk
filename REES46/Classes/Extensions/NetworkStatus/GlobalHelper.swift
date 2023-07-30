@@ -55,46 +55,49 @@ public extension String {
 
 public extension DispatchQueue {
     private static var _onceTracker = [String]()
-
-    class func once(file: String = #file,
-                           function: String = #function,
-                           line: Int = #line,
-                           block: () -> Void) {
+    
+    class func onceTechService(
+        file: String = #file,
+        function: String = #function,
+        line: Int = #line,
+        block: () -> Void
+    ) {
         let token = "\(file):\(function):\(line)"
-        onces(token: token, block: block)
+        onceTechService(token: token, block: block)
     }
-
-    class func onces(token: String,
-                            block: () -> Void) {
+    
+    class func onceTechService(
+        token: String,
+        block: () -> Void
+    ) {
         objc_sync_enter(self)
         defer { objc_sync_exit(self) }
-
+        
         guard !_onceTracker.contains(token) else { return }
-
+        
         _onceTracker.append(token)
         block()
     }
-    
-    class func reset(token: String) {
-        _onceTracker = [""]
-    }
 }
 
-
-//public extension UIDevice {
-//    func checkIfHasDynamicIsland() -> Bool {
-//        if let simulatorModelIdentifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] {
-//            let nameSimulator = simulatorModelIdentifier
-//            return nameSimulator == "iPhone15,2" || nameSimulator == "iPhone15,3" ? true : false
-//        }
-//
-//        var sysinfo = utsname()
-//        uname(&sysinfo)
-//        let name =  String(bytes: Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN)), encoding: .ascii)!.trimmingCharacters(in: .controlCharacters)
-//        return name == "iPhone15,2" || name == "iPhone15,3" ? true : false
-//    }
-//}
-
+extension UIImage {
+    public func withRoundedCorners(radius: CGFloat? = nil) -> UIImage? {
+        let maxRadius = min(size.width, size.height) / 2
+        let cornerRadius: CGFloat
+        if let radius = radius, radius > 0 && radius <= maxRadius {
+            cornerRadius = radius
+        } else {
+            cornerRadius = maxRadius
+        }
+        UIGraphicsBeginImageContextWithOptions(size, false, scale)
+        let rect = CGRect(origin: .zero, size: size)
+        UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).addClip()
+        draw(in: rect)
+        let image = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return image
+    }
+}
 
 public extension UIColor {
    convenience init(red: Int, green: Int, blue: Int) {

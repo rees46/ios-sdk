@@ -24,12 +24,12 @@ final public class VideoDownloadManager: NSObject {
                                        onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
         
         guard let url = request.url else {
-            debugPrint("Request url is empty")
+            debugPrint("SDK Request url is empty")
             return nil
         }
         
         if let _ = self.ongoingDownloads[url.absoluteString] {
-            debugPrint("Already in progress")
+            debugPrint("SDK Already in progress")
             return nil
         }
         var downloadTask: URLSessionDownloadTask
@@ -175,7 +175,7 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                              totalBytesWritten: Int64,
                              totalBytesExpectedToWrite: Int64) {
         guard totalBytesExpectedToWrite > 0 else {
-            debugPrint("Could not calculate progress as totalBytesExpectedToWrite is less than 0")
+            debugPrint("SDK Could not calculate progress as totalBytesExpectedToWrite is less than 0")
             return;
         }
         
