@@ -4,10 +4,9 @@ import AVFoundation
 
 protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
-    func didTapOpenLinkIosExternalWeb(url: String, slide: Slide)
-    func sendProductStructForExternal(product: StoriesElement)
-    
-    func openProductsCarousel(products: [StoriesProduct])
+    func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide)
+    func sendStructSelectedStorySlide(storySlide: StoriesElement)
+    func openProductsCarouselView(withProducts: [StoriesProduct])
     func closeProductsCarousel()
 }
 
@@ -32,8 +31,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
     var pstBottomAnchor: NSLayoutConstraint!
     private var customConstraints = [NSLayoutConstraint]()
     
-    public weak var delegate: StoryCollectionViewCellDelegate?
-    public weak var mainStoriesDelegate: StoriesViewMainProtocol?
+    public weak var cellDelegate: StoryCollectionViewCellDelegate?
+    public weak var mainStoriesDelegate: StoriesViewLinkProtocol?
     
     var player = AVPlayer()
     private let timeObserverKeyPath: String = "timeControlStatus"
@@ -48,14 +47,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(showSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerShow"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(hideSpinnner(_:)), name: .init(rawValue: "NeedLongSpinnerHide"), object: nil)
         
         //player.addObserver(self, forKeyPath: timeObserverKeyPath, options: [.old, .new], context: nil)
         
         // videoView.contentMode = .scaleAspectFill
         videoView.contentMode = .scaleToFill
-        
         videoView.isOpaque = true
         videoView.clearsContextBeforeDrawing = true
         videoView.autoresizesSubviews = true
@@ -64,7 +60,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         //imageView.contentMode = .scaleAspectFill
         imageView.contentMode = .scaleAspectFit
-        
         imageView.clipsToBounds = true
         //imageView.layer.cornerRadius = 5
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -93,30 +88,13 @@ class StoryCollectionViewCell: UICollectionViewCell {
         customConstraints.forEach { $0.isActive = false }
         customConstraints.removeAll()
     }
-
-   // private func updateViewState() {
-//        clearConstraints()
-//
-//        let constraints = [
-//            view.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
-//            view.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),
-//            view.topAnchor.constraint(equalTo: parentView.topAnchor),
-//            view.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)
-//        ]
-//
-//        activate(constraints: constraints)
-//
-//        view.layoutIfNeeded()
-//    }
     
     private func activate(constraints: [NSLayoutConstraint]) {
         customConstraints.append(contentsOf: constraints)
         customConstraints.forEach { $0.isActive = true }
     }
     
-    func makeConstraints(){
-        //self.invalidateIntrinsicContentSize()
-        //self.layoutIfNeeded()
+    func makeConstraints() {
         
         videoView.topAnchor.constraint(equalTo: topAnchor).isActive = true
         videoView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
@@ -132,419 +110,156 @@ class StoryCollectionViewCell: UICollectionViewCell {
             
             clearConstraints()
             
-            //            let constraints = [
-            //                storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            //                storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            //                //storyButton.topAnchor.constraint(equalTo: topAnchor),
-            //                storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24),
-            //                storyButton.heightAnchor.constraint(equalToConstant: 56)
-            //            ]
-            //
-            //            let constraintsd = [
-            //                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
-            //                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-            //                //productsButton.topAnchor.constraint(equalTo: nil),
-            //                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -96 ),
-            //                productsButton.heightAnchor.constraint(equalToConstant: 36)
-            //            ]
-            //
-            //            self.activate(constraints: constraints)
-            //            self.activate(constraints: constraintsd)
-            //layoutIfNeeded()
-            
-            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
+            let ds : Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
             if ds == true {
-                let constraints = [
+                let storyButtonConstraints = [
                     storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
                     storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    //storyButton.topAnchor.constraint(equalTo: topAnchor),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
                     storyButton.heightAnchor.constraint(equalToConstant: 56)
                 ]
                 
-                let constraintsd = [
+                var productsButtonConstraints = [
                     productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
                     productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    //productsButton.topAnchor.constraint(equalTo: topAnchor),
                     productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
                     productsButton.heightAnchor.constraint(equalToConstant: 36)
                 ]
                 
-                self.activate(constraints: constraints)
-                self.activate(constraints: constraintsd)
+                if GlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                let muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    //muteButton.centerYAnchor.constraint(equalTo: productsButton.centerYAnchor),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
             } else {
-                let constraints = [
+                let storyButtonConstraints = [
                     storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
                     storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    //storyButton.topAnchor.constraint(equalTo: topAnchor),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
                     storyButton.heightAnchor.constraint(equalToConstant: 56)
                 ]
                 
-                let constraintsd = [
+                var productsButtonConstraints = [
                     productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
                     productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    //productsButton.topAnchor.constraint(equalTo: nil),
                     productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
                     productsButton.heightAnchor.constraint(equalToConstant: 36)
                 ]
                 
-                self.activate(constraints: constraints)
-                self.activate(constraints: constraintsd)
+                if GlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                let muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
             }
-            
-            //self.activate(constraints: constraints)
-            //self.activate(constraints: constraintsd)
             layoutIfNeeded()
             
-            //            for subview in cell.contentView {
-            //                        subview.clearConstraints()
-            //                    }
-            //                    self.removeConstraints(self.constraints)
-            
-            //self.invalidateIntrinsicContentSize()
-            //self.invalidateIntrinsicContentSize()
-            //self.storyButton.topAnchor.constraint(equalTo: topAnchor, constant: 64).isActive = true
-            //            self.storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-            //            self.storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-            //            self.storyButton.heightAnchor.constraint(equalToConstant: 56).isActive = true
-            //
-            ////            self.cstBottomAnchor = storyButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24)
-            ////            self.cstBottomAnchor.isActive = true
-            //
-            //            //self.productsButton.topAnchor.constraint(equalTo: topAnchor, constant: 64).isActive = true
-            //            self.productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
-            //            self.productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
-            //            self.productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            ////            self.pstBottomAnchor = productsButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -90)
-            ////            self.pstBottomAnchor.isActive = true
-            //
-            //            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
-            //            if ds == true {
-            //
-            //                self.cstBottomAnchor = storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -32)
-            //                self.cstBottomAnchor.isActive = true
-            //
-            //                self.pstBottomAnchor = productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -110)
-            //                self.pstBottomAnchor.isActive = true
-            //
-            //                self.cstBottomAnchor.priority = UILayoutPriority(100)
-            //                self.pstBottomAnchor.priority = UILayoutPriority(100)
-            //
-            //                //self.cstBottomAnchor.constant = -24.0
-            //                //se//lf.pstBottomAnchor.constant = -90.0
-            ////                //storyButton.heightAnchor.constraint(equalToConstant: 14).isActive = false
-            ////                storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-            ////                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            ////
-            ////                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = false
-            ////                storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80).isActive = false
-            ////
-            ////                //storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-            ////                storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-            ////                storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-            ////
-            ////                //rstoryButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80).isActive = false
-            ////                storyButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32).isActive = true ///
-            ////
-            ////
-            ////                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
-            ////                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
-            ////
-            ////
-            ////                //productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = false
-            ////                productsButton.bottomAnchor.constraint(equalTo: storyButton.topAnchor, constant: -12).isActive = true
-            ////
-            //
-            //
-            //
-            //
-            //
-            //                //storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
-            //
-            //                //productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            ////                pstBottomAnchor = productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97)
-            ////                pstBottomAnchor.constant = -97
-            ////                pstBottomAnchor.isActive = true
-            ////                pstHeightAnchor = productsButton.heightAnchor.constraint(equalToConstant: 36)
-            ////                pstHeightAnchor.constant = 36
-            ////                pstHeightAnchor.isActive = true
-            ////                //pstHeightAnchor.isActive = true
-            //
-            ////                cstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-            ////                cstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-            ////                pstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-            ////                pstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-            //
-            //                UIView.animate(withDuration: 0.4) {
-            //                    self.setNeedsUpdateConstraints()
-            //                    self.layoutIfNeeded()
-            //                }
-            //            } else {
-            //                //self.storyButton.heightAnchor.constraint(equalToConstant: 1).isActive = true
-            //
-            //                self.storyButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32).isActive = false
-            //                self.productsButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10).isActive = false
-            //
-            //                self.cstBottomAnchor = storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 60)
-            //                self.cstBottomAnchor.isActive = true
-            //
-            //                self.pstBottomAnchor = productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4)
-            //                self.pstBottomAnchor.isActive = true
-            //
-            //                self.cstBottomAnchor.priority = UILayoutPriority(100)
-            //                self.pstBottomAnchor.priority = UILayoutPriority(100)
-            
-            //                storyButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -24).isActive = false
-            //                productsButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -90).isActive = false
-            //
-            //                self.cstBottomAnchor.isActive = false
-            //                self.cstBottomAnchor.constant = -1.0
-            //                self.cstBottomAnchor.isActive = true
-            //
-            //                self.pstBottomAnchor.isActive = false
-            //                self.pstBottomAnchor.constant = -20.0
-            //                self.pstBottomAnchor.isActive = true
-            
-            //self.myListCVLeftConstraint?.constant = 0.0
-            //                storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = false
-            //                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            //
-            //                storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-            //                storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-            //
-            //                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
-            //                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
-            //
-            //                storyButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -32).isActive = false
-            //                //productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97).isActive = false
-            //
-            //                productsButton.bottomAnchor.constraint(equalTo: storyButton.topAnchor, constant: -12).isActive = false
-            //
-            //                //productsButton.bottomAnchor.constraint(equalTo: storyButton.bottomAnchor, constant: -80).isActive = false
-            //                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -35).isActive = true
-            
-            
-            //fff
-            
-            //productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            
-            
-            //storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = false
-            //storyButton.heightAnchor.constraint(equalToConstant: 1).isActive = true
-            
-            //storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97).isActive = false
-            //s//toryButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5).isActive = true
-            
-            
-            //cstHeightAnchor.bott priority.constant.pri  bottomAnchor.prio = UILayoutPriority(rawValue: 99)
-            //storyButton.bottomAnchor.constraint.prio
-            ///productsButton.priority = UILayoutPriority(rawValue: 100)
-            //pstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-            
-            //                cstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-            //                cstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-            //                pstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-            //                pstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-            
-            //                UIView.animate(withDuration: 0.4) {
-            ////
-            ////                    self.invalidateIntrinsicContentSize()
-            ////                    self.setNeedsLayout()
-            ////                    self.layoutIfNeeded()
-            //
-            //                    //self.setNeedsUpdateConstraints()
-            //                    //self.layoutIfNeeded()
-            //                }
-            
-            // }
-            
-            ////XXXS
-            //            storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-            //            storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-            //            storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18).isActive = true
-            //            storyButton.heightAnchor.constraint(equalToConstant: 56).isActive = true
-            //
-            //            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
-            //            if ds == true {
-            //                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -90).isActive = true
-            //                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 90).isActive = true
-            //                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -96).isActive = true
-            //                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            //            } else {
-            //                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -96).isActive = false
-            //
-            //                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
-            //                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
-            //                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
-            //                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-            //
-            //                //productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
-            // }
         } else {
-            
+
             clearConstraints()
             
-            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
+            let ds : Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
             if ds == true {
-                let constraints = [
+                let storyButtonConstraints = [
                     storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
                     storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    //storyButton.topAnchor.constraint(equalTo: topAnchor),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -24),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22),
                     storyButton.heightAnchor.constraint(equalToConstant: 56)
                 ]
                 
-                let constraintsd = [
+                var productsButtonConstraints = [
                     productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
                     productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    //productsButton.topAnchor.constraint(equalTo: topAnchor),
                     productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
                     productsButton.heightAnchor.constraint(equalToConstant: 36)
                 ]
                 
-                self.activate(constraints: constraints)
-                self.activate(constraints: constraintsd)
+                if GlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                let muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    //muteButton.centerYAnchor.constraint(equalTo: productsButton.centerYAnchor),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
             } else {
-                let constraints = [
+                let storyButtonConstraints = [
                     storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
                     storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    //storyButton.topAnchor.constraint(equalTo: topAnchor),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22),
                     storyButton.heightAnchor.constraint(equalToConstant: 56)
                 ]
                 
-                let constraintsd = [
+                var productsButtonConstraints = [
                     productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
                     productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    //productsButton.topAnchor.constraint(equalTo: nil),
                     productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
                     productsButton.heightAnchor.constraint(equalToConstant: 36)
                 ]
                 
-                self.activate(constraints: constraints)
-                self.activate(constraints: constraintsd)
+                if GlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                let muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
             }
-            
-            //self.activate(constraints: constraints)
-            //self.activate(constraints: constraintsd)
             layoutIfNeeded()
-            
         }
-   // }
-//            //storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-//            //productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-//
-//            let ds : Bool = UserDefaults.standard.bool(forKey: "doubleProductsConfig")
-//            if ds == true {
-//                //storyButton.heightAnchor.constraint(equalToConstant: 14).isActive = false
-//                storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-//                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-//
-//                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = false
-//                storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80).isActive = false
-//
-//                //storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-//                storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-//                storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-//
-//                //rstoryButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -80).isActive = false
-//                storyButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -27).isActive = true ///
-//
-//
-//                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
-//                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
-//
-//
-//                //productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = false
-//                productsButton.bottomAnchor.constraint(equalTo: storyButton.topAnchor, constant: -7).isActive = true
-//
-//                //storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
-//
-//                //productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-////                pstBottomAnchor = productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97)
-////                pstBottomAnchor.constant = -97
-////                pstBottomAnchor.isActive = true
-////                pstHeightAnchor = productsButton.heightAnchor.constraint(equalToConstant: 36)
-////                pstHeightAnchor.constant = 36
-////                pstHeightAnchor.isActive = true
-////                //pstHeightAnchor.isActive = true
-//
-//                cstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-//                cstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-//                pstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-//                pstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-//
-//                UIView.animate(withDuration: 0.3) {
-//                    //self.setNeedsUpdateConstraints()
-//                    //self.layoutIfNeeded()
-//                }
-//            } else {
-//
-//                storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = false
-//                productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-//
-//                storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-//                storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-//
-//                productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66).isActive = true
-//                productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66).isActive = true
-//
-//                storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -27).isActive = false
-//                //productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97).isActive = false
-//
-//                productsButton.bottomAnchor.constraint(equalTo: storyButton.topAnchor, constant: -7).isActive = false
-//
-//                //productsButton.bottomAnchor.constraint(equalTo: storyButton.bottomAnchor, constant: -80).isActive = false
-//                productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28).isActive = true
-//
-//                //productsButton.heightAnchor.constraint(equalToConstant: 36).isActive = true
-//
-//
-//                //storyButton.heightAnchor.constraint(equalToConstant: 60).isActive = false
-//                //storyButton.heightAnchor.constraint(equalToConstant: 1).isActive = true
-//
-//                //storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -97).isActive = false
-//                //s//toryButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -5).isActive = true
-//
-//
-//                //cstHeightAnchor.bott priority.constant.pri  bottomAnchor.prio = UILayoutPriority(rawValue: 99)
-//                //storyButton.bottomAnchor.constraint.prio
-//                ///productsButton.priority = UILayoutPriority(rawValue: 100)
-//                //pstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-//
-//                cstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-//                cstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-//                pstHeightAnchor?.priority = UILayoutPriority(rawValue: 100)
-//                pstBottomAnchor?.priority = UILayoutPriority(rawValue: 100)
-//
-//                UIView.animate(withDuration: 0.3) {
-//                    self.setNeedsUpdateConstraints()
-//                    self.layoutIfNeeded()
-//                }
-//
-//
-        //    }
-        
-////            cstBottomAnchor.isActive = true
-////            cstHeightAnchor.isActive = true
-////            pstHeightAnchor.isActive = true
-////            pstBottomAnchor.isActive = true
-//            layoutIfNeeded()
-//            //l/ayoutIfNeeded()
-//            layoutSubviews()
-//            if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
-////                storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16).isActive = true
-////                storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16).isActive = true
-////                storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18).isActive = true
-////                storyButton.heightAnchor.constraint(equalToConstant: 54).isActive = true
-//            }
-        //}
-        
-        muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7).isActive = true
-        muteButton.bottomAnchor.constraint(equalTo: storyButton.bottomAnchor, constant: -70).isActive = true
-        muteButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
-        muteButton.heightAnchor.constraint(equalToConstant: 48).isActive = true
     }
     
     @objc private func didTapOnMute() {
@@ -555,7 +270,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         if player.volume == 1.0 {
             player.volume = 0.0
             muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(false, forKey: "soundSetting")
+            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
         } else {
             player.volume = 1.0
             do {
@@ -565,7 +280,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             }
             
             muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(true, forKey: "soundSetting")
+            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
         }
     }
     
@@ -582,7 +297,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     @objc
     private func playVideo(_ notification: NSNotification) {
-        //preloader.stopPreloaderAnimation()
         if let slideID = notification.userInfo?["slideID"] as? Int {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -598,15 +312,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
         mainBundle = Bundle.module
 #endif
         
-        let soundSetting : Bool = UserDefaults.standard.bool(forKey: "soundSetting")
+        let soundSetting : Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
         if soundSetting == true {
             player.volume = 1
             muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(true, forKey: "soundSetting")
+            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
         } else {
             player.volume = 0
             muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(false, forKey: "soundSetting")
+            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
         }
         
         muteButton.translatesAutoresizingMaskIntoConstraints = false
@@ -616,8 +330,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     public func configure(slide: Slide) {
-//        setButtonToDefault()
-        
         self.currentSlide = slide
         if slide.type == .video {
 //            if let preview = slide.previewImage {
@@ -662,11 +374,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
 #if SWIFT_PACKAGE
                     mainBundle = Bundle.module
 #endif
-                    let soundSetting : Bool = UserDefaults.standard.bool(forKey: "soundSetting")
+                    let soundSetting : Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
                     if soundSetting == true {
                         player.volume = 1
                         muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
-                        UserDefaults.standard.set(true, forKey: "soundSetting")
+                        UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
                         
                         do {
                             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
@@ -676,7 +388,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                     } else {
                         player.volume = 0
                         muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
-                        UserDefaults.standard.set(false, forKey: "soundSetting")
+                        UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
                     }
                     muteButton.isHidden = false
                 } else {
@@ -684,13 +396,13 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 }
                 self.videoView.layer.addSublayer(playerLayer)
                 player.play()
-                UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
+                UserDefaults.standard.set(Int(currentSlide!.id), forKey: "LastViewedSlideMemorySetting")
             } else {
                 muteButton.isHidden = true
                 imageView.isHidden = false
                 videoView.isHidden = true
                 if let preview = slide.previewImage {
-                    self.imageView.image = preview
+                    self.imageView.image = preview //.withRoundedCorners(radius: 14)
                 }
             }
         } else {
@@ -699,68 +411,51 @@ class StoryCollectionViewCell: UICollectionViewCell {
             imageView.isHidden = false
             videoView.isHidden = true
             if let image = slide.downloadedImage {
-                self.imageView.image = image
+                self.imageView.image = image //.withRoundedCorners(radius: 14)
             }
         }
         
         if let element = slide.elements.first(where: {$0.type == .button}) {
-            
-//            UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
-            
+            UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
             selectedElement = element
             storyButton.configButton(buttonData: element)
             storyButton.isHidden = false
             productsButton.isHidden = true
             
-            //TEST
-//            productsButton.layer.cornerRadius = layer.frame.size.height / 2
-//            productsButton.layer.masksToBounds = true
-//
-//            productsButton.configProductsButton(buttonData: element)
-//            productsButton.isHidden = false
-//            makeConstraints()
-            //TEST
             makeConstraints()
             
             if let elementProduct = slide.elements.last(where: {$0.type == .products}) {
-                UserDefaults.standard.set(true, forKey: "doubleProductsConfig")
-                
+                UserDefaults.standard.set(true, forKey: "DoubleProductButtonSetting")
                 selectedProductsElement = elementProduct
                 productsButton.layer.cornerRadius = layer.frame.size.height / 2
                 productsButton.layer.masksToBounds = true
                 
                 storyButton.configButton(buttonData: element)
                 productsButton.configProductsButton(buttonData: elementProduct)
-                
-                
                 productsButton.isHidden = false
+                
                 makeConstraints()
                 return
             } else {
-                UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
+                UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
                 storyButton.configButton(buttonData: element)
                 makeConstraints()
             }
             
         } else if let element = slide.elements.first(where: {$0.type == .products}) {
-            UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
+            UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
             selectedProductsElement = element
             productsButton.layer.cornerRadius = layer.frame.size.height / 2
             productsButton.layer.masksToBounds = true
-            
             productsButton.configProductsButton(buttonData: element)
             productsButton.isHidden = false
             
             storyButton.configButton(buttonData: element)
-            //storyButton.configButton(buttonData: StoriesElement(json: ["link" : "Any"]))
             storyButton.isHidden = true
-            
-//            productsButton.configProductsButton(buttonData: element)
-//            productsButton.isHidden = false
             
             makeConstraints()
         } else {
-            UserDefaults.standard.set(false, forKey: "doubleProductsConfig")
+            UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
             storyButton.isHidden = true
             productsButton.isHidden = true
             makeConstraints()
@@ -817,39 +512,29 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     private func didTapOnProductsButton() {
         if let productsList = selectedProductsElement?.products, productsList.count != 0 {
-            UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
+            UserDefaults.standard.set(Int(currentSlide!.id), forKey: "LastViewedSlideMemorySetting")
             let products = productsList
-            delegate?.openProductsCarousel(products: products)
+            cellDelegate?.openProductsCarouselView(withProducts: products)
             return
         }
     }
     
     @objc
     private func didTapButton() {
-        
-//        if let productsList = selectedProductsElement?.products, productsList.count != 0 {
-//            UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
-//            let products = productsList
-//            delegate?.openProductsCarousel(products: products)
-//            return
-//        }
-        
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
                 
-                mainStoriesDelegate?.structOfSelectedProduct(product: selectedElement!)
-                mainStoriesDelegate?.extendLinkIos(url: linkIos)
+                UserDefaults.standard.set(Int(currentSlide.id), forKey: "LastViewedSlideMemorySetting")
                 
-                delegate?.didTapOpenLinkIosExternalWeb(url: linkIos, slide: currentSlide)
-                delegate?.sendProductStructForExternal(product: selectedElement!)
-                
+                cellDelegate?.sendStructSelectedStorySlide(storySlide: selectedElement!)
+                cellDelegate?.didTapOpenLinkExternalServiceMethod(url: linkIos, slide: currentSlide)
                 return
             }
         }
         
         if let link = selectedElement?.link, !link.isEmpty {
             if let currentSlide = currentSlide {
-                delegate?.didTapUrlButton(url: link, slide: currentSlide)
+                cellDelegate?.didTapUrlButton(url: link, slide: currentSlide)
                 return
             }
         }
@@ -864,21 +549,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
             if error == nil {
                 guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
                 DispatchQueue.main.async {
-                    self.imageView.image = image
+                    self.imageView.image = image //.withRoundedCorners(radius: 14)
                 }
             }
         })
         task.resume()
-    }
-
-    @objc
-    private func showSpinnner(_ notification: NSNotification) {
-        //preloader.startPreloaderAnimation()
-    }
-    
-    @objc
-    private func hideSpinnner(_ notification: NSNotification) {
-        //preloader.stopPreloaderAnimation()
     }
 }
 
@@ -889,17 +564,5 @@ extension AVPlayer {
 
     var isVideoAvailable: Bool? {
         return self.currentItem?.asset.tracks.filter({$0.mediaType == .video}).count != 0
-    }
-}
-
-extension UIView {
-    
-    var heightConstraint: NSLayoutConstraint? {
-        get {
-            return constraints.first(where: {
-                $0.firstAttribute == .height && $0.relation == .equal
-            })
-        }
-        set { setNeedsLayout() }
     }
 }

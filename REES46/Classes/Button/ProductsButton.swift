@@ -48,7 +48,7 @@ protocol CustomProductButtonDelegate: AnyObject {
                 
                 backgroundColor = .white
                 setTitleColor(.black, for: .normal)
-                
+
                 //angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
                 //backgroundColor = .clear
                 //setTitleColor(.white, for: .normal)
@@ -56,13 +56,6 @@ protocol CustomProductButtonDelegate: AnyObject {
                 backgroundColor = .white
                 setTitleColor(.black, for: .normal)
             }
-            
-//            layer.shadowColor = UIColor.black.cgColor
-//            layer.shadowOffset = CGSize(width: 0.0, height: 3.0)
-//            layer.shadowRadius = 3
-//            layer.shadowOpacity = 1.0
-            
-            //backgroundColor = .clear
             layer.cornerRadius = layer.frame.size.height/2
             layer.masksToBounds = true
             
@@ -79,12 +72,6 @@ protocol CustomProductButtonDelegate: AnyObject {
     }
     
     @objc public func didTapButton() {
-//        if let productsList = selectedProductsElement?.products, productsList.count != 0 {
-//            UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
-//            let products = productsList
-//            delegate?.openProductsCarousel(products: products)
-//            return
-//        }
         
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)

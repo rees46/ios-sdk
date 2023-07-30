@@ -17,7 +17,6 @@ class ViewController: UIViewController {
     
     @IBOutlet private weak var updateButton: UIButton!
     @IBOutlet private weak var storiesCollectionView: StoriesView!
-    //@IBOutlet private weak var sss: Storyv!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,19 +39,12 @@ class ViewController: UIViewController {
     @objc
     private func updateStories() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
     
     @objc
     private func didTapUpdate() {
-        
-        //let navVC = NavigationStackController.init(rootViewController: self)
-        //let nav = UINavigationController(rootViewController: navVC)
-        //self.window?.rootViewController = nav
-        //self.navigationController?.pushViewController(nav, animated: true)
-        //return
-        
         pushTokenLabel.text = "PUSHTOKEN = " + pushGlobalToken
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken
@@ -60,7 +52,7 @@ class ViewController: UIViewController {
         globalSDK?.resetCachedWatchedStoriesStates()
 
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
 }

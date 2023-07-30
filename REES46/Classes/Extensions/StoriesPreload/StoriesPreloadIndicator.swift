@@ -2,9 +2,10 @@ import UIKit
 import QuartzCore
 
 @IBDesignable
-public final class StoriesSupremeCellLoader: UIView {
+public final class StoriesPreloadIndicator: UIView {
     public var animationDuration: Double = 1
     public var rotationDuration: Double = 10
+    
     @IBInspectable
     public var numSegments: Int = 12 {
         didSet {
@@ -14,76 +15,76 @@ public final class StoriesSupremeCellLoader: UIView {
     @IBInspectable
     public var strokeColor : UIColor = .white {
         didSet {
-            segmentLayer?.strokeColor = strokeColor.cgColor
+            indSegmentLayer?.strokeColor = strokeColor.cgColor
         }
     }
     @IBInspectable
     public var lineWidth : CGFloat = 8 {
         didSet {
-            segmentLayer?.lineWidth = lineWidth
+            indSegmentLayer?.lineWidth = lineWidth
             updateSegments()
         }
     }
     
     public var hidesWhenStopped: Bool = true
     public private(set) var isAnimating = false
-    private weak var replicatorLayer: CAReplicatorLayer!
-    private weak var segmentLayer: CAShapeLayer!
+    private weak var indReplicatorLayer: CAReplicatorLayer!
+    private weak var indSegmentLayer: CAShapeLayer!
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
-        setup()
+        setupIndicator()
     }
     
     public required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        setup()
+        setupIndicator()
     }
     
-    private func setup() {
-        let replicatorLayer = CAReplicatorLayer()
+    private func setupIndicator() {
+        let indReplicatorLayer = CAReplicatorLayer()
         
-        layer.addSublayer(replicatorLayer)
+        layer.addSublayer(indReplicatorLayer)
         
-        let dot = CAShapeLayer()
-        dot.lineCap = CAShapeLayerLineCap.round
-        dot.strokeColor = strokeColor.cgColor
-        dot.lineWidth = lineWidth
-        dot.fillColor = nil
+        let ind_dot = CAShapeLayer()
+        ind_dot.lineCap = CAShapeLayerLineCap.round
+        ind_dot.strokeColor = strokeColor.cgColor
+        ind_dot.lineWidth = lineWidth
+        ind_dot.fillColor = nil
         
-        replicatorLayer.addSublayer(dot)
+        indReplicatorLayer.addSublayer(ind_dot)
         
-        self.replicatorLayer = replicatorLayer
-        self.segmentLayer = dot
+        self.indReplicatorLayer = indReplicatorLayer
+        self.indSegmentLayer = ind_dot
     }
     
     override public func layoutSubviews() {
         super.layoutSubviews()
         
         let maxSize = max(0,min(bounds.width, bounds.height))
-        replicatorLayer.bounds = CGRect(x: 0, y: 0, width: maxSize, height: maxSize)
-        replicatorLayer.position = CGPoint(x: bounds.width/2, y:bounds.height/2)
+        indReplicatorLayer.bounds = CGRect(x: 0, y: 0, width: maxSize, height: maxSize)
+        indReplicatorLayer.position = CGPoint(x: bounds.width/2, y:bounds.height/2)
         
         updateSegments()
     }
     
     private func updateSegments() {
-        guard numSegments > 0, let segmentLayer = segmentLayer else { return }
+        guard numSegments > 0, let indSegmentLayer = indSegmentLayer else { return }
         
         let angle = 2*CGFloat.pi / CGFloat(numSegments)
-        replicatorLayer.instanceCount = numSegments
-        replicatorLayer.instanceTransform = CATransform3DMakeRotation(angle, 0.0, 0.0, 1.0)
-        replicatorLayer.instanceDelay = 1.5*animationDuration/Double(numSegments)
+        indReplicatorLayer.instanceCount = numSegments
+        indReplicatorLayer.instanceTransform = CATransform3DMakeRotation(angle, 0.0, 0.0, 1.0)
+        indReplicatorLayer.instanceDelay = 1.5*animationDuration/Double(numSegments)
         
-        let maxRadius = max(0,min(replicatorLayer.bounds.width, replicatorLayer.bounds.height))/2
+        let maxRadius = max(0,min(indReplicatorLayer.bounds.width, indReplicatorLayer.bounds.height))/2
         let radius: CGFloat = maxRadius - lineWidth/2
         
-        segmentLayer.bounds = CGRect(x:0, y:0, width: 2*maxRadius, height: 2*maxRadius)
-        segmentLayer.position = CGPoint(x: replicatorLayer.bounds.width/2, y: replicatorLayer.bounds.height/2)
+        indSegmentLayer.bounds = CGRect(x:0, y:0, width: 2*maxRadius, height: 2*maxRadius)
+        indSegmentLayer.position = CGPoint(x: indReplicatorLayer.bounds.width/2, y: indReplicatorLayer.bounds.height/2)
         
         let path = UIBezierPath(arcCenter: CGPoint(x: maxRadius, y: maxRadius), radius: radius, startAngle: -angle/2 - CGFloat.pi/2, endAngle: angle/2 - CGFloat.pi/2, clockwise: true)
         
-        segmentLayer.path = path.cgPath
+        indSegmentLayer.path = path.cgPath
     }
     
     public func startAnimating() {
@@ -119,19 +120,19 @@ public final class StoriesSupremeCellLoader: UIView {
         fade.repeatCount = Float.infinity
         fade.timingFunction = CAMediaTimingFunction(controlPoints: 0.55, 0.0, 0.45, 1.0)
         
-        replicatorLayer.add(rotate, forKey: "rotate")
-        segmentLayer.add(shrinkStart, forKey: "start")
-        segmentLayer.add(shrinkEnd, forKey: "end")
-        segmentLayer.add(fade, forKey: "fade")
+        indReplicatorLayer.add(rotate, forKey: "rotate")
+        indSegmentLayer.add(shrinkStart, forKey: "start")
+        indSegmentLayer.add(shrinkEnd, forKey: "end")
+        indSegmentLayer.add(fade, forKey: "fade")
     }
     
     public func stopAnimating() {
         isAnimating = false
         
-        replicatorLayer.removeAnimation(forKey: "rotate")
-        segmentLayer.removeAnimation(forKey: "start")
-        segmentLayer.removeAnimation(forKey: "end")
-        segmentLayer.removeAnimation(forKey: "fade")
+        indReplicatorLayer.removeAnimation(forKey: "rotate")
+        indSegmentLayer.removeAnimation(forKey: "start")
+        indSegmentLayer.removeAnimation(forKey: "end")
+        indSegmentLayer.removeAnimation(forKey: "fade")
         
         if hidesWhenStopped {
             self.isHidden = true
@@ -139,6 +140,6 @@ public final class StoriesSupremeCellLoader: UIView {
     }
     
     public override var intrinsicContentSize: CGSize {
-        return CGSize(width: 180, height: 180)
+        return CGSize(width: 76, height: 76)
     }
 }

@@ -23,10 +23,6 @@ class StoryButton: UIButton {
         
         self.setTitle(buttonData.title ?? "", for: .normal)
         
-        
-        //self.setTitle(buttonData.title ?? "Перейти", for: .normal)
-        //self.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-        
         if let bgColor = buttonData.background {
             let color = bgColor.hexToRGB()
             self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
@@ -45,10 +41,6 @@ class StoryButton: UIButton {
             self.setTitleColor(.black, for: .normal)
             //self.setTitleColor(.white, for: .normal)
         }
-        
-//        if CGFloat(buttonData.cornerRadius) == 0 {
-//            self.layer.cornerRadius = layer.frame.size.height/2
-//        }
     }
     
     private func setToDefault() {

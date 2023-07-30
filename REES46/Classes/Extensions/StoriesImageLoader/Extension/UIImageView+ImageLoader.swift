@@ -1,21 +1,21 @@
 import UIKit
 
-private var StoriesImageLoaderRequestUrlKey = 0
-private let _ioQueue = DispatchQueue(label: "swift.storiesimageloader.queues.io", attributes: .concurrent)
+private var StoriesCollectionCellLoaderRequestUrlKey = 0
+private let _ioQueue = DispatchQueue(label: "swift.storiescollectioncellloader.queues.io", attributes: .concurrent)
 
 extension UIImageView {
     fileprivate var requestUrl: URL? {
         get {
             var requestUrl: URL?
             _ioQueue.sync {
-                requestUrl = objc_getAssociatedObject(self, &StoriesImageLoaderRequestUrlKey) as? URL
+                requestUrl = objc_getAssociatedObject(self, &StoriesCollectionCellLoaderRequestUrlKey) as? URL
             }
 
             return requestUrl
         }
         set(newValue) {
             _ioQueue.async {
-                objc_setAssociatedObject(self, &StoriesImageLoaderRequestUrlKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                objc_setAssociatedObject(self, &StoriesCollectionCellLoaderRequestUrlKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             }
         }
     }
@@ -35,7 +35,7 @@ extension Loadable where Base: UIImageView {
 
     @discardableResult
     public func request(with url: URLLiteralConvertible, placeholder: UIImage?, options: [Option] = [], onCompletion: @escaping (UIImage?, Error?, FetchOperation) -> Void) -> Loader? {
-        guard let storiesImageLoaderUrl = url.storiesImageLoaderURL else { return nil }
+        guard let storiesCollectionCellLoaderUrl = url.storiesCollectionCellLoaderURL else { return nil }
 
         let imageCompletion: (UIImage?, Error?, FetchOperation) -> Void = { image, error, operation in
             guard var image = image else { return onCompletion(nil, error, operation)  }
@@ -55,21 +55,21 @@ extension Loadable where Base: UIImageView {
         let task = Task(base, onCompletion: imageCompletion)
 
         if let requestUrl = base.requestUrl {
-            let loader = StoriesImageLoader.manager.getLoader(with: requestUrl)
+            let loader = StoriesCollectionCellLoader.manager.getLoader(with: requestUrl)
             loader.operative.remove(task)
-            if requestUrl != storiesImageLoaderUrl, loader.operative.tasks.isEmpty {
+            if requestUrl != storiesCollectionCellLoaderUrl, loader.operative.tasks.isEmpty {
                 loader.cancel()
             }
         }
-        base.requestUrl = url.storiesImageLoaderURL
+        base.requestUrl = url.storiesCollectionCellLoaderURL
 
         base.image = placeholder ?? nil
-        if let data = StoriesImageLoader.manager.disk.get(storiesImageLoaderUrl), let image = UIImage.process(data: data) {
+        if let data = StoriesCollectionCellLoader.manager.disk.get(storiesCollectionCellLoaderUrl), let image = UIImage.process(data: data) {
             task.onCompletion(image, nil, .disk)
             return nil
         }
 
-        let loader = StoriesImageLoader.manager.getLoader(with: storiesImageLoaderUrl, task: task)
+        let loader = StoriesCollectionCellLoader.manager.getLoader(with: storiesCollectionCellLoaderUrl, task: task)
         loader.resume()
 
         return loader

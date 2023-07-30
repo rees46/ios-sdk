@@ -1,27 +1,27 @@
 import UIKit
 
-final class ActivityIndicatorAnimator {
+final class FlatActivityIndicatorAnimator {
     enum Animation: String {
-        var key: String {
+        var f_key: String {
             return rawValue
         }
 
-        case spring = "activity.indicator.spring"
-        case rotation = "activity.indicator.rotation"
+        case f_spring = "factivity.flatindicator.spring"
+        case f_rotation = "factivity.flatindicator.rotation"
     }
 
-    public func addAnimation(to layer: CALayer) {
-        layer.add(rotationAnimation(), forKey: Animation.rotation.key)
-        layer.add(springAnimation(), forKey: Animation.spring.key)
+    public func addFlatAnimation(to f_layer: CALayer) {
+        f_layer.add(rotationAnimation(), forKey: Animation.f_rotation.f_key)
+        f_layer.add(springAnimation(), forKey: Animation.f_spring.f_key)
     }
 
-    public func removeAnimation(from layer: CALayer) {
-        layer.removeAnimation(forKey: Animation.rotation.key)
-        layer.removeAnimation(forKey: Animation.spring.key)
+    public func removeFlatAnimation(from f_layer: CALayer) {
+        f_layer.removeAnimation(forKey: Animation.f_rotation.f_key)
+        f_layer.removeAnimation(forKey: Animation.f_spring.f_key)
     }
 }
 
-extension ActivityIndicatorAnimator {
+extension FlatActivityIndicatorAnimator {
     private func rotationAnimation() -> CABasicAnimation {
         let animation = CABasicAnimation(key: .rotationZ)
         animation.duration = 4
@@ -36,18 +36,18 @@ extension ActivityIndicatorAnimator {
         let animation = CAAnimationGroup()
         animation.duration = 1.5
         animation.animations = [
-            strokeStartAnimation(),
-            strokeEndAnimation(),
-            strokeCatchAnimation(),
-            strokeFreezeAnimation()
+            flatStartAnimation(),
+            flatEndAnimation(),
+            flatCatchAnimation(),
+            flatFreezeAnimation()
         ]
         animation.repeatCount = .infinity
 
         return animation
     }
 
-    private func strokeStartAnimation() -> CABasicAnimation {
-        let animation = CABasicAnimation(key: .strokeStart)
+    private func flatStartAnimation() -> CABasicAnimation {
+        let animation = CABasicAnimation(key: .flatStart)
         animation.duration = 1
         animation.fromValue = 0
         animation.toValue = 0.15
@@ -56,8 +56,8 @@ extension ActivityIndicatorAnimator {
         return animation
     }
 
-    private func strokeEndAnimation() -> CABasicAnimation {
-        let animation = CABasicAnimation(key: .strokeEnd)
+    private func flatEndAnimation() -> CABasicAnimation {
+        let animation = CABasicAnimation(key: .flatEnd)
         animation.duration = 1
         animation.fromValue = 0
         animation.toValue = 1
@@ -66,8 +66,8 @@ extension ActivityIndicatorAnimator {
         return animation
     }
 
-    private func strokeCatchAnimation() -> CABasicAnimation {
-        let animation = CABasicAnimation(key: .strokeStart)
+    private func flatCatchAnimation() -> CABasicAnimation {
+        let animation = CABasicAnimation(key: .flatStart)
         animation.beginTime = 1
         animation.duration = 0.8
         animation.fromValue = 0.15
@@ -77,8 +77,8 @@ extension ActivityIndicatorAnimator {
         return animation
     }
 
-    private func strokeFreezeAnimation() -> CABasicAnimation {
-        let animation = CABasicAnimation(key: .strokeEnd)
+    private func flatFreezeAnimation() -> CABasicAnimation {
+        let animation = CABasicAnimation(key: .flatEnd)
         animation.beginTime = 1
         animation.duration = 0.9
         animation.fromValue = 1

@@ -3,12 +3,12 @@ import UIKit
 
 public struct Loader {
 
-    unowned let delegate: StoriesImageLoader.LoaderManager
+    unowned let delegate: StoriesCollectionCellLoader.LoaderManager
     let task: URLSessionDataTask
     let operative = Operative()
     let url: URL
 
-    init(_ task: URLSessionDataTask, url: URL, delegate: StoriesImageLoader.LoaderManager) {
+    init(_ task: URLSessionDataTask, url: URL, delegate: StoriesCollectionCellLoader.LoaderManager) {
         self.task = task
         self.url = url
         self.delegate = delegate
@@ -26,7 +26,7 @@ public struct Loader {
         task.cancel()
 
         let reason = "Cancel to request: \(url)"
-        onFailure(with: NSError(domain: "Imageloader", code: 0, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
+        onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: 0, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
     }
 
     func complete(with error: Error?) {
@@ -42,8 +42,8 @@ public struct Loader {
         }
 
         if let statusCode = (task.response as? HTTPURLResponse)?.statusCode, statusCode >= 200, statusCode < 400 {
-            let reason = "Disconnect on downloading caused by HTTPStatusCode: \(statusCode)"
-            onFailure(with: NSError(domain: "Imageloader", code: statusCode, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
+            let reason = "SDK Disconnect on downloading caused by HTTPStatusCode: \(statusCode)"
+            onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: statusCode, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
             return
         }
 
@@ -51,7 +51,7 @@ public struct Loader {
     }
 
     private func failOnConvertToImage() {
-        onFailure(with: NSError(domain: "Imageloader", code: -999, userInfo: [NSLocalizedFailureReasonErrorKey: "Failure when convert image"]))
+        onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: -999, userInfo: [NSLocalizedFailureReasonErrorKey: "SDK Failure when convert image"]))
     }
 
     private func onSuccess(with image: UIImage) {

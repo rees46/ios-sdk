@@ -77,8 +77,8 @@ class Slide {
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
-    private let downloadManager = VideoDownloadManager.shared
-    var directoryName : String = "CacheDirectory"
+    private let vDownloadManager = VideoDownloadManager.shared
+    var sdkDirectoryName : String = "SDKCacheDirectory"
     
     public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? -1
@@ -94,7 +94,7 @@ class Slide {
             if preview != nil {
                 setImage(imageURL: preview!, isPreview: true)
             } else {
-                print("Success video preview for \(self.id) is downloaded")
+                print("SDK Success video preview for \(self.id) is downloaded")
             }
             
             downloadVideo { result in
@@ -103,7 +103,7 @@ class Slide {
                     self.videoURL = url
                     self.completionCached(slideWithId: self.id, workingSlideUrl: url)
                 case .failure(let error):
-                    print("Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
+                    print("SDK Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
                 }
             }
         } else if type == .image {
@@ -114,7 +114,7 @@ class Slide {
     func downloadVideo(completion: @escaping (Result<URL, Error>) -> Void) {
         
         guard let url = URL(string: self.background) else {
-            completion(.failure(NSError(domain: "Invalid URL", code: -1, userInfo: nil)))
+            completion(.failure(NSError(domain: "SDK Invalid URL", code: -1, userInfo: nil)))
             return
         }
         
@@ -124,14 +124,15 @@ class Slide {
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: temporaryFileURL.path) {
             completion(.success(temporaryFileURL))
-            print("Load cached video for story id = \(self.id)")
+            print("SDK Load cached video for story id = \(self.id)")
             return
         }
         
         let request = URLRequest(url: url)
-        _ = self.downloadManager.downloadStoryMediaFile(withRequest: request,
-                                                        inDirectory: directoryName,
-                                                        shouldDownloadInBackground: false,
+        _ = self.vDownloadManager.downloadStoryMediaFile(withRequest: request,
+                                                        inDirectory: sdkDirectoryName,
+                                                        shouldDownloadInBackground: true,
+                                                        //shouldDownloadInBackground: false,
                                                         onProgress: {(progress) in
             
         }) {(error, url) in
@@ -141,7 +142,7 @@ class Slide {
                 if let url = url {
                     do {
                         try fileManager.moveItem(at: url, to: temporaryFileURL)
-                        print("Downloaded video for story id = \(self.id)")
+                        //print("SDK Downloaded video for story id = \(self.id)")
                         completion(.success(temporaryFileURL))
                     } catch {
                         completion(.failure(error))
@@ -156,7 +157,7 @@ class Slide {
             let videoData = try Data(contentsOf: fileURL)
             return videoData
         } catch {
-            print("Error reading video data: \(error)")
+            print("SDK Error reading video data: \(error)")
             return nil
         }
     }
@@ -166,7 +167,7 @@ class Slide {
             return
         }
         
-        StoryImageCache.image(for: url.absoluteString) { cachedImage in
+        StoryCellImageCache.image(for: url.absoluteString) { cachedImage in
             
             if isPreview {
                 self.previewImage = cachedImage
@@ -177,7 +178,7 @@ class Slide {
             
             if cachedImage != nil {
                 self.completionCached(slideWithId: self.id, workingSlideUrl: url)
-                print("Load cached image for story id = \(self.id)")
+                print("SDK Load cached image for story id = \(self.id)")
                 
             } else {
                 let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
@@ -189,9 +190,9 @@ class Slide {
                         } else {
                             self.downloadedImage = image
                             
-                            StoryImageCache.save(image, for: url.absoluteString)
+                            StoryCellImageCache.save(image, for: url.absoluteString)
                             self.completionCached(slideWithId: self.id, workingSlideUrl: url)
-                            print("Downloaded image for story id = \(self.id)")
+                            //print("SDK Downloaded image for story id = \(self.id)")
                         }
                     }
                 })

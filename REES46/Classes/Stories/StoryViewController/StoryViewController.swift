@@ -1,14 +1,12 @@
 import UIKit
 
 public protocol StoryViewControllerProtocol: AnyObject {
-    func didTapLinkIosOpeningExternal(url: String)
     func reloadStoriesCollectionSubviews()
 }
 
 public protocol CarouselCollectionViewCellDelegate: AnyObject {
     func closeProductsCarousel()
-    func didTapLinkIosOpeningExternal(url: String)
-    func sendCarouselProductStructForExternal(product: StoriesProduct)
+    func sendStructSelectedCarouselProduct(product: StoriesProduct)
 }
 
 public class NavigationStackController: UINavigationController {
@@ -54,8 +52,7 @@ extension NavigationStackController: UINavigationControllerDelegate {
 }
 
 class StoryViewController: UINavigationController, UINavigationControllerDelegate, UIGestureRecognizerDelegate, CarouselCollectionViewCellDelegate {
-    
-    private var collectionView: UICollectionView = {
+private var collectionView: UICollectionView = {
         let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -106,10 +103,12 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     private var needSaveStoryLocal = true
     
     public var sdk: PersonalizationSDK?
-    public var linkDelegate: StoriesViewMainProtocol?
+    public var sdkLinkDelegate: StoriesViewLinkProtocol?
     
-    private let tintBlurView = UIView()
-    private var carouselCollectionView = CarouselCollectionView()
+    private let carouselProductsSlideTintBlurView = UIView()
+    private var carouselProductsSlideCollectionView = CarouselCollectionView()
+    
+    private let reelsSlidePreloader = StoriesPreloadIndicator()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -121,18 +120,15 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         
         NotificationCenter.default.addObserver(self, selector: #selector(pauseTimer), name: .init(rawValue: "ExternalActionStoryPause"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: .init(rawValue: "ExternalActionStoryPlay"), object: nil)
-        UserDefaults.standard.set(false, forKey: "stopTimerSetting")
+        UserDefaults.standard.set(false, forKey: "CarouselTimerStopMemorySetting")
+        UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
     }
     
     @objc
     func willEnterForeground() {
-        let ds : Bool = UserDefaults.standard.bool(forKey: "stopTimerSetting")
-        if ds == true {
-//            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
-//            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-//            continueTimer()
-        } else {
-            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+        let ds : Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
+        if !ds {
+            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             continueTimer()
         }
@@ -140,7 +136,8 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
 
     @objc
     func didEnterBackground() {
-        //UserDefaults.standard.set(Int(currentSlide!.id), forKey: "SlideOpenSetting")
+        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+        NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
     }
     
@@ -150,17 +147,27 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     func applicationWillResignActive(notification: NSNotification) {
-        viewWillDisappear(true) // DEPRECATED
+        viewWillDisappear(true)
     }
     
     func applicationWillEnterBackground(notification: NSNotification) {
-        viewWillAppear(true) // DEPRECATED
+        viewWillAppear(true)
     }
 
     private func commonInit() {
         view.addSubview(collectionView)
         view.addSubview(closeButton)
         view.addSubview(pageIndicator)
+        
+        reelsSlidePreloader.contentMode = .scaleToFill
+        reelsSlidePreloader.translatesAutoresizingMaskIntoConstraints = false
+        reelsSlidePreloader.animationDuration = 1
+        reelsSlidePreloader.rotationDuration = 17
+        reelsSlidePreloader.numSegments = Int(Double(Int.random(in: 10..<11)))
+        reelsSlidePreloader.strokeColor = .white
+        reelsSlidePreloader.lineWidth = 3.0
+        reelsSlidePreloader.alpha = 0
+        view.addSubview(reelsSlidePreloader)
 
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 0).isActive = true
@@ -195,6 +202,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
         }
+        
+        reelsSlidePreloader.translatesAutoresizingMaskIntoConstraints = false
+        reelsSlidePreloader.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor).isActive = true
+        reelsSlidePreloader.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor).isActive = true
 
         configureView()
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
@@ -439,7 +450,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     private func scrollToFirstRow() {
         let sectionFrame = collectionView.layoutAttributesForItem(at: IndexPath(item: 0, section: currentPosition.section))?.frame ?? .zero
-        //print(sectionFrame)
         collectionView.setContentOffset(CGPoint(x: sectionFrame.origin.x - collectionView.contentInset.left, y: 0), animated: false)
     }
     
@@ -521,13 +531,12 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         closeButton.setImage(image, for: .normal)
 
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
-        //preloader = StoriesRingLoader.createStoriesLoader()
         updateSlides()
     }
 
     @objc
     func didTapCloseButton() {
-        self.linkDelegate?.reloadStoriesCollectionSubviews()
+        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
         dismiss(animated: true)
     }
 
@@ -566,21 +575,29 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         })
         
         if imageStoryIdDownloaded {
+            UIView.animate(withDuration: 0.3, animations: {
+                self.reelsSlidePreloader.alpha = 0
+            })
             timer.invalidate()
             timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
-            //preloader.stopPreloaderAnimation()
         } else {
-            let name = "waitStorySlideCached." + storyImageSlideId
-            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(name), object: nil)
+            timer.invalidate()
+            UIView.animate(withDuration: 0.5, animations: {
+                self.reelsSlidePreloader.alpha = 1.0
+            })
             
-            //preloader = StoriesRingLoader.createStoriesLoader()
-            //preloader.startAnimation()
+            let notifName = "waitStorySlideCached." + storyImageSlideId
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(notifName), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(notifName), object: nil)
         }
     }
     
-    @objc func updateVisibleCells(notification: NSNotification){
+    @objc func updateVisibleCells(notification: NSNotification) {
         DispatchQueue.main.async {
             if let visibleCell = self.collectionView.indexPathsForVisibleItems.first {
+                UIView.animate(withDuration: 0.5, animations: {
+                    self.reelsSlidePreloader.alpha = 0.0
+                })
                 self.currentPosition = visibleCell
                 self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
                 DispatchQueue.main.async {
@@ -683,8 +700,18 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     private func openUrl(link: String) {
         if let url = URL(string: link) {
             pauseTimer()
-            present(url: url, completion: nil)
+            
+            let carouselOpenedBoolKey : Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
+            if !carouselOpenedBoolKey {
+                NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "WebKitClosedContinueTimerSetting"), object: nil)
+                NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("WebKitClosedContinueTimerSetting"), object: nil)
+            }
+            
+            presentInternalSdkWebKit(url: url, completion: nil)
             //UIApplication.shared.open(url) //Safari default
+            
+            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+            NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         }
     }
     
@@ -784,100 +811,112 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    public func openProductsCarousel(products: [StoriesProduct]) {
-        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+    public func openProductsCarouselView(withProducts: [StoriesProduct]) {
+        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
         
         view.backgroundColor = .clear
         
-        tintBlurView.backgroundColor = UIColor(white: 0, alpha: 0.8)
-        tintBlurView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height)
-        view.addSubview(tintBlurView)
+        carouselProductsSlideTintBlurView.backgroundColor = UIColor(white: 0, alpha: 0.8)
+        carouselProductsSlideTintBlurView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height)
+        view.addSubview(carouselProductsSlideTintBlurView)
         
-        view.addSubview(self.carouselCollectionView)
+        view.addSubview(self.carouselProductsSlideCollectionView)
         
-        self.carouselCollectionView.center = CGPoint(x: self.view.center.x,
+        self.carouselProductsSlideCollectionView.center = CGPoint(x: self.view.center.x,
                 y: self.view.center.y + self.view.frame.size.height)
-        self.view.addSubview(self.carouselCollectionView)
-        self.view.bringSubviewToFront(self.carouselCollectionView)
+        self.view.addSubview(self.carouselProductsSlideCollectionView)
+        self.view.bringSubviewToFront(self.carouselProductsSlideCollectionView)
         
         UIView.animate(withDuration: 0.7, delay: 0.0,
             usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
             options: .allowAnimatedContent, animations: {
-            self.carouselCollectionView.center = self.view.center
+            self.carouselProductsSlideCollectionView.center = self.view.center
         }) { (isFinished) in
             self.view.layoutIfNeeded()
         }
         
-        carouselCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        carouselCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-        carouselCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0).isActive = true
-        //carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        //self.carouselCollectionView.center.y -= self.carouselCollectionView.frame.height
+        carouselProductsSlideCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        carouselProductsSlideCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        carouselProductsSlideCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0).isActive = true
+        //carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+        //self.carouselProductsSlideCollectionView.center.y -= self.carouselProductsSlideCollectionView.frame.height
         
         if GlobalHelper.DeviceType.IS_IPHONE_XS {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_14 {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_14_PRO {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_5 {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 380).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 380).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_8P {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
         } else {
-            carouselCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         }
         
-        carouselCollectionView.productsDelegate = self
-        carouselCollectionView.set(cells: products)
-        UserDefaults.standard.set(true, forKey: "stopTimerSetting")
+        carouselProductsSlideCollectionView.carouselProductsDelegate = self
+        carouselProductsSlideCollectionView.set(cells: withProducts)
+        UserDefaults.standard.set(true, forKey: "CarouselTimerStopMemorySetting")
     }
     
     public func closeProductsCarousel() {
         UIView.animate(withDuration: 0.4, delay: 0.0,
                        usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
             options: .allowAnimatedContent, animations: {
-            self.carouselCollectionView.center = CGPoint(x: self.view.center.x,
+            self.carouselProductsSlideCollectionView.center = CGPoint(x: self.view.center.x,
             y: self.view.center.y + self.view.frame.size.height)
         }) { (isFinished) in
-            self.tintBlurView.removeFromSuperview()
-            self.carouselCollectionView.removeFromSuperview()
-         
+            self.carouselProductsSlideTintBlurView.removeFromSuperview()
+            self.carouselProductsSlideCollectionView.removeFromSuperview()
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             self.continueTimer()
         }
-        //let sIdDetect : Int = UserDefaults.standard.integer(forKey: "SlideOpenSetting")
-        //NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-        
-        UserDefaults.standard.set(false, forKey: "stopTimerSetting")
+        UserDefaults.standard.set(false, forKey: "CarouselTimerStopMemorySetting")
     }
     
     func didTapLinkIosOpeningExternal(url: String) {
         self.openUrl(link: url)
     }
     
-    public func didTapOpenLinkIosExternalWeb(url: String, slide: Slide) {
-        self.linkDelegate?.extendLinkIos(url: url)
+    public func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide) {
+        let stateButton : Bool = UserDefaults.standard.bool(forKey: "LastTapButtonMemorySdkSetting")
+        if stateButton == true {
+            continueTimer()
+            
+            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+            print("SDK Start Timer Play Content")
+            UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
+        } else {
+            print("SDK Pause Timer")
+            UserDefaults.standard.set(true, forKey: "LastTapButtonMemorySdkSetting")
+        }
     }
     
-    public func sendProductStructForExternal(product: StoriesElement) {
-        self.linkDelegate?.structOfSelectedProduct(product: product)
+    public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
+        pauseTimer()
+        
+        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+        NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+        self.sdkLinkDelegate?.sendStructSelectedStorySlide(storySlide: storySlide)
     }
     
-    public func sendCarouselProductStructForExternal(product: StoriesProduct) {
-        self.linkDelegate?.structOfSelectedCarouselProduct(product: product)
+    func sendStructSelectedCarouselProduct(product: StoriesProduct) {
+        sdkLinkDelegate?.structOfSelectedCarouselProduct(product: product)
+        openUrl(link: product.url)
     }
     
     @objc
@@ -896,10 +935,14 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        
+        reelsSlidePreloader.startAnimating()
+        //reelsSlidePreloader.alpha = 0
+        
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else {return UICollectionViewCell()}
         let slide = stories[indexPath.section].slides[indexPath.row]
         cell.configure(slide: slide)
-        cell.delegate = self
+        cell.cellDelegate = self
         return cell
     }
 
@@ -958,7 +1001,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
 }
 
 extension StoryViewController: StoryCollectionViewCellDelegate {
-    func didTapUrlButton(url: String, slide: Slide) {
+    public func didTapUrlButton(url: String, slide: Slide) {
         self.openUrl(link: url)
         for (section, story) in stories.enumerated() {
             for (row, storySlide) in story.slides.enumerated() {
@@ -967,8 +1010,6 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
                 }
             }
         }
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("ContinueTimerWebKitClosed"), object: nil)
     }
 }
 

@@ -7,7 +7,7 @@ extension String {
     }
 }
 
-private let _ioQueue = DispatchQueue(label: "swift.storiesimageloader.queues.disk.set")
+private let _ioQueue = DispatchQueue(label: "swift.storiescollectioncellloader.queues.disk.set")
 
 public struct Disk {
 
@@ -41,7 +41,7 @@ extension Disk.Directory {
 
     var path: String {
         let cacheDirectory = NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true)[0]
-        let directoryName = "swift.storiesimageloader.disk"
+        let directoryName = "swift.storiescollectioncellloader.disk"
 
         return cacheDirectory + "/" + directoryName
     }

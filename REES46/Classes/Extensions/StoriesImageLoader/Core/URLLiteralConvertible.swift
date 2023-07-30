@@ -1,23 +1,23 @@
 import Foundation
 
 public protocol URLLiteralConvertible {
-    var storiesImageLoaderURL: URL? { get }
+    var storiesCollectionCellLoaderURL: URL? { get }
 }
 
 extension URL: URLLiteralConvertible {
-    public var storiesImageLoaderURL: URL? {
+    public var storiesCollectionCellLoaderURL: URL? {
         return self
     }
 }
 
 extension URLComponents: URLLiteralConvertible {
-    public var storiesImageLoaderURL: URL? {
+    public var storiesCollectionCellLoaderURL: URL? {
         return url
     }
 }
 
 extension String: URLLiteralConvertible {
-    public var storiesImageLoaderURL: URL? {
+    public var storiesCollectionCellLoaderURL: URL? {
         if let string = addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
             return URL(string: string)
         }

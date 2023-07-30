@@ -6,9 +6,9 @@ extension CAPropertyAnimation {
             return rawValue
         }
 
-        case strokeStart = "strokeStart"
-        case strokeEnd = "strokeEnd"
-        case strokeColor = "strokeColor"
+        case flatStart = "strokeStart"
+        case flatEnd = "strokeEnd"
+        case flatColor = "strokeColor"
         case rotationZ = "transform.rotation.z"
         case scale = "transform.scale"
     }
