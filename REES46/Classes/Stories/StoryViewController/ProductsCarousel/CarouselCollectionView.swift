@@ -188,7 +188,11 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: CarouselConstants.carouselItemWidth, height: frame.height * 0.73)
+        if GlobalHelper.DeviceType.IS_IPHONE_5 {
+            return CGSize(width: CarouselConstants.carouselItemSlowWidth, height: frame.height * 0.73)
+        } else {
+            return CGSize(width: CarouselConstants.carouselItemWidth, height: frame.height * 0.73)
+        }
     }
     
     required init?(coder aDecoder: NSCoder) {

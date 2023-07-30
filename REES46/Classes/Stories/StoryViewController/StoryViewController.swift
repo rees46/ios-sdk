@@ -854,9 +854,9 @@ private var collectionView: UICollectionView = {
         } else if GlobalHelper.DeviceType.IS_IPHONE_14_PRO {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_5 {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 380).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true
+            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
         } else if GlobalHelper.DeviceType.IS_IPHONE_8P {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
         } else {
