@@ -4,6 +4,8 @@ import WebKit
 class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     var cells = [StoriesProduct]()
+    var hideButton = UIButton()
+    var hideLabel: String?
     
     public weak var carouselProductsDelegate: CarouselCollectionViewCellDelegate?
     
@@ -21,7 +23,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         translatesAutoresizingMaskIntoConstraints = false
         layout.minimumLineSpacing = CarouselConstants.carouselMinimumLineSpacing
         
-        if GlobalHelper.DeviceType.IS_IPHONE_8 {
+        if SdkGlobalHelper.DeviceType.IS_IPHONE_8 {
             contentInset = UIEdgeInsets(top: 0, left: CarouselConstants.leftDistanceToView, bottom: 70, right: CarouselConstants.rightDistanceToView)
         } else {
             contentInset = UIEdgeInsets(top: 0, left: CarouselConstants.leftDistanceToView, bottom: 60, right: CarouselConstants.rightDistanceToView)
@@ -37,7 +39,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         stackView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stackView)
         
-        if GlobalHelper.DeviceType.IS_IPHONE_XS {
+        if SdkGlobalHelper.DeviceType.IS_IPHONE_XS {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
@@ -45,49 +47,49 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 15),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 14),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_14 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14 {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 14),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 14),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PRO {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 14),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_5 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -6),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8 {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -19),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if GlobalHelper.DeviceType.IS_IPHONE_8P {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8P {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
@@ -103,20 +105,22 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
             ])
         }
         
-        let button = UIButton(frame: CGRect(x: 0, y: 0, width: 85, height: 40))
+        hideButton = UIButton(frame: CGRect(x: 0, y: 0, width: 85, height: 40))
+        hideButton.translatesAutoresizingMaskIntoConstraints = false
+        hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
+        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            hideButton.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 14)
+        } else {
+            hideButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+        }
+        hideButton.backgroundColor = .clear //.white
+        hideButton.setTitleColor(UIColor.black, for: .normal)
+        //hideButton.layer.cornerRadius = button.frame.size.height / 2
+        //hideButton.layer.borderWidth = 1.2
+        //hideButton.layer.masksToBounds = true
+        //hideButton.layer.borderColor = UIColor.black.cgColor
         
-        button.translatesAutoresizingMaskIntoConstraints = false
-        
-        button.setTitle("Скрыть товары", for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-        button.backgroundColor = .clear //.white
-        button.setTitleColor(UIColor.black, for: .normal)
-        //button.layer.cornerRadius = button.frame.size.height / 2
-        //button.layer.borderWidth = 1.2
-        //button.layer.masksToBounds = true
-        //button.layer.borderColor = UIColor.black.cgColor
-        
-        button.addTarget(self, action: #selector(self.buttonTapped), for: .touchUpInside)
+        hideButton.addTarget(self, action: #selector(self.buttonTapped), for: .touchUpInside)
         
         var mainBundle = Bundle(for: classForCoder)
     #if SWIFT_PACKAGE
@@ -126,20 +130,19 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         
         let imageView = UIImageView(image: image)
         imageView.translatesAutoresizingMaskIntoConstraints = false
-
-        button.addSubview(imageView)
+        hideButton.addSubview(imageView)
 
         let length = CGFloat(21)
-        button.titleEdgeInsets.right += length
+        hideButton.titleEdgeInsets.right += length
 
         NSLayoutConstraint.activate([
-            imageView.leadingAnchor.constraint(equalTo: button.titleLabel!.trailingAnchor, constant: 6),
-            imageView.centerYAnchor.constraint(equalTo: button.titleLabel!.centerYAnchor, constant: 1),
+            imageView.leadingAnchor.constraint(equalTo: hideButton.titleLabel!.trailingAnchor, constant: 6),
+            imageView.centerYAnchor.constraint(equalTo: hideButton.titleLabel!.centerYAnchor, constant: 1),
             imageView.widthAnchor.constraint(equalToConstant: length),
             imageView.heightAnchor.constraint(equalToConstant: length)
         ])
         
-        stackView.addArrangedSubview(button)
+        stackView.addArrangedSubview(hideButton)
         addSubview(stackView)
     }
     
@@ -149,6 +152,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     
     func set(cells: [StoriesProduct]) {
         self.cells = cells
+        self.hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -188,7 +192,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        if GlobalHelper.DeviceType.IS_IPHONE_5 {
+        if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
             return CGSize(width: CarouselConstants.carouselItemSlowWidth, height: frame.height * 0.73)
         } else {
             return CGSize(width: CarouselConstants.carouselItemWidth, height: frame.height * 0.73)

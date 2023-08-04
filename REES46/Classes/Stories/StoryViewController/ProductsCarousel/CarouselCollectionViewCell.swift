@@ -13,7 +13,11 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 16)
+        } else {
+            label.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        }
         label.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -22,7 +26,11 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let smallDescriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 14)
+        } else {
+            label.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        }
         label.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -38,7 +46,11 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let oldCostLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 14)
+        } else {
+            label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+        }
         label.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -46,7 +58,11 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let costLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
+        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 18)
+        } else {
+            label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
+        }
         label.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
@@ -55,7 +71,11 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     let discountLabel: UILabel = {
         let label = UILabel()
         label.frame = CGRect(x: 0, y: 0, width: 45, height: 20)
-        label.font = UIFont.systemFont(ofSize: 13, weight: .bold)
+        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 13)
+        } else {
+            label.font = UIFont.systemFont(ofSize: 13, weight: .bold)
+        }
         label.textColor = .white
         label.backgroundColor = UIColor(red: 0.925, green: 0.282, blue: 0.6, alpha: 1)
         label.layer.cornerRadius = 3

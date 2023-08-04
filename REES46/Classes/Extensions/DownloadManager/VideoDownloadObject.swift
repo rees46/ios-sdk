@@ -1,6 +1,6 @@
 import UIKit
 
-class SDDownloadObject: NSObject {
+class VideoDownloadObject: NSObject {
 
     var completionBlock: VideoDownloadManager.DownloadCompletionBlock
     var progressBlock: VideoDownloadManager.DownloadProgressBlock?

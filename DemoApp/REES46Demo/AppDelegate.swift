@@ -43,6 +43,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             globalSDK = self.sdk
             NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
         })
+        
+//        sdkConfiguration.stories.registerFont(fileName: "MuseoCyrl500", fileExtension: "ttf")
+//        sdkConfiguration.stories.setStoriesBlock(fontName: "MuseoCyrl500", fontSize: 14.0, textColor: "#1A900C", backgroundColor: "#D5F5E3")
+//        sdkConfiguration.stories.setSlideDefaultButton(fontName: "MuseoCyrl500", fontSize: 21.0, textColor: "#A3E4D7", backgroundColor: "#900C3F")
+//        sdkConfiguration.stories.setSlideProductsButton(fontName: "MuseoCyrl500", fontSize: 19.0, textColor: "#7D3C98", backgroundColor: "#7CFC00")
+//        sdkConfiguration.stories.setProductsCard(fontName: "MuseoCyrl500")
+
 
         print("1. Register push")
         notificationService = NotificationService(sdk: sdk)
@@ -478,7 +485,7 @@ extension AppDelegate: NotificationServicePushDelegate {
     private func openPushVC(title: String) {
         let pushVC = PushPresentViewController()
         pushVC.pushTitle = title
-        let navVC = UINavigationController(rootViewController: pushVC)
-        window?.rootViewController?.present(navVC, animated: true)
+        let navigationController = UINavigationController(rootViewController: pushVC)
+        window?.rootViewController?.present(navigationController, animated: true)
     }
 }

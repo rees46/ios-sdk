@@ -181,7 +181,7 @@ private var collectionView: UICollectionView = {
 
         NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 16).isActive = true
         
-        if GlobalHelper.sharedInstance.checkIfHasDynamicIsland() {
+        if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 62).isActive = true }
         else {
             NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 40).isActive = true
@@ -191,7 +191,7 @@ private var collectionView: UICollectionView = {
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        if GlobalHelper.sharedInstance.checkIfHasDynamicIsland() {
+        if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -10).isActive = true
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: pageIndicator, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 26).isActive = true
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
@@ -811,7 +811,7 @@ private var collectionView: UICollectionView = {
         }
     }
     
-    public func openProductsCarouselView(withProducts: [StoriesProduct]) {
+    public func openProductsCarouselView(withProducts: [StoriesProduct], hideLabel: String) {
         let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
@@ -820,6 +820,7 @@ private var collectionView: UICollectionView = {
         
         carouselProductsSlideTintBlurView.backgroundColor = UIColor(white: 0, alpha: 0.8)
         carouselProductsSlideTintBlurView.frame = CGRect(x: 0, y: 0, width: view.frame.width, height: view.frame.height)
+        carouselProductsSlideCollectionView.hideLabel = hideLabel
         view.addSubview(carouselProductsSlideTintBlurView)
         
         view.addSubview(self.carouselProductsSlideCollectionView)
@@ -843,21 +844,21 @@ private var collectionView: UICollectionView = {
         //carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         //self.carouselProductsSlideCollectionView.center.y -= self.carouselProductsSlideCollectionView.frame.height
         
-        if GlobalHelper.DeviceType.IS_IPHONE_XS {
+        if SdkGlobalHelper.DeviceType.IS_IPHONE_XS {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_14 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14 {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_14_PRO {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_5 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_8 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8 {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
-        } else if GlobalHelper.DeviceType.IS_IPHONE_8P {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8P {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
         } else {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true

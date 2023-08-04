@@ -19,24 +19,24 @@ public class StoryContent {
 public class StoriesSettings {
     let color: String
     let fontSize: Int
-    let background: String
+    //let background: String
     let avatarSize: Int
     let closeColor: String
     let borderViewed, backgroundPin, borderNotViewed: String
-    let backgroundOpacity: Int
+    //let backgroundOpacity: Int
     let backgroundProgress: String
     let pinSymbol: String
 
     public init(json: [String: Any]) {
         self.color = json["color"] as? String ?? ""
         self.fontSize = json["font_size"] as? Int ?? 12
-        self.background = json["background"] as? String ?? ""
+        //self.background = json["background"] as? String ?? ""
         self.avatarSize = json["avatar_size"] as? Int ?? 20
         self.closeColor = json["close_color"] as? String ?? ""
         self.borderViewed = json["border_viewed"] as? String ?? ""
         self.backgroundPin = json["background_pin"] as? String ?? ""
         self.borderNotViewed = json["border_not_viewed"] as? String ?? ""
-        self.backgroundOpacity = json["background_opacity"] as? Int ?? 100
+        //self.backgroundOpacity = json["background_opacity"] as? Int ?? 100
         self.backgroundProgress = json["background_progress"] as? String ?? ""
         self.pinSymbol = json["pin_symbol"] as? String ?? ""
     }
@@ -127,6 +127,8 @@ class Slide {
             print("SDK Load cached video for story id = \(self.id)")
             return
         }
+        
+        //let dispetcher = self.vDownloadManager.currentDownloads()
         
         let request = URLRequest(url: url)
         _ = self.vDownloadManager.downloadStoryMediaFile(withRequest: request,

@@ -8,8 +8,9 @@ final public class VideoDownloadManager: NSObject {
     public typealias BackgroundDownloadCompletionHandler = () -> Void
     
     private var session: URLSession!
-    private var ongoingDownloads: [String : SDDownloadObject] = [:]
+    private var ongoingDownloads: [String : VideoDownloadObject] = [:]
     private var backgroundSession: URLSession!
+    private var eSession: URLSession!
     
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     public var localNotificationText: String?
@@ -24,12 +25,12 @@ final public class VideoDownloadManager: NSObject {
                                        onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
         
         guard let url = request.url else {
-            debugPrint("SDK Request url is empty")
+            print("SDK Request url is empty")
             return nil
         }
         
         if let _ = self.ongoingDownloads[url.absoluteString] {
-            debugPrint("SDK Already in progress")
+            print("SDK Already in progress")
             return nil
         }
         var downloadTask: URLSessionDownloadTask
@@ -39,11 +40,11 @@ final public class VideoDownloadManager: NSObject {
             downloadTask = self.session.downloadTask(with: request)
         }
         
-        let download = SDDownloadObject(downloadTask: downloadTask,
-                                        progressBlock: progressBlock,
-                                        completionBlock: completionBlock,
-                                        fileName: fileName,
-                                        directoryName: directory)
+        let download = VideoDownloadObject(downloadTask: downloadTask,
+                                           progressBlock: progressBlock,
+                                           completionBlock: completionBlock,
+                                           fileName: fileName,
+                                           directoryName: directory)
 
         let key = self.getExDownloadKey(withUrl: url)
         self.ongoingDownloads[key] = download
@@ -120,11 +121,13 @@ final public class VideoDownloadManager: NSObject {
         super.init()
         let sessionConfiguration = URLSessionConfiguration.default
         self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
+        //let ephemeralConfiguration = URLSessionConfiguration.ephemeral
+        //self.eSession = URLSession(configuration: ephemeralConfiguration, delegate: self, delegateQueue: nil)
         let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
         self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
     }
 
-    private func isDownloadInProgress(forUniqueKey key:String?) -> (Bool, SDDownloadObject?) {
+    private func isDownloadInProgress(forUniqueKey key:String?) -> (Bool, VideoDownloadObject?) {
         guard let key = key else { return (false, nil) }
         for (uniqueKey, download) in self.ongoingDownloads {
             if key == uniqueKey {
@@ -175,7 +178,7 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                              totalBytesWritten: Int64,
                              totalBytesExpectedToWrite: Int64) {
         guard totalBytesExpectedToWrite > 0 else {
-            debugPrint("SDK Could not calculate progress as totalBytesExpectedToWrite is less than 0")
+            print("SDK Could not calculate progress as totalBytesExpectedToWrite is less than 0")
             return;
         }
         

@@ -65,8 +65,21 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 0).isActive = true
         configureView()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+    }
+    
+    @objc
+    func willEnterForeground() {
+        //collectionView.reloadData()
     }
 
+    @objc
+    func didEnterBackground() {
+        //
+    }
+    
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -94,7 +107,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
             case let .success(response):
                 self.stories = response.stories
                 self.settings = response.settings
-                self.setBgColor(color: response.settings.background)
+                //self.setBgColor(color: response.stories.background)
                 DispatchQueue.main.async {
                     self.isInDownloadMode = false
                     self.collectionView.reloadData()
@@ -259,6 +272,14 @@ extension StoriesView: StoriesViewLinkProtocol {
         print("ProductPrice: \(objProductClass.price)")
         print("ProductPriceFormatted: \(objProductClass.price_formatted)")
         print("ProductPicture: \(objProductClass.picture)\n\n")
+    }
+}
+
+class CustomCollectionViewCell: UICollectionViewCell {
+    override var isSelected: Bool {
+        didSet {
+            contentView.backgroundColor = isSelected ? .red : .white
+        }
     }
 }
 

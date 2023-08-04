@@ -1,11 +1,11 @@
 import UIKit
 import Foundation
 
-class GlobalHelper {
-    
-    class var sharedInstance: GlobalHelper {
+class SdkGlobalHelper {
+
+    class var sharedInstance: SdkGlobalHelper {
         struct Static {
-            static let instance: GlobalHelper = GlobalHelper()
+            static let instance: SdkGlobalHelper = SdkGlobalHelper()
         }
         return Static.instance
     }
@@ -32,7 +32,7 @@ class GlobalHelper {
         static let IS_IPHONE_14_PRO_MAX = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 932.0
     }
     
-    func checkIfHasDynamicIsland() -> Bool {
+    func willDeviceHaveDynamicIsland() -> Bool {
         if let simulatorModelIdentifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] {
             let nameSimulator = simulatorModelIdentifier
             return nameSimulator == "iPhone15,2" || nameSimulator == "iPhone15,3" ? true : false
@@ -42,13 +42,6 @@ class GlobalHelper {
         uname(&sysinfo)
         let name =  String(bytes: Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN)), encoding: .ascii)!.trimmingCharacters(in: .controlCharacters)
         return name == "iPhone15,2" || name == "iPhone15,3" ? true : false
-    }
-}
-
-
-public extension String {
-    func localizeUI(withComment comment: String? = nil) -> String {
-        return NSLocalizedString(self, comment: comment ?? "")
     }
 }
 
@@ -74,45 +67,108 @@ public extension DispatchQueue {
         defer { objc_sync_exit(self) }
         
         guard !_onceTracker.contains(token) else { return }
-        
         _onceTracker.append(token)
         block()
     }
 }
 
-extension UIImage {
-    public func withRoundedCorners(radius: CGFloat? = nil) -> UIImage? {
+
+public extension UIImage {
+    func withRoundedCorners(radius: CGFloat? = nil) -> UIImage? {
         let maxRadius = min(size.width, size.height) / 2
         let cornerRadius: CGFloat
+        
         if let radius = radius, radius > 0 && radius <= maxRadius {
             cornerRadius = radius
         } else {
             cornerRadius = maxRadius
         }
+        
         UIGraphicsBeginImageContextWithOptions(size, false, scale)
+        
         let rect = CGRect(origin: .zero, size: size)
         UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius).addClip()
         draw(in: rect)
+        
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image
     }
 }
 
-public extension UIColor {
-   convenience init(red: Int, green: Int, blue: Int) {
-       assert(red >= 0 && red <= 255, "Invalid red component")
-       assert(green >= 0 && green <= 255, "Invalid green component")
-       assert(blue >= 0 && blue <= 255, "Invalid blue component")
 
-       self.init(red: CGFloat(red) / 255.0, green: CGFloat(green) / 255.0, blue: CGFloat(blue) / 255.0, alpha: 1.0)
-   }
+extension UIColor {
+    convenience init(red: Int, green: Int, blue: Int) {
+        assert(red >= 0 && red <= 255, "Invalid red component")
+        assert(green >= 0 && green <= 255, "Invalid green component")
+        assert(blue >= 0 && blue <= 255, "Invalid blue component")
+ 
+        self.init(red: CGFloat(red) / 255.0, green: CGFloat(green) / 255.0, blue: CGFloat(blue) / 255.0, alpha: 1.0)
+    }
 
-   convenience init(rgb: Int) {
-       self.init(
-           red: (rgb >> 16) & 0xFF,
-           green: (rgb >> 8) & 0xFF,
-           blue: rgb & 0xFF
-       )
-   }
+    convenience init(rgb: Int) {
+        self.init(
+            red: (rgb >> 16) & 0xFF,
+            green: (rgb >> 8) & 0xFF,
+            blue: rgb & 0xFF
+        )
+    }
+    
+    static func generateRandomColor(from colors: [UIColor]) -> UIColor? {
+        //preloadIndicator.strokeColor = UIColor.generateRandomColor(from: [.red, .orange, .systemPink, .orange, .cyan])! //use
+        return colors.randomElement()
+    }
+}
+
+
+extension UIColor {
+    class func hexStringFromColor(color: UIColor) -> String {
+        let components = color.cgColor.components
+        
+        if components?.count == 2 {
+            let r: CGFloat = components?[0] ?? 0.0
+            let g: CGFloat = components?[0] ?? 0.0
+            let b: CGFloat = components?[0] ?? 0.0
+
+            let hexString = String.init(format: "#%02lX%02lX%02lX", lroundf(Float(r * 255)), lroundf(Float(g * 255)), lroundf(Float(b * 255)))
+            print(hexString)
+            return hexString
+        } else {
+            let r: CGFloat = components?[0] ?? 0.0
+            let g: CGFloat = components?[1] ?? 0.0
+            let b: CGFloat = components?[2] ?? 0.0
+
+            let hexString = String.init(format: "#%02lX%02lX%02lX", lroundf(Float(r * 255)), lroundf(Float(g * 255)), lroundf(Float(b * 255)))
+            //print(hexString)
+            return hexString
+        }
+    }
+}
+
+
+extension Bundle {
+    func decode<T: Codable>(_ file: String) -> T {
+        guard let url = self.url(forResource: file, withExtension: nil) else {
+            fatalError("Failed to locate \(file) in  bundle")
+        }
+        
+        guard let data = try? Data(contentsOf: url) else {
+            fatalError("Failed to load \(file) from bundle")
+        }
+        
+        let decoder = JSONDecoder()
+        
+        guard let loadedData = try? decoder.decode(T.self, from: data) else {
+            fatalError("Failed to decode \(file) from bundle")
+        }
+        
+        return loadedData
+    }
+}
+
+
+public extension String {
+    func localizeUI(withComment comment: String? = nil) -> String {
+        return NSLocalizedString(self, comment: comment ?? "")
+    }
 }

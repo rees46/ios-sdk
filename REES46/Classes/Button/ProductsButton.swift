@@ -10,6 +10,7 @@ protocol CustomProductButtonDelegate: AnyObject {
     
     var _buttonData: StoriesElement?
     weak var delegate: CustomProductButtonDelegate?
+    var sdk: PersonalizationSDK!
     
     init() {
         super.init(frame: .zero)
@@ -33,35 +34,52 @@ protocol CustomProductButtonDelegate: AnyObject {
     
     func configProductsButton(buttonData: StoriesElement) {
         if (buttonData.products!.count != 0) {
+            if sdkConfiguration.stories.slideProductsButtonFontNameChanged != nil {
+                if sdkConfiguration.stories.slideProductsButtonFontSizeChanged != nil {
+                    self.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideProductsButtonFontNameChanged!, size:  sdkConfiguration.stories.slideProductsButtonFontSizeChanged!)
+                } else {
+                    self.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideProductsButtonFontNameChanged!, size: 14)
+                }
+            } else {
+                titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+            }
             
-            titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+            //titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
             setTitle(buttonData.labels?.showCarousel ?? "See all products", for: .normal)
-            //setTitleColor(.white, for: .normal)
             
             var mainBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
             mainBundle = Bundle.module
 #endif
             
-            let angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
-            if GlobalHelper.DeviceType.IS_IPHONE_8 || GlobalHelper.DeviceType.IS_IPHONE_8P || GlobalHelper.DeviceType.IS_IPHONE_5 {
-                
-                backgroundColor = .white
-                setTitleColor(.black, for: .normal)
-
+            let angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
+            
+            if sdkConfiguration.stories.slideProductsButtonBackgroundColorChanged != nil {
+                self.backgroundColor = sdkConfiguration.stories.slideProductsButtonBackgroundColorChanged
+            } else {
+                self.backgroundColor = .white
                 //angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
                 //backgroundColor = .clear
                 //setTitleColor(.white, for: .normal)
-            } else {
-                backgroundColor = .white
-                setTitleColor(.black, for: .normal)
             }
+            
             layer.cornerRadius = layer.frame.size.height/2
             layer.masksToBounds = true
             
-            //let angleUpIcon = UIImage(named: "angleUpWhite", in: mainBundle, compatibleWith: nil)
-            self.addRightIconForProductsBtn(image: angleUpIcon!)
+            //self.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 17.0)
             
+            if sdkConfiguration.stories.slideProductsButtonTextColorChanged != nil {
+                if let components = sdkConfiguration.stories.slideProductsButtonTextColorChanged?.rgba {
+                    self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
+                } else {
+                    self.setTitleColor(.black, for: .normal)
+                }
+                self.addRightIconForProductsBtn(image: angleUpIcon!)
+                tintColor = sdkConfiguration.stories.slideProductsButtonTextColorChanged
+            } else {
+                setTitleColor(.black, for: .normal)
+                tintColor = .black
+            }
         } else {
             titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
             
@@ -92,7 +110,7 @@ protocol CustomProductButtonDelegate: AnyObject {
     private func setToDefaultProductsButton() {
         backgroundColor = .white
         setTitle("", for: .normal)
-        setTitleColor(.black, for: .normal)
+        //setTitleColor(.black, for: .normal)
         layer.cornerRadius = layer.frame.size.height / 2
         layer.masksToBounds = true
         super.layoutSubviews()
@@ -104,7 +122,7 @@ extension UIButton {
         
         let imageView = UIImageView(image: image)
         imageView.translatesAutoresizingMaskIntoConstraints = false
-
+        //imageView.tintColor = .red
         addSubview(imageView)
 
         let length = CGFloat(21)
@@ -116,5 +134,11 @@ extension UIButton {
             imageView.widthAnchor.constraint(equalToConstant: length),
             imageView.heightAnchor.constraint(equalToConstant: length)
         ])
+    }
+    
+    func setImageTintColor(_ color: UIColor) {
+        let tintedImage = self.imageView?.image?.withRenderingMode(.alwaysTemplate)
+        self.setImage(tintedImage, for: .normal)
+        self.tintColor = color
     }
 }
