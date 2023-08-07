@@ -108,8 +108,8 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         hideButton = UIButton(frame: CGRect(x: 0, y: 0, width: 85, height: 40))
         hideButton.translatesAutoresizingMaskIntoConstraints = false
         hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
-        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            hideButton.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 14)
+        if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            hideButton.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
             hideButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         }

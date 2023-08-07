@@ -12,9 +12,9 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     let pinSymbolView = UIView()
     let pinSymbolLabel = UILabel()
     let preloadIndicator = StoriesPreloadIndicator()
-    //let startIndicator = StoriesPreloadIndicator()
     
     private var task: URLSessionDataTask?
+    var sdk: PersonalizationSDK!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -27,17 +27,6 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storyBackCircle.translatesAutoresizingMaskIntoConstraints = false
         storyBackCircle.alpha = 1.0
         addSubview(storyBackCircle)
-        
-        //startIndicator.contentMode = .scaleToFill
-        //startIndicator.translatesAutoresizingMaskIntoConstraints = false
-        //startIndicator.animationDuration = Double(Int.random(in: 2..<3))
-        //startIndicator.rotationDuration = 7
-        //startIndicator.numSegments = Int(Double(Int.random(in: 9..<17)))
-        //startIndicator.strokeColor = .orange
-        //startIndicator.lineWidth = 3.9
-        //startIndicator.alpha = 1
-        //storyWhiteBackCircle.addSubview(startIndicator)
-        //startIndicator.startAnimating()
         
         storyWhiteBackCircle.backgroundColor = bgColor
         storyWhiteBackCircle.contentMode = .scaleToFill
@@ -127,18 +116,22 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             //storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
             //storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             
-            if sdkConfiguration.stories.storiesBlockFontNameChanged != nil {
-                if sdkConfiguration.stories.storiesBlockFontSizeChanged != nil {
-                    storyAuthorNameLabel.font = .systemFont(ofSize: sdkConfiguration.stories.storiesBlockFontSizeChanged ?? 14.0)
+            if SdkConfiguration.stories.storiesBlockFontNameChanged != nil {
+                if SdkConfiguration.stories.storiesBlockFontSizeChanged != nil {
+                    storyAuthorNameLabel.font = UIFont(name: (SdkConfiguration.stories.storiesBlockFontNameChanged)!, size:  SdkConfiguration.stories.storiesBlockFontSizeChanged ?? 14.0)
                 } else {
                     storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
                 }
             } else {
-                storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
+                if SdkConfiguration.stories.storiesBlockFontSizeChanged != nil {
+                    storyAuthorNameLabel.font = .systemFont(ofSize: SdkConfiguration.stories.storiesBlockFontSizeChanged ?? 14.0)
+                } else {
+                    storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
+                }
             }
             
-            if sdkConfiguration.stories.storiesBlockTextColorChanged != nil {
-                storyAuthorNameLabel.textColor = sdkConfiguration.stories.storiesBlockTextColorChanged
+            if SdkConfiguration.stories.storiesBlockTextColorChanged != nil {
+                storyAuthorNameLabel.textColor = SdkConfiguration.stories.storiesBlockTextColorChanged
             } else {
                 storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             }

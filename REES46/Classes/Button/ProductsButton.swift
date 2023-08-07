@@ -34,14 +34,18 @@ protocol CustomProductButtonDelegate: AnyObject {
     
     func configProductsButton(buttonData: StoriesElement) {
         if (buttonData.products!.count != 0) {
-            if sdkConfiguration.stories.slideProductsButtonFontNameChanged != nil {
-                if sdkConfiguration.stories.slideProductsButtonFontSizeChanged != nil {
-                    self.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideProductsButtonFontNameChanged!, size:  sdkConfiguration.stories.slideProductsButtonFontSizeChanged!)
+            if SdkConfiguration.stories.slideProductsButtonFontNameChanged != nil {
+                if SdkConfiguration.stories.slideProductsButtonFontSizeChanged != nil {
+                    self.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideProductsButtonFontNameChanged)!, size:  (SdkConfiguration.stories.slideProductsButtonFontSizeChanged)!)
                 } else {
-                    self.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideProductsButtonFontNameChanged!, size: 14)
+                    self.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideProductsButtonFontNameChanged)!, size: 14)
                 }
             } else {
-                titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+                if SdkConfiguration.stories.slideProductsButtonFontSizeChanged != nil {
+                    self.titleLabel?.font = .systemFont(ofSize: SdkConfiguration.stories.slideProductsButtonFontSizeChanged!, weight: .bold)
+                } else {
+                    self.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
+                }
             }
             
             //titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
@@ -54,8 +58,8 @@ protocol CustomProductButtonDelegate: AnyObject {
             
             let angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
             
-            if sdkConfiguration.stories.slideProductsButtonBackgroundColorChanged != nil {
-                self.backgroundColor = sdkConfiguration.stories.slideProductsButtonBackgroundColorChanged
+            if SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged != nil {
+                self.backgroundColor = SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged
             } else {
                 self.backgroundColor = .white
                 //angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)
@@ -68,16 +72,17 @@ protocol CustomProductButtonDelegate: AnyObject {
             
             //self.titleLabel?.font = UIFont(name: "Roboto-Regular", size: 17.0)
             
-            if sdkConfiguration.stories.slideProductsButtonTextColorChanged != nil {
-                if let components = sdkConfiguration.stories.slideProductsButtonTextColorChanged?.rgba {
+            if SdkConfiguration.stories.slideProductsButtonTextColorChanged != nil {
+                if let components = SdkConfiguration.stories.slideProductsButtonTextColorChanged?.rgba {
                     self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
                 } else {
                     self.setTitleColor(.black, for: .normal)
                 }
                 self.addRightIconForProductsBtn(image: angleUpIcon!)
-                tintColor = sdkConfiguration.stories.slideProductsButtonTextColorChanged
+                tintColor = SdkConfiguration.stories.slideProductsButtonTextColorChanged
             } else {
                 setTitleColor(.black, for: .normal)
+                self.addRightIconForProductsBtn(image: angleUpIcon!)
                 tintColor = .black
             }
         } else {

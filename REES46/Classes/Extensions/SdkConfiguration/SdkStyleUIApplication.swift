@@ -1,7 +1,6 @@
 import UIKit
 import Foundation
 
-
 public protocol styleManagerProtocol {
     func setStoriesViewFont(fontName: String)
     func getDeviceID() -> String
@@ -182,11 +181,11 @@ public extension UIApplication {
             return tabBarController.viewControllers?.first
         }
         return nil
-    }
+     }
     
      var navViewController: UINavigationController? {
-        return sdkCurrentViewController?.navigationController
-    }
+         return sdkCurrentViewController?.navigationController
+     }
     
      func sdkTopViewController(_ base: UIViewController? = UIApplication.shared.keyWindow?.rootViewController) -> UIViewController? {
           
@@ -206,7 +205,6 @@ public extension UIApplication {
         return base
     }
     
-    
     func didEnterBackground(_ block: (()->Void)? = nil) {
         let application: UIApplication = UIApplication.shared
         var bgTask: UIBackgroundTaskIdentifier = UIBackgroundTaskIdentifier(rawValue: 0)
@@ -225,7 +223,6 @@ public extension UIApplication {
             bgTask = UIBackgroundTaskIdentifier.invalid
         }
     }
-    
     
      func setAppIcon(name: String?) {
         if #available(iOS 10.3, *) {

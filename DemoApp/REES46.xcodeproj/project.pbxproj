@@ -70,9 +70,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46.release.xcconfig"; path = "Target Support Files/Pods-REES46/Pods-REES46.release.xcconfig"; sourceTree = "<group>"; };
 		40D13F7A61C225C4AA9279B6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
-		4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.release.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.release.xcconfig"; sourceTree = "<group>"; };
 		53578CC38C4B3A4AA9973CCC /* REES46.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = REES46.podspec; path = ../REES46.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		5AE5CCEEB00A5EF1E5E39AFF /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* REES46Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = REES46Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,9 +83,7 @@
 		607FACE51AFB9204008FA782 /* REES46Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
-		627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		709A033D4F1D68C450C42B4F /* Pods-REES46Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.debug.xcconfig"; sourceTree = "<group>"; };
-		77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46_Tests/Pods-REES46_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		80CF46CFF72794AEE45F4623 /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
@@ -108,8 +104,6 @@
 		9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPresentViewController.swift; sourceTree = "<group>"; };
 		9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PushPresentViewController.xib; sourceTree = "<group>"; };
 		9F59578DAB07F41E9050DA8D /* Pods-REES46Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.release.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.release.xcconfig"; sourceTree = "<group>"; };
-		A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46.debug.xcconfig"; path = "Target Support Files/Pods-REES46/Pods-REES46.debug.xcconfig"; sourceTree = "<group>"; };
-		CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46_Example.debug.xcconfig"; path = "Target Support Files/Pods-REES46_Example/Pods-REES46_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		D625060CEE5B94BF0F97A2D7 /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E405FFE94AC2D2387456FA70 /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -154,12 +148,6 @@
 		4F88B19B361A54409BF39837 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				CE1BE168418E431399CF07E2 /* Pods-REES46_Example.debug.xcconfig */,
-				4A5EB6446B2D0D788CD25D4F /* Pods-REES46_Example.release.xcconfig */,
-				627FDFB1A1DA891E7C4A9072 /* Pods-REES46_Tests.debug.xcconfig */,
-				77719ACD42DE7B3672BE257B /* Pods-REES46_Tests.release.xcconfig */,
-				A75E4E3477B59C8E457D7CFB /* Pods-REES46.debug.xcconfig */,
-				3EC5729D3DDC34213E2D14A1 /* Pods-REES46.release.xcconfig */,
 				80CF46CFF72794AEE45F4623 /* Pods-REES46Demo.debug.xcconfig */,
 				9F59578DAB07F41E9050DA8D /* Pods-REES46Demo.release.xcconfig */,
 				709A033D4F1D68C450C42B4F /* Pods-REES46Tests.debug.xcconfig */,

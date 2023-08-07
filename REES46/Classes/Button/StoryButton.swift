@@ -17,28 +17,36 @@ class StoryButton: UIButton {
     }
     
     func configButton(buttonData: StoriesElement) {
-        if let backendFont = buttonData.textBold {
-            self.titleLabel?.font = .systemFont(ofSize: 14, weight: backendFont ? .bold : .regular)
-        }
-        
-        if sdkConfiguration.stories.slideDefaultButtonFontNameChanged != nil {
-            if sdkConfiguration.stories.slideDefaultButtonFontSizeChanged != nil {
-                self.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideDefaultButtonFontNameChanged!, size:  25.0)
+//        if let backendFont = buttonData.textBold {
+//            self.titleLabel?.font = .systemFont(ofSize: 14, weight: backendFont ? .bold : .regular)
+//        }
+//
+        if SdkConfiguration.stories.slideDefaultButtonFontNameChanged != nil {
+            if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != nil {
+                self.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideDefaultButtonFontNameChanged)!, size: SdkConfiguration.stories.slideDefaultButtonFontSizeChanged ?? 14.0)
             } else {
-                self.titleLabel?.font = UIFont(name: sdkConfiguration.stories.slideDefaultButtonFontNameChanged!, size: sdkConfiguration.stories.slideDefaultButtonFontSizeConstant)
+                self.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideDefaultButtonFontNameChanged)!, size: 14.0)
             }
         } else {
             if let backendFont = buttonData.textBold {
-                self.titleLabel?.font = .systemFont(ofSize: 14, weight: backendFont ? .bold : .regular)
+                if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != nil {
+                    self.titleLabel?.font = .systemFont(ofSize: SdkConfiguration.stories.slideDefaultButtonFontSizeChanged!, weight: backendFont ? .bold : .regular)
+                } else {
+                    self.titleLabel?.font = .systemFont(ofSize: 14, weight: backendFont ? .bold : .regular)
+                }
             } else {
-                self.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular)
+                if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != nil {
+                    self.titleLabel?.font = .systemFont(ofSize: SdkConfiguration.stories.slideDefaultButtonFontSizeChanged!, weight: .regular)
+                } else {
+                    self.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular)
+                }
             }
         }
         
         self.setTitle(buttonData.title ?? "", for: .normal)
         
-        if sdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged != nil {
-            self.backgroundColor = sdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged
+        if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged != nil {
+            self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged
         } else {
             if let bgColor = buttonData.background {
                 let color = bgColor.hexToRGB()
@@ -51,8 +59,8 @@ class StoryButton: UIButton {
         self.layer.cornerRadius = CGFloat(buttonData.cornerRadius)
         self.layer.masksToBounds = true
         
-        if sdkConfiguration.stories.slideDefaultButtonTextColorChanged != nil {
-            if let components = sdkConfiguration.stories.slideDefaultButtonTextColorChanged?.rgba {
+        if SdkConfiguration.stories.slideDefaultButtonTextColorChanged != nil {
+            if let components = SdkConfiguration.stories.slideDefaultButtonTextColorChanged?.rgba {
                 self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
             } else {
                 self.setTitleColor(.black, for: .normal)

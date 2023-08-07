@@ -3,6 +3,7 @@ import UIKit
 class CarouselCollectionViewCell: UICollectionViewCell {
     
     static let reuseId = "CarouselCollectionViewCell"
+    var sdk: PersonalizationSDK!
     
     let mainImageView: UIImageView = {
        let imageView = UIImageView()
@@ -13,8 +14,8 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let nameLabel: UILabel = {
         let label = UILabel()
-        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 16)
+        if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 16)
         } else {
             label.font = UIFont.systemFont(ofSize: 16, weight: .bold)
         }
@@ -26,8 +27,8 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let smallDescriptionLabel: UILabel = {
         let label = UILabel()
-        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 14)
+        if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
             label.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
         }
@@ -46,8 +47,8 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let oldCostLabel: UILabel = {
         let label = UILabel()
-        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 14)
+        if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
             label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
         }
@@ -58,8 +59,8 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     
     let costLabel: UILabel = {
         let label = UILabel()
-        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 18)
+        if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 18)
         } else {
             label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         }
@@ -71,8 +72,9 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     let discountLabel: UILabel = {
         let label = UILabel()
         label.frame = CGRect(x: 0, y: 0, width: 45, height: 20)
-        if sdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: sdkConfiguration.stories.slideProductsHideButtonFontNameChanged!, size: 13)
+        if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
+            
+            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 13)
         } else {
             label.font = UIFont.systemFont(ofSize: 13, weight: .bold)
         }

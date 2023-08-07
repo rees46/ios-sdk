@@ -1007,6 +1007,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         jsonDecoder.dateDecodingStrategy = .formatted(dateFormatter)
         return jsonDecoder
     }()
+    
+    func configuration() -> SdkConfiguration.Type {
+        return SdkConfiguration.self
+    }
 
     private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
 
