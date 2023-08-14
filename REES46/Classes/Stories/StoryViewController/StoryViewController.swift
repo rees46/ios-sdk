@@ -153,6 +153,40 @@ private var collectionView: UICollectionView = {
     func applicationWillEnterBackground(notification: NSNotification) {
         viewWillAppear(true)
     }
+    
+    public override func traitCollectionDidChange (_ previousTraitCollection: UITraitCollection?) {
+        if #available(iOS 12.0, *) {
+            super.traitCollectionDidChange(previousTraitCollection)
+            let userInterfaceStyle = traitCollection.userInterfaceStyle
+            if UIApplication.shared.applicationState == .inactive {
+                switch userInterfaceStyle {
+                case .unspecified:
+                    let userInfo = ["url": "workingSlideUrl"] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                    self.collectionView.reloadData()
+                    self.sdkLinkDelegate?.updateBgColor()
+                case .light:
+                    let userInfo = ["url": "workingSlideUrl"] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                    self.collectionView.reloadData()
+                    self.sdkLinkDelegate?.updateBgColor()
+                case .dark:
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
+                    self.collectionView.reloadData()
+                    self.sdkLinkDelegate?.updateBgColor()
+                @unknown default:
+                    break
+                }
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.collectionView.backgroundColor = .white
+                self.collectionView.reloadData()
+            }
+        }
+    }
 
     private func commonInit() {
         view.addSubview(collectionView)

@@ -145,6 +145,12 @@ extension UIColor {
     }
 }
 
+extension UIColor {
+
+    static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
+    static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
+}
+
 
 extension Bundle {
     func decode<T: Codable>(_ file: String) -> T {

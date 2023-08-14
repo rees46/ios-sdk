@@ -1,30 +1,694 @@
 import UIKit.UIFont
 import Foundation
 
-public protocol SdkConfigurationProtocol: AnyObject {
-    //
-}
+public protocol SdkConfigurationProtocol: AnyObject {}
 
-//public typealias SdkConfiguration = SdkConfiguration
 public typealias sdkFontPath = URL
 public typealias sdkFontName = String
 public typealias sdkFontExtension = String
 public typealias sdkFontClass = (url: sdkFontPath, name: sdkFontName)
 
-open class SdkConfiguration: SdkConfigurationProtocol {
-
+open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtocol {
+    public func reloadStoriesCollectionSubviews() {}
+    
     public static let stories: SdkConfiguration = SdkConfiguration()
     
-    open var name: String?
-    
     public init() {}
-
     public private(set) static var fontFamily: SdkFontFamily!
-    
     lazy var _fontNames = originalFontNames
     public var fontNames: [String] { return _fontNames }
     public var allLoadedFonts: [sdkFontClass] = []
-    public var arg: String = ""
+
+    public func registerFont(fileName: String, fileExtension: String) {
+        let pathForResourceString = Bundle.main.path(forResource: fileName, ofType: fileExtension)
+        if pathForResourceString != nil {
+            let fontData = NSData(contentsOfFile: pathForResourceString!)
+            let dataProvider = CGDataProvider(data: fontData!)
+            let fontRef = CGFont(dataProvider!)
+            var errorRef: Unmanaged<CFError>? = nil
+
+            if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
+                print("SDK Error registering font")
+            } else {
+                print("SDK Success registering font")
+            }
+        }
+    }
+    
+    public func registerFont(fileName: String) {
+        //sdk.configuration().stories?.registerFont(fileName: "Roboto-Italic.ttf")
+        var parsedFont: (sdkFontName, sdkFontExtension)?
+
+        if fileName.contains(SdkSupportedFontExtensions.trueType.rawValue) || fileName.contains(SdkSupportedFontExtensions.openType.rawValue) {
+            parsedFont = SdkConfiguration.fontExt(fromName: fileName)
+        } else {
+            let tmpName = fileName + "." + SdkSupportedFontExtensions.trueType.rawValue
+            parsedFont = SdkConfiguration.fontExt(fromName: tmpName)
+        }
+
+        if let parsedFont = parsedFont {
+
+            let pathForResourceString = Bundle.main.path(forResource: parsedFont.0, ofType: parsedFont.1)
+            if pathForResourceString != nil {
+                let fontData = NSData(contentsOfFile: pathForResourceString!)
+                let dataProvider = CGDataProvider(data: fontData!)
+                let fontRef = CGFont(dataProvider!)
+                var errorRef: Unmanaged<CFError>? = nil
+
+                if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
+                    print("SDK Error registering font")
+                } else {
+                    print("SDK Success registering font")
+                }
+            }
+        }
+    }
+    
+    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, darkModeTextColor: String? = nil, darkModeBackgroundColor: String? = nil) {
+        
+        let uiBlockTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
+        let uiBlockBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
+        let uiBlockTextColorDark = UIColor(hexString: darkModeTextColor ?? UIColor.white.toHexString())
+        let uiBlockBackgroundColorDark = UIColor(hexString: darkModeBackgroundColor ?? UIColor.black.toHexString())
+        
+        storiesBlockTextColorChanged_Light = uiBlockTextColorLight
+        storiesBlockTextColorChanged_Dark = uiBlockTextColorDark
+        
+        storiesBlockBackgroundColorChanged_Light = uiBlockBackgroundColorLight
+        storiesBlockBackgroundColorChanged_Dark = uiBlockBackgroundColorDark
+        
+        var fontBySdk = UIFont(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeConstant)
+        if fontName != nil {
+            if fontName == storiesBlockFontNameConstant {
+                storiesBlockFontNameChanged = storiesBlockFontNameConstant
+            } else {
+                storiesBlockFontNameChanged = fontName
+            }
+            //var testFont = UIFont(name: fontName!, size: 14.0)
+            fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+        
+            SdkStyle.shared.register(fonts: normalFonts(), for: FontSizes.normal)
+            SdkStyle.shared.register(fonts: largeFonts(), for: FontSizes.large)
+            SdkStyle.shared.switchFontSize(to: FontSizes.normal)
+            
+//            _ = {
+//                $0.isUserInteractionEnabled = true
+//                $0.textColor = storiesBlockTextColorChanged
+//                $0.font = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+//            }(UILabel.appearance())
+            
+            if fontSize != nil {
+                if fontSize == storiesBlockMinimumFontSizeConstant {
+                    storiesBlockMinimumFontSizeChanged = storiesBlockMinimumFontSizeConstant
+                } else {
+                    storiesBlockMinimumFontSizeChanged = fontSize
+                    fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+                }
+            } else {
+                storiesBlockMinimumFontSizeChanged = 0.0
+            }
+        } else {
+            if fontSize != nil {
+                if fontSize == storiesBlockMinimumFontSizeConstant {
+                    storiesBlockMinimumFontSizeChanged = storiesBlockMinimumFontSizeConstant
+                } else {
+                    storiesBlockMinimumFontSizeChanged = fontSize
+                    fontBySdk = UIFont(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+                }
+            } else {
+                storiesBlockMinimumFontSizeChanged = 0.0
+            }
+        }
+        
+        if (fontBySdk == nil) {
+            fontBySdk = .systemFont(ofSize: 14.0)
+        }
+        
+        SdkStyle.shared.register(colorScheme:
+                                    lightSdkStyleApperance(storiesBlockSelectFontName: fontBySdk!,
+                                                           storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                           storiesBlockFontColor: uiBlockTextColorLight,
+                                                           storiesBlockBackgroundColor: uiBlockBackgroundColorLight,
+                                                           
+                                                           defaultButtonSelectFontName: fontBySdk!,
+                                                           defaultButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                           defaultButtonFontColor: .white,
+                                                           defaultButtonBackgroundColor: .black,
+                                                           
+                                                           productsButtonSelectFontName: fontBySdk!,
+                                                           productsButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                           productsButtonFontColor: .black,
+                                                           productsButtonBackgroundColor: .white
+                                                          ),
+                                 for: SdkStyleApperanceTypes.storiesBlockLight)
+        
+        SdkStyle.shared.register(colorScheme:
+                                    darkSdkStyleApperance(storiesBlockSelectFontName: fontBySdk!,
+                                                          storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                          storiesBlockFontColor: uiBlockTextColorDark,
+                                                          storiesBlockBackgroundColor: uiBlockBackgroundColorDark,
+                                                          
+                                                          defaultButtonSelectFontName: fontBySdk!,
+                                                          defaultButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                          defaultButtonFontColor: .black,
+                                                          defaultButtonBackgroundColor: .white,
+                                                          
+                                                          productsButtonSelectFontName: fontBySdk!,
+                                                          productsButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                          productsButtonFontColor: .black,
+                                                          productsButtonBackgroundColor: .white
+                                                          ),
+                                 for: SdkStyleApperanceTypes.storiesBlockDark)
+
+        
+        if #available(iOS 13.0, *) {
+            if SdkConfiguration.isDarkMode {
+                SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockDark, animated: false)
+            } else {
+                SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockLight, animated: false)
+            }
+        } else {
+            //
+        }
+    }
+    
+    public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, darkModeTextColor: String? = nil, darkModeBackgroundColor: String? = nil) {
+        
+        let slideDefaultButtonTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
+        //let slideDefaultButtonBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
+        let slideDefaultButtonTextColorDark = UIColor(hexString: darkModeTextColor ?? UIColor.white.toHexString())
+        //let slideDefaultButtonBackgroundColorDark = UIColor(hexString: darkModeBackgroundColor ?? UIColor.black.toHexString())
+        
+        let defaultTextColor = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant_Light)
+        let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
+        if textColor != nil {
+            slideDefaultButtonTextColorChanged_Light = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
+        } else {
+            slideDefaultButtonTextColorChanged_Light = nil
+        }
+        
+        let defaultTextColorDark = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant_Dark)
+        let convertedTextColorDark = darkModeTextColor?.hexToRGB() ?? defaultTextColorDark.hexToRGB()
+        if textColor != nil {
+            slideDefaultButtonTextColorChanged_Dark = UIColor(red: convertedTextColorDark.red, green: convertedTextColorDark.green, blue: convertedTextColorDark.blue, alpha: 1)
+        } else {
+            slideDefaultButtonTextColorChanged_Dark = nil
+        }
+        
+        let defaultBackgroundColorLight = UIColor.hexStringFromColor(color: slideDefaultButtonBackgroundColorConstant_Light)
+        let convertedDefaultButtonBackgroundColorLight = backgroundColor?.hexToRGB() ?? defaultBackgroundColorLight.hexToRGB()
+        if backgroundColor != nil {
+            slideDefaultButtonBackgroundColorChanged_Light = UIColor(red: convertedDefaultButtonBackgroundColorLight.red, green: convertedDefaultButtonBackgroundColorLight.green, blue: convertedDefaultButtonBackgroundColorLight.blue, alpha: 1)
+        } else {
+            slideDefaultButtonBackgroundColorChanged_Light = nil
+        }
+        
+        let defaultBackgroundColorDark = UIColor.hexStringFromColor(color: slideDefaultButtonBackgroundColorConstant_Dark)
+        let convertedDefaultButtonBackgroundColorDark = darkModeBackgroundColor?.hexToRGB() ?? defaultBackgroundColorDark.hexToRGB()
+        if darkModeBackgroundColor != nil {
+            slideDefaultButtonBackgroundColorChanged_Dark = UIColor(red: convertedDefaultButtonBackgroundColorDark.red, green: convertedDefaultButtonBackgroundColorDark.green, blue: convertedDefaultButtonBackgroundColorDark.blue, alpha: 1)
+        } else {
+            slideDefaultButtonBackgroundColorChanged_Dark = nil
+        }
+        
+        var slideButtonFontBySdk = UIFont(name: slideDefaultButtonFontNameConstant, size: slideDefaultButtonFontSizeConstant)
+        if fontName != nil {
+            if fontName == slideDefaultButtonFontNameConstant {
+                slideDefaultButtonFontNameChanged = slideDefaultButtonFontNameConstant
+            } else {
+                slideDefaultButtonFontNameChanged = fontName
+            }
+            slideButtonFontBySdk = UIFont(name: slideDefaultButtonFontNameChanged!, size: slideDefaultButtonFontSizeChanged ?? 14.0)
+            
+            if fontSize != nil {
+                if fontSize == slideDefaultButtonFontSizeConstant {
+                    slideDefaultButtonFontSizeChanged = slideDefaultButtonFontSizeConstant
+                } else {
+                    slideDefaultButtonFontSizeChanged = fontSize
+                    slideButtonFontBySdk = UIFont(name: slideDefaultButtonFontNameChanged!, size: fontSize ?? 14.0)
+                }
+            } else {
+                slideDefaultButtonFontSizeChanged = 0.0
+            }
+        } else {
+            if fontSize != nil {
+                if fontSize == slideDefaultButtonFontSizeConstant {
+                    slideDefaultButtonFontSizeChanged = slideDefaultButtonFontSizeConstant
+                } else {
+                    slideDefaultButtonFontSizeChanged = fontSize
+                    slideButtonFontBySdk = UIFont(name: slideDefaultButtonFontNameConstant, size: slideDefaultButtonFontSizeChanged ?? 14.0)
+                }
+            } else {
+                slideDefaultButtonFontSizeChanged = 0.0
+            }
+        }
+        
+        let storedStoriesBlockSelectFontName = SdkStyle.shared.currentColorScheme?.storiesBlockSelectFontName
+        let storedStoriesBlockFontColor = SdkStyle.shared.currentColorScheme?.storiesBlockFontColor
+        let storedStoriesBlockBackgroundColor = SdkStyle.shared.currentColorScheme?.storiesBlockBackgroundColor
+        
+        if (slideButtonFontBySdk == nil) {
+            slideButtonFontBySdk = .systemFont(ofSize: 16.0)
+        }
+        
+        SdkStyle.shared.register(colorScheme:
+                                    lightSdkStyleApperance(storiesBlockSelectFontName: storedStoriesBlockSelectFontName!,
+                                                           storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                           storiesBlockFontColor: storedStoriesBlockFontColor!,
+                                                           storiesBlockBackgroundColor: storedStoriesBlockBackgroundColor!,
+                                                           
+                                                           defaultButtonSelectFontName: slideButtonFontBySdk!,
+                                                           defaultButtonSelectFontSize: slideDefaultButtonFontSizeChanged!,
+                                                           defaultButtonFontColor: slideDefaultButtonTextColorLight,
+                                                           defaultButtonBackgroundColor: slideDefaultButtonBackgroundColorChanged_Light ?? .white,
+                                                           
+                                                           productsButtonSelectFontName: slideButtonFontBySdk!,
+                                                           productsButtonSelectFontSize: slideDefaultButtonFontSizeChanged!,
+                                                           productsButtonFontColor: .black,
+                                                           productsButtonBackgroundColor: .white
+                                                          ),
+                                 for: SdkStyleApperanceTypes.storiesBlockLight)
+        
+        SdkStyle.shared.register(colorScheme:
+                                    darkSdkStyleApperance(storiesBlockSelectFontName: storedStoriesBlockSelectFontName!,
+                                                          storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
+                                                          storiesBlockFontColor: storedStoriesBlockFontColor!,
+                                                          storiesBlockBackgroundColor: storedStoriesBlockBackgroundColor!,
+                                                          
+                                                          defaultButtonSelectFontName: slideButtonFontBySdk!,
+                                                          defaultButtonSelectFontSize: slideDefaultButtonFontSizeChanged!,
+                                                          defaultButtonFontColor: slideDefaultButtonTextColorDark,
+                                                          defaultButtonBackgroundColor: slideDefaultButtonBackgroundColorChanged_Dark ?? .white,
+                                                          
+                                                          productsButtonSelectFontName: slideButtonFontBySdk!,
+                                                          productsButtonSelectFontSize: 12.0,
+                                                          productsButtonFontColor: .black,
+                                                          productsButtonBackgroundColor: .white
+                                                          ),
+                                 for: SdkStyleApperanceTypes.storiesBlockDark)
+
+        
+        if #available(iOS 13.0, *) {
+            if SdkConfiguration.isDarkMode {
+                SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockDark, animated: false)
+            } else {
+                SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockLight, animated: false)
+            }
+        } else {
+            //
+        }
+    }
+    
+    public func setSlideProductsButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, darkModeTextColor: String? = nil, darkModeBackgroundColor: String? = nil) {
+        
+        if fontName != nil {
+            if fontName == slideProductsButtonFontNameConstant {
+                slideProductsButtonFontNameChanged = nil
+            } else {
+                slideProductsButtonFontNameChanged = fontName
+            }
+        }
+        
+        let defaultTextColor = UIColor.hexStringFromColor(color: slideProductsButtonTextColorConstant_Light)
+        let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
+        slideProductsButtonTextColorChanged_Light = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
+        
+        let defaultTextColorDark = UIColor.hexStringFromColor(color: slideProductsButtonTextColorConstant_Dark)
+        let convertedTextColorDark = darkModeTextColor?.hexToRGB() ?? defaultTextColorDark.hexToRGB()
+        slideProductsButtonTextColorChanged_Dark = UIColor(red: convertedTextColorDark.red, green: convertedTextColorDark.green, blue: convertedTextColorDark.blue, alpha: 1)
+        
+        let defaultBackgroundColor = UIColor.hexStringFromColor(color: slideProductsButtonBackgroundColorConstant_Light)
+        let convertedBackgroundColor = backgroundColor?.hexToRGB() ?? defaultBackgroundColor.hexToRGB()
+        if backgroundColor != nil {
+            slideProductsButtonBackgroundColorChanged_Light = UIColor(red: convertedBackgroundColor.red, green: convertedBackgroundColor.green, blue: convertedBackgroundColor.blue, alpha: 1)
+        } else {
+            slideProductsButtonBackgroundColorChanged_Light = nil
+        }
+        
+        let defaultBackgroundColorDark = UIColor.hexStringFromColor(color: slideProductsButtonBackgroundColorConstant_Dark)
+        let convertedBackgroundColorDark = darkModeBackgroundColor?.hexToRGB() ?? defaultBackgroundColorDark.hexToRGB()
+        if backgroundColor != nil {
+            slideProductsButtonBackgroundColorChanged_Dark = UIColor(red: convertedBackgroundColorDark.red, green: convertedBackgroundColorDark.green, blue: convertedBackgroundColorDark.blue, alpha: 1)
+        } else {
+            slideProductsButtonBackgroundColorChanged_Dark = nil
+        }
+        
+        let convertedFontSize = fontSize ?? slideProductsButtonFontSizeConstant
+        if fontSize != nil {
+            slideProductsButtonFontSizeChanged = convertedFontSize
+        } else {
+            slideProductsButtonFontSizeChanged = nil
+        }
+    }
+    
+    public func setProductsCard(fontName: String? = nil) {
+        if fontName != nil {
+            if fontName == slideProductsHideButtonFontNameConstant {
+                slideProductsHideButtonFontNameChanged = nil
+            } else {
+                slideProductsHideButtonFontNameChanged = fontName
+            }
+        }
+    }
+    
+    public enum InstalledCustomFonts: String, SdkApperanceViewScheme {
+        case storiesBlockTextFont
+        case defaultButtonTextFont
+        case productsButtonTextFont
+    }
+
+    public struct normalFonts: SdkStyleCustomFonts {
+        public var customFonts = [InstalledCustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 17),
+                                 InstalledCustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 12),
+                                 InstalledCustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 22) ]
+    }
+
+    public struct largeFonts: SdkStyleCustomFonts {
+        public var customFonts = [InstalledCustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 20),
+                                InstalledCustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 15),
+                                InstalledCustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 27) ]
+    }
+
+    public enum FontSizes: String, SdkApperanceViewScheme {
+        case normal
+        case large
+    }
+    
+    public struct storiesBlockLightSdkStyleApperance: sdkElement_storiesBlockColorScheme {
+        public var storiesBlockBackgroundColor = UIColor.blue
+        public var storiesBlockFontColor = UIColor.green
+    }
+    
+    public enum SdkSupportedFontExtensions: String {
+        case trueType = "ttf"
+        case openType = "otf"
+
+        init?(_ ver: String?) {
+            if SdkSupportedFontExtensions.trueType.rawValue == ver {
+                self = .trueType
+            } else if SdkSupportedFontExtensions.openType.rawValue == ver {
+                self = .openType
+            } else {
+                return nil
+            }
+        }
+    }
+
+    public struct lightSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
+        
+        public var storiesBlockSelectFontName: UIFont
+        public var storiesBlockSelectFontSize: CGFloat
+        public var storiesBlockFontColor: UIColor
+        public var storiesBlockBackgroundColor: UIColor
+        
+        public var defaultButtonSelectFontName: UIFont
+        public var defaultButtonSelectFontSize: CGFloat
+        public var defaultButtonFontColor: UIColor
+        public var defaultButtonBackgroundColor: UIColor
+        
+        public var productsButtonSelectFontName: UIFont
+        public var productsButtonSelectFontSize: CGFloat
+        public var productsButtonFontColor: UIColor
+        public var productsButtonBackgroundColor: UIColor
+        
+        
+        public let storiesBack = UIColor.lightGray
+        public let viewControllerBackground = UIColor.white
+        public let navigationBarStyle = UIBarStyle.default
+        public let navigationBarBackgroundColor =  UIColor.white
+        public let navigationBarTextColor = UIColor.black
+        public let viewBackgroundColor = UIColor.magenta
+        public let labelTextColor = UIColor.black
+        public let buttonTintColor = UIColor.blue
+
+        public let tableViewBackgroundColor = UIColor.lightGray
+        public var tableViewSeparatorColor = UIColor.gray
+        public let headerBackgroundColor = UIColor.white
+        public let headerTextColorColor = UIColor.black
+        public let cellBackgroundColor = UIColor.white
+        public let cellTextColorColor = UIColor.black
+        public let cellSubTextColorColor = UIColor.darkGray
+
+        public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.magenta,
+                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple ]
+    }
+
+    public struct darkSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
+        
+        public var storiesBlockSelectFontName: UIFont
+        public var storiesBlockSelectFontSize: CGFloat
+        public var storiesBlockFontColor: UIColor
+        public var storiesBlockBackgroundColor: UIColor
+        
+        public var defaultButtonSelectFontName: UIFont
+        public var defaultButtonSelectFontSize: CGFloat
+        public var defaultButtonFontColor: UIColor
+        public var defaultButtonBackgroundColor: UIColor
+        
+        public var productsButtonSelectFontName: UIFont
+        public var productsButtonSelectFontSize: CGFloat
+        public var productsButtonFontColor: UIColor
+        public var productsButtonBackgroundColor: UIColor
+        
+        
+        public let viewControllerBackground = UIColor.black
+        public let navigationBarStyle = UIBarStyle.black
+        public let navigationBarBackgroundColor =  UIColor.black
+        public let navigationBarTextColor = UIColor.white
+        public let viewBackgroundColor = UIColor.yellow
+        public let labelTextColor = UIColor.white
+        public let buttonTintColor = UIColor.blue
+
+        public let tableViewBackgroundColor = UIColor.darkGray
+        public var tableViewSeparatorColor = UIColor.gray
+        public let headerBackgroundColor = UIColor.black
+        public let headerTextColorColor = UIColor.white
+        public let cellBackgroundColor = UIColor.black
+        public let cellTextColorColor = UIColor.white
+        public let cellSubTextColorColor = UIColor.lightGray
+
+        public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.purple,
+                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.magenta ]
+    }
+
+    public struct customSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
+        
+        public var storiesBlockSelectFontName: UIFont
+        public var storiesBlockSelectFontSize: CGFloat
+        public var storiesBlockFontColor: UIColor
+        public var storiesBlockBackgroundColor: UIColor
+        
+        public var defaultButtonSelectFontName: UIFont
+        public var defaultButtonSelectFontSize: CGFloat
+        public var defaultButtonFontColor: UIColor
+        public var defaultButtonBackgroundColor: UIColor
+        
+        public var productsButtonSelectFontName: UIFont
+        public var productsButtonSelectFontSize: CGFloat
+        public var productsButtonFontColor: UIColor
+        public var productsButtonBackgroundColor: UIColor
+        
+        
+        public let storiesBack = UIColor.lightGray
+        public var viewControllerBackground = UIColor.blue
+        public let navigationBarStyle = UIBarStyle.black
+        public let navigationBarBackgroundColor =  UIColor.blue
+        public let navigationBarTextColor = UIColor.white
+        public let viewBackgroundColor = UIColor.black
+        public let labelTextColor = UIColor.white
+        public let buttonTintColor = UIColor.blue
+
+        public let tableViewBackgroundColor = UIColor.lightGray
+        public var tableViewSeparatorColor = UIColor.gray
+        public let headerBackgroundColor = UIColor.white
+        public let headerTextColorColor = UIColor.black
+        public let cellBackgroundColor = UIColor.white
+        public let cellTextColorColor = UIColor.black
+        public let cellSubTextColorColor = UIColor.darkGray
+
+        public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.magenta,
+                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple ]
+    }
+
+    public enum SdkStyleApperanceTypes: String, SdkApperanceViewScheme {
+        case storiesBlockLight
+        case storiesBlockDark
+        case slideDefaultButtonLight
+        case slideDefaultButtonDark
+        case slideProductsButtonLight
+        case slideProductsButtonDark
+        case productsCardLight
+        case productsCardDark
+        case custom
+    }
+    
+    @available(iOS 13.0, *)
+    public static var isDarkMode: Bool {
+        return UITraitCollection.current.userInterfaceStyle == .dark
+    }
+    
+    public func availableFonts() -> [String: [String]] {
+        var fonts: [String: [String]] = [:]
+        
+        UIFont.familyNames.forEach({ familyName in
+            let fontNames = UIFont.fontNames(forFamilyName: familyName)
+            fonts[familyName] = fontNames
+        })
+        return fonts
+    }
+    
+    public func getInstalledFontsFrom(bundle: Bundle = .main,
+        completion: (([String]) -> Void)? = nil) {
+        getInstalledFontsFrom(at: bundle.bundleURL, completion: completion)
+    }
+
+    public func getInstalledFontsFrom(at url: URL?,
+        completion: (([String]) -> Void)? = nil
+    ) {
+        guard let url = url else { completion?([])
+            return
+        }
+
+        var loadedForSDKFonts: [sdkFontClass] = []
+        loadedForSDKFonts += SdkConfiguration.loadFonts(at: url)
+        loadedForSDKFonts += SdkConfiguration.loadFontsFromBundles(at: url)
+
+        let alreadyLoaded = allLoadedFonts.map { $0.url }
+        let justLoaded = loadedForSDKFonts.map { $0.url }
+        for i in 0 ..< justLoaded.count {
+            let justLoadedUrl = justLoaded[i]
+            if alreadyLoaded.firstIndex(of: justLoadedUrl) == nil {
+                allLoadedFonts.append(loadedForSDKFonts[i])
+            }
+        }
+
+        completion?(loadedForSDKFonts.map { $0.name })
+    }
+    
+    public enum CustomTableCellColors: String, SdkApperanceViewScheme {
+        case cellBackground
+        case cellTextColor
+    }
+    
+    public var storiesBlockFontNameChanged: String?
+    public var storiesBlockFontNameConstant: String {
+        get { return ".SFUI-Regular" }
+        set { storiesBlockFontNameChanged = newValue }
+    }
+    
+    public var storiesBlockMinimumFontSizeChanged: CGFloat?
+    public var storiesBlockMinimumFontSizeConstant: CGFloat {
+        get { return 7.0 }
+        set { storiesBlockMinimumFontSizeChanged = newValue }
+    }
+    
+    public var storiesBlockTextColorChanged_Light: UIColor?
+    public var storiesBlockTextColorConstant_Light: UIColor {
+        get { return .black }
+        set { storiesBlockTextColorChanged_Light = newValue }
+    }
+    
+    public var storiesBlockTextColorChanged_Dark: UIColor?
+    public var storiesBlockTextColorConstant_Dark: UIColor {
+        get { return .black }
+        set { storiesBlockTextColorChanged_Dark = newValue }
+    }
+    
+    public var storiesBlockBackgroundColorChanged_Light: UIColor?
+    public var storiesBlockBackgroundColorConstant_Light: UIColor {
+        get { return .white }
+        set { storiesBlockBackgroundColorChanged_Light = newValue }
+    }
+    
+    public var storiesBlockBackgroundColorChanged_Dark: UIColor?
+    public var storiesBlockBackgroundColorConstant_Dark: UIColor {
+        get { return .black }
+        set { storiesBlockBackgroundColorChanged_Dark = newValue }
+    }
+    
+    public var slideDefaultButtonFontNameChanged: String?
+    public var slideDefaultButtonFontNameConstant: String {
+        get { return ".SFUI-Regular" }
+        set { slideDefaultButtonFontNameChanged = newValue }
+    }
+    
+    public var slideDefaultButtonFontSizeChanged: CGFloat?
+    public var slideDefaultButtonFontSizeConstant: CGFloat {
+        get { return 14.0 }
+        set { slideDefaultButtonFontSizeChanged = newValue }
+    }
+    
+    public var slideDefaultButtonTextColorChanged_Light: UIColor?
+    public var slideDefaultButtonTextColorConstant_Light: UIColor {
+        get { return .black }
+        set { slideDefaultButtonTextColorChanged_Light = newValue }
+    }
+    
+    public var slideDefaultButtonTextColorChanged_Dark: UIColor?
+    public var slideDefaultButtonTextColorConstant_Dark: UIColor {
+        get { return .black }
+        set { slideDefaultButtonTextColorChanged_Dark = newValue }
+    }
+    
+    public var slideDefaultButtonBackgroundColorChanged_Light: UIColor?
+    public var slideDefaultButtonBackgroundColorConstant_Light: UIColor {
+        get { return .white }
+        set { slideDefaultButtonBackgroundColorChanged_Light = newValue }
+    }
+    
+    public var slideDefaultButtonBackgroundColorChanged_Dark: UIColor?
+    public var slideDefaultButtonBackgroundColorConstant_Dark: UIColor {
+        get { return .white }
+        set { slideDefaultButtonBackgroundColorChanged_Dark = newValue }
+    }
+    
+    public var slideProductsButtonFontNameChanged: String?
+    public var slideProductsButtonFontNameConstant: String {
+        get { return ".SFUI-Regular" }
+        set { slideProductsButtonFontNameChanged = newValue }
+    }
+    
+    public var slideProductsButtonFontSizeChanged: CGFloat?
+    public var slideProductsButtonFontSizeConstant: CGFloat {
+        get { return 14.0 }
+        set { slideProductsButtonFontSizeChanged = newValue }
+    }
+    
+    public var slideProductsButtonTextColorChanged_Light: UIColor?
+    public var slideProductsButtonTextColorConstant_Light: UIColor {
+        get { return .black }
+        set { slideProductsButtonTextColorChanged_Light = newValue }
+    }
+    
+    public var slideProductsButtonTextColorChanged_Dark: UIColor?
+    public var slideProductsButtonTextColorConstant_Dark: UIColor {
+        get { return .black }
+        set { slideProductsButtonTextColorChanged_Dark = newValue }
+    }
+    
+    public var slideProductsButtonBackgroundColorChanged_Light: UIColor?
+    public var slideProductsButtonBackgroundColorConstant_Light: UIColor {
+        get { return .white }
+        set { slideProductsButtonBackgroundColorChanged_Light = newValue }
+    }
+    
+    public var slideProductsButtonBackgroundColorChanged_Dark: UIColor?
+    public var slideProductsButtonBackgroundColorConstant_Dark: UIColor {
+        get { return .white }
+        set { slideProductsButtonBackgroundColorChanged_Dark = newValue }
+    }
+    
+    public var slideProductsHideButtonFontNameChanged: String?
+    public var slideProductsHideButtonFontNameConstant: String {
+        get { return ".SFUI-Regular" }
+        set { slideProductsButtonFontNameChanged = newValue }
+    }
+    
+    public var bootRegisteredFontChanged: UIFont?
+    public var bootRegisteredFontConstant: UIFont {
+        get { return .systemFont(ofSize: 14.0) }
+        set { bootRegisteredFontChanged = newValue }
+    }
     
     public var originalFontNames = [
         "Open Sans",
@@ -60,313 +724,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
         return sFont
     }
-    
-    public func registerFont(fileName: String) {
-        //sdk.configuration().stories?.registerFont(fileName: "Roboto-Italic.ttf")
-        var parsedFont: (sdkFontName, sdkFontExtension)?
-
-        if fileName.contains(SdkSupportedFontExtensions.trueType.rawValue) || fileName.contains(SdkSupportedFontExtensions.openType.rawValue) {
-            parsedFont = SdkConfiguration.fontExt(fromName: fileName)
-        } else {
-            let tmpName = fileName + "." + SdkSupportedFontExtensions.trueType.rawValue
-            parsedFont = SdkConfiguration.fontExt(fromName: tmpName)
-        }
-
-        if let parsedFont = parsedFont {
-
-            let pathForResourceString = Bundle.main.path(forResource: parsedFont.0, ofType: parsedFont.1)
-            if pathForResourceString != nil {
-                let fontData = NSData(contentsOfFile: pathForResourceString!)
-                let dataProvider = CGDataProvider(data: fontData!)
-                let fontRef = CGFont(dataProvider!)
-                var errorRef: Unmanaged<CFError>? = nil
-
-                if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                    print("SDK Error registering font")
-                } else {
-                    print("SDK Success registering font")
-                }
-            }
-        }
-    }
-    
-    public func registerFont(fileName: String, fileExtension: String) {
-        //sdk.configuration().stories.registerFont(fileName: "Roboto-Italic", fileExtension: "ttf")
-        let pathForResourceString = Bundle.main.path(forResource: fileName, ofType: fileExtension)
-        if pathForResourceString != nil {
-            let fontData = NSData(contentsOfFile: pathForResourceString!)
-            let dataProvider = CGDataProvider(data: fontData!)
-            let fontRef = CGFont(dataProvider!)
-            var errorRef: Unmanaged<CFError>? = nil
-
-            if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                print("SDK Error registering font")
-            } else {
-                print("SDK Success registering font")
-            }
-        }
-    }
-    
-    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil) {
-        
-        if fontName != nil {
-            if fontName == storiesBlockFontNameConstant {
-                storiesBlockFontNameChanged = storiesBlockFontNameConstant
-            } else {
-                storiesBlockFontNameChanged = fontName
-            }
-        } else {
-            storiesBlockFontNameChanged = nil
-        }
-        
-        if fontSize != nil {
-            if fontSize == storiesBlockFontSizeConstant {
-                storiesBlockFontSizeChanged = storiesBlockFontSizeConstant
-            } else {
-                storiesBlockFontSizeChanged = fontSize
-            }
-        } else {
-            storiesBlockFontSizeChanged = storiesBlockFontSizeConstant
-        }
-        
-        let defaultTextColor = UIColor.hexStringFromColor(color: storiesBlockTextColorConstant)
-        if textColor != nil {
-            let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
-            storiesBlockTextColorChanged = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
-        } else {
-            let convertedTextColor = defaultTextColor.hexToRGB()
-            storiesBlockTextColorChanged = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
-        }
-        
-        let defaultBackgroundColor = UIColor.hexStringFromColor(color: storiesBlockBackgroundColorConstant)
-        let convertedBackgroundColor = backgroundColor?.hexToRGB() ?? defaultBackgroundColor.hexToRGB()
-        storiesBlockBackgroundColorChanged = UIColor(red: convertedBackgroundColor.red, green: convertedBackgroundColor.green, blue: convertedBackgroundColor.blue, alpha: 1)
-        
-        if storiesBlockFontNameChanged != nil {
-            _ = {
-                $0.isUserInteractionEnabled = true
-                $0.textColor = storiesBlockTextColorChanged
-                $0.font = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockFontSizeChanged ?? 14.0)
-            }(UILabel.appearance())
-        } else {
-            _ = {
-                $0.isUserInteractionEnabled = true
-                $0.textColor = storiesBlockTextColorChanged
-                
-                if fontSize != nil {
-                    $0.font = .systemFont(ofSize: storiesBlockFontSizeChanged ?? 14.0)
-                } else {
-                    $0.font = .systemFont(ofSize: 14.0)
-                }
-            }(UILabel.appearance())
-        }
-        
-        _ = {
-            $0.backgroundColor = storiesBlockBackgroundColorChanged
-        }(UICollectionView.appearance())
-    }
-    
-    public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil) {
-        
-        if fontName != nil {
-            if fontName == slideDefaultButtonFontNameConstant {
-                slideDefaultButtonFontNameChanged = nil
-            } else {
-                slideDefaultButtonFontNameChanged = fontName
-            }
-        }
-        
-        let convertedFontSize = fontSize ?? slideDefaultButtonFontSizeConstant
-        if fontSize != nil {
-            slideDefaultButtonFontSizeChanged = convertedFontSize
-        } else {
-            slideDefaultButtonFontSizeChanged = nil
-        }
-        
-        let defaultTextColor = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant)
-        let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
-        if textColor != nil {
-            slideDefaultButtonTextColorChanged = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
-        } else {
-            slideDefaultButtonTextColorChanged = nil
-        }
-        
-        let defaultBackgroundColor = UIColor.hexStringFromColor(color: slideDefaultButtonBackgroundColorConstant)
-        let convertedBackgroundColor = backgroundColor?.hexToRGB() ?? defaultBackgroundColor.hexToRGB()
-        if backgroundColor != nil {
-            slideDefaultButtonBackgroundColorChanged = UIColor(red: convertedBackgroundColor.red, green: convertedBackgroundColor.green, blue: convertedBackgroundColor.blue, alpha: 1)
-        } else {
-            slideDefaultButtonBackgroundColorChanged = nil
-        }
-    }
-    
-    public func setSlideProductsButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil) {
-        
-        if fontName != nil {
-            if fontName == slideProductsButtonFontNameConstant {
-                slideProductsButtonFontNameChanged = nil
-            } else {
-                slideProductsButtonFontNameChanged = fontName
-            }
-        }
-        
-        let defaultTextColor = UIColor.hexStringFromColor(color: slideProductsButtonTextColorConstant)
-        let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
-        slideProductsButtonTextColorChanged = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
-        
-        let defaultBackgroundColor = UIColor.hexStringFromColor(color: slideProductsButtonBackgroundColorConstant)
-        let convertedBackgroundColor = backgroundColor?.hexToRGB() ?? defaultBackgroundColor.hexToRGB()
-        if backgroundColor != nil {
-            slideProductsButtonBackgroundColorChanged = UIColor(red: convertedBackgroundColor.red, green: convertedBackgroundColor.green, blue: convertedBackgroundColor.blue, alpha: 1)
-        } else {
-            slideProductsButtonBackgroundColorChanged = nil
-        }
-        
-        let convertedFontSize = fontSize ?? slideProductsButtonFontSizeConstant
-        if fontSize != nil {
-            slideProductsButtonFontSizeChanged = convertedFontSize
-        } else {
-            slideProductsButtonFontSizeChanged = nil
-        }
-    }
-    
-    public func setProductsCard(fontName: String? = nil) {
-        if fontName != nil {
-            if fontName == slideProductsHideButtonFontNameConstant {
-                slideProductsHideButtonFontNameChanged = nil
-            } else {
-                slideProductsHideButtonFontNameChanged = fontName
-            }
-        }
-    }
-    
-    public var storiesBlockTextColorChanged: UIColor?
-    public var storiesBlockTextColorConstant: UIColor {
-        get { return .black }
-        set { storiesBlockTextColorChanged = newValue }
-    }
-    
-    public var storiesBlockBackgroundColorChanged: UIColor?
-    public var storiesBlockBackgroundColorConstant: UIColor {
-        get { return .white }
-        set { storiesBlockBackgroundColorChanged = newValue }
-    }
-    
-    public var storiesBlockFontNameChanged: String?
-    public var storiesBlockFontNameConstant: String {
-        get { return ".SFUI-Regular" }
-        set { storiesBlockFontNameChanged = newValue }
-    }
-    
-    public var storiesBlockFontSizeChanged: CGFloat?
-    public var storiesBlockFontSizeConstant: CGFloat {
-        get { return 14.0 }
-        set { storiesBlockFontSizeChanged = newValue }
-    }
-    
-    public var slideDefaultButtonFontNameChanged: String?
-    public var slideDefaultButtonFontNameConstant: String {
-        get { return ".SFUI-Regular" }
-        set { slideDefaultButtonFontNameChanged = newValue }
-    }
-    
-    public var slideDefaultButtonFontSizeChanged: CGFloat?
-    public var slideDefaultButtonFontSizeConstant: CGFloat {
-        get { return 14.0 }
-        set { slideDefaultButtonFontSizeChanged = newValue }
-    }
-    
-    public var slideDefaultButtonTextColorChanged: UIColor?
-    public var slideDefaultButtonTextColorConstant: UIColor {
-        get { return .black }
-        set { slideDefaultButtonTextColorChanged = newValue }
-    }
-    
-    public var slideDefaultButtonBackgroundColorChanged: UIColor?
-    public var slideDefaultButtonBackgroundColorConstant: UIColor {
-        get { return .white }
-        set { slideDefaultButtonBackgroundColorChanged = newValue }
-    }
-    
-    public var slideProductsButtonFontNameChanged: String?
-    public var slideProductsButtonFontNameConstant: String {
-        get { return ".SFUI-Regular" }
-        set { slideProductsButtonFontNameChanged = newValue }
-    }
-    
-    public var slideProductsButtonFontSizeChanged: CGFloat?
-    public var slideProductsButtonFontSizeConstant: CGFloat {
-        get { return 14.0 }
-        set { slideProductsButtonFontSizeChanged = newValue }
-    }
-    
-    public var slideProductsButtonTextColorChanged: UIColor?
-    public var slideProductsButtonTextColorConstant: UIColor {
-        get { return .black }
-        set { slideProductsButtonTextColorChanged = newValue }
-    }
-    
-    public var slideProductsButtonBackgroundColorChanged: UIColor?
-    public var slideProductsButtonBackgroundColorConstant: UIColor {
-        get { return .white }
-        set { slideProductsButtonBackgroundColorChanged = newValue }
-    }
-    
-    public var slideProductsHideButtonFontNameChanged: String?
-    public var slideProductsHideButtonFontNameConstant: String {
-        get { return ".SFUI-Regular" }
-        //get { return .systemFont(ofSize: 14.0) }
-        set { slideProductsButtonFontNameChanged = newValue }
-    }
-    
-    public var bootRegisteredFontChanged: UIFont?
-    public var bootRegisteredFontConstant: UIFont {
-        get { return .systemFont(ofSize: 14.0) }
-        set { bootRegisteredFontChanged = newValue }
-    }
-    
-    public func availableFonts() -> [String: [String]] {
-        var fonts: [String: [String]] = [:]
-        
-        UIFont.familyNames.forEach({ familyName in
-            let fontNames = UIFont.fontNames(forFamilyName: familyName)
-            fonts[familyName] = fontNames
-        })
-        return fonts
-    }
-    
-    public func getInstalledFontsFrom(
-        bundle: Bundle = .main,
-        completion: (([String]) -> Void)? = nil
-    ) {
-        getInstalledFontsFrom(at: bundle.bundleURL, completion: completion)
-    }
-
-    public func getInstalledFontsFrom(
-        at url: URL?,
-        completion: (([String]) -> Void)? = nil
-    ) {
-        guard let url = url else { completion?([])
-            return
-        }
-
-        var loadedFonts: [sdkFontClass] = []
-        loadedFonts += SdkConfiguration.loadFonts(at: url)
-        loadedFonts += SdkConfiguration.loadFontsFromBundles(at: url)
-
-        let alreadyLoaded = allLoadedFonts.map { $0.url }
-        let justLoaded = loadedFonts.map { $0.url }
-        for i in 0 ..< justLoaded.count {
-            let justLoadedUrl = justLoaded[i]
-            if alreadyLoaded.firstIndex(of: justLoadedUrl) == nil {
-                allLoadedFonts.append(loadedFonts[i])
-            }
-        }
-
-        completion?(loadedFonts.map { $0.name })
-    }
 }
 
+//DEPRECATED
 
 private extension SdkConfiguration {
     
@@ -564,23 +924,6 @@ public extension UIFont {
         self.init(name: fontName, size: fontDescriptor.pointSize)
     }
 }
-            
-         
-public enum SdkSupportedFontExtensions: String {
-    case trueType = "ttf"
-    case openType = "otf"
-
-    init?(_ ver: String?) {
-        if SdkSupportedFontExtensions.trueType.rawValue == ver {
-            self = .trueType
-        } else if SdkSupportedFontExtensions.openType.rawValue == ver {
-            self = .openType
-        } else {
-            return nil
-        }
-    }
-}
-
 
 extension SdkConfiguration {
     class func fonts(_ contents: [URL]) -> [sdkFontClass] {
@@ -599,5 +942,65 @@ extension SdkConfiguration {
         if comps.count < 2 { return nil }
         let fname = comps[0 ..< comps.count - 1].joined(separator: ".")
         return SdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
+    }
+}
+
+
+//public enum SdkStyleApperanceTypes: String, SdkApperanceViewScheme {
+//    case light
+//    case dark
+//    case blue
+//}
+
+enum CustomFonts: String, SdkApperanceViewScheme {
+    case storiesBlockTextFont
+    case defaultButtonTextFont
+    case productsButtonTextFont
+}
+
+public struct normalFonts: SdkStyleCustomFonts {
+    public var customFonts = [CustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 17),
+                       CustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 12),
+                       CustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 22) ]
+}
+
+struct largeFonts: SdkStyleCustomFonts {
+    let ss = sdkElement_storiesBlockColorScheme.self
+    public var customFonts = [CustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 20),
+                       CustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 15),
+                       CustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 27) ]
+}
+
+enum FontSizes: String, SdkApperanceViewScheme {
+    case normal
+    case large
+}
+
+extension UIColor {
+    convenience init(hexString: String, alpha: CGFloat = 1.0) {
+        let hexString: String = hexString.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
+        let scanner = Scanner(string: hexString)
+        if (hexString.hasPrefix("#")) {
+            scanner.scanLocation = 1
+        }
+        var color: UInt32 = 0
+        scanner.scanHexInt32(&color)
+        let mask = 0x000000FF
+        let r = Int(color >> 16) & mask
+        let g = Int(color >> 8) & mask
+        let b = Int(color) & mask
+        let red   = CGFloat(r) / 255.0
+        let green = CGFloat(g) / 255.0
+        let blue  = CGFloat(b) / 255.0
+        self.init(red:red, green:green, blue:blue, alpha:alpha)
+    }
+    func toHexString() -> String {
+        var r:CGFloat = 0
+        var g:CGFloat = 0
+        var b:CGFloat = 0
+        var a:CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+        let rgb:Int = (Int)(r*255)<<16 | (Int)(g*255)<<8 | (Int)(b*255)<<0
+        return String(format:"#%06x", rgb)
     }
 }

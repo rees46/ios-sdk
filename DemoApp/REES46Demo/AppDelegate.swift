@@ -44,14 +44,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
         })
         
-//        //SDK Default Settings
+//        //SDK Configuration Init Font First
 //        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: "otf")
 //
-//        sdk.configuration().stories.setStoriesBlock(fontName: "Museo", fontSize: 13.0, textColor: "#1A900C", backgroundColor: "#D5F5E3")
-//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo", fontSize: 17.0, textColor: "#A3E4D7", backgroundColor: "#900C3F")
-//        sdk.configuration().stories.setSlideProductsButton(fontName: "Museo", fontSize: 19.0, textColor: "#7D3C98", backgroundColor: "#7CFC00")
+//        //SDK Configuration Default font & colors Settings
+//        sdk.configuration().stories.setStoriesBlock(fontName: "Museo",
+//                                                    fontSize: 15.0, textColor: "#5ec169",
+//                                                    backgroundColor: "#ffffff",
+//                                                    darkModeTextColor: "#ffffff",
+//                                                    darkModeBackgroundColor: "#000000")
+//
+//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo",
+//                                                          fontSize: 19.0,
+//                                                          textColor: "#FFFFFF",
+//                                                          backgroundColor: "#5ec169",
+//                                                          darkModeTextColor: "#000000",
+//                                                          darkModeBackgroundColor: "#ffffff")
+//
+//        sdk.configuration().stories.setSlideProductsButton(fontName: "Museo",
+//                                                           fontSize: 19.0,
+//                                                           textColor: "#FFFFFF",
+//                                                           backgroundColor: "#000000",
+//                                                           darkModeTextColor: "#000000",
+//                                                           darkModeBackgroundColor: "#ffffff")
+//
 //        sdk.configuration().stories.setProductsCard(fontName: "Museo")
-
+        
         print("1. Register push")
         notificationService = NotificationService(sdk: sdk)
         notificationService?.pushActionDelegate = self

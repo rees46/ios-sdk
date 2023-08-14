@@ -360,13 +360,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["story_id"] = storyId
                 params["slide_id"] = slideId
                 params["code"] = self.storiesCode
-                path = "stories/push"
+                path = "stories/track"
                 paramEvent = "view"
             case let .slideClick(storyId, slideId):
                 params["story_id"] = storyId
                 params["slide_id"] = slideId
                 params["code"] = self.storiesCode
-                path = "stories/push"
+                path = "stories/track"
                 paramEvent = "click"
             case let .search(query):
                 params["search_query"] = query
@@ -840,7 +840,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func manageSubscription(email: String? = nil, phone: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+    func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramID: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         
         let path = "subscriptions/manage"
         var params: [String: Any] = [
@@ -861,19 +861,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             params["phone"] = phone
         }
         
-        if let emailBulk               = emailBulk            { params["email_bulk"]              = emailBulk }
-        if let emailChain              = emailChain           { params["email_chain"]             = emailChain }
-        if let emailTransactional      = emailTransactional   { params["email_transactional"]     = emailTransactional }
-        if let smsBulk                 = smsBulk              { params["sms_bulk"]                = smsBulk }
-        if let smsChain                = smsChain             { params["sms_chain"]               = smsChain }
-        if let smsTransactional        = smsTransactional     { params["sms_transactional"]       = smsTransactional }
-        if let webPushBulk             = webPushBulk          { params["web_push_bulk"]           = webPushBulk }
-        if let webPushChain            = webPushChain         { params["web_push_chain"]          = webPushChain }
-        if let webPushTransactional    = webPushTransactional { params["web_push_transactional"]  = webPushTransactional }
-        if let mobilePushBulk          = mobilePushBulk          { params["mobile_push_bulk"]             = mobilePushBulk }
-        if let mobilePushChain         = mobilePushChain         { params["mobile_push_chain"]            = mobilePushChain }
-        if let mobilePushTransactional = mobilePushTransactional { params["mobile_push_transactional"]    = mobilePushTransactional }
-
+        if let userExternalId          = userExternalId             { params["external_id"]                 = userExternalId }
+        if let userLoyaltyId           = userLoyaltyId              { params["loyalty_id"]                  = userLoyaltyId }
+        if let telegramID          = telegramID             { params["telegram_id"]                 = telegramID }
+        if let emailBulk               = emailBulk                  { params["email_bulk"]                  = emailBulk }
+        if let emailChain              = emailChain                 { params["email_chain"]                 = emailChain }
+        if let emailTransactional      = emailTransactional         { params["email_transactional"]         = emailTransactional }
+        if let smsBulk                 = smsBulk                    { params["sms_bulk"]                    = smsBulk }
+        if let smsChain                = smsChain                   { params["sms_chain"]                   = smsChain }
+        if let smsTransactional        = smsTransactional           { params["sms_transactional"]           = smsTransactional }
+        if let webPushBulk             = webPushBulk                { params["web_push_bulk"]               = webPushBulk }
+        if let webPushChain            = webPushChain               { params["web_push_chain"]              = webPushChain }
+        if let webPushTransactional    = webPushTransactional       { params["web_push_transactional"]      = webPushTransactional }
+        if let mobilePushBulk          = mobilePushBulk             { params["mobile_push_bulk"]            = mobilePushBulk }
+        if let mobilePushChain         = mobilePushChain            { params["mobile_push_chain"]           = mobilePushChain }
+        if let mobilePushTransactional = mobilePushTransactional    { params["mobile_push_transactional"]   = mobilePushTransactional }
         self.postRequest(path: path, params: params, completion: { result in
             switch result {
             case .success(_):
@@ -1008,7 +1010,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return jsonDecoder
     }()
     
-    func configuration() -> SdkConfiguration.Type {
+    internal func configuration() -> SdkConfiguration.Type {
         return SdkConfiguration.self
     }
 

@@ -73,6 +73,6 @@ public struct Loader {
 
 extension Loader: Equatable {}
 
-public func ==(lhs: Loader, rhs: Loader) -> Bool {
+public func == (lhs: Loader, rhs: Loader) -> Bool {
     return lhs.task == rhs.task
 }

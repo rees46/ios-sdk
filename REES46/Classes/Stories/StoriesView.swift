@@ -12,6 +12,7 @@ public protocol StoriesViewLinkProtocol: AnyObject {
     func sendStructSelectedStorySlide(storySlide: StoriesElement)
     func structOfSelectedCarouselProduct(product: StoriesProduct)
     func reloadStoriesCollectionSubviews()
+    func updateBgColor()
 }
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
@@ -72,7 +73,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     
     @objc
     func willEnterForeground() {
-        //collectionView.reloadData()
+        //
     }
 
     @objc
@@ -80,10 +81,44 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         //
     }
     
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        if #available(iOS 12.0, *) {
+            super.traitCollectionDidChange(previousTraitCollection)
+            let userInterfaceStyle = traitCollection.userInterfaceStyle
+            if UIApplication.shared.applicationState == .inactive {
+                switch userInterfaceStyle {
+                case .unspecified:
+                    DispatchQueue.main.async {
+                        self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                        self.reloadStoriesCollectionSubviews()
+                    }
+                case .light:
+                    DispatchQueue.main.async {
+                        self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                        self.reloadStoriesCollectionSubviews()
+                    }
+                case .dark:
+                    DispatchQueue.main.async {
+                        self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
+                        self.reloadStoriesCollectionSubviews()
+                    }
+                @unknown default:
+                    break
+                }
+            }
+        } else {
+            DispatchQueue.main.async {
+                self.collectionView.backgroundColor = .white
+                self.reloadStoriesCollectionSubviews()
+            }
+        }
+    }
+    
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
+        self.setBgColor()
         UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
     }
     
@@ -92,6 +127,25 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         self.mainVC = mainVC
         self.code = code
         loadStoriesData()
+    }
+    
+    private func setBgColor() {
+        if #available(iOS 13.0, *) {
+            if SdkConfiguration.isDarkMode {
+                DispatchQueue.main.async {
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
+                    self.reloadStoriesCollectionSubviews()
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                    self.reloadStoriesCollectionSubviews()
+                }
+            }
+        } else {
+            self.collectionView.backgroundColor = .white
+            self.reloadStoriesCollectionSubviews()
+        }
     }
     
     private func setBgColor(color: String) {
@@ -256,6 +310,10 @@ extension StoriesView: StoriesViewLinkProtocol {
             self.collectionView.layoutIfNeeded()
             self.collectionView.reloadData()
         }
+    }
+    
+    public func updateBgColor() {
+        self.setBgColor()
     }
     
     public func printSlideObject(objElementClass: StoriesElement) {
