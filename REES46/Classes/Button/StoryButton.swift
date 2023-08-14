@@ -23,6 +23,7 @@ class StoryButton: UIButton {
 //
         if SdkConfiguration.stories.slideDefaultButtonFontNameChanged != nil {
             if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != 0.0 {
+                //self.titleLabel?.font = .systemFont(ofSize: 19.0)
                 self.titleLabel?.font = SdkStyle.shared.currentColorScheme?.defaultButtonSelectFontName.withSize(SdkStyle.shared.currentColorScheme!.defaultButtonSelectFontSize)
             } else {
                 self.titleLabel?.font = SdkStyle.shared.currentColorScheme?.defaultButtonSelectFontName.withSize(19.0)
@@ -30,9 +31,9 @@ class StoryButton: UIButton {
         } else {
             if let backendFont = buttonData.textBold {
                 if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != nil {
-                    self.titleLabel?.font = .systemFont(ofSize: SdkStyle.shared.currentColorScheme!.defaultButtonSelectFontSize, weight: backendFont ? .bold : .regular)
+                    self.titleLabel?.font = .systemFont(ofSize: SdkStyle.shared.currentColorScheme!.defaultButtonSelectFontSize, weight: .bold)
                 } else {
-                    self.titleLabel?.font = .systemFont(ofSize: 19.0, weight: backendFont ? .bold : .regular)
+                    self.titleLabel?.font = .systemFont(ofSize: 17.0, weight: backendFont ? .bold : .regular)
                 }
             } else {
                 if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != nil {
@@ -77,8 +78,7 @@ class StoryButton: UIButton {
                 }
             } else {
                 if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light != nil {
-                    self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light
-                    //self.backgroundColor = SdkStyle.shared.currentColorScheme!.defaultButtonBackgroundColor
+                    self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorConstant_Light
                 } else {
                     if let bgColor = buttonData.background {
                         let color = bgColor.hexToRGB()

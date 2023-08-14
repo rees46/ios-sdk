@@ -14,13 +14,20 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
     public static let stories: SdkConfiguration = SdkConfiguration()
     
     public init() {}
-    public private(set) static var fontFamily: SdkFontFamily!
-    lazy var _fontNames = originalFontNames
-    public var fontNames: [String] { return _fontNames }
+    
     public var allLoadedFonts: [sdkFontClass] = []
-
+    
     public func registerFont(fileName: String, fileExtension: String) {
-        let pathForResourceString = Bundle.main.path(forResource: fileName, ofType: fileExtension)
+        
+        //sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.ttf.rawValue)
+        let pathForResourceString = Bundle.main.path(forResource: fileName,
+                                                     ofType: fileExtension)
+        guard pathForResourceString != nil else {
+            print("SDK Failed! locate custom font \(fileName) in App Bundle!")
+            //fatalError("SDK Failed! locate custom fon \(fileName) in App Bundle!")
+            return
+        }
+        
         if pathForResourceString != nil {
             let fontData = NSData(contentsOfFile: pathForResourceString!)
             let dataProvider = CGDataProvider(data: fontData!)
@@ -33,21 +40,27 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
                 print("SDK Success registering font")
             }
         }
+        
+        SdkFontInjector.manager.registerFontNameWithExtension(fileName: fileName, fileExtension: fileExtension)
     }
     
-    public func registerFont(fileName: String) {
-        //sdk.configuration().stories?.registerFont(fileName: "Roboto-Italic.ttf")
+    public func registerFont(fileNameWithoutExtension: String) {
+        //EASY
+        //sdk.configuration().stories.registerFont(fileNameWithoutExtension: "Museo900")
         var parsedFont: (sdkFontName, sdkFontExtension)?
 
-        if fileName.contains(SdkSupportedFontExtensions.trueType.rawValue) || fileName.contains(SdkSupportedFontExtensions.openType.rawValue) {
-            parsedFont = SdkConfiguration.fontExt(fromName: fileName)
+        if fileNameWithoutExtension.contains(SdkFontInjector.sdkSupportedFontExtensions.trueType.rawValue) || fileNameWithoutExtension.contains(SdkFontInjector.sdkSupportedFontExtensions.openType.rawValue) {
+            parsedFont = SdkConfiguration.fontExt(fromName: fileNameWithoutExtension)
         } else {
-            let tmpName = fileName + "." + SdkSupportedFontExtensions.trueType.rawValue
+            var tmpName = fileNameWithoutExtension + "." + SdkFontInjector.sdkSupportedFontExtensions.trueType.rawValue
             parsedFont = SdkConfiguration.fontExt(fromName: tmpName)
+            if parsedFont == nil {
+                tmpName = fileNameWithoutExtension + "." + SdkFontInjector.sdkSupportedFontExtensions.openType.rawValue
+                parsedFont = SdkConfiguration.fontExt(fromName: tmpName)
+            }
         }
 
         if let parsedFont = parsedFont {
-
             let pathForResourceString = Bundle.main.path(forResource: parsedFont.0, ofType: parsedFont.1)
             if pathForResourceString != nil {
                 let fontData = NSData(contentsOfFile: pathForResourceString!)
@@ -84,13 +97,8 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
             } else {
                 storiesBlockFontNameChanged = fontName
             }
-            //var testFont = UIFont(name: fontName!, size: 14.0)
-            fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
-        
-            SdkStyle.shared.register(fonts: normalFonts(), for: FontSizes.normal)
-            SdkStyle.shared.register(fonts: largeFonts(), for: FontSizes.large)
-            SdkStyle.shared.switchFontSize(to: FontSizes.normal)
             
+            fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
 //            _ = {
 //                $0.isUserInteractionEnabled = true
 //                $0.textColor = storiesBlockTextColorChanged
@@ -168,7 +176,7 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
                 SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockLight, animated: false)
             }
         } else {
-            //
+            SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockLight, animated: false)
         }
     }
     
@@ -185,6 +193,7 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
             slideDefaultButtonTextColorChanged_Light = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
         } else {
             slideDefaultButtonTextColorChanged_Light = nil
+            slideDefaultButtonTextColorConstant_Light = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
         }
         
         let defaultTextColorDark = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant_Dark)
@@ -243,7 +252,10 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
             }
         }
         
-        let storedStoriesBlockSelectFontName = SdkStyle.shared.currentColorScheme?.storiesBlockSelectFontName
+        var storedStoriesBlockSelectFontName = SdkStyle.shared.currentColorScheme?.storiesBlockSelectFontName
+        if storedStoriesBlockSelectFontName == nil {
+            storedStoriesBlockSelectFontName = .systemFont(ofSize: 15.0, weight: .semibold)
+        }
         let storedStoriesBlockFontColor = SdkStyle.shared.currentColorScheme?.storiesBlockFontColor
         let storedStoriesBlockBackgroundColor = SdkStyle.shared.currentColorScheme?.storiesBlockBackgroundColor
         
@@ -295,7 +307,14 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
                 SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockLight, animated: false)
             }
         } else {
-            //
+            if fontName != nil {
+                if fontName == slideDefaultButtonFontNameConstant {
+                    slideDefaultButtonFontNameChanged = slideDefaultButtonFontNameConstant
+                } else {
+                    slideDefaultButtonFontNameChanged = fontName
+                }
+            }
+            SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockLight, animated: false)
         }
     }
     
@@ -351,47 +370,9 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
     }
     
-    public enum InstalledCustomFonts: String, SdkApperanceViewScheme {
-        case storiesBlockTextFont
-        case defaultButtonTextFont
-        case productsButtonTextFont
-    }
-
-    public struct normalFonts: SdkStyleCustomFonts {
-        public var customFonts = [InstalledCustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 17),
-                                 InstalledCustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 12),
-                                 InstalledCustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 22) ]
-    }
-
-    public struct largeFonts: SdkStyleCustomFonts {
-        public var customFonts = [InstalledCustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 20),
-                                InstalledCustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 15),
-                                InstalledCustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 27) ]
-    }
-
-    public enum FontSizes: String, SdkApperanceViewScheme {
-        case normal
-        case large
-    }
-    
-    public struct storiesBlockLightSdkStyleApperance: sdkElement_storiesBlockColorScheme {
-        public var storiesBlockBackgroundColor = UIColor.blue
-        public var storiesBlockFontColor = UIColor.green
-    }
-    
-    public enum SdkSupportedFontExtensions: String {
-        case trueType = "ttf"
-        case openType = "otf"
-
-        init?(_ ver: String?) {
-            if SdkSupportedFontExtensions.trueType.rawValue == ver {
-                self = .trueType
-            } else if SdkSupportedFontExtensions.openType.rawValue == ver {
-                self = .openType
-            } else {
-                return nil
-            }
-        }
+    final class func fontExt(fromName name: String) -> (sdkFontName, sdkFontExtension) {
+        let components = name.split{$0 == "."}.map { String($0) }
+        return (components[0], components[1])
     }
 
     public struct lightSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
@@ -522,19 +503,13 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         case custom
     }
     
-    @available(iOS 13.0, *)
+    @available(iOS 12.0, *)
     public static var isDarkMode: Bool {
-        return UITraitCollection.current.userInterfaceStyle == .dark
-    }
-    
-    public func availableFonts() -> [String: [String]] {
-        var fonts: [String: [String]] = [:]
-        
-        UIFont.familyNames.forEach({ familyName in
-            let fontNames = UIFont.fontNames(forFamilyName: familyName)
-            fonts[familyName] = fontNames
-        })
-        return fonts
+        if #available(iOS 13.0, *) {
+            return UITraitCollection.current.userInterfaceStyle == .dark
+        } else {
+            return .random()
+        }
     }
     
     public func getInstalledFontsFrom(bundle: Bundle = .main,
@@ -543,8 +518,8 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
     }
 
     public func getInstalledFontsFrom(at url: URL?,
-        completion: (([String]) -> Void)? = nil
-    ) {
+                                      completion: (([String]) -> Void)? = nil) {
+        
         guard let url = url else { completion?([])
             return
         }
@@ -690,28 +665,6 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         set { bootRegisteredFontChanged = newValue }
     }
     
-    public var originalFontNames = [
-        "Open Sans",
-        "Open Sans Bold",
-        "Open Sans Bold Italic",
-        "Open Sans Extra Bold",
-        "Open Sans Extra Bold Italic",
-        "Open Sans Italic",
-        "Open Sans Light",
-        "Open Sans Semi Bold",
-        "Open Sans Semi Bold Italic",
-        "Open SansLight Italic",
-    ]
-    
-    public func overrideSystemFont(fontName: String) {
-        overrideSystemFont(fontFamily: SdkFontFamily(regular: fontName))
-    }
-    
-    public func overrideSystemFont(fontFamily: SdkFontFamily) {
-        SdkConfiguration.fontFamily = fontFamily
-        SdkConfiguration.exchangeOriginalUIFontMethodsWithCustomMethods()
-    }
-    
     public class func customFont(name: String, size: CGFloat) -> UIFont {
         let sizeWithOffset = size
         guard let sFont = UIFont(name: name, size: sizeWithOffset) else {
@@ -726,37 +679,8 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
     }
 }
 
-//DEPRECATED
 
 private extension SdkConfiguration {
-    
-    @objc class func customSystemFont(ofSize size: CGFloat) -> UIFont {
-        return customFont(name: SdkConfiguration.fontFamily.regular, size: size)
-    }
-    
-    @objc class func customBoldSystemFont(ofSize size: CGFloat) -> UIFont {
-        return customFont(name: SdkConfiguration.fontFamily.bold, size: size)
-    }
-    
-    @objc class func customSystemFont(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont {
-        switch weight {
-            case .ultraLight: return customFont(name: SdkConfiguration.fontFamily.ultraLight, size: size)
-            case .thin:       return customFont(name: SdkConfiguration.fontFamily.thin,       size: size)
-            case .light:      return customFont(name: SdkConfiguration.fontFamily.light,      size: size)
-            case .regular:    return customFont(name: SdkConfiguration.fontFamily.regular,    size: size)
-            case .medium:     return customFont(name: SdkConfiguration.fontFamily.medium,     size: size)
-            case .semibold:   return customFont(name: SdkConfiguration.fontFamily.semibold,   size: size)
-            case .bold:       return customFont(name: SdkConfiguration.fontFamily.bold,       size: size)
-            case .heavy:      return customFont(name: SdkConfiguration.fontFamily.heavy,      size: size)
-            case .black:      return customFont(name: SdkConfiguration.fontFamily.black,      size: size)
-            default:          return customFont(name: SdkConfiguration.fontFamily.regular,    size: size)
-        }
-    }
-    
-    @objc class func customItalicSystemFont(ofSize size: CGFloat) -> UIFont {
-        return customFont(name: SdkConfiguration.fontFamily.oblique, size: size)
-    }
-    
     class func loadFonts(at url: URL) -> [sdkFontClass] {
         var loadedFonts: [sdkFontClass] = []
 
@@ -842,88 +766,12 @@ private extension SdkConfiguration {
         _ = UIFont.systemFont(ofSize: 7)
     }
     
-    final class func fontExt(fromName name: String) -> (sdkFontName, sdkFontExtension) {
-        let components = name.split{$0 == "."}.map { String($0) }
-        return (components[0], components[1])
-    }
+//    final class func fontExt(fromName name: String) -> (sdkFontName, sdkFontExtension) {
+//        let components = name.split{$0 == "."}.map { String($0) }
+//        return (components[0], components[1])
+//    }
 }
 
-
-private extension SdkConfiguration {
-    
-    class func exchangeOriginalUIFontMethodsWithCustomMethods() {
-        func exchangeOriginalUIFontMethodsWithCustomMethods() {
-            
-            SdkFontInstaller.exchange(
-                classMethod: #selector(UIFont.systemFont(ofSize:)), of: UIFont.self,
-                with: #selector(SdkConfiguration.customSystemFont(ofSize:)), of: SdkFontInstaller.self
-            )
-            
-            SdkFontInstaller.exchange(
-                classMethod: #selector(UIFont.boldSystemFont(ofSize:)), of: UIFont.self,
-                with: #selector(SdkConfiguration.customBoldSystemFont(ofSize:)), of: SdkFontInstaller.self
-            )
-            
-            SdkFontInstaller.exchange(
-                classMethod: #selector(UIFont.systemFont(ofSize:weight:)), of: UIFont.self,
-                with: #selector(SdkConfiguration.customSystemFont(ofSize:weight:)), of: SdkFontInstaller.self
-            )
-            
-            SdkFontInstaller.exchange(
-                classMethod: #selector(UIFont.italicSystemFont(ofSize:)), of: UIFont.self,
-                with: #selector(SdkConfiguration.customItalicSystemFont(ofSize:)), of: SdkFontInstaller.self
-            )
-            
-            SdkFontInstaller.exchange(
-                instanceMethod: #selector(UIFontDescriptor.init(coder:)), of: UIFont.self,
-                with: #selector(UIFont.init(customCoder:)), of: UIFont.self
-            )
-        }
-    }
-    
-}
-
-@objc
-public extension UIFont {
-    @objc convenience init?(customCoder aDecoder: NSCoder) {
-        guard let fontDescriptor = aDecoder.decodeObject(forKey: "UIFontDescriptor") as? UIFontDescriptor else {
-            self.init(coder: aDecoder)
-            return
-        }
-        
-        guard let fontUIUsageAttribute = fontDescriptor.fontAttributes[.usage] as? String else {
-            self.init(coder: aDecoder)
-            return
-        }
-
-        var fontFamily: SdkFontFamily {
-            return SdkConfiguration.fontFamily
-        }
-
-        var fontName: String {
-            guard let fontDescriptorUsage = UIFontDescriptorUsage(rawValue: fontUIUsageAttribute) else {
-                print("SDK Undefined usage attribute: \(fontUIUsageAttribute)")
-                return fontFamily.regular
-            }
-            
-            switch fontDescriptorUsage {
-                case .ultraLight:    return fontFamily.ultraLight
-                case .thin:          return fontFamily.thin
-                case .light:         return fontFamily.light
-                case .regular:       return fontFamily.regular
-                case .oblique:       return fontFamily.oblique
-                case .medium:        return fontFamily.medium
-                case .demi:          return fontFamily.semibold
-                case .emphasized:    return fontFamily.emphasized
-                case .bold:          return fontFamily.bold
-                case .heavy:         return fontFamily.heavy
-                case .black:         return fontFamily.black
-            }
-        }
-
-        self.init(name: fontName, size: fontDescriptor.pointSize)
-    }
-}
 
 extension SdkConfiguration {
     class func fonts(_ contents: [URL]) -> [sdkFontClass] {
@@ -941,39 +789,8 @@ extension SdkConfiguration {
         let comps = name.components(separatedBy: ".")
         if comps.count < 2 { return nil }
         let fname = comps[0 ..< comps.count - 1].joined(separator: ".")
-        return SdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
+        return SdkFontInjector.sdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
     }
-}
-
-
-//public enum SdkStyleApperanceTypes: String, SdkApperanceViewScheme {
-//    case light
-//    case dark
-//    case blue
-//}
-
-enum CustomFonts: String, SdkApperanceViewScheme {
-    case storiesBlockTextFont
-    case defaultButtonTextFont
-    case productsButtonTextFont
-}
-
-public struct normalFonts: SdkStyleCustomFonts {
-    public var customFonts = [CustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 17),
-                       CustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 12),
-                       CustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 22) ]
-}
-
-struct largeFonts: SdkStyleCustomFonts {
-    let ss = sdkElement_storiesBlockColorScheme.self
-    public var customFonts = [CustomFonts.storiesBlockTextFont.SdkApperanceViewScheme()    : UIFont.systemFont(ofSize: 20),
-                       CustomFonts.defaultButtonTextFont.SdkApperanceViewScheme() : UIFont.systemFont(ofSize: 15),
-                       CustomFonts.productsButtonTextFont.SdkApperanceViewScheme()   : UIFont.systemFont(ofSize: 27) ]
-}
-
-enum FontSizes: String, SdkApperanceViewScheme {
-    case normal
-    case large
 }
 
 extension UIColor {

@@ -91,19 +91,26 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
                     DispatchQueue.main.async {
                         self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
                         self.reloadStoriesCollectionSubviews()
+                        self.updateBgColor()
                     }
                 case .light:
                     DispatchQueue.main.async {
                         self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
                         self.reloadStoriesCollectionSubviews()
+                        self.updateBgColor()
                     }
                 case .dark:
                     DispatchQueue.main.async {
                         self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
                         self.reloadStoriesCollectionSubviews()
+                        self.updateBgColor()
                     }
                 @unknown default:
                     break
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.updateBgColor()
                 }
             }
         } else {
@@ -313,7 +320,10 @@ extension StoriesView: StoriesViewLinkProtocol {
     }
     
     public func updateBgColor() {
-        self.setBgColor()
+        DispatchQueue.main.async {
+            self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
+            self.setBgColor()
+        }
     }
     
     public func printSlideObject(objElementClass: StoriesElement) {

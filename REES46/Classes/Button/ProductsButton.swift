@@ -115,8 +115,7 @@ protocol CustomProductButtonDelegate: AnyObject {
                 tintColor = .black
             }
         } else {
-            titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
-            
+            titleLabel?.font = .systemFont(ofSize: 17.0, weight: .semibold)
             self.layer.cornerRadius = layer.frame.size.height/2
             self.layer.masksToBounds = true
         }

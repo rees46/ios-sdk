@@ -131,7 +131,7 @@ extension UIColor {
             let b: CGFloat = components?[0] ?? 0.0
 
             let hexString = String.init(format: "#%02lX%02lX%02lX", lroundf(Float(r * 255)), lroundf(Float(g * 255)), lroundf(Float(b * 255)))
-            print(hexString)
+            //print(hexString)
             return hexString
         } else {
             let r: CGFloat = components?[0] ?? 0.0
@@ -145,15 +145,15 @@ extension UIColor {
     }
 }
 
-extension UIColor {
 
+extension UIColor {
     static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
     static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
 }
 
 
 extension Bundle {
-    func decode<T: Codable>(_ file: String) -> T {
+    public func decodeSdkClassFromBundle<T: Codable>(_ file: String) -> T {
         guard let url = self.url(forResource: file, withExtension: nil) else {
             fatalError("Failed to locate \(file) in  bundle")
         }

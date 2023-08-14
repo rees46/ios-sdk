@@ -45,25 +45,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         })
         
 //        //SDK Configuration Init Font First
-//        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: "otf")
-//
+//        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.otf.rawValue) //ttf!
+//        
 //        //SDK Configuration Default font & colors Settings
 //        sdk.configuration().stories.setStoriesBlock(fontName: "Museo",
-//                                                    fontSize: 15.0, textColor: "#5ec169",
+//                                                    fontSize: 16.0,
+//                                                    textColor: "#5ec169",
 //                                                    backgroundColor: "#ffffff",
 //                                                    darkModeTextColor: "#ffffff",
 //                                                    darkModeBackgroundColor: "#000000")
 //
 //        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo",
 //                                                          fontSize: 19.0,
-//                                                          textColor: "#FFFFFF",
+//                                                          textColor: "#5ec169",
 //                                                          backgroundColor: "#5ec169",
 //                                                          darkModeTextColor: "#000000",
 //                                                          darkModeBackgroundColor: "#ffffff")
 //
 //        sdk.configuration().stories.setSlideProductsButton(fontName: "Museo",
-//                                                           fontSize: 19.0,
-//                                                           textColor: "#FFFFFF",
+//                                                           fontSize: 17.0,
+//                                                           textColor: "#ffffff",
 //                                                           backgroundColor: "#000000",
 //                                                           darkModeTextColor: "#000000",
 //                                                           darkModeBackgroundColor: "#ffffff")

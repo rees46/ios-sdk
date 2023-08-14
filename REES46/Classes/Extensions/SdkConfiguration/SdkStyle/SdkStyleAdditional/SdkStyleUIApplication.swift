@@ -19,11 +19,11 @@ public extension UIApplication {
    
     func setStoriesViewBackgroundColor(color: UIColor) {
        _ = {
-           $0.backgroundColor = .blue
+           $0.backgroundColor = .white
        }(UICollectionView.appearance())
     }
    
-    func setupFullAppearance(_ tintColor: UIColor, barTintColor: UIColor) {
+    func setupFullAppearanceTheme(_ tintColor: UIColor, barTintColor: UIColor) {
        _ = {
            $0.barTintColor = barTintColor
            $0.tintColor = tintColor

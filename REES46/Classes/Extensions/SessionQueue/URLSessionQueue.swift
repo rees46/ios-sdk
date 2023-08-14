@@ -87,17 +87,5 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
         dataTasks.forEach { dataTask in
             dataTask.sessionTask.resume()
         }
-        
-//        queue.execute(taskCompleted: { (task, error) in
-//            debugPrint("Task ids completed: \(task.identifier) with error: \(error)")
-//        }) { [weak self] completedTasks in
-//            guard let strongSelf = self else { return }
-//
-//            debugPrint(strongSelf.usersDataTask.taskElements.map( { $0.name }))
-//            debugPrint("All tasks now completed")
-//        }
     }
-    
-    
-    
 }

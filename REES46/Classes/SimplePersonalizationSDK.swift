@@ -215,7 +215,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-    func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramID: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             
             let path = "profile/set"
@@ -267,8 +267,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 paramsTemp["vk_id"] = String(vkID)
             }
             
-            if let telegramID = telegramID {
-                paramsTemp["telegram_id"] = String(telegramID)
+            if let telegramId = telegramId {
+                paramsTemp["telegram_id"] = String(telegramId)
             }
             
             if let userId = userId {
@@ -840,7 +840,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramID: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+    func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramId: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         
         let path = "subscriptions/manage"
         var params: [String: Any] = [
@@ -863,7 +863,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         if let userExternalId          = userExternalId             { params["external_id"]                 = userExternalId }
         if let userLoyaltyId           = userLoyaltyId              { params["loyalty_id"]                  = userLoyaltyId }
-        if let telegramID          = telegramID             { params["telegram_id"]                 = telegramID }
+        if let telegramId              = telegramId                 { params["telegram_id"]                 = telegramId }
         if let emailBulk               = emailBulk                  { params["email_bulk"]                  = emailBulk }
         if let emailChain              = emailChain                 { params["email_chain"]                 = emailChain }
         if let emailTransactional      = emailTransactional         { params["email_transactional"]         = emailTransactional }

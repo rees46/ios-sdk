@@ -161,21 +161,23 @@ private var collectionView: UICollectionView = {
             if UIApplication.shared.applicationState == .inactive {
                 switch userInterfaceStyle {
                 case .unspecified:
-                    let userInfo = ["url": "workingSlideUrl"] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
-                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
-                    self.collectionView.reloadData()
-                    self.sdkLinkDelegate?.updateBgColor()
+                        let userInfo = ["url": "workingSlideUrl"] as [String: Any]
+                        NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
+                        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                        self.sdkLinkDelegate?.updateBgColor()
+                        self.collectionView.reloadData()
                 case .light:
+                        let userInfo = ["url": "workingSlideUrl"] as [String: Any]
+                        NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
+                        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                        self.sdkLinkDelegate?.updateBgColor()
+                        self.collectionView.reloadData()
+                case .dark:
                     let userInfo = ["url": "workingSlideUrl"] as [String: Any]
                     NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
-                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
-                    self.collectionView.reloadData()
+                    self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
                     self.sdkLinkDelegate?.updateBgColor()
-                case .dark:
-                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
                     self.collectionView.reloadData()
-                    self.sdkLinkDelegate?.updateBgColor()
                 @unknown default:
                     break
                 }

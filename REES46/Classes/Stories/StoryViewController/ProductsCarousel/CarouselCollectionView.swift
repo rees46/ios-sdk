@@ -162,9 +162,10 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = dequeueReusableCell(withReuseIdentifier: CarouselCollectionViewCell.reuseId, for: indexPath) as! CarouselCollectionViewCell
         
-        let url = URL(string: cells[indexPath.row].picture)!
-        
-        cell.mainImageView.load.request(with: url)
+        let url = URL(string: cells[indexPath.row].picture)
+        if url != nil {
+            cell.mainImageView.load.request(with: url!)
+        }
         cell.nameLabel.text = cells[indexPath.row].name
         
         let mainProductText = cells[indexPath.row].oldprice_formatted
