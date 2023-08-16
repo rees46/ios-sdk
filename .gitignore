@@ -1,10 +1,12 @@
 .DS_Store
+.idea
+.swiftpm
 /.build
 /Packages
 /*.xcodeproj
-xcuserdata/
+/Packages
+/Pods
 DemoApp/Pods
 DemoApp/Podfile.lock
 DemoApp/REES46Demo/GoogleService-Info.plist
-.idea
-.swiftpm
+DemoApp/REES46App/GoogleService-Info.plist
