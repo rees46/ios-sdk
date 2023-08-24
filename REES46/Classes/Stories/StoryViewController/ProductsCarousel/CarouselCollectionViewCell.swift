@@ -3,7 +3,6 @@ import UIKit
 class CarouselCollectionViewCell: UICollectionViewCell {
     
     static let reuseId = "CarouselCollectionViewCell"
-    var sdk: PersonalizationSDK!
     
     let mainImageView: UIImageView = {
        let imageView = UIImageView()

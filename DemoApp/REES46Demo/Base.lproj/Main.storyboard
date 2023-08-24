@@ -3,7 +3,7 @@
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21678"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21679"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -21,60 +21,60 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6qN-Wn-uB2" customClass="UpdateButton" customModule="REES46Demo" customModuleProvider="target">
-                                <rect key="frame" x="167" y="351" width="90" height="40"/>
+                                <rect key="frame" x="152" y="351" width="120" height="40"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="90" id="UHd-0w-1Ht"/>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="120" id="UaL-RH-QDJ"/>
                                     <constraint firstAttribute="height" constant="40" id="XGJ-de-EuZ"/>
                                 </constraints>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="Update"/>
                             </button>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" scrollEnabled="NO" editable="NO" text="FCM TOKEN" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="xie-eK-LO0">
-                                <rect key="frame" x="60" y="132" width="294" height="33"/>
+                                <rect key="frame" x="45" y="132" width="326" height="33"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="textColor" systemColor="labelColor"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" scrollEnabled="NO" editable="NO" text="PUSH TOKEN" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="Xqd-20-S5Q">
-                                <rect key="frame" x="60" y="205" width="294" height="33"/>
+                                <rect key="frame" x="45" y="205" width="326" height="33"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="textColor" systemColor="labelColor"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" scrollEnabled="NO" editable="NO" text="DID TOKEN" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="lyo-LU-rYQ">
-                                <rect key="frame" x="60" y="278" width="294" height="33"/>
+                                <rect key="frame" x="45" y="278" width="326" height="33"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <color key="textColor" systemColor="labelColor"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                 <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
                             </textView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WVN-UL-gKy" customClass="StoriesView" customModule="REES46">
-                                <rect key="frame" x="0.0" y="632" width="414" height="130"/>
+                                <rect key="frame" x="0.0" y="632" width="414" height="150"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                 <constraints>
-                                    <constraint firstAttribute="height" constant="130" id="wqp-TX-QXY"/>
+                                    <constraint firstAttribute="height" constant="150" id="wqp-TX-QXY"/>
                                 </constraints>
                             </view>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstAttribute="trailingMargin" secondItem="xie-eK-LO0" secondAttribute="trailing" constant="40" id="3O5-76-N1S"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="Xqd-20-S5Q" secondAttribute="trailing" constant="40" id="6ib-3J-6yM"/>
-                            <constraint firstItem="Xqd-20-S5Q" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="BIB-Ve-qFf"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="xie-eK-LO0" secondAttribute="trailing" constant="23" id="3O5-76-N1S"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="Xqd-20-S5Q" secondAttribute="trailing" constant="23" id="6ib-3J-6yM"/>
+                            <constraint firstItem="Xqd-20-S5Q" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="25" id="BIB-Ve-qFf"/>
                             <constraint firstItem="WVN-UL-gKy" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="-20" id="Dqn-MI-dDT"/>
-                            <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="100" id="H7y-BV-oZN"/>
+                            <constraint firstItem="2fi-mo-0CV" firstAttribute="top" secondItem="WVN-UL-gKy" secondAttribute="bottom" constant="80" id="H7y-BV-oZN"/>
                             <constraint firstItem="Xqd-20-S5Q" firstAttribute="top" secondItem="xie-eK-LO0" secondAttribute="bottom" constant="40" id="KOM-98-h4H"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" constant="5" id="LbY-Jv-3Yl"/>
                             <constraint firstItem="lyo-LU-rYQ" firstAttribute="top" secondItem="Xqd-20-S5Q" secondAttribute="bottom" constant="40" id="Tgv-NX-s2w"/>
-                            <constraint firstItem="lyo-LU-rYQ" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" id="awM-uK-1xe"/>
+                            <constraint firstItem="lyo-LU-rYQ" firstAttribute="centerX" secondItem="kh9-bI-dsS" secondAttribute="centerX" constant="1" id="awM-uK-1xe"/>
                             <constraint firstAttribute="trailingMargin" secondItem="WVN-UL-gKy" secondAttribute="trailing" constant="-20" id="bFa-0g-Nv4"/>
-                            <constraint firstItem="xie-eK-LO0" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="lvv-rr-Ema"/>
-                            <constraint firstItem="lyo-LU-rYQ" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="40" id="tHs-pw-VCx"/>
+                            <constraint firstItem="xie-eK-LO0" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="25" id="lvv-rr-Ema"/>
+                            <constraint firstItem="lyo-LU-rYQ" firstAttribute="leading" secondItem="kh9-bI-dsS" secondAttribute="leadingMargin" constant="25" id="tHs-pw-VCx"/>
                             <constraint firstItem="6qN-Wn-uB2" firstAttribute="top" secondItem="lyo-LU-rYQ" secondAttribute="bottom" constant="40" id="wOv-fZ-q3z"/>
                             <constraint firstItem="xie-eK-LO0" firstAttribute="top" secondItem="jyV-Pf-zRb" secondAttribute="bottom" constant="40" id="xZa-gF-MMo"/>
-                            <constraint firstAttribute="trailingMargin" secondItem="lyo-LU-rYQ" secondAttribute="trailing" constant="40" id="yQ0-fB-yGm"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="lyo-LU-rYQ" secondAttribute="trailing" constant="23" id="yQ0-fB-yGm"/>
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="tEk-ws-ejp"/>

@@ -21,6 +21,7 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         updateButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
+        fontInterPreload()
         addStoriesObserver()
     }
     
@@ -55,6 +56,12 @@ class ViewController: UIViewController {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
+    
+    func fontInterPreload() {
+        fcmTokenLabel.font = SdkDynamicFont.dynamicFont(textStyle: .headline, weight: .bold)
+        pushTokenLabel .font = SdkDynamicFont.dynamicFont(textStyle: .headline, weight: .bold)
+        didLabel.font = SdkDynamicFont.dynamicFont(textStyle: .headline, weight: .bold)
+    }
 }
 
 
@@ -73,7 +80,7 @@ class ViewController: UIViewController {
     func updateButtonCornerRadius() {
         layer.backgroundColor = UIColor.white.cgColor
         layer.masksToBounds = true
-        layer.borderWidth = 1.2
+        layer.borderWidth = 1.4
         layer.borderColor = UIColor.systemBlue.cgColor
         layer.cornerRadius = frame.size.height / 2
     }

@@ -145,7 +145,7 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                              didFinishDownloadingTo location: URL) {
         
         let key = (downloadTask.originalRequest?.url?.absoluteString)!
-        if let download = self.ongoingDownloads[key]  {
+        if let download = self.ongoingDownloads[key] {
             if let response = downloadTask.response {
                 let statusCode = (response as! HTTPURLResponse).statusCode
                 

@@ -46,10 +46,14 @@ class StoryButton: UIButton {
         
         self.setTitle(buttonData.title ?? "", for: .normal)
         
-        self.layer.cornerRadius = CGFloat(buttonData.cornerRadius)
+        if SdkConfiguration.stories.defaultButtonCornerRadius != -1 {
+            self.layer.cornerRadius = SdkConfiguration.stories.defaultButtonCornerRadius
+        } else {
+            self.layer.cornerRadius = CGFloat(buttonData.cornerRadius)
+        }
         self.layer.masksToBounds = true
         
-        if #available(iOS 13.0, *) {
+        if #available(iOS 12.0, *) {
             if SdkConfiguration.isDarkMode {
                 if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Dark != nil {
                     self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Dark
@@ -78,7 +82,7 @@ class StoryButton: UIButton {
                 }
             } else {
                 if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light != nil {
-                    self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorConstant_Light
+                    self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light
                 } else {
                     if let bgColor = buttonData.background {
                         let color = bgColor.hexToRGB()
@@ -112,9 +116,11 @@ class StoryButton: UIButton {
     
     private func setToDefault() {
         self.backgroundColor = .white
-        //self.setTitleColor(.black, for: .normal)
-        //self.setTitle("", for: .normal)
-        self.layer.cornerRadius = layer.frame.size.height / 2
+        if SdkConfiguration.stories.productsButtonCornerRadius != -1 {
+            self.layer.cornerRadius = SdkConfiguration.stories.productsButtonCornerRadius
+        } else {
+            self.layer.cornerRadius = layer.frame.size.height / 2
+        }
         self.layer.masksToBounds = true
     }
     

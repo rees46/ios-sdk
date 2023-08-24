@@ -72,7 +72,8 @@ private var collectionView: UICollectionView = {
 
     private var closeButton: UIButton = {
         let closeButton = UIButton()
-        closeButton.tintColor = .white
+        //closeButton.tintColor = UIColor.red
+        //closeButton.tintColor = .white
         return closeButton
     }()
 
@@ -564,8 +565,12 @@ private var collectionView: UICollectionView = {
         mainBundle = Bundle.module
 #endif
         let image = UIImage(named: "iconStoryClose", in: mainBundle, compatibleWith: nil)
-        closeButton.setImage(image, for: .normal)
-
+        let imageRender = image?.withRenderingMode(.alwaysTemplate)
+        let imageView = UIImageView(image: imageRender)
+        closeButton.setImage(imageView.image, for: .normal)
+        
+        let customTintColor = SdkConfiguration.stories.closeIconColor.hexToRGB()
+        closeButton.tintColor = UIColor(red: customTintColor.red, green: customTintColor.green, blue: customTintColor.blue, alpha: 1)
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
         updateSlides()
     }
@@ -877,31 +882,19 @@ private var collectionView: UICollectionView = {
         carouselProductsSlideCollectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
         carouselProductsSlideCollectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
         carouselProductsSlideCollectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0).isActive = true
-        //carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        //self.carouselProductsSlideCollectionView.center.y -= self.carouselProductsSlideCollectionView.frame.height
         
-        if SdkGlobalHelper.DeviceType.IS_IPHONE_XS {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14 {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO {
+        if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8 {
-            carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8P {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8 || SdkGlobalHelper.DeviceType.IS_IPHONE_8P {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
         } else {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
         }
         
         carouselProductsSlideCollectionView.carouselProductsDelegate = self
+        carouselProductsSlideCollectionView.cells.removeAll()
         carouselProductsSlideCollectionView.set(cells: withProducts)
+        carouselProductsSlideCollectionView.reloadData()
         UserDefaults.standard.set(true, forKey: "CarouselTimerStopMemorySetting")
     }
     

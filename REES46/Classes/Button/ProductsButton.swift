@@ -10,7 +10,6 @@ protocol CustomProductButtonDelegate: AnyObject {
     
     var _buttonData: StoriesElement?
     weak var delegate: CustomProductButtonDelegate?
-    var sdk: PersonalizationSDK!
     
     init() {
         super.init(frame: .zero)
@@ -29,7 +28,11 @@ protocol CustomProductButtonDelegate: AnyObject {
     }
 
     func updateCornerRadius() {
-        layer.cornerRadius = rounded ? frame.size.height / 2 : 2
+        if SdkConfiguration.stories.productsButtonCornerRadius != -1 {
+            layer.cornerRadius = SdkConfiguration.stories.productsButtonCornerRadius
+        } else {
+            layer.cornerRadius = rounded ? frame.size.height / 2 : 2
+        }
     }
     
     func configProductsButton(buttonData: StoriesElement) {
@@ -48,7 +51,6 @@ protocol CustomProductButtonDelegate: AnyObject {
                 }
             }
             
-            //titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
             setTitle(buttonData.labels?.showCarousel ?? "See all products", for: .normal)
             if buttonData.labels?.showCarousel == "" {
                 setTitle("See all products", for: .normal)
@@ -61,7 +63,7 @@ protocol CustomProductButtonDelegate: AnyObject {
             
             let angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
             
-            if #available(iOS 13.0, *) {
+            if #available(iOS 12.0, *) {
                 if SdkConfiguration.isDarkMode {
                     if SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Dark != nil {
                         self.backgroundColor = SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Dark
@@ -79,10 +81,14 @@ protocol CustomProductButtonDelegate: AnyObject {
                 self.backgroundColor = .white
             }
             
-            layer.cornerRadius = layer.frame.size.height/2
+            if SdkConfiguration.stories.productsButtonCornerRadius != -1 {
+                layer.cornerRadius = SdkConfiguration.stories.productsButtonCornerRadius
+            } else {
+                layer.cornerRadius = layer.frame.size.height/2
+            }
             layer.masksToBounds = true
             
-            if #available(iOS 13.0, *) {
+            if #available(iOS 12.0, *) {
                 if SdkConfiguration.isDarkMode {
                     if SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark != nil {
                         if let components = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark?.rgba {
@@ -119,7 +125,11 @@ protocol CustomProductButtonDelegate: AnyObject {
             }
         } else {
             titleLabel?.font = .systemFont(ofSize: 17.0, weight: .semibold)
-            self.layer.cornerRadius = layer.frame.size.height/2
+            if SdkConfiguration.stories.productsButtonCornerRadius != -1 {
+                self.layer.cornerRadius = SdkConfiguration.stories.productsButtonCornerRadius
+            } else {
+                self.layer.cornerRadius = layer.frame.size.height/2
+            }
             self.layer.masksToBounds = true
         }
         super.layoutSubviews()
@@ -146,8 +156,11 @@ protocol CustomProductButtonDelegate: AnyObject {
     private func setToDefaultProductsButton() {
         backgroundColor = .white
         setTitle("", for: .normal)
-        //setTitleColor(.black, for: .normal)
-        layer.cornerRadius = layer.frame.size.height / 2
+        if SdkConfiguration.stories.productsButtonCornerRadius != -1 {
+            layer.cornerRadius = SdkConfiguration.stories.productsButtonCornerRadius
+        } else {
+            layer.cornerRadius = layer.frame.size.height / 2
+        }
         layer.masksToBounds = true
         super.layoutSubviews()
     }

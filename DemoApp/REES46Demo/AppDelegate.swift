@@ -44,49 +44,55 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
         })
         
-        //SDK Configuration Init Font First
-        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.otf.rawValue) //ttf!
-        
-        //SDK Configuration Default font & colors Settings
-        sdk.configuration().stories.setStoriesBlock(fontName: "Museo",
-                                                    fontSize: 17.0,
-                                                    textColor: "#5ec169",
-                                                    textColorDarkMode: "#ffffff",
-                                                    backgroundColor: "#ffffff",
-                                                    backgroundColorDarkMode: "#f3f3f3",
-                                                    iconSize: 90,
-                                                    iconBorderWidth: 3,
-                                                    iconMarginX: 5,
-                                                    iconMarginBottom: 10,
-                                                    iconNotViewedBorderColor: "#5ec169",
-                                                    iconNotViewedBorderColorDarkMode: "#5ec169",
-                                                    iconViewedBorderColor: "#5ec169",
-                                                    iconViewedBorderColorDarkMode: "#5ec169",
-                                                    iconViewedTransparency: 70,
-                                                    iconPlaceholderColor: "#ffffff",
-                                                    iconPlaceholderColorDarkMode: "#ffffff",
-                                                    labelWidth: 100,
-                                                    pinColor: "#5ec169",
-                                                    pinColorDarkMode: "#ffffff",
-                                                    closeIconColor: "#ffffff")
-        
-        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo",
-                                                          fontSize: 20.0,
-                                                          textColor: "#5ec169",
-                                                          backgroundColor: "#5ec169",
-                                                          textColorDarkMode: "#000000",
-                                                          backgroundColorDarkMode: "#ffffff",
-                                                          cornerRadius: 5)
-
-        sdk.configuration().stories.setSlideProductsButton(fontName: "Museo",
-                                                           fontSize: 18.0,
-                                                           textColor: "#ffffff",
-                                                           backgroundColor: "#5ec169",
-                                                           textColorDarkMode: "#000000",
-                                                           backgroundColorDarkMode: "#008080",
-                                                           cornerRadius: 5)
-
-        sdk.configuration().stories.setProductsCard(fontName: "Museo")
+//        //SDK Configuration init Font first
+//        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.otf.rawValue) //or ttf!
+//
+//        //SDK Configuration settings
+//        sdk.configuration().stories.setStoriesBlock(fontName: "Museo",
+//                                                    fontSize: 16.0,
+//                                                    textColor: "#5ec169",
+//                                                    textColorDarkMode: "#ffffff",
+//                                                    backgroundColor: "#ffffff",
+//                                                    backgroundColorDarkMode: "#000000",
+//                                                    iconSize: 76,
+//                                                    iconBorderWidth: 2.3,
+//                                                    iconMarginX: 18,
+//                                                    iconMarginBottom: 8,
+//                                                    iconNotViewedBorderColor: "#fd7c50",
+//                                                    iconNotViewedBorderColorDarkMode: "#fd7c50",
+//                                                    iconViewedBorderColor: "#fdc2a1",
+//                                                    iconViewedBorderColorDarkMode: "#fdc2a1",
+//                                                    iconViewedTransparency: 1.0,
+//                                                    iconPreloaderColor: "#5ec169",
+//                                                    iconPlaceholderColor: "#d6d6d6",
+//                                                    iconPlaceholderColorDarkMode: "#d6d6d6",
+//                                                    labelWidth: 76, //default equal iconSize
+//                                                    pinColor: "#fd7c50",
+//                                                    pinColorDarkMode: "#fd7c50",
+//                                                    closeIconColor: "#ffffff")
+//
+//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo",
+//                                                          fontSize: 17.0,
+//                                                          textColor: "#ffffff",
+//                                                          backgroundColor: "#5ec169",
+//                                                          textColorDarkMode: "#000000",
+//                                                          backgroundColorDarkMode: "#ffffff",
+//                                                          cornerRadius: 5)
+//
+//        sdk.configuration().stories.setSlideProductsButton(fontName: "Museo",
+//                                                           fontSize: 17.0,
+//                                                           textColor: "#ffffff",
+//                                                           backgroundColor: "#5ec169",
+//                                                           textColorDarkMode: "#000000",
+//                                                           backgroundColorDarkMode: "#ffffff",
+//                                                           cornerRadius: 5)
+//
+//        sdk.configuration().stories.setProductsCard(fontName: "Museo")
+//        
+//        //SDK Stories block text label characters wrapping settings
+//        sdk.configuration().stories.storiesBlockNumberOfLines = 2
+//        sdk.configuration().stories.storiesBlockCharWrapping = false
+//        sdk.configuration().stories.storiesBlockCharCountWrap = 10
         
         print("1. Register push")
         notificationService = NotificationService(sdk: sdk)

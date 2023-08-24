@@ -14,24 +14,37 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public init() {}
     public var allLoadedFonts: [sdkFontClass] = []
     
-    var iconSize: Int = 76
-    var iconBorderWidth: Int = 1
-    var iconMarginX: Int = 18
-    var iconMarginBottom: Int = 3
-    var iconNotViewedBorderColor: String = "#5ec169"
-    var iconNotViewedBorderColorDarkMode: String = "#5ec169"
-    var iconViewedBorderColor: String = "#5ec169"
-    var iconViewedBorderColorDarkMode: String = "#5ec169"
-    var iconViewedTransparency: Int = 90
-    var iconPlaceholderColor: String = "#ffffff"
-    var iconPlaceholderColorDarkMode: String = "#ffffff"
-    var labelWidth: Int = 100
-    var pinColor: String = "#000000"
-    var pinColorDarkMode: String = "#ffffff"
+    var iconSize: CGFloat = 76
+    var iconBorderWidth: CGFloat = 2.3
+    var iconMarginX: CGFloat = 18
+    var iconMarginBottom: CGFloat = 8
+    var iconNotViewedBorderColor: String = "" //#fd7c50"
+    var iconNotViewedBorderColorDarkMode: String = "" //"#fd7c50"
+    var iconViewedBorderColor: String = "" //"#fdc2a1"
+    var iconViewedBorderColorDarkMode: String = "" //"#fdc2a1"
+    var iconViewedTransparency: CGFloat = 1.0
+    var iconPlaceholderColor: String = "#d6d6d6"
+    var iconPlaceholderColorDarkMode: String = "#d6d6d6"
+    var iconPreloaderColor: String = "#5ec169"
+    var labelWidth: CGFloat = 76
+    var pinColor: String = "" //"#fd7c50"
+    var pinColorDarkMode: String = "" //"#fd7c50"
     var closeIconColor: String = "#ffffff"
-        
+    
+    var defaultIconNotViewedBorderColor: String = "#fd7c50"
+    var defaultIconViewedBorderColor: String = "#fdc2a1"
+    var defaultIconViewedTransparency: CGFloat = 1.0
+    var defaultIconPinColor: String = "#fd7c50"
+    
+    public var storiesBlockNumberOfLines: Int = 2
+    
+    public var storiesBlockCharWrapping = false
+    public var storiesBlockCharCountWrap: Int = 10
+    
+    var defaultButtonCornerRadius: CGFloat = -1
+    var productsButtonCornerRadius: CGFloat = -1
+    
     public func registerFont(fileName: String, fileExtension: String) {
-        
         //sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.ttf.rawValue)
         let pathForResourceString = Bundle.main.path(forResource: fileName,
                                                      ofType: fileExtension)
@@ -58,7 +71,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     }
     
     public func registerFont(fileNameWithoutExtension: String) {
-        //EASY
         //sdk.configuration().stories.registerFont(fileNameWithoutExtension: "Museo900")
         var parsedFont: (sdkFontName, sdkFontExtension)?
 
@@ -90,7 +102,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: Int? = nil, iconBorderWidth: Int? = nil, iconMarginX: Int? = nil, iconMarginBottom: Int? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: Int? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, labelWidth: Int? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
+    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: CGFloat? = nil, iconBorderWidth: CGFloat? = nil, iconMarginX: CGFloat? = nil, iconMarginBottom: CGFloat? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: CGFloat? = nil, iconPreloaderColor: String? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, labelWidth: CGFloat? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
         
         let uiBlockTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
         let uiBlockBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
@@ -208,6 +220,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         if iconViewedTransparency != nil {
             self.iconViewedTransparency = iconViewedTransparency!
         }
+        if iconPreloaderColor != nil {
+            self.iconPreloaderColor = iconPreloaderColor!
+        }
         if iconPlaceholderColor != nil {
             self.iconPlaceholderColor = iconPlaceholderColor!
         }
@@ -227,7 +242,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             self.closeIconColor = closeIconColor!
         }
         
-        if #available(iOS 13.0, *) {
+        if #available(iOS 12.0, *) {
             if SdkConfiguration.isDarkMode {
                 SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockDark, animated: false)
             } else {
@@ -238,7 +253,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: Int? = nil) {
+    public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: CGFloat? = nil) {
         
         let slideDefaultButtonTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
         //let slideDefaultButtonBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
@@ -314,18 +329,25 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         if storedStoriesBlockSelectFontName == nil {
             storedStoriesBlockSelectFontName = .systemFont(ofSize: 15.0, weight: .semibold)
         }
-        let storedStoriesBlockFontColor = SdkStyle.shared.currentColorScheme?.storiesBlockFontColor
-        let storedStoriesBlockBackgroundColor = SdkStyle.shared.currentColorScheme?.storiesBlockBackgroundColor
+        let storedStoriesBlockFontColor = SdkStyle.shared.currentColorScheme?.storiesBlockFontColor ?? .black
+        let storedStoriesBlockBackgroundColor = SdkStyle.shared.currentColorScheme?.storiesBlockBackgroundColor ?? .white
         
         if (slideButtonFontBySdk == nil) {
             slideButtonFontBySdk = .systemFont(ofSize: 16.0)
+        }
+        if (storiesBlockMinimumFontSizeChanged == nil) {
+            storiesBlockMinimumFontSizeChanged = 14.0
+        }
+        
+        if cornerRadius != nil {
+            self.defaultButtonCornerRadius = cornerRadius!
         }
         
         SdkStyle.shared.register(colorScheme:
                                     lightSdkStyleApperance(storiesBlockSelectFontName: storedStoriesBlockSelectFontName!,
                                                            storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
-                                                           storiesBlockFontColor: storedStoriesBlockFontColor!,
-                                                           storiesBlockBackgroundColor: storedStoriesBlockBackgroundColor!,
+                                                           storiesBlockFontColor: storedStoriesBlockFontColor,
+                                                           storiesBlockBackgroundColor: storedStoriesBlockBackgroundColor,
                                                            
                                                            defaultButtonSelectFontName: slideButtonFontBySdk!,
                                                            defaultButtonSelectFontSize: slideDefaultButtonFontSizeChanged!,
@@ -342,8 +364,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         SdkStyle.shared.register(colorScheme:
                                     darkSdkStyleApperance(storiesBlockSelectFontName: storedStoriesBlockSelectFontName!,
                                                           storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
-                                                          storiesBlockFontColor: storedStoriesBlockFontColor!,
-                                                          storiesBlockBackgroundColor: storedStoriesBlockBackgroundColor!,
+                                                          storiesBlockFontColor: storedStoriesBlockFontColor,
+                                                          storiesBlockBackgroundColor: storedStoriesBlockBackgroundColor,
                                                           
                                                           defaultButtonSelectFontName: slideButtonFontBySdk!,
                                                           defaultButtonSelectFontSize: slideDefaultButtonFontSizeChanged!,
@@ -358,7 +380,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                                  for: SdkStyleApperanceTypes.storiesBlockDark)
 
         
-        if #available(iOS 13.0, *) {
+        if #available(iOS 12.0, *) {
             if SdkConfiguration.isDarkMode {
                 SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockDark, animated: false)
             } else {
@@ -376,7 +398,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    public func setSlideProductsButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: Int? = nil) {
+    public func setSlideProductsButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: CGFloat? = nil) {
         
         if fontName != nil {
             if fontName == slideProductsButtonFontNameConstant {
@@ -415,6 +437,10 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             slideProductsButtonFontSizeChanged = convertedFontSize
         } else {
             slideProductsButtonFontSizeChanged = nil
+        }
+        
+        if cornerRadius != nil {
+            self.productsButtonCornerRadius = cornerRadius!
         }
     }
     
@@ -566,7 +592,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         if #available(iOS 13.0, *) {
             return UITraitCollection.current.userInterfaceStyle == .dark
         } else {
-            return .random()
+            return false
         }
     }
     

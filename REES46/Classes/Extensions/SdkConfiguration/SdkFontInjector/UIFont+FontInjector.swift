@@ -2,10 +2,10 @@ import UIKit
 
 public enum SdkFontTextStyleImplement: Int {
     
-    case largeTitle = 0
-    case title1
-    case title2
-    case title3
+    case largeTitleDefault = 0
+    case largeTitle
+    case mediumTitle
+    case smallTitle
     case headline
     case body
     case callout
@@ -15,9 +15,9 @@ public enum SdkFontTextStyleImplement: Int {
     case caption2
     
     internal var systemSdkFontTextStyleImplement: UIFont.TextStyle? {
-        return [SdkFontTextStyleImplement.title1: UIFont.TextStyle.title1,
-                SdkFontTextStyleImplement.title2: UIFont.TextStyle.title2,
-                SdkFontTextStyleImplement.title3: UIFont.TextStyle.title3,
+        return [SdkFontTextStyleImplement.largeTitle: UIFont.TextStyle.title1,
+                SdkFontTextStyleImplement.mediumTitle: UIFont.TextStyle.title2,
+                SdkFontTextStyleImplement.smallTitle: UIFont.TextStyle.title3,
                 SdkFontTextStyleImplement.headline: UIFont.TextStyle.headline,
                 SdkFontTextStyleImplement.body: UIFont.TextStyle.body,
                 SdkFontTextStyleImplement.callout: UIFont.TextStyle.callout,

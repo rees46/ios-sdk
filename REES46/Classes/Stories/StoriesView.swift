@@ -20,15 +20,15 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     let cellId = "StoriesCollectionViewPreviewCell"
     
     private var collectionView: UICollectionView = {
-        let testFrame = CGRect(x: 0, y: 0, width: 300, height: 113)
+        let testFrame = CGRect(x: 0, y: 0, width: 300, height: 135)
         let layout = UICollectionViewFlowLayout()
         //layout.horizontalAlignment = .left
         layout.minimumLineSpacing = 10
         layout.minimumInteritemSpacing = 10
         layout.scrollDirection = .horizontal
         
-        layout.itemSize = CGSize(width: 76, height: 113)
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 18, bottom: 0, right: 18)
+        layout.itemSize = CGSize(width: SdkConfiguration.stories.iconSize, height: 135)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: SdkConfiguration.stories.iconMarginX, bottom: 0, right: SdkConfiguration.stories.iconMarginX)
         
         let collectionView = UICollectionView(frame: testFrame, collectionViewLayout: layout)
         collectionView.showsHorizontalScrollIndicator = false
@@ -137,7 +137,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
     
     private func setBgColor() {
-        if #available(iOS 13.0, *) {
+        if #available(iOS 12.0, *) {
             if SdkConfiguration.isDarkMode {
                 DispatchQueue.main.async {
                     self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
@@ -203,7 +203,11 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 18
+        if (SdkConfiguration.stories.labelWidth > SdkConfiguration.stories.iconSize) {
+            return SdkConfiguration.stories.labelWidth / 2 + SdkConfiguration.stories.iconMarginX * 2
+        } else {
+            return 18
+        }
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -228,12 +232,27 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false, storyId: currentStory.id)
                 cell.configure(story: currentStory)
             }
+        } else {
+            if (isInDownloadMode && stories == nil) {
+                cell.storyBackCircle.alpha = 0.0
+                var placeholderColor = SdkConfiguration.stories.iconPlaceholderColor.hexToRGB()
+                if #available(iOS 12.0, *) {
+                    if SdkConfiguration.isDarkMode {
+                        placeholderColor = SdkConfiguration.stories.iconPlaceholderColorDarkMode.hexToRGB()
+                    }
+                }
+                cell.storyBackCircle.backgroundColor = UIColor(red: placeholderColor.red, green: placeholderColor.green, blue: placeholderColor.blue, alpha: 1.0)
+                UIView.animate(withDuration: 5.0, animations: {
+                    cell.storyBackCircle.alpha = 1.0
+                })
+            }
         }
         
         return cell
     }
 
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        
         if let currentStory = stories?[indexPath.row] {
             let storyVC = StoryViewController()
             storyVC.sdkLinkDelegate = self
@@ -264,31 +283,16 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
                 storyVC.startWithIndexPath = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
                 mainVC?.present(storyVC, animated: true)
-                
-//                let nav = UINavigationController(rootViewController: mainVC!)
-//                window?.rootViewController = nav
-//                nav.present(storyVC, animated: true, completion: nil)
-                
             } else if (currentDefaultIndex + 1 == allStoriesMainArray.count) {
                 storyVC.currentPosition = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: Int(0), section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
                 mainVC?.present(storyVC, animated: true)
-                
-//                let nav = UINavigationController(rootViewController: mainVC!)
-//                window?.rootViewController = nav
-//                nav.present(storyVC, animated: true, completion: nil)
-                
             } else {
                 storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
                 storyVC.modalPresentationStyle = .fullScreen
                 mainVC?.present(storyVC, animated: true)
-                
-//                let nav = UINavigationController(rootViewController: mainVC!)
-//                window?.rootViewController = nav
-//                nav.present(storyVC, animated: true, completion: nil)
-                
             }
         }
     }
