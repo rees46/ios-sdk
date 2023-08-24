@@ -8,23 +8,36 @@ public typealias sdkFontName = String
 public typealias sdkFontExtension = String
 public typealias sdkFontClass = (url: sdkFontPath, name: sdkFontName)
 
-open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtocol {
-    public func reloadStoriesCollectionSubviews() {}
-    
+open class SdkConfiguration: SdkConfigurationProtocol {
+
     public static let stories: SdkConfiguration = SdkConfiguration()
-    
     public init() {}
-    
     public var allLoadedFonts: [sdkFontClass] = []
     
+    var iconSize: Int = 76
+    var iconBorderWidth: Int = 1
+    var iconMarginX: Int = 18
+    var iconMarginBottom: Int = 3
+    var iconNotViewedBorderColor: String = "#5ec169"
+    var iconNotViewedBorderColorDarkMode: String = "#5ec169"
+    var iconViewedBorderColor: String = "#5ec169"
+    var iconViewedBorderColorDarkMode: String = "#5ec169"
+    var iconViewedTransparency: Int = 90
+    var iconPlaceholderColor: String = "#ffffff"
+    var iconPlaceholderColorDarkMode: String = "#ffffff"
+    var labelWidth: Int = 100
+    var pinColor: String = "#000000"
+    var pinColorDarkMode: String = "#ffffff"
+    var closeIconColor: String = "#ffffff"
+        
     public func registerFont(fileName: String, fileExtension: String) {
         
         //sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.ttf.rawValue)
         let pathForResourceString = Bundle.main.path(forResource: fileName,
                                                      ofType: fileExtension)
         guard pathForResourceString != nil else {
-            print("SDK Failed! locate custom font \(fileName) in App Bundle!")
-            //fatalError("SDK Failed! locate custom fon \(fileName) in App Bundle!")
+            print("SDK Failed locate custom font \(fileName) in App Bundle")
+            //fatalError("SDK Failed locate custom fon \(fileName) in App Bundle")
             return
         }
         
@@ -77,12 +90,12 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
     }
     
-    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, darkModeTextColor: String? = nil, darkModeBackgroundColor: String? = nil) {
+    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: Int? = nil, iconBorderWidth: Int? = nil, iconMarginX: Int? = nil, iconMarginBottom: Int? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: Int? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, labelWidth: Int? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
         
         let uiBlockTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
         let uiBlockBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
-        let uiBlockTextColorDark = UIColor(hexString: darkModeTextColor ?? UIColor.white.toHexString())
-        let uiBlockBackgroundColorDark = UIColor(hexString: darkModeBackgroundColor ?? UIColor.black.toHexString())
+        let uiBlockTextColorDark = UIColor(hexString: textColorDarkMode ?? UIColor.white.toHexString())
+        let uiBlockBackgroundColorDark = UIColor(hexString: backgroundColorDarkMode ?? UIColor.black.toHexString())
         
         storiesBlockTextColorChanged_Light = uiBlockTextColorLight
         storiesBlockTextColorChanged_Dark = uiBlockTextColorDark
@@ -168,6 +181,51 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
                                                           ),
                                  for: SdkStyleApperanceTypes.storiesBlockDark)
 
+        if iconSize != nil {
+            self.iconSize = iconSize!
+        }
+        if iconBorderWidth != nil {
+            self.iconBorderWidth = iconBorderWidth!
+        }
+        if iconMarginX != nil {
+            self.iconMarginX = iconMarginX!
+        }
+        if iconMarginBottom != nil {
+            self.iconMarginBottom = iconMarginBottom!
+        }
+        if iconNotViewedBorderColor != nil {
+            self.iconNotViewedBorderColor = iconNotViewedBorderColor!
+        }
+        if iconNotViewedBorderColorDarkMode != nil {
+            self.iconNotViewedBorderColorDarkMode = iconNotViewedBorderColorDarkMode!
+        }
+        if iconViewedBorderColor != nil {
+            self.iconViewedBorderColor = iconViewedBorderColor!
+        }
+        if iconViewedBorderColorDarkMode != nil {
+            self.iconViewedBorderColorDarkMode = iconViewedBorderColorDarkMode!
+        }
+        if iconViewedTransparency != nil {
+            self.iconViewedTransparency = iconViewedTransparency!
+        }
+        if iconPlaceholderColor != nil {
+            self.iconPlaceholderColor = iconPlaceholderColor!
+        }
+        if iconPlaceholderColorDarkMode != nil {
+            self.iconPlaceholderColorDarkMode = iconPlaceholderColorDarkMode!
+        }
+        if labelWidth != nil {
+            self.labelWidth = labelWidth!
+        }
+        if pinColor != nil {
+            self.pinColor = pinColor!
+        }
+        if pinColorDarkMode != nil {
+            self.pinColorDarkMode = pinColorDarkMode!
+        }
+        if closeIconColor != nil {
+            self.closeIconColor = closeIconColor!
+        }
         
         if #available(iOS 13.0, *) {
             if SdkConfiguration.isDarkMode {
@@ -180,12 +238,12 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
     }
     
-    public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, darkModeTextColor: String? = nil, darkModeBackgroundColor: String? = nil) {
+    public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: Int? = nil) {
         
         let slideDefaultButtonTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
         //let slideDefaultButtonBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
-        let slideDefaultButtonTextColorDark = UIColor(hexString: darkModeTextColor ?? UIColor.white.toHexString())
-        //let slideDefaultButtonBackgroundColorDark = UIColor(hexString: darkModeBackgroundColor ?? UIColor.black.toHexString())
+        let slideDefaultButtonTextColorDark = UIColor(hexString: textColorDarkMode ?? UIColor.white.toHexString())
+        //let slideDefaultButtonBackgroundColorDark = UIColor(hexString: backgroundColorDarkMode ?? UIColor.black.toHexString())
         
         let defaultTextColor = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant_Light)
         let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
@@ -197,7 +255,7 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
         
         let defaultTextColorDark = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant_Dark)
-        let convertedTextColorDark = darkModeTextColor?.hexToRGB() ?? defaultTextColorDark.hexToRGB()
+        let convertedTextColorDark = textColorDarkMode?.hexToRGB() ?? defaultTextColorDark.hexToRGB()
         if textColor != nil {
             slideDefaultButtonTextColorChanged_Dark = UIColor(red: convertedTextColorDark.red, green: convertedTextColorDark.green, blue: convertedTextColorDark.blue, alpha: 1)
         } else {
@@ -213,8 +271,8 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
         
         let defaultBackgroundColorDark = UIColor.hexStringFromColor(color: slideDefaultButtonBackgroundColorConstant_Dark)
-        let convertedDefaultButtonBackgroundColorDark = darkModeBackgroundColor?.hexToRGB() ?? defaultBackgroundColorDark.hexToRGB()
-        if darkModeBackgroundColor != nil {
+        let convertedDefaultButtonBackgroundColorDark = backgroundColorDarkMode?.hexToRGB() ?? defaultBackgroundColorDark.hexToRGB()
+        if backgroundColorDarkMode != nil {
             slideDefaultButtonBackgroundColorChanged_Dark = UIColor(red: convertedDefaultButtonBackgroundColorDark.red, green: convertedDefaultButtonBackgroundColorDark.green, blue: convertedDefaultButtonBackgroundColorDark.blue, alpha: 1)
         } else {
             slideDefaultButtonBackgroundColorChanged_Dark = nil
@@ -318,7 +376,7 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
     }
     
-    public func setSlideProductsButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, darkModeTextColor: String? = nil, darkModeBackgroundColor: String? = nil) {
+    public func setSlideProductsButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: Int? = nil) {
         
         if fontName != nil {
             if fontName == slideProductsButtonFontNameConstant {
@@ -333,7 +391,7 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         slideProductsButtonTextColorChanged_Light = UIColor(red: convertedTextColor.red, green: convertedTextColor.green, blue: convertedTextColor.blue, alpha: 1)
         
         let defaultTextColorDark = UIColor.hexStringFromColor(color: slideProductsButtonTextColorConstant_Dark)
-        let convertedTextColorDark = darkModeTextColor?.hexToRGB() ?? defaultTextColorDark.hexToRGB()
+        let convertedTextColorDark = textColorDarkMode?.hexToRGB() ?? defaultTextColorDark.hexToRGB()
         slideProductsButtonTextColorChanged_Dark = UIColor(red: convertedTextColorDark.red, green: convertedTextColorDark.green, blue: convertedTextColorDark.blue, alpha: 1)
         
         let defaultBackgroundColor = UIColor.hexStringFromColor(color: slideProductsButtonBackgroundColorConstant_Light)
@@ -345,7 +403,7 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
         }
         
         let defaultBackgroundColorDark = UIColor.hexStringFromColor(color: slideProductsButtonBackgroundColorConstant_Dark)
-        let convertedBackgroundColorDark = darkModeBackgroundColor?.hexToRGB() ?? defaultBackgroundColorDark.hexToRGB()
+        let convertedBackgroundColorDark = backgroundColorDarkMode?.hexToRGB() ?? defaultBackgroundColorDark.hexToRGB()
         if backgroundColor != nil {
             slideProductsButtonBackgroundColorChanged_Dark = UIColor(red: convertedBackgroundColorDark.red, green: convertedBackgroundColorDark.green, blue: convertedBackgroundColorDark.blue, alpha: 1)
         } else {
@@ -672,8 +730,8 @@ open class SdkConfiguration: SdkConfigurationProtocol, StoryViewControllerProtoc
                 let fontNames = UIFont.fontNames(forFamilyName: familyName)
                 print(familyName, fontNames)
             })
-            print("SDK! ERROR!", name)
-            fatalError("SDK Font not found: \(name)")
+            //print("SDK Fatal Error Font not found: \(name)")
+            fatalError("SDK Fatal Font not found: \(name)")
         }
         return sFont
     }

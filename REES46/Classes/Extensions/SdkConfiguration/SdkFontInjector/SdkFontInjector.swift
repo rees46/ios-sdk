@@ -1,6 +1,6 @@
 import UIKit
 
-protocol SdkFontPackage: Hashable, RawRepresentable {
+public protocol SdkFontPackage: Hashable, RawRepresentable {
     static func dynamicFont(textStyle: SdkFontTextStyleImplement, weight: UIFont.Weight) -> UIFont
     static func font(ofSize size: CGFloat, weight: UIFont.Weight) -> UIFont
 }
@@ -89,11 +89,11 @@ open class SdkFontInjector: NSObject {
 
 
 extension SdkFontPackage {
-    static func dynamicFont(textStyle: SdkFontTextStyleImplement, weight: UIFont.Weight = .regular) -> UIFont {
+    public static func dynamicFont(textStyle: SdkFontTextStyleImplement, weight: UIFont.Weight = .regular) -> UIFont {
         return UIFont.dynamicFont(style: textStyle, weight: weight, ofFont: Self.self)
     }
     
-    static func font(ofSize size: CGFloat, weight: UIFont.Weight = .regular) -> UIFont {
+    public static func font(ofSize size: CGFloat, weight: UIFont.Weight = .regular) -> UIFont {
         return UIFont.staicFont(ofSize: size, weight: weight)
     }
 }

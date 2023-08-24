@@ -514,7 +514,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         if let productsList = selectedProductsElement?.products, productsList.count != 0 {
             UserDefaults.standard.set(Int(currentSlide!.id), forKey: "LastViewedSlideMemorySetting")
             let products = productsList
-            cellDelegate?.openProductsCarouselView(withProducts: products, hideLabel: (selectedProductsElement?.labels!.hideCarousel)!)
+            cellDelegate?.openProductsCarouselView(withProducts: products, hideLabel: (selectedProductsElement?.labels?.hideCarousel)!)
             return
         }
     }

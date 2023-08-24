@@ -50,6 +50,9 @@ protocol CustomProductButtonDelegate: AnyObject {
             
             //titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
             setTitle(buttonData.labels?.showCarousel ?? "See all products", for: .normal)
+            if buttonData.labels?.showCarousel == "" {
+                setTitle("See all products", for: .normal)
+            }
             
             var mainBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
@@ -155,7 +158,6 @@ extension UIButton {
         
         let imageView = UIImageView(image: image)
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        //imageView.tintColor = .red
         addSubview(imageView)
 
         let length = CGFloat(21)

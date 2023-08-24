@@ -108,12 +108,16 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         hideButton = UIButton(frame: CGRect(x: 0, y: 0, width: 85, height: 40))
         hideButton.translatesAutoresizingMaskIntoConstraints = false
         hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
+        if hideLabel == nil {
+            hideButton.setTitle("Hide products", for: .normal)
+        }
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
             hideButton.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
             hideButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         }
-        hideButton.backgroundColor = .clear //.white
+        hideButton.backgroundColor = .clear
         hideButton.setTitleColor(UIColor.black, for: .normal)
         //hideButton.layer.cornerRadius = button.frame.size.height / 2
         //hideButton.layer.borderWidth = 1.2
@@ -152,7 +156,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     
     func set(cells: [StoriesProduct]) {
         self.cells = cells
-        self.hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
+        //self.hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {

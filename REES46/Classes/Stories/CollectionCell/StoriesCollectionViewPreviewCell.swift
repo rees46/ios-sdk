@@ -59,7 +59,6 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell, SdkStyleCustomColo
         storyAuthorNameLabel.textAlignment = .center
         storyAuthorNameLabel.numberOfLines = 2
         storyAuthorNameLabel.lineBreakMode = .byWordWrapping
-        //storyAuthorNameLabel.font = .boldSystemFont(ofSize: 23)
         storyAuthorNameLabel.translatesAutoresizingMaskIntoConstraints = false
         storyAuthorNameLabel.backgroundColor = bgColor
         addSubview(storyAuthorNameLabel)
@@ -73,7 +72,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell, SdkStyleCustomColo
         pinSymbolLabel.translatesAutoresizingMaskIntoConstraints = false
         pinSymbolView.addSubview(pinSymbolLabel)
 
-        makeConstraints()
+        makeStoiesBlockCollectionConstraints()
     }
     
     required init?(coder: NSCoder) {
@@ -82,6 +81,14 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell, SdkStyleCustomColo
     
     deinit {
         task?.cancel()
+    }
+    
+    private func setImage(imagePathSdk: String) {
+        guard let url = URL(string: imagePathSdk) else {
+            return
+        }
+        
+        self.storyImage.load.request(with: url)
     }
     
     public func configure(story: Story) {
@@ -190,7 +197,6 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell, SdkStyleCustomColo
             UIView.animate(withDuration: 1.0, animations: {
                 self.storyImage.alpha = 0.9
             })
-            //storyAuthorNameLabel.textColor = .black
             storyBackCircle.backgroundColor = .white
             storyWhiteBackCircle.backgroundColor = .white
             storySuperClearBackCircle.backgroundColor = .white
@@ -216,15 +222,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell, SdkStyleCustomColo
         }
     }
     
-    private func setImage(imagePathSdk: String) {
-        guard let url = URL(string: imagePathSdk) else {
-            return
-        }
-        
-        self.storyImage.load.request(with: url)
-    }
-    
-    private func makeConstraints() {
+    private func makeStoiesBlockCollectionConstraints() {
         
         storyBackCircle.topAnchor.constraint(equalTo: topAnchor).isActive = true
         storyBackCircle.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
@@ -266,11 +264,11 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell, SdkStyleCustomColo
         pinSymbolLabel.centerYAnchor.constraint(equalTo: pinSymbolView.centerYAnchor).isActive = true
     }
     
-    func applyCustomColorScheme(_ colorScheme: SdkStyleCustomColorScheme) {
+    public func applyCustomColorScheme(_ colorScheme: SdkStyleCustomColorScheme) {
         //
     }
     
-    func applySdkCustomFonts(_ fonts: SdkStyleCustomFonts) {
+    public func applySdkCustomFonts(_ fonts: SdkStyleCustomFonts) {
         //
     }
     
