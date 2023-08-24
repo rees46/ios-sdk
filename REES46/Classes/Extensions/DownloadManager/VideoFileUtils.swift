@@ -28,7 +28,7 @@ class SDFileUtils: NSObject {
         return URL(fileURLWithPath: cachePath)
     }
     
-    static func createDirectoryIfNotExists(withName name:String) -> (Bool, Error?)  {
+    static func createDirectoryIfNotExists(withName name:String) -> (Bool, Error?) {
         let directoryUrl = self.cacheDirectoryPath().appendingPathComponent(name)
         if FileManager.default.fileExists(atPath: directoryUrl.path) {
             return (true, nil)
@@ -36,7 +36,7 @@ class SDFileUtils: NSObject {
         do {
             try FileManager.default.createDirectory(at: directoryUrl, withIntermediateDirectories: true, attributes: nil)
             return (true, nil)
-        } catch  {
+        } catch {
             return (false, error)
         }
     }

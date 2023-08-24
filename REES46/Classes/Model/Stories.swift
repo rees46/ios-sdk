@@ -222,7 +222,6 @@ class Slide {
 
 // MARK: - Element
 public class StoriesElement {
-    let link: String?
     let type: ElementType
     let color: String?
     let title, linkIos: String?
@@ -232,6 +231,7 @@ public class StoriesElement {
     let labels: Labels?
     let products: [StoriesProduct]?
     let cornerRadius: Int
+    public var link: String?
     
     public init(json: [String: Any]) {
         self.link = json["link"] as? String
@@ -273,11 +273,11 @@ public class StoriesProduct {
     let oldprice: Int?
     let oldprice_full: Int
     let oldprice_formatted, oldprice_full_formatted: String
-    let url: String
     let picture: String
     let discount: String?
     let discount_formatted: String?
     let category: StoriesCategory
+    public var url: String
     
     public init(json: [String:Any]) {
         self.name = json["name"] as? String ?? ""

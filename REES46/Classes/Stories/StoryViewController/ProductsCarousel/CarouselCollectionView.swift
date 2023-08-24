@@ -15,7 +15,6 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         super.init(frame: .zero, collectionViewLayout: layout)
         
         backgroundColor = UIColor(red: 240/255, green: 240/255, blue: 240/255, alpha: 255/255)
-        //UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 171/255)
         delegate = self
         dataSource = self
         register(CarouselCollectionViewCell.self, forCellWithReuseIdentifier: CarouselCollectionViewCell.reuseId)
@@ -108,19 +107,18 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         hideButton = UIButton(frame: CGRect(x: 0, y: 0, width: 85, height: 40))
         hideButton.translatesAutoresizingMaskIntoConstraints = false
         hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
+        if hideLabel == nil || hideLabel == "" {
+            hideButton.setTitle("Hide products", for: .normal)
+        }
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
             hideButton.titleLabel?.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
             hideButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         }
-        hideButton.backgroundColor = .clear //.white
+        hideButton.backgroundColor = .clear
         hideButton.setTitleColor(UIColor.black, for: .normal)
-        //hideButton.layer.cornerRadius = button.frame.size.height / 2
-        //hideButton.layer.borderWidth = 1.2
-        //hideButton.layer.masksToBounds = true
-        //hideButton.layer.borderColor = UIColor.black.cgColor
-        
-        hideButton.addTarget(self, action: #selector(self.buttonTapped), for: .touchUpInside)
+        hideButton.addTarget(self, action: #selector(self.closeButtonTapped), for: .touchUpInside)
         
         var mainBundle = Bundle(for: classForCoder)
     #if SWIFT_PACKAGE
@@ -146,13 +144,16 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         addSubview(stackView)
     }
     
-    @objc func buttonTapped(sender : UIButton) {
+    @objc func closeButtonTapped(sender : UIButton) {
         carouselProductsDelegate?.closeProductsCarousel()
     }
     
     func set(cells: [StoriesProduct]) {
         self.cells = cells
         self.hideButton.setTitle(hideLabel ?? "Hide products", for: .normal)
+        if hideLabel == nil || hideLabel == "" {
+            hideButton.setTitle("Hide products", for: .normal)
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -184,6 +185,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         }
         
         cell.costLabel.text = cells[indexPath.row].price_formatted
+        
         return cell
     }
     
