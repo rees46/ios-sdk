@@ -360,13 +360,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["story_id"] = storyId
                 params["slide_id"] = slideId
                 params["code"] = self.storiesCode
-                path = "stories/track"
+                path = "track/stories"
                 paramEvent = "view"
             case let .slideClick(storyId, slideId):
                 params["story_id"] = storyId
                 params["slide_id"] = slideId
                 params["code"] = self.storiesCode
-                path = "stories/track"
+                path = "track/stories"
                 paramEvent = "click"
             case let .search(query):
                 params["search_query"] = query
