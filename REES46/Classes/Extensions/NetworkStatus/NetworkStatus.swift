@@ -6,11 +6,11 @@ import CoreTelephony
 @available(iOS 12.0, *)
 public class NetworkStatus {
     
-    public static var manager : NetworkStatus = NetworkStatus()
+    public static var manager: NetworkStatus = NetworkStatus()
     
-    private let monitor : NWPathMonitor
+    private let monitor: NWPathMonitor
     
-    private var semaphore : DispatchSemaphore? = DispatchSemaphore(value: 0)
+    private var semaphore: DispatchSemaphore? = DispatchSemaphore(value: 0)
     
     public var connectionStatus: NetworkConnectionStatus {
         didSet {
@@ -28,7 +28,7 @@ public class NetworkStatus {
         }
     }
     
-    private var observers : [String: NetworkStatusObserver]
+    private var observers: [String: NetworkStatusObserver]
     
     private init() {
         connectionStatus = .Offline
@@ -47,8 +47,8 @@ public class NetworkStatus {
     }
     
     private func setConnection(path: NWPath) {
-        var newConnectionStatus : NetworkConnectionStatus = .Offline
-        var newConnectionType : NetworkConnectionType? = nil
+        var newConnectionStatus: NetworkConnectionStatus = .Offline
+        var newConnectionType: NetworkConnectionType? = nil
         
         guard path.status == .satisfied else {
             newConnectionStatus = .Offline

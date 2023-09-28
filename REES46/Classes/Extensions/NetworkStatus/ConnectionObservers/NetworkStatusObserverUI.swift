@@ -18,7 +18,7 @@ public class NetworkStatusObserverUI: ObservableObject {
         self.hiddenObserver.setExternalObserver(observer: self)
     }
     
-    class HiddenObserver : NetworkStatusObserver {
+    class HiddenObserver: NetworkStatusObserver {
         weak var externalObserver: NetworkStatusObserverUI?
         
         init() {

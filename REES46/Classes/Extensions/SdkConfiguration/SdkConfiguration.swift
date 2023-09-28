@@ -30,6 +30,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     var pinColor: String = "" //"#fd7c50"
     var pinColorDarkMode: String = "" //"#fd7c50"
     var closeIconColor: String = "#ffffff"
+    var iconDisplayFormatSquare = false //default false
     
     var defaultIconNotViewedBorderColor: String = "#fd7c50"
     var defaultIconViewedBorderColor: String = "#fdc2a1"
@@ -44,13 +45,13 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     var defaultButtonCornerRadius: CGFloat = -1
     var productsButtonCornerRadius: CGFloat = -1
     
+    public var defaultCopiedMessage: String = "Copied"
+    
     public func registerFont(fileName: String, fileExtension: String) {
-        //sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.ttf.rawValue)
         let pathForResourceString = Bundle.main.path(forResource: fileName,
                                                      ofType: fileExtension)
         guard pathForResourceString != nil else {
             print("SDK Failed locate custom font \(fileName) in App Bundle")
-            //fatalError("SDK Failed locate custom fon \(fileName) in App Bundle")
             return
         }
         
@@ -102,7 +103,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: CGFloat? = nil, iconBorderWidth: CGFloat? = nil, iconMarginX: CGFloat? = nil, iconMarginBottom: CGFloat? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: CGFloat? = nil, iconPreloaderColor: String? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, labelWidth: CGFloat? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
+    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: CGFloat? = nil, iconBorderWidth: CGFloat? = nil, iconMarginX: CGFloat? = nil, iconMarginBottom: CGFloat? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: CGFloat? = nil, iconPreloaderColor: String? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, iconDisplayFormatSquare: Bool? = false, labelWidth: CGFloat? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
         
         let uiBlockTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
         let uiBlockBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
@@ -242,6 +243,10 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             self.closeIconColor = closeIconColor!
         }
         
+        if iconDisplayFormatSquare != nil {
+            self.iconDisplayFormatSquare = iconDisplayFormatSquare ?? false
+        }
+        
         if #available(iOS 12.0, *) {
             if SdkConfiguration.isDarkMode {
                 SdkStyle.shared.switchApppearance(to: SdkStyleApperanceTypes.storiesBlockDark, animated: false)
@@ -256,9 +261,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public func setSlideDefaultButton(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, backgroundColor: String? = nil, textColorDarkMode: String? = nil, backgroundColorDarkMode: String? = nil, cornerRadius: CGFloat? = nil) {
         
         let slideDefaultButtonTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
-        //let slideDefaultButtonBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
         let slideDefaultButtonTextColorDark = UIColor(hexString: textColorDarkMode ?? UIColor.white.toHexString())
-        //let slideDefaultButtonBackgroundColorDark = UIColor(hexString: backgroundColorDarkMode ?? UIColor.black.toHexString())
         
         let defaultTextColor = UIColor.hexStringFromColor(color: slideDefaultButtonTextColorConstant_Light)
         let convertedTextColor = textColor?.hexToRGB() ?? defaultTextColor.hexToRGB()
@@ -454,6 +457,101 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
+    //promoblock
+    public var promoSlideFontNameChanged: String?
+    public var promoSlideFontNameConstant: String {
+        get { return ".SFUI-Regular" }
+        set { promoSlideFontNameChanged = newValue }
+    }
+    
+    public var promoSlideFontSizeChanged: CGFloat?
+    public var promoSlideFontSizeConstant: CGFloat {
+        get { return 14.0 }
+        set { promoSlideFontSizeChanged = newValue }
+    }
+    
+    public var promoProductTitleTextColorLightMode: UIColor?
+    public var promoSlideFontColorConstant_Light: UIColor {
+        get { return .white }
+        set { promoProductTitleTextColorLightMode = newValue }
+    }
+    
+    public var promoProductTitleTextColorDarkMode: UIColor?
+    public var promoSlideFontColorConstant_Dark: UIColor {
+        get { return .white }
+        set { promoProductTitleTextColorDarkMode = newValue }
+    }
+    
+    public var bannerPriceSectionFontColor: UIColor?
+    public var bannerPriceSectionFontColorConstant: UIColor {
+        get { return .white }
+        set { bannerPriceSectionFontColor = newValue }
+    }
+
+    public var bannerPromocodeSectionFontColor: UIColor?
+    public var bannerPromocodeSectionFontColorConstant: UIColor {
+        get { return .white }
+        set { bannerPromocodeSectionFontColor = newValue }
+    }
+    
+    public var bannerPriceSectionBackgroundColor: UIColor?
+    public var bannerPriceSectionBackgroundConstant: UIColor {
+        get { return .blue }
+        set { bannerPriceSectionBackgroundColor = newValue }
+    }
+
+    public var bannerPromocodeSectionBackgroundColor: UIColor?
+    public var bannerPromocodeSectionBackgroundColorConstant: UIColor {
+        get { return .orange }
+        set { bannerPromocodeSectionBackgroundColor = newValue }
+    }
+    
+    public var bannerDiscountSectionBackgroundColor: UIColor?
+    public var bannerDiscountSectionBackgroundConstant: UIColor {
+        get { return .yellow }
+        set { bannerDiscountSectionBackgroundColor = newValue }
+    }
+    
+    public func setPromocodeCard(productTitleFontName: String? = nil, productTitleFontSize: CGFloat? = nil, productTitleTextColor: String? = nil, productTitleTextColorDarkMode: String? = nil, productBannerPriceSectionFontColor: String? = nil, productBannerPromocodeSectionFontColor: String? = nil, productBannerPriceSectionBackgroundColor: String? = nil, productBannerPromocodeSectionBackgroundColor: String? = nil, discountSectionBackgroundColor: String? = nil, productBannerDefaultMessage: String? = "Copied") {
+        
+        if productTitleFontName != nil {
+            if productTitleFontName == promoSlideFontNameConstant {
+                promoSlideFontNameChanged = nil
+            } else {
+                promoSlideFontNameChanged = productTitleFontName
+            }
+        }
+        
+        let convertedFontSize = productTitleFontSize ?? promoSlideFontSizeConstant
+        if productTitleFontSize != nil {
+            promoSlideFontSizeChanged = convertedFontSize
+        } else {
+            promoSlideFontSizeConstant = 16.0
+        }
+        
+        let uipromoProductTitleTextColorLightMode = UIColor(hexString: productTitleTextColor ?? UIColor.sdkDefaultBlackColor.toHexString())
+        let uipromoProductTitleTextColorDarkMode = UIColor(hexString: productTitleTextColorDarkMode ?? UIColor.white.toHexString())
+        
+        promoProductTitleTextColorLightMode = uipromoProductTitleTextColorLightMode
+        promoProductTitleTextColorDarkMode = uipromoProductTitleTextColorDarkMode
+        
+        let uiProductBannerPriceSectionFontColor = UIColor(hexString: productBannerPriceSectionFontColor ?? UIColor.sdkDefaultWhiteColor.toHexString())
+        let uiProductBannerPromocodeSectionFontColor = UIColor(hexString: productBannerPromocodeSectionFontColor ?? UIColor.sdkDefaultWhiteColor.toHexString())
+        let uiProductBannerPriceSectionBackgroundColor = UIColor(hexString: productBannerPriceSectionBackgroundColor ?? UIColor.sdkDefaultOrangeColor.toHexString())
+        let uiProductBannerPromocodeSectionBackgroundColor = UIColor(hexString: productBannerPromocodeSectionBackgroundColor ?? UIColor.sdkDefaultBlueColor.toHexString())
+        
+        bannerPriceSectionFontColor = uiProductBannerPriceSectionFontColor
+        bannerPromocodeSectionFontColor = uiProductBannerPromocodeSectionFontColor
+        
+        bannerPriceSectionBackgroundColor = uiProductBannerPriceSectionBackgroundColor
+        bannerPromocodeSectionBackgroundColor = uiProductBannerPromocodeSectionBackgroundColor
+        
+        let uiDiscountBannerSectionBackgroundColor = UIColor(hexString: discountSectionBackgroundColor ?? UIColor.sdkDefaultYellowColor.toHexString())
+        bannerDiscountSectionBackgroundColor = uiDiscountBannerSectionBackgroundColor
+        
+        defaultCopiedMessage = productBannerDefaultMessage!
+    }
+    
     final class func fontExt(fromName name: String) -> (sdkFontName, sdkFontExtension) {
         let components = name.split{$0 == "."}.map { String($0) }
         return (components[0], components[1])
@@ -495,7 +593,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let cellSubTextColorColor = UIColor.darkGray
 
         public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.magenta,
-                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple ]
+                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple]
     }
 
     public struct darkSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
@@ -572,7 +670,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let cellSubTextColorColor = UIColor.darkGray
 
         public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.magenta,
-                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple ]
+                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple]
     }
 
     public enum SdkStyleApperanceTypes: String, SdkApperanceViewScheme {
@@ -749,6 +847,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         set { bootRegisteredFontChanged = newValue }
     }
     
+//    //promo
+
+    
     public class func customFont(name: String, size: CGFloat) -> UIFont {
         let sizeWithOffset = size
         guard let sFont = UIFont(name: name, size: sizeWithOffset) else {
@@ -849,13 +950,7 @@ private extension SdkConfiguration {
     class func workaroundDeadlock() {
         _ = UIFont.systemFont(ofSize: 7)
     }
-    
-//    final class func fontExt(fromName name: String) -> (sdkFontName, sdkFontExtension) {
-//        let components = name.split{$0 == "."}.map { String($0) }
-//        return (components[0], components[1])
-//    }
 }
-
 
 extension SdkConfiguration {
     class func fonts(_ contents: [URL]) -> [sdkFontClass] {

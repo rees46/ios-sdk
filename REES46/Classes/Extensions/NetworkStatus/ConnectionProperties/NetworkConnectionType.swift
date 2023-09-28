@@ -1,6 +1,6 @@
 import Foundation
 
-public enum NetworkConnectionType : Equatable, CustomStringConvertible {
+public enum NetworkConnectionType: Equatable, CustomStringConvertible {
     case cellular(radioType: NetworkRadioType)
     case wifi
     case ethernet

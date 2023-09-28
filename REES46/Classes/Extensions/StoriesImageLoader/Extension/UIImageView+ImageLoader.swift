@@ -21,7 +21,7 @@ extension UIImageView {
     }
 }
 
-extension Loadable where Base: UIImageView {
+extension SdkImageReloader where Base: UIImageView {
 
     @discardableResult
     public func request(with url: URLLiteralConvertible, options: [Option] = []) -> Loader? {

@@ -17,13 +17,8 @@ class StoryButton: UIButton {
     }
     
     func configButton(buttonData: StoriesElement) {
-//        if let backendFont = buttonData.textBold {
-//            self.titleLabel?.font = .systemFont(ofSize: 14, weight: backendFont ? .bold : .regular)
-//        }
-//
         if SdkConfiguration.stories.slideDefaultButtonFontNameChanged != nil {
             if SdkConfiguration.stories.slideDefaultButtonFontSizeChanged != 0.0 {
-                //self.titleLabel?.font = .systemFont(ofSize: 19.0)
                 self.titleLabel?.font = SdkStyle.shared.currentColorScheme?.defaultButtonSelectFontName.withSize(SdkStyle.shared.currentColorScheme!.defaultButtonSelectFontSize)
             } else {
                 self.titleLabel?.font = SdkStyle.shared.currentColorScheme?.defaultButtonSelectFontName.withSize(19.0)
@@ -93,7 +88,6 @@ class StoryButton: UIButton {
                 }
                 
                 if SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Light != nil {
-                    //self.setTitleColor(SdkStyle.shared.currentColorScheme!.defaultButtonFontColor, for: .normal)
                     if let components = SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Light?.rgba {
                         self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
                     } else {

@@ -26,7 +26,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let gcmMessageIDKey = "gcm.message_id"
     var sdk: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
-
+    
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
@@ -45,13 +45,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         })
         
 //        //SDK Configuration init Font first
-//        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.otf.rawValue) //or ttf!
+//        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.ttf.rawValue) //or ttf!
 //
 //        //SDK Configuration settings
 //        sdk.configuration().stories.setStoriesBlock(fontName: "Museo",
-//                                                    fontSize: 16.0,
+//                                                    fontSize: 15.0,
 //                                                    textColor: "#5ec169",
-//                                                    textColorDarkMode: "#ffffff",
+//                                                    textColorDarkMode: "#5ec169",
 //                                                    backgroundColor: "#ffffff",
 //                                                    backgroundColorDarkMode: "#000000",
 //                                                    iconSize: 76,
@@ -66,10 +66,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                    iconPreloaderColor: "#5ec169",
 //                                                    iconPlaceholderColor: "#d6d6d6",
 //                                                    iconPlaceholderColorDarkMode: "#d6d6d6",
+//                                                    iconDisplayFormatSquare: false,
 //                                                    labelWidth: 76, //default equal iconSize
 //                                                    pinColor: "#fd7c50",
 //                                                    pinColorDarkMode: "#fd7c50",
-//                                                    closeIconColor: "#ffffff")
+//                                                    closeIconColor: "#5ec169")
 //
 //        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo",
 //                                                          fontSize: 17.0,
@@ -88,11 +89,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           cornerRadius: 5)
 //
 //        sdk.configuration().stories.setProductsCard(fontName: "Museo")
-//        
+//
+//        sdk.configuration().stories.setPromocodeCard(productTitleFontName: "Roboto-Italic",
+//                                                     productTitleFontSize: 19.0,
+//                                                     productTitleTextColor: "#5ec169",
+//                                                     productTitleTextColorDarkMode: "#5ec169",
+//                                                     productBannerPriceSectionFontColor: "#d6d6d6",
+//                                                     productBannerPromocodeSectionFontColor: "#5ec169",
+//                                                     productBannerPriceSectionBackgroundColor: "#fd7c50",
+//                                                     productBannerPromocodeSectionBackgroundColor: "#17aadf",
+//                                                     discountSectionBackgroundColor: "#ea1717",
+//                                                     productBannerDefaultMessage: "Copied")
+//
 //        //SDK Stories block text label characters wrapping settings
 //        sdk.configuration().stories.storiesBlockNumberOfLines = 2
 //        sdk.configuration().stories.storiesBlockCharWrapping = false
-//        sdk.configuration().stories.storiesBlockCharCountWrap = 10
+//        sdk.configuration().stories.storiesBlockCharCountWrap = 15
         
         print("1. Register push")
         notificationService = NotificationService(sdk: sdk)
@@ -295,7 +307,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        }
 //
 //        print("4. Testing product recommendations")
-//        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", currentProductId: "1") { recomendResponse in
+//        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", currentProductId: "644") { recomendResponse in
 //            print("   Recommendations requested callback")
 //            switch recomendResponse {
 //            case let .success(response):

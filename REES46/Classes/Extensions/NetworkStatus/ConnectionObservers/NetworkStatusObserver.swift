@@ -9,7 +9,7 @@ public protocol NetworkStatusObserver {
 
 @available(iOS 12.0, *)
 public extension NetworkStatusObserver {
-    internal var connectionObserverId : String {
+    internal var connectionObserverId: String {
         get {
             return String(unsafeBitCast(self, to: Int.self))
         }

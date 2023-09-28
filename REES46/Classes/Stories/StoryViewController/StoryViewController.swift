@@ -70,10 +70,8 @@ private var collectionView: UICollectionView = {
         return collectionView
     }()
 
-    private var closeButton: UIButton = {
+    public var closeButton: UIButton = {
         let closeButton = UIButton()
-        //closeButton.tintColor = UIColor.red
-        //closeButton.tintColor = .white
         return closeButton
     }()
 
@@ -127,9 +125,9 @@ private var collectionView: UICollectionView = {
     
     @objc
     func willEnterForeground() {
-        let ds : Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
+        let ds: Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
         if !ds {
-            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+            let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             continueTimer()
         }
@@ -137,7 +135,7 @@ private var collectionView: UICollectionView = {
 
     @objc
     func didEnterBackground() {
-        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+        let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
     }
@@ -742,7 +740,7 @@ private var collectionView: UICollectionView = {
         if let url = URL(string: link) {
             pauseTimer()
             
-            let carouselOpenedBoolKey : Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
+            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
             if !carouselOpenedBoolKey {
                 NotificationCenter.default.removeObserver(self, name: NSNotification.Name(rawValue: "WebKitClosedContinueTimerSetting"), object: nil)
                 NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("WebKitClosedContinueTimerSetting"), object: nil)
@@ -751,7 +749,7 @@ private var collectionView: UICollectionView = {
             presentInternalSdkWebKit(url: url, completion: nil)
             //UIApplication.shared.open(url) //Safari default
             
-            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+            let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         }
     }
@@ -853,7 +851,7 @@ private var collectionView: UICollectionView = {
     }
     
     public func openProductsCarouselView(withProducts: [StoriesProduct], hideLabel: String) {
-        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+        let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
         
@@ -910,7 +908,7 @@ private var collectionView: UICollectionView = {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+            let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             self.continueTimer()
         }
@@ -922,11 +920,11 @@ private var collectionView: UICollectionView = {
     }
     
     public func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide) {
-        let stateButton : Bool = UserDefaults.standard.bool(forKey: "LastTapButtonMemorySdkSetting")
+        let stateButton: Bool = UserDefaults.standard.bool(forKey: "LastTapButtonMemorySdkSetting")
         if stateButton == true {
             continueTimer()
             
-            let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+            let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             print("SDK Start Timer Play Content")
             UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
@@ -939,7 +937,7 @@ private var collectionView: UICollectionView = {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
         pauseTimer()
         
-        let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+        let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         self.sdkLinkDelegate?.sendStructSelectedStorySlide(storySlide: storySlide)
     }

@@ -90,33 +90,20 @@ class CarouselCollectionViewCell: UICollectionViewCell {
         
         addSubview(mainImageView)
         addSubview(nameLabel)
-        //addSubview(smallDescriptionLabel)
-        //addSubview(likeImageView)
         addSubview(oldCostLabel)
         addSubview(discountLabel)
         addSubview(costLabel)
         
         backgroundColor = .white
-        //backgroundColor = .clear
         
         mainImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         mainImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         mainImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20).isActive = true
         mainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1/2).isActive = true
-        //mainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 3/5).isActive = true
         
         nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
         nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         nameLabel.topAnchor.constraint(equalTo: mainImageView.bottomAnchor, constant: 12).isActive = true
-        
-        //smallDescriptionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        //smallDescriptionLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 8).isActive = true
-        //smallDescriptionLabel.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 1/2, constant: 10).isActive = true
-        
-        //likeImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        //likeImageView.topAnchor.constraint(equalTo: smallDescriptionLabel.bottomAnchor, constant: 30).isActive = true
-        //likeImageView.widthAnchor.constraint(equalToConstant: 24).isActive = true
-        //likeImageView.heightAnchor.constraint(equalToConstant: 24).isActive = true
         
         oldCostLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
         oldCostLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 14).isActive = true
@@ -124,20 +111,14 @@ class CarouselCollectionViewCell: UICollectionViewCell {
         discountLabel.leadingAnchor.constraint(equalTo: oldCostLabel.trailingAnchor, constant: 10).isActive = true
         discountLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 11).isActive = true
         discountLabel.heightAnchor.constraint(equalToConstant: 20).isActive = true
-        //discountLabel.topAnchor.constraint(equalTo: oldCostLabel.trailingAnchor, constant: 6).isActive = true
         
         costLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
         costLabel.topAnchor.constraint(equalTo: oldCostLabel.bottomAnchor, constant: 8).isActive = true
-        //costLabel.centerYAnchor.constraint(equalTo: nameLabel.centerYAnchor).isActive = true
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        
         self.layer.cornerRadius = 7
-        //self.layer.shadowRadius = 9
-        //layer.shadowOpacity = 0.3
-        //layer.shadowOffset = CGSize(width: 5, height: 8)
         self.clipsToBounds = false
     }
     

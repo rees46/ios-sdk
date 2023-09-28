@@ -20,7 +20,7 @@ public class DefaultNavigation: UINavigationController {
 }
 
 class Navigation {
-    private let window : UIWindow?
+    private let window: UIWindow?
     init(window: UIWindow ) {
         self.window = window
     }

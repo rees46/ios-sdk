@@ -177,7 +177,7 @@ extension UIRefreshControl: SdkStyleColorSchemeAwareView {
         }
 
         let attrTitle = NSAttributedString(string: title,
-                                           attributes: [ NSAttributedString.Key.foregroundColor : titleColor])
+                                           attributes: [NSAttributedString.Key.foregroundColor: titleColor])
         attributedTitle = attrTitle
     }
 }

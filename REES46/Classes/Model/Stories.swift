@@ -66,6 +66,7 @@ class Story {
 class Slide {
     let id, duration: Int
     let background: String
+    let backgroundColor: String
     let preview: String?
     let type: SlideType
     let elements: [StoriesElement]
@@ -74,12 +75,13 @@ class Slide {
     var previewImage: UIImage? = nil
     
     private let vDownloadManager = VideoDownloadManager.shared
-    var sdkDirectoryName : String = "SDKCacheDirectory"
+    var sdkDirectoryName: String = "SDKCacheDirectory"
     
     public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? -1
         self.duration = json["duration"] as? Int ?? 10
         self.background = json["background"] as? String ?? ""
+        self.backgroundColor = json["background_color"] as? String ?? ""
         self.preview = json["preview"] as? String
         let _type = json["type"] as? String ?? ""
         self.type = SlideType(rawValue: _type) ?? .unknown
@@ -165,7 +167,7 @@ class Slide {
             return
         }
         
-        StoryCellImageCache.image(for: url.absoluteString) { cachedImage in
+        StoryBlockImageCache.image(for: url.absoluteString) { cachedImage in
             
             if isPreview {
                 self.previewImage = cachedImage
@@ -177,7 +179,6 @@ class Slide {
             if cachedImage != nil {
                 self.completionCached(slideWithId: self.id, workingSlideUrl: url)
                 print("SDK Load cached image for story id = \(self.id)")
-                
             } else {
                 let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
                     if error == nil {
@@ -188,7 +189,7 @@ class Slide {
                         } else {
                             self.downloadedImage = image
                             
-                            StoryCellImageCache.save(image, for: url.absoluteString)
+                            StoryBlockImageCache.save(image, for: url.absoluteString)
                             self.completionCached(slideWithId: self.id, workingSlideUrl: url)
                             //print("SDK Downloaded image for story id = \(self.id)")
                         }
@@ -227,10 +228,11 @@ public class StoriesElement {
     let title, linkIos: String?
     let textBold: Bool?
     let background: String?
+    let cornerRadius: Int
     let linkAndroid: String?
     let labels: Labels?
     let products: [StoriesProduct]?
-    let cornerRadius: Int
+    let product: StoriesPromoElement?
     public var link: String?
     
     public init(json: [String: Any]) {
@@ -242,17 +244,52 @@ public class StoriesElement {
         self.linkIos = json["link_ios"] as? String
         self.textBold = json["text_bold"] as? Bool
         self.background = json["background"] as? String
-        self.linkAndroid = json["link_android"] as? String
+        self.cornerRadius = json["corner_radius"] as? Int ?? 12
+        //self.linkAndroid = json["link_android"] as? String
         let _labels = json["labels"] as? [String: Any] ?? [:]
         self.labels = Labels(json: _labels)
         let _products = json["products"] as? [[String: Any]] ?? []
         self.products = _products.map({StoriesProduct(json: $0)})
-        self.cornerRadius = json["corner_radius"] as? Int ?? 12
+        let _product = json["item"] as? [String: Any] ?? [:]
+        self.product = StoriesPromoElement(json: _product) ////_product.map({StoriesPromocode(json: $0)})
+        self.linkAndroid = json["link_android"] as? String
     }
 }
 
 
 // MARK: - Labels
+class StoriesPromoElement {
+    let id, name, brand, price_full, price_formatted, price_full_formatted, image_url, picture, currency: String
+    let price: Int
+    let oldprice: Int
+    let oldprice_full, oldprice_formatted, oldprice_full_formatted: String
+    let discount_percent: Int
+    let price_with_promocode_formatted: String
+    let promocode: String
+    
+    public init(json: [String: Any]) {
+        self.id = json["id"] as? String ?? ""
+        self.name = json["name"] as? String ?? ""
+        self.brand = json["brand"] as? String ?? ""
+        self.image_url = json["image_url"] as? String ?? ""
+        self.price = json["price"] as? Int ?? 0
+        self.price_formatted = json["price_formatted"] as? String ?? ""
+        self.price_full = json["price_full"] as? String ?? ""
+        self.price_full_formatted = json["price_full_formatted"] as? String ?? ""
+        self.picture = json["picture"] as? String ?? ""
+        self.currency = json["currency"] as? String ?? ""
+        self.oldprice = json["oldprice"] as? Int ?? 0
+        self.oldprice_full = json["oldprice_full"] as? String ?? ""
+        self.oldprice_formatted = json["oldprice_formatted"] as? String ?? ""
+        self.oldprice_full_formatted = json["oldprice_full_formatted"] as? String ?? ""
+        self.discount_percent = json["discount_percent"] as? Int ?? 0
+        self.price_with_promocode_formatted = json["price_with_promocode_formatted"] as? String ?? ""
+        self.promocode = json["promocode"] as? String ?? ""
+    }
+}
+
+
+// MARK: - Labelsprice_full_formatted
 class Labels {
     let hideCarousel, showCarousel: String
     
@@ -314,6 +351,7 @@ class StoriesCategory {
 enum ElementType: String {
     case button = "button"
     case products = "products"
+    case product = "product"
     case unknown
 }
 

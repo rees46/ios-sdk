@@ -149,6 +149,10 @@ extension UIColor {
 extension UIColor {
     static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
     static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
+    static let sdkDefaultOrangeColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
+    static let sdkDefaultBlueColor = UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
+    static let sdkDefaultYellowColor = UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
+    static let sdkDefaultGreenColor = UIColor(red: 94/255, green: 193/255, blue: 105/255, alpha: 1.0)
 }
 
 
