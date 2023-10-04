@@ -11,7 +11,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     let storyAuthorNameLabel = UILabel()
     let pinSymbolView = UIView()
     let pinSymbolLabel = UILabel()
-    let preloadIndicator = StoriesPreloadIndicator()
+    let storiesBlockAnimatedLoader = StoriesSlideReloadIndicator()
     
     private var task: URLSessionDataTask?
     
@@ -46,14 +46,14 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storyImage.translatesAutoresizingMaskIntoConstraints = false
         storySuperClearBackCircle.addSubview(storyImage)
         
-        preloadIndicator.contentMode = .scaleToFill
-        preloadIndicator.translatesAutoresizingMaskIntoConstraints = false
-        preloadIndicator.animationDuration = Double(Int.random(in: 2..<3))
-        preloadIndicator.rotationDuration = 7
-        preloadIndicator.numSegments = Int(Double(Int.random(in: 9..<17)))
-        preloadIndicator.lineWidth = SdkConfiguration.stories.iconBorderWidth + 1.6 //3.9
-        preloadIndicator.alpha = 0
-        storyWhiteBackCircle.addSubview(preloadIndicator)
+        storiesBlockAnimatedLoader.contentMode = .scaleToFill
+        storiesBlockAnimatedLoader.translatesAutoresizingMaskIntoConstraints = false
+        storiesBlockAnimatedLoader.lineWidth = SdkConfiguration.stories.iconBorderWidth + 1.6 //3.9
+        storiesBlockAnimatedLoader.numSegments = Int(Double(Int.random(in: 9..<17)))
+        storiesBlockAnimatedLoader.animationDuration = Double(Int.random(in: 2..<3))
+        storiesBlockAnimatedLoader.rotationDuration = 7
+        storiesBlockAnimatedLoader.alpha = 0
+        storyWhiteBackCircle.addSubview(storiesBlockAnimatedLoader)
         
         storyAuthorNameLabel.textAlignment = .center
         storyAuthorNameLabel.numberOfLines = SdkConfiguration.stories.storiesBlockNumberOfLines
@@ -116,7 +116,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
 //            storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
 //            storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             
-            preloadIndicator.strokeColor = .white
+            storiesBlockAnimatedLoader.strokeColor = .white
             storyAuthorNameLabel.backgroundColor = .clear
             
             if (SdkStyle.shared.currentColorScheme?.storiesBlockFontColor == UIColor.sdkDefaultBlackColor) {
@@ -173,14 +173,14 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
                     UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1)
                     
-                    preloadIndicator.strokeColor = viewed ?
+                    storiesBlockAnimatedLoader.strokeColor = viewed ?
                     //UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
                     //UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
                     UIColor(red: 255/255, green: 118/255, blue: 0/255, alpha: 1) :
                     UIColor(red: 255/255, green: 118/255, blue: 0/255, alpha: 1)
                 } else {
                     var updViewedColor = SdkConfiguration.stories.iconViewedBorderColor.hexToRGB()
-                    let preloaderColor = SdkConfiguration.stories.iconPreloaderColor.hexToRGB()
+                    let animatedLoaderColor = SdkConfiguration.stories.iconAnimatedLoaderColor.hexToRGB()
                     if #available(iOS 12.0, *) {
                         if SdkConfiguration.isDarkMode {
                             updViewedColor = SdkConfiguration.stories.iconViewedBorderColorDarkMode.hexToRGB()
@@ -188,7 +188,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     }
                     storyWhiteBackCircle.backgroundColor = UIColor(red: updViewedColor.red, green: updViewedColor.green, blue: updViewedColor.blue, alpha: 1)
                     
-                    preloadIndicator.strokeColor = UIColor(red: preloaderColor.red, green: preloaderColor.green, blue: preloaderColor.blue, alpha: 1)
+                    storiesBlockAnimatedLoader.strokeColor = UIColor(red: animatedLoaderColor.red, green: animatedLoaderColor.green, blue: animatedLoaderColor.blue, alpha: 1)
                 }
             } else {
                 if SdkConfiguration.stories.iconNotViewedBorderColor == "" {
@@ -196,10 +196,10 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
                     UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
                     
-                    preloadIndicator.strokeColor = UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1)
+                    storiesBlockAnimatedLoader.strokeColor = UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1)
                 } else {
                     var updNotViewedColor = SdkConfiguration.stories.iconNotViewedBorderColor.hexToRGB()
-                    let preloaderColor = SdkConfiguration.stories.iconPreloaderColor.hexToRGB()
+                    let animatedLoaderColor = SdkConfiguration.stories.iconAnimatedLoaderColor.hexToRGB()
                     if #available(iOS 12.0, *) {
                         if SdkConfiguration.isDarkMode {
                             updNotViewedColor = SdkConfiguration.stories.iconNotViewedBorderColorDarkMode.hexToRGB()
@@ -207,7 +207,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     }
                     storyWhiteBackCircle.backgroundColor = UIColor(red: updNotViewedColor.red, green: updNotViewedColor.green, blue: updNotViewedColor.blue, alpha: 1)
                     
-                    preloadIndicator.strokeColor = UIColor(red: preloaderColor.red, green: preloaderColor.green, blue: preloaderColor.blue, alpha: 1)
+                    storiesBlockAnimatedLoader.strokeColor = UIColor(red: animatedLoaderColor.red, green: animatedLoaderColor.green, blue: animatedLoaderColor.blue, alpha: 1)
                 }
             }
             storyWhiteBackCircle.layer.masksToBounds = true
@@ -256,15 +256,15 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         let sId = String(storyId)
         DispatchQueue.onceTechService(token: sId) {
             UIView.animate(withDuration: 0.7, animations: {
-                self.preloadIndicator.alpha = 1
+                self.storiesBlockAnimatedLoader.alpha = 1
             })
-            preloadIndicator.startAnimating()
+            storiesBlockAnimatedLoader.startAnimating()
 
             let preffixStart = Double(Int.random(in: 3..<5))
             let preffixEnd = Double(Int.random(in: 8..<11))
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(Double.random(in: preffixStart..<preffixEnd))) {
                 UIView.animate(withDuration: 2.5, animations: {
-                    self.preloadIndicator.alpha = 0
+                    self.storiesBlockAnimatedLoader.alpha = 0
                     let bgColor = UIColor(red: 214/255, green: 214/255, blue: 214/255, alpha: 214/255)
                     self.storyBackCircle.backgroundColor = bgColor
                 })
@@ -289,12 +289,12 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         storySuperClearBackCircle.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: -SdkConfiguration.stories.iconBorderWidth).isActive = true
         storySuperClearBackCircle.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: -SdkConfiguration.stories.iconBorderWidth).isActive = true
         
-        preloadIndicator.topAnchor.constraint(equalTo: storyBackCircle.topAnchor, constant: 0).isActive = true
-        preloadIndicator.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor, constant: 0).isActive = true
-        preloadIndicator.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: 0).isActive = true
-        preloadIndicator.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: 0).isActive = true
-        preloadIndicator.widthAnchor.constraint(equalTo: storyBackCircle.widthAnchor).isActive = true
-        preloadIndicator.heightAnchor.constraint(equalTo: storyBackCircle.heightAnchor).isActive = true
+        storiesBlockAnimatedLoader.topAnchor.constraint(equalTo: storyBackCircle.topAnchor, constant: 0).isActive = true
+        storiesBlockAnimatedLoader.leadingAnchor.constraint(equalTo: storyBackCircle.leadingAnchor, constant: 0).isActive = true
+        storiesBlockAnimatedLoader.trailingAnchor.constraint(equalTo: storyBackCircle.trailingAnchor, constant: 0).isActive = true
+        storiesBlockAnimatedLoader.bottomAnchor.constraint(equalTo: storyBackCircle.bottomAnchor, constant: 0).isActive = true
+        storiesBlockAnimatedLoader.widthAnchor.constraint(equalTo: storyBackCircle.widthAnchor).isActive = true
+        storiesBlockAnimatedLoader.heightAnchor.constraint(equalTo: storyBackCircle.heightAnchor).isActive = true
         
         storyImage.topAnchor.constraint(equalTo: storyWhiteBackCircle.topAnchor, constant: 4.2).isActive = true
         storyImage.leadingAnchor.constraint(equalTo: storyWhiteBackCircle.leadingAnchor, constant: 4.2).isActive = true
@@ -326,16 +326,15 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     }
     
     public func showSdkPreloadIndicator() {
-        preloadIndicator.startAnimating()
+        storiesBlockAnimatedLoader.startAnimating()
     }
     
     public func hideSdkPreloadIndicator() {
-        preloadIndicator.stopAnimating()
+        storiesBlockAnimatedLoader.stopAnimating()
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        print(SdkConfiguration.stories.iconDisplayFormatSquare)
         if SdkConfiguration.stories.iconDisplayFormatSquare {
             //Square implementation coming soon
         } else {

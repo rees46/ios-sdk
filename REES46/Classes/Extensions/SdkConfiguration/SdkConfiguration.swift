@@ -14,6 +14,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public init() {}
     public var allLoadedFonts: [sdkFontClass] = []
     
+    //Sdk main stories block default settings
     var iconSize: CGFloat = 76
     var iconBorderWidth: CGFloat = 2.3
     var iconMarginX: CGFloat = 18
@@ -25,7 +26,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     var iconViewedTransparency: CGFloat = 1.0
     var iconPlaceholderColor: String = "#d6d6d6"
     var iconPlaceholderColorDarkMode: String = "#d6d6d6"
-    var iconPreloaderColor: String = "#5ec169"
+    var iconAnimatedLoaderColor: String = "#5ec169"
     var labelWidth: CGFloat = 76
     var pinColor: String = "" //"#fd7c50"
     var pinColorDarkMode: String = "" //"#fd7c50"
@@ -38,14 +39,37 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     var defaultIconPinColor: String = "#fd7c50"
     
     public var storiesBlockNumberOfLines: Int = 2
-    
     public var storiesBlockCharWrapping = false
     public var storiesBlockCharCountWrap: Int = 10
     
     var defaultButtonCornerRadius: CGFloat = -1
     var productsButtonCornerRadius: CGFloat = -1
     
+    //Sdk Promocode default settings
     public var defaultCopiedMessage: String = "Copied"
+    
+    //Sdk Stories default reload settings
+    public var storiesSlideReloadManually = false
+    public var storiesSlideReloadTimeoutInterval: TimeInterval = 10
+    public var storiesSlideReloadIndicatorDisabled = false
+    public var storiesSlideReloadIndicatorBackgroundColor: String = "#ffffff"
+    public var storiesSlideReloadIndicatorSize: CGFloat = 76.0
+    public var storiesSlideReloadIndicatorBorderLineWidth: CGFloat = 3
+    public var storiesSlideReloadIndicatorSegmentCount = Int(Double(Int.random(in: 10..<11)))
+    public var storiesSlideReloadIndicatorAnimationDuration: Double = 1
+    public var storiesSlideReloadIndicatorRotationDuration: Double = 17
+    
+    public var storiesSlideReloadPopupMessageError: String = "Failed to retrieve data. Please check your connection and try again"
+    public var storiesSlideReloadPopupMessageFontSize: CGFloat = 17
+    public var storiesSlideReloadPopupMessageFontWeight: UIFont.Weight = .medium
+    public var storiesSlideReloadPopupPositionY: CGFloat = 120 //Coming soon scheme .top .center .bottom
+    public var storiesSlideReloadPopupMessageDisplayTime: TimeInterval = 2.5
+    
+    public enum storiesSlideReloadPopupPosition: String, SdkPopupAlertViewScheme {
+        case top
+        case centerCustom
+        case bottom
+    }
     
     public func registerFont(fileName: String, fileExtension: String) {
         let pathForResourceString = Bundle.main.path(forResource: fileName,
@@ -103,7 +127,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: CGFloat? = nil, iconBorderWidth: CGFloat? = nil, iconMarginX: CGFloat? = nil, iconMarginBottom: CGFloat? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: CGFloat? = nil, iconPreloaderColor: String? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, iconDisplayFormatSquare: Bool? = false, labelWidth: CGFloat? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
+    public func setStoriesBlock(fontName: String? = nil, fontSize: CGFloat? = nil, textColor: String? = nil, textColorDarkMode: String? = nil, backgroundColor: String? = nil, backgroundColorDarkMode: String? = nil, iconSize: CGFloat? = nil, iconBorderWidth: CGFloat? = nil, iconMarginX: CGFloat? = nil, iconMarginBottom: CGFloat? = nil, iconNotViewedBorderColor: String? = nil, iconNotViewedBorderColorDarkMode: String? = nil, iconViewedBorderColor: String? = nil, iconViewedBorderColorDarkMode: String? = nil, iconViewedTransparency: CGFloat? = nil, iconAnimatedLoaderColor: String? = nil, iconPlaceholderColor: String? = nil, iconPlaceholderColorDarkMode: String? = nil, iconDisplayFormatSquare: Bool? = false, labelWidth: CGFloat? = nil, pinColor: String? = nil, pinColorDarkMode: String? = nil, closeIconColor: String? = nil) {
         
         let uiBlockTextColorLight = UIColor(hexString: textColor ?? UIColor.sdkDefaultBlackColor.toHexString())
         let uiBlockBackgroundColorLight = UIColor(hexString: backgroundColor ?? UIColor.white.toHexString())
@@ -221,8 +245,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         if iconViewedTransparency != nil {
             self.iconViewedTransparency = iconViewedTransparency!
         }
-        if iconPreloaderColor != nil {
-            self.iconPreloaderColor = iconPreloaderColor!
+        if iconAnimatedLoaderColor != nil {
+            self.iconAnimatedLoaderColor = iconAnimatedLoaderColor!
         }
         if iconPlaceholderColor != nil {
             self.iconPlaceholderColor = iconPlaceholderColor!
@@ -457,7 +481,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    //promoblock
     public var promoSlideFontNameChanged: String?
     public var promoSlideFontNameConstant: String {
         get { return ".SFUI-Regular" }
@@ -529,7 +552,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             promoSlideFontSizeConstant = 16.0
         }
         
-        let uipromoProductTitleTextColorLightMode = UIColor(hexString: productTitleTextColor ?? UIColor.sdkDefaultBlackColor.toHexString())
+        let uipromoProductTitleTextColorLightMode = UIColor(hexString: productTitleTextColor ?? UIColor.white.toHexString())
         let uipromoProductTitleTextColorDarkMode = UIColor(hexString: productTitleTextColorDarkMode ?? UIColor.white.toHexString())
         
         promoProductTitleTextColorLightMode = uipromoProductTitleTextColorLightMode
@@ -574,7 +597,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public var productsButtonFontColor: UIColor
         public var productsButtonBackgroundColor: UIColor
         
-        
         public let storiesBack = UIColor.lightGray
         public let viewControllerBackground = UIColor.white
         public let navigationBarStyle = UIBarStyle.default
@@ -613,7 +635,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public var productsButtonFontColor: UIColor
         public var productsButtonBackgroundColor: UIColor
         
-        
         public let viewControllerBackground = UIColor.black
         public let navigationBarStyle = UIBarStyle.black
         public let navigationBarBackgroundColor =  UIColor.black
@@ -650,7 +671,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public var productsButtonSelectFontSize: CGFloat
         public var productsButtonFontColor: UIColor
         public var productsButtonBackgroundColor: UIColor
-        
         
         public let storiesBack = UIColor.lightGray
         public var viewControllerBackground = UIColor.blue
@@ -846,10 +866,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         get { return .systemFont(ofSize: 14.0) }
         set { bootRegisteredFontChanged = newValue }
     }
-    
-//    //promo
 
-    
     public class func customFont(name: String, size: CGFloat) -> UIFont {
         let sizeWithOffset = size
         guard let sFont = UIFont(name: name, size: sizeWithOffset) else {

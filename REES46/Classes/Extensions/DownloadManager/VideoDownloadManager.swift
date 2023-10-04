@@ -8,11 +8,12 @@ final public class VideoDownloadManager: NSObject {
     public typealias BackgroundDownloadCompletionHandler = () -> Void
     
     private var session: URLSession!
-    private var ongoingDownloads: [String:VideoDownloadObject] = [:]
+    private var ongoingDownloads: [String : VideoDownloadObject] = [:]
     private var backgroundSession: URLSession!
     //private var eSession: URLSession!
     
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
+    public var showLocalNotificationOnBackgroundDownloadSuccess = true
     public var localNotificationText: String?
 
     public static let shared: VideoDownloadManager = { return VideoDownloadManager() }()
@@ -49,7 +50,7 @@ final public class VideoDownloadManager: NSObject {
         let key = self.getExDownloadKey(withUrl: url)
         self.ongoingDownloads[key] = download
         downloadTask.resume()
-        return key
+        return key;
     }
     
     public func getExDownloadKey(withUrl url: URL) -> String {
@@ -136,6 +137,30 @@ final public class VideoDownloadManager: NSObject {
         }
         return (false, nil)
     }
+    
+    private func showSdkDownloaderNotification(withText text:String) {
+        let notificationCenter = UNUserNotificationCenter.current()
+        notificationCenter.getNotificationSettings { (settings) in
+            guard settings.authorizationStatus == .authorized else {
+                debugPrint("Sdk not authorized to schedule notification")
+                return
+            }
+            
+            let content = UNMutableNotificationContent()
+            content.title = text
+            content.sound = UNNotificationSound.default
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1,
+                                                            repeats: false)
+            let identifier = "SdkDownloadManagerNotification"
+            let request = UNNotificationRequest(identifier: identifier,
+                                                content: content, trigger: trigger)
+            notificationCenter.add(request, withCompletionHandler: { (error) in
+                if let error = error {
+                    debugPrint("Sdk could not schedule notification, error : \(error)")
+                }
+            })
+        }
+    }
 }
 
 extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
@@ -186,13 +211,14 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                              totalBytesWritten: Int64,
                              totalBytesExpectedToWrite: Int64) {
         guard totalBytesExpectedToWrite > 0 else {
-            print("SDK Could not calculate progress as totalBytesExpectedToWrite is less than 0")
-            return
+            debugPrint("SDK Could not calculate progress as total bytes to Write is less than 0")
+            return;
         }
         
         if let download = self.ongoingDownloads[(downloadTask.originalRequest?.url?.absoluteString)!],
             let progressBlock = download.progressBlock {
-            let progress: CGFloat = CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite)
+            let progress : CGFloat = CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite)
+            //let percent = String(format:"%.0f", progress * 100) + "%"
             OperationQueue.main.addOperation({
                 progressBlock(progress)
             })
@@ -221,6 +247,15 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                 OperationQueue.main.addOperation({
                     if let completion = self.backgroundCompletionHandler {
                         completion()
+                    }
+                    
+                    if self.showLocalNotificationOnBackgroundDownloadSuccess {
+                        var notificationText = "Sdk Notification Download completed"
+                        if let userNotificationText = self.localNotificationText {
+                            notificationText = userNotificationText
+                        }
+                        
+                        self.showSdkDownloaderNotification(withText: notificationText)
                     }
                     
                     self.backgroundCompletionHandler = nil

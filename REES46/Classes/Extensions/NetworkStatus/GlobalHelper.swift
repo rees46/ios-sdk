@@ -115,7 +115,6 @@ extension UIColor {
     }
     
     static func generateRandomColor(from colors: [UIColor]) -> UIColor? {
-        //preloadIndicator.strokeColor = UIColor.generateRandomColor(from: [.red, .orange, .systemPink, .orange, .cyan])! //use
         return colors.randomElement()
     }
 }

@@ -107,7 +107,7 @@ private var collectionView: UICollectionView = {
     private let carouselProductsSlideTintBlurView = UIView()
     private var carouselProductsSlideCollectionView = CarouselCollectionView()
     
-    private let reelsSlidePreloader = StoriesPreloadIndicator()
+    private let storiesSlideReloadIndicator = StoriesSlideReloadIndicator()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -194,15 +194,22 @@ private var collectionView: UICollectionView = {
         view.addSubview(closeButton)
         view.addSubview(pageIndicator)
         
-        reelsSlidePreloader.contentMode = .scaleToFill
-        reelsSlidePreloader.translatesAutoresizingMaskIntoConstraints = false
-        reelsSlidePreloader.animationDuration = 1
-        reelsSlidePreloader.rotationDuration = 17
-        reelsSlidePreloader.numSegments = Int(Double(Int.random(in: 10..<11)))
-        reelsSlidePreloader.strokeColor = .white
-        reelsSlidePreloader.lineWidth = 3.0
-        reelsSlidePreloader.alpha = 0
-        view.addSubview(reelsSlidePreloader)
+        if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
+            //Do nothing indicator disabled
+        } else {
+            storiesSlideReloadIndicator.contentMode = .scaleToFill
+            storiesSlideReloadIndicator.translatesAutoresizingMaskIntoConstraints = false
+            
+            let customIndicatorColor = SdkConfiguration.stories.storiesSlideReloadIndicatorBackgroundColor.hexToRGB()
+            storiesSlideReloadIndicator.strokeColor = UIColor(red: customIndicatorColor.red, green: customIndicatorColor.green, blue: customIndicatorColor.blue, alpha: 1)
+            
+            storiesSlideReloadIndicator.lineWidth = SdkConfiguration.stories.storiesSlideReloadIndicatorBorderLineWidth
+            storiesSlideReloadIndicator.numSegments = SdkConfiguration.stories.storiesSlideReloadIndicatorSegmentCount
+            storiesSlideReloadIndicator.animationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorAnimationDuration
+            storiesSlideReloadIndicator.rotationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorRotationDuration
+            storiesSlideReloadIndicator.alpha = 1
+            view.addSubview(storiesSlideReloadIndicator)
+        }
 
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 0).isActive = true
@@ -238,9 +245,13 @@ private var collectionView: UICollectionView = {
             NSLayoutConstraint(item: closeButton, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 30).isActive = true
         }
         
-        reelsSlidePreloader.translatesAutoresizingMaskIntoConstraints = false
-        reelsSlidePreloader.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor).isActive = true
-        reelsSlidePreloader.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor).isActive = true
+        if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
+            //Implementation
+        } else {
+            storiesSlideReloadIndicator.translatesAutoresizingMaskIntoConstraints = false
+            storiesSlideReloadIndicator.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor).isActive = true
+            storiesSlideReloadIndicator.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor).isActive = true
+        }
 
         configureView()
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
@@ -614,16 +625,26 @@ private var collectionView: UICollectionView = {
         })
         
         if imageStoryIdDownloaded {
-            UIView.animate(withDuration: 0.3, animations: {
-                self.reelsSlidePreloader.alpha = 0
-            })
+            if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
+                //Implementation
+            } else {
+                UIView.animate(withDuration: 0.3, animations: {
+                    self.storiesSlideReloadIndicator.alpha = 0
+                })
+            }
+            
             timer.invalidate()
             timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
         } else {
             timer.invalidate()
-            UIView.animate(withDuration: 0.5, animations: {
-                self.reelsSlidePreloader.alpha = 1.0
-            })
+            
+            if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
+                //Implementation
+            } else {
+                UIView.animate(withDuration: 0.5, animations: {
+                    self.storiesSlideReloadIndicator.alpha = 1.0
+                })
+            }
             
             let notifName = "waitStorySlideCached." + storyImageSlideId
             NotificationCenter.default.removeObserver(self, name: NSNotification.Name(notifName), object: nil)
@@ -634,9 +655,13 @@ private var collectionView: UICollectionView = {
     @objc func updateVisibleCells(notification: NSNotification) {
         DispatchQueue.main.async {
             if let visibleCell = self.collectionView.indexPathsForVisibleItems.first {
-                UIView.animate(withDuration: 0.5, animations: {
-                    self.reelsSlidePreloader.alpha = 0.0
-                })
+                if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
+                    //Implementation
+                } else {
+                    UIView.animate(withDuration: 0.5, animations: {
+                        self.storiesSlideReloadIndicator.alpha = 0.0
+                    })
+                }
                 self.currentPosition = visibleCell
                 self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
                 DispatchQueue.main.async {
@@ -964,8 +989,11 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        reelsSlidePreloader.startAnimating()
-        //reelsSlidePreloader.alpha = 0
+        if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
+            //Implementation
+        } else {
+            storiesSlideReloadIndicator.startAnimating()
+        }
         
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else {return UICollectionViewCell()}
         let slide = stories[indexPath.section].slides[indexPath.row]

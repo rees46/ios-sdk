@@ -986,8 +986,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             "did": deviceID
         ]
         let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 10
-        sessionConfig.waitsForConnectivity = true
+        if SdkConfiguration.stories.storiesSlideReloadManually {
+            sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
+            sessionConfig.waitsForConnectivity = false
+        } else {
+            sessionConfig.timeoutIntervalForRequest = 10
+            sessionConfig.waitsForConnectivity = true
+        }
         self.urlSession = URLSession(configuration: sessionConfig)
         getRequest(path: path, params: params, true) { result in
 
@@ -1062,7 +1067,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         }
                     } else {
                         completion(.failure(.invalidResponse))
-                        //Deprecated next releases
                     }
                 }
             }.resume()
@@ -1077,13 +1081,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             "stream": stream
         ]
         for (key, value) in params {
-                  requestParams[key] = value
-             }
+            requestParams[key] = value
+        }
 
         if let url = URL(string: baseURL + path) {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             do {
+                //request.httpBody = nil
                 request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
             } catch let error {
                 completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
@@ -1137,7 +1142,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.failure(.networkOfflineError))
                         }
                     } else {
-                        completion(.failure(.invalidResponse)) //Deprecated in next releases
+                        completion(.failure(.invalidResponse))
                     }
                 }
             }.resume()

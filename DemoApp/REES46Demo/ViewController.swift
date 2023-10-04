@@ -26,7 +26,7 @@ class ViewController: UIViewController {
     }
     
     func addStoriesObserver() {
-        NotificationCenter.default.addObserver(self, selector: #selector(updateStories), name: globalSDKNotificationName, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock), name: globalSDKNotificationName, object: nil)
     }
     
     deinit {
@@ -38,7 +38,7 @@ class ViewController: UIViewController {
     }
     
     @objc
-    private func updateStories() {
+    private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }

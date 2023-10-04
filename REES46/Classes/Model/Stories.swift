@@ -245,13 +245,12 @@ public class StoriesElement {
         self.textBold = json["text_bold"] as? Bool
         self.background = json["background"] as? String
         self.cornerRadius = json["corner_radius"] as? Int ?? 12
-        //self.linkAndroid = json["link_android"] as? String
         let _labels = json["labels"] as? [String: Any] ?? [:]
         self.labels = Labels(json: _labels)
         let _products = json["products"] as? [[String: Any]] ?? []
         self.products = _products.map({StoriesProduct(json: $0)})
         let _product = json["item"] as? [String: Any] ?? [:]
-        self.product = StoriesPromoElement(json: _product) ////_product.map({StoriesPromocode(json: $0)})
+        self.product = StoriesPromoElement(json: _product)
         self.linkAndroid = json["link_android"] as? String
     }
 }

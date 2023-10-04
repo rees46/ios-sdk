@@ -1,14 +1,12 @@
 import UIKit
 
 class PromoCodeView: UIView {
-    
-    let promoProductNameLabel = UILabel()
-    var imageView = UIImageView()
-    
     var _promoData: StoriesPromoElement?
-    //let dismissablePromocodeBanner = PromocodeBanner(location: PromocodeBannerLocation.bottomRight)
     
     private let loadingPlaceholderView = LoadingPlaceholderView()
+    
+    let promoProductNameLabel = UILabel()
+    var promocodeSlideProductImage = UIImageView()
     
     init() {
         super.init(frame: .zero)
@@ -46,9 +44,9 @@ class PromoCodeView: UIView {
             }
             if #available(iOS 12.0, *) {
                 if SdkConfiguration.isDarkMode {
-                    promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorDarkMode
+                    promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorDarkMode ?? .white
                 } else {
-                    promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorLightMode
+                    promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorLightMode ?? .white
                 }
             } else {
                 promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorLightMode
@@ -57,25 +55,15 @@ class PromoCodeView: UIView {
             promoProductNameLabel.sizeToFit()
             addSubview(promoProductNameLabel)
             
-            imageView.backgroundColor = .clear
-            imageView.contentMode = .scaleAspectFit
-            imageView.layer.masksToBounds = true
-            imageView.layer.cornerRadius = 6.0
-            imageView.layer.borderColor = UIColor.clear.cgColor
-            imageView.alpha = 0.0
-            imageView.frame = CGRect(x: 18, y: frame.maxY/2 - frame.size.width/2, width: frame.size.width - 36, height: frame.size.width - 36)
+            promocodeSlideProductImage.backgroundColor = .clear
+            promocodeSlideProductImage.contentMode = .scaleAspectFit
+            promocodeSlideProductImage.layer.masksToBounds = true
+            promocodeSlideProductImage.layer.cornerRadius = 6.0
+            promocodeSlideProductImage.layer.borderColor = UIColor.clear.cgColor
+            promocodeSlideProductImage.alpha = 0.0
+            promocodeSlideProductImage.frame = CGRect(x: 18, y: frame.maxY/2 - frame.size.width/2, width: frame.size.width - 36, height: frame.size.width - 36)
             
-//            let transparentAdditionaBorderLayer = CALayer()
-//            let equalImageViewFrame = CGRect(x: 0.0, y: 0.0, width: imageView.frame.size.height, height: imageView.frame.size.height)
-//            transparentAdditionaBorderLayer.backgroundColor = UIColor.clear.cgColor
-//            transparentAdditionaBorderLayer.frame = equalImageViewFrame
-//            transparentAdditionaBorderLayer.masksToBounds = true
-//            transparentAdditionaBorderLayer.cornerRadius = 6.0
-//            transparentAdditionaBorderLayer.borderWidth = 16.0
-//            transparentAdditionaBorderLayer.borderColor = UIColor.systemPink.cgColor
-//            imageView.layer.addSublayer(transparentAdditionaBorderLayer)
-            
-            addSubview(imageView)
+            addSubview(promocodeSlideProductImage)
             
             let url = URL(string: promoData.image_url)
             if url != nil {
@@ -90,16 +78,15 @@ class PromoCodeView: UIView {
                         let imageBorderRepresentation = cachedImage!.imageWithInsets(insets: UIEdgeInsets(top: 22, left: 22, bottom: 22, right: 22))
                         if cachedImage!.hasAlpha {
                             DispatchQueue.main.async {
-                                //Sdk Detect alpha channel
-                                self.imageView.backgroundColor = .clear
-                                self.imageView.layer.borderWidth = 0.0
-                                self.imageView.image = cachedImage
+                                self.promocodeSlideProductImage.backgroundColor = .clear
+                                self.promocodeSlideProductImage.layer.borderWidth = 0.0
+                                self.promocodeSlideProductImage.image = cachedImage
                             }
                         } else {
                             DispatchQueue.main.async {
-                                self.imageView.backgroundColor = .white
-                                self.imageView.layer.borderWidth = 22.0
-                                self.imageView.image = imageBorderRepresentation
+                                self.promocodeSlideProductImage.backgroundColor = .white
+                                self.promocodeSlideProductImage.layer.borderWidth = 22.0
+                                self.promocodeSlideProductImage.image = imageBorderRepresentation
                             }
                         }
                         
@@ -107,7 +94,7 @@ class PromoCodeView: UIView {
                             self.loadingPlaceholderView.uncover(animated: false)
                         }
                         UIView.animate(withDuration: 0.2, animations: {
-                                self.imageView.alpha = 1.0
+                                self.promocodeSlideProductImage.alpha = 1.0
                             }, completion: { (b) in
                                 //Do nothing
                         })
@@ -120,7 +107,7 @@ class PromoCodeView: UIView {
                         UIView.animate(withDuration: 0.1, animations: {
                             self.loadingPlaceholderView.cover(self, animated: true)
                         }, completion: { (b) in
-                            //Do nothing coming soon
+                            //Do nothing
                         })
                         
                         let task = URLSession.shared.dataTask(with: url!, completionHandler: { data, _, error in
@@ -131,16 +118,15 @@ class PromoCodeView: UIView {
                                 let imageBorderRepresentation = downloadedImage.imageWithInsets(insets: UIEdgeInsets(top: 22, left: 22, bottom: 22, right: 22))
                                 if downloadedImage.hasAlpha {
                                     DispatchQueue.main.async { [self] in
-                                        //Sdk Detect alpha channel
-                                        self.imageView.backgroundColor = .clear
-                                        self.imageView.layer.borderWidth = 0.0
-                                        self.imageView.image = downloadedImage
+                                        self.promocodeSlideProductImage.backgroundColor = .clear
+                                        self.promocodeSlideProductImage.layer.borderWidth = 0.0
+                                        self.promocodeSlideProductImage.image = downloadedImage
                                     }
                                 } else {
                                     DispatchQueue.main.async { [self] in
-                                        self.imageView.backgroundColor = .white
-                                        self.imageView.layer.borderWidth = 22.0
-                                        self.imageView.image = imageBorderRepresentation
+                                        self.promocodeSlideProductImage.backgroundColor = .white
+                                        self.promocodeSlideProductImage.layer.borderWidth = 22.0
+                                        self.promocodeSlideProductImage.image = imageBorderRepresentation
                                     }
                                 }
                                 
@@ -150,7 +136,7 @@ class PromoCodeView: UIView {
                                 
                                 DispatchQueue.main.async { [self] in
                                     UIView.animate(withDuration: 1.8, animations: {
-                                        self.imageView.alpha = 1.0
+                                        self.promocodeSlideProductImage.alpha = 1.0
                                     }, completion: { (b) in })
                                 }
                                 

@@ -2,10 +2,11 @@ import Foundation
 import UIKit
 
 public struct StoryBlockImageCache {
-    
     enum Error: Swift.Error {
         case StoryBlockImageCacheSaveError
     }
+    
+    public static var internalLogger: ((_ message: String, _ file: String, _ function: String, _ line: Int) -> Void)?
     
     public static var imageURLProvider: StoryImageURLProviding?
 
@@ -59,7 +60,8 @@ public struct StoryBlockImageCache {
         do {
             try fileSystem(save: image, for: key)
         } catch {
-            print("SDK Error saving image for block")
+            internalLogger?("Sdk Internal Error saving image for key \(key): \(error)", file, function, line)
+            //print("SDK Error saving image for block")
         }
     }
     
@@ -68,8 +70,10 @@ public struct StoryBlockImageCache {
         urlSession = createUrlSession()
     }
     
+    //fileprivate static var internalShared = StoryBlockImageCache()
+    //fileprivate let cache = NSCache<AnyObject, AnyObject>()
     public static var shared = StoryBlockImageCache()
-    public let cache = NSCache<AnyObject, AnyObject>()
+    public let internalCache = NSCache<AnyObject, AnyObject>()
     fileprivate static let cacheDirectory: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
 
     fileprivate init() {
@@ -79,11 +83,11 @@ public struct StoryBlockImageCache {
     }
 
     fileprivate static func purgeRecursiveNSCache(file: String = #file, function: String = #function, line: Int = #line) {
-        StoryBlockImageCache.shared.cache.removeAllObjects()
+        StoryBlockImageCache.shared.internalCache.removeAllObjects()
     }
 
     fileprivate static func inMemoryImage(for key: String) -> UIImage? {
-        if let image = StoryBlockImageCache.shared.cache.object(forKey: key as NSString) as? UIImage {
+        if let image = StoryBlockImageCache.shared.internalCache.object(forKey: key as NSString) as? UIImage {
             return image
         } else {
             return nil
@@ -101,10 +105,19 @@ public struct StoryBlockImageCache {
     }
 
     fileprivate static func inMemory(save image: UIImage, for key: String) {
-        StoryBlockImageCache.shared.cache.setObject(image, forKey: key as AnyObject)
+        StoryBlockImageCache.shared.internalCache.setObject(image, forKey: key as AnyObject)
     }
 
     fileprivate static func fileSystem(save image: UIImage, for key: String, file: String = #file, function: String = #function, line: Int = #line) throws {
+//        if let jpeg = image.jpegData(compressionQuality: 1.0), let url = fileUrl(forKey: key) {
+//            do {
+//                try jpeg.write(to: url, options: [.atomic])
+//            } catch {
+//                internalLogger?("Error saving image to filesystem for \(key) - \(error)", file, function, line)
+//                throw Error.StoryBlockImageCacheSaveError
+//            }
+//        }
+        
         if let pngAlphaQuality = image.pngData() , let url = fileUrl(forKey: key) {
             do {
                 try pngAlphaQuality.write(to: url, options: [.atomic])
