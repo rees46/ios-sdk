@@ -1,4 +1,5 @@
 import UIKit
+import AVFoundation
 
 public protocol StoryViewControllerProtocol: AnyObject {
     func reloadStoriesCollectionSubviews()
@@ -37,7 +38,6 @@ public class NavigationStackController: UINavigationController {
 }
 
 extension NavigationStackController: UINavigationControllerDelegate {
-
     public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
         if canBeMadeHeadViewController(viewController: viewController) {
             viewController.navigationItem.setHidesBackButton(false, animated: false)
@@ -398,8 +398,8 @@ private var collectionView: UICollectionView = {
                         currentPosition.row = currentDefaultIndex
                         collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
                     } else {
-                        print(stories[currentPosition.section - 1].slides.count)
-                        print(stories[currentPosition.section].slides.count)
+                        //print(stories[currentPosition.section - 1].slides.count)
+                        //print(stories[currentPosition.section].slides.count)
                         if (currentDefaultIndex + 1 <= stories[currentPosition.section - 1].slides.count) {
                             currentPosition.section -= 1
                             currentPosition.row = currentDefaultIndex + 1
@@ -531,8 +531,8 @@ private var collectionView: UICollectionView = {
                 }
                 
                 if (currentDefaultIndex + 1 < stories[currentPosition.section - 1].slides.count) {
-                    print(stories[currentPosition.section - 1].slides.count)
-                    print(stories[currentPosition.section].slides.count)
+                    //print(stories[currentPosition.section - 1].slides.count)
+                    //print(stories[currentPosition.section].slides.count)
                     if (currentDefaultIndex + 1 <= stories[currentPosition.section - 1].slides.count) {
                         currentPosition.section -= 1
                         currentPosition.row = currentDefaultIndex + 1
@@ -581,6 +581,18 @@ private var collectionView: UICollectionView = {
         let customTintColor = SdkConfiguration.stories.closeIconColor.hexToRGB()
         closeButton.tintColor = UIColor(red: customTintColor.red, green: customTintColor.green, blue: customTintColor.blue, alpha: 1)
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
+        
+        let slideMedia = stories[currentPosition.section].slides.first
+        if slideMedia?.type == .video {
+            let videoLink = slideMedia?.background
+            let url = URL(string: videoLink!)
+            let durationLength = AVURLAsset(url: url!).duration.seconds
+            let currentDurationInt = Int(durationLength)
+            storyTime = currentDurationInt
+
+        } else {
+            storyTime = slideMedia!.duration
+        }
         updateSlides()
     }
 
@@ -772,7 +784,6 @@ private var collectionView: UICollectionView = {
             }
             
             presentInternalSdkWebKit(url: url, completion: nil)
-            //UIApplication.shared.open(url) //Safari default
             
             let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])

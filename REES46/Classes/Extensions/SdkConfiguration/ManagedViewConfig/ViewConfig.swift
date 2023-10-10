@@ -2,7 +2,8 @@ import Foundation
 import SwiftUI
 
 @available(iOS 14.0, *)
-@propertyWrapper public struct ViewConfig<Value>: DynamicProperty {
+@propertyWrapper public struct ViewConfig<InternalValue>: DynamicProperty {
+    
     private final class Listener<Value>: ObservableObject {
         var subscriber: NSObjectProtocol?
         var value: Value? {
@@ -28,12 +29,12 @@ import SwiftUI
         }
     }
 
-    @StateObject private var core = Listener<Value>()
+    @StateObject private var core = Listener<InternalValue>()
     private let key: String
     private let defaults: UserDefaults
-    private let defaultValue: Value
+    private let defaultValue: InternalValue
 
-    public var wrappedValue: Value {
+    public var wrappedValue: InternalValue {
         core.value ?? defaultValue
     }
 
@@ -41,13 +42,13 @@ import SwiftUI
         core.listenTo(store: self.defaults, key: key, defaultValue: defaultValue)
     }
 
-    public init(wrappedValue defaultValue: Value, _ key: String, store: UserDefaults = UserDefaults.standard) {
+    public init(wrappedValue defaultValue: InternalValue, _ key: String, store: UserDefaults = UserDefaults.standard) {
         self.key = key
         self.defaults = store
         self.defaultValue = defaultValue
     }
 
-    public init(_ key: String, store: UserDefaults = UserDefaults.standard) where Value: ExpressibleByNilLiteral {
+    public init(_ key: String, store: UserDefaults = UserDefaults.standard) where InternalValue: ExpressibleByNilLiteral {
         self.key = key
         self.defaultValue = nil
         self.defaults = store

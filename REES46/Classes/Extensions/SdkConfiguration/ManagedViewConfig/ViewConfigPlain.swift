@@ -1,7 +1,7 @@
 import Foundation
 
 @propertyWrapper public struct ViewConfigPlain<Value> {
-    private final class Listener<Value> {
+    private final class Listener<ListenerValue> {
         var subscriber: NSObjectProtocol?
         var value: Value?
 

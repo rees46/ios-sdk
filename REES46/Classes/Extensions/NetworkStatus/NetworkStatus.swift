@@ -10,7 +10,7 @@ public class NetworkStatus {
     
     private let monitor: NWPathMonitor
     
-    private var semaphore: DispatchSemaphore? = DispatchSemaphore(value: 0)
+    public var semaphore: DispatchSemaphore? = DispatchSemaphore(value: 0)
     
     public var connectionStatus: NetworkConnectionStatus {
         didSet {

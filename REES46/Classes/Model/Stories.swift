@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import AVFoundation
 
 public class StoryContent {
     let id: Int
@@ -48,6 +49,7 @@ class Story {
     let name: String
     let pinned: Bool
     let slides: [Slide]
+    let videoid: String
     
     public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? -1
@@ -57,6 +59,7 @@ class Story {
         self.name = json["name"] as? String ?? ""
         self.pinned = json["pinned"] as? Bool ?? false
         let _slides = json["slides"] as? [[String: Any]] ?? []
+        self.videoid = json["id"] as? String ?? "-1"
         self.slides = _slides.map({Slide(json: $0)})
     }
 }
@@ -64,13 +67,15 @@ class Story {
 
 // MARK: - Slide
 class Slide {
-    let id, duration: Int
+    let id: Int
+    var duration: Int
     let background: String
     let backgroundColor: String
     let preview: String?
     let type: SlideType
     let elements: [StoriesElement]
     var videoURL: URL? = nil
+    var videoid: String? = nil
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
@@ -83,6 +88,7 @@ class Slide {
         self.background = json["background"] as? String ?? ""
         self.backgroundColor = json["background_color"] as? String ?? ""
         self.preview = json["preview"] as? String
+        self.videoid = json["id"] as? String ?? "-1"
         let _type = json["type"] as? String ?? ""
         self.type = SlideType(rawValue: _type) ?? .unknown
         let _elements = json["elements"] as? [[String: Any]] ?? []
@@ -99,7 +105,11 @@ class Slide {
                 switch result {
                 case .success(let url):
                     self.videoURL = url
+                    let slideVideoIdentificator = self.videoid!
+                    let slideVideoDuration = AVURLAsset(url: self.videoURL!).duration.seconds
+                    
                     self.completionCached(slideWithId: self.id, workingSlideUrl: url)
+                    self.completionCachedVideoDuration(videoSlideWithId: slideVideoIdentificator, videoDuration: slideVideoDuration)
                 case .failure(let error):
                     print("SDK Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
                 }
@@ -122,11 +132,12 @@ class Slide {
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: temporaryFileURL.path) {
             completion(.success(temporaryFileURL))
-            print("SDK Load cached video for story id = \(self.id)")
+            
+            let duration = AVURLAsset(url: temporaryFileURL).duration.seconds
+            let videoIdentification = self.videoid!
+            completionCachedVideoDuration(videoSlideWithId: videoIdentification, videoDuration: duration)
             return
         }
-        
-        //let dispetcher = self.vDownloadManager.currentDownloads()
         
         let request = URLRequest(url: url)
         _ = self.vDownloadManager.downloadStoryMediaFile(withRequest: request,
@@ -168,7 +179,6 @@ class Slide {
         }
         
         StoryBlockImageCache.image(for: url.absoluteString) { cachedImage in
-            
             if isPreview {
                 self.previewImage = cachedImage
                 //print("Downloaded preview for image for video story with id = \(self.id)")
@@ -178,7 +188,7 @@ class Slide {
             
             if cachedImage != nil {
                 self.completionCached(slideWithId: self.id, workingSlideUrl: url)
-                print("SDK Load cached image for story id = \(self.id)")
+                print("SDK Load cached image for story id = \(String(describing: self.videoid))")
             } else {
                 let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
                     if error == nil {
@@ -197,6 +207,21 @@ class Slide {
                 })
                 task.resume()
             }
+        }
+    }
+    
+    private func completionCachedVideoDuration(videoSlideWithId: String, videoDuration: Double) {
+        let storyVideoId = String(videoSlideWithId)
+        
+        let storyVideoDurationName = "waitStoryVideoDurationCached." + storyVideoId
+        var storiesVideosDurationArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyVideoDurationName)) as? [String] ?? []
+        let storyIdWithVideoDurationExists = storiesVideosDurationArr.contains(where: {
+            $0.range(of: String(storyVideoDurationName)) != nil
+        })
+        
+        if !storyIdWithVideoDurationExists {
+            storiesVideosDurationArr.append(storyVideoDurationName)
+            UserDefaults.standard.setValue(storiesVideosDurationArr, for: UserDefaults.Key(storyVideoDurationName))
         }
     }
     

@@ -25,13 +25,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     var segment: String
 
-    var urlSession: URLSession
-
     var userInfo: InitResponse = InitResponse()
 
     private let sessionQueue = SessionQueue.manager
     
-    private let semaphore = DispatchSemaphore(value: 0)
+    private var requestOperation: RequestOperation?
+    
+    public let semaphore = DispatchSemaphore(value: 0)
 
     init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
@@ -53,7 +53,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Trying to fetch user session (permanent user ID)
         deviceID = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
-        urlSession = URLSession.shared
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
@@ -121,10 +120,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "token": token,
                 "platform": self.stream,
             ]
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
+            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case .success:
@@ -145,10 +141,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "token": token,
                 "platform": "ios",
             ]
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
+            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case .success:
@@ -167,10 +160,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceID,
                 "shop_id": self.shopId
             ]
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
+            
             self.getRequest(path: path, params: params) { (result) in
                 switch result {
                 case let .success(successResult):
@@ -200,10 +190,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.failure(.custom(error: "Error: rating can be between 1 and 10 only")))
                 return // Exit from review
             }
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
+            
             self.postRequest(path: path, params: params) { (result) in
                 switch result {
                 case .success:
@@ -309,11 +296,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let customProperties = customProperties {
                 paramsTemp.merge(customProperties) { (_, new) in new }
             }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
             
             var params: [String: Any] = [String: Any]()
             for item in paramsTemp {
@@ -458,7 +440,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["source"] = sourceParams
             }
             
-            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
@@ -573,11 +554,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let locations = locations{
                 params["locations"] = locations
             }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
 
             self.getRequest(path: path, params: params) { result in
                 switch result {
@@ -661,10 +637,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
@@ -700,11 +672,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["extended"] = extended
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
@@ -729,11 +696,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "type": type
             ]
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case .success:
@@ -755,11 +717,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "code": code,
                 "type": type
             ]
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -876,6 +833,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let mobilePushBulk          = mobilePushBulk             { params["mobile_push_bulk"]            = mobilePushBulk }
         if let mobilePushChain         = mobilePushChain            { params["mobile_push_chain"]           = mobilePushChain }
         if let mobilePushTransactional = mobilePushTransactional    { params["mobile_push_transactional"]   = mobilePushTransactional }
+        
         self.postRequest(path: path, params: params, completion: { result in
             switch result {
             case .success(_):
@@ -960,12 +918,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             "tz": String(hours)
         ]
         
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 1
-        sessionConfig.waitsForConnectivity = true
-        self.urlSession = URLSession(configuration: sessionConfig)
         getRequest(path: path, params: params, true) { result in
-
             switch result {
             case let .success(successResult):
                 let resJSON = successResult
@@ -993,9 +946,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             sessionConfig.timeoutIntervalForRequest = 10
             sessionConfig.waitsForConnectivity = true
         }
-        self.urlSession = URLSession(configuration: sessionConfig)
-        getRequest(path: path, params: params, true) { result in
 
+        getRequest(path: path, params: params, true) { result in
             switch result {
             case let .success(successResult):
                 let res = StoryContent(json: successResult)
@@ -1022,61 +974,58 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
 
         let urlString = baseURL + path
-        var url = URLComponents(string: urlString)
-
-        var queryItems = [URLQueryItem]()
-        for item in params{
-            queryItems.append(URLQueryItem(name: item.key, value: item.value))
+        var queryItems: [String: String] = params
+        for item in params {
+            queryItems.updateValue(item.value, forKey: item.key)
         }
-        queryItems.append(URLQueryItem(name: "stream", value: stream))
-        url?.queryItems = queryItems
+        queryItems.updateValue(stream, forKey: "stream")
 
-        if let endUrl = url?.url {
-            urlSession.dataTask(with: endUrl) { result in
-                switch result {
-                case .success(let (response, data)):
-                    guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
-                        let json = try? JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            let statusMessage = jsonObject["message"] as? String ?? ""
-                            print("Status message: ", statusMessage)
-                        }
-                        completion(.failure(.invalidResponse))
-                        return
+        requestOperation = RequestOperation(url: urlString,
+                                            query: queryItems,
+                                            method: .get) {result, response, data, error in
+            switch result {
+            case true:
+                guard let statusCode = (response)?.statusCode, 200 ..< 299 ~= statusCode else {
+                    let json = try? JSONSerialization.jsonObject(with: data ?? Data())
+                    if let jsonObject = json as? [String: Any] {
+                        let statusMessage = jsonObject["message"] as? String ?? ""
+                        print("Status message: ", statusMessage)
                     }
-                    do {
-                        let json = try JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            completion(.success(jsonObject))
-                        } else {
-                            completion(.failure(.decodeError))
-                        }
-                    } catch {
+                    completion(.failure(.invalidResponse))
+                    return
+                }
+                do {
+                    let json = try JSONSerialization.jsonObject(with: data!)
+                    if let jsonObject = json as? [String: Any] {
+                        completion(.success(jsonObject))
+                    } else {
                         completion(.failure(.decodeError))
                     }
-                case .failure:
-                    if #available(iOS 12.0, *) {
-                        let networkManager = NetworkStatus.manager
-                        let connectionStatus = networkManager.connectionStatus
-                        
-                        if connectionStatus == .Online {
-                            completion(.failure(.invalidResponse))
-                        } else if connectionStatus == .Offline {
-                            completion(.failure(.networkOfflineError))
-
-                        }
-                    } else {
-                        completion(.failure(.invalidResponse))
-                    }
+                } catch {
+                    completion(.failure(.decodeError))
                 }
-            }.resume()
-        } else {
-            completion(.failure(.invalidResponse))
+            case false:
+                if #available(iOS 12.0, *) {
+                    let networkManager = NetworkStatus.manager
+                    let connectionStatus = networkManager.connectionStatus
+                    if connectionStatus == .Online {
+                        completion(.failure(.invalidResponse))
+                    } else if connectionStatus == .Offline {
+                        completion(.failure(.networkOfflineError))
+
+                    }
+                } else {
+                    completion(.failure(.invalidResponse))
+                }
+            }
         }
+        
+        sessionQueue.addOperation(self.requestOperation!)
     }
 
     private func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
         
+        let urlString = baseURL + path
         var requestParams : [String: Any] = [
             "stream": stream
         ]
@@ -1084,109 +1033,74 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             requestParams[key] = value
         }
 
-        if let url = URL(string: baseURL + path) {
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            do {
-                //request.httpBody = nil
-                request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
-            } catch let error {
-                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
-                return
-            }
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue("application/json", forHTTPHeaderField: "Accept")
-            
-            urlSession.postTask(with: request) { result in
-                switch result {
-                case .success(let (response, data)):
-                    guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
-                        if let json = try? JSONSerialization.jsonObject(with: data) {
-                            if let jsonObject = json as? [String:Any] {
-                                if let status = jsonObject["status"] as? String, status == "error" {
-                                    if let errorMessage = jsonObject["message"] as? String {
-                                        completion(.failure(.custom(error: errorMessage)))
-                                    }
+        var httpBody = Data()
+        do {
+            httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
+        } catch let error {
+            completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
+            return
+        }
+        
+        let headerFields: [String: String] = [
+            "Content-Type" : "application/json",
+            "Accept" : "application/json"
+        ]
+        
+        requestOperation = RequestOperation(url: urlString,
+                                            method: .post,
+                                            headers: headerFields,
+                                            sdkBody: httpBody) {result, response, data, error in
+            switch result {
+            case true:
+                guard let statusCode = (response)?.statusCode, 200 ..< 299 ~= statusCode else {
+                    guard let data = data else { return }
+
+                    if let json = try? JSONSerialization.jsonObject(with: data) {
+                        if let jsonObject = json as? [String:Any] {
+                            if let status = jsonObject["status"] as? String, status == "error" {
+                                if let errorMessage = jsonObject["message"] as? String {
+                                    completion(.failure(.custom(error: errorMessage)))
                                 }
                             }
                         }
-                        completion(.failure(.invalidResponse))
-                        return
                     }
-                    do {
-                        if data.isEmpty {
-                            if path.contains("clicked") || path.contains("closed") || path.contains("received") {
-                                completion(.success([:]))
-                                return
-                            }
+                    completion(.failure(.invalidResponse))
+                    return
+                }
+                do {
+                    if data!.isEmpty {
+                        if path.contains("clicked") || path.contains("closed") || path.contains("received") {
+                            completion(.success([:]))
+                            return
                         }
-                        let json = try JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            completion(.success(jsonObject))
-                        } else {
-                            completion(.failure(.decodeError))
-                        }
-                    } catch {
+                    }
+                    let json = try JSONSerialization.jsonObject(with: data!)
+                    if let jsonObject = json as? [String: Any] {
+                        completion(.success(jsonObject))
+                    } else {
                         completion(.failure(.decodeError))
                     }
-                case .failure:
-                    if #available(iOS 12.0, *) {
-                        let networkManager = NetworkStatus.manager
-                        let connectionStatus = networkManager.connectionStatus
-                        //let typeOfConnection = networkManager.connectionType
-                        //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                        
-                        if connectionStatus == .Online {
-                            completion(.failure(.invalidResponse))
-                        } else if connectionStatus == .Offline {
-                            completion(.failure(.networkOfflineError))
-                        }
-                    } else {
-                        completion(.failure(.invalidResponse))
-                    }
+                } catch {
+                    completion(.failure(.decodeError))
                 }
-            }.resume()
-        } else {
-            completion(.failure(.invalidResponse))
+            case false:
+                if #available(iOS 12.0, *) {
+                    let networkManager = NetworkStatus.manager
+                    let connectionStatus = networkManager.connectionStatus
+                    //let typeOfConnection = networkManager.connectionType
+                    //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                    
+                    if connectionStatus == .Online {
+                        completion(.failure(.invalidResponse))
+                    } else if connectionStatus == .Offline {
+                        completion(.failure(.networkOfflineError))
+                    }
+                } else {
+                    completion(.failure(.invalidResponse))
+                }
+            }
         }
-    }
-}
-
-
-extension URLSession {
-    func dataTask(with url: URL, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-        HTTPLogger().logRequest(URLRequest(url: url))
-        return dataTask(with: url) { data, response, error in
-            if let error = error {
-                HTTPLogger().logError(error)
-                result(.failure(error))
-                return
-            }
-            guard let response = response, let data = data else {
-                let error = NSError(domain: "error", code: 0, userInfo: nil)
-                result(.failure(error))
-                return
-            }
-            HTTPLogger().logResponse(response, data: data)
-            result(.success((response, data)))
-        }
-    }
-
-    func postTask(with request: URLRequest, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-        HTTPLogger().logRequest(request)
-        return uploadTask(with: request, from: nil) { data, response, error in
-            if let error = error {
-                HTTPLogger().logError(error)
-                result(.failure(error))
-                return
-            }
-            guard let response = response, let data = data else {
-                let error = NSError(domain: "error", code: 0, userInfo: nil)
-                result(.failure(error))
-                return
-            }
-            HTTPLogger().logResponse(response, data: data)
-            result(.success((response, data)))
-        }
+        
+        self.sessionQueue.addOperation(requestOperation!)
     }
 }

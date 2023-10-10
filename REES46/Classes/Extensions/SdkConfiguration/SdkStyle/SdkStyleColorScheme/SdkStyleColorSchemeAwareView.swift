@@ -147,10 +147,10 @@ extension UIRefreshControl: SdkStyleColorSchemeAwareView {
 
     public var titleColor: UIColor? {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKey.key) as? UIColor
+            return objc_getAssociatedObject(self, AssociatedKey.key) as? UIColor
         }
         set {
-            objc_setAssociatedObject(self, &AssociatedKey.key, newValue, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, AssociatedKey.key, newValue, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             updateTitle()
         }
     }

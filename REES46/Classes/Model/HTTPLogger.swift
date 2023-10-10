@@ -100,6 +100,7 @@ public final class HTTPLogger: URLProtocol, URLSessionDelegate {
     }
     
     public override func stopLoading() {
+        //
     }
     
     func URLSession(
@@ -112,7 +113,6 @@ public final class HTTPLogger: URLProtocol, URLSessionDelegate {
         self.client?.urlProtocol(self, wasRedirectedTo: request, redirectResponse: response)
         
     }
-    
     
     public func logError(_ error: Error) {
         

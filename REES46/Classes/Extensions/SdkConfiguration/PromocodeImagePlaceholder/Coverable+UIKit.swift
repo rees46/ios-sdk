@@ -10,12 +10,12 @@ extension UIView {
     @IBInspectable
     open var isC: Bool {
         get {
-            let settedValue = objc_getAssociatedObject(self, &AssociatedObjectKey.isC) as? Bool
+            let settedValue = objc_getAssociatedObject(self, AssociatedObjectKey.isC) as? Bool
             return settedValue ?? engh
         }
         set {
             objc_setAssociatedObject(self,
-                                     &AssociatedObjectKey.isC,
+                                     AssociatedObjectKey.isC,
                                      newValue,
                                      .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
@@ -24,12 +24,12 @@ extension UIView {
     public var coverablePath: UIBezierPath? {
         get {
             let settedCoverablePath = objc_getAssociatedObject(self,
-                                                               &AssociatedObjectKey.path) as? UIBezierPath
+                                                               AssociatedObjectKey.path) as? UIBezierPath
             return settedCoverablePath ?? (self as? Coverable)?.defaultCoverablePath
         }
         set {
             objc_setAssociatedObject(self,
-                                     &AssociatedObjectKey.path,
+                                     AssociatedObjectKey.path,
                                      newValue,
                                      .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }

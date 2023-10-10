@@ -376,15 +376,16 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 storySlideImageView.isHidden = true
 
                 let asset = AVAsset(url: videoURL)
-                let volume = AVAudioSession.sharedInstance().outputVolume
-                print("output volume: \(volume)")
-                
                 let playerItem = AVPlayerItem(asset: asset)
                 self.player = AVPlayer(playerItem: playerItem)
                 let playerLayer = AVPlayerLayer(player: player)
                 let screenSize = UIScreen.main.bounds.size
                 playerLayer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
                 playerLayer.name = "VIDEO"
+                
+                //let videoDuration = asset.duration
+                //let durationTime = CMTimeGetSeconds(videoDuration)
+                //print(videoDuration)
                 //playerLayer.videoGravity = .resizeAspectFill
                 
                 if playerItem.asset.tracks.filter({$0.mediaType == .audio}).count != 0 {
@@ -729,7 +730,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     override public func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        //Video time seek & pause implementation
+        //Video time seek & play/pause implementation
     }
     
     func stopPlayer() {
@@ -786,21 +787,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         })
         task.resume()
     }
-    
-//    @objc public func displayAdditionalBanner() {
-//        additionalBanner.size = CGSize(width: 200, height: 40)
-//        additionalBanner.displayTime = 2
-//        additionalBanner.animationDuration = 0.25
-//        additionalBanner.padding = (10, 10)
-//
-//        let label = UILabel()
-//        label.backgroundColor = UIColor(red: 0, green: 0.7, blue: 0.4, alpha: 1)
-//        label.text = ""
-//        label.textColor = .white
-//
-//        additionalBanner.setView(view: label)
-//        showInCellPromocodeBanner(banner: additionalBanner)
-//    }
 }
 
 extension AVPlayer {

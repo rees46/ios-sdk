@@ -9,10 +9,16 @@ struct Post: Codable {
 public class URLSessionQueue: NSObject, URLSessionDataDelegate {
 
     private let queue = DispatchQueue(label: "urlsession.datatasks.queue")
+
     private var dataTasks: [SessionDataTaskProtocol] = []
     
     public var taskCompleted: ((_ task: SessionDataTaskProtocol, _ error: Error?) -> Void)?
+    
     public var allTasksCompletedHandler: ((_ tasks: [SessionDataTaskProtocol]) -> Void)?
+    
+    open var taskNeedNewBodyStream: ((URLSession, URLSessionTask) -> InputStream?)?
+    
+    open var taskNeedNewBodyStreamWithCompletion: ((URLSession, URLSessionTask, (InputStream?) -> Void) -> Void)?
     
     lazy var session: URLSession = {
         return URLSession(configuration: URLSessionConfiguration.default, delegate: self, delegateQueue: nil)

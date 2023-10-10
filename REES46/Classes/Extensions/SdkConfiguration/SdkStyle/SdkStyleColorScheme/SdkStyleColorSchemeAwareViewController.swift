@@ -103,14 +103,14 @@ extension UIView {
 
     public var skipColorScheme: Bool {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKey.key) as? Bool ?? false
+            return objc_getAssociatedObject(self, AssociatedKey.key) as? Bool ?? false
         }
         set {
             if newValue {
-                objc_setAssociatedObject(self, &AssociatedKey.key, true, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                objc_setAssociatedObject(self, AssociatedKey.key, true, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             }
             else {
-                if let obj = objc_getAssociatedObject(self, &AssociatedKey.key) as? Bool {
+                if let obj = objc_getAssociatedObject(self, AssociatedKey.key) as? Bool {
                     objc_removeAssociatedObjects(obj)
                 }
             }
@@ -125,14 +125,14 @@ extension UIViewController {
 
     public var applyNavBarColors: Bool {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKey.key) as? Bool ?? true
+            return objc_getAssociatedObject(self, AssociatedKey.key) as? Bool ?? true
         }
         set {
             if newValue {
-                objc_setAssociatedObject(self, &AssociatedKey.key, true, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                objc_setAssociatedObject(self, AssociatedKey.key, true, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             }
             else {
-                if let obj = objc_getAssociatedObject(self, &AssociatedKey.key) as? Bool {
+                if let obj = objc_getAssociatedObject(self, AssociatedKey.key) as? Bool {
                     objc_removeAssociatedObjects(obj)
                 }
             }
