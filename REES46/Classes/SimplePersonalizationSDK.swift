@@ -75,7 +75,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(error)
                         
                         if #available(iOS 12.0, *) {
-                            let networkManager = NetworkStatus.manager
+                            let networkManager = NetworkStatus.nManager
                             let connectionStatus = networkManager.connectionStatus
                             let typeOfConnection = networkManager.connectionType
                             print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
@@ -1006,7 +1006,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             case false:
                 if #available(iOS 12.0, *) {
-                    let networkManager = NetworkStatus.manager
+                    let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
@@ -1085,11 +1085,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             case false:
                 if #available(iOS 12.0, *) {
-                    let networkManager = NetworkStatus.manager
+                    let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
                     //let typeOfConnection = networkManager.connectionType
                     //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                    
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
                     } else if connectionStatus == .Offline {

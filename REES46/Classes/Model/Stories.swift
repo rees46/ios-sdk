@@ -127,7 +127,17 @@ class Slide {
         }
         
         let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
-        let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent("\(self.id).mp4")
+        
+        let pathStoriesDir: String = (url.deletingLastPathComponent().absoluteString)
+        let fullNameStoriesDot: String = url.lastPathComponent
+        let exName:String = (url.deletingPathExtension().lastPathComponent)
+
+        Swift.print("pathDir:", pathStoriesDir)
+        Swift.print("fullName:", fullNameStoriesDot)
+        Swift.print("exName:", exName)
+        
+        let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent("\(exName).mp4")
+        print(temporaryFileURL)
         
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: temporaryFileURL.path) {

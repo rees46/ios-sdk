@@ -113,8 +113,6 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         if let settings = settings {
             storyAuthorNameLabel.font = SdkStyle.shared.currentColorScheme?.storiesBlockSelectFontName.withSize(SdkStyle.shared.currentColorScheme!.storiesBlockSelectFontSize)
             let labelColor = settings.color.hexToRGB()
-//            storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
-//            storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             
             storiesBlockAnimatedLoader.strokeColor = .white
             storyAuthorNameLabel.backgroundColor = .clear

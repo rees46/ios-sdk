@@ -61,7 +61,7 @@ public class SdkPopupAlertView: UIView {
         let label = UILabel()
         label.numberOfLines = 0 //1
         if #available(iOS 13.0, *) {
-            label.textColor = .label
+            label.textColor = .black //.label
         } else {
             label.textColor = .black
         }
@@ -70,7 +70,7 @@ public class SdkPopupAlertView: UIView {
 
     private var popupDefaultBackgroundColor: UIColor? {
         if #available(iOS 12.0, *) {
-            return traitCollection.userInterfaceStyle == .dark ? darkBackgroundColor : lightBackgroundColor
+            return traitCollection.userInterfaceStyle == .dark ? lightBackgroundColor : lightBackgroundColor
         } else {
             return lightBackgroundColor
         }
@@ -103,7 +103,7 @@ public class SdkPopupAlertView: UIView {
 
     public var titleTextColor: UIColor = .black {
         didSet {
-            titleLabel.textColor = titleTextColor
+            titleLabel.textColor = .black//titleTextColor
         }
     }
 
@@ -119,10 +119,10 @@ public class SdkPopupAlertView: UIView {
         }
     }
 
-    private var overlayWindow: SdkPopupAlertViewWindow?
+    private var sdkPopupOverlayWindow: SdkPopupAlertViewWindow?
 
-    public init(title: String, titleFont: UIFont = .systemFont(ofSize: 13, weight: .regular),
-                subtitle: String? = nil, subtitleFont: UIFont = .systemFont(ofSize: 11, weight: .regular),
+    public init(title: String, titleFont: UIFont = .systemFont(ofSize: 17, weight: .bold),
+                subtitle: String? = nil, subtitleFont: UIFont = .systemFont(ofSize: 17, weight: .bold),
                 icon: UIImage? = nil, iconSpacing: CGFloat = 16, position: Position = .top, onTap: (() -> ())? = nil) {
         self.position = position
 
@@ -134,7 +134,7 @@ public class SdkPopupAlertView: UIView {
 
         titleLabel.font = titleFont
         titleLabel.textAlignment = .center
-        titleLabel.text = title //"\n" + title
+        titleLabel.text = title
         vStack.addArrangedSubview(titleLabel)
 
         if let icon = icon {
@@ -146,18 +146,41 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 28)
             ])
             if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .label
+                iconImageView.tintColor = .black
+                //iconImageView.tintColor = .label
             } else {
                 iconImageView.tintColor = .black
             }
             iconImageView.image = icon
+            hStack.addArrangedSubview(iconImageView)
+        } else {
+            let iconImageView = UIImageView()
+            iconImageView.contentMode = .scaleAspectFit
+            iconImageView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                iconImageView.widthAnchor.constraint(equalToConstant: 26),
+                iconImageView.heightAnchor.constraint(equalToConstant: 26)
+            ])
+            if #available(iOS 13.0, *) {
+                iconImageView.tintColor = .black
+                //iconImageView.tintColor = .label
+            } else {
+                iconImageView.tintColor = .black
+            }
+            
+            var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+            mainBundle = Bundle.module
+#endif
+            let copyIcon = UIImage(named: "iconCopyDark", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
+            iconImageView.image = copyIcon
             hStack.addArrangedSubview(iconImageView)
         }
 
         if let subtitle = subtitle {
             let subtitleLabel = UILabel()
             if #available(iOS 13.0, *) {
-                subtitleLabel.textColor = .secondaryLabel
+                subtitleLabel.textColor = .black
             } else {
                 subtitleLabel.textColor = .lightGray
             }
@@ -180,10 +203,10 @@ public class SdkPopupAlertView: UIView {
     }
 
     func prepareForShowing() {
-        overlayWindow = SdkPopupAlertViewWindow(SdkPopupAlertView: self)
+        sdkPopupOverlayWindow = SdkPopupAlertViewWindow(SdkPopupAlertView: self)
         setupConstraints(position: position)
         setupStackViewConstraints()
-        overlayWindow?.isHidden = false
+        sdkPopupOverlayWindow?.isHidden = false
     }
 
     override public func layoutSubviews() {
@@ -192,7 +215,7 @@ public class SdkPopupAlertView: UIView {
     }
 
     @available(iOS 10.0, *)
-    public func show(haptic: UINotificationFeedbackGenerator.FeedbackType? = nil) {
+    public func showHapticFeedbackType(haptic: UINotificationFeedbackGenerator.FeedbackType? = nil) {
         if let hapticType = haptic {
             UINotificationFeedbackGenerator().notificationOccurred(hapticType)
         }
@@ -200,7 +223,7 @@ public class SdkPopupAlertView: UIView {
     }
 
     public func show() {
-        if overlayWindow == nil {
+        if sdkPopupOverlayWindow == nil {
             prepareForShowing()
         } else {
             return
@@ -220,7 +243,7 @@ public class SdkPopupAlertView: UIView {
                 transform = initialTransform
             }) { [self] _ in
                 removeFromSuperview()
-                overlayWindow = nil
+                sdkPopupOverlayWindow = nil
             }
         }
     }
@@ -298,6 +321,7 @@ public class SdkPopupAlertView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 }
+
 
 @available(iOSApplicationExtension, unavailable)
 class SdkPopupAlertViewWindow: UIWindow {

@@ -27,7 +27,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     public let productWithPromocodeSuperview = PromoCodeView()
     public let promocodeBannerView = PromocodeBanner(location: PromocodeBannerLocation.bottomLeft)
-    public let sdkPopupAlertView = SdkPopupAlertView(title: SdkConfiguration.stories.defaultCopiedMessage)
+    public var sdkPopupAlertView = SdkPopupAlertView(title: SdkConfiguration.stories.defaultCopiedMessage)
     
     public weak var cellDelegate: StoryCollectionViewCellDelegate?
     public weak var mainStoriesDelegate: StoriesViewLinkProtocol?
@@ -491,13 +491,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
 
                 insertSubview(productWithPromocodeSuperview, aboveSubview: storySlideImageView)
                 
-//                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-//                    insertSubview(promocodeBannerView, aboveSubview: storySlideImageView)
-//                }
-                
                 makeConstraints()
-                
-                //self.sdkPopupTapHandle() //TEST
             }
             
         } else if let element = slide.elements.first(where: {$0.type == .products}) {
@@ -528,14 +522,20 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     @objc func sdkPopupTapHandle(_ sender: UITapGestureRecognizer? = nil) {
+        var mainBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        mainBundle = Bundle.module
+#endif
+        let errorIcon = UIImage(named: "iconError", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
+        
         if #available(iOS 13.0, *) {
             let popupView = SdkPopupAlertView(
                 title: "",
                 titleFont: .systemFont(ofSize: 5, weight: .light),
                 subtitle: SdkConfiguration.stories.storiesSlideReloadPopupMessageError,
                 subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
-                //icon: UIImage(systemName: "defaultIcon"), // Coming soon
-                //iconSpacing: 16,
+                icon: errorIcon,
+                iconSpacing: 16,
                 position: .centerCustom,
                 onTap: { print("Sdk Alert popup tapped")
                 }
@@ -555,14 +555,18 @@ class StoryCollectionViewCell: UICollectionViewCell {
         promocodeBannerView.animationDuration = 0.0 //0.75
         
         let presentedBannerLabel = UILabel()
-        let presentedColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0) //TO DO
+        let presentedColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
         presentedBannerLabel.backgroundColor = presentedColor
         
         let codePromo = promoData.promocode
         let normalClearText = ""
         let normalAttributedString = NSMutableAttributedString(string:normalClearText)
         
-        let oldPriceText = "     " + String(promoData.oldprice)
+        var oldPriceText = "     " + String(promoData.oldprice_formatted)
+        if (promoData.oldprice_formatted == "") {
+            oldPriceText = "     " + String(promoData.oldprice)
+        }
+
         if promoData.oldprice != 0 {
             let attrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16, weight: .heavy),
                          NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
@@ -582,7 +586,14 @@ class StoryCollectionViewCell: UICollectionViewCell {
             //print("SDK Old Price Implementation")
         }
         
-        let newPriceText = "   " + String(promoData.price)
+        var formattedPriceWithPromocode = String(promoData.price_with_promocode_formatted)
+        if formattedPriceWithPromocode == "" {
+            formattedPriceWithPromocode = String(promoData.price_formatted)
+        }
+        let currentCurrency = promoData.currency
+        let replaceCurrencyPriceWithPromocode = formattedPriceWithPromocode.replacingOccurrences(of: currentCurrency, with: "")
+        
+        let newPriceText = "   " + replaceCurrencyPriceWithPromocode
         
         var newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 28, weight: .black), .foregroundColor: UIColor.white]
         if newPriceText.utf16.count <= 10 {
@@ -646,7 +657,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else if codePromo.utf16.count <= 16 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 15, weight: .bold), .foregroundColor: UIColor.white]
             } else if codePromo.utf16.count <= 18 {
-                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 13, weight: .bold), .foregroundColor: UIColor.white]
+                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .bold), .foregroundColor: UIColor.white]
             } else {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 11, weight: .regular), .foregroundColor: UIColor.white]
             }
@@ -659,26 +670,47 @@ class StoryCollectionViewCell: UICollectionViewCell {
         v.addGestureRecognizer(tap)
         v.addSubview(presentedBannerLabel)
         
-        let btn = UIButton()
+        let promoBtn = UIButton()
         if promoData.discount_percent != 0 || codePromo != "" {
-            btn.setAttributedTitle(attributedDiscountSectionString, for: .normal)
-            btn.titleLabel?.textAlignment = .left
-            btn.titleLabel?.numberOfLines = 3
+            promoBtn.setAttributedTitle(attributedDiscountSectionString, for: .normal)
+            promoBtn.titleLabel?.textAlignment = .left
+            promoBtn.titleLabel?.numberOfLines = 3
 
             var bgAdditionalColor = SdkConfiguration.stories.bannerPromocodeSectionBackgroundColor ?? UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
             
             if codePromo == "" {
                 bgAdditionalColor = SdkConfiguration.stories.bannerDiscountSectionBackgroundColor ?? UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
             } else {
-                btn.addTarget(self, action: #selector(copyPromocodeToClipboard), for: .touchUpInside)
+                
+                var mainBundle = Bundle(for: classForCoder)
+            #if SWIFT_PACKAGE
+                mainBundle = Bundle.module
+            #endif
+                let copyIcon = UIImage(named: "iconCopyLight", in: mainBundle, compatibleWith: nil)
+                
+                let copyIconImageView = UIImageView(image: copyIcon)
+                copyIconImageView.translatesAutoresizingMaskIntoConstraints = false
+                promoBtn.addSubview(copyIconImageView)
+                
+                let copyIconLength = CGFloat(17)
+                NSLayoutConstraint.activate([
+                    copyIconImageView.leadingAnchor.constraint(equalTo: promoBtn.trailingAnchor, constant: -28),
+                    copyIconImageView.centerYAnchor.constraint(equalTo: promoBtn.centerYAnchor, constant: -15),
+                    copyIconImageView.widthAnchor.constraint(equalToConstant: copyIconLength),
+                    copyIconImageView.heightAnchor.constraint(equalToConstant: copyIconLength)
+                ])
+                
+                promoBtn.addTarget(self, action: #selector(copyPromocodeToClipboard), for: .touchUpInside)
             }
-            btn.backgroundColor = bgAdditionalColor
-            v.addSubview(btn)
+            
+            promoBtn.backgroundColor = bgAdditionalColor
+            v.addSubview(promoBtn)
+            
         } else {
             let bgAdditionalColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
             //let bgAdditionalColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor
-            btn.backgroundColor = bgAdditionalColor
-            v.addSubview(btn)
+            promoBtn.backgroundColor = bgAdditionalColor
+            v.addSubview(promoBtn)
         }
         
         promocodeBannerView.setView(view: v)
@@ -686,27 +718,27 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         if codePromo == "" {
             presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.72, height: v.frame.height)
-            btn.frame = CGRect(x: (v.frame.width * 0.72) - 5, y: 0, width: v.frame.width - (v.frame.width * 0.72) + 10, height: v.frame.height)
+            promoBtn.frame = CGRect(x: (v.frame.width * 0.72) - 5, y: 0, width: v.frame.width - (v.frame.width * 0.72) + 10, height: v.frame.height)
         } else {
             if promoData.discount_percent != 0 || codePromo != "" {
                 if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
                     if codePromo.utf16.count < 11 {
                         presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.6, height: v.frame.height)
-                        btn.frame = CGRect(x: v.frame.width * 0.6, y: 0, width: v.frame.width - (v.frame.width * 0.6), height: v.frame.height)
+                        promoBtn.frame = CGRect(x: v.frame.width * 0.6, y: 0, width: v.frame.width - (v.frame.width * 0.6), height: v.frame.height)
                     } else if codePromo.utf16.count <= 12 {
                         presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.54, height: v.frame.height)
-                        btn.frame = CGRect(x: v.frame.width * 0.54, y: 0, width: v.frame.width - (v.frame.width * 0.54), height: v.frame.height)
+                        promoBtn.frame = CGRect(x: v.frame.width * 0.54, y: 0, width: v.frame.width - (v.frame.width * 0.54), height: v.frame.height)
                     } else {
                         presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.6, height: v.frame.height)
-                        btn.frame = CGRect(x: v.frame.width * 0.6, y: 0, width: v.frame.width - (v.frame.width * 0.6), height: v.frame.height)
+                        promoBtn.frame = CGRect(x: v.frame.width * 0.6, y: 0, width: v.frame.width - (v.frame.width * 0.6), height: v.frame.height)
                     }
                 } else {
                     presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.53, height: v.frame.height)
-                    btn.frame = CGRect(x: v.frame.width * 0.53, y: 0, width: v.frame.width - (v.frame.width * 0.53), height: v.frame.height)
+                    promoBtn.frame = CGRect(x: v.frame.width * 0.53, y: 0, width: v.frame.width - (v.frame.width * 0.53), height: v.frame.height)
                 }
             } else {
                 presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 1.0, height: v.frame.height)
-                btn.frame = CGRect(x: v.frame.width * 1.0, y: 0, width: v.frame.width - (v.frame.width * 1.0), height: v.frame.height)
+                promoBtn.frame = CGRect(x: v.frame.width * 1.0, y: 0, width: v.frame.width - (v.frame.width * 1.0), height: v.frame.height)
             }
         }
     }

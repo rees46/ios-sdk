@@ -16,10 +16,10 @@ public extension NetworkStatusObserver {
     }
     
     func startObserving() {
-        NetworkStatus.manager.addObserver(observer: self)
+        NetworkStatus.nManager.addObserver(observer: self)
     }
     
     func stopObserving() {
-        NetworkStatus.manager.removeObserver(observer: self)
+        NetworkStatus.nManager.removeObserver(observer: self)
     }
 }

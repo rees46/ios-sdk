@@ -6,7 +6,7 @@ import CoreTelephony
 @available(iOS 12.0, *)
 public class NetworkStatus {
     
-    public static var manager: NetworkStatus = NetworkStatus()
+    public static var nManager: NetworkStatus = NetworkStatus()
     
     private let monitor: NWPathMonitor
     

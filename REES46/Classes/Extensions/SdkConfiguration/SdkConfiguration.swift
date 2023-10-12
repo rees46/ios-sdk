@@ -149,11 +149,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             }
             
             fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
-//            _ = {
-//                $0.isUserInteractionEnabled = true
-//                $0.textColor = storiesBlockTextColorChanged
-//                $0.font = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
-//            }(UILabel.appearance())
             
             if fontSize != nil {
                 if fontSize == storiesBlockMinimumFontSizeConstant {

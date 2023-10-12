@@ -31,11 +31,9 @@ public extension UIApplication {
            ]
         }(UINavigationBar.appearance())
         
-        if #available(iOS 11.0, *) {
-            _ = {
-                $0.tintColor = nil
-            }(UINavigationBar.appearance(whenContainedInInstancesOf: [UIDocumentBrowserViewController.self]))
-        }
+        _ = {
+            $0.tintColor = nil
+        }(UINavigationBar.appearance(whenContainedInInstancesOf: [UIDocumentBrowserViewController.self]))
         
         _ = {
             $0.setTitleTextAttributes([.font: UIFont.systemFont(ofSize: 17), ], for: .normal)
@@ -63,9 +61,7 @@ public extension UIApplication {
             $0.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             $0.showsHorizontalScrollIndicator = false
             $0.keyboardDismissMode = .onDrag
-            if #available(iOS 11.0, *) {
-                $0.contentInsetAdjustmentBehavior = .never
-            }
+            $0.contentInsetAdjustmentBehavior = .never
         }(UIScrollView.appearance())
         
         _ = {
@@ -73,11 +69,9 @@ public extension UIApplication {
             $0.separatorStyle = .singleLine
             $0.rowHeight = 60
             $0.backgroundColor = .groupTableViewBackground
-            if #available(iOS 11.0, *) {
-                $0.estimatedRowHeight = 0.0
-                $0.estimatedSectionHeaderHeight = 0.0
-                $0.estimatedSectionFooterHeight = 0.0
-            }
+            $0.estimatedRowHeight = 0.0
+            $0.estimatedSectionHeaderHeight = 0.0
+            $0.estimatedSectionFooterHeight = 0.0
         }(UITableView.appearance())
         
         _ = {
