@@ -98,6 +98,7 @@ extension SdkFontPackage {
     }
 }
 
+
 extension SdkFontPackage where Self.RawValue == String {
     var fileName: String {
         return rawValue
@@ -108,8 +109,8 @@ extension SdkFontPackage where Self.RawValue == String {
     }
 }
 
+
 extension UIFont.Weight {
-    
     static var mappingKeys: [UIFont.Weight: String] {
         return [.ultraLight: "ultraLight",
                 .thin: "thin",

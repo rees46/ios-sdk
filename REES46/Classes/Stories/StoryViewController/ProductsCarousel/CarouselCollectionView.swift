@@ -120,11 +120,11 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         hideButton.setTitleColor(UIColor.black, for: .normal)
         hideButton.addTarget(self, action: #selector(self.closeButtonTapped), for: .touchUpInside)
         
-        var mainBundle = Bundle(for: classForCoder)
+        var frameworkBundle = Bundle(for: classForCoder)
     #if SWIFT_PACKAGE
-        mainBundle = Bundle.module
+        frameworkBundle = Bundle.module
     #endif
-        let image = UIImage(named: "angleDownBlack", in: mainBundle, compatibleWith: nil)
+        let image = UIImage(named: "angleDownBlack", in: frameworkBundle, compatibleWith: nil)
         
         let imageView = UIImageView(image: image)
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -144,7 +144,8 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         addSubview(stackView)
     }
     
-    @objc func closeButtonTapped(sender : UIButton) {
+    @objc
+    func closeButtonTapped(sender : UIButton) {
         carouselProductsDelegate?.closeProductsCarousel()
     }
     

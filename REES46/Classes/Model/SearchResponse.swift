@@ -23,10 +23,12 @@ public struct PriceRange {
 public struct Suggest {
     public var name: String
     public var url: String
+    public var deeplinkIos: String
     
     init(json: [String: Any]) {
         self.name = json["name"] as? String ?? ""
         self.url = json["url"] as? String ?? ""
+        self.deeplinkIos = json["deeplink_ios"] as? String ?? ""
     }
 }
 
@@ -65,12 +67,14 @@ public struct SearchBlankResponse {
 public struct Redirect {
     public var query: String = ""
     public var redirectUrl: String = ""
-    public var deepLink: String?
+    public var deeplink: String?
+    public var deeplinkIos: String?
     
     init(json: [String: Any]) {
         self.query = json["query"] as? String ?? ""
         self.redirectUrl = json["redirect_link"] as? String ?? ""
-        self.deepLink = json["deep_link"] as? String
+        self.deeplink = json["deep_link"] as? String
+        self.deeplinkIos = json["deeplink_ios"] as? String
     }
 }
 
@@ -149,6 +153,7 @@ public struct Product {
     public var resizedImageUrl: String = ""
     public var resizedImages: [String: String] = [:]
     public var url: String
+    public var deeplinkIos: String
 
     public var price: Double
     public var priceFormatted: String
@@ -165,9 +170,6 @@ public struct Product {
     public var relativeSalesRate: Float = 0.0
     public var isNew: Bool?
     public var params: [[String: Any]]?
-
-    // @deprecated Use resizedImageUrl instead (same value)
-    public var picture: String
     
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
@@ -180,6 +182,7 @@ public struct Product {
         resizedImageUrl = json["picture"] as? String ?? ""
         resizedImages = json["image_url_resized"] as? [String: String] ?? [:]
         url = json["url"] as? String ?? ""
+        deeplinkIos = json["deeplink_ios"] as? String ?? ""
         
         price = json["price"] as? Double ?? 0
         priceFormatted = json["price_formatted"] as? String ?? ""
@@ -196,20 +199,18 @@ public struct Product {
         discount = json["discount"] as? Int ?? 0
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
-        
-        // @deprecated Use resizedImageUrl instead (same value)
-        picture = json["picture"] as? String ?? ""
-
     }
 }
 
 public struct Query {
     public var name: String
     public var url: String
+    public var deeplinkIos: String
 
     init(json: [String: Any]) {
         name = json["name"] as? String ?? ""
         url = json["url"] as? String ?? ""
+        deeplinkIos = json["deeplink_ios"] as? String ?? ""
     }
 }
 

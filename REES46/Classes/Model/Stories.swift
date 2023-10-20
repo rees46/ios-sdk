@@ -3,18 +3,25 @@ import UIKit
 import AVFoundation
 
 public class StoryContent {
-    let id: Int
+    var id: String
+    let ids: Int
     let settings: StoriesSettings
     let stories: [Story]
     
     public init(json: [String: Any]) {
-        self.id = json["id"] as? Int ?? -1
+        self.id = json["id"] as? String ?? "-1"
+        self.ids = json["id"] as? Int ?? -1
         let _settings = json["settings"] as? [String: Any] ?? [:]
         self.settings = StoriesSettings(json: _settings)
         let _stories = json["stories"] as? [[String: Any]] ?? []
         self.stories = _stories.map({Story(json: $0)})
+        
+        if let ids = json["id"] as? Int {
+            self.id = String(ids)
+        }
     }
 }
+
 
 // MARK: - Settings
 public class StoriesSettings {
@@ -42,57 +49,64 @@ public class StoriesSettings {
 
 // MARK: - Story
 class Story {
-    let id: Int
+    var id: String
+    let ids: Int
     let avatar: String
     let viewed: Bool
     let startPosition: Int
     let name: String
     let pinned: Bool
     let slides: [Slide]
-    let videoid: String
     
     public init(json: [String: Any]) {
-        self.id = json["id"] as? Int ?? -1
+        self.id = json["id"] as? String ?? "-1"
+        self.ids = json["id"] as? Int ?? -1
         self.avatar = json["avatar"] as? String ?? ""
         self.viewed = json["viewed"] as? Bool ?? false
         self.startPosition = json["start_position"] as? Int ?? 0
         self.name = json["name"] as? String ?? ""
         self.pinned = json["pinned"] as? Bool ?? false
         let _slides = json["slides"] as? [[String: Any]] ?? []
-        self.videoid = json["id"] as? String ?? "-1"
         self.slides = _slides.map({Slide(json: $0)})
+        
+        if let ids = json["id"] as? Int {
+            self.id = String(ids)
+        }
     }
 }
 
 
 // MARK: - Slide
 class Slide {
-    let id: Int
+    var id: String
     var duration: Int
     let background: String
     let backgroundColor: String
     let preview: String?
+    let ids: Int
     let type: SlideType
     let elements: [StoriesElement]
     var videoURL: URL? = nil
-    var videoid: String? = nil
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
-    private let vDownloadManager = VideoDownloadManager.shared
-    var sdkDirectoryName: String = "SDKCacheDirectory"
+    fileprivate var vDownloadManager = VideoDownloadManager()
     
     public init(json: [String: Any]) {
-        self.id = json["id"] as? Int ?? -1
+        self.id = json["id"] as? String ?? "-1"
+        self.ids = json["id"] as? Int ?? -1
         self.duration = json["duration"] as? Int ?? 10
         self.background = json["background"] as? String ?? ""
         self.backgroundColor = json["background_color"] as? String ?? ""
         self.preview = json["preview"] as? String
-        self.videoid = json["id"] as? String ?? "-1"
         let _type = json["type"] as? String ?? ""
         self.type = SlideType(rawValue: _type) ?? .unknown
         let _elements = json["elements"] as? [[String: Any]] ?? []
         self.elements = _elements.map({StoriesElement(json: $0)})
+        
+        if let ids = json["id"] as? Int {
+            self.id = String(ids)
+        }
         
         if type == .video {
             if preview != nil {
@@ -101,75 +115,41 @@ class Slide {
                 print("SDK Success video preview for \(self.id) is downloaded")
             }
             
-            downloadVideo { result in
-                switch result {
-                case .success(let url):
-                    self.videoURL = url
-                    let slideVideoIdentificator = self.videoid!
-                    let slideVideoDuration = AVURLAsset(url: self.videoURL!).duration.seconds
-                    
-                    self.completionCached(slideWithId: self.id, workingSlideUrl: url)
-                    self.completionCachedVideoDuration(videoSlideWithId: slideVideoIdentificator, videoDuration: slideVideoDuration)
-                case .failure(let error):
-                    print("SDK Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
-                }
+            VideoDownloadManager.maxOperationCount = 1
+            vDownloadManager.parseProcessDelegate = self
+            
+            let completion = BlockOperation {
+                //print("SDK All video downloads completed")
             }
+            
+            //let parentKey = "0000" + self.id
+            //let checkStoredVideo = SdkGlobalHelper.sharedInstance.getVideoUrlsFromDictionary(parentID: self.id)
+            //self.videoURL = checkStoredVideo
+            //self.completionCached(slideWithId: self.id, actualSlideUrl: "")
+//            if let pathToExistVideoFile = checkStoredVideo[self.id] {
+//                self.videoURL = URL(string: pathToExistVideoFile)
+//                self.completionCached(slideWithId: self.id, actualSlideUrl: pathToExistVideoFile)
+//                return
+//            }
+            
+            if let url = URL(string: self.background) {
+                let downloadOperation = vDownloadManager.addDownload(url, self.id)
+                completion.addDependency(downloadOperation)
+            }
+            
+//            downloadLinks.forEach { link in
+//                if let url = URL(string: link) {
+//                    let downloadOperation = downloadManager.addDownload(url)
+//                    completion.addDependency(downloadOperation)
+//                }
+//            }
+            
+            OperationQueue.main.addOperation(completion)
+            
         } else if type == .image {
             setImage(imageURL: self.background, isPreview: false)
-        }
-    }
- 
-    func downloadVideo(completion: @escaping (Result<URL, Error>) -> Void) {
-        
-        guard let url = URL(string: self.background) else {
-            completion(.failure(NSError(domain: "SDK Invalid URL", code: -1, userInfo: nil)))
-            return
-        }
-        
-        let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
-        
-        let pathStoriesDir: String = (url.deletingLastPathComponent().absoluteString)
-        let fullNameStoriesDot: String = url.lastPathComponent
-        let exName:String = (url.deletingPathExtension().lastPathComponent)
-
-        Swift.print("pathDir:", pathStoriesDir)
-        Swift.print("fullName:", fullNameStoriesDot)
-        Swift.print("exName:", exName)
-        
-        let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent("\(exName).mp4")
-        print(temporaryFileURL)
-        
-        let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: temporaryFileURL.path) {
-            completion(.success(temporaryFileURL))
-            
-            let duration = AVURLAsset(url: temporaryFileURL).duration.seconds
-            let videoIdentification = self.videoid!
-            completionCachedVideoDuration(videoSlideWithId: videoIdentification, videoDuration: duration)
-            return
-        }
-        
-        let request = URLRequest(url: url)
-        _ = self.vDownloadManager.downloadStoryMediaFile(withRequest: request,
-                                                        inDirectory: sdkDirectoryName,
-                                                        shouldDownloadInBackground: true,
-                                                        //shouldDownloadInBackground: false,
-                                                        onProgress: {(progress) in
-            
-        }) {(error, url) in
-            if let error = error {
-                print("Error is \(error as NSError)")
-            } else {
-                if let url = url {
-                    do {
-                        try fileManager.moveItem(at: url, to: temporaryFileURL)
-                        //print("SDK Downloaded video for story id = \(self.id)")
-                        completion(.success(temporaryFileURL))
-                    } catch {
-                        completion(.failure(error))
-                    }
-                }
-            }
+        } else {
+            self.completionCached(slideWithId: self.id, actualSlideUrl: "")
         }
     }
     
@@ -197,8 +177,8 @@ class Slide {
             }
             
             if cachedImage != nil {
-                self.completionCached(slideWithId: self.id, workingSlideUrl: url)
-                print("SDK Load cached image for story id = \(String(describing: self.videoid))")
+                self.completionCached(slideWithId: self.id, actualSlideUrl: "")
+                print("SDK Load cached image for story id = \(String(describing: self.id))")
             } else {
                 let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
                     if error == nil {
@@ -210,7 +190,7 @@ class Slide {
                             self.downloadedImage = image
                             
                             StoryBlockImageCache.save(image, for: url.absoluteString)
-                            self.completionCached(slideWithId: self.id, workingSlideUrl: url)
+                            self.completionCached(slideWithId: self.id, actualSlideUrl: "")
                             //print("SDK Downloaded image for story id = \(self.id)")
                         }
                     }
@@ -220,58 +200,42 @@ class Slide {
         }
     }
     
-    private func completionCachedVideoDuration(videoSlideWithId: String, videoDuration: Double) {
-        let storyVideoId = String(videoSlideWithId)
+    private func completionCached(slideWithId: String, actualSlideUrl: String) {
+        let storySlideMediaId = "1111" + slideWithId
         
-        let storyVideoDurationName = "waitStoryVideoDurationCached." + storyVideoId
-        var storiesVideosDurationArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyVideoDurationName)) as? [String] ?? []
-        let storyIdWithVideoDurationExists = storiesVideosDurationArr.contains(where: {
-            $0.range(of: String(storyVideoDurationName)) != nil
+        var slidesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storySlideMediaId)) as? [String] ?? []
+        let slideWithIdExists = slidesDownloadedArray.contains(where: {
+            $0.range(of: storySlideMediaId) != nil
         })
         
-        if !storyIdWithVideoDurationExists {
-            storiesVideosDurationArr.append(storyVideoDurationName)
-            UserDefaults.standard.setValue(storiesVideosDurationArr, for: UserDefaults.Key(storyVideoDurationName))
-        }
-    }
-    
-    private func completionCached(slideWithId: Int, workingSlideUrl: URL) {
-        let storyImageId = String(slideWithId)
-        let storyImageDownloadedName = "waitStorySlideCached." + storyImageId
-        
-        var watchedStoriesDownloadedArr: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyImageDownloadedName)) as? [String] ?? []
-        let watchedStoryIdExists = watchedStoriesDownloadedArr.contains(where: {
-            $0.range(of: String(storyImageDownloadedName)) != nil
-        })
-        
-        if !watchedStoryIdExists {
-            watchedStoriesDownloadedArr.append(storyImageDownloadedName)
-            UserDefaults.standard.setValue(watchedStoriesDownloadedArr, for: UserDefaults.Key(storyImageDownloadedName))
+        if !slideWithIdExists {
+            slidesDownloadedArray.append(storySlideMediaId)
+            UserDefaults.standard.setValue(slidesDownloadedArray, for: UserDefaults.Key(storySlideMediaId))
         }
         
-        let name = "waitStorySlideCached." + storyImageId
-        let userInfo = ["url": workingSlideUrl] as [String: Any]
-        NotificationCenter.default.post(name:Notification.Name(name), object: userInfo)
+        let userInfo = ["url": actualSlideUrl] as [String: Any]
+        NotificationCenter.default.post(name:Notification.Name(storySlideMediaId), object: userInfo)
     }
 }
 
 
-// MARK: - Element
+// MARK: - Slide
 public class StoriesElement {
+    public var link: String?
+    public var deeplinkIos: String?
     let type: ElementType
     let color: String?
     let title, linkIos: String?
     let textBold: Bool?
     let background: String?
     let cornerRadius: Int
-    let linkAndroid: String?
     let labels: Labels?
     let products: [StoriesProduct]?
     let product: StoriesPromoElement?
-    public var link: String?
     
     public init(json: [String: Any]) {
         self.link = json["link"] as? String
+        self.deeplinkIos = json["deeplink_ios"] as? String
         let _type = json["type"] as? String ?? ""
         self.type = ElementType(rawValue: _type) ?? .unknown
         self.color = json["color"] as? String
@@ -286,24 +250,28 @@ public class StoriesElement {
         self.products = _products.map({StoriesProduct(json: $0)})
         let _product = json["item"] as? [String: Any] ?? [:]
         self.product = StoriesPromoElement(json: _product)
-        self.linkAndroid = json["link_android"] as? String
     }
 }
 
 
-// MARK: - Labels
-class StoriesPromoElement {
+// MARK: - Promocodes
+public class StoriesPromoElement {
     let id, name, brand, price_full, price_formatted, price_full_formatted, image_url, picture, currency: String
+    let url: String
+    let deeplinkIos: String
     let price: Int
     let oldprice: Int
     let oldprice_full, oldprice_formatted, oldprice_full_formatted: String
     let discount_percent: Int
     let price_with_promocode_formatted: String
     let promocode: String
+    let image_url_resized: PromoElementImagesResize?
     
     public init(json: [String: Any]) {
         self.id = json["id"] as? String ?? ""
         self.name = json["name"] as? String ?? ""
+        self.url = json["url"] as? String ?? ""
+        self.deeplinkIos = json["deeplink_ios"] as? String ?? ""
         self.brand = json["brand"] as? String ?? ""
         self.image_url = json["image_url"] as? String ?? ""
         self.price = json["price"] as? Int ?? 0
@@ -319,22 +287,13 @@ class StoriesPromoElement {
         self.discount_percent = json["discount_percent"] as? Int ?? 0
         self.price_with_promocode_formatted = json["price_with_promocode_formatted"] as? String ?? ""
         self.promocode = json["promocode"] as? String ?? ""
+        let _image_url_resized = json["image_url_resized"] as? [String: Any] ?? [:]
+        self.image_url_resized = PromoElementImagesResize(json: _image_url_resized)
     }
 }
 
 
-// MARK: - Labelsprice_full_formatted
-class Labels {
-    let hideCarousel, showCarousel: String
-    
-    public init(json: [String: Any]) {
-        self.hideCarousel = json["hide_carousel"] as? String ?? ""
-        self.showCarousel = json["show_carousel"] as? String ?? ""
-    }
-}
-
-
-// MARK: - Product
+// MARK: - Carousel Product
 public class StoriesProduct {
     let name: String
     let currency: String
@@ -349,6 +308,7 @@ public class StoriesProduct {
     let discount_formatted: String?
     let category: StoriesCategory
     public var url: String
+    public var deeplinkIos: String
     
     public init(json: [String:Any]) {
         self.name = json["name"] as? String ?? ""
@@ -362,6 +322,7 @@ public class StoriesProduct {
         self.oldprice_formatted = json["oldprice_formatted"] as? String ?? ""
         self.oldprice_full_formatted = json["oldprice_full_formatted"] as? String ?? ""
         self.url = json["url"] as? String ?? ""
+        self.deeplinkIos = json["deeplink_ios"] as? String ?? ""
         self.picture = json["picture"] as? String ?? ""
         self.discount = json["discount"] as? String ?? ""
         self.discount_formatted = json["discount_formatted"] as? String ?? "0%"
@@ -371,7 +332,18 @@ public class StoriesProduct {
 }
 
 
-// MARK: - Category
+// MARK: - Carousel Labels
+class Labels {
+    let hideCarousel, showCarousel: String
+    
+    public init(json: [String: Any]) {
+        self.hideCarousel = json["hide_carousel"] as? String ?? ""
+        self.showCarousel = json["show_carousel"] as? String ?? ""
+    }
+}
+
+
+// MARK: - Stories Category
 class StoriesCategory {
     let name: String
     let url: String
@@ -380,6 +352,19 @@ class StoriesCategory {
         self.name = json["name"] as? String ?? ""
         self.url = json["url"] as? String ?? ""
        }
+}
+
+// MARK: - Image Resized
+public class PromoElementImagesResize {
+    let image_url_resized220: String
+    let image_url_resized310: String
+    let image_url_resized520: String
+    
+    public init(json: [String:Any]) {
+        self.image_url_resized220 = json["220"] as? String ?? ""
+        self.image_url_resized310 = json["310"] as? String ?? ""
+        self.image_url_resized520 = json["520"] as? String ?? ""
+    }
 }
 
 enum ElementType: String {
@@ -393,4 +378,24 @@ enum SlideType: String {
     case image = "image"
     case video = "video"
     case unknown = ""
+}
+
+
+extension Slide: VideoDownloadProcessProtocol {
+    func sdkVideoDownloadSuccess(_ videoFileName: URL) {
+        //print("\(videoFileName) has been downloaded for slideId \(self.id)\n")
+        
+        SdkGlobalHelper.sharedInstance.saveVideoURLsToDictionary(parentID: self.id, urlDictionary: videoFileName)
+        
+        self.videoURL = videoFileName
+        self.completionCached(slideWithId: self.id, actualSlideUrl: "")
+    }
+    
+    func downloadingProgress(_ percent: Float, fileName: String) {
+        //let text = String(format: "SDK Process downloading: %@, %0.2f%%", fileName, percent * 100)
+    }
+
+    func downloadWithError(_ error: Error?, fileName: String) {
+        //print("SDK Video download for \(self.id) with \(fileName) failed: \(String(describing: (error != nil) ? error!.localizedDescription : "Unknown error")) \n")
+    }
 }

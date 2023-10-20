@@ -7,13 +7,6 @@ public protocol SdkPopupAlertViewScheme {
     func SdkPopupAlertView() -> String
 }
 
-extension RawRepresentable where RawValue == String {
-    public func SdkPopupAlertView() -> String {
-        let str = String(describing: type(of: self)) + rawValue
-        return str
-    }
-}
-
 public class SdkPopupAlertView: UIView {
     public enum TextAlignment {
         case left
@@ -90,7 +83,7 @@ public class SdkPopupAlertView: UIView {
     private var onTap: (() -> ())?
 
     public var autoHide = true
-    public var displayTime: TimeInterval = 2.5
+    public var displayAlertTime: TimeInterval = 2.7
     public var showAnimationDuration = 0.3
     public var hideAnimationDuration = 0.3
     public var hideOnTap = true
@@ -103,7 +96,7 @@ public class SdkPopupAlertView: UIView {
 
     public var titleTextColor: UIColor = .black {
         didSet {
-            titleLabel.textColor = .black//titleTextColor
+            titleLabel.textColor = titleTextColor
         }
     }
 
@@ -121,8 +114,8 @@ public class SdkPopupAlertView: UIView {
 
     private var sdkPopupOverlayWindow: SdkPopupAlertViewWindow?
 
-    public init(title: String, titleFont: UIFont = .systemFont(ofSize: 17, weight: .bold),
-                subtitle: String? = nil, subtitleFont: UIFont = .systemFont(ofSize: 17, weight: .bold),
+    public init(title: String, titleFont: UIFont = .systemFont(ofSize: 17, weight: .semibold),
+                subtitle: String? = nil, subtitleFont: UIFont = .systemFont(ofSize: 17, weight: .semibold),
                 icon: UIImage? = nil, iconSpacing: CGFloat = 16, position: Position = .top, onTap: (() -> ())? = nil) {
         self.position = position
 
@@ -146,8 +139,7 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 28)
             ])
             if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .black
-                //iconImageView.tintColor = .label
+                iconImageView.tintColor = .black //.label
             } else {
                 iconImageView.tintColor = .black
             }
@@ -162,17 +154,16 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 26)
             ])
             if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .black
-                //iconImageView.tintColor = .label
+                iconImageView.tintColor = .black //.label
             } else {
                 iconImageView.tintColor = .black
             }
             
-            var mainBundle = Bundle(for: classForCoder)
+            var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-            mainBundle = Bundle.module
+            frameworkBundle = Bundle.module
 #endif
-            let copyIcon = UIImage(named: "iconCopyDark", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
+            let copyIcon = UIImage(named: "iconCopyDark", in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
             iconImageView.image = copyIcon
             hStack.addArrangedSubview(iconImageView)
         }
@@ -232,7 +223,7 @@ public class SdkPopupAlertView: UIView {
             self.transform = .identity
         }) { [self] _ in
             if autoHide {
-                hide(after: displayTime)
+                hide(after: displayAlertTime)
             }
         }
     }
@@ -246,6 +237,11 @@ public class SdkPopupAlertView: UIView {
                 sdkPopupOverlayWindow = nil
             }
         }
+    }
+    
+    public func hideImmediately() {
+        removeFromSuperview()
+        sdkPopupOverlayWindow = nil
     }
 
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -309,7 +305,8 @@ public class SdkPopupAlertView: UIView {
         layer.shadowOpacity = 1
     }
 
-    @objc private func didTap() {
+    @objc
+    private func didTap() {
         if hideOnTap {
             hide()
         }
@@ -353,5 +350,13 @@ class SdkPopupAlertViewWindow: UIWindow {
             return SdkPopupAlertView.frame.contains(point)
         }
         return false
+    }
+}
+
+
+extension RawRepresentable where RawValue == String {
+    public func SdkPopupAlertView() -> String {
+        let str = String(describing: type(of: self)) + rawValue
+        return str
     }
 }

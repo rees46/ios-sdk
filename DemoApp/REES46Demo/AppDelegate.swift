@@ -87,7 +87,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           textColorDarkMode: "#000000",
 //                                                           backgroundColorDarkMode: "#ffffff",
 //                                                           cornerRadius: 5)
-//
+
 //        sdk.configuration().stories.setProductsCard(fontName: "Museo")
 
 //        sdk.configuration().stories.setPromocodeCard(productTitleFontName: "Museo",
@@ -112,7 +112,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        sdk.configuration().stories.storiesSlideReloadIndicatorAnimationDuration = 1
 //        sdk.configuration().stories.storiesSlideReloadIndicatorRotationDuration = 17
 //
-//        //SDK Stories alert popup settings
+//        //SDK Alert popup connection settings
 //        sdk.configuration().stories.storiesSlideReloadPopupMessageError = "Failed to retrieve data. Please check your connection and try again."
 //        sdk.configuration().stories.storiesSlideReloadPopupMessageFontSize = 17.0
 //        sdk.configuration().stories.storiesSlideReloadPopupMessageFontWeight = .medium
@@ -486,6 +486,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
+    func application(_ application: UIApplication,
+                     handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+            //backgroundCompletionHandler = completionHandler
+    }
 }
 
 // Firebase notifications

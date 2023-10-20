@@ -22,6 +22,7 @@ extension UserDefaults {
     }
 }
 
+
 extension UserDefaults.Key {
     static let currentStory = UserDefaults.Key("currentStory")
 }

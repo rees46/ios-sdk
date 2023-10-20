@@ -88,7 +88,7 @@ public class RWebViewController:UIViewController, WKUIDelegate {
   
   private func setupToolbar() {
       let closeButton = createImageButton(imageName: "iconWebKitClose")
-      closeButton.addTarget(self, action: #selector(dismissMe(_:)), for: .touchUpInside)
+      closeButton.addTarget(self, action: #selector(dismissWebView(_:)), for: .touchUpInside)
       closeButton.tintColor = .gray
       closeButton.widthAnchor.constraint(equalTo: closeButton.heightAnchor).isActive = true
 
@@ -108,11 +108,11 @@ public class RWebViewController:UIViewController, WKUIDelegate {
   }
     
   private func createImageButton(imageName: String) -> UIButton {
-      var mainBundle = Bundle(for: classForCoder)
+      var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-      mainBundle = Bundle.module
+      frameworkBundle = Bundle.module
 #endif
-      let image = UIImage(named: "iconWebKitClose", in: mainBundle, compatibleWith: nil)
+      let image = UIImage(named: "iconWebKitClose", in: frameworkBundle, compatibleWith: nil)
       
       let closeButton = UIButton(type: .custom)
       closeButton.setImage(image, for: .normal)
@@ -161,13 +161,14 @@ public class RWebViewController:UIViewController, WKUIDelegate {
   }
   
   private func removeWebViewObservers() {
-      rWebView.removeObserver(self, forKeyPath:  #keyPath(WKWebView.estimatedProgress))
-      rWebView.removeObserver(self, forKeyPath:  #keyPath(WKWebView.title))
-      rWebView.removeObserver(self, forKeyPath:  #keyPath(WKWebView.canGoBack))
-      rWebView.removeObserver(self, forKeyPath:  #keyPath(WKWebView.canGoForward))
+      rWebView.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+      rWebView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
+      rWebView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
+      rWebView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
   }
   
-  @objc private func dismissMe(_ sender: UIButton) {
+  @objc
+    private func dismissWebView(_ sender: UIButton) {
       dismiss(completion: nil)
   }
   
@@ -212,6 +213,7 @@ public class RWebViewController:UIViewController, WKUIDelegate {
   }
 }
 
+
 extension RWebViewController:UIGestureRecognizerDelegate {
   
     fileprivate func addPanGestureRecognizer() {
@@ -228,7 +230,8 @@ extension RWebViewController:UIGestureRecognizerDelegate {
         toolbar.gestureRecognizers = [panRecognizer]
     }
     
-    @objc private func handlePanning(_ gestureRecognizer: UIPanGestureRecognizer?) {
+    @objc
+    private func handlePanning(_ gestureRecognizer: UIPanGestureRecognizer?) {
     
     if gestureRecognizer?.state == .began {
         lastLocation = container.center
@@ -263,6 +266,7 @@ extension RWebViewController:UIGestureRecognizerDelegate {
         }
     }
 }
+
 
 extension RWebViewController:WKNavigationDelegate {
 

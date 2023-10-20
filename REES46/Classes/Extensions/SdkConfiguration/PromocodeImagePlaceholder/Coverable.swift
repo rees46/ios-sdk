@@ -32,6 +32,7 @@ extension Coverable where Self: UIView {
     }
 }
 
+
 extension Array where Element: CoverableView {
     var coverablePath: UIBezierPath {
         return reduce(UIBezierPath(), { totalPath, cell in
@@ -40,6 +41,7 @@ extension Array where Element: CoverableView {
         })
     }
 }
+
 
 extension UIView {
     func coverableSubviews() -> [CoverableView] {

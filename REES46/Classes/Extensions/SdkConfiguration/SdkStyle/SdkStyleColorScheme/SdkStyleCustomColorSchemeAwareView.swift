@@ -6,6 +6,7 @@ public protocol SdkStyleCustomColorSchemeAwareView {
     var shouldDowncastCustomColorScheme: Bool { get }
 }
 
+
 extension SdkStyleCustomColorSchemeAwareView {
     public var shouldDowncastCustomColorScheme: Bool {
         return false

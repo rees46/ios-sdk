@@ -21,6 +21,7 @@ final class FlatActivityIndicatorAnimator {
     }
 }
 
+
 extension FlatActivityIndicatorAnimator {
     private func rotationAnimation() -> CABasicAnimation {
         let animation = CABasicAnimation(key: .rotationZ)

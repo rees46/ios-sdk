@@ -5,12 +5,14 @@ public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveIosLink(text: String)
     func receiveSelectedProductData(products: StoriesElement)
     func receiveSelectedCarouselProductData(products: StoriesProduct)
+    func receiveSelectedPromocodeProductData(promoSlide: StoriesPromoElement)
 }
 
 public protocol StoriesViewLinkProtocol: AnyObject {
     func linkIosExternalUse(url: String)
     func sendStructSelectedStorySlide(storySlide: StoriesElement)
     func structOfSelectedCarouselProduct(product: StoriesProduct)
+    func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement)
     func reloadStoriesCollectionSubviews()
     func updateBgColor()
 }
@@ -126,7 +128,14 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         collectionView.dataSource = self
         collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
         self.setBgColor()
+        
         UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
+//        let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
+//        if soundSetting {
+//            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
+//        } else {
+//            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
+//        }
     }
     
     public func configure(sdk: PersonalizationSDK, mainVC: UIViewController, code: String) {
@@ -193,6 +202,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
 }
 
+
 extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
@@ -215,17 +225,17 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         
         if let currentStory = stories?[indexPath.row] {
             
-            let storyId = String(currentStory.id)
-            let storyName = "story." + storyId
+            let storyId = currentStory.id
+            let storyName = "viewed.slide." + storyId
             
             var allStoriesMainArray: [String] = []
             for (index, _) in currentStory.slides.enumerated() {
                 //print("Story has \(index + 1): \(currentStory.slides[(index)].id)")
-                allStoriesMainArray.append(String(currentStory.slides[(index)].id))
+                allStoriesMainArray.append(currentStory.slides[(index)].id)
             }
             
-            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-            if (watchedStoriesArray.count == allStoriesMainArray.count) {
+            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            if (viewedSlidesStoriesCachedArray.count == allStoriesMainArray.count) {
                 cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, storyId: currentStory.id)
                 cell.configure(story: currentStory)
             } else {
@@ -259,19 +269,19 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             storyVC.sdk = sdk
             storyVC.stories = stories ?? []
             
-            let sId = "story." + String(currentStory.id)
+            let sId = "viewed.slide." + currentStory.id
             
             var allStoriesMainArray: [String] = []
             for (index, _) in currentStory.slides.enumerated() {
-                allStoriesMainArray.append(String(currentStory.slides[(index)].id))
+                allStoriesMainArray.append(currentStory.slides[(index)].id)
             }
             
-            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
-            let lastWatchedIndexValue = watchedStoriesArray.last
+            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
+            let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
             
             var currentDefaultIndex = 0
             for name in allStoriesMainArray {
-                if name == lastWatchedIndexValue {
+                if name == lastViewedSlideIndexValue {
                     //print("Story \(name) for index \(currentDefaultIndex)")
                     break
                 }
@@ -298,6 +308,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 }
 
+
 extension StoriesView: StoriesViewLinkProtocol {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
         self.communicationDelegate?.receiveSelectedProductData(products: storySlide)
@@ -309,6 +320,12 @@ extension StoriesView: StoriesViewLinkProtocol {
         self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
         print("\n\nSDK Received carousel selected product link for external use:")
         printCarouselObject(objProductClass: product)
+    }
+    
+    public func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement) {
+        self.communicationDelegate?.receiveSelectedPromocodeProductData(promoSlide: promoSlide)
+        print("\n\nSDK Received promocode slide button tap links for external use:")
+        printPromoObject(objPromoClass: promoSlide)
     }
     
     public func linkIosExternalUse(url: String) {
@@ -331,9 +348,9 @@ extension StoriesView: StoriesViewLinkProtocol {
     }
     
     public func printSlideObject(objElementClass: StoriesElement) {
-        print("LinkWeb: \(objElementClass.link ?? "")")
-        print("LinkiOS: \(objElementClass.linkIos ?? "")")
-        print("LinkAndroid: \(objElementClass.linkAndroid ?? "")")
+        print("Deeplink iOS: \(objElementClass.deeplinkIos ?? "")")
+        print("Link iOS: \(objElementClass.linkIos ?? "")")
+        print("Link Web: \(objElementClass.link ?? "")")
     }
     
     public func printCarouselObject(objProductClass: StoriesProduct) {
@@ -345,6 +362,11 @@ extension StoriesView: StoriesViewLinkProtocol {
         print("ProductPriceFormatted: \(objProductClass.price_formatted)")
         print("ProductPicture: \(objProductClass.picture)\n\n")
     }
+    
+    public func printPromoObject(objPromoClass: StoriesPromoElement) {
+        print("Deeplink iOS: \(objPromoClass.deeplinkIos )")
+        print("Link Web: \(objPromoClass.url )")
+    }
 }
 
 class CustomCollectionViewCell: UICollectionViewCell {
@@ -355,20 +377,9 @@ class CustomCollectionViewCell: UICollectionViewCell {
     }
 }
 
+
 extension UIViewController {
     func embedInNavigationController() -> UINavigationController {
         return UINavigationController(rootViewController: self)
-    }
-}
-
-extension UIView {
-    func fixInView(_ container: UIView!) {
-        translatesAutoresizingMaskIntoConstraints = false
-        frame = container.frame
-        container.addSubview(self)
-        NSLayoutConstraint(item: self, attribute: .leading, relatedBy: .equal, toItem: container, attribute: .leading, multiplier: 1.0, constant: 0).isActive = true
-        NSLayoutConstraint(item: self, attribute: .trailing, relatedBy: .equal, toItem: container, attribute: .trailing, multiplier: 1.0, constant: 0).isActive = true
-        NSLayoutConstraint(item: self, attribute: .top, relatedBy: .equal, toItem: container, attribute: .top, multiplier: 1.0, constant: 0).isActive = true
-        NSLayoutConstraint(item: self, attribute: .bottom, relatedBy: .equal, toItem: container, attribute: .bottom, multiplier: 1.0, constant: 0).isActive = true
     }
 }

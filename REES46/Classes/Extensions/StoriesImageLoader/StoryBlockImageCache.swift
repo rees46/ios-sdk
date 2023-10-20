@@ -11,8 +11,11 @@ public struct StoryBlockImageCache {
     public static var imageURLProvider: StoryImageURLProviding?
 
     fileprivate static var urlSession: URLSession = createUrlSession()
+    
     fileprivate static func createUrlSession() -> URLSession {
         let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 3
+        config.waitsForConnectivity = true
         let session = URLSession(configuration: config)
         return session
     }
@@ -60,8 +63,7 @@ public struct StoryBlockImageCache {
         do {
             try fileSystem(save: image, for: key)
         } catch {
-            internalLogger?("Sdk Internal Error saving image for key \(key): \(error)", file, function, line)
-            //print("SDK Error saving image for block")
+            internalLogger?("SDK Internal Error saving image for key \(key): \(error)", file, function, line)
         }
     }
     
@@ -70,8 +72,6 @@ public struct StoryBlockImageCache {
         urlSession = createUrlSession()
     }
     
-    //fileprivate static var internalShared = StoryBlockImageCache()
-    //fileprivate let cache = NSCache<AnyObject, AnyObject>()
     public static var shared = StoryBlockImageCache()
     public let internalCache = NSCache<AnyObject, AnyObject>()
     fileprivate static let cacheDirectory: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first

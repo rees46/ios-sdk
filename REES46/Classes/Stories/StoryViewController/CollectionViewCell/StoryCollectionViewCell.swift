@@ -6,6 +6,7 @@ protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
     func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide)
     func sendStructSelectedStorySlide(storySlide: StoriesElement)
+    func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement)
     func openProductsCarouselView(withProducts: [StoriesProduct], hideLabel: String)
     func closeProductsCarousel()
 }
@@ -36,11 +37,17 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     var player = AVPlayer()
     private let timeObserverKeyPath: String = "timeControlStatus"
-    fileprivate let kMinVolume = 0.00001
-    fileprivate let kMaxVolume = 0.99999
+    
+    private var audioSession: AVAudioSession!
+    var outputVolumeObservation: NSKeyValueObservation?
+    
+    fileprivate let kVolumeKey = "volume"
+    fileprivate var kAudioLevel : Float = 0.0
     
     override init(frame: CGRect) {
         super.init(frame: frame)
+        
+        promocodeBannerView.removeFromSuperview()
         
         if currentSlide?.backgroundColor != nil {
             //let color = currentSlide?.backgroundColor.hexToRGB()
@@ -52,8 +59,12 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(deallocAVAudio(_:)), name: .init(rawValue: "deallocAVAudio"), object: nil)
         
-        videoView.contentMode = .scaleToFill //.scaleAspectFill
+        audioSession = AVAudioSession.sharedInstance()
+        listenVolumeButton()
+        
+        videoView.contentMode = .scaleToFill
         videoView.isOpaque = true
         videoView.clearsContextBeforeDrawing = true
         videoView.autoresizesSubviews = true
@@ -85,273 +96,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         makeConstraints()
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func clearConstraints() {
-        customConstraints.forEach { $0.isActive = false }
-        customConstraints.removeAll()
-    }
-    
-    private func activate(constraints: [NSLayoutConstraint]) {
-        customConstraints.append(contentsOf: constraints)
-        customConstraints.forEach { $0.isActive = true }
-    }
-    
-    func makeConstraints() {
-        
-        videoView.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        videoView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        videoView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        videoView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        
-        storySlideImageView.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        storySlideImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        storySlideImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        storySlideImageView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        
-        productWithPromocodeSuperview.topAnchor.constraint(equalTo: topAnchor).isActive = true
-        productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        
-        if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
-            
-            clearConstraints()
-            let ds: Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
-            if ds == true {
-                let storyButtonConstraints = [
-                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
-                    storyButton.heightAnchor.constraint(equalToConstant: 56)
-                ]
-                
-                var productsButtonConstraints = [
-                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
-                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
-                    productsButton.heightAnchor.constraint(equalToConstant: 36)
-                ]
-                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-                    productsButtonConstraints = [
-                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
-                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
-                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
-                        productsButton.heightAnchor.constraint(equalToConstant: 36)
-                    ]
-                }
-                
-                let muteButtonConstraints = [
-                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
-                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
-                    muteButton.widthAnchor.constraint(equalToConstant: 48),
-                    muteButton.heightAnchor.constraint(equalToConstant: 48)
-                ]
-                
-                self.activate(constraints: storyButtonConstraints)
-                self.activate(constraints: productsButtonConstraints)
-                self.activate(constraints: muteButtonConstraints)
-                
-            } else {
-                
-                let storyButtonConstraints = [
-                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
-                    storyButton.heightAnchor.constraint(equalToConstant: 56)
-                ]
-                
-                var productsButtonConstraints = [
-                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
-                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
-                    productsButton.heightAnchor.constraint(equalToConstant: 36)
-                ]
-                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-                    productsButtonConstraints = [
-                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
-                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
-                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
-                        productsButton.heightAnchor.constraint(equalToConstant: 36)
-                    ]
-                }
-                
-                var muteButtonConstraints = [
-                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
-                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
-                    muteButton.widthAnchor.constraint(equalToConstant: 48),
-                    muteButton.heightAnchor.constraint(equalToConstant: 48)
-                ]
-                if selectedPromoElement != nil {
-                    muteButtonConstraints = [
-                        muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
-                        muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -163),
-                        muteButton.widthAnchor.constraint(equalToConstant: 48),
-                        muteButton.heightAnchor.constraint(equalToConstant: 48)
-                    ]
-                }
-                
-                self.activate(constraints: storyButtonConstraints)
-                self.activate(constraints: productsButtonConstraints)
-                self.activate(constraints: muteButtonConstraints)
-            }
-            layoutIfNeeded()
-            
-        } else {
-
-            clearConstraints()
-            
-            let ds: Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
-            if ds == true {
-                let storyButtonConstraints = [
-                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22),
-                    storyButton.heightAnchor.constraint(equalToConstant: 56)
-                ]
-                
-                var productsButtonConstraints = [
-                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
-                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
-                    productsButton.heightAnchor.constraint(equalToConstant: 36)
-                ]
-                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-                    productsButtonConstraints = [
-                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
-                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
-                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
-                        productsButton.heightAnchor.constraint(equalToConstant: 36)
-                    ]
-                }
-                
-                let muteButtonConstraints = [
-                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
-                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
-                    muteButton.widthAnchor.constraint(equalToConstant: 48),
-                    muteButton.heightAnchor.constraint(equalToConstant: 48)
-                ]
-                
-                self.activate(constraints: storyButtonConstraints)
-                self.activate(constraints: productsButtonConstraints)
-                self.activate(constraints: muteButtonConstraints)
-                
-            } else {
-                
-                let storyButtonConstraints = [
-                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22),
-                    storyButton.heightAnchor.constraint(equalToConstant: 56)
-                ]
-                
-                var productsButtonConstraints = [
-                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
-                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
-                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
-                    productsButton.heightAnchor.constraint(equalToConstant: 36)
-                ]
-                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-                    productsButtonConstraints = [
-                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
-                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
-                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
-                        productsButton.heightAnchor.constraint(equalToConstant: 36)
-                    ]
-                }
-                
-                var muteButtonConstraints = [
-                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
-                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
-                    muteButton.widthAnchor.constraint(equalToConstant: 48),
-                    muteButton.heightAnchor.constraint(equalToConstant: 48)
-                ]
-                if selectedPromoElement != nil {
-                    muteButtonConstraints = [
-                        muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
-                        muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -163),
-                        muteButton.widthAnchor.constraint(equalToConstant: 48),
-                        muteButton.heightAnchor.constraint(equalToConstant: 48)
-                    ]
-                }
-                
-                self.activate(constraints: storyButtonConstraints)
-                self.activate(constraints: productsButtonConstraints)
-                self.activate(constraints: muteButtonConstraints)
-            }
-            layoutIfNeeded()
-        }
-    }
-    
-    @objc private func didTapOnMute() {
-        var mainBundle = Bundle(for: classForCoder)
-#if SWIFT_PACKAGE
-        mainBundle = Bundle.module
-#endif
-        if player.volume == 1.0 {
-            player.volume = 0.0
-            muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
-        } else {
-            player.volume = 1.0
-            do {
-                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-            } catch let error {
-                print("Error in AVAudio Session\(error.localizedDescription)")
-            }
-            
-            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
-        }
-    }
-    
-    @objc
-    private func pauseVideo(_ notification: NSNotification) {
-        if let slideID = notification.userInfo?["slideID"] as? Int {
-            if let currentSlide = currentSlide {
-                if currentSlide.id == slideID {
-                    player.pause()
-                }
-            }
-        }
-    }
-    
-    @objc
-    private func playVideo(_ notification: NSNotification) {
-        if let slideID = notification.userInfo?["slideID"] as? Int {
-            if let currentSlide = currentSlide {
-                if currentSlide.id == slideID {
-                    player.play()
-                }
-            }
-        }
-    }
-    
-    private func setMuteButtonToDefault() {
-        var mainBundle = Bundle(for: classForCoder)
-#if SWIFT_PACKAGE
-        mainBundle = Bundle.module
-#endif
-        
-        let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
-        if soundSetting == true {
-            player.volume = 1
-            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
-        } else {
-            player.volume = 0
-            muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
-            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
-        }
-        
-        muteButton.translatesAutoresizingMaskIntoConstraints = false
-        muteButton.isHidden = true
-        muteButton.addTarget(self, action: #selector(didTapOnMute), for: .touchUpInside)
-        addSubview(muteButton)
-    }
-    
     public func configure(slide: Slide) {
         self.currentSlide = slide
         
@@ -362,10 +106,18 @@ class StoryCollectionViewCell: UICollectionViewCell {
             self.backgroundColor = UIColor.black
         }
         
+        if (sdkPopupAlertView.window != nil) {
+            hideSdkPopupAlertView()
+        }
+        
+        promocodeBannerView.removeFromSuperview()
+        insertSubview(productWithPromocodeSuperview, belowSubview: storySlideImageView)
+        
         if slide.type == .video {
             videoView.isHidden = false
             storySlideImageView.isHidden = true
-
+            //muteButton.isHidden = true
+            
             self.videoView.layer.sublayers?.forEach {
                 if $0.name == "VIDEO" {
                     $0.removeFromSuperlayer()
@@ -375,38 +127,36 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 videoView.isHidden = false
                 storySlideImageView.isHidden = true
 
-                let asset = AVAsset(url: videoURL)
+                let asset = AVAsset(url: videoURL.absoluteURL)
                 let playerItem = AVPlayerItem(asset: asset)
                 self.player = AVPlayer(playerItem: playerItem)
                 let playerLayer = AVPlayerLayer(player: player)
                 let screenSize = UIScreen.main.bounds.size
                 playerLayer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
                 playerLayer.name = "VIDEO"
-                
-                //let videoDuration = asset.duration
-                //let durationTime = CMTimeGetSeconds(videoDuration)
-                //print(videoDuration)
                 //playerLayer.videoGravity = .resizeAspectFill
                 
                 if playerItem.asset.tracks.filter({$0.mediaType == .audio}).count != 0 {
-                    var mainBundle = Bundle(for: classForCoder)
-#if SWIFT_PACKAGE
-                    mainBundle = Bundle.module
-#endif
                     let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
-                    if soundSetting == true {
+                    
+                    var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+                    frameworkBundle = Bundle.module
+#endif
+                    
+                    if soundSetting {
                         player.volume = 1
-                        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: mainBundle, compatibleWith: nil), for: .normal)
+                        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
                         UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
                         
                         do {
-                            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+                            try audioSession.setCategory(.playback, mode: .default, options: [])
                         } catch let error {
-                            print("Error in AVAudio Session\(error.localizedDescription)")
+                            print("SDK Error in AVAudio Session\(error.localizedDescription)")
                         }
                     } else {
                         player.volume = 0
-                        muteButton.setImage(UIImage(named: "iconStoryMute", in: mainBundle, compatibleWith: nil), for: .normal)
+                        muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
                         UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
                     }
                     muteButton.isHidden = false
@@ -442,6 +192,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             storyButton.configButton(buttonData: element)
             storyButton.isHidden = false
             productsButton.isHidden = true
+            productWithPromocodeSuperview.isHidden = true
             
             makeConstraints()
             
@@ -451,10 +202,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 productsButton.layer.cornerRadius = layer.frame.size.height / 2
                 productsButton.layer.masksToBounds = true
                 
+                //promocodeBannerView.dismissWithoutAnimation()
+                //productWithPromocodeSuperview.configPromoView(promoData: selectedPromoElement!)
+                
                 storyButton.configButton(buttonData: element)
                 productsButton.configProductsButton(buttonData: elementProduct)
                 
                 productsButton.isHidden = false
+                productWithPromocodeSuperview.isHidden = true
+                //bringSubviewToFront(productsButton)
                 
                 makeConstraints()
                 
@@ -469,15 +225,14 @@ class StoryCollectionViewCell: UICollectionViewCell {
             if let elementProduct = slide.elements.last(where: {$0.type == .product}) {
                 
                 selectedPromoElement = elementProduct.product!
-
+                
                 promocodeBannerView.dismissWithoutAnimation()
                 productWithPromocodeSuperview.configPromoView(promoData: selectedPromoElement!)
-
+                productWithPromocodeSuperview.isHidden = false
+                
                 if selectedPromoElement!.discount_percent != 0 {
-                    productWithPromocodeSuperview.isHidden = false
                     self.displayPromocodeBanner(promoTitle: elementProduct.title, promoData: self.selectedPromoElement!)
                 } else {
-                    productWithPromocodeSuperview.isHidden = false
                     self.displayPromocodeBanner(promoTitle: elementProduct.title, promoData: self.selectedPromoElement!)
                 }
 
@@ -491,6 +246,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
 
                 insertSubview(productWithPromocodeSuperview, aboveSubview: storySlideImageView)
                 
+                bringSubviewToFront(muteButton)
+                bringSubviewToFront(storyButton)
+                bringSubviewToFront(productsButton)
                 makeConstraints()
             }
             
@@ -511,22 +269,144 @@ class StoryCollectionViewCell: UICollectionViewCell {
             
             storyButton.configButton(buttonData: element)
             storyButton.isHidden = true
+            productWithPromocodeSuperview.isHidden = true
             
             makeConstraints()
         } else {
             UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
             storyButton.isHidden = true
             productsButton.isHidden = true
+            productWithPromocodeSuperview.isHidden = true
             makeConstraints()
         }
     }
     
-    @objc func sdkPopupTapHandle(_ sender: UITapGestureRecognizer? = nil) {
-        var mainBundle = Bundle(for: classForCoder)
+    private func setImage(imagePath: String) {
+        guard let url = URL(string: imagePath) else {
+            return
+        }
+
+        let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
+            if error == nil {
+                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
+                DispatchQueue.main.async {
+                    self.storySlideImageView.tintColor = UIColor.black
+                    self.storySlideImageView.isOpaque = false
+                    self.storySlideImageView.image = image
+                }
+            } else {
+                self.sdkErrorReloadTapHandle()
+            }
+        })
+        task.resume()
+    }
+    
+    func listenVolumeButton() {
+        do {
+            try audioSession.setActive(true, options: [])
+            audioSession.addObserver(self, forKeyPath: "outputVolume", options: NSKeyValueObservingOptions.new, context: nil)
+            kAudioLevel = audioSession.outputVolume
+        } catch {
+            print("SDK Output volume listener error")
+        }
+    }
+        
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+        if keyPath == "outputVolume"{
+            if audioSession.outputVolume > kAudioLevel {
+                kAudioLevel = audioSession.outputVolume
+                
+                var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-        mainBundle = Bundle.module
+                frameworkBundle = Bundle.module
 #endif
-        let errorIcon = UIImage(named: "iconError", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
+                do {
+                    try audioSession.setCategory(.playback, mode: .default, options: [])
+                    player.volume = audioSession.outputVolume
+                    muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
+                    UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
+                } catch let error {
+                    player.volume = audioSession.outputVolume
+                    muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
+                    print("Error in AVAudio Session\(error.localizedDescription)")
+                }
+            }
+            if audioSession.outputVolume < kAudioLevel {
+                player.volume = audioSession.outputVolume
+            }
+            if audioSession.outputVolume > 0.999 {
+                kAudioLevel = 0.9375
+            }
+            if audioSession.outputVolume < 0.001 {
+                var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+                frameworkBundle = Bundle.module
+#endif
+                kAudioLevel = 0.0625
+                muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
+                UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
+            }
+        }
+    }
+    
+    @objc
+    private func didTapOnMute() {
+        var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
+        if player.volume == 1.0 {
+            player.volume = 0.0
+            muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
+        } else {
+            player.volume = 1.0
+            do {
+                try audioSession.setCategory(.playback, mode: .default, options: [])
+            } catch let error {
+                print("SDK Error in AVAudio Session\(error.localizedDescription)")
+            }
+            
+            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
+        }
+    }
+    
+    private func setMuteButtonToDefault() {
+        var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
+        
+        let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
+        if soundSetting {
+            player.volume = 1
+            muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
+        } else {
+            player.volume = 0
+            muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
+            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
+        }
+        
+        muteButton.translatesAutoresizingMaskIntoConstraints = false
+        muteButton.isHidden = true
+        muteButton.addTarget(self, action: #selector(didTapOnMute), for: .touchUpInside)
+        addSubview(muteButton)
+    }
+    
+    @objc
+    func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
+        //
+    }
+    
+    @objc
+    func sdkErrorReloadTapHandle(_ sender: UITapGestureRecognizer? = nil) {
+        var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
+        let errorIcon = UIImage(named: "iconError", in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
         
         if #available(iOS 13.0, *) {
             let popupView = SdkPopupAlertView(
@@ -537,16 +417,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 icon: errorIcon,
                 iconSpacing: 16,
                 position: .centerCustom,
-                onTap: { print("Sdk Alert popup tapped")
+                onTap: { print("SDK Alert popup tapped")
                 }
             )
-            popupView.displayTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
+            popupView.displayAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
             popupView.show()
         }
     }
     
     func displayPromocodeBanner(promoTitle: String?, promoData: StoriesPromoElement) {
-        
         let screenSize: CGRect = UIScreen.main.bounds
         promocodeBannerView.size = CGSize(width: screenSize.width - 32, height: 68)
         promocodeBannerView.cornerRadius = 6
@@ -562,28 +441,29 @@ class StoryCollectionViewCell: UICollectionViewCell {
         let normalClearText = ""
         let normalAttributedString = NSMutableAttributedString(string:normalClearText)
         
-        var oldPriceText = "     " + String(promoData.oldprice_formatted)
-        if (promoData.oldprice_formatted == "") {
-            oldPriceText = "     " + String(promoData.oldprice)
-        }
-
+        var oldPriceText = "     "
         if promoData.oldprice != 0 {
-            let attrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16, weight: .heavy),
-                         NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
-                         .foregroundColor: UIColor.white.withAlphaComponent(0.7)] as [NSAttributedString.Key: Any]
-            let boldString = NSMutableAttributedString(string: oldPriceText, attributes:attrs)
-            normalAttributedString.append(boldString)
-            
-            normalAttributedString.addAttributes([
-                .strikethroughColor: UIColor.white.withAlphaComponent(0.5)
-            ], range: NSRange(location: 0, length: oldPriceText.count))
-            
-            let spaceText = "  \n"
-            let attrsSpace = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 1, weight: .thin), .foregroundColor: UIColor.white]
-            let boldStringSpace = NSMutableAttributedString(string: spaceText, attributes:attrsSpace)
-            normalAttributedString.append(boldStringSpace)
-        } else {
-            //print("SDK Old Price Implementation")
+            if Int(promoData.oldprice) >= Int(promoData.price) {
+                oldPriceText = "     " + String(promoData.oldprice_formatted)
+                if (promoData.oldprice_formatted == "") {
+                    oldPriceText = "     " + String(promoData.oldprice)
+                }
+                
+                let attrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16, weight: .heavy),
+                             NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                             .foregroundColor: UIColor.white.withAlphaComponent(0.7)] as [NSAttributedString.Key: Any]
+                let boldString = NSMutableAttributedString(string: oldPriceText, attributes:attrs)
+                normalAttributedString.append(boldString)
+                
+                normalAttributedString.addAttributes([
+                    .strikethroughColor: UIColor.white.withAlphaComponent(0.5)
+                ], range: NSRange(location: 0, length: oldPriceText.count))
+                
+                let spaceText = "  \n"
+                let attrsSpace = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 1, weight: .thin), .foregroundColor: UIColor.white]
+                let boldStringSpace = NSMutableAttributedString(string: spaceText, attributes:attrsSpace)
+                normalAttributedString.append(boldStringSpace)
+            }
         }
         
         var formattedPriceWithPromocode = String(promoData.price_with_promocode_formatted)
@@ -666,8 +546,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         
         let v = UIView()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkPopupTapHandle(_:)))
-        v.addGestureRecognizer(tap)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkNilTap(_:)))
+        //v.addGestureRecognizer(tap)
+        promocodeBannerView.addGestureRecognizer(tap)
         v.addSubview(presentedBannerLabel)
         
         let promoBtn = UIButton()
@@ -682,11 +563,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 bgAdditionalColor = SdkConfiguration.stories.bannerDiscountSectionBackgroundColor ?? UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
             } else {
                 
-                var mainBundle = Bundle(for: classForCoder)
+                var frameworkBundle = Bundle(for: classForCoder)
             #if SWIFT_PACKAGE
-                mainBundle = Bundle.module
+                frameworkBundle = Bundle.module
             #endif
-                let copyIcon = UIImage(named: "iconCopyLight", in: mainBundle, compatibleWith: nil)
+                let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
                 
                 let copyIconImageView = UIImageView(image: copyIcon)
                 copyIconImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -714,7 +595,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         
         promocodeBannerView.setView(view: v)
-        showInCellPromocodeBanner(banner: promocodeBannerView)
+        showInCellPromocodeBanner(promoBanner: promocodeBannerView)
         
         if codePromo == "" {
             presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.72, height: v.frame.height)
@@ -743,7 +624,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc public func copyPromocodeToClipboard() {
+    @objc
+    public func copyPromocodeToClipboard() {
         let pasteboard = UIPasteboard.general
         pasteboard.string = selectedPromoElement?.promocode
         
@@ -753,20 +635,19 @@ class StoryCollectionViewCell: UICollectionViewCell {
         sdkPopupAlertView.show()
     }
     
-    @objc public func dismissPromocodeBanner() {
+    @objc
+    public func hideSdkPopupAlertView() {
+        sdkPopupAlertView.hideImmediately()
+    }
+    
+    @objc
+    public func dismissPromocodeBanner() {
         promocodeBannerView.dismiss()
     }
     
-    @objc public func dismissPromocodeBannerWithoutAnimation() {
+    @objc
+    public func dismissPromocodeBannerWithoutAnimation() {
         promocodeBannerView.dismissWithoutAnimation()
-    }
-    
-    override public func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
-        //Video time seek & play/pause implementation
-    }
-    
-    func stopPlayer() {
-        player.pause()
     }
     
     @objc
@@ -781,6 +662,32 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     @objc
     private func didTapButton() {
+        
+        if let promoCodeDeeplinkIos = selectedPromoElement?.deeplinkIos, !promoCodeDeeplinkIos.isEmpty {
+            if let currentSlide = currentSlide {
+                
+                UserDefaults.standard.set(Int(currentSlide.id), forKey: "LastViewedSlideMemorySetting")
+                
+//#warning ("TODO Production")
+                //cellDelegate?.didTapUrlButton(url: promoCodeDeeplinkIos, slide: currentSlide)
+                
+                cellDelegate?.sendStructSelectedPromocodeSlide(promoSlide: selectedPromoElement!)
+                cellDelegate?.didTapOpenLinkExternalServiceMethod(url: promoCodeDeeplinkIos, slide: currentSlide)
+                return
+            }
+        }
+        
+        if let deeplinkIos = selectedElement?.product?.deeplinkIos, !deeplinkIos.isEmpty {
+            if let currentSlide = currentSlide {
+                
+                UserDefaults.standard.set(Int(currentSlide.id), forKey: "LastViewedSlideMemorySetting")
+                
+                cellDelegate?.sendStructSelectedStorySlide(storySlide: selectedElement!)
+                cellDelegate?.didTapOpenLinkExternalServiceMethod(url: deeplinkIos, slide: currentSlide)
+                return
+            }
+        }
+        
         if let linkIos = selectedElement?.linkIos, !linkIos.isEmpty {
             if let currentSlide = currentSlide {
                 
@@ -800,26 +707,243 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    private func setImage(imagePath: String) {
-        guard let url = URL(string: imagePath) else {
-            return
-        }
-
-        let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
-            if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
-                DispatchQueue.main.async {
-                    self.storySlideImageView.tintColor = UIColor.black
-                    self.storySlideImageView.isOpaque = false
-                    self.storySlideImageView.image = image
+    @objc
+    private func pauseVideo(_ notification: NSNotification) {
+        if let slideID = notification.userInfo?["slideID"] as? String {
+            if let currentSlide = currentSlide {
+                if currentSlide.id == slideID {
+                    player.pause()
                 }
-            } else {
-                self.sdkPopupTapHandle()
             }
-        })
-        task.resume()
+        }
+    }
+    
+    @objc
+    private func playVideo(_ notification: NSNotification) {
+        if let slideID = notification.userInfo?["slideID"] as? String {
+            if let currentSlide = currentSlide {
+                if currentSlide.id == slideID {
+                    player.play()
+                }
+            }
+        }
+    }
+    
+    @objc
+    public func deallocAVAudio(_ notification: NSNotification) {
+        outputVolumeObservation = nil
+        //safeRemoveObserver(audioSession, forKeyPath: "outputVolume")
+    }
+    
+    func stopPlayer() {
+        player.pause()
+    }
+    
+    func makeConstraints() {
+        videoView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        videoView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        videoView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        videoView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        
+        storySlideImageView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        storySlideImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        storySlideImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        storySlideImageView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        
+        productWithPromocodeSuperview.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
+        
+        if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
+            
+            clearConstraints()
+            let ds: Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
+            if ds {
+                let storyButtonConstraints = [
+                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
+                    storyButton.heightAnchor.constraint(equalToConstant: 56)
+                ]
+                
+                var productsButtonConstraints = [
+                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
+                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
+                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
+                    productsButton.heightAnchor.constraint(equalToConstant: 36)
+                ]
+                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                let muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
+                
+            } else {
+                
+                let storyButtonConstraints = [
+                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -18),
+                    storyButton.heightAnchor.constraint(equalToConstant: 56)
+                ]
+                
+                var productsButtonConstraints = [
+                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
+                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
+                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+                    productsButton.heightAnchor.constraint(equalToConstant: 36)
+                ]
+                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                var muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                if selectedPromoElement != nil {
+                    muteButtonConstraints = [
+                        muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                        muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -163),
+                        muteButton.widthAnchor.constraint(equalToConstant: 48),
+                        muteButton.heightAnchor.constraint(equalToConstant: 48)
+                    ]
+                }
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
+            }
+            layoutIfNeeded()
+            
+        } else {
+
+            clearConstraints()
+            
+            let ds: Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
+            if ds {
+                let storyButtonConstraints = [
+                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22),
+                    storyButton.heightAnchor.constraint(equalToConstant: 56)
+                ]
+                
+                var productsButtonConstraints = [
+                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
+                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
+                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
+                    productsButton.heightAnchor.constraint(equalToConstant: 36)
+                ]
+                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -89),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                let muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
+                
+            } else {
+                
+                let storyButtonConstraints = [
+                    storyButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+                    storyButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+                    storyButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22),
+                    storyButton.heightAnchor.constraint(equalToConstant: 56)
+                ]
+                
+                var productsButtonConstraints = [
+                    productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 66),
+                    productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -66),
+                    productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+                    productsButton.heightAnchor.constraint(equalToConstant: 36)
+                ]
+                if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+                    productsButtonConstraints = [
+                        productsButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 52),
+                        productsButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -52),
+                        productsButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+                        productsButton.heightAnchor.constraint(equalToConstant: 36)
+                    ]
+                }
+                
+                var muteButtonConstraints = [
+                    muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                    muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -83),
+                    muteButton.widthAnchor.constraint(equalToConstant: 48),
+                    muteButton.heightAnchor.constraint(equalToConstant: 48)
+                ]
+                if selectedPromoElement != nil {
+                    muteButtonConstraints = [
+                        muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
+                        muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -163),
+                        muteButton.widthAnchor.constraint(equalToConstant: 48),
+                        muteButton.heightAnchor.constraint(equalToConstant: 48)
+                    ]
+                }
+                
+                self.activate(constraints: storyButtonConstraints)
+                self.activate(constraints: productsButtonConstraints)
+                self.activate(constraints: muteButtonConstraints)
+            }
+            layoutIfNeeded()
+        }
+    }
+    
+    private func clearConstraints() {
+        customConstraints.forEach { $0.isActive = false }
+        customConstraints.removeAll()
+    }
+    
+    private func activate(constraints: [NSLayoutConstraint]) {
+        customConstraints.append(contentsOf: constraints)
+        customConstraints.forEach { $0.isActive = true }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        audioSession.removeObserver(self, forKeyPath: "outputVolume", context: nil)
+        //AVAudioSession.sharedInstance().removeObserver(self, forKeyPath: "outputVolume", context: nil)
     }
 }
+
 
 extension AVPlayer {
     var isAudioAvailable: Bool? {

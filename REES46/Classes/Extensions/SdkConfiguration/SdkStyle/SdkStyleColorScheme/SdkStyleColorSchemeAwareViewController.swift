@@ -4,6 +4,7 @@ protocol SdkStyleColorSchemeAwareViewController {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme, animated: Bool)
 }
 
+
 extension UIViewController: SdkStyleColorSchemeAwareViewController {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme, animated: Bool) {
         view.downcastColorScheme(colorScheme, animated: animated)
@@ -83,6 +84,7 @@ extension UIView {
     }
 }
 
+
 extension UIView {
     var parentViewController: UIViewController? {
         var parentResponder: UIResponder? = self
@@ -95,6 +97,7 @@ extension UIView {
         return nil
     }
 }
+
 
 extension UIView {
     private struct AssociatedKey {
@@ -117,6 +120,7 @@ extension UIView {
         }
     }
 }
+
 
 extension UIViewController {
     private struct AssociatedKey {

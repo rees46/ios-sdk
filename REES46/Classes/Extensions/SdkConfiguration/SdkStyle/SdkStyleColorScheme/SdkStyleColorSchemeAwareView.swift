@@ -6,11 +6,13 @@ protocol SdkStyleColorSchemeAwareView {
     var shouldDowncastColorScheme: Bool { get }
 }
 
+
 extension SdkStyleColorSchemeAwareView {
     var shouldDowncastColorScheme: Bool {
         return false
     }
 }
+
 
 extension UILabel: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
@@ -26,6 +28,7 @@ extension UILabel: SdkStyleColorSchemeAwareView {
     }
 }
 
+
 extension UIButton: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
         guard let buttonColorScheme = colorScheme as? SdkStyleButtonColorScheme else {
@@ -39,6 +42,7 @@ extension UIButton: SdkStyleColorSchemeAwareView {
         tintColor = buttonColorScheme.buttonTintColor
     }
 }
+
 
 extension UITableView: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
@@ -58,6 +62,7 @@ extension UITableView: SdkStyleColorSchemeAwareView {
     }
 }
 
+
 extension UICollectionView: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
         guard let collectionViewColorScheme = colorScheme as? SdkStyleCollectionViewColorScheme else {
@@ -75,6 +80,7 @@ extension UICollectionView: SdkStyleColorSchemeAwareView {
         return true
     }
 }
+
 
 extension UITableViewCell: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
@@ -96,6 +102,7 @@ extension UITableViewCell: SdkStyleColorSchemeAwareView {
     }
 }
 
+
 extension UITableViewHeaderFooterView: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
         guard let tableViewColorScheme = colorScheme as? SdkStyleTableViewColorScheme else {
@@ -111,6 +118,7 @@ extension UITableViewHeaderFooterView: SdkStyleColorSchemeAwareView {
     }
 }
 
+
 extension UIDatePicker: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {
         guard let datePickerColorScheme = colorScheme as? SdkStyleDatePickerColorScheme else {
@@ -124,6 +132,7 @@ extension UIDatePicker: SdkStyleColorSchemeAwareView {
         setValue(datePickerColorScheme.datePickerTextColor, forKey: "textColor")
     }
 }
+
 
 extension UIRefreshControl: SdkStyleColorSchemeAwareView {
     func applyColorScheme(_ colorScheme: SdkStyleColorScheme) {

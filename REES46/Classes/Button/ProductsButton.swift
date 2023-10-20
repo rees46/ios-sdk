@@ -56,12 +56,12 @@ protocol CustomProductButtonDelegate: AnyObject {
                 setTitle("See all products", for: .normal)
             }
             
-            var mainBundle = Bundle(for: classForCoder)
+            var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-            mainBundle = Bundle.module
+            frameworkBundle = Bundle.module
 #endif
             
-            let angleUpIcon = UIImage(named: "angleUpBlack", in: mainBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
+            let angleUpIcon = UIImage(named: "angleUpBlack", in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
             
             if #available(iOS 12.0, *) {
                 if SdkConfiguration.isDarkMode {
@@ -135,7 +135,8 @@ protocol CustomProductButtonDelegate: AnyObject {
         super.layoutSubviews()
     }
     
-    @objc public func didTapButton() {
+    @objc
+    public func didTapButton() {
         
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)
@@ -165,6 +166,7 @@ protocol CustomProductButtonDelegate: AnyObject {
         super.layoutSubviews()
     }
 }
+
 
 extension UIButton {
     func addRightIconForProductsBtn(image: UIImage) {

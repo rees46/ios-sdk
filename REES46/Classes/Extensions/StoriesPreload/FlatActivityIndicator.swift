@@ -47,6 +47,7 @@ public class FlatActivityIndicator: UIView {
     }
 }
 
+
 extension FlatActivityIndicator {
     override public var intrinsicContentSize: CGSize {
         return CGSize(width: 76, height: 76)
@@ -62,6 +63,7 @@ extension FlatActivityIndicator {
         f_indicator.path = f_path.cgPath
     }
 }
+
 
 extension FlatActivityIndicator {
     public func startFlatIndicatorAnimating() {

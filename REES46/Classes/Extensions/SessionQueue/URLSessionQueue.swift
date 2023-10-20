@@ -21,7 +21,10 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
     open var taskNeedNewBodyStreamWithCompletion: ((URLSession, URLSessionTask, (InputStream?) -> Void) -> Void)?
     
     lazy var session: URLSession = {
-        return URLSession(configuration: URLSessionConfiguration.default, delegate: self, delegateQueue: nil)
+        let sessionConfiguration = URLSessionConfiguration.default
+        sessionConfiguration.timeoutIntervalForRequest = 3
+        sessionConfiguration.waitsForConnectivity = true
+        return URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
     }()
     
     public func addTask(dataTask: SessionDataTaskProtocol) {
@@ -64,7 +67,7 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
                 allTasksCompletedHandler?(dataTasks)
             }
         } else {
-            debugPrint("Tasks completed: \(completed.count)/\(dataTasks.count)")
+            debugPrint("SDK Tasks completed: \(completed.count)/\(dataTasks.count)")
         }
     }
     

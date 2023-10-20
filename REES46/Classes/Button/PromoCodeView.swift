@@ -11,15 +11,11 @@ class PromoCodeView: UIView {
     init() {
         super.init(frame: .zero)
         setToDefault()
-        
-//        let sId = String("RESET_TECH_TEST")
-//        DispatchQueue.onceTechService(token: sId) {
-//            StoryBlockImageCache.shared.cache.removeAllObjects()
-//        }
     }
     
     func configPromoView(promoData: StoriesPromoElement) {
         promoProductNameLabel.removeFromSuperview()
+        //promocodeSlideProductImage.removeFromSuperview()
         
         if (promoData.name != "") {
             if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_8 || SdkGlobalHelper.DeviceType.IS_IPHONE_8P || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
@@ -32,9 +28,13 @@ class PromoCodeView: UIView {
             promoProductNameLabel.textAlignment = .left
             
             if SdkConfiguration.stories.promoSlideFontNameChanged != nil {
-                promoProductNameLabel.font = UIFont(name: (SdkConfiguration.stories.promoSlideFontNameChanged)!, size: 16)
+                if let customFont = UIFont(name: SdkConfiguration.stories.promoSlideFontNameChanged!, size: 16) {
+                    promoProductNameLabel.font = customFont
+                }
                 if SdkConfiguration.stories.promoSlideFontSizeChanged != nil {
-                    promoProductNameLabel.font = UIFont(name: (SdkConfiguration.stories.promoSlideFontNameChanged)!, size: SdkConfiguration.stories.promoSlideFontSizeChanged!)
+                    if let customFontWithSize = UIFont(name: SdkConfiguration.stories.promoSlideFontNameChanged!, size: SdkConfiguration.stories.promoSlideFontSizeChanged!) {
+                        promoProductNameLabel.font = customFontWithSize
+                    }
                 }
             } else {
                 promoProductNameLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
@@ -60,20 +60,14 @@ class PromoCodeView: UIView {
             promocodeSlideProductImage.layer.masksToBounds = true
             promocodeSlideProductImage.layer.cornerRadius = 6.0
             promocodeSlideProductImage.layer.borderColor = UIColor.clear.cgColor
-            promocodeSlideProductImage.alpha = 0.0
             promocodeSlideProductImage.frame = CGRect(x: 18, y: frame.maxY/2 - frame.size.width/2, width: frame.size.width - 36, height: frame.size.width - 36)
             
             addSubview(promocodeSlideProductImage)
             
-            let url = URL(string: promoData.image_url)
-            if url != nil {
-                
-//                let sId = String("RESET_TECH_TEST")
-//                DispatchQueue.onceTechService(token: sId) {
-//                    StoryBlockImageCache.shared.cache.removeAllObjects()
-//                }
-                
-                StoryBlockImageCache.image(for: url!.absoluteString) { [self] cachedImage in
+            let urlImgFullSize: String = promoData.image_url
+            let urlImgResize = URL(string: promoData.image_url_resized?.image_url_resized520 ?? urlImgFullSize)
+            if urlImgResize != nil {
+                StoryBlockImageCache.image(for: urlImgResize!.absoluteString) { [self] cachedImage in
                     if cachedImage != nil {
                         let imageBorderRepresentation = cachedImage!.imageWithInsets(insets: UIEdgeInsets(top: 22, left: 22, bottom: 22, right: 22))
                         if cachedImage!.hasAlpha {
@@ -110,7 +104,7 @@ class PromoCodeView: UIView {
                             //Do nothing
                         })
                         
-                        let task = URLSession.shared.dataTask(with: url!, completionHandler: { data, _, error in
+                        let task = URLSession.shared.dataTask(with: urlImgResize!, completionHandler: { data, _, error in
                             if error == nil {
                                 
                                 guard let unwrappedData = data, let downloadedImage = UIImage(data: unwrappedData) else { return }
@@ -140,7 +134,7 @@ class PromoCodeView: UIView {
                                     }, completion: { (b) in })
                                 }
                                 
-                                StoryBlockImageCache.save(downloadedImage, for: url!.absoluteString)
+                                StoryBlockImageCache.save(downloadedImage, for: urlImgResize!.absoluteString)
                             }
                         })
                         task.resume()
@@ -161,18 +155,6 @@ class PromoCodeView: UIView {
 }
 
 
-final class TopAlignedLabel: UILabel {
-    override func drawText(in rect: CGRect) {
-        super.drawText(in: .init(
-            origin: .zero,
-            size: textRect(
-                forBounds: rect,
-                limitedToNumberOfLines: numberOfLines
-            ).size
-        ))
-    }
-}
-
 extension UIImage {
     func imageWithInsets(insets: UIEdgeInsets) -> UIImage? {
         UIGraphicsBeginImageContextWithOptions(
@@ -186,6 +168,7 @@ extension UIImage {
         return imageWithInsets
     }
 }
+
 
 extension UIImage {
     public var hasAlpha: Bool {

@@ -1,265 +1,99 @@
-import UIKit
-import UserNotifications
+import Foundation
 
-final public class VideoDownloadManager: NSObject {
-    
-    public typealias DownloadCompletionBlock = (_ error : Error?, _ fileUrl:URL?) -> Void
-    public typealias DownloadProgressBlock = (_ progress : CGFloat) -> Void
-    public typealias BackgroundDownloadCompletionHandler = () -> Void
-    
-    private var session: URLSession!
-    private var ongoingDownloads: [String : VideoDownloadObject] = [:]
-    private var backgroundSession: URLSession!
-    //private var eSession: URLSession!
-    
-    public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
-    public var showLocalNotificationOnBackgroundDownloadSuccess = true
-    public var localNotificationText: String?
+enum VideoDownloadError: Error {
+    case packetFetchError(String)
+    case wrongOrder(String)
+}
 
-    public static let shared: VideoDownloadManager = { return VideoDownloadManager() }()
+@objc protocol VideoDownloadProcessProtocol {
     
-    public func downloadStoryMediaFile(withRequest request: URLRequest,
-                                       inDirectory directory: String? = nil,
-                                       withName fileName: String? = nil,
-                                       shouldDownloadInBackground: Bool = false,
-                                       onProgress progressBlock:DownloadProgressBlock? = nil,
-                                       onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
+    func downloadingProgress(_ percent: Float, fileName: String)
+    
+    func sdkVideoDownloadSuccess(_ fileName: URL)
+
+    func downloadWithError(_ error: Error?, fileName: String)
+}
+
+
+@objcMembers class VideoDownloadManager: NSObject {
+    
+    fileprivate var vOperations = [Int: VideoDownloadOperation]()
+    
+    public static var maxOperationCount = 1
+    
+    private let vQueue: OperationQueue = {
+        let _queue = OperationQueue()
+        _queue.name = "vDownloadManager"
+        _queue.maxConcurrentOperationCount = maxOperationCount
+        return _queue
+    }()
+    
+    lazy var session: URLSession = {
+        let vConfiguration = URLSessionConfiguration.default
+        //let vConfiguration = URLSessionConfiguration.background(withIdentifier: "sdkBackgroundSession")
+        vConfiguration.timeoutIntervalForRequest = 1
+        vConfiguration.waitsForConnectivity = true
+        return URLSession(configuration: vConfiguration, delegate: self, delegateQueue: nil)
+    }()
+    
+    var parseProcessDelegate: VideoDownloadProcessProtocol?
+    
+    @discardableResult
+    @objc func addDownload(_ url: URL, _ videoSlideId: String) -> VideoDownloadOperation {
         
-        guard let url = request.url else {
-            print("SDK Request url is empty")
-            return nil
-        }
+        let operation = VideoDownloadOperation(session: session, url: url, videoSlideId: videoSlideId)
+        vOperations[operation.task.taskIdentifier] = operation
+        vQueue.addOperation(operation)
         
-        if let _ = self.ongoingDownloads[url.absoluteString] {
-            print("SDK Already in progress")
-            return nil
-        }
-        var downloadTask: URLSessionDownloadTask
-        if shouldDownloadInBackground {
-            downloadTask = self.backgroundSession.downloadTask(with: request)
-        } else{
-            downloadTask = self.session.downloadTask(with: request)
-        }
-        
-        let download = VideoDownloadObject(downloadTask: downloadTask,
-                                           progressBlock: progressBlock,
-                                           completionBlock: completionBlock,
-                                           fileName: fileName,
-                                           directoryName: directory)
-
-        let key = self.getExDownloadKey(withUrl: url)
-        self.ongoingDownloads[key] = download
-        downloadTask.resume()
-        return key;
-    }
-    
-    public func getExDownloadKey(withUrl url: URL) -> String {
-        return url.absoluteString
-    }
-    
-    public func currentDownloads() -> [String] {
-        return Array(self.ongoingDownloads.keys)
-    }
-    
-    public func cancelAllDownloads() {
-        for (_, download) in self.ongoingDownloads {
-            let downloadTask = download.downloadTask
-            downloadTask.cancel()
-        }
-        self.ongoingDownloads.removeAll()
-    }
-    
-    public func cancelDownload(forUniqueKey key:String?) {
-        let downloadStatus = self.isDownloadInProgress(forUniqueKey: key)
-        let presence = downloadStatus.0
-        if presence {
-            if let download = downloadStatus.1 {
-                download.downloadTask.cancel()
-                self.ongoingDownloads.removeValue(forKey: key!)
-            }
-        }
-    }
-    
-    public func pause(forUniqueKey key:String?) {
-        let downloadStatus = self.isDownloadInProgress(forUniqueKey: key)
-        let presence = downloadStatus.0
-        if presence {
-            if let download = downloadStatus.1 {
-                let downloadTask = download.downloadTask
-                downloadTask.suspend()
-            }}
-    }
-    
-    public func resume(forUniqueKey key:String?) {
-        let downloadStatus = self.isDownloadInProgress(forUniqueKey: key)
-        let presence = downloadStatus.0
-        if presence {
-            if let download = downloadStatus.1 {
-                let downloadTask = download.downloadTask
-                downloadTask.resume()
-            }}
-    }
-    
-    public func isDownloadInProgress(forKey key:String?) -> Bool {
-        let downloadStatus = self.isDownloadInProgress(forUniqueKey: key)
-        return downloadStatus.0
-    }
-    
-    public func alterDownload(withKey key: String?,
-                              onProgress progressBlock:DownloadProgressBlock?,
-                              onCompletion completionBlock:@escaping DownloadCompletionBlock) {
-        let downloadStatus = self.isDownloadInProgress(forUniqueKey: key)
-        let presence = downloadStatus.0
-        if presence {
-            if let download = downloadStatus.1 {
-                download.progressBlock = progressBlock
-                download.completionBlock = completionBlock
-            }
-        }
-    }
-    
-    private override init() {
-        super.init()
-        let sessionConfiguration = URLSessionConfiguration.default
-        self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
-        //let ephemeralConfiguration = URLSessionConfiguration.ephemeral
-        //self.eSession = URLSession(configuration: ephemeralConfiguration, delegate: self, delegateQueue: nil)
-        let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
-        self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
+        return operation
     }
 
-    private func isDownloadInProgress(forUniqueKey key:String?) -> (Bool, VideoDownloadObject?) {
-        guard let key = key else { return (false, nil) }
-        for (uniqueKey, download) in self.ongoingDownloads {
-            if key == uniqueKey {
-                return (true, download)
-            }
-        }
-        return (false, nil)
-    }
-    
-    private func showSdkDownloaderNotification(withText text:String) {
-        let notificationCenter = UNUserNotificationCenter.current()
-        notificationCenter.getNotificationSettings { (settings) in
-            guard settings.authorizationStatus == .authorized else {
-                debugPrint("Sdk not authorized to schedule notification")
-                return
-            }
-            
-            let content = UNMutableNotificationContent()
-            content.title = text
-            content.sound = UNNotificationSound.default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1,
-                                                            repeats: false)
-            let identifier = "SdkDownloadManagerNotification"
-            let request = UNNotificationRequest(identifier: identifier,
-                                                content: content, trigger: trigger)
-            notificationCenter.add(request, withCompletionHandler: { (error) in
-                if let error = error {
-                    debugPrint("Sdk could not schedule notification, error : \(error)")
-                }
-            })
-        }
+    func cancelAll() {
+        vQueue.cancelAllOperations()
     }
 }
 
-extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
+
+extension VideoDownloadManager: URLSessionDownloadDelegate {
     
-    public func urlSession(_ session: URLSession,
-                             downloadTask: URLSessionDownloadTask,
-                             didFinishDownloadingTo location: URL) {
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         
-        let key = (downloadTask.originalRequest?.url?.absoluteString)!
-        if let download = self.ongoingDownloads[key] {
-            if let response = downloadTask.response {
-                let statusCode = (response as! HTTPURLResponse).statusCode
-                
-                guard statusCode < 400 else {
-                    let error = NSError(domain:"HttpError", code:statusCode, userInfo:[NSLocalizedDescriptionKey : HTTPURLResponse.localizedString(forStatusCode: statusCode)])
-                    OperationQueue.main.addOperation({
-                        download.completionBlock(error, nil)
-                    })
-                    return
-                }
-                let fileName = download.fileName ?? downloadTask.response?.suggestedFilename ?? (downloadTask.originalRequest?.url?.lastPathComponent)!
-                let directoryName = download.directoryName
-                
-                let fileMovingResult = SDFileUtils.moveFile(fromUrl: location, toDirectory: directoryName, withName: fileName)
-                let didSucceed = fileMovingResult.0
-                let error = fileMovingResult.1
-                let finalFileUrl = fileMovingResult.2
-                
-                OperationQueue.main.addOperation({
-                    (didSucceed ? download.completionBlock(nil, finalFileUrl) : download.completionBlock(error, nil))
-                })
+        vOperations[downloadTask.taskIdentifier]?.trackDownloadByOperation(session, downloadTask: downloadTask, didFinishDownloadingTo: location)
+        
+        if downloadTask.originalRequest!.url != nil {
+            do {
+                let manager = FileManager.default
+                let destinationURL = try manager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true).appendingPathComponent(downloadTask.originalRequest!.url!.lastPathComponent)
+                parseProcessDelegate?.sdkVideoDownloadSuccess(destinationURL)
+            } catch {
+                //print("\(error)")
             }
-        }
-        self.ongoingDownloads.removeValue(forKey:key)
-//        if let removedValue = self.ongoingDownloads.removeValue(forKey: key) {
-//            self.ongoingDownloads.removeValue(forKey:key)
-//            print("SDK VideoDownloadManager Key value \(removedValue) was removed")
-//            //self.ongoingDownloads.removeValue(forKey:key)
-//        } else {
-//            //self.ongoingDownloads.removeValue(forKey:key)
-//            print("SDK VideoDownloadManager dictionary does not contain Key value \(key)")
-//        }
-    }
-    
-    public func urlSession(_ session: URLSession,
-                             downloadTask: URLSessionDownloadTask,
-                             didWriteData bytesWritten: Int64,
-                             totalBytesWritten: Int64,
-                             totalBytesExpectedToWrite: Int64) {
-        guard totalBytesExpectedToWrite > 0 else {
-            debugPrint("SDK Could not calculate progress as total bytes to Write is less than 0")
-            return;
-        }
-        
-        if let download = self.ongoingDownloads[(downloadTask.originalRequest?.url?.absoluteString)!],
-            let progressBlock = download.progressBlock {
-            let progress : CGFloat = CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite)
-            //let percent = String(format:"%.0f", progress * 100) + "%"
-            OperationQueue.main.addOperation({
-                progressBlock(progress)
-            })
-        }
-    }
-    
-    public func urlSession(_ session: URLSession,
-                             task: URLSessionTask,
-                             didCompleteWithError error: Error?) {
-        
-        if let error = error {
-            let downloadTask = task as! URLSessionDownloadTask
-            let key = (downloadTask.originalRequest?.url?.absoluteString)!
-            if let download = self.ongoingDownloads[key] {
-                OperationQueue.main.addOperation({
-                    download.completionBlock(error, nil)
-                })
-            }
-            self.ongoingDownloads.removeValue(forKey:key)
+            
+//            DispatchQueue.main.async { [self] in
+//                //parseProcessDelegate?.sdkVideoDownloadSuccess(downloadUrl)
+//            }
         }
     }
 
-    public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        session.getTasksWithCompletionHandler { (dataTasks, uploadTasks, downloadTasks) in
-            if downloadTasks.count == 0 {
-                OperationQueue.main.addOperation({
-                    if let completion = self.backgroundCompletionHandler {
-                        completion()
-                    }
-                    
-                    if self.showLocalNotificationOnBackgroundDownloadSuccess {
-                        var notificationText = "Sdk Notification Download completed"
-                        if let userNotificationText = self.localNotificationText {
-                            notificationText = userNotificationText
-                        }
-                        
-                        self.showSdkDownloaderNotification(withText: notificationText)
-                    }
-                    
-                    self.backgroundCompletionHandler = nil
-                })
+    func urlSession(_ session: URLSession, downloadTask sdkDownloadVideoTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        vOperations[sdkDownloadVideoTask.taskIdentifier]?.trackDownloadByOperation(session, sdkDownloadVideoTask: sdkDownloadVideoTask, didWriteData: bytesWritten, totalBytesWritten: totalBytesWritten, totalBytesExpectedToWrite: totalBytesExpectedToWrite)
+        
+        if let downloadUrl = sdkDownloadVideoTask.originalRequest!.url {
+            let percent = Double(totalBytesWritten)/Double(totalBytesExpectedToWrite)
+            DispatchQueue.main.async { [self] in
+                parseProcessDelegate?.downloadingProgress(Float(percent), fileName: downloadUrl.lastPathComponent)
+            }
+        }
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        let key = task.taskIdentifier
+        vOperations[key]?.trackDownloadByOperation(session, task: task, didCompleteWithError: error)
+        vOperations.removeValue(forKey: key)
+        
+        if let downloadUrl = task.originalRequest!.url, error != nil {
+            DispatchQueue.main.async { [self] in
+                parseProcessDelegate?.downloadWithError(error, fileName: downloadUrl.lastPathComponent)
             }
         }
     }

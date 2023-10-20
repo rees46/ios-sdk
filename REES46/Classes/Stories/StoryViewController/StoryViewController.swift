@@ -37,20 +37,6 @@ public class NavigationStackController: UINavigationController {
     }
 }
 
-extension NavigationStackController: UINavigationControllerDelegate {
-    public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        if canBeMadeHeadViewController(viewController: viewController) {
-            viewController.navigationItem.setHidesBackButton(false, animated: false)
-        }
-    }
-
-    public func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
-        if canBeMadeHeadViewController(viewController: viewController) {
-            resetNavigationStackWithLatestViewControllerAsHead()
-        }
-    }
-}
-
 class StoryViewController: UINavigationController, UINavigationControllerDelegate, UIGestureRecognizerDelegate, CarouselCollectionViewCellDelegate {
 private var collectionView: UICollectionView = {
         let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
@@ -160,20 +146,26 @@ private var collectionView: UICollectionView = {
             if UIApplication.shared.applicationState == .inactive {
                 switch userInterfaceStyle {
                 case .unspecified:
-                        let userInfo = ["url": "workingSlideUrl"] as [String: Any]
-                        NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
-                        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
-                        self.sdkLinkDelegate?.updateBgColor()
-                        self.collectionView.reloadData()
+                    let storySlideId = stories[currentPosition.section].id
+                    let cachedSlideId = "1111" + storySlideId
+                    let userInfo = ["url": cachedSlideId] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
+                    self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                    self.sdkLinkDelegate?.updateBgColor()
+                    self.collectionView.reloadData()
                 case .light:
-                        let userInfo = ["url": "workingSlideUrl"] as [String: Any]
-                        NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
-                        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
-                        self.sdkLinkDelegate?.updateBgColor()
-                        self.collectionView.reloadData()
+                    let storySlideId = stories[currentPosition.section].id
+                    let cachedSlideId = "1111" + storySlideId
+                    let userInfo = ["url": cachedSlideId] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
+                    self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                    self.sdkLinkDelegate?.updateBgColor()
+                    self.collectionView.reloadData()
                 case .dark:
-                    let userInfo = ["url": "workingSlideUrl"] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name("waitStorySlideCached."), object: userInfo)
+                    let storySlideId = stories[currentPosition.section].id
+                    let cachedSlideId = "1111" + storySlideId
+                    let userInfo = ["url": cachedSlideId] as [String: Any]
+                    NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
                     self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
                     self.sdkLinkDelegate?.updateBgColor()
                     self.collectionView.reloadData()
@@ -194,22 +186,18 @@ private var collectionView: UICollectionView = {
         view.addSubview(closeButton)
         view.addSubview(pageIndicator)
         
-        if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
-            //Do nothing indicator disabled
-        } else {
-            storiesSlideReloadIndicator.contentMode = .scaleToFill
-            storiesSlideReloadIndicator.translatesAutoresizingMaskIntoConstraints = false
-            
-            let customIndicatorColor = SdkConfiguration.stories.storiesSlideReloadIndicatorBackgroundColor.hexToRGB()
-            storiesSlideReloadIndicator.strokeColor = UIColor(red: customIndicatorColor.red, green: customIndicatorColor.green, blue: customIndicatorColor.blue, alpha: 1)
-            
-            storiesSlideReloadIndicator.lineWidth = SdkConfiguration.stories.storiesSlideReloadIndicatorBorderLineWidth
-            storiesSlideReloadIndicator.numSegments = SdkConfiguration.stories.storiesSlideReloadIndicatorSegmentCount
-            storiesSlideReloadIndicator.animationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorAnimationDuration
-            storiesSlideReloadIndicator.rotationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorRotationDuration
-            storiesSlideReloadIndicator.alpha = 1
-            view.addSubview(storiesSlideReloadIndicator)
-        }
+        storiesSlideReloadIndicator.contentMode = .scaleToFill
+        storiesSlideReloadIndicator.translatesAutoresizingMaskIntoConstraints = false
+        
+        let customIndicatorColor = SdkConfiguration.stories.storiesSlideReloadIndicatorBackgroundColor.hexToRGB()
+        storiesSlideReloadIndicator.strokeColor = UIColor(red: customIndicatorColor.red, green: customIndicatorColor.green, blue: customIndicatorColor.blue, alpha: 1)
+        
+        storiesSlideReloadIndicator.lineWidth = SdkConfiguration.stories.storiesSlideReloadIndicatorBorderLineWidth
+        storiesSlideReloadIndicator.numSegments = SdkConfiguration.stories.storiesSlideReloadIndicatorSegmentCount
+        storiesSlideReloadIndicator.animationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorAnimationDuration
+        storiesSlideReloadIndicator.rotationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorRotationDuration
+        storiesSlideReloadIndicator.alpha = 0.0
+        view.addSubview(storiesSlideReloadIndicator)
 
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 0).isActive = true
@@ -257,7 +245,8 @@ private var collectionView: UICollectionView = {
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
     }
     
-    @objc private func didSingleTapOnScreen(_ gestureRecognizer: UITapGestureRecognizer) {
+    @objc
+    private func didSingleTapOnScreen(_ gestureRecognizer: UITapGestureRecognizer) {
         let tapLocation = gestureRecognizer.location(in: self.view)
         let halfWidth = self.view.bounds.width / 2.0
         if tapLocation.x < halfWidth {
@@ -268,20 +257,19 @@ private var collectionView: UICollectionView = {
     }
     
     private func handleRightTap() {
-        
         needSaveStoryLocal = false
-        let storyId = String(stories[currentPosition.section].id)
-        let storyName = "story." + storyId
-        let slideId = String(stories[currentPosition.section].slides[currentPosition.row].id)
+        let storyId = stories[currentPosition.section].id
+        let storyName = "viewed.slide." + storyId
+        let slideId = stories[currentPosition.section].slides[currentPosition.row].id
         
-        var watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-        let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-            $0.range(of: String(slideId)) != nil
+        var viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+            $0.range(of: slideId) != nil
         })
         
-        if !watchedStoryIdExists {
-            watchedStoriesArray.append(slideId)
-            UserDefaults.standard.setValue(watchedStoriesArray, for: UserDefaults.Key(storyName))
+        if !viewedStorySlideIdExists {
+            viewedSlidesStoriesCachedArray.append(slideId)
+            UserDefaults.standard.setValue(viewedSlidesStoriesCachedArray, for: UserDefaults.Key(storyName))
             needSaveStoryLocal = true
         }
         
@@ -298,26 +286,25 @@ private var collectionView: UICollectionView = {
 
             currentPosition.row = 0
             
-            let storyId = String(stories[currentPosition.section + 1].id)
-            let storyName = "story." + storyId
-            let slideId = String(stories[currentPosition.section + 1].slides[currentPosition.row].id)
+            let storyId = stories[currentPosition.section + 1].id
+            let storyName = "viewed.slide." + storyId
+            let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
-                allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
+                allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
             }
             
-            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-                $0.range(of: String(slideId)) != nil
+            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+                $0.range(of: slideId) != nil
             })
             
-            if watchedStoryIdExists {
-                let lastWatchedIndexValue = watchedStoriesArray.last
+            if viewedStorySlideIdExists {
+                let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
-                    if name == lastWatchedIndexValue {
+                    if name == lastViewedSlideIndexValue {
                         break
                     }
                     currentDefaultIndex += 1
@@ -366,26 +353,25 @@ private var collectionView: UICollectionView = {
             
             currentPosition.row = 0
             
-            let storyId = String(stories[currentPosition.section - 1].id)
-            let storyName = "story." + storyId
-            let slideId = String(stories[currentPosition.section - 1].slides[currentPosition.row].id)
+            let storyId = stories[currentPosition.section - 1].id
+            let storyName = "viewed.slide." + storyId
+            let slideId = stories[currentPosition.section - 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
-                //print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
-                allStoriesMainArray.append(String(stories[currentPosition.section - 1].slides[(index)].id))
+                allStoriesMainArray.append(stories[currentPosition.section - 1].slides[(index)].id)
             }
             
-            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-                $0.range(of: String(slideId)) != nil
+            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+                $0.range(of: slideId) != nil
             })
             
-            if watchedStoryIdExists {
-                let lastWatchedIndexValue = watchedStoriesArray.last
+            if viewedStorySlideIdExists {
+                let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
-                    if name == lastWatchedIndexValue {
+                    if name == lastViewedSlideIndexValue {
                         //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
@@ -439,26 +425,26 @@ private var collectionView: UICollectionView = {
             needSaveStoryLocal = false
             currentPosition.row = 0
             
-            let storyId = String(stories[currentPosition.section + 1].id)
-            let storyName = "story." + storyId
-            let slideId = String(stories[currentPosition.section + 1].slides[currentPosition.row].id)
+            let storyId = stories[currentPosition.section + 1].id
+            let storyName = "viewed.slide." + storyId
+            let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
                 //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
-                allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
+                allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
             }
             
-            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-                $0.range(of: String(slideId)) != nil
+            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+                $0.range(of: slideId) != nil
             })
             
-            if watchedStoryIdExists {
-                let lastWatchedIndexValue = watchedStoriesArray.last
+            if viewedStorySlideIdExists {
+                let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
-                    if name == lastWatchedIndexValue {
+                    if name == lastViewedSlideIndexValue {
                         //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
@@ -504,26 +490,26 @@ private var collectionView: UICollectionView = {
         if currentPosition.section > 0 {
             currentPosition.row = 0
             
-            let storyId = String(stories[currentPosition.section - 1].id)
-            let storyName = "story." + storyId
-            let slideId = String(stories[currentPosition.section - 1].slides[currentPosition.row].id)
+            let storyId = stories[currentPosition.section - 1].id
+            let storyName = "viewed.slide." + storyId
+            let slideId = stories[currentPosition.section - 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
                 //print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
-                allStoriesMainArray.append(String(stories[currentPosition.section - 1].slides[(index)].id))
+                allStoriesMainArray.append(stories[currentPosition.section - 1].slides[(index)].id)
             }
             
-            let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-            let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-                $0.range(of: String(slideId)) != nil
+            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+                $0.range(of: slideId) != nil
             })
             
-            if watchedStoryIdExists {
-                let lastWatchedIndexValue = watchedStoriesArray.last
+            if viewedStorySlideIdExists {
+                let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
-                    if name == lastWatchedIndexValue {
+                    if name == lastViewedSlideIndexValue {
                         //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
@@ -531,8 +517,6 @@ private var collectionView: UICollectionView = {
                 }
                 
                 if (currentDefaultIndex + 1 < stories[currentPosition.section - 1].slides.count) {
-                    //print(stories[currentPosition.section - 1].slides.count)
-                    //print(stories[currentPosition.section].slides.count)
                     if (currentDefaultIndex + 1 <= stories[currentPosition.section - 1].slides.count) {
                         currentPosition.section -= 1
                         currentPosition.row = currentDefaultIndex + 1
@@ -569,11 +553,11 @@ private var collectionView: UICollectionView = {
         collectionView.delegate = self
         collectionView.dataSource = self
         
-        var mainBundle = Bundle(for: classForCoder)
+        var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-        mainBundle = Bundle.module
+        frameworkBundle = Bundle.module
 #endif
-        let image = UIImage(named: "iconStoryClose", in: mainBundle, compatibleWith: nil)
+        let image = UIImage(named: "iconStoryClose", in: frameworkBundle, compatibleWith: nil)
         let imageRender = image?.withRenderingMode(.alwaysTemplate)
         let imageView = UIImageView(image: imageRender)
         closeButton.setImage(imageView.image, for: .normal)
@@ -582,27 +566,23 @@ private var collectionView: UICollectionView = {
         closeButton.tintColor = UIColor(red: customTintColor.red, green: customTintColor.green, blue: customTintColor.blue, alpha: 1)
         collectionView.register(StoryCollectionViewCell.self, forCellWithReuseIdentifier: StoryCollectionViewCell.cellId)
         
-        let slideMedia = stories[currentPosition.section].slides.first
-        if slideMedia?.type == .video {
-            let videoLink = slideMedia?.background
-            let url = URL(string: videoLink!)
-            let durationLength = AVURLAsset(url: url!).duration.seconds
-            let currentDurationInt = Int(durationLength)
-            storyTime = currentDurationInt
-
-        } else {
-            storyTime = slideMedia!.duration
-        }
         updateSlides()
     }
-
-    @objc
-    func didTapCloseButton() {
-        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
-        dismiss(animated: true)
-    }
-
+    
     private func updateSlides() {
+        let storySlideMedia = stories[currentPosition.section].slides[currentPosition.row]
+        storyTime = storySlideMedia.duration
+        
+        if storySlideMedia.type == .video {
+            let videoDurationInCache = SdkGlobalHelper.sharedInstance.retrieveVideoCachedParamsDictionary(parentSlideId: storySlideMedia.id)
+            if let videoDurationSeconds = videoDurationInCache[storySlideMedia.id] {
+                storyTime = Int(videoDurationSeconds) ?? storySlideMedia.duration
+                //print("SDK Video duration is \(videoDurationSeconds)")
+            } else {
+                //print("SDK Error can not detect video duration")
+            }
+        }
+        
         timeLeft = TimeInterval(storyTime)
         for view in pageIndicator.arrangedSubviews {
             pageIndicator.removeArrangedSubview(view)
@@ -629,11 +609,12 @@ private var collectionView: UICollectionView = {
         currentProgressView = progressView
         currentDuration = duration
         
-        let storyImageSlideId = String(stories[currentPosition.section].slides[currentPosition.row].id)
-        let prefix = "waitStorySlideCached." + storyImageSlideId
-        let imagesForStoriesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(prefix)) as? [String] ?? []
+        let superviewSlideId = stories[currentPosition.section].slides[currentPosition.row].id
+        let cachedSlideMediaId = "1111" + superviewSlideId
+        
+        let imagesForStoriesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(cachedSlideMediaId)) as? [String] ?? []
         let imageStoryIdDownloaded = imagesForStoriesDownloadedArray.contains(where: {
-            $0.range(of: String(prefix)) != nil
+            $0.range(of: cachedSlideMediaId) != nil
         })
         
         if imageStoryIdDownloaded {
@@ -641,7 +622,7 @@ private var collectionView: UICollectionView = {
                 //Implementation
             } else {
                 UIView.animate(withDuration: 0.3, animations: {
-                    self.storiesSlideReloadIndicator.alpha = 0
+                    self.storiesSlideReloadIndicator.alpha = 0.0
                 })
             }
             
@@ -651,29 +632,31 @@ private var collectionView: UICollectionView = {
             timer.invalidate()
             
             if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
-                //Implementation
+                UIView.animate(withDuration: 0.5, animations: {
+                    self.storiesSlideReloadIndicator.alpha = 0.0
+                })
             } else {
                 UIView.animate(withDuration: 0.5, animations: {
-                    self.storiesSlideReloadIndicator.alpha = 1.0
+                    self.storiesSlideReloadIndicator.alpha = 0.0
                 })
             }
             
-            let notifName = "waitStorySlideCached." + storyImageSlideId
-            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(notifName), object: nil)
-            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(notifName), object: nil)
+            NotificationCenter.default.removeObserver(self, name: NSNotification.Name(cachedSlideMediaId), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(cachedSlideMediaId), object: nil)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+                self.storiesSlideReloadIndicator.alpha = 0.0
+            }
         }
     }
     
-    @objc func updateVisibleCells(notification: NSNotification) {
+    @objc
+    func updateVisibleCells(notification: NSNotification) {
         DispatchQueue.main.async {
             if let visibleCell = self.collectionView.indexPathsForVisibleItems.first {
-                if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
-                    //Implementation
-                } else {
-                    UIView.animate(withDuration: 0.5, animations: {
-                        self.storiesSlideReloadIndicator.alpha = 0.0
-                    })
-                }
+                UIView.animate(withDuration: 0.5, animations: {
+                    self.storiesSlideReloadIndicator.alpha = 0.0
+                })
                 self.currentPosition = visibleCell
                 self.collectionView.reloadItems(at: self.collectionView.indexPathsForVisibleItems)
                 DispatchQueue.main.async {
@@ -683,7 +666,8 @@ private var collectionView: UICollectionView = {
         }
     }
 
-    @objc func updateTime() {
+    @objc
+    func updateTime() {
         if timeLeft > 0 {
             timeLeft = endTime?.timeIntervalSinceNow ?? 0
             currentProgressView?.progress = 1 - Float(timeLeft) / currentDuration
@@ -703,26 +687,26 @@ private var collectionView: UICollectionView = {
                 
                 currentPosition.row = 0
                 
-                let storyId = String(stories[currentPosition.section + 1].id)
-                let storyName = "story." + storyId
-                let slideId = String(stories[currentPosition.section + 1].slides[currentPosition.row].id)
+                let storyId = stories[currentPosition.section + 1].id
+                let storyName = "viewed.slide." + storyId
+                let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
                 
                 var allStoriesMainArray: [String] = []
                 for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
                     //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
-                    allStoriesMainArray.append(String(stories[currentPosition.section + 1].slides[(index)].id))
+                    allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
                 }
                 
-                let watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-                let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-                    $0.range(of: String(slideId)) != nil
+                let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+                let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+                    $0.range(of: slideId) != nil
                 })
                 
-                if watchedStoryIdExists {
-                    let lastWatchedIndexValue = watchedStoriesArray.last
+                if viewedStorySlideIdExists {
+                    let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
                     var currentDefaultIndex = 0
                     for name in allStoriesMainArray {
-                        if name == lastWatchedIndexValue {
+                        if name == lastViewedSlideIndexValue {
                             //print("Story \(name) for index \(currentDefaultIndex)")
                             break
                         }
@@ -758,23 +742,23 @@ private var collectionView: UICollectionView = {
     }
     
     private func saveStorySlideWatching(index: IndexPath) {
-        let storyId = String(stories[index.section].id)
-        let storyName = "story." + storyId
-        let slideId = String(stories[index.section].slides[index.row].id)
+        let storyId = stories[index.section].id
+        let storyName = "viewed.slide." + storyId
+        let slideId = stories[index.section].slides[index.row].id
         
-        var watchedStoriesArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-        let watchedStoryIdExists = watchedStoriesArray.contains(where: {
-            $0.range(of: String(slideId)) != nil
+        var viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
+            $0.range(of: slideId) != nil
         })
         
-        if !watchedStoryIdExists {
-            watchedStoriesArray.append(slideId)
-            UserDefaults.standard.setValue(watchedStoriesArray, for: UserDefaults.Key(storyName))
+        if !viewedStorySlideIdExists {
+            viewedSlidesStoriesCachedArray.append(slideId)
+            UserDefaults.standard.setValue(viewedSlidesStoriesCachedArray, for: UserDefaults.Key(storyName))
         }
     }
     
     private func openUrl(link: String) {
-        if let url = URL(string: link) {
+        if let linkUrl = URL(string: link) {
             pauseTimer()
             
             let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
@@ -783,7 +767,7 @@ private var collectionView: UICollectionView = {
                 NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("WebKitClosedContinueTimerSetting"), object: nil)
             }
             
-            presentInternalSdkWebKit(url: url, completion: nil)
+            presentInternalSdkWebKit(webUrl: linkUrl, completion: nil)
             
             let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
             NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
@@ -802,21 +786,20 @@ private var collectionView: UICollectionView = {
     }
     
     private func trackViewSlide(index: IndexPath) {
-        let storyId = String(stories[index.section].id)
-        let slideId = String(stories[index.section].slides[index.row].id)
+        let storyId = stories[index.section].id
+        let slideId = stories[index.section].slides[index.row].id
         sdk?.track(event: .slideView(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
         })
     }
     
     private func trackClickSlide(index: IndexPath) {
-        let storyId = String(stories[index.section].id)
-        let slideId = String(stories[index.section].slides[index.row].id)
+        let storyId = stories[index.section].id
+        let slideId = stories[index.section].slides[index.row].id
         sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
         })
     }
     
     private func setupGestureRecognizerOnCollection() {
-        
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
         
         collectionView.gestureRecognizers = []
@@ -850,7 +833,8 @@ private var collectionView: UICollectionView = {
         return false
     }
     
-    @objc private func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
+    @objc
+    private func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
         if gestureRecognizer.state == .ended {
             let p = gestureRecognizer.location(in: collectionView)
             if let indexPath = collectionView.indexPathForItem(at: p) {
@@ -951,13 +935,9 @@ private var collectionView: UICollectionView = {
         UserDefaults.standard.set(false, forKey: "CarouselTimerStopMemorySetting")
     }
     
-    func didTapLinkIosOpeningExternal(url: String) {
-        self.openUrl(link: url)
-    }
-    
     public func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide) {
         let stateButton: Bool = UserDefaults.standard.bool(forKey: "LastTapButtonMemorySdkSetting")
-        if stateButton == true {
+        if stateButton {
             continueTimer()
             
             let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
@@ -980,14 +960,33 @@ private var collectionView: UICollectionView = {
     
     func sendStructSelectedCarouselProduct(product: StoriesProduct) {
         sdkLinkDelegate?.structOfSelectedCarouselProduct(product: product)
-        openUrl(link: product.url)
+        if (product.deeplinkIos != "") {
+            openUrl(link: product.deeplinkIos)
+        } else {
+            openUrl(link: product.url)
+        }
+    }
+    
+    public func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement) {
+        pauseTimer()
+        
+        let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+        NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+        self.sdkLinkDelegate?.sendStructSelectedPromocodeSlide(promoSlide: promoSlide)
     }
     
     @objc
     func didSwipeDown() {
         dismiss(animated: true)
     }
+    
+    @objc
+    func didTapCloseButton() {
+        self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+        dismiss(animated: true)
+    }
 }
+
 
 extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -1000,11 +999,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
-            //Implementation
-        } else {
-            storiesSlideReloadIndicator.startAnimating()
-        }
+        //storiesSlideReloadIndicator.startAnimating()
         
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else {return UICollectionViewCell()}
         let slide = stories[indexPath.section].slides[indexPath.row]
@@ -1067,6 +1062,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 }
 
+
 extension StoryViewController: StoryCollectionViewCellDelegate {
     public func didTapUrlButton(url: String, slide: Slide) {
         self.openUrl(link: url)
@@ -1080,11 +1076,27 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
     }
 }
 
+
 extension UICollectionView {
     func isValid(indexPath: IndexPath) -> Bool {
         guard indexPath.section < numberOfSections,
               indexPath.row < numberOfItems(inSection: indexPath.section)
         else { return false }
         return true
+    }
+}
+
+
+extension NavigationStackController: UINavigationControllerDelegate {
+    public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        if canBeMadeHeadViewController(viewController: viewController) {
+            viewController.navigationItem.setHidesBackButton(false, animated: false)
+        }
+    }
+
+    public func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
+        if canBeMadeHeadViewController(viewController: viewController) {
+            resetNavigationStackWithLatestViewControllerAsHead()
+        }
     }
 }

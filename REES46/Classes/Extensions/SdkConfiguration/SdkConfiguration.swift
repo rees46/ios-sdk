@@ -19,17 +19,17 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     var iconBorderWidth: CGFloat = 2.3
     var iconMarginX: CGFloat = 18
     var iconMarginBottom: CGFloat = 8
-    var iconNotViewedBorderColor: String = "" //#fd7c50"
-    var iconNotViewedBorderColorDarkMode: String = "" //"#fd7c50"
-    var iconViewedBorderColor: String = "" //"#fdc2a1"
-    var iconViewedBorderColorDarkMode: String = "" //"#fdc2a1"
+    var iconNotViewedBorderColor: String = ""
+    var iconNotViewedBorderColorDarkMode: String = ""
+    var iconViewedBorderColor: String = ""
+    var iconViewedBorderColorDarkMode: String = ""
     var iconViewedTransparency: CGFloat = 1.0
     var iconPlaceholderColor: String = "#d6d6d6"
     var iconPlaceholderColorDarkMode: String = "#d6d6d6"
     var iconAnimatedLoaderColor: String = "#5ec169"
     var labelWidth: CGFloat = 76
-    var pinColor: String = "" //"#fd7c50"
-    var pinColorDarkMode: String = "" //"#fd7c50"
+    var pinColor: String = ""
+    var pinColorDarkMode: String = ""
     var closeIconColor: String = "#ffffff"
     var iconDisplayFormatSquare = false //default false
     
@@ -96,7 +96,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     }
     
     public func registerFont(fileNameWithoutExtension: String) {
-        //sdk.configuration().stories.registerFont(fileNameWithoutExtension: "Museo900")
         var parsedFont: (sdkFontName, sdkFontExtension)?
 
         if fileNameWithoutExtension.contains(SdkFontInjector.sdkSupportedFontExtensions.trueType.rawValue) || fileNameWithoutExtension.contains(SdkFontInjector.sdkSupportedFontExtensions.openType.rawValue) {
@@ -140,7 +139,15 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         storiesBlockBackgroundColorChanged_Light = uiBlockBackgroundColorLight
         storiesBlockBackgroundColorChanged_Dark = uiBlockBackgroundColorDark
         
-        var fontBySdk = UIFont(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeConstant)
+//        let descriptor = UIFontDescriptor(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeConstant)
+//        var fontProvidedBySdk = UIFont(descriptor: descriptor, size: storiesBlockMinimumFontSizeConstant)
+//        
+//        if let customFont = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0) {
+//            fontProvidedBySdk = customFont
+//        }
+        
+        var fontProvidedBySdk = UIFont(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeConstant)
+
         if fontName != nil {
             if fontName == storiesBlockFontNameConstant {
                 storiesBlockFontNameChanged = storiesBlockFontNameConstant
@@ -148,14 +155,14 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 storiesBlockFontNameChanged = fontName
             }
             
-            fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+            fontProvidedBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
             
             if fontSize != nil {
                 if fontSize == storiesBlockMinimumFontSizeConstant {
                     storiesBlockMinimumFontSizeChanged = storiesBlockMinimumFontSizeConstant
                 } else {
                     storiesBlockMinimumFontSizeChanged = fontSize
-                    fontBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+                    fontProvidedBySdk = UIFont(name: storiesBlockFontNameChanged!, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
                 }
             } else {
                 storiesBlockMinimumFontSizeChanged = 0.0
@@ -166,29 +173,29 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                     storiesBlockMinimumFontSizeChanged = storiesBlockMinimumFontSizeConstant
                 } else {
                     storiesBlockMinimumFontSizeChanged = fontSize
-                    fontBySdk = UIFont(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
+                    fontProvidedBySdk = UIFont(name: storiesBlockFontNameConstant, size: storiesBlockMinimumFontSizeChanged ?? 14.0)
                 }
             } else {
                 storiesBlockMinimumFontSizeChanged = 0.0
             }
         }
         
-        if (fontBySdk == nil) {
-            fontBySdk = .systemFont(ofSize: 14.0)
+        if (fontProvidedBySdk == nil) {
+            fontProvidedBySdk = .systemFont(ofSize: 14.0)
         }
         
         SdkStyle.shared.register(colorScheme:
-                                    lightSdkStyleApperance(storiesBlockSelectFontName: fontBySdk!,
+                                    lightSdkStyleApperance(storiesBlockSelectFontName: fontProvidedBySdk!,
                                                            storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
                                                            storiesBlockFontColor: uiBlockTextColorLight,
                                                            storiesBlockBackgroundColor: uiBlockBackgroundColorLight,
                                                            
-                                                           defaultButtonSelectFontName: fontBySdk!,
+                                                           defaultButtonSelectFontName: fontProvidedBySdk!,
                                                            defaultButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
                                                            defaultButtonFontColor: .white,
                                                            defaultButtonBackgroundColor: .black,
                                                            
-                                                           productsButtonSelectFontName: fontBySdk!,
+                                                           productsButtonSelectFontName: fontProvidedBySdk!,
                                                            productsButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
                                                            productsButtonFontColor: .black,
                                                            productsButtonBackgroundColor: .white
@@ -196,17 +203,17 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                                  for: SdkStyleApperanceTypes.storiesBlockLight)
         
         SdkStyle.shared.register(colorScheme:
-                                    darkSdkStyleApperance(storiesBlockSelectFontName: fontBySdk!,
+                                    darkSdkStyleApperance(storiesBlockSelectFontName: fontProvidedBySdk!,
                                                           storiesBlockSelectFontSize: storiesBlockMinimumFontSizeChanged!,
                                                           storiesBlockFontColor: uiBlockTextColorDark,
                                                           storiesBlockBackgroundColor: uiBlockBackgroundColorDark,
                                                           
-                                                          defaultButtonSelectFontName: fontBySdk!,
+                                                          defaultButtonSelectFontName: fontProvidedBySdk!,
                                                           defaultButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
                                                           defaultButtonFontColor: .black,
                                                           defaultButtonBackgroundColor: .white,
                                                           
-                                                          productsButtonSelectFontName: fontBySdk!,
+                                                          productsButtonSelectFontName: fontProvidedBySdk!,
                                                           productsButtonSelectFontSize: storiesBlockMinimumFontSizeChanged!,
                                                           productsButtonFontColor: .black,
                                                           productsButtonBackgroundColor: .white
@@ -478,9 +485,15 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var promoSlideFontNameChanged: String?
     public var promoSlideFontNameConstant: String {
-        get { return ".SFUI-Regular" }
+        get { return "San Francisco (System Font)" }
         set { promoSlideFontNameChanged = newValue }
     }
+    
+//    public var promoSlideFontNameChanged: UIFont?
+//    public var promoSlideFontNameConstant: UIFont {
+//        get { return .systemFont(ofSize: 16.0) }
+//        set { promoSlideFontNameChanged = newValue }
+//    }
     
     public var promoSlideFontSizeChanged: CGFloat?
     public var promoSlideFontSizeConstant: CGFloat {
@@ -744,7 +757,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var storiesBlockFontNameChanged: String?
     public var storiesBlockFontNameConstant: String {
-        get { return ".SFUI-Regular" }
+        get { return "San Francisco (System Font)" }
         set { storiesBlockFontNameChanged = newValue }
     }
     
@@ -780,7 +793,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var slideDefaultButtonFontNameChanged: String?
     public var slideDefaultButtonFontNameConstant: String {
-        get { return ".SFUI-Regular" }
+        get { return "San Francisco (System Font)" }
         set { slideDefaultButtonFontNameChanged = newValue }
     }
     
@@ -816,7 +829,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var slideProductsButtonFontNameChanged: String?
     public var slideProductsButtonFontNameConstant: String {
-        get { return ".SFUI-Regular" }
+        get { return "San Francisco (System Font)" }
         set { slideProductsButtonFontNameChanged = newValue }
     }
     
@@ -852,7 +865,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var slideProductsHideButtonFontNameChanged: String?
     public var slideProductsHideButtonFontNameConstant: String {
-        get { return ".SFUI-Regular" }
+        get { return "San Francisco (System Font)" }
         set { slideProductsButtonFontNameChanged = newValue }
     }
     
@@ -869,8 +882,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 let fontNames = UIFont.fontNames(forFamilyName: familyName)
                 print(familyName, fontNames)
             })
-            //print("SDK Fatal Error Font not found: \(name)")
-            fatalError("SDK Fatal Font not found: \(name)")
+            print("SDK Error Font not found: \(name)")
+            return UIFont.systemFont(ofSize: 15.0)
         }
         return sFont
     }
@@ -964,6 +977,7 @@ private extension SdkConfiguration {
     }
 }
 
+
 extension SdkConfiguration {
     class func fonts(_ contents: [URL]) -> [sdkFontClass] {
         var fonts = [sdkFontClass]()
@@ -983,6 +997,7 @@ extension SdkConfiguration {
         return SdkFontInjector.sdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
     }
 }
+
 
 extension UIColor {
     convenience init(hexString: String, alpha: CGFloat = 1.0) {

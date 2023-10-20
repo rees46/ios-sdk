@@ -113,6 +113,7 @@ public class SdkStyle: NSObject {
     }
 }
 
+
 extension UIView {
     @objc
     func apppear_willMove(toSuperview newSuperview: UIView?) {
@@ -159,6 +160,7 @@ extension UIView {
         }
     }()
 }
+
 
 extension UIViewController {
     @objc

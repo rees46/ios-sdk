@@ -12,8 +12,8 @@ public extension UIViewController {
   }
   
   @objc
-  func presentInternalSdkWebKit(url: URL, titleHidden:Bool = false, completion: (() -> Void)? = nil) {
-      let urlRequest = URLRequest(url: url)
+  func presentInternalSdkWebKit(webUrl: URL, titleHidden:Bool = false, completion: (() -> Void)? = nil) {
+      let urlRequest = URLRequest(url: webUrl)
       presentWebKit(urlRequest: urlRequest, titleHidden: titleHidden, completion: completion)
   }
 }

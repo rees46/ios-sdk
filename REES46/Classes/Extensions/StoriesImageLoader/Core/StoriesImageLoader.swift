@@ -23,7 +23,7 @@ public struct StoriesCollectionCellLoader {
     }
 
     class Session: NSObject, URLSessionDataDelegate {
-
+        
         static let shared = Session()
         static let manager = LoaderManager()
 
@@ -68,7 +68,7 @@ public struct StoriesCollectionCellLoader {
                 return loader
             }
 
-            let loader = Loader(session.dataTask(with: url), url: url, delegate: self)
+            let loader = Loader(session.dataTask(with: url), reqUrl: url, delegate: self)
             storage[url] = loader
             return loader
         }
@@ -80,8 +80,9 @@ public struct StoriesCollectionCellLoader {
         }
 
         func remove(_ loader: Loader) {
-            guard let url = storage.getKey(loader) else { return }
-
+            guard let url = storage.getKey(loader) else {
+                return
+            }
             storage[url] = nil
         }
     }

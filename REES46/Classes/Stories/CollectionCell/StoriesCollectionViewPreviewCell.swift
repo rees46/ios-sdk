@@ -105,7 +105,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         pinSymbolView.isHidden = !story.pinned
     }
     
-    func configureCell(settings: StoriesSettings?, viewed: Bool, viewedLocalKey: Bool, storyId: Int) {
+    func configureCell(settings: StoriesSettings?, viewed: Bool, viewedLocalKey: Bool, storyId: String) {
         storyWhiteBackCircle.isHidden = false
         storySuperClearBackCircle.isHidden = false
         layoutIfNeeded()
@@ -251,7 +251,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             pinSymbolView.isHidden = true
         }
         
-        let sId = String(storyId)
+        let sId = storyId
         DispatchQueue.onceTechService(token: sId) {
             UIView.animate(withDuration: 0.7, animations: {
                 self.storiesBlockAnimatedLoader.alpha = 1
@@ -358,7 +358,6 @@ private extension UIColor {
        var alpha = CGFloat.zero
     
        guard getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
-           debugPrint("color could not be retrieved")
            return (1.0, 1.0, 1.0, 1.0)
        }
        return (red, green, blue, alpha)

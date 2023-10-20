@@ -31,6 +31,7 @@ class Operative {
     }
 }
 
+
 extension Task: Equatable {}
 
 func ==(lhs: Task, rhs: Task) -> Bool {

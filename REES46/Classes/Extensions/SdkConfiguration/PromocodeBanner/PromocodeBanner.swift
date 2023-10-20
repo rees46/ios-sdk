@@ -11,9 +11,9 @@ public enum PromocodeBannerLocation {
 public class PromocodeBanner: UIView {
 
     static var SDK_OPEN: Bool = false
-    static var MAX_BANNERS: Int = 999
+    static var MAX_ALLOWED_BANNERS: Int = 999
     
-    internal static var OPEN_BANNERS: Int = 0
+    internal static var OPEN_PROMOCODE_BANNERS: Int = 0
     
     internal var location: PromocodeBannerLocation
     
@@ -115,7 +115,8 @@ public class PromocodeBanner: UIView {
         let _ = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(PromocodeBanner.decrementTimer(timer:)), userInfo: nil, repeats: true)
     }
     
-    @objc private func decrementTimer(timer: Timer) {
+    @objc
+    private func decrementTimer(timer: Timer) {
         if displayTime > 0 {
             displayTime -= 1
         } else {
@@ -130,7 +131,6 @@ public class PromocodeBanner: UIView {
     }
     
     public func dismiss() {
-        
         switch location {
         case .topLeft:
             UIView.animate(withDuration: self.animationDuration, animations: {
@@ -167,6 +167,6 @@ public class PromocodeBanner: UIView {
         }
         
         PromocodeBanner.SDK_OPEN = false
-        PromocodeBanner.OPEN_BANNERS -= 1
+        PromocodeBanner.OPEN_PROMOCODE_BANNERS -= 1
     }
 }

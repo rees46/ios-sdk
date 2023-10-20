@@ -50,7 +50,7 @@ class ViewController: UIViewController {
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken
         
-        globalSDK?.resetCachedWatchedStoriesStates()
+        globalSDK?.resetCachedSlidesStates()
 
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")

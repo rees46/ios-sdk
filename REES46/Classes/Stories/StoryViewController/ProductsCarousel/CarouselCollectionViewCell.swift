@@ -5,7 +5,7 @@ class CarouselCollectionViewCell: UICollectionViewCell {
     static let reuseId = "CarouselCollectionViewCell"
     
     let mainImageView: UIImageView = {
-       let imageView = UIImageView()
+        let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
         return imageView

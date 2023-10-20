@@ -25,6 +25,7 @@ public struct Recommended {
     public var imageUrl: String = ""
     public var resizedImageUrl: String = ""
     public var url: String = ""
+    public var deeplinkIos: String = ""
     public var categories = [Category]()
 
     public var price: Double = 0
@@ -56,6 +57,7 @@ public struct Recommended {
         imageUrl = json["image_url"] as? String ?? ""
         resizedImageUrl = json["picture"] as? String ?? ""
         url = json["url"] as? String ?? ""
+        deeplinkIos = json["deeplink_ios"] as? String ?? ""
         price = json["price"] as? Double ?? 0
         priceFormatted = json["price_formatted"] as? String
         priceFull = json["price_full"] as? Double ?? 0
@@ -86,9 +88,6 @@ public struct Recommended {
         
     }
 }
-
-
-
 
 public enum RecommendedByCase: String {
     case dynamic = "dynamic"

@@ -194,11 +194,10 @@ open class LoadingPlaceholderView: UIView {
         gradientLayer.removeFromSuperlayer()
         maskLayer.removeFromSuperlayer()
     }
-    
 }
 
+
 extension UIColor {
-    
     fileprivate func withBrightness(brightness: CGFloat) -> UIColor {
         var H: CGFloat = 0, S: CGFloat = 0, B: CGFloat = 0, A: CGFloat = 0
         if getHue(&H, saturation: &S, brightness: &B, alpha: &A) {
