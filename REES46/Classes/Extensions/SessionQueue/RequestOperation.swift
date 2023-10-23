@@ -60,7 +60,7 @@ public class RequestOperation: SessionOperation {
         self.method = method
         self.cachePolicy = cachePolicy
         self.headers = headers
-        self.body = body
+        self.body = sdkBody
         self.completionHandler = completionHandler
     }
     
