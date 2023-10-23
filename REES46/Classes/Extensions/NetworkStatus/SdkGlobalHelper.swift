@@ -1,6 +1,33 @@
 import UIKit
 import Foundation
 
+struct Profile: Codable {
+    let id: String!
+    let url: URL
+}
+
+struct UserProfileCache {
+    static let key = "userProfileCache"
+    
+    static func save(_ value: Profile!) {
+         UserDefaults.standard.set(try? PropertyListEncoder().encode(value), forKey: key)
+    }
+    
+    static func get() -> Profile! {
+        var userData: Profile!
+        if let data = UserDefaults.standard.value(forKey: key) as? Data {
+            userData = try? PropertyListDecoder().decode(Profile.self, from: data)
+            return userData!
+        } else {
+            return userData
+        }
+    }
+    
+    static func remove() {
+        UserDefaults.standard.removeObject(forKey: key)
+    }
+}
+
 class SdkGlobalHelper {
 
     class var sharedInstance: SdkGlobalHelper {
@@ -68,33 +95,6 @@ class SdkGlobalHelper {
         }
         
         return convertedDurationsDictionary
-    }
-    
-    func saveVideoURLsToDictionary(parentID: String, urlDictionary: URL) {
-        let parentItemKey = "0000" + parentID
-
-        let encoder = PropertyListEncoder()
-
-        guard let data = try? encoder.encode(urlDictionary) else {
-            return
-        }
-
-        UserDefaults.standard.set(data, forKey: parentItemKey)
-    }
-    
-    func getVideoUrlsFromDictionary(parentID: String) -> URL {
-            let parentItemKey = "0000" + parentID
-
-            let decoder = PropertyListDecoder()
-
-            guard let data = UserDefaults.standard.data(forKey: parentItemKey),
-                let urlDictionary = try? decoder.decode(URL.self, from: data) else {
-                let urlVideoString = "tcp"
-                let dd = URL(string: urlVideoString)!
-                return dd
-            }
-
-            return urlDictionary
     }
 }
 

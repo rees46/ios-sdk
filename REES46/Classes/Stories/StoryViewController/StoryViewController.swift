@@ -637,16 +637,16 @@ private var collectionView: UICollectionView = {
                 })
             } else {
                 UIView.animate(withDuration: 0.5, animations: {
-                    self.storiesSlideReloadIndicator.alpha = 0.0
+                    self.storiesSlideReloadIndicator.alpha = 1.0
                 })
             }
             
             NotificationCenter.default.removeObserver(self, name: NSNotification.Name(cachedSlideMediaId), object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(cachedSlideMediaId), object: nil)
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-                self.storiesSlideReloadIndicator.alpha = 0.0
-            }
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
+//                self.storiesSlideReloadIndicator.alpha = 0.0
+//            }
         }
     }
     
@@ -999,7 +999,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
-        //storiesSlideReloadIndicator.startAnimating()
+        storiesSlideReloadIndicator.startAnimating()
         
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else {return UICollectionViewCell()}
         let slide = stories[indexPath.section].slides[indexPath.row]

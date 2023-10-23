@@ -90,7 +90,8 @@ class Slide {
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
-    fileprivate var vDownloadManager = VideoDownloadManager()
+    private let vDownloadManager = VideoDownloadManager.shared
+    var sdkDirectoryName: String = "SDKCacheDirectory"
     
     public init(json: [String: Any]) {
         self.id = json["id"] as? String ?? "-1"
@@ -115,41 +116,70 @@ class Slide {
                 print("SDK Success video preview for \(self.id) is downloaded")
             }
             
-            VideoDownloadManager.maxOperationCount = 1
-            vDownloadManager.parseProcessDelegate = self
-            
-            let completion = BlockOperation {
-                //print("SDK All video downloads completed")
+            downloadVideo { result in
+                switch result {
+                case .success(let url):
+                    self.videoURL = url
+                    self.completionCached(slideWithId: self.id, actualSlideUrl: "")
+                case .failure(let error):
+                    print("SDK Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
+                }
             }
-            
-            //let parentKey = "0000" + self.id
-            //let checkStoredVideo = SdkGlobalHelper.sharedInstance.getVideoUrlsFromDictionary(parentID: self.id)
-            //self.videoURL = checkStoredVideo
-            //self.completionCached(slideWithId: self.id, actualSlideUrl: "")
-//            if let pathToExistVideoFile = checkStoredVideo[self.id] {
-//                self.videoURL = URL(string: pathToExistVideoFile)
-//                self.completionCached(slideWithId: self.id, actualSlideUrl: pathToExistVideoFile)
-//                return
-//            }
-            
-            if let url = URL(string: self.background) {
-                let downloadOperation = vDownloadManager.addDownload(url, self.id)
-                completion.addDependency(downloadOperation)
-            }
-            
-//            downloadLinks.forEach { link in
-//                if let url = URL(string: link) {
-//                    let downloadOperation = downloadManager.addDownload(url)
-//                    completion.addDependency(downloadOperation)
-//                }
-//            }
-            
-            OperationQueue.main.addOperation(completion)
             
         } else if type == .image {
             setImage(imageURL: self.background, isPreview: false)
         } else {
             self.completionCached(slideWithId: self.id, actualSlideUrl: "")
+        }
+    }
+
+    func downloadVideo(completion: @escaping (Result<URL, Error>) -> Void) {
+        
+        guard let url = URL(string: self.background) else {
+            completion(.failure(NSError(domain: "SDK Invalid URL", code: -1, userInfo: nil)))
+            return
+        }
+        
+        let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
+        let temporaryFileURL = temporaryDirectoryURL.appendingPathComponent("\(self.id).mp4")
+        
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: temporaryFileURL.path) {
+            completion(.success(temporaryFileURL))
+            print("SDK Load cached video for story id = \(self.id)")
+            return
+        }
+        
+        let request = URLRequest(url: url)
+        _ = self.vDownloadManager.downloadStoryMediaFile(withRequest: request,
+                                                        inDirectory: sdkDirectoryName,
+                                                        shouldDownloadInBackground: true,
+                                                        //shouldDownloadInBackground: false,
+                                                        onProgress: {(progress) in
+            
+        }) {(error, url) in
+            if let error = error {
+                print("Error is \(error as NSError)")
+            } else {
+                if let url = url {
+                    do {
+                        try fileManager.moveItem(at: url, to: temporaryFileURL)
+                        
+                        let duration = AVURLAsset(url: temporaryFileURL).duration.seconds
+                        let vTime = String(format:"%d", Int(duration.truncatingRemainder(dividingBy: 60)))
+                        //print(vTime)
+                                     
+                        DispatchQueue.main.async {
+                            SdkGlobalHelper.sharedInstance.saveVideoParamsToDictionary(parentSlideId: self.id, paramsDictionary: [self.id : vTime])
+                        }
+                        
+                        //print("SDK Downloaded video for story id = \(self.id)")
+                        completion(.success(temporaryFileURL))
+                    } catch {
+                        completion(.failure(error))
+                    }
+                }
+            }
         }
     }
     
@@ -378,24 +408,4 @@ enum SlideType: String {
     case image = "image"
     case video = "video"
     case unknown = ""
-}
-
-
-extension Slide: VideoDownloadProcessProtocol {
-    func sdkVideoDownloadSuccess(_ videoFileName: URL) {
-        //print("\(videoFileName) has been downloaded for slideId \(self.id)\n")
-        
-        SdkGlobalHelper.sharedInstance.saveVideoURLsToDictionary(parentID: self.id, urlDictionary: videoFileName)
-        
-        self.videoURL = videoFileName
-        self.completionCached(slideWithId: self.id, actualSlideUrl: "")
-    }
-    
-    func downloadingProgress(_ percent: Float, fileName: String) {
-        //let text = String(format: "SDK Process downloading: %@, %0.2f%%", fileName, percent * 100)
-    }
-
-    func downloadWithError(_ error: Error?, fileName: String) {
-        //print("SDK Video download for \(self.id) with \(fileName) failed: \(String(describing: (error != nil) ? error!.localizedDescription : "Unknown error")) \n")
-    }
 }
