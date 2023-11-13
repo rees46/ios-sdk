@@ -29,9 +29,12 @@ public enum SdkFontTextStyleImplement: Int {
     
     public var dynamicPointSize: CGFloat {
         if let systemSdkFontTextStyleImplement = systemSdkFontTextStyleImplement {
+            
             return UIFont.preferredFont(forTextStyle: systemSdkFontTextStyleImplement).pointSize
+            
         } else if self == .largeTitle {
             let titleFontSize = UIFont.preferredFont(forTextStyle: .title1).pointSize
+            
             if let title1SizingMapper = [38, 43, 48, 53, 58].firstIndex(of: titleFontSize) {
                 return [44, 48, 52, 56, 60][title1SizingMapper]
             }
@@ -54,6 +57,7 @@ extension UIFont {
         if let font = SdkFontInjector.font(ofSize: size, weight: weight) {
             return font
         }
+        
         return UIFont.systemFont(ofSize: size, weight: weight)
     }
     

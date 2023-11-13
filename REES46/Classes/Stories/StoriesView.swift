@@ -5,14 +5,14 @@ public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveIosLink(text: String)
     func receiveSelectedProductData(products: StoriesElement)
     func receiveSelectedCarouselProductData(products: StoriesProduct)
-    func receiveSelectedPromocodeProductData(promoSlide: StoriesPromoElement)
+    func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement)
 }
 
 public protocol StoriesViewLinkProtocol: AnyObject {
     func linkIosExternalUse(url: String)
     func sendStructSelectedStorySlide(storySlide: StoriesElement)
     func structOfSelectedCarouselProduct(product: StoriesProduct)
-    func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement)
+    func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement)
     func reloadStoriesCollectionSubviews()
     func updateBgColor()
 }
@@ -84,41 +84,34 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
     
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        if #available(iOS 12.0, *) {
-            super.traitCollectionDidChange(previousTraitCollection)
-            let userInterfaceStyle = traitCollection.userInterfaceStyle
-            if UIApplication.shared.applicationState == .inactive {
-                switch userInterfaceStyle {
-                case .unspecified:
-                    DispatchQueue.main.async {
-                        self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
-                        self.reloadStoriesCollectionSubviews()
-                        self.updateBgColor()
-                    }
-                case .light:
-                    DispatchQueue.main.async {
-                        self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
-                        self.reloadStoriesCollectionSubviews()
-                        self.updateBgColor()
-                    }
-                case .dark:
-                    DispatchQueue.main.async {
-                        self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
-                        self.reloadStoriesCollectionSubviews()
-                        self.updateBgColor()
-                    }
-                @unknown default:
-                    break
-                }
-            } else {
+        super.traitCollectionDidChange(previousTraitCollection)
+        let userInterfaceStyle = traitCollection.userInterfaceStyle
+        if UIApplication.shared.applicationState == .inactive {
+            switch userInterfaceStyle {
+            case .unspecified:
                 DispatchQueue.main.async {
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                    self.reloadStoriesCollectionSubviews()
                     self.updateBgColor()
                 }
+            case .light:
+                DispatchQueue.main.async {
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                    self.reloadStoriesCollectionSubviews()
+                    self.updateBgColor()
+                }
+            case .dark:
+                DispatchQueue.main.async {
+                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
+                    self.reloadStoriesCollectionSubviews()
+                    self.updateBgColor()
+                }
+            @unknown default:
+                break
             }
         } else {
             DispatchQueue.main.async {
-                self.collectionView.backgroundColor = .white
-                self.reloadStoriesCollectionSubviews()
+                self.updateBgColor()
             }
         }
     }
@@ -130,12 +123,6 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         self.setBgColor()
         
         UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
-//        let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
-//        if soundSetting {
-//            UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
-//        } else {
-//            UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
-//        }
     }
     
     public func configure(sdk: PersonalizationSDK, mainVC: UIViewController, code: String) {
@@ -146,21 +133,16 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
     
     private func setBgColor() {
-        if #available(iOS 12.0, *) {
-            if SdkConfiguration.isDarkMode {
-                DispatchQueue.main.async {
-                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
-                    self.reloadStoriesCollectionSubviews()
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
-                    self.reloadStoriesCollectionSubviews()
-                }
+        if SdkConfiguration.isDarkMode {
+            DispatchQueue.main.async {
+                self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Dark
+                self.reloadStoriesCollectionSubviews()
             }
         } else {
-            self.collectionView.backgroundColor = .white
-            self.reloadStoriesCollectionSubviews()
+            DispatchQueue.main.async {
+                self.collectionView.backgroundColor = SdkConfiguration.stories.storiesBlockBackgroundColorChanged_Light
+                self.reloadStoriesCollectionSubviews()
+            }
         }
     }
     
@@ -177,7 +159,6 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
             case let .success(response):
                 self.stories = response.stories
                 self.settings = response.settings
-                //self.setBgColor(color: response.stories.background)
                 DispatchQueue.main.async {
                     self.isInDownloadMode = false
                     self.collectionView.reloadData()
@@ -245,12 +226,13 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         } else {
             if (isInDownloadMode && stories == nil) {
                 cell.storyBackCircle.alpha = 0.0
+                
                 var placeholderColor = SdkConfiguration.stories.iconPlaceholderColor.hexToRGB()
-                if #available(iOS 12.0, *) {
-                    if SdkConfiguration.isDarkMode {
-                        placeholderColor = SdkConfiguration.stories.iconPlaceholderColorDarkMode.hexToRGB()
-                    }
+                
+                if SdkConfiguration.isDarkMode {
+                    placeholderColor = SdkConfiguration.stories.iconPlaceholderColorDarkMode.hexToRGB()
                 }
+                
                 cell.storyBackCircle.backgroundColor = UIColor(red: placeholderColor.red, green: placeholderColor.green, blue: placeholderColor.blue, alpha: 1.0)
                 UIView.animate(withDuration: 5.0, animations: {
                     cell.storyBackCircle.alpha = 1.0
@@ -322,10 +304,10 @@ extension StoriesView: StoriesViewLinkProtocol {
         printCarouselObject(objProductClass: product)
     }
     
-    public func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement) {
-        self.communicationDelegate?.receiveSelectedPromocodeProductData(promoSlide: promoSlide)
+    public func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement) {
+        self.communicationDelegate?.receiveSelectedPromocodeProductData(promoCodeSlide: promoCodeSlide)
         print("\n\nSDK Received promocode slide button tap links for external use:")
-        printPromoObject(objPromoClass: promoSlide)
+        printPromoObject(objPromoClass: promoCodeSlide)
     }
     
     public func linkIosExternalUse(url: String) {
@@ -363,7 +345,7 @@ extension StoriesView: StoriesViewLinkProtocol {
         print("ProductPicture: \(objProductClass.picture)\n\n")
     }
     
-    public func printPromoObject(objPromoClass: StoriesPromoElement) {
+    public func printPromoObject(objPromoClass: StoriesPromoCodeElement) {
         print("Deeplink iOS: \(objPromoClass.deeplinkIos )")
         print("Link Web: \(objPromoClass.url )")
     }

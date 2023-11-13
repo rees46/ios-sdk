@@ -1,7 +1,7 @@
 import UIKit
 
 class PromoCodeView: UIView {
-    var _promoData: StoriesPromoElement?
+    var _promoData: StoriesPromoCodeElement?
     
     private let loadingPlaceholderView = LoadingPlaceholderView()
     
@@ -13,12 +13,11 @@ class PromoCodeView: UIView {
         setToDefault()
     }
     
-    func configPromoView(promoData: StoriesPromoElement) {
+    func configPromoView(promoData: StoriesPromoCodeElement) {
         promoProductNameLabel.removeFromSuperview()
-        //promocodeSlideProductImage.removeFromSuperview()
         
         if (promoData.name != "") {
-            if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_8 || SdkGlobalHelper.DeviceType.IS_IPHONE_8P || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+            if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_SEP || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
                 promoProductNameLabel.frame = CGRect(x: frame.minX + 18, y: frame.minY + 72, width: frame.width - 60, height: 80)
             } else {
                 promoProductNameLabel.frame = CGRect(x: frame.minX + 18, y: frame.minY + 116, width: frame.width - 60, height: 80)
@@ -27,29 +26,26 @@ class PromoCodeView: UIView {
             promoProductNameLabel.numberOfLines = 0
             promoProductNameLabel.textAlignment = .left
             
-            if SdkConfiguration.stories.promoSlideFontNameChanged != nil {
-                if let customFont = UIFont(name: SdkConfiguration.stories.promoSlideFontNameChanged!, size: 16) {
+            if SdkConfiguration.stories.promoCodeSlideFontNameChanged != nil {
+                if let customFont = UIFont(name: SdkConfiguration.stories.promoCodeSlideFontNameChanged!, size: 16) {
                     promoProductNameLabel.font = customFont
                 }
-                if SdkConfiguration.stories.promoSlideFontSizeChanged != nil {
-                    if let customFontWithSize = UIFont(name: SdkConfiguration.stories.promoSlideFontNameChanged!, size: SdkConfiguration.stories.promoSlideFontSizeChanged!) {
+                if SdkConfiguration.stories.promoCodeSlideFontSizeChanged != nil {
+                    if let customFontWithSize = UIFont(name: SdkConfiguration.stories.promoCodeSlideFontNameChanged!, size: SdkConfiguration.stories.promoCodeSlideFontSizeChanged!) {
                         promoProductNameLabel.font = customFontWithSize
                     }
                 }
             } else {
                 promoProductNameLabel.font = UIFont.systemFont(ofSize: 16, weight: .semibold)
-                if SdkConfiguration.stories.promoSlideFontSizeChanged != nil {
-                    promoProductNameLabel.font = UIFont.systemFont(ofSize: SdkConfiguration.stories.promoSlideFontSizeChanged!, weight: .semibold)
+                if SdkConfiguration.stories.promoCodeSlideFontSizeChanged != nil {
+                    promoProductNameLabel.font = UIFont.systemFont(ofSize: SdkConfiguration.stories.promoCodeSlideFontSizeChanged!, weight: .semibold)
                 }
             }
-            if #available(iOS 12.0, *) {
-                if SdkConfiguration.isDarkMode {
-                    promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorDarkMode ?? .white
-                } else {
-                    promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorLightMode ?? .white
-                }
+            
+            if SdkConfiguration.isDarkMode {
+                promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorDarkMode ?? .white
             } else {
-                promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorLightMode
+                promoProductNameLabel.textColor = SdkConfiguration.stories.promoProductTitleTextColorLightMode ?? .white
             }
             
             promoProductNameLabel.sizeToFit()
@@ -66,6 +62,7 @@ class PromoCodeView: UIView {
             
             let urlImgFullSize: String = promoData.image_url
             let urlImgResize = URL(string: promoData.image_url_resized?.image_url_resized520 ?? urlImgFullSize)
+            
             if urlImgResize != nil {
                 StoryBlockImageCache.image(for: urlImgResize!.absoluteString) { [self] cachedImage in
                     if cachedImage != nil {
@@ -96,7 +93,6 @@ class PromoCodeView: UIView {
                         
                         loadingPlaceholderView.gradientColor = .white
                         loadingPlaceholderView.backgroundColor = .clear
-                        //loadingPlaceholderView.cover(self, animated: true)
                         
                         UIView.animate(withDuration: 0.1, animations: {
                             self.loadingPlaceholderView.cover(self, animated: true)

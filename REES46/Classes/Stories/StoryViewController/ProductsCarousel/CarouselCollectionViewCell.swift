@@ -2,118 +2,127 @@ import UIKit
 
 class CarouselCollectionViewCell: UICollectionViewCell {
     
-    static let reuseId = "CarouselCollectionViewCell"
+    static let reuseCarouselId = "CarouselCollectionViewCell"
     
-    let mainImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        return imageView
+    let carouselMainImageView: UIImageView = {
+        let carouselProductImageView = UIImageView()
+        carouselProductImageView.translatesAutoresizingMaskIntoConstraints = false
+        carouselProductImageView.contentMode = .scaleAspectFit
+        return carouselProductImageView
     }()
     
-    let nameLabel: UILabel = {
-        let label = UILabel()
+    let carouselProductNameLabel: UILabel = {
+        let cLabel = UILabel()
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 16)
+            cLabel.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 16)
         } else {
-            label.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+            cLabel.font = UIFont.systemFont(ofSize: 16, weight: .bold)
         }
-        label.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
-        label.numberOfLines = 0
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        
+        cLabel.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
+        cLabel.numberOfLines = 0
+        cLabel.translatesAutoresizingMaskIntoConstraints = false
+        return cLabel
     }()
     
-    let smallDescriptionLabel: UILabel = {
-        let label = UILabel()
+    let carouselDescriptionLabel: UILabel = {
+        let cLabel = UILabel()
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
+            cLabel.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
-            label.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+            cLabel.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
         }
-        label.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
-        label.numberOfLines = 0
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        
+        cLabel.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
+        cLabel.numberOfLines = 0
+        cLabel.translatesAutoresizingMaskIntoConstraints = false
+        return cLabel
     }()
     
-    let likeImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "like")
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
+    let carouselLikeImageView: UIImageView = {
+        let carouselLikeImageView = UIImageView()
+        carouselLikeImageView.image = UIImage(named: "iconLikeHeart")
+        carouselLikeImageView.translatesAutoresizingMaskIntoConstraints = false
+        return carouselLikeImageView
     }()
     
-    let oldCostLabel: UILabel = {
-        let label = UILabel()
+    let carouselOldCostLabel: UILabel = {
+        let cLabel = UILabel()
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
+            cLabel.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 14)
         } else {
-            label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+            cLabel.font = UIFont.systemFont(ofSize: 14, weight: .regular)
         }
-        label.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        
+        cLabel.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
+        cLabel.translatesAutoresizingMaskIntoConstraints = false
+        return cLabel
     }()
     
-    let costLabel: UILabel = {
-        let label = UILabel()
+    let carouselNowCostLabel: UILabel = {
+        let cLabel = UILabel()
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 18)
+            cLabel.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 18)
         } else {
-            label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
+            cLabel.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         }
-        label.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        
+        cLabel.textColor = #colorLiteral(red: 0.007841579616, green: 0.007844132371, blue: 0.007841020823, alpha: 1)
+        cLabel.translatesAutoresizingMaskIntoConstraints = false
+        return cLabel
     }()
     
-    let discountLabel: UILabel = {
-        let label = UILabel()
-        label.frame = CGRect(x: 0, y: 0, width: 45, height: 20)
+    let carouselDiscountLabel: UILabel = {
+        let cLabel = UILabel()
+        cLabel.frame = CGRect(x: 0, y: 0, width: 45, height: 20)
+        
         if SdkConfiguration.stories.slideProductsHideButtonFontNameChanged != nil {
-            
-            label.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 13)
+            cLabel.font = UIFont(name: (SdkConfiguration.stories.slideProductsHideButtonFontNameChanged)!, size: 13)
         } else {
-            label.font = UIFont.systemFont(ofSize: 13, weight: .bold)
+            cLabel.font = UIFont.systemFont(ofSize: 13, weight: .bold)
         }
-        label.textColor = .white
-        label.backgroundColor = UIColor(red: 0.925, green: 0.282, blue: 0.6, alpha: 1)
-        label.layer.cornerRadius = 3
-        label.layer.masksToBounds = true
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        
+        cLabel.textColor = .white
+        cLabel.backgroundColor = UIColor(red: 0.925, green: 0.282, blue: 0.6, alpha: 1)
+        cLabel.layer.cornerRadius = 3
+        cLabel.layer.masksToBounds = true
+        cLabel.translatesAutoresizingMaskIntoConstraints = false
+        return cLabel
     }()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        addSubview(mainImageView)
-        addSubview(nameLabel)
-        addSubview(oldCostLabel)
-        addSubview(discountLabel)
-        addSubview(costLabel)
+        addSubview(carouselMainImageView)
+        addSubview(carouselProductNameLabel)
+        addSubview(carouselOldCostLabel)
+        addSubview(carouselDiscountLabel)
+        addSubview(carouselNowCostLabel)
         
         backgroundColor = .white
         
-        mainImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
-        mainImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        mainImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20).isActive = true
-        mainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1/2).isActive = true
+        carouselMainImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        carouselMainImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        carouselMainImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20).isActive = true
+        carouselMainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1).isActive = true
         
-        nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        nameLabel.topAnchor.constraint(equalTo: mainImageView.bottomAnchor, constant: 12).isActive = true
+        carouselProductNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
+        carouselProductNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        carouselProductNameLabel.topAnchor.constraint(equalTo: carouselMainImageView.bottomAnchor, constant: 12).isActive = true
         
-        oldCostLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        oldCostLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 14).isActive = true
+        carouselOldCostLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
+        carouselOldCostLabel.topAnchor.constraint(equalTo: carouselProductNameLabel.bottomAnchor, constant: 14).isActive = true
         
-        discountLabel.leadingAnchor.constraint(equalTo: oldCostLabel.trailingAnchor, constant: 10).isActive = true
-        discountLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 11).isActive = true
-        discountLabel.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        carouselDiscountLabel.leadingAnchor.constraint(equalTo: carouselOldCostLabel.trailingAnchor, constant: 10).isActive = true
+        carouselDiscountLabel.topAnchor.constraint(equalTo: carouselProductNameLabel.bottomAnchor, constant: 11).isActive = true
+        carouselDiscountLabel.heightAnchor.constraint(equalToConstant: 20).isActive = true
         
-        costLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        costLabel.topAnchor.constraint(equalTo: oldCostLabel.bottomAnchor, constant: 8).isActive = true
+        carouselNowCostLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
+        carouselNowCostLabel.topAnchor.constraint(equalTo: carouselOldCostLabel.bottomAnchor, constant: 8).isActive = true
     }
     
     override func layoutSubviews() {

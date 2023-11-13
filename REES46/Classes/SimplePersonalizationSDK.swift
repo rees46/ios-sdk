@@ -6,6 +6,7 @@
 //  Copyright (c) 2023. All rights reserved.
 //
 
+import UIKit
 import Foundation
 
 public var global_EL: Bool = true
@@ -77,21 +78,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     if let completion = completion {
                         completion(error)
                         
-                        if #available(iOS 12.0, *) {
-                            let networkManager = NetworkStatus.nManager
-                            let connectionStatus = networkManager.connectionStatus
-                            let typeOfConnection = networkManager.connectionType
-                            print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                            //print("Connection Type: \(typeOfConnection ?? .notdetected)")
-                            
-                            if connectionStatus == .Online {
-                                completion(error)
-                            } else if connectionStatus == .Offline {
-                                //completion(.networkOfflineError)
-                                completion(.custom(error: typeOfConnection?.description ?? "f" ))
-                            }
-                        } else {
+                        let networkManager = NetworkStatus.nManager
+                        let connectionStatus = networkManager.connectionStatus
+                        let typeOfConnection = networkManager.connectionType
+                        print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                        //print("Connection Type: \(typeOfConnection ?? .notdetected)")
+                        
+                        if connectionStatus == .Online {
                             completion(error)
+                        } else if connectionStatus == .Offline {
+                            //completion(.networkOfflineError)
+                            completion(.custom(error: typeOfConnection?.description ?? "Network Error" ))
                         }
                     }
                     self.semaphore.signal()
@@ -224,9 +221,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
-            
             let path = "profile/set"
-            
             var paramsTemp: [String: Any?] = [
                 "shop_id": self.shopId,
                 "did": self.deviceID,
@@ -487,7 +482,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
      *
      */
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        
         sessionQueue.addOperation {
             let path = "push/custom"
             var params: [String: Any] = [
@@ -543,7 +537,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
-    
     
     func trackSource(source: RecommendedByCase, code: String) {
         UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "timeStartSave")
@@ -685,9 +678,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
-
     func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
-
         sessionQueue.addOperation {
             let path = "search"
             var params = [
@@ -892,7 +883,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.failure(error))
             }
         })
-        
     }
     
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
@@ -973,15 +963,49 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionConfig.waitsForConnectivity = true
         self.urlSession = URLSession(configuration: sessionConfig)
         
-        getRequest(path: path, params: params, true) { result in
-            switch result {
-            case let .success(successResult):
-                let resJSON = successResult
-                let resultResponse = InitResponse(json: resJSON)
+        if SdkConfiguration.stories.useSdkOldInitialization == true {
+            getRequest(path: path, params: params, true) { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let resultResponse = InitResponse(json: resJSON)
+                    UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
+                    completion(.success(resultResponse))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        } else {
+            
+            let initFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sdkinit.json")
+            let fontData = NSData(contentsOf: initFileName)
+            let json = try? JSONSerialization.jsonObject(with: fontData as? Data ?? Data())
+            if let jsonObject = json as? [String: Any] {
+                let resultResponse = InitResponse(json: jsonObject)
                 UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
+                UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
+                sleep(2)
                 completion(.success(resultResponse))
-            case let .failure(error):
-                completion(.failure(error))
+            } else {
+                getRequest(path: path, params: params, true) { result in
+                    switch result {
+                    case let .success(successResult):
+                        let resJSON = successResult
+                        let resultResponse = InitResponse(json: resJSON)
+                        
+                        UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
+                        //self.saveToTextFile(didToken: resultResponse.deviceID)
+                        //print("DID TOKEN NOW =", resultResponse.deviceID)
+                        
+                        UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
+                        //self.saveToTextFile(seanceToken: resultResponse.seance)
+                        //print("SEANCE TOKEN NOW =", resultResponse.seance)
+                        
+                        completion(.success(resultResponse))
+                    case let .failure(error):
+                        completion(.failure(error))
+                    }
+                }
             }
         }
     }
@@ -998,12 +1022,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
             sessionConfig.waitsForConnectivity = false
         } else {
-            sessionConfig.timeoutIntervalForRequest = 10
+            sessionConfig.timeoutIntervalForRequest = 5
             sessionConfig.waitsForConnectivity = true
         }
         self.urlSession = URLSession(configuration: sessionConfig)
         
-        getRequest(path: path, params: params, true) { result in
+        getRequest(path: path, params: params, false) { result in
             switch result {
             case let .success(successResult):
                 let res = StoryContent(json: successResult)
@@ -1023,6 +1047,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return jsonDecoder
     }()
     
+    func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
+        let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
+        try data.write(to: jsonFileURL)
+    }
+    
+    func saveToTextFile(didToken: String) {
+        let didFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("did.txt")
+        do {
+            try didToken.write(to: didFileName, atomically: true, encoding: String.Encoding.utf8)
+        } catch {
+            print("SDK Error Write DID token")
+        }
+    }
+    
+    func saveToTextFile(sidToken: String) {
+        let sidFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sid.txt")
+        do {
+            try sidToken.write(to: sidFileName, atomically: true, encoding: String.Encoding.utf8)
+        } catch {
+            print("SDK Error Write seance SID token")
+        }
+    }
+    
     internal func configuration() -> SdkConfiguration.Type {
         return SdkConfiguration.self
     }
@@ -1038,6 +1085,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
+        
+        if SdkConfiguration.stories.useSdkOldInitialization == false {
+            if (!isInit && path == "init") {
+                let initFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sdkinit.json")
+
+                let iData = NSData(contentsOf: initFileName)
+                let json = try? JSONSerialization.jsonObject(with: iData! as Data)
+                if let jsonObject = json as? [String: Any] {
+                    completion(.success(jsonObject))
+                } else {
+                    completion(.failure(.decodeError))
+                }
+            }
+        }
 
         if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
@@ -1053,6 +1114,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         return
                     }
                     do {
+                        if SdkConfiguration.stories.useSdkOldInitialization == false {
+                            if isInit {
+                                try self.saveDataToJsonFile(data, jsonInitFileName: "sdkinit.json")
+                            }
+                        }
+                        
                         let json = try JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             completion(.success(jsonObject))
@@ -1063,18 +1130,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(.failure(.decodeError))
                     }
                 case .failure:
-                    if #available(iOS 12.0, *) {
-                        let networkManager = NetworkStatus.nManager
-                        let connectionStatus = networkManager.connectionStatus
-                        
-                        if connectionStatus == .Online {
-                            completion(.failure(.invalidResponse))
-                        } else if connectionStatus == .Offline {
-                            completion(.failure(.networkOfflineError))
-
-                        }
-                    } else {
+                    let networkManager = NetworkStatus.nManager
+                    let connectionStatus = networkManager.connectionStatus
+                    
+                    if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
+                    } else if connectionStatus == .Offline {
+                        completion(.failure(.networkOfflineError))
+
                     }
                 }
             }.resume()
@@ -1095,17 +1158,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let url = URL(string: baseURL + path) {
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
-            do {
-                //request.httpBody = nil
-                request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
-            } catch let error {
-                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
-                return
-            }
+            
+//            do {
+//                request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
+//            } catch let error {
+//                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
+//                return
+//            }
+            
+            let boundary = generateBoundary()
+            let jsonData = createDataForBody(withParameters: requestParams, content: [], boundary: boundary)
+            
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
             
-            urlSession.postTask(with: request) { result in
+            urlSession.postTask(with: request, bodyData: jsonData) { result in
                 switch result {
                 case .success(let (response, data)):
                     guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
@@ -1138,24 +1205,79 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(.failure(.decodeError))
                     }
                 case .failure:
-                    if #available(iOS 12.0, *) {
-                        let networkManager = NetworkStatus.nManager
-                        let connectionStatus = networkManager.connectionStatus
-                        //let typeOfConnection = networkManager.connectionType
-                        //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                        
-                        if connectionStatus == .Online {
-                            completion(.failure(.invalidResponse))
-                        } else if connectionStatus == .Offline {
-                            completion(.failure(.networkOfflineError))
-                        }
-                    } else {
+                    let networkManager = NetworkStatus.nManager
+                    let connectionStatus = networkManager.connectionStatus
+                    //let typeOfConnection = networkManager.connectionType
+                    //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                    
+                    if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
+                    } else if connectionStatus == .Offline {
+                        completion(.failure(.networkOfflineError))
                     }
                 }
             }.resume()
         } else {
             completion(.failure(.invalidResponse))
+        }
+    }
+    
+    func createDataForBody(withParameters params: [String: Any]?, content: [DataUploadStruct]?, boundary: String) -> Data {
+
+        let lineBreak = "\r\n"
+        var body = Data()
+
+        if let parameters = params {
+            for (key, value) in parameters {
+                body.append("--\(boundary + lineBreak)")
+                body.append("Content-Disposition: form-data; name=\"\(key)\"\(lineBreak + lineBreak)")
+                
+                if let vString = value as? String {
+                    body.append("\(vString + lineBreak)")
+                }
+            }
+        }
+
+        if let content = content {
+            for uploadData in content {
+                body.append("--\(boundary + lineBreak)")
+                body.append("Content-Disposition: form-data; name=\"\(uploadData.key)\"; filename=\"\(uploadData.fileName)\"\(lineBreak)")
+                body.append("Content-Type: \(uploadData.mimeType + lineBreak + lineBreak)")
+                body.append(uploadData.data)
+                body.append(lineBreak)
+            }
+        }
+
+        body.append("--\(boundary)--\(lineBreak)")
+        return body
+    }
+    
+    func generateBoundary() -> String {
+        return "Boundary-\(NSUUID().uuidString)"
+    }
+    
+    struct DataUploadStruct {
+        let key: String
+        let fileName: String
+        let data: Data
+        let mimeType: String
+
+        init?(withImage image: UIImage, forKey key: String) {
+            self.key = key
+            self.mimeType = "image/jpg"
+            self.fileName = "\(arc4random()).jpeg"
+
+            guard let data = image.jpegData(compressionQuality: 0.5) else { return nil }
+            self.data = data
+        }
+    }
+}
+
+
+extension Data {
+    mutating func append(_ string: String) {
+        if let data = string.data(using: .utf8) {
+            append(data)
         }
     }
 }
@@ -1177,8 +1299,8 @@ extension URLSession {
         }
     }
 
-    func postTask(with request: URLRequest, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-        return uploadTask(with: request, from: nil) { data, response, error in
+    func postTask(with request: URLRequest, bodyData: Data, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
+        return uploadTask(with: request, from: bodyData) { data, response, error in
             if let error = error {
                 result(.failure(error))
                 return

@@ -6,7 +6,7 @@ struct Profile: Codable {
     let url: URL
 }
 
-struct UserProfileCache {
+public struct UserProfileCache {
     static let key = "userProfileCache"
     
     static func save(_ value: Profile!) {
@@ -28,9 +28,9 @@ struct UserProfileCache {
     }
 }
 
-class SdkGlobalHelper {
+public class SdkGlobalHelper {
 
-    class var sharedInstance: SdkGlobalHelper {
+    public class var sharedInstance: SdkGlobalHelper {
         struct Static {
             static let instance: SdkGlobalHelper = SdkGlobalHelper()
         }
@@ -40,26 +40,31 @@ class SdkGlobalHelper {
     init() {
     }
     
-    struct ScreenSize {
+    public struct ScreenSize {
         static let SCREEN_WIDTH = UIScreen.main.bounds.size.width
         static let SCREEN_HEIGHT = UIScreen.main.bounds.size.height
         static let SCREEN_MAX_LENGTH = max(ScreenSize.SCREEN_WIDTH, ScreenSize.SCREEN_HEIGHT)
         static let SCREEN_MIN_LENGTH = min(ScreenSize.SCREEN_WIDTH, ScreenSize.SCREEN_HEIGHT)
     }
     
-    struct DeviceType {
-        static let IS_IPHONE_5 = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 568.0
-        static let IS_IPHONE_8 = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 667.0
-        static let IS_IPHONE_8P = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 736.0
-        static let IS_IPHONE_XS = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 812.0
-        static let IS_IPHONE_XS_MAX = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 896.0
-        static let IS_IPHONE_14 = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 844.0
-        static let IS_IPHONE_14_PRO = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 852.0
-        static let IS_IPHONE_14_PLUS = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 926.0
-        static let IS_IPHONE_14_PRO_MAX = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 932.0
+    public struct DeviceType {
+        public static let IS_IPHONE_5 = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 568.0
+        public static let IS_IPHONE_SE = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 667.0
+        public static let IS_IPHONE_SEP = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 736.0
+        public static let IS_IPHONE_XS = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 812.0
+        public static let IS_IPHONE_XS_MAX = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 896.0
+        public static let IS_IPHONE_14 = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 844.0
+        public static let IS_IPHONE_14_PRO = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 852.0
+        public static let IS_IPHONE_14_PLUS = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 926.0
+        public static let IS_IPHONE_14_PRO_MAX = UIDevice.current.userInterfaceIdiom == .phone && ScreenSize.SCREEN_MAX_LENGTH == 932.0
     }
     
-    func willDeviceHaveDynamicIsland() -> Bool {
+    public func getSdkDocumentsDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0]
+    }
+    
+    public func willDeviceHaveDynamicIsland() -> Bool {
         if let simulatorModelIdentifier = ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] {
             let nameSimulator = simulatorModelIdentifier
             return nameSimulator == "iPhone15,2" || nameSimulator == "iPhone15,3" || nameSimulator == "iPhone15,4" || nameSimulator == "iPhone15,5" || nameSimulator == "iPhone16,1" || nameSimulator == "iPhone16,2"  ? true : false
@@ -71,7 +76,7 @@ class SdkGlobalHelper {
         return name == "iPhone15,2" || name == "iPhone15,3" || name == "iPhone15,4" || name == "iPhone15,5" || name == "iPhone16,1" || name == "iPhone16,2" ? true : false
     }
     
-    func saveVideoParamsToDictionary(parentSlideId: String, paramsDictionary: [String:String]) {
+    public func saveVideoParamsToDictionary(parentSlideId: String, paramsDictionary: [String:String]) {
        var stringValuesToSave: [String:String] = [:]
         
        for key in paramsDictionary.keys {
@@ -205,10 +210,17 @@ extension UIColor {
 
         return (red, green, blue, alpha)
     }
-}
-
-
-extension UIColor {
+    
+    func withBrightness(brightness: CGFloat) -> UIColor {
+        var H: CGFloat = 0, S: CGFloat = 0, B: CGFloat = 0, A: CGFloat = 0
+        if getHue(&H, saturation: &S, brightness: &B, alpha: &A) {
+            B += (brightness - 1.0)
+            B = max(min(B, 1.0), 0.0)
+            return UIColor(hue: H, saturation: S, brightness: B, alpha: A)
+        }
+        return self
+    }
+    
     static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
     static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
     static let sdkDefaultOrangeColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)

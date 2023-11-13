@@ -48,63 +48,58 @@ class StoryButton: UIButton {
         }
         self.layer.masksToBounds = true
         
-        if #available(iOS 12.0, *) {
-            if SdkConfiguration.isDarkMode {
-                if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Dark != nil {
-                    self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Dark
+        if SdkConfiguration.isDarkMode {
+            if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Dark != nil {
+                self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Dark
+            } else {
+                if let bgColor = buttonData.background {
+                    let color = bgColor.hexToRGB()
+                    self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
                 } else {
-                    if let bgColor = buttonData.background {
-                        let color = bgColor.hexToRGB()
-                        self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
-                    } else {
-                        self.backgroundColor = .white
-                    }
+                    self.backgroundColor = .white
                 }
-                
-                if SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Dark != nil {
-                    if let components = SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Dark?.rgba {
-                        self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
-                    } else {
-                        self.setTitleColor(.black, for: .normal)
-                    }
+            }
+            
+            if SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Dark != nil {
+                if let components = SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Dark?.rgba {
+                    self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
                 } else {
-                    if let titleColor = buttonData.color {
-                        let color = titleColor.hexToRGB()
-                        self.setTitleColor(UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1), for: .normal)
-                    } else {
-                        self.setTitleColor(.black, for: .normal)
-                    }
+                    self.setTitleColor(.black, for: .normal)
                 }
             } else {
-                if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light != nil {
-                    self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light
+                if let titleColor = buttonData.color {
+                    let color = titleColor.hexToRGB()
+                    self.setTitleColor(UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1), for: .normal)
                 } else {
-                    if let bgColor = buttonData.background {
-                        let color = bgColor.hexToRGB()
-                        self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
-                    } else {
-                        self.backgroundColor = .white
-                    }
-                }
-                
-                if SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Light != nil {
-                    if let components = SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Light?.rgba {
-                        self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
-                    } else {
-                        self.setTitleColor(.black, for: .normal)
-                    }
-                } else {
-                    if let titleColor = buttonData.color {
-                        let color = titleColor.hexToRGB()
-                        self.setTitleColor(UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1), for: .normal)
-                    } else {
-                        self.setTitleColor(.black, for: .normal)
-                    }
+                    self.setTitleColor(.black, for: .normal)
                 }
             }
         } else {
-            self.setTitleColor(.black, for: .normal)
-            self.backgroundColor = .white
+            if SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light != nil {
+                self.backgroundColor = SdkConfiguration.stories.slideDefaultButtonBackgroundColorChanged_Light
+            } else {
+                if let bgColor = buttonData.background {
+                    let color = bgColor.hexToRGB()
+                    self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
+                } else {
+                    self.backgroundColor = .white
+                }
+            }
+            
+            if SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Light != nil {
+                if let components = SdkConfiguration.stories.slideDefaultButtonTextColorChanged_Light?.rgba {
+                    self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
+                } else {
+                    self.setTitleColor(.black, for: .normal)
+                }
+            } else {
+                if let titleColor = buttonData.color {
+                    let color = titleColor.hexToRGB()
+                    self.setTitleColor(UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1), for: .normal)
+                } else {
+                    self.setTitleColor(.black, for: .normal)
+                }
+            }
         }
     }
     

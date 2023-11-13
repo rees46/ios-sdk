@@ -63,22 +63,18 @@ protocol CustomProductButtonDelegate: AnyObject {
             
             let angleUpIcon = UIImage(named: "angleUpBlack", in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
             
-            if #available(iOS 12.0, *) {
-                if SdkConfiguration.isDarkMode {
-                    if SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Dark != nil {
-                        self.backgroundColor = SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Dark
-                    } else {
-                        self.backgroundColor = .white
-                    }
+            if SdkConfiguration.isDarkMode {
+                if SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Dark != nil {
+                    self.backgroundColor = SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Dark
                 } else {
-                    if SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Light != nil {
-                        self.backgroundColor = SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Light
-                    } else {
-                        self.backgroundColor = .white
-                    }
+                    self.backgroundColor = .white
                 }
             } else {
-                self.backgroundColor = .white
+                if SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Light != nil {
+                    self.backgroundColor = SdkConfiguration.stories.slideProductsButtonBackgroundColorChanged_Light
+                } else {
+                    self.backgroundColor = .white
+                }
             }
             
             if SdkConfiguration.stories.productsButtonCornerRadius != -1 {
@@ -88,41 +84,36 @@ protocol CustomProductButtonDelegate: AnyObject {
             }
             layer.masksToBounds = true
             
-            if #available(iOS 12.0, *) {
-                if SdkConfiguration.isDarkMode {
-                    if SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark != nil {
-                        if let components = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark?.rgba {
-                            self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
-                        } else {
-                            self.setTitleColor(.black, for: .normal)
-                        }
-                        self.addRightIconForProductsBtn(image: angleUpIcon!)
-                        tintColor = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark
+            if SdkConfiguration.isDarkMode {
+                if SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark != nil {
+                    if let components = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark?.rgba {
+                        self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
                     } else {
-                        setTitleColor(.black, for: .normal)
-                        self.addRightIconForProductsBtn(image: angleUpIcon!)
-                        tintColor = .black
+                        self.setTitleColor(.black, for: .normal)
                     }
+                    self.addRightIconForProductsBtn(image: angleUpIcon!)
+                    tintColor = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Dark
                 } else {
-                    if SdkConfiguration.stories.slideProductsButtonTextColorChanged_Light != nil {
-                        if let components = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Light?.rgba {
-                            self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
-                        } else {
-                            self.setTitleColor(.black, for: .normal)
-                        }
-                        self.addRightIconForProductsBtn(image: angleUpIcon!)
-                        tintColor = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Light
-                    } else {
-                        setTitleColor(.black, for: .normal)
-                        self.addRightIconForProductsBtn(image: angleUpIcon!)
-                        tintColor = .black
-                    }
+                    setTitleColor(.black, for: .normal)
+                    self.addRightIconForProductsBtn(image: angleUpIcon!)
+                    tintColor = .black
                 }
             } else {
-                setTitleColor(.black, for: .normal)
-                self.addRightIconForProductsBtn(image: angleUpIcon!)
-                tintColor = .black
+                if SdkConfiguration.stories.slideProductsButtonTextColorChanged_Light != nil {
+                    if let components = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Light?.rgba {
+                        self.setTitleColor(UIColor(red: components.red, green: components.green, blue: components.blue, alpha: components.alpha), for: .normal)
+                    } else {
+                        self.setTitleColor(.black, for: .normal)
+                    }
+                    self.addRightIconForProductsBtn(image: angleUpIcon!)
+                    tintColor = SdkConfiguration.stories.slideProductsButtonTextColorChanged_Light
+                } else {
+                    setTitleColor(.black, for: .normal)
+                    self.addRightIconForProductsBtn(image: angleUpIcon!)
+                    tintColor = .black
+                }
             }
+            
         } else {
             titleLabel?.font = .systemFont(ofSize: 17.0, weight: .semibold)
             if SdkConfiguration.stories.productsButtonCornerRadius != -1 {

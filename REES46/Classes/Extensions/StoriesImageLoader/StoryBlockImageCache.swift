@@ -74,6 +74,7 @@ public struct StoryBlockImageCache {
     
     public static var shared = StoryBlockImageCache()
     public let internalCache = NSCache<AnyObject, AnyObject>()
+    
     fileprivate static let cacheDirectory: URL? = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
 
     fileprivate init() {

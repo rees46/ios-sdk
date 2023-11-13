@@ -1,7 +1,6 @@
 import UIKit
 
 extension UIView {
-    
     private struct AssociatedObjectKey {
         static var isC = "isC"
         static var path = "coverablePath"
@@ -50,4 +49,6 @@ extension UIView {
 }
 
 
-extension UIImageView: Coverable { }
+extension UIImageView: Coverable {
+    // Coverable
+}

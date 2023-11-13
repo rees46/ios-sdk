@@ -1,18 +1,22 @@
 import Foundation
 
 @propertyWrapper public struct ViewConfigPlain<Value> {
+    
     private final class Listener<ListenerValue> {
+        
         var subscriber: NSObjectProtocol?
         var value: Value?
 
         func listenTo(store: UserDefaults, key: String, defaultValue: Value) {
             if subscriber == nil {
-                ViewConfigService.shared.use(userDefaults: store)
-                value = ViewConfigService.shared.value(for: key, store) ?? defaultValue
-                subscriber = NotificationCenter.default.addObserver(forName: .sdkConfigChanged,
-                                                                    object: store, queue: nil) { [weak self] _ in
-                    guard let self = self else { return }
-                    self.value = ViewConfigService.shared.value(for: key, store) ?? defaultValue
+                ViewConfigService.configShared.use(userDefaults: store)
+                value = ViewConfigService.configShared.value(for: key, store) ?? defaultValue
+                
+                subscriber = NotificationCenter.default.addObserver(forName: .sdkConfigChanged, object: store, queue: nil) { [weak self] _ in
+                    guard let self = self else {
+                        return
+                    }
+                    self.value = ViewConfigService.configShared.value(for: key, store) ?? defaultValue
                 }
             }
         }
@@ -23,6 +27,7 @@ import Foundation
     }
 
     private var listener = Listener<Value>()
+    
     private let defaultValue: Value
 
     public var wrappedValue: Value {

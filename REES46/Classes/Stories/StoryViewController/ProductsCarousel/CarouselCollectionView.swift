@@ -17,15 +17,15 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         backgroundColor = UIColor(red: 240/255, green: 240/255, blue: 240/255, alpha: 255/255)
         delegate = self
         dataSource = self
-        register(CarouselCollectionViewCell.self, forCellWithReuseIdentifier: CarouselCollectionViewCell.reuseId)
+        register(CarouselCollectionViewCell.self, forCellWithReuseIdentifier: CarouselCollectionViewCell.reuseCarouselId)
         
         translatesAutoresizingMaskIntoConstraints = false
-        layout.minimumLineSpacing = CarouselConstants.carouselMinimumLineSpacing
+        layout.minimumLineSpacing = CarouselConstantsF.carouselMinimumLineSpacing
         
-        if SdkGlobalHelper.DeviceType.IS_IPHONE_8 {
-            contentInset = UIEdgeInsets(top: 0, left: CarouselConstants.leftDistanceToView, bottom: 70, right: CarouselConstants.rightDistanceToView)
+        if SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
+            contentInset = UIEdgeInsets(top: 0, left: CarouselConstantsF.leftDistanceToView, bottom: 70, right: CarouselConstantsF.rightDistanceToView)
         } else {
-            contentInset = UIEdgeInsets(top: 0, left: CarouselConstants.leftDistanceToView, bottom: 60, right: CarouselConstants.rightDistanceToView)
+            contentInset = UIEdgeInsets(top: 0, left: CarouselConstantsF.leftDistanceToView, bottom: 60, right: CarouselConstantsF.rightDistanceToView)
         }
         
         showsHorizontalScrollIndicator = false
@@ -42,7 +42,6 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
-                //stackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: 15),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
@@ -81,14 +80,14 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -6),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8 {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -19),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8P {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_SEP {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
@@ -145,7 +144,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     }
     
     @objc
-    func closeButtonTapped(sender : UIButton) {
+    func closeButtonTapped(sender: UIButton) {
         carouselProductsDelegate?.closeProductsCarousel()
     }
     
@@ -162,30 +161,30 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(withReuseIdentifier: CarouselCollectionViewCell.reuseId, for: indexPath) as! CarouselCollectionViewCell
+        let cell = dequeueReusableCell(withReuseIdentifier: CarouselCollectionViewCell.reuseCarouselId, for: indexPath) as! CarouselCollectionViewCell
         
         let url = URL(string: cells[indexPath.row].picture)
         if url != nil {
-            cell.mainImageView.load.request(with: url!)
+            cell.carouselMainImageView.load.request(with: url!)
         }
-        cell.nameLabel.text = cells[indexPath.row].name
+        cell.carouselProductNameLabel.text = cells[indexPath.row].name
         
         let mainProductText = cells[indexPath.row].oldprice_formatted
         let textRange = NSMakeRange(0, mainProductText.count)
         let attributedText = NSMutableAttributedString(string: mainProductText)
         attributedText.addAttribute(NSAttributedString.Key.strikethroughStyle , value: NSUnderlineStyle.single.rawValue, range: textRange)
-        cell.oldCostLabel.attributedText = attributedText
+        cell.carouselOldCostLabel.attributedText = attributedText
         
         if (cells[indexPath.row].discount_formatted == "0%" || cells[indexPath.row].discount_formatted == nil) {
-            cell.discountLabel.isHidden = true
+            cell.carouselDiscountLabel.isHidden = true
         } else {
             let discountPercent = cells[indexPath.row].discount_formatted ?? "10%"
             let discountPercentFinal = " -" + discountPercent + " "
-            cell.discountLabel.text = discountPercentFinal
-            cell.discountLabel.isHidden = false
+            cell.carouselDiscountLabel.text = discountPercentFinal
+            cell.carouselDiscountLabel.isHidden = false
         }
         
-        cell.costLabel.text = cells[indexPath.row].price_formatted
+        cell.carouselNowCostLabel.text = cells[indexPath.row].price_formatted
         
         return cell
     }
@@ -197,9 +196,9 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-            return CGSize(width: CarouselConstants.carouselItemSlowWidth, height: frame.height * 0.73)
+            return CGSize(width: CarouselConstantsF.carouselItemSlowWidth, height: frame.height * 0.73)
         } else {
-            return CGSize(width: CarouselConstants.carouselItemWidth, height: frame.height * 0.73)
+            return CGSize(width: CarouselConstantsF.carouselItemWidth, height: frame.height * 0.73)
         }
     }
     

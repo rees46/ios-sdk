@@ -86,7 +86,7 @@ open class LoadingPlaceholderView: UIView {
             bottomAnchor.constraint(equalTo: viewToCover.bottomAnchor),
             leftAnchor.constraint(equalTo: viewToCover.leftAnchor),
             rightAnchor.constraint(equalTo: viewToCover.rightAnchor)
-            ])
+        ])
         setupMaskLayerIfNeeded()
         setupGradientLayerIfNeeded()
         setupGradientLayerAnimation()
@@ -172,16 +172,18 @@ open class LoadingPlaceholderView: UIView {
     }
     
     private func fadeOut(animated: Bool) {
-        guard
+        guard 
             animated
-            else {
-                self.alpha = 0
-                return
-            }
+        else {
+            self.alpha = 0
+            return
+        }
+        
         let opacityAnimation = CABasicAnimation(keyPath: "opacity")
         opacityAnimation.fromValue = alpha
         opacityAnimation.toValue = 0
         opacityAnimation.duration = promocodeDuration
+        
         gradientLayer.add(opacityAnimation, forKey: "opacityAnimationOut")
         
         UIView.animate(withDuration: promocodeDuration) {
@@ -194,18 +196,4 @@ open class LoadingPlaceholderView: UIView {
         gradientLayer.removeFromSuperlayer()
         maskLayer.removeFromSuperlayer()
     }
-}
-
-
-extension UIColor {
-    fileprivate func withBrightness(brightness: CGFloat) -> UIColor {
-        var H: CGFloat = 0, S: CGFloat = 0, B: CGFloat = 0, A: CGFloat = 0
-        if getHue(&H, saturation: &S, brightness: &B, alpha: &A) {
-            B += (brightness - 1.0)
-            B = max(min(B, 1.0), 0.0)
-            return UIColor(hue: H, saturation: S, brightness: B, alpha: A)
-        }
-        return self
-    }
-    
 }

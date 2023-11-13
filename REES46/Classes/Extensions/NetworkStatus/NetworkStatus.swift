@@ -3,7 +3,7 @@ import Network
 import CoreTelephony
 #endif
 
-@available(iOS 12.0, *)
+
 public class NetworkStatus {
     
     public static var nManager: NetworkStatus = NetworkStatus()

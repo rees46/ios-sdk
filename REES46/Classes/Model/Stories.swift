@@ -231,7 +231,7 @@ class Slide {
     }
     
     private func completionCached(slideWithId: String, actualSlideUrl: String) {
-        let storySlideMediaId = "1111" + slideWithId
+        let storySlideMediaId = "cached.slide." + slideWithId
         
         var slidesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storySlideMediaId)) as? [String] ?? []
         let slideWithIdExists = slidesDownloadedArray.contains(where: {
@@ -261,7 +261,7 @@ public class StoriesElement {
     let cornerRadius: Int
     let labels: Labels?
     let products: [StoriesProduct]?
-    let product: StoriesPromoElement?
+    let product: StoriesPromoCodeElement?
     
     public init(json: [String: Any]) {
         self.link = json["link"] as? String
@@ -279,13 +279,13 @@ public class StoriesElement {
         let _products = json["products"] as? [[String: Any]] ?? []
         self.products = _products.map({StoriesProduct(json: $0)})
         let _product = json["item"] as? [String: Any] ?? [:]
-        self.product = StoriesPromoElement(json: _product)
+        self.product = StoriesPromoCodeElement(json: _product)
     }
 }
 
 
 // MARK: - Promocodes
-public class StoriesPromoElement {
+public class StoriesPromoCodeElement {
     let id, name, brand, price_full, price_formatted, price_full_formatted, image_url, picture, currency: String
     let url: String
     let deeplinkIos: String
@@ -295,7 +295,7 @@ public class StoriesPromoElement {
     let discount_percent: Int
     let price_with_promocode_formatted: String
     let promocode: String
-    let image_url_resized: PromoElementImagesResize?
+    let image_url_resized: PromoCodeElementImagesResize?
     
     public init(json: [String: Any]) {
         self.id = json["id"] as? String ?? ""
@@ -318,7 +318,7 @@ public class StoriesPromoElement {
         self.price_with_promocode_formatted = json["price_with_promocode_formatted"] as? String ?? ""
         self.promocode = json["promocode"] as? String ?? ""
         let _image_url_resized = json["image_url_resized"] as? [String: Any] ?? [:]
-        self.image_url_resized = PromoElementImagesResize(json: _image_url_resized)
+        self.image_url_resized = PromoCodeElementImagesResize(json: _image_url_resized)
     }
 }
 
@@ -385,7 +385,7 @@ class StoriesCategory {
 }
 
 // MARK: - Image Resized
-public class PromoElementImagesResize {
+public class PromoCodeElementImagesResize {
     let image_url_resized220: String
     let image_url_resized310: String
     let image_url_resized520: String

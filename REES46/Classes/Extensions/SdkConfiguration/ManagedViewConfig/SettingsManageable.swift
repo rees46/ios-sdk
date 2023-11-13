@@ -2,16 +2,21 @@ import Foundation
 
 protocol SettingsManageable {
     func settingsAddr() -> URL
+    func toDictionary() -> [String: Any?]?
     func update() -> Bool
     mutating func preload() -> Bool
     mutating func preloadUsingSettingsFile() -> Bool
     func delete() -> Bool
     mutating func reset() -> Bool
-    func toDictionary() -> [String: Any?]?
 }
 
 
 extension SettingsManageable where Self: Codable {
+    
+    func settingsAddr() -> URL {
+        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        return cachesDirectory.appendingPathComponent("\(Self.self).plist")
+    }
     
     func toDictionary() -> [String: Any?]? {
         do {
@@ -25,11 +30,6 @@ extension SettingsManageable where Self: Codable {
         }
         
         return nil
-    }
-    
-    func settingsAddr() -> URL {
-        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        return cachesDirectory.appendingPathComponent("\(Self.self).plist")
     }
     
     func update() -> Bool {

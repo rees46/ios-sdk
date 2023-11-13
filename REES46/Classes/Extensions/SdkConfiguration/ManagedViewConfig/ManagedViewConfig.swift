@@ -12,8 +12,7 @@ public class ManagedViewConfig {
     private var feedbackGrabStates = [GrabStateFunction]()
 
     init() {
-        NotificationCenter.default.addObserver(self, selector: #selector(ManagedViewConfig.didChange),
-                                               name: UserDefaults.didChangeNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(ManagedViewConfig.didChange), name: UserDefaults.didChangeNotification, object: nil)
     }
     
     public func addViewAppConfigChangedGrabState(_ appConfigChangedGrabState: @escaping GrabStateFunction) {

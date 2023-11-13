@@ -57,7 +57,7 @@ class Tests: XCTestCase {
         }
     }
     
-    func test_session_genterated() {
+    func test_session_generated() {
         let oldSession = sdk?.getSession() // Get the old saved sessionID
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {

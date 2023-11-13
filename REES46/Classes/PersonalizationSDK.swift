@@ -185,7 +185,47 @@ public extension PersonalizationSDK {
     }
     
     func resetDownloadedStoriesStates() {
-        let included_prefixes = ["1111"]
+        let included_prefixes = ["cached.slide."]
+        let dict = UserDefaults.standard.dictionaryRepresentation()
+        let keys = dict.keys.filter { key in
+            for prefix in included_prefixes {
+                if key.hasPrefix(prefix) {
+                    return true
+                }
+            }
+            return false
+        }
+        for key in keys {
+            if dict[key] != nil {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        UserDefaults.standard.synchronize()
+        resetCartProductStates()
+    }
+    
+    func resetCartProductStates() {
+        let included_prefixes = ["cart.product."]
+        let dict = UserDefaults.standard.dictionaryRepresentation()
+        let keys = dict.keys.filter { key in
+            for prefix in included_prefixes {
+                if key.hasPrefix(prefix) {
+                    return true
+                }
+            }
+            return false
+        }
+        for key in keys {
+            if dict[key] != nil {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        UserDefaults.standard.synchronize()
+        resetFavoritesProductStates()
+    }
+    
+    func resetFavoritesProductStates() {
+        let included_prefixes = ["favorites.product."]
         let dict = UserDefaults.standard.dictionaryRepresentation()
         let keys = dict.keys.filter { key in
             for prefix in included_prefixes {

@@ -29,6 +29,10 @@ final public class VideoDownloadManager: NSObject {
             return nil
         }
         
+//        if self.ongoingDownloads.count == 0 {
+//            return nil
+//        }
+        
         if let _ = self.ongoingDownloads[url.absoluteString] {
             print("SDK Already in progress")
             return nil
@@ -141,7 +145,7 @@ final public class VideoDownloadManager: NSObject {
         let notificationCenter = UNUserNotificationCenter.current()
         notificationCenter.getNotificationSettings { (settings) in
             guard settings.authorizationStatus == .authorized else {
-                debugPrint("Sdk not authorized to schedule notification")
+                debugPrint("SDK not authorized to schedule notification")
                 return
             }
             
@@ -155,7 +159,7 @@ final public class VideoDownloadManager: NSObject {
                                                 content: content, trigger: trigger)
             notificationCenter.add(request, withCompletionHandler: { (error) in
                 if let error = error {
-                    debugPrint("Sdk could not schedule notification, error : \(error)")
+                    debugPrint("SDK could not schedule notification with error: \(error)")
                 }
             })
         }
@@ -194,6 +198,7 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
             }
         }
         self.ongoingDownloads.removeValue(forKey:key)
+        
 //        if let removedValue = self.ongoingDownloads.removeValue(forKey: key) {
 //            self.ongoingDownloads.removeValue(forKey:key)
 //            print("SDK VideoDownloadManager Key value \(removedValue) was removed")
@@ -213,6 +218,10 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
             //debugPrint("SDK Could not calculate progress as total bytes to Write is less than 0")
             return
         }
+        
+//        if self.ongoingDownloads.count == 0 {
+//            return
+//        }
         
         if let download = self.ongoingDownloads[(downloadTask.originalRequest?.url?.absoluteString)!],
             let progressBlock = download.progressBlock {
@@ -249,7 +258,7 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                     }
                     
                     if self.showLocalNotificationOnBackgroundDownloadSuccess {
-                        var notificationText = "Sdk Notification Download completed"
+                        var notificationText = "SDK Internal Notification Downloading task completed"
                         if let userNotificationText = self.localNotificationText {
                             notificationText = userNotificationText
                         }

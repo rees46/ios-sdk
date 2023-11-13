@@ -53,6 +53,7 @@ public class SdkPopupAlertView: UIView {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0 //1
+        
         if #available(iOS 13.0, *) {
             label.textColor = .black //.label
         } else {
@@ -62,11 +63,7 @@ public class SdkPopupAlertView: UIView {
     }()
 
     private var popupDefaultBackgroundColor: UIColor? {
-        if #available(iOS 12.0, *) {
-            return traitCollection.userInterfaceStyle == .dark ? lightBackgroundColor : lightBackgroundColor
-        } else {
-            return lightBackgroundColor
-        }
+        return traitCollection.userInterfaceStyle == .dark ? lightBackgroundColor : lightBackgroundColor
     }
 
     private var vStackAlignment: UIStackView.Alignment {
@@ -114,9 +111,15 @@ public class SdkPopupAlertView: UIView {
 
     private var sdkPopupOverlayWindow: SdkPopupAlertViewWindow?
 
-    public init(title: String, titleFont: UIFont = .systemFont(ofSize: 17, weight: .semibold),
-                subtitle: String? = nil, subtitleFont: UIFont = .systemFont(ofSize: 17, weight: .semibold),
-                icon: UIImage? = nil, iconSpacing: CGFloat = 16, position: Position = .top, onTap: (() -> ())? = nil) {
+    public init(title: String,
+                titleFont: UIFont = .systemFont(ofSize: 17, weight: .semibold),
+                subtitle: String? = nil,
+                subtitleFont: UIFont = .systemFont(ofSize: 17, weight: .semibold),
+                icon: UIImage? = nil,
+                iconSpacing: CGFloat = 16,
+                position: Position = .top,
+                onTap: (() -> ())? = nil) {
+        
         self.position = position
 
         super.init(frame: .zero)
@@ -134,25 +137,32 @@ public class SdkPopupAlertView: UIView {
             let iconImageView = UIImageView()
             iconImageView.contentMode = .scaleAspectFit
             iconImageView.translatesAutoresizingMaskIntoConstraints = false
+            
             NSLayoutConstraint.activate([
                 iconImageView.widthAnchor.constraint(equalToConstant: 28),
                 iconImageView.heightAnchor.constraint(equalToConstant: 28)
             ])
+            
             if #available(iOS 13.0, *) {
                 iconImageView.tintColor = .black //.label
             } else {
                 iconImageView.tintColor = .black
             }
+            
             iconImageView.image = icon
             hStack.addArrangedSubview(iconImageView)
+            
         } else {
+            
             let iconImageView = UIImageView()
             iconImageView.contentMode = .scaleAspectFit
             iconImageView.translatesAutoresizingMaskIntoConstraints = false
+            
             NSLayoutConstraint.activate([
                 iconImageView.widthAnchor.constraint(equalToConstant: 26),
                 iconImageView.heightAnchor.constraint(equalToConstant: 26)
             ])
+            
             if #available(iOS 13.0, *) {
                 iconImageView.tintColor = .black //.label
             } else {
@@ -170,11 +180,13 @@ public class SdkPopupAlertView: UIView {
 
         if let subtitle = subtitle {
             let subtitleLabel = UILabel()
+            
             if #available(iOS 13.0, *) {
                 subtitleLabel.textColor = .black
             } else {
                 subtitleLabel.textColor = .lightGray
             }
+            
             subtitleLabel.textAlignment = .center
             subtitleLabel.numberOfLines = 0
             subtitleLabel.font = subtitleFont
@@ -205,7 +217,6 @@ public class SdkPopupAlertView: UIView {
         layer.cornerRadius = bounds.height / 2
     }
 
-    @available(iOS 10.0, *)
     public func showHapticFeedbackType(haptic: UINotificationFeedbackGenerator.FeedbackType? = nil) {
         if let hapticType = haptic {
             UINotificationFeedbackGenerator().notificationOccurred(hapticType)
@@ -250,8 +261,11 @@ public class SdkPopupAlertView: UIView {
     }
 
     private func setupConstraints(position: Position) {
-        guard let superview = superview else { return }
+        guard let superview = superview else {
+            return
+        }
         translatesAutoresizingMaskIntoConstraints = false
+        
         var constraints = [
             centerXAnchor.constraint(equalTo: superview.centerXAnchor),
             leadingAnchor.constraint(greaterThanOrEqualTo: superview.leadingAnchor, constant: 8),
@@ -261,7 +275,7 @@ public class SdkPopupAlertView: UIView {
 
         switch position {
         case .top:
-            if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_8 || SdkGlobalHelper.DeviceType.IS_IPHONE_8P || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+            if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_SEP || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
                 constraints += [
                     topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor, constant: 68),
                     bottomAnchor.constraint(lessThanOrEqualTo: superview.layoutMarginsGuide.bottomAnchor, constant: -8)
@@ -290,8 +304,8 @@ public class SdkPopupAlertView: UIView {
         hStack.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            hStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
-            hStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
+            hStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 54),
+            hStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -54),
             hStack.topAnchor.constraint(equalTo: topAnchor, constant: 8),
             hStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
         ])

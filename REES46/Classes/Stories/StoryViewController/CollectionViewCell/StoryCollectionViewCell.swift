@@ -6,7 +6,7 @@ protocol StoryCollectionViewCellDelegate: AnyObject {
     func didTapUrlButton(url: String, slide: Slide)
     func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide)
     func sendStructSelectedStorySlide(storySlide: StoriesElement)
-    func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement)
+    func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement)
     func openProductsCarouselView(withProducts: [StoriesProduct], hideLabel: String)
     func closeProductsCarousel()
 }
@@ -24,11 +24,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
     private var currentSlide: Slide?
     private var selectedElement: StoriesElement?
     private var selectedProductsElement: StoriesElement?
-    private var selectedPromoElement: StoriesPromoElement?
+    private var selectedPromoCodeElement: StoriesPromoCodeElement?
     
     public let productWithPromocodeSuperview = PromoCodeView()
     public let promocodeBannerView = PromocodeBanner(location: PromocodeBannerLocation.bottomLeft)
-    public var sdkPopupAlertView = SdkPopupAlertView(title: SdkConfiguration.stories.defaultCopiedMessage)
+    public var sdkPopupAlertView = SdkPopupAlertView(title: SdkConfiguration.stories.defaultCopyToClipboardMessageText)
     
     public weak var cellDelegate: StoryCollectionViewCellDelegate?
     public weak var mainStoriesDelegate: StoriesViewLinkProtocol?
@@ -57,9 +57,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         videoView.backgroundColor = .black
         
+        NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        
         NotificationCenter.default.addObserver(self, selector: #selector(pauseVideo(_:)), name: .init(rawValue: "PauseVideoLongTap"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(playVideo(_:)), name: .init(rawValue: "PlayVideoLongTap"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(deallocAVAudio(_:)), name: .init(rawValue: "deallocAVAudio"), object: nil)
         
         audioSession = AVAudioSession.sharedInstance()
         listenVolumeButton()
@@ -201,9 +203,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 productsButton.layer.cornerRadius = layer.frame.size.height / 2
                 productsButton.layer.masksToBounds = true
                 
-                //promocodeBannerView.dismissWithoutAnimation()
-                //productWithPromocodeSuperview.configPromoView(promoData: selectedPromoElement!)
-                
                 storyButton.configButton(buttonData: element)
                 productsButton.configProductsButton(buttonData: elementProduct)
                 
@@ -223,16 +222,16 @@ class StoryCollectionViewCell: UICollectionViewCell {
             
             if let elementProduct = slide.elements.last(where: {$0.type == .product}) {
                 
-                selectedPromoElement = elementProduct.product!
+                selectedPromoCodeElement = elementProduct.product!
                 
                 promocodeBannerView.dismissWithoutAnimation()
-                productWithPromocodeSuperview.configPromoView(promoData: selectedPromoElement!)
+                productWithPromocodeSuperview.configPromoView(promoData: selectedPromoCodeElement!)
                 productWithPromocodeSuperview.isHidden = false
                 
-                if selectedPromoElement!.discount_percent != 0 {
-                    self.displayPromocodeBanner(promoTitle: elementProduct.title, promoData: self.selectedPromoElement!)
+                if selectedPromoCodeElement!.discount_percent != 0 {
+                    self.displayPromocodeBanner(promoTitle: elementProduct.title, promoData: self.selectedPromoCodeElement!)
                 } else {
-                    self.displayPromocodeBanner(promoTitle: elementProduct.title, promoData: self.selectedPromoElement!)
+                    self.displayPromocodeBanner(promoTitle: elementProduct.title, promoData: self.selectedPromoCodeElement!)
                 }
 
                 insertSubview(muteButton, aboveSubview: productWithPromocodeSuperview)
@@ -424,7 +423,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    func displayPromocodeBanner(promoTitle: String?, promoData: StoriesPromoElement) {
+    func displayPromocodeBanner(promoTitle: String?, promoData: StoriesPromoCodeElement) {
         let screenSize: CGRect = UIScreen.main.bounds
         promocodeBannerView.size = CGSize(width: screenSize.width - 32, height: 68)
         promocodeBannerView.cornerRadius = 6
@@ -440,29 +439,36 @@ class StoryCollectionViewCell: UICollectionViewCell {
         let normalClearText = ""
         let normalAttributedString = NSMutableAttributedString(string:normalClearText)
         
-        var oldPriceText = "     "
+        var oldPriceText = "   "
         if promoData.oldprice != 0 {
-            if Int(promoData.oldprice) >= Int(promoData.price) {
-                oldPriceText = "     " + String(promoData.oldprice_formatted)
-                if (promoData.oldprice_formatted == "") {
-                    oldPriceText = "     " + String(promoData.oldprice)
-                }
-                
-                let attrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16, weight: .heavy),
+            //if Int(promoData.oldprice) >= Int(promoData.price)
+            oldPriceText = "   " + String(promoData.oldprice_formatted)
+            if (promoData.oldprice_formatted == "") {
+                oldPriceText = "   " + String(promoData.oldprice)
+            }
+            
+            var oldPriceTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16, weight: .heavy),
+                         NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                         .foregroundColor: UIColor.white.withAlphaComponent(0.7)] as [NSAttributedString.Key: Any]
+            
+            if oldPriceText.utf16.count >= 10 {
+                //oldPriceText = "    " + String(promoData.oldprice)
+                oldPriceTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .bold),
                              NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
                              .foregroundColor: UIColor.white.withAlphaComponent(0.7)] as [NSAttributedString.Key: Any]
-                let boldString = NSMutableAttributedString(string: oldPriceText, attributes:attrs)
-                normalAttributedString.append(boldString)
-                
-                normalAttributedString.addAttributes([
-                    .strikethroughColor: UIColor.white.withAlphaComponent(0.5)
-                ], range: NSRange(location: 0, length: oldPriceText.count))
-                
-                let spaceText = "  \n"
-                let attrsSpace = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 1, weight: .thin), .foregroundColor: UIColor.white]
-                let boldStringSpace = NSMutableAttributedString(string: spaceText, attributes:attrsSpace)
-                normalAttributedString.append(boldStringSpace)
             }
+            
+            let boldString = NSMutableAttributedString(string: oldPriceText, attributes:oldPriceTextAttrs)
+            normalAttributedString.append(boldString)
+            
+            normalAttributedString.addAttributes([
+                .strikethroughColor: UIColor.white.withAlphaComponent(0.5)
+            ], range: NSRange(location: 0, length: oldPriceText.count))
+            
+            let spaceText = "  \n"
+            let attrsSpace = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 1, weight: .thin), .foregroundColor: UIColor.white]
+            let boldStringSpace = NSMutableAttributedString(string: spaceText, attributes:attrsSpace)
+            normalAttributedString.append(boldStringSpace)
         }
         
         var formattedPriceWithPromocode = String(promoData.price_with_promocode_formatted)
@@ -482,20 +488,33 @@ class StoryCollectionViewCell: UICollectionViewCell {
         } else if newPriceText.utf16.count <= 12 {
             newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 23, weight: .black), .foregroundColor: UIColor.white]
         } else if newPriceText.utf16.count <= 16 {
-            newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 17, weight: .bold), .foregroundColor: UIColor.white]
+            newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 17, weight: .black), .foregroundColor: UIColor.white]
         } else {
-            newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .bold), .foregroundColor: UIColor.white]
+            newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .black), .foregroundColor: UIColor.white]
         }
         
-        let boldString1 = NSMutableAttributedString(string: newPriceText, attributes:newPriceTextAttributes)
-        normalAttributedString.append(boldString1)
+        let boldString = NSMutableAttributedString(string: newPriceText, attributes:newPriceTextAttributes)
+        normalAttributedString.append(boldString)
         
         let currencyText = " " + promoData.currency
-        let attrs2 = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: UIColor.white]
-        let boldString2 = NSMutableAttributedString(string: currencyText, attributes:attrs2)
-        normalAttributedString.append(boldString2)
+        var currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: UIColor.white]
+        if newPriceText.utf16.count <= 10 {
+            currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 26, weight: .black), .foregroundColor: UIColor.white]
+        } else if newPriceText.utf16.count <= 11 {
+            currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .black), .foregroundColor: UIColor.white]
+        } else if newPriceText.utf16.count <= 12 {
+            currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 23, weight: .black), .foregroundColor: UIColor.white]
+        } else if newPriceText.utf16.count <= 16 {
+            currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 17, weight: .black), .foregroundColor: UIColor.white]
+        } else {
+            currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .black), .foregroundColor: UIColor.white]
+        }
         
-        presentedBannerLabel.numberOfLines = 3 //0
+        //let currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: UIColor.white]
+        let currencyTextBoldString = NSMutableAttributedString(string: currencyText, attributes:currencyTextAttrs)
+        normalAttributedString.append(currencyTextBoldString)
+        
+        presentedBannerLabel.numberOfLines = 3
         presentedBannerLabel.attributedText = normalAttributedString
         
         let nextStepSymbol = " \n"
@@ -524,11 +543,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
         } else {
             var priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .heavy), .foregroundColor: UIColor.white]
             if codePromo.utf16.count <= 4 {
-                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 31, weight: .heavy), .foregroundColor: UIColor.white]
+                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 31, weight: .heavy), .foregroundColor: UIColor.white]
             } else if codePromo.utf16.count <= 8 {
-                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 27, weight: .heavy), .foregroundColor: UIColor.white]
+                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 27, weight: .heavy), .foregroundColor: UIColor.white]
             } else if codePromo.utf16.count < 11 {
-                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .heavy), .foregroundColor: UIColor.white]
+                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .heavy), .foregroundColor: UIColor.white]
             } else if codePromo.utf16.count <= 12 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 20, weight: .heavy), .foregroundColor: UIColor.white]
             } else if codePromo.utf16.count <= 14 {
@@ -536,7 +555,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else if codePromo.utf16.count <= 16 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 15, weight: .bold), .foregroundColor: UIColor.white]
             } else if codePromo.utf16.count <= 18 {
-                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .bold), .foregroundColor: UIColor.white]
+                priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 13, weight: .bold), .foregroundColor: UIColor.white]
             } else {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 11, weight: .regular), .foregroundColor: UIColor.white]
             }
@@ -626,7 +645,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     public func copyPromocodeToClipboard() {
         let pasteboard = UIPasteboard.general
-        pasteboard.string = selectedPromoElement?.promocode
+        pasteboard.string = selectedPromoCodeElement?.promocode
         
         if (sdkPopupAlertView.window != nil) {
             return
@@ -662,7 +681,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     private func didTapButton() {
         
-        if let promoCodeDeeplinkIos = selectedPromoElement?.deeplinkIos, !promoCodeDeeplinkIos.isEmpty {
+        if let promoCodeDeeplinkIos = selectedPromoCodeElement?.deeplinkIos, !promoCodeDeeplinkIos.isEmpty {
             if let currentSlide = currentSlide {
                 
                 UserDefaults.standard.set(Int(currentSlide.id), forKey: "LastViewedSlideMemorySetting")
@@ -670,7 +689,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
 //#warning ("TODO Production")
                 //cellDelegate?.didTapUrlButton(url: promoCodeDeeplinkIos, slide: currentSlide)
                 
-                cellDelegate?.sendStructSelectedPromocodeSlide(promoSlide: selectedPromoElement!)
+                cellDelegate?.sendStructSelectedPromocodeSlide(promoCodeSlide: selectedPromoCodeElement!)
                 cellDelegate?.didTapOpenLinkExternalServiceMethod(url: promoCodeDeeplinkIos, slide: currentSlide)
                 return
             }
@@ -729,9 +748,18 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     @objc
-    public func deallocAVAudio(_ notification: NSNotification) {
-        outputVolumeObservation = nil
-        //safeRemoveObserver(audioSession, forKeyPath: "outputVolume")
+    func willEnterForeground() {
+        do {
+            try audioSession.setCategory(AVAudioSession.Category.playback)
+        } catch {
+            print("SDK Error in AVAudio Session\(error.localizedDescription)")
+        }
+        player.play()
+    }
+
+    @objc
+    func didEnterBackground() {
+        player.pause()
     }
     
     func stopPlayer() {
@@ -822,7 +850,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                     muteButton.widthAnchor.constraint(equalToConstant: 48),
                     muteButton.heightAnchor.constraint(equalToConstant: 48)
                 ]
-                if selectedPromoElement != nil {
+                if selectedPromoCodeElement != nil {
                     muteButtonConstraints = [
                         muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
                         muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -163),
@@ -906,7 +934,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                     muteButton.widthAnchor.constraint(equalToConstant: 48),
                     muteButton.heightAnchor.constraint(equalToConstant: 48)
                 ]
-                if selectedPromoElement != nil {
+                if selectedPromoCodeElement != nil {
                     muteButtonConstraints = [
                         muteButton.leadingAnchor.constraint(equalTo: storyButton.leadingAnchor, constant: -7),
                         muteButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -163),
@@ -939,7 +967,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     deinit {
         audioSession.removeObserver(self, forKeyPath: "outputVolume", context: nil)
-        //AVAudioSession.sharedInstance().removeObserver(self, forKeyPath: "outputVolume", context: nil)
     }
 }
 

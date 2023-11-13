@@ -120,14 +120,10 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
             if (SdkStyle.shared.currentColorScheme?.storiesBlockFontColor == UIColor.sdkDefaultBlackColor) {
                 storyAuthorNameLabel.textColor = UIColor(red: labelColor.red, green: labelColor.green, blue: labelColor.blue, alpha: 1)
             } else {
-                if #available(iOS 12.0, *) {
-                    if SdkConfiguration.isDarkMode {
-                        storyAuthorNameLabel.textColor = SdkConfiguration.stories.storiesBlockTextColorChanged_Dark
-                    } else {
-                        storyAuthorNameLabel.textColor = SdkConfiguration.stories.storiesBlockTextColorChanged_Light
-                    }
+                if SdkConfiguration.isDarkMode {
+                    storyAuthorNameLabel.textColor = SdkConfiguration.stories.storiesBlockTextColorChanged_Dark
                 } else {
-                    storyAuthorNameLabel.textColor = .black
+                    storyAuthorNameLabel.textColor = SdkConfiguration.stories.storiesBlockTextColorChanged_Light
                 }
             }
             
@@ -142,24 +138,25 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     let size = SdkStyle.shared.currentColorScheme?.storiesBlockSelectFontSize ?? 15.0
                     storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(size))
                 } else {
-                    //storyAuthorNameLabel.maximumFontSizeBySdk = CGFloat(settings.fontSize)
                     storyAuthorNameLabel.font = .systemFont(ofSize: CGFloat(settings.fontSize))
                 }
             }
             
             storyBackCircle.backgroundColor = .white
+            
             let pinBgColor = settings.backgroundPin.hexToRGB()
             if SdkConfiguration.stories.pinColor != "" {
                 var updPinColor = SdkConfiguration.stories.pinColor.hexToRGB()
-                if #available(iOS 12.0, *) {
-                    if SdkConfiguration.isDarkMode {
-                        updPinColor = SdkConfiguration.stories.pinColorDarkMode.hexToRGB()
-                    }
+                
+                if SdkConfiguration.isDarkMode {
+                    updPinColor = SdkConfiguration.stories.pinColorDarkMode.hexToRGB()
                 }
+                
                 pinSymbolView.backgroundColor = UIColor(red: updPinColor.red, green: updPinColor.green, blue: updPinColor.blue, alpha: 1)
             } else {
                 pinSymbolView.backgroundColor = UIColor(red: pinBgColor.red, green: pinBgColor.green, blue: pinBgColor.blue, alpha: 1)
             }
+            
             pinSymbolLabel.text = settings.pinSymbol
             
             let storiesViewdBg = settings.borderViewed.hexToRGB()
@@ -179,11 +176,11 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                 } else {
                     var updViewedColor = SdkConfiguration.stories.iconViewedBorderColor.hexToRGB()
                     let animatedLoaderColor = SdkConfiguration.stories.iconAnimatedLoaderColor.hexToRGB()
-                    if #available(iOS 12.0, *) {
-                        if SdkConfiguration.isDarkMode {
-                            updViewedColor = SdkConfiguration.stories.iconViewedBorderColorDarkMode.hexToRGB()
-                        }
+                    
+                    if SdkConfiguration.isDarkMode {
+                        updViewedColor = SdkConfiguration.stories.iconViewedBorderColorDarkMode.hexToRGB()
                     }
+                    
                     storyWhiteBackCircle.backgroundColor = UIColor(red: updViewedColor.red, green: updViewedColor.green, blue: updViewedColor.blue, alpha: 1)
                     
                     storiesBlockAnimatedLoader.strokeColor = UIColor(red: animatedLoaderColor.red, green: animatedLoaderColor.green, blue: animatedLoaderColor.blue, alpha: 1)
@@ -198,11 +195,11 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                 } else {
                     var updNotViewedColor = SdkConfiguration.stories.iconNotViewedBorderColor.hexToRGB()
                     let animatedLoaderColor = SdkConfiguration.stories.iconAnimatedLoaderColor.hexToRGB()
-                    if #available(iOS 12.0, *) {
-                        if SdkConfiguration.isDarkMode {
-                            updNotViewedColor = SdkConfiguration.stories.iconNotViewedBorderColorDarkMode.hexToRGB()
-                        }
+                    
+                    if SdkConfiguration.isDarkMode {
+                        updNotViewedColor = SdkConfiguration.stories.iconNotViewedBorderColorDarkMode.hexToRGB()
                     }
+                    
                     storyWhiteBackCircle.backgroundColor = UIColor(red: updNotViewedColor.red, green: updNotViewedColor.green, blue: updNotViewedColor.blue, alpha: 1)
                     
                     storiesBlockAnimatedLoader.strokeColor = UIColor(red: animatedLoaderColor.red, green: animatedLoaderColor.green, blue: animatedLoaderColor.blue, alpha: 1)

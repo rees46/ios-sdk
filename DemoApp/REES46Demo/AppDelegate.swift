@@ -45,10 +45,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         })
         
 //        //SDK Configuration init Font first
-//        sdk.configuration().stories.registerFont(fileName: "Museo900", fileExtension: FontExtension.otf.rawValue) //or ttf!
+//        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
 
 //        //SDK Configuration settings
-//        sdk.configuration().stories.setStoriesBlock(fontName: "Museo",
+//        sdk.configuration().stories.setStoriesBlock(fontName: "Inter",
 //                                                    fontSize: 15.0,
 //                                                    textColor: "#5ec169",
 //                                                    textColorDarkMode: "#5ec169",
@@ -72,7 +72,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                    pinColorDarkMode: "#fd7c50",
 //                                                    closeIconColor: "#5ec169")
 
-//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Museo",
+//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Inter",
 //                                                          fontSize: 17.0,
 //                                                          textColor: "#ffffff",
 //                                                          backgroundColor: "#5ec169",
@@ -80,7 +80,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                          backgroundColorDarkMode: "#ffffff",
 //                                                          cornerRadius: 5)
 
-//        sdk.configuration().stories.setSlideProductsButton(fontName: "Museo",
+//        sdk.configuration().stories.setSlideProductsButton(fontName: "Inter",
 //                                                           fontSize: 17.0,
 //                                                           textColor: "#ffffff",
 //                                                           backgroundColor: "#5ec169",
@@ -88,9 +88,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           backgroundColorDarkMode: "#ffffff",
 //                                                           cornerRadius: 5)
 
-//        sdk.configuration().stories.setProductsCard(fontName: "Museo")
+//        sdk.configuration().stories.setProductsCard(fontName: "Inter")
 
-//        sdk.configuration().stories.setPromocodeCard(productTitleFontName: "Museo",
+//        sdk.configuration().stories.setPromocodeCard(productTitleFontName: "Inter",
 //                                                     productTitleFontSize: 19.0,
 //                                                     productTitleTextColor: "#5ec169",
 //                                                     productTitleTextColorDarkMode: "#5ec169",
@@ -99,9 +99,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                     productBannerPriceSectionBackgroundColor: "#fd7c50",
 //                                                     productBannerPromocodeSectionBackgroundColor: "#17aadf",
 //                                                     discountSectionBackgroundColor: "#ea1717",
-//                                                     productBannerDefaultMessage: "Copied")
+//                                                     copyToClipboardMessage: "Copied"
+//        )
+        
+//        //SDK Recommendations Widget settings
+//        sdk.configuration().recommendations.setWidgetBlock(widgetFontName: "Inter",
+//                                                           widgetBackgroundColor: "#ffffff",
+//                                                           widgetBackgroundColorDarkMode: "#000000",
+//                                                           widgetCellBackgroundColor: "#ffffff",
+//                                                           widgetCellBackgroundColorDarkMode: "#000000",
+//                                                           widgetBorderWidth: 1,
+//                                                           widgetBorderColor: "#c3c3c3",
+//                                                           widgetBorderColorDarkMode: "#c3c3c3",
+//                                                           widgetBorderTransparent: 0.4,
+//                                                           widgetCornerRadius: 9,
+//                                                           widgetStarsColor: "#ff9500",
+//                                                           widgetAddToCartButtonText: "Add to cart",
+//                                                           widgetRemoveFromCartButtonText: "Remove from cart",
+//                                                           widgetAddToCartButtonFontSize: 17,
+//                                                           widgetRemoveFromCartButtonFontSize: 14,
+//                                                           widgetCartButtonTextColor: "#ffffff",
+//                                                           widgetCartButtonTextColorDarkMode: "#ffffff",
+//                                                           widgetCartButtonBackgroundColor: "#000000",
+//                                                           widgetCartButtonBackgroundColorDarkMode: "#ffffff",
+//                                                           widgetCartButtonNeedOpenWebUrl: false,
+//                                                           widgetFavoritesIconColor: "#000000",
+//                                                           widgetFavoritesIconColorDarkMode: "#ffffff",
+//                                                           widgetPreloadIndicatorColor: "#ffffff"
+//        )
 
 //        //SDK Stories block autoreload settings
+//        sdk.configuration().stories.useSdkOldInitialization = false //default false - will be deprecated November 14
 //        sdk.configuration().stories.storiesSlideReloadManually = false //default false - autoreload enabled
 //        sdk.configuration().stories.storiesSlideReloadTimeoutInterval = 10 //default infinity
 //        sdk.configuration().stories.storiesSlideReloadIndicatorDisabled = false //default false - indicator enabled

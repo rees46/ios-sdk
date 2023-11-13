@@ -233,33 +233,33 @@ extension RWebViewController:UIGestureRecognizerDelegate {
     @objc
     private func handlePanning(_ gestureRecognizer: UIPanGestureRecognizer?) {
     
-    if gestureRecognizer?.state == .began {
-        lastLocation = container.center
-    }
-    
-    if gestureRecognizer?.state != .cancelled {
-        guard let translation: CGPoint = gestureRecognizer?
-            .translation(in: view) else { return }
-        container.center = CGPoint(
-            x: container.center.x,
-            y: lastLocation.y + translation.y)
-    }
-    
-    if gestureRecognizer?.state == .ended {
-        if container.frame.origin.y > view.frame.size.height/2.0 {
-            dismiss()
-            return
+        if gestureRecognizer?.state == .began {
+            lastLocation = container.center
         }
         
-        UIView.animate(
-            withDuration: 0.7,
-            delay: 0.0,
-            usingSpringWithDamping: 0.5,
-            initialSpringVelocity: 0.5,
-            options: .allowUserInteraction,
-            animations: {
-              self.container.center = self.lastLocation
-                
+        if gestureRecognizer?.state != .cancelled {
+            guard let translation: CGPoint = gestureRecognizer?
+                .translation(in: view) else { return }
+            container.center = CGPoint(
+                x: container.center.x,
+                y: lastLocation.y + translation.y)
+        }
+        
+        if gestureRecognizer?.state == .ended {
+            if container.frame.origin.y > view.frame.size.height/2.0 {
+                dismiss()
+                return
+            }
+            
+            UIView.animate(
+                withDuration: 0.7,
+                delay: 0.0,
+                usingSpringWithDamping: 0.5,
+                initialSpringVelocity: 0.5,
+                options: .allowUserInteraction,
+                animations: {
+                  self.container.center = self.lastLocation
+                    
             }) { finished in
                 
             }
@@ -269,11 +269,10 @@ extension RWebViewController:UIGestureRecognizerDelegate {
 
 
 extension RWebViewController:WKNavigationDelegate {
-
-public func webView(
-    _ webView: WKWebView,
-    decidePolicyFor navigationAction: WKNavigationAction,
-    decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    
+    public func webView(_ webView: WKWebView,
+                        decidePolicyFor navigationAction: WKNavigationAction,
+                        decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         switch navigationAction.navigationType {
         case .linkActivated:
             webView.load(navigationAction.request)

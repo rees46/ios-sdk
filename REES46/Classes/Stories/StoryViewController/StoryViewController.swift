@@ -10,6 +10,11 @@ public protocol CarouselCollectionViewCellDelegate: AnyObject {
     func sendStructSelectedCarouselProduct(product: StoriesProduct)
 }
 
+//public protocol RecommendationsWidgetViewCellDelegate: AnyObject {
+//    func addToCartWidgetAction(product: StoriesProduct)
+//    func addToFavoritesWidgetAction(product: StoriesProduct)
+//}
+
 public class NavigationStackController: UINavigationController {
     
     open weak var stackDelegate: UINavigationControllerDelegate?
@@ -51,7 +56,6 @@ private var collectionView: UICollectionView = {
         collectionView.backgroundColor = .black
         collectionView.showsVerticalScrollIndicator = false
         collectionView.showsHorizontalScrollIndicator = false
-        //collectionView.isScrollEnabled = false
         collectionView.isPrefetchingEnabled = false
         return collectionView
     }()
@@ -140,43 +144,36 @@ private var collectionView: UICollectionView = {
     }
     
     public override func traitCollectionDidChange (_ previousTraitCollection: UITraitCollection?) {
-        if #available(iOS 12.0, *) {
-            super.traitCollectionDidChange(previousTraitCollection)
-            let userInterfaceStyle = traitCollection.userInterfaceStyle
-            if UIApplication.shared.applicationState == .inactive {
-                switch userInterfaceStyle {
-                case .unspecified:
-                    let storySlideId = stories[currentPosition.section].id
-                    let cachedSlideId = "1111" + storySlideId
-                    let userInfo = ["url": cachedSlideId] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
-                    self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
-                    self.sdkLinkDelegate?.updateBgColor()
-                    self.collectionView.reloadData()
-                case .light:
-                    let storySlideId = stories[currentPosition.section].id
-                    let cachedSlideId = "1111" + storySlideId
-                    let userInfo = ["url": cachedSlideId] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
-                    self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
-                    self.sdkLinkDelegate?.updateBgColor()
-                    self.collectionView.reloadData()
-                case .dark:
-                    let storySlideId = stories[currentPosition.section].id
-                    let cachedSlideId = "1111" + storySlideId
-                    let userInfo = ["url": cachedSlideId] as [String: Any]
-                    NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
-                    self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
-                    self.sdkLinkDelegate?.updateBgColor()
-                    self.collectionView.reloadData()
-                @unknown default:
-                    break
-                }
-            }
-        } else {
-            DispatchQueue.main.async {
-                self.collectionView.backgroundColor = .white
+        super.traitCollectionDidChange(previousTraitCollection)
+        let userInterfaceStyle = traitCollection.userInterfaceStyle
+        if UIApplication.shared.applicationState == .inactive {
+            switch userInterfaceStyle {
+            case .unspecified:
+                let storySlideId = stories[currentPosition.section].id
+                let cachedSlideId = "cached.slide." + storySlideId
+                let userInfo = ["url": cachedSlideId] as [String: Any]
+                NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
+                self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                self.sdkLinkDelegate?.updateBgColor()
                 self.collectionView.reloadData()
+            case .light:
+                let storySlideId = stories[currentPosition.section].id
+                let cachedSlideId = "cached.slide." + storySlideId
+                let userInfo = ["url": cachedSlideId] as [String: Any]
+                NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
+                self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                self.sdkLinkDelegate?.updateBgColor()
+                self.collectionView.reloadData()
+            case .dark:
+                let storySlideId = stories[currentPosition.section].id
+                let cachedSlideId = "cached.slide." + storySlideId
+                let userInfo = ["url": cachedSlideId] as [String: Any]
+                NotificationCenter.default.post(name:Notification.Name(cachedSlideId), object: userInfo)
+                self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
+                self.sdkLinkDelegate?.updateBgColor()
+                self.collectionView.reloadData()
+            @unknown default:
+                break
             }
         }
     }
@@ -234,7 +231,7 @@ private var collectionView: UICollectionView = {
         }
         
         if SdkConfiguration.stories.storiesSlideReloadIndicatorDisabled {
-            //Implementation
+            //Disable implementation
         } else {
             storiesSlideReloadIndicator.translatesAutoresizingMaskIntoConstraints = false
             storiesSlideReloadIndicator.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor).isActive = true
@@ -580,6 +577,9 @@ private var collectionView: UICollectionView = {
                 //print("SDK Video duration is \(videoDurationSeconds)")
             } else {
                 //print("SDK Error can not detect video duration")
+                //let duration = AVURLAsset(url: storySlideMedia.videoURL!).duration.seconds
+                //let vTime = String(format:"%d", Int(duration.truncatingRemainder(dividingBy: 60)))
+                //print(vTime)
             }
         }
         
@@ -610,7 +610,7 @@ private var collectionView: UICollectionView = {
         currentDuration = duration
         
         let superviewSlideId = stories[currentPosition.section].slides[currentPosition.row].id
-        let cachedSlideMediaId = "1111" + superviewSlideId
+        let cachedSlideMediaId = "cached.slide." + superviewSlideId
         
         let imagesForStoriesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(cachedSlideMediaId)) as? [String] ?? []
         let imageStoryIdDownloaded = imagesForStoriesDownloadedArray.contains(where: {
@@ -643,10 +643,6 @@ private var collectionView: UICollectionView = {
             
             NotificationCenter.default.removeObserver(self, name: NSNotification.Name(cachedSlideMediaId), object: nil)
             NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(cachedSlideMediaId), object: nil)
-            
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 20) {
-//                self.storiesSlideReloadIndicator.alpha = 0.0
-//            }
         }
     }
     
@@ -757,7 +753,7 @@ private var collectionView: UICollectionView = {
         }
     }
     
-    private func openUrl(link: String) {
+    public func openUrl(link: String) {
         if let linkUrl = URL(string: link) {
             pauseTimer()
             
@@ -903,7 +899,7 @@ private var collectionView: UICollectionView = {
         
         if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 420).isActive = true
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8 || SdkGlobalHelper.DeviceType.IS_IPHONE_8P {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_SEP {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 430).isActive = true
         } else {
             carouselProductsSlideCollectionView.heightAnchor.constraint(equalToConstant: 450).isActive = true
@@ -967,12 +963,12 @@ private var collectionView: UICollectionView = {
         }
     }
     
-    public func sendStructSelectedPromocodeSlide(promoSlide: StoriesPromoElement) {
+    public func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement) {
         pauseTimer()
         
         let sIdDetect: Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-        self.sdkLinkDelegate?.sendStructSelectedPromocodeSlide(promoSlide: promoSlide)
+        self.sdkLinkDelegate?.sendStructSelectedPromocodeSlide(promoCodeSlide: promoCodeSlide)
     }
     
     @objc
