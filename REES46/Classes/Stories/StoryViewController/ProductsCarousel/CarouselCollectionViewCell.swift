@@ -108,10 +108,10 @@ class CarouselCollectionViewCell: UICollectionViewCell {
         carouselMainImageView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         carouselMainImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         carouselMainImageView.topAnchor.constraint(equalTo: topAnchor, constant: 20).isActive = true
-        carouselMainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1).isActive = true
+        carouselMainImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1/2).isActive = true
         
         carouselProductNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true
-        carouselProductNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        carouselProductNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8).isActive = true
         carouselProductNameLabel.topAnchor.constraint(equalTo: carouselMainImageView.bottomAnchor, constant: 12).isActive = true
         
         carouselOldCostLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20).isActive = true

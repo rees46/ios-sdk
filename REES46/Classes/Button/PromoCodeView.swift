@@ -17,7 +17,7 @@ class PromoCodeView: UIView {
         promoProductNameLabel.removeFromSuperview()
         
         if (promoData.name != "") {
-            if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_SEP || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
+            if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_8_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
                 promoProductNameLabel.frame = CGRect(x: frame.minX + 18, y: frame.minY + 72, width: frame.width - 60, height: 80)
             } else {
                 promoProductNameLabel.frame = CGRect(x: frame.minX + 18, y: frame.minY + 116, width: frame.width - 60, height: 80)

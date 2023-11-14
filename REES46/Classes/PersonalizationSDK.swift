@@ -163,7 +163,7 @@ public extension PersonalizationSDK {
         manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, completion: completion)
     }
     
-    func resetCachedSlidesStates() {
+    func resetSdkCache() {
         let included_prefixes = ["viewed.slide."]
         let dict = UserDefaults.standard.dictionaryRepresentation()
         let keys = dict.keys.filter { key in
@@ -248,6 +248,7 @@ public extension PersonalizationSDK {
 public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com", stream: String = "ios", enableLogs: Bool = false, _ completion: ((SDKError?) -> Void)? = nil) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(shopId: shopId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, apiDomain: apiDomain, stream: stream, enableLogs: enableLogs, completion: completion)
     
-    sdk.resetCachedSlidesStates()
+    sdk.resetSdkCache()
+    
     return sdk
 }

@@ -1,11 +1,11 @@
 import UIKit
 
-protocol RecommendationsWidgetViewCellDelegate: AnyObject {
+public protocol RecommendationsWidgetViewCellDelegate: AnyObject {
     func didTapWidgetAddToCartButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint)
     func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint)
 }
 
-class RecommendationsWidgetViewCell: UICollectionViewCell {
+public class RecommendationsWidgetViewCell: UICollectionViewCell {
     
     static let reuseRecommCellId = "RecommendationsWidgetViewCell"
 
@@ -237,12 +237,12 @@ class RecommendationsWidgetViewCell: UICollectionViewCell {
         
         if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
             recommendationsFavoritesButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14).isActive = true
-            recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
+            recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -21).isActive = true
             recommendationsFavoritesButton.widthAnchor.constraint(equalToConstant: 27).isActive = true
             recommendationsFavoritesButton.heightAnchor.constraint(equalToConstant: 27).isActive = true
         } else {
             recommendationsFavoritesButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18).isActive = true
-            recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -22).isActive = true
+            recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -21).isActive = true
             recommendationsFavoritesButton.widthAnchor.constraint(equalToConstant: 27).isActive = true
             recommendationsFavoritesButton.heightAnchor.constraint(equalToConstant: 27).isActive = true
         }

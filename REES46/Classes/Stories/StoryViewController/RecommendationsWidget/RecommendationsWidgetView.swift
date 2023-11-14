@@ -1,5 +1,11 @@
 import UIKit
 
+public protocol RecommendationsWidgetCommunicationProtocol: AnyObject {
+    func addToCartProductData(product: Recommended)
+    func addToFavoritesProductData(product: Recommended)
+    func didTapOnProduct(product: Recommended)
+}
+
 open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, RecommendationsWidgetViewCellDelegate {
     
     public var cells = [Recommended]()
@@ -9,6 +15,8 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     private static var rowsCount = 100
     
     public let recommendationsCollectionWidgetIndicator = StoriesSlideReloadIndicator()
+    
+    public weak var recommendationsDelegate: RecommendationsWidgetCommunicationProtocol?
     
     public init() {
         let layout = UICollectionViewFlowLayout()
@@ -239,7 +247,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         return cell
     }
     
-    func didTapWidgetAddToCartButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
+    public func didTapWidgetAddToCartButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
         if let indexPath = indexPath(for: cell) {
             let selectedProductForCartFromWidget = cells[indexPath.row]
             
@@ -259,6 +267,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 UIView.performWithoutAnimation({
                     self.reloadData()
                 })
+                
             } else {
                 if let index = viewedSlidesCartCachedArray.firstIndex(of: selectedProductForCartFromWidget.id) {
                     viewedSlidesCartCachedArray.remove(at: index)
@@ -272,7 +281,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 })
             }
             
-            print("User did tap Add To Cart from Recommendations widget\nProduct id: \(selectedProductForCartFromWidget.id)")
+            print("User did tap Add/Remove To Cart from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForCartFromWidget.id)")
             print("Product name: \(selectedProductForCartFromWidget.name)")
             print("Product brand: \(selectedProductForCartFromWidget.brand)")
             print("Product model: \(selectedProductForCartFromWidget.model)")
@@ -286,17 +295,22 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             print("Product priceFullFormatted: \(String(describing: selectedProductForCartFromWidget.priceFullFormatted))")
             print("Product currency: \(selectedProductForCartFromWidget.currency)")
             
+            recommendationsDelegate?.addToCartProductData(product: selectedProductForCartFromWidget)
+            
+//#warning ("TODO Production")
+            //openWidgetUrl(link: selectedProductForCartFromWidget.url)
+            
             if SdkConfiguration.recommendations.widgetCartButtonNeedOpenWebUrl {
                 openWidgetUrl(link: selectedProductForCartFromWidget.url)
             }
         }
     }
     
-    func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
+    public func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
         if let indexPath = indexPath(for: cell) {
             let selectedProductForFavoritesFromWidget = cells[indexPath.row]
             
-            print("User did tap Add To Favorites from Recommendations widget\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
+            print("User did tap Add/Remove To Favorites from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
             print("Favorite product name: \(selectedProductForFavoritesFromWidget.name)")
             print("Favorite product brand: \(selectedProductForFavoritesFromWidget.brand)")
             print("Favorite product model: \(selectedProductForFavoritesFromWidget.model)")
@@ -334,6 +348,8 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                     self.reloadData()
                 })
             }
+            
+            recommendationsDelegate?.addToFavoritesProductData(product: selectedProductForFavoritesFromWidget)
         }
     }
     
@@ -383,7 +399,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        //let selectedRecommendationProduct = cells[indexPath.row]
+        let selectedRecommendationProductFroCell = cells[indexPath.row]
+        recommendationsDelegate?.didTapOnProduct(product: selectedRecommendationProductFroCell)
+        print("User did tap cell fro Recoenndations Widget\nUse 'recommendationsDelegate' for interactions\n Product id: \(selectedRecommendationProductFroCell.id)")
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

@@ -638,6 +638,12 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         set { promoProductTitleTextColorDarkMode = newValue }
     }
     
+    public var bannerOldPriceSectionFontColor: UIColor?
+    public var bannerOldPriceSectionFontColorConstant: UIColor {
+        get { return .white }
+        set { bannerOldPriceSectionFontColor = newValue }
+    }
+    
     public var bannerPriceSectionFontColor: UIColor?
     public var bannerPriceSectionFontColorConstant: UIColor {
         get { return .white }
@@ -652,7 +658,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var bannerPriceSectionBackgroundColor: UIColor?
     public var bannerPriceSectionBackgroundConstant: UIColor {
-        get { return .blue }
+        get { return .orange }
         set { bannerPriceSectionBackgroundColor = newValue }
     }
 
@@ -668,22 +674,23 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         set { bannerDiscountSectionBackgroundColor = newValue }
     }
     
-    public func setPromocodeCard(productTitleFontName: String? = nil,
+    public func setPromocodeCard(productBannerFontName: String? = nil,
                                  productTitleFontSize: CGFloat? = nil,
                                  productTitleTextColor: String? = nil,
                                  productTitleTextColorDarkMode: String? = nil,
+                                 productBannerOldPriceSectionFontColor: String? = nil,
                                  productBannerPriceSectionFontColor: String? = nil,
-                                 productBannerPromocodeSectionFontColor: String? = nil,
                                  productBannerPriceSectionBackgroundColor: String? = nil,
+                                 productBannerPromocodeSectionFontColor: String? = nil,
                                  productBannerPromocodeSectionBackgroundColor: String? = nil,
-                                 discountSectionBackgroundColor: String? = nil,
-                                 copyToClipboardMessage: String? = "Copied") {
+                                 productBannerDiscountSectionBackgroundColor: String? = nil,
+                                 productBannerPromocodeCopyToClipboardMessage: String? = "Copied") {
         
-        if productTitleFontName != nil {
-            if productTitleFontName == promoCodeSlideFontNameConstant {
+        if productBannerFontName != nil {
+            if productBannerFontName == promoCodeSlideFontNameConstant {
                 promoCodeSlideFontNameChanged = nil
             } else {
-                promoCodeSlideFontNameChanged = productTitleFontName
+                promoCodeSlideFontNameChanged = productBannerFontName
             }
         }
         
@@ -700,21 +707,24 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         promoProductTitleTextColorLightMode = uipromoProductTitleTextColorLightMode
         promoProductTitleTextColorDarkMode = uipromoProductTitleTextColorDarkMode
         
+        let uiOldProductBannerPriceSectionFontColor = UIColor(hexString: productBannerOldPriceSectionFontColor ?? UIColor.sdkDefaultWhiteColor.toHexString())
+        
         let uiProductBannerPriceSectionFontColor = UIColor(hexString: productBannerPriceSectionFontColor ?? UIColor.sdkDefaultWhiteColor.toHexString())
         let uiProductBannerPromocodeSectionFontColor = UIColor(hexString: productBannerPromocodeSectionFontColor ?? UIColor.sdkDefaultWhiteColor.toHexString())
         let uiProductBannerPriceSectionBackgroundColor = UIColor(hexString: productBannerPriceSectionBackgroundColor ?? UIColor.sdkDefaultOrangeColor.toHexString())
         let uiProductBannerPromocodeSectionBackgroundColor = UIColor(hexString: productBannerPromocodeSectionBackgroundColor ?? UIColor.sdkDefaultBlueColor.toHexString())
         
+        bannerOldPriceSectionFontColor = uiOldProductBannerPriceSectionFontColor
         bannerPriceSectionFontColor = uiProductBannerPriceSectionFontColor
         bannerPromocodeSectionFontColor = uiProductBannerPromocodeSectionFontColor
         
         bannerPriceSectionBackgroundColor = uiProductBannerPriceSectionBackgroundColor
         bannerPromocodeSectionBackgroundColor = uiProductBannerPromocodeSectionBackgroundColor
         
-        let uiDiscountBannerSectionBackgroundColor = UIColor(hexString: discountSectionBackgroundColor ?? UIColor.sdkDefaultYellowColor.toHexString())
+        let uiDiscountBannerSectionBackgroundColor = UIColor(hexString: productBannerDiscountSectionBackgroundColor ?? UIColor.sdkDefaultYellowColor.toHexString())
         bannerDiscountSectionBackgroundColor = uiDiscountBannerSectionBackgroundColor
         
-        defaultCopyToClipboardMessageText = copyToClipboardMessage!
+        defaultCopyToClipboardMessageText = productBannerPromocodeCopyToClipboardMessage!
         //defaultCopyToClipboardMessageWidth = copyToClipboardWidth!
     }
     

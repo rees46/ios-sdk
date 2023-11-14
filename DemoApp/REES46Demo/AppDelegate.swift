@@ -90,17 +90,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 //        sdk.configuration().stories.setProductsCard(fontName: "Inter")
 
-//        sdk.configuration().stories.setPromocodeCard(productTitleFontName: "Inter",
-//                                                     productTitleFontSize: 19.0,
+//        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
+//                                                     productTitleFontSize: 16.0,
 //                                                     productTitleTextColor: "#5ec169",
 //                                                     productTitleTextColorDarkMode: "#5ec169",
-//                                                     productBannerPriceSectionFontColor: "#d6d6d6",
-//                                                     productBannerPromocodeSectionFontColor: "#5ec169",
-//                                                     productBannerPriceSectionBackgroundColor: "#fd7c50",
-//                                                     productBannerPromocodeSectionBackgroundColor: "#17aadf",
-//                                                     discountSectionBackgroundColor: "#ea1717",
-//                                                     copyToClipboardMessage: "Copied"
-//        )
+//                                                     productBannerOldPriceSectionFontColor: "#5ec169",
+//                                                     productBannerPriceSectionFontColor: "#5ec169",
+//                                                     productBannerPriceSectionBackgroundColor: "#ffffff",
+//                                                     productBannerPromocodeSectionFontColor: "#ff0000",
+//                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
+//                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
+//                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
         
 //        //SDK Recommendations Widget settings
 //        sdk.configuration().recommendations.setWidgetBlock(widgetFontName: "Inter",
@@ -125,8 +125,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           widgetCartButtonNeedOpenWebUrl: false,
 //                                                           widgetFavoritesIconColor: "#000000",
 //                                                           widgetFavoritesIconColorDarkMode: "#ffffff",
-//                                                           widgetPreloadIndicatorColor: "#ffffff"
-//        )
+//                                                           widgetPreloadIndicatorColor: "#ffffff")
 
 //        //SDK Stories block autoreload settings
 //        sdk.configuration().stories.useSdkOldInitialization = false //default false - will be deprecated November 14

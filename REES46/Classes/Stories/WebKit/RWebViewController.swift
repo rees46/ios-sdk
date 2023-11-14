@@ -178,7 +178,7 @@ public class RWebViewController:UIViewController, WKUIDelegate {
           
           let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
           if !carouselOpenedBoolKey {
-              let sIdDetect : Int = UserDefaults.standard.integer(forKey: "LastViewedSlideMemorySetting")
+              let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
               NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
           }
       })

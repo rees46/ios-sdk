@@ -22,31 +22,27 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //updateButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
-        //fontInterPreload()
-
-        addStoriesObserver()
+        addSdkObservers()
     }
     
-    func addStoriesObserver() {
-        NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock), name: globalSDKNotificationName, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget), name: globalSDKNotificationName, object: nil)
+    func addSdkObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock),
+                                               name: globalSDKNotificationName, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget),
+                                               name: globalSDKNotificationName, object: nil)
     }
     
     deinit {
-        NotificationCenter.default.removeObserver(self, name: globalSDKNotificationName, object: nil)
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+        NotificationCenter.default.removeObserver(self,name: globalSDKNotificationName, object: nil)
     }
     
     @objc
     private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
             
-            //Sdk preload Recommendation Widget after full Initialization
+            //Recommendation Widget loading if need manually after full Sdk Initialization
             //self.loadRecommendationsWidget()
         }
     }
@@ -56,9 +52,12 @@ class ViewController: UIViewController {
             
             DispatchQueue.main.async {
                 self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "bc1f41f40bb4f92a705ec9d5ec2ada42")
+                //self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "a043dbc2f852ffe18861a2cdfc364ef2")
+                
+                
                 self.view.addSubview(self.recommendationsCollectionView)
                 
-                // Recommendation Widget default height & view position settings
+                // Recommendation Widget height and position settings
                 self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
                 self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 20).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
@@ -71,17 +70,26 @@ class ViewController: UIViewController {
         }
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+    }
+    
     @objc
     private func didTapUpdate() {
         pushTokenLabel.text = "PUSHTOKEN = " + pushGlobalToken
         fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
         didLabel.text = "DID = " + didToken
         
-        globalSDK?.resetCachedSlidesStates()
+        globalSDK?.resetSdkCache()
 
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
+    }
+    
+    func setupSdkButtonView() {
+        //updateButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
+        //fontInterPreload()
     }
     
     func fontInterPreload() {
@@ -92,7 +100,7 @@ class ViewController: UIViewController {
 }
 
 
-@IBDesignable class UpdateButton: UIButton {
+@IBDesignable class sdkUpdateTokenButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()

@@ -20,12 +20,12 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         register(CarouselCollectionViewCell.self, forCellWithReuseIdentifier: CarouselCollectionViewCell.reuseCarouselId)
         
         translatesAutoresizingMaskIntoConstraints = false
-        layout.minimumLineSpacing = CarouselConstantsF.carouselMinimumLineSpacing
+        layout.minimumLineSpacing = CarouselProductsConstants.productCarouselMinimumLineSpacing
         
         if SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
-            contentInset = UIEdgeInsets(top: 0, left: CarouselConstantsF.leftDistanceToView, bottom: 70, right: CarouselConstantsF.rightDistanceToView)
+            contentInset = UIEdgeInsets(top: 0, left: CarouselProductsConstants.cLeftDistanceToView, bottom: 70, right: CarouselProductsConstants.cRightDistanceToView)
         } else {
-            contentInset = UIEdgeInsets(top: 0, left: CarouselConstantsF.leftDistanceToView, bottom: 60, right: CarouselConstantsF.rightDistanceToView)
+            contentInset = UIEdgeInsets(top: 0, left: CarouselProductsConstants.cLeftDistanceToView, bottom: 60, right: CarouselProductsConstants.cRightDistanceToView)
         }
         
         showsHorizontalScrollIndicator = false
@@ -87,7 +87,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
                 stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -19),
                 stackView.heightAnchor.constraint(equalToConstant: 36)
             ])
-        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_SEP {
+        } else if SdkGlobalHelper.DeviceType.IS_IPHONE_8_PLUS {
             NSLayoutConstraint.activate([
                 stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor, constant: 58),
                 stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -58),
@@ -196,9 +196,9 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         if SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-            return CGSize(width: CarouselConstantsF.carouselItemSlowWidth, height: frame.height * 0.73)
+            return CGSize(width: CarouselProductsConstants.productCarouselItemSlimWidth, height: frame.height * 0.73)
         } else {
-            return CGSize(width: CarouselConstantsF.carouselItemWidth, height: frame.height * 0.73)
+            return CGSize(width: CarouselProductsConstants.productCarouselItemWidth, height: frame.height * 0.73)
         }
     }
     
