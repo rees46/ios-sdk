@@ -281,7 +281,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 })
             }
             
-            print("User did tap Add/Remove To Cart from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForCartFromWidget.id)")
+            print("\nUser did tap Add/Remove To Cart from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForCartFromWidget.id)")
             print("Product name: \(selectedProductForCartFromWidget.name)")
             print("Product brand: \(selectedProductForCartFromWidget.brand)")
             print("Product model: \(selectedProductForCartFromWidget.model)")
@@ -310,7 +310,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         if let indexPath = indexPath(for: cell) {
             let selectedProductForFavoritesFromWidget = cells[indexPath.row]
             
-            print("User did tap Add/Remove To Favorites from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
+            print("\nUser did tap Add/Remove To Favorites from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
             print("Favorite product name: \(selectedProductForFavoritesFromWidget.name)")
             print("Favorite product brand: \(selectedProductForFavoritesFromWidget.brand)")
             print("Favorite product model: \(selectedProductForFavoritesFromWidget.model)")
@@ -401,7 +401,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedRecommendationProductFroCell = cells[indexPath.row]
         recommendationsDelegate?.didTapOnProduct(product: selectedRecommendationProductFroCell)
-        print("User did tap cell fro Recoenndations Widget\nUse 'recommendationsDelegate' for interactions\n Product id: \(selectedRecommendationProductFroCell.id)")
+        print("\nUser did tap cell from Recommendations Widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedRecommendationProductFroCell.id)")
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

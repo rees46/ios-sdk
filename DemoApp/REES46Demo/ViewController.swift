@@ -52,9 +52,6 @@ class ViewController: UIViewController {
             
             DispatchQueue.main.async {
                 self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "bc1f41f40bb4f92a705ec9d5ec2ada42")
-                //self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "a043dbc2f852ffe18861a2cdfc364ef2")
-                
-                
                 self.view.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings

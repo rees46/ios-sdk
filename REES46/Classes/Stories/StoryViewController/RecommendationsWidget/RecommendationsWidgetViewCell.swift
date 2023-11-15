@@ -197,6 +197,7 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         recommendationsImageView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         recommendationsImageView.topAnchor.constraint(equalTo: topAnchor, constant: 9).isActive = true
         recommendationsImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 2.34/5).isActive = true
+        //recommendationsImageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1/3).isActive = true
         
         recommendationsDiscountLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 13).isActive = true
         recommendationsDiscountLabel.topAnchor.constraint(equalTo: topAnchor, constant: 12).isActive = true
@@ -237,15 +238,13 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         
         if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
             recommendationsFavoritesButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14).isActive = true
-            recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -21).isActive = true
-            recommendationsFavoritesButton.widthAnchor.constraint(equalToConstant: 27).isActive = true
-            recommendationsFavoritesButton.heightAnchor.constraint(equalToConstant: 27).isActive = true
         } else {
             recommendationsFavoritesButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18).isActive = true
-            recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -21).isActive = true
-            recommendationsFavoritesButton.widthAnchor.constraint(equalToConstant: 27).isActive = true
-            recommendationsFavoritesButton.heightAnchor.constraint(equalToConstant: 27).isActive = true
         }
+        
+        recommendationsFavoritesButton.widthAnchor.constraint(equalToConstant: 27).isActive = true
+        recommendationsFavoritesButton.heightAnchor.constraint(equalToConstant: 27).isActive = true
+        recommendationsFavoritesButton.centerYAnchor.constraint(equalTo: recommendationsCartButton.centerYAnchor, constant: 0.0).isActive = true
     }
     
     public override func layoutSubviews() {

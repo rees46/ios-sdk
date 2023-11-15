@@ -19,6 +19,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var stream: String
     
     var baseURL: String
+    let baseInitJsonFileName = "sdkinit.json"
 
     var userEmail: String?
     var userPhone: String?
@@ -970,20 +971,26 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     let resJSON = successResult
                     let resultResponse = InitResponse(json: resJSON)
                     UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
+                    UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
+                    UserDefaults.standard.set(self.baseURL, forKey: "base_url")
                     completion(.success(resultResponse))
                 case let .failure(error):
                     completion(.failure(error))
                 }
             }
         } else {
+            let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(baseInitJsonFileName)
+            if self.baseURL != UserDefaults.standard.string(forKey: "base_url") ?? "" {
+                try? FileManager.default.removeItem(at: initFileNamePath)
+            }
             
-            let initFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sdkinit.json")
-            let fontData = NSData(contentsOf: initFileName)
-            let json = try? JSONSerialization.jsonObject(with: fontData as? Data ?? Data())
+            let initData = NSData(contentsOf: initFileNamePath)
+            let json = try? JSONSerialization.jsonObject(with: initData as? Data ?? Data())
             if let jsonObject = json as? [String: Any] {
                 let resultResponse = InitResponse(json: jsonObject)
                 UserDefaults.standard.set(resultResponse.deviceID, forKey: "device_id")
                 UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
+                UserDefaults.standard.set(self.baseURL, forKey: "base_url")
                 sleep(2)
                 completion(.success(resultResponse))
             } else {
@@ -1001,6 +1008,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         //self.saveToTextFile(seanceToken: resultResponse.seance)
                         //print("SEANCE TOKEN NOW =", resultResponse.seance)
                         
+                        UserDefaults.standard.set(self.baseURL, forKey: "base_url")
                         completion(.success(resultResponse))
                     case let .failure(error):
                         completion(.failure(error))
@@ -1053,18 +1061,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func saveToTextFile(didToken: String) {
-        let didFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("did.txt")
+        let didFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("did.txt")
         do {
-            try didToken.write(to: didFileName, atomically: true, encoding: String.Encoding.utf8)
+            try didToken.write(to: didFileNamePath, atomically: true, encoding: String.Encoding.utf8)
         } catch {
             print("SDK Error Write DID token")
         }
     }
     
     func saveToTextFile(sidToken: String) {
-        let sidFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sid.txt")
+        let sidFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sid.txt")
         do {
-            try sidToken.write(to: sidFileName, atomically: true, encoding: String.Encoding.utf8)
+            try sidToken.write(to: sidFileNamePath, atomically: true, encoding: String.Encoding.utf8)
         } catch {
             print("SDK Error Write seance SID token")
         }
@@ -1088,9 +1096,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         if SdkConfiguration.stories.useSdkOldInitialization == false {
             if (!isInit && path == "init") {
-                let initFileName = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sdkinit.json")
-
-                let iData = NSData(contentsOf: initFileName)
+                let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(baseInitJsonFileName)
+                let iData = NSData(contentsOf: initFileNamePath)
                 let json = try? JSONSerialization.jsonObject(with: iData! as Data)
                 if let jsonObject = json as? [String: Any] {
                     completion(.success(jsonObject))
@@ -1116,7 +1123,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     do {
                         if SdkConfiguration.stories.useSdkOldInitialization == false {
                             if isInit {
-                                try self.saveDataToJsonFile(data, jsonInitFileName: "sdkinit.json")
+                                try self.saveDataToJsonFile(data, jsonInitFileName: self.baseInitJsonFileName)
                             }
                         }
                         
