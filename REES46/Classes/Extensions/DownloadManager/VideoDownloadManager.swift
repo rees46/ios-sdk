@@ -34,7 +34,7 @@ final public class VideoDownloadManager: NSObject {
 //        }
         
         if let _ = self.ongoingDownloads[url.absoluteString] {
-            print("SDK Already in progress")
+            //print("SDK Already in progress")
             return nil
         }
         var downloadTask: URLSessionDownloadTask
@@ -217,19 +217,14 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
             //debugPrint("SDK Could not calculate progress as total bytes to Write is less than 0")
             return
         }
-        
-//        if self.ongoingDownloads.count == 0 {
-//            return
+//        if let download = self.ongoingDownloads[(downloadTask.originalRequest?.url?.absoluteString)!],
+//            let progressBlock = download.progressBlock {
+//            let progress: CGFloat = CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite)
+//            //let percent = String(format:"%.0f", progress * 100) + "%"
+//            OperationQueue.main.addOperation({
+//                progressBlock(progress)
+//            })
 //        }
-        
-        if let download = self.ongoingDownloads[(downloadTask.originalRequest?.url?.absoluteString)!],
-            let progressBlock = download.progressBlock {
-            let progress: CGFloat = CGFloat(totalBytesWritten) / CGFloat(totalBytesExpectedToWrite)
-            //let percent = String(format:"%.0f", progress * 100) + "%"
-            OperationQueue.main.addOperation({
-                progressBlock(progress)
-            })
-        }
     }
     
     public func urlSession(_ session: URLSession,

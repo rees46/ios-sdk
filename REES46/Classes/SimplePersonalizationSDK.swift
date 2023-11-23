@@ -22,8 +22,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     var baseURL: String
     let baseInitJsonFileName = ".json"
-    let cachedPrefix = "cached.url."
-    let sPrefix = "shopid."
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier //Bundle.main.bundleIdentifier
@@ -41,6 +39,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let sessionQueue = SessionQueue.manager
     
     private var requestOperation: RequestOperation?
+    
+    let bodyMutableData = NSMutableData()
     
     private let semaphore = DispatchSemaphore(value: 0)
 
@@ -974,12 +974,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         let identifierManager = ASIdentifierManager.shared()
         if identifierManager.isAdvertisingTrackingEnabled {
-            let ads = identifierManager.advertisingIdentifier.uuidString
-            params["ios_advertising_id"] = ads
+            let advId = identifierManager.advertisingIdentifier.uuidString
+            params["ios_advertising_id"] = advId
         }
-        
-        //let advId = ASIdentifierManager.shared().advertisingIdentifier
-        //print(advId)
         
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
@@ -989,23 +986,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         
-        let processedInitUrl = cachedPrefix + self.baseURL + sPrefix + self.shopId
-        let initializationsArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(processedInitUrl)) as? [String] ?? []
-        let urlInitializationIsExist = initializationsArray.contains(where: {
-            $0.range(of: processedInitUrl) != nil
-        })
-        
-        if urlInitializationIsExist {
-            let savedInitUrlValue = UserDefaults.standard.string(forKey: self.shopId) ?? ""
-            if processedInitUrl != savedInitUrlValue {
-                //print(savedInitUrlValue)
-                //try? FileManager.default.removeItem(at: initFileNamePath)
-            }
-        }
-        
         if self.baseURL != UserDefaults.standard.string(forKey: "base_url") ?? "" {
             try? FileManager.default.removeItem(at: initFileNamePath)
-            sleep(1)
         }
         
         let initData = NSData(contentsOf: initFileNamePath)
@@ -1019,12 +1001,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         } else if let ipfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
             let jsonSecret = try? JSONSerialization.jsonObject(with: ipfsSecret)
             try? FileManager.default.removeItem(at: initFileNamePath)
-            try? self.saveDataToJsonFile(ipfsSecret, jsonInitFileName: convertedInitJsonFileName)
-            if let jsonObject = jsonSecret as? [String: Any] {
-                let resultResponse = InitResponse(json: jsonObject)
-                self.finalizeInit(result: resultResponse)
-                sleep(1)
-                completion(.success(resultResponse))
+            getRequest(path: path, params: params, true) { result in
+                switch result {
+                case let .success(successResult):
+                    let resJSON = successResult
+                    let resultResponse = InitResponse(json: resJSON)
+                    self.finalizeInit(result: resultResponse)
+                    completion(.success(resultResponse))
+                case .failure(_):
+                    if let jsonObject = jsonSecret as? [String: Any] {
+                        let resultResponse = InitResponse(json: jsonObject)
+                        self.finalizeInit(result: resultResponse)
+                        sleep(1)
+                        completion(.success(resultResponse))
+                    }
+                }
             }
         } else {
             getRequest(path: path, params: params, true) { result in
@@ -1043,15 +1034,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     public func deleteUserCredentials() {
         let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
-        let baseUrlInitId = cachedPrefix + self.baseURL + sPrefix + self.shopId
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         try? FileManager.default.removeItem(at: initFileNamePath)
         
         UserDefaults.standard.set(nil, forKey: "device_id")
         UserDefaults.standard.set(nil, forKey: "seance_id")
         UserDefaults.standard.set(nil, forKey: "base_url")
-        UserDefaults.standard.set(nil, forKey: self.shopId)
-        UserDefaults.standard.set(nil, forKey: baseUrlInitId)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SDKError>) -> Void) {
@@ -1117,8 +1105,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func finalizeInit(result: InitResponse) {
         let dId = result.deviceID
         let sId = result.seance
-        let baseUrlInitId = cachedPrefix + self.baseURL + sPrefix + self.shopId
-        
         let rootDid: String? = UserDefaults.standard.string(forKey: "device_id") ?? ""
         if (rootDid == nil || rootDid == "") {
             DispatchQueue.onceTechService(token: self.baseURL) {
@@ -1127,16 +1113,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         UserDefaults.standard.set(sId, forKey: "seance_id")
         UserDefaults.standard.set(self.baseURL, forKey: "base_url")
-        UserDefaults.standard.set(baseUrlInitId, forKey: self.shopId)
-        
-        var initializationUrlsArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(baseUrlInitId)) as? [String] ?? []
-        let urlIdExists = initializationUrlsArray.contains(where: {
-            $0.range(of: baseUrlInitId) != nil
-        })
-        if !urlIdExists {
-            initializationUrlsArray.append(baseUrlInitId)
-            UserDefaults.standard.setValue(initializationUrlsArray, for: UserDefaults.Key(baseUrlInitId))
-        }
     }
     
     internal func configuration() -> SdkConfiguration.Type {
@@ -1151,11 +1127,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         var queryItems = [URLQueryItem]()
         for item in params{
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
-        }
-        
-        let dId = UserDefaults.standard.string(forKey: "device_id") ?? ""
-        if (isInit && dId != "") {
-            queryItems.append(URLQueryItem(name: "did", value: dId))
         }
         
         queryItems.append(URLQueryItem(name: "stream", value: stream))
@@ -1240,6 +1211,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             let boundary = generateBoundary()
             let jsonData = createDataForBody(withParameters: requestParams, content: [], boundary: boundary)
+            
+            _ = (try? JSONSerialization.data(withJSONObject: requestParams)) ?? Data()
             
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
