@@ -11,6 +11,8 @@ import FirebaseMessaging
 import REES46
 import UIKit
 import UserNotifications
+import AppTrackingTransparency
+import AdSupport
 
 var pushGlobalToken: String = ""
 var fcmGlobalToken: String = ""
@@ -88,7 +90,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           backgroundColorDarkMode: "#ffffff",
 //                                                           cornerRadius: 5)
 
-//        sdk.configuration().stories.setProductsCard(fontName: "Inter")
+//        sdk.configuration().stories.setProductsCard(fontName: "Inter",
+//                                                    showProductsButtonText: "See all products",
+//                                                    hideProductsButtonText: "Hide products")
 
 //        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
 //                                                     productTitleFontSize: 16.0,
@@ -128,7 +132,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           widgetPreloadIndicatorColor: "#ffffff")
 
 //        //SDK Stories block autoreload settings
-//        sdk.configuration().stories.useSdkOldInitialization = false //default false - will be deprecated November 14
 //        sdk.configuration().stories.storiesSlideReloadManually = false //default false - autoreload enabled
 //        sdk.configuration().stories.storiesSlideReloadTimeoutInterval = 10 //default infinity
 //        sdk.configuration().stories.storiesSlideReloadIndicatorDisabled = false //default false - indicator enabled
@@ -147,7 +150,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        sdk.configuration().stories.storiesSlideReloadPopupPositionY = 120 //default constant
         
 //        //SDK Stories block text label characters wrapping settings
-//        sdk.configuration().stories.storiesBlockNumberOfLines = 2
+//        sdk.configuration().stories.storiesBlockNumberOfLines = 0
 //        sdk.configuration().stories.storiesBlockCharWrapping = false
 //        sdk.configuration().stories.storiesBlockCharCountWrap = 15
         
@@ -525,6 +528,7 @@ extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         // FOR TEST
         fcmGlobalToken = fcmToken ?? ""
+        UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
         // END TEST
         notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
     }
@@ -540,6 +544,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         let token = tokenParts.joined()
         pushGlobalToken = token
         print("Push Token:", pushGlobalToken)
+        UserDefaults.standard.set(token, forKey: "pushGlobalToken")
+        
         Messaging.messaging().apnsToken = deviceToken
         // END TEST
         
@@ -561,6 +567,25 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     func getDeliveredNotifications() {
         UNUserNotificationCenter.current().getDeliveredNotifications { (notifications) in
             print(notifications)
+        }
+    }
+    
+    private func requestTrackingAuthorization() {
+        guard #available(iOS 14, *) else { return }
+        ATTrackingManager.requestTrackingAuthorization { status in
+            DispatchQueue.main.async {
+                switch status {
+                case .authorized:
+                    let idfa = ASIdentifierManager.shared().advertisingIdentifier
+                    print("SDK User granted access to ios_advertising_id\nIDFA: ", idfa)
+                case .denied, .restricted:
+                    print("SDK User denied access to IDFA")
+                case .notDetermined:
+                    print("SDK User not received an authorization request to IDFA")
+                @unknown default:
+                    break
+                }
+            }
         }
     }
 }

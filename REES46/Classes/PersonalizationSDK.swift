@@ -107,6 +107,7 @@ public protocol PersonalizationSDK {
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func configuration() -> SdkConfiguration.Type
+    func deleteUserCredentials()
 }
 
 public extension PersonalizationSDK {
@@ -163,6 +164,10 @@ public extension PersonalizationSDK {
         manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, completion: completion)
     }
     
+    func deleteUserCredentials() {
+        deleteUserCredentials()
+    }
+    
     func resetSdkCache() {
         let included_prefixes = ["viewed.slide."]
         let dict = UserDefaults.standard.dictionaryRepresentation()
@@ -201,7 +206,7 @@ public extension PersonalizationSDK {
             }
         }
         UserDefaults.standard.synchronize()
-        resetCartProductStates()
+        //resetCartProductStates()
     }
     
     func resetCartProductStates() {
@@ -221,7 +226,7 @@ public extension PersonalizationSDK {
             }
         }
         UserDefaults.standard.synchronize()
-        resetFavoritesProductStates()
+        //resetFavoritesProductStates()
     }
     
     func resetFavoritesProductStates() {

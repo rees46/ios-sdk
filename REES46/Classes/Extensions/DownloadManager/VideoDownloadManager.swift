@@ -145,16 +145,15 @@ final public class VideoDownloadManager: NSObject {
         let notificationCenter = UNUserNotificationCenter.current()
         notificationCenter.getNotificationSettings { (settings) in
             guard settings.authorizationStatus == .authorized else {
-                debugPrint("SDK not authorized to schedule notification")
+                //debugPrint("SDK not authorized to schedule notification")
                 return
             }
             
             let content = UNMutableNotificationContent()
             content.title = text
             content.sound = UNNotificationSound.default
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1,
-                                                            repeats: false)
-            let identifier = "SdkDownloadManagerNotification"
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+            let identifier = "SDKSuccessDownloadManagerNotification"
             let request = UNNotificationRequest(identifier: identifier,
                                                 content: content, trigger: trigger)
             notificationCenter.add(request, withCompletionHandler: { (error) in

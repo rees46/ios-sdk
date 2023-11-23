@@ -294,25 +294,25 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 extension StoriesView: StoriesViewLinkProtocol {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
         self.communicationDelegate?.receiveSelectedProductData(products: storySlide)
-        print("\n\nSDK Received story slide button tap links for external use:")
+        print("\nSDK Received story slide button tap links for external use:")
         printSlideObject(objElementClass: storySlide)
     }
     
     public func structOfSelectedCarouselProduct(product: StoriesProduct) {
         self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
-        print("\n\nSDK Received carousel selected product link for external use:")
+        print("\nSDK Received carousel selected product link for external use:")
         printCarouselObject(objProductClass: product)
     }
     
     public func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement) {
         self.communicationDelegate?.receiveSelectedPromocodeProductData(promoCodeSlide: promoCodeSlide)
-        print("\n\nSDK Received promocode slide button tap links for external use:")
+        print("\nSDK Received promocode slide button tap links for external use:")
         printPromoObject(objPromoClass: promoCodeSlide)
     }
     
     public func linkIosExternalUse(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
-        print("\n\nSDK Received linkIos for external use: \(url)\n\n")
+        print("\nSDK Received linkIos for external use: \(url)\n\n")
     }
 
     public func reloadStoriesCollectionSubviews() {

@@ -146,7 +146,7 @@ class Slide {
         let fileManager = FileManager.default
         if fileManager.fileExists(atPath: temporaryFileURL.path) {
             completion(.success(temporaryFileURL))
-            print("SDK Load cached video for story id = \(self.id)")
+            //print("SDK Load cached video for story id = \(self.id)")
             return
         }
         
@@ -208,12 +208,13 @@ class Slide {
             
             if cachedImage != nil {
                 self.completionCached(slideWithId: self.id, actualSlideUrl: "")
-                print("SDK Load cached image for story id = \(String(describing: self.id))")
+                //print("SDK Load cached image for story id = \(String(describing: self.id))")
             } else {
                 let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
                     if error == nil {
-                        
-                        guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
+                        guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
+                            return
+                        }
                         if isPreview {
                             self.previewImage = image
                         } else {

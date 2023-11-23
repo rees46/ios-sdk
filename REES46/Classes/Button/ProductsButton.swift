@@ -51,9 +51,9 @@ protocol CustomProductButtonDelegate: AnyObject {
                 }
             }
             
-            setTitle(buttonData.labels?.showCarousel ?? "See all products", for: .normal)
+            setTitle(buttonData.labels?.showCarousel ?? SdkConfiguration.stories.defaultShowProductsButtonText, for: .normal)
             if buttonData.labels?.showCarousel == "" {
-                setTitle("See all products", for: .normal)
+                setTitle(SdkConfiguration.stories.defaultShowProductsButtonText, for: .normal)
             }
             
             var frameworkBundle = Bundle(for: classForCoder)

@@ -251,16 +251,16 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         if let indexPath = indexPath(for: cell) {
             let selectedProductForCartFromWidget = cells[indexPath.row]
             
-            let productFavoritesId = "cart.product." + selectedProductForCartFromWidget.id
+            let productInCartId = "cart.product." + selectedProductForCartFromWidget.id
             
-            var viewedSlidesCartCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productFavoritesId)) as? [String] ?? []
-            let viewedFavoritesSlideIdExists = viewedSlidesCartCachedArray.contains(where: {
+            var viewedSlidesCartCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productInCartId)) as? [String] ?? []
+            let viewedCartSlideIdExists = viewedSlidesCartCachedArray.contains(where: {
                 $0.range(of: selectedProductForCartFromWidget.id) != nil
             })
             
-            if !viewedFavoritesSlideIdExists {
+            if !viewedCartSlideIdExists {
                 viewedSlidesCartCachedArray.append(selectedProductForCartFromWidget.id)
-                UserDefaults.standard.setValue(viewedSlidesCartCachedArray, for: UserDefaults.Key(productFavoritesId))
+                UserDefaults.standard.setValue(viewedSlidesCartCachedArray, for: UserDefaults.Key(productInCartId))
                 
                 cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetRemoveFromCartButtonText, for: .normal)
                 
@@ -272,7 +272,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 if let index = viewedSlidesCartCachedArray.firstIndex(of: selectedProductForCartFromWidget.id) {
                     viewedSlidesCartCachedArray.remove(at: index)
                 }
-                UserDefaults.standard.setValue(viewedSlidesCartCachedArray, for: UserDefaults.Key(productFavoritesId))
+                UserDefaults.standard.setValue(viewedSlidesCartCachedArray, for: UserDefaults.Key(productInCartId))
                 
                 cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetAddToCartButtonText, for: .normal)
                 
@@ -293,7 +293,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             print("Product priceFormatted: \(String(describing: selectedProductForCartFromWidget.priceFormatted))")
             print("Product priceFull: \(selectedProductForCartFromWidget.priceFull)")
             print("Product priceFullFormatted: \(String(describing: selectedProductForCartFromWidget.priceFullFormatted))")
-            print("Product currency: \(selectedProductForCartFromWidget.currency)")
+            print("Product currency: \(selectedProductForCartFromWidget.currency)\n")
             
             recommendationsDelegate?.addToCartProductData(product: selectedProductForCartFromWidget)
             
@@ -322,7 +322,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             print("Favorite product priceFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFormatted))")
             print("Favorite product priceFull: \(selectedProductForFavoritesFromWidget.priceFull)")
             print("Favorite product priceFullFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFullFormatted))")
-            print("Favorite product currency: \(selectedProductForFavoritesFromWidget.currency)")
+            print("Favorite product currency: \(selectedProductForFavoritesFromWidget.currency)\n")
             
             let productFavoritesId = "favorites.product." + selectedProductForFavoritesFromWidget.id
             
@@ -401,7 +401,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedRecommendationProductFroCell = cells[indexPath.row]
         recommendationsDelegate?.didTapOnProduct(product: selectedRecommendationProductFroCell)
-        print("\nUser did tap cell from Recommendations Widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedRecommendationProductFroCell.id)")
+        print("\nUser did tap cell from Recommendations Widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedRecommendationProductFroCell.id)\n")
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

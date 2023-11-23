@@ -22,7 +22,7 @@ public class SdkPopupAlertView: UIView {
 
     override public var bounds: CGRect {
         didSet {
-            setupShadow()
+            setupRealShadow()
         }
     }
 
@@ -79,8 +79,8 @@ public class SdkPopupAlertView: UIView {
 
     private var onTap: (() -> ())?
 
-    public var autoHide = true
-    public var displayAlertTime: TimeInterval = 2.7
+    public var autoRealHide = true
+    public var displayRealAlertTime: TimeInterval = 2.7
     public var showAnimationDuration = 0.3
     public var hideAnimationDuration = 0.3
     public var hideOnTap = true
@@ -207,8 +207,8 @@ public class SdkPopupAlertView: UIView {
 
     func prepareForShowing() {
         sdkPopupOverlayWindow = SdkPopupAlertViewWindow(SdkPopupAlertView: self)
-        setupConstraints(position: position)
-        setupStackViewConstraints()
+        setupRealdefaultConstraints(position: position)
+        setupRealStackViewdefaultConstraints()
         sdkPopupOverlayWindow?.isHidden = false
     }
 
@@ -233,8 +233,8 @@ public class SdkPopupAlertView: UIView {
         UIView.animate(withDuration: showAnimationDuration, delay: 0.0, options: .curveEaseOut, animations: {
             self.transform = .identity
         }) { [self] _ in
-            if autoHide {
-                hide(after: displayAlertTime)
+            if autoRealHide {
+                hide(after: displayRealAlertTime)
             }
         }
     }
@@ -260,13 +260,13 @@ public class SdkPopupAlertView: UIView {
         backgroundColor = popupDefaultBackgroundColor
     }
 
-    private func setupConstraints(position: Position) {
+    private func setupRealdefaultConstraints(position: Position) {
         guard let superview = superview else {
             return
         }
         translatesAutoresizingMaskIntoConstraints = false
         
-        var constraints = [
+        var defaultConstraints = [
             centerXAnchor.constraint(equalTo: superview.centerXAnchor),
             leadingAnchor.constraint(greaterThanOrEqualTo: superview.leadingAnchor, constant: 8),
             trailingAnchor.constraint(lessThanOrEqualTo: superview.trailingAnchor, constant: -8),
@@ -276,31 +276,31 @@ public class SdkPopupAlertView: UIView {
         switch position {
         case .top:
             if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_8_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
-                constraints += [
+                defaultConstraints += [
                     topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor, constant: 68),
                     bottomAnchor.constraint(lessThanOrEqualTo: superview.layoutMarginsGuide.bottomAnchor, constant: -8)
                 ]
             } else {
-                constraints += [
+                defaultConstraints += [
                     topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor, constant: 90),
                     bottomAnchor.constraint(lessThanOrEqualTo: superview.layoutMarginsGuide.bottomAnchor, constant: -8)
                 ]
             }
         case .centerCustom:
-            constraints += [
+            defaultConstraints += [
                 topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor, constant: SdkConfiguration.stories.storiesSlideReloadPopupPositionY),
                 bottomAnchor.constraint(lessThanOrEqualTo: superview.layoutMarginsGuide.bottomAnchor, constant: -8)
             ]
         case .bottom:
-            constraints += [
+            defaultConstraints += [
                 bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor, constant: -8),
                 topAnchor.constraint(greaterThanOrEqualTo: superview.layoutMarginsGuide.topAnchor, constant: 8)
             ]
         }
-        NSLayoutConstraint.activate(constraints)
+        NSLayoutConstraint.activate(defaultConstraints)
     }
 
-    private func setupStackViewConstraints() {
+    private func setupRealStackViewdefaultConstraints() {
         hStack.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
@@ -311,7 +311,7 @@ public class SdkPopupAlertView: UIView {
         ])
     }
 
-    private func setupShadow() {
+    private func setupRealShadow() {
         layer.masksToBounds = false
         layer.shadowOffset = CGSize(width: 0, height: 4)
         layer.shadowColor = UIColor.black.withAlphaComponent(0.08).cgColor
@@ -335,6 +335,7 @@ public class SdkPopupAlertView: UIView {
 
 
 @available(iOSApplicationExtension, unavailable)
+
 class SdkPopupAlertViewWindow: UIWindow {
     init(SdkPopupAlertView: SdkPopupAlertView) {
         if #available(iOS 13.0, *) {

@@ -208,7 +208,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 
                 productsButton.isHidden = false
                 productWithPromocodeSuperview.isHidden = true
-                //bringSubviewToFront(productsButton)
                 
                 makeConstraints()
                 
@@ -418,7 +417,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 onTap: { print("SDK Alert popup tapped")
                 }
             )
-            popupView.displayAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
+            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
             popupView.show()
         }
     }

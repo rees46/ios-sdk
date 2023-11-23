@@ -38,7 +38,7 @@ public class NavigationStackController: UINavigationController {
 }
 
 class StoryViewController: UINavigationController, UINavigationControllerDelegate, UIGestureRecognizerDelegate, CarouselCollectionViewCellDelegate {
-private var collectionView: UICollectionView = {
+    private var collectionView: UICollectionView = {
         let frame = CGRect(x: 0, y: 0, width: 300, height: 100)
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
@@ -826,9 +826,9 @@ private var collectionView: UICollectionView = {
     
     @objc
     private func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
+        let positionNumber = gestureRecognizer.location(in: collectionView)
         if gestureRecognizer.state == .ended {
-            let p = gestureRecognizer.location(in: collectionView)
-            if let indexPath = collectionView.indexPathForItem(at: p) {
+            if let indexPath = collectionView.indexPathForItem(at: positionNumber) {
                 let slide = stories[indexPath.section].slides[indexPath.row]
                 NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
                 continueTimer()
@@ -836,17 +836,14 @@ private var collectionView: UICollectionView = {
             return
         }
         if (gestureRecognizer.state != .began) {
-            let p = gestureRecognizer.location(in: collectionView)
-
-            if let indexPath = collectionView.indexPathForItem(at: p) {
+            if let indexPath = collectionView.indexPathForItem(at: positionNumber) {
                 let slide = stories[indexPath.section].slides[indexPath.row]
                 NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
                 pauseTimer()
             }
             return
         } else {
-            let p = gestureRecognizer.location(in: collectionView)
-            if let indexPath = collectionView.indexPathForItem(at: p) {
+            if let indexPath = collectionView.indexPathForItem(at: positionNumber) {
                 let slide = stories[indexPath.section].slides[indexPath.row]
                 NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": slide.id])
                 pauseTimer()
@@ -862,13 +859,7 @@ private var collectionView: UICollectionView = {
     }
     
     public func openProductsCarouselView(withProducts: [StoriesProduct], hideLabel: String) {
-        
-        UserDefaults.standard.set(true, forKey: "CarouselTimerStopMemorySetting")
-        
-        let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
-        NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
-        
         view.backgroundColor = .clear
         
         carouselProductsSlideTintBlurView.backgroundColor = UIColor(white: 0, alpha: 0.8)
@@ -878,12 +869,11 @@ private var collectionView: UICollectionView = {
         
         view.addSubview(self.carouselProductsSlideCollectionView)
         
-        self.carouselProductsSlideCollectionView.center = CGPoint(x: self.view.center.x,
-                y: self.view.center.y + self.view.frame.size.height)
+        self.carouselProductsSlideCollectionView.center = CGPoint(x: self.view.center.x, y: self.view.center.y + self.view.frame.size.height)
         self.view.addSubview(self.carouselProductsSlideCollectionView)
         self.view.bringSubviewToFront(self.carouselProductsSlideCollectionView)
         
-        UIView.animate(withDuration: 0.7, delay: 0.0,
+        UIView.animate(withDuration: 0.6, delay: 0.0,
             usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
             options: .allowAnimatedContent, animations: {
             self.carouselProductsSlideCollectionView.center = self.view.center
@@ -906,8 +896,13 @@ private var collectionView: UICollectionView = {
         carouselProductsSlideCollectionView.carouselProductsDelegate = self
         carouselProductsSlideCollectionView.cells.removeAll()
         carouselProductsSlideCollectionView.set(cells: withProducts)
+        
         carouselProductsSlideCollectionView.reloadData()
-        //UserDefaults.standard.set(true, forKey: "CarouselTimerStopMemorySetting")
+        
+        let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
+        NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+        
+        UserDefaults.standard.set(true, forKey: "CarouselTimerStopMemorySetting")
     }
     
     public func closeProductsCarousel() {
@@ -922,10 +917,12 @@ private var collectionView: UICollectionView = {
             self.carouselProductsSlideCollectionView.removeFromSuperview()
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-            self.continueTimer()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                self.continueTimer()
+            }
         }
         UserDefaults.standard.set(false, forKey: "CarouselTimerStopMemorySetting")
     }
@@ -940,7 +937,7 @@ private var collectionView: UICollectionView = {
             print("SDK Start Timer Play Content")
             UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
         } else {
-            print("SDK Pause Timer")
+            print("SDK Pause Timer\n")
             UserDefaults.standard.set(true, forKey: "LastTapButtonMemorySdkSetting")
         }
     }

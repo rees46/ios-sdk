@@ -42,9 +42,11 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     var defaultIconViewedTransparency: CGFloat = 1.0
     var defaultIconPinColor: String = "#fd7c50"
     
-    public var storiesBlockNumberOfLines: Int = 2
+    public var storiesBlockNumberOfLines: Int = 0
     public var storiesBlockCharWrapping = false
     public var storiesBlockCharCountWrap: Int = 10
+    public var defaultShowProductsButtonText: String = "See all products"
+    public var defaultHideProductsButtonText: String = "Hide products"
     
     var defaultButtonCornerRadius: CGFloat = -1
     var productsButtonCornerRadius: CGFloat = -1
@@ -79,7 +81,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var widgetPreloadIndicatorColor: String = "#000000"
     
     //Sdk Stories default reload settings
-    public var useSdkOldInitialization = false
     public var storiesSlideReloadManually = false
     public var storiesSlideReloadTimeoutInterval: TimeInterval = 10
     public var storiesSlideReloadIndicatorDisabled = false
@@ -509,7 +510,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
     }
     
-    public func setProductsCard(fontName: String? = nil) {
+    public func setProductsCard(fontName: String? = nil,
+                                showProductsButtonText: String? = "See all products",
+                                hideProductsButtonText: String? = "Hide products") {
         if fontName != nil {
             if fontName == slideProductsHideButtonFontNameConstant {
                 slideProductsHideButtonFontNameChanged = nil
@@ -517,6 +520,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 slideProductsHideButtonFontNameChanged = fontName
             }
         }
+        defaultShowProductsButtonText = showProductsButtonText!
+        defaultHideProductsButtonText = hideProductsButtonText!
     }
     
     public func setWidgetBlock(widgetFontName: String? = nil,

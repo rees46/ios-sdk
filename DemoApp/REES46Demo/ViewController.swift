@@ -9,20 +9,22 @@
 import UIKit
 import REES46
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UIScrollViewDelegate {
     
-    @IBOutlet private weak var fcmTokenLabel: UITextView!
-    @IBOutlet private weak var pushTokenLabel: UITextView!
-    @IBOutlet private weak var didLabel: UITextView!
-    @IBOutlet private weak var updateButton: UIButton!
-    
+    @IBOutlet private weak var fcmTokenLabel: UILabel!
+    @IBOutlet private weak var pushTokenLabel: UILabel!
+    @IBOutlet private weak var didLabel: UILabel!
+    @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var storiesCollectionView: StoriesView!
+    @IBOutlet private weak var updateDidButton: UIButton!
+    @IBOutlet private weak var resetDidButton: UIButton!
     
     public var recommendationsCollectionView = RecommendationsWidgetView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         addSdkObservers()
+        setupSdkDemoAppViews()
     }
     
     func addSdkObservers() {
@@ -42,12 +44,13 @@ class ViewController: UIViewController {
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
             
-            //Recommendation Widget loading if need manually after full Sdk Initialization
+            //Recommendation Widget loading if need manually after Sdk full initialization
             //self.loadRecommendationsWidget()
         }
     }
     
     @objc private func loadRecommendationsWidget() {
+        sleep(3)
         if let globalSDK = globalSDK {
             
             DispatchQueue.main.async {
@@ -56,37 +59,66 @@ class ViewController: UIViewController {
                 
                 // Recommendation Widget height and position settings
                 self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
-                self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 20).isActive = true //top
+                self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: -25).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
-                
-                if SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
-                    self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: -25).isActive = true // old devices position fix
-                }
             }
         }
     }
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
-    
     @objc
     private func didTapUpdate() {
-        pushTokenLabel.text = "PUSHTOKEN = " + pushGlobalToken
-        fcmTokenLabel.text = "FCMTOKEN = " + fcmGlobalToken
-        didLabel.text = "DID = " + didToken
-        
+        setupSdkLabels()
         globalSDK?.resetSdkCache()
-
+        
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
     
-    func setupSdkButtonView() {
-        //updateButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
-        //fontInterPreload()
+    @objc
+    private func didTapReset() {
+        let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
+        let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
+        try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
+        sleep(3)
+
+        globalSDK?.resetSdkCache()
+        globalSDK?.deleteUserCredentials()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.setupSdkLabels()
+        }
+        //viewWillLayoutSubviews()
+    }
+    
+    func setupSdkDemoAppViews() {
+        navigationController?.navigationBar.isHidden = true
+        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 1400)
+
+        updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
+        resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
+        fontInterPreload()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            self.setupSdkLabels()
+        }
+    }
+    
+    func setupSdkLabels() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            if pushGlobalToken == "" {
+                pushGlobalToken = UserDefaults.standard.string(forKey: "pushGlobalToken") ?? "No push token"
+            }
+            
+            if fcmGlobalToken == "" {
+                fcmGlobalToken = UserDefaults.standard.string(forKey: "fcmGlobalToken") ?? "No Firebase token"
+            }
+            
+            let did = UserDefaults.standard.string(forKey: "device_id") ?? "No did token"
+            self.didLabel.text = "DID\n\n" + did
+            
+            self.pushTokenLabel.text = "PUSHTOKEN\n\n" + pushGlobalToken
+            self.fcmTokenLabel.text = "FCMTOKEN\n\n" + fcmGlobalToken
+        }
     }
     
     func fontInterPreload() {
@@ -94,10 +126,24 @@ class ViewController: UIViewController {
         pushTokenLabel .font = SdkDynamicFont.dynamicFont(textStyle: .headline, weight: .bold)
         didLabel.font = SdkDynamicFont.dynamicFont(textStyle: .headline, weight: .bold)
     }
+    
+    override func viewDidLayoutSubviews() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+    }
 }
 
 
-@IBDesignable class sdkUpdateTokenButton: UIButton {
+@IBDesignable class UpdateButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()
@@ -112,8 +158,8 @@ class ViewController: UIViewController {
     func updateButtonCornerRadius() {
         layer.backgroundColor = UIColor.white.cgColor
         layer.masksToBounds = true
-        layer.borderWidth = 1.4
-        layer.borderColor = UIColor.systemBlue.cgColor
+        layer.borderWidth = 2.0
+        layer.borderColor = UIColor.systemGreen.cgColor
         layer.cornerRadius = frame.size.height / 2
     }
 }

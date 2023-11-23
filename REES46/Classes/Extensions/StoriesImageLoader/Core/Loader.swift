@@ -6,11 +6,11 @@ public struct Loader {
     unowned let delegate: StoriesCollectionCellLoader.LoaderManager
     let task: URLSessionDataTask
     let operative = Operative()
-    let baseUrl: URL
+    let baseReqUrl: URL
 
     init(_ task: URLSessionDataTask, reqUrl: URL, delegate: StoriesCollectionCellLoader.LoaderManager) {
         self.task = task
-        self.baseUrl = reqUrl
+        self.baseReqUrl = reqUrl
         self.delegate = delegate
     }
 
@@ -24,7 +24,7 @@ public struct Loader {
 
     public func cancel() {
         task.cancel()
-        let reason = "SDK Loader cancel to request: \(baseUrl)"
+        let reason = "SDK Loader cancel to request: \(baseReqUrl)"
         onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: 0, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
     }
 
@@ -36,7 +36,7 @@ public struct Loader {
 
         if let image = UIImage.process(data: operative.receiveData) {
             onSuccess(with: image)
-            delegate.disk.set(operative.receiveData, forKey: baseUrl)
+            delegate.disk.set(operative.receiveData, forKey: baseReqUrl)
             return
         }
 
