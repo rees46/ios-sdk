@@ -80,9 +80,10 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var widgetCartButtonNeedOpenWebUrl = false
     public var widgetPreloadIndicatorColor: String = "#000000"
     
-    //Sdk Stories default reload settings
-    public var storiesSlideReloadManually = false
-    public var storiesSlideReloadTimeoutInterval: TimeInterval = 10
+    //Sdk Stories Block collection cell indicator
+    public var storiesBlockPreloadIndicatorDisabled = false
+    
+    //Sdk Stories Slide default indicator
     public var storiesSlideReloadIndicatorDisabled = false
     public var storiesSlideReloadIndicatorBackgroundColor: String = "#ffffff"
     public var storiesSlideReloadIndicatorSize: CGFloat = 76.0
@@ -91,6 +92,11 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var storiesSlideReloadIndicatorAnimationDuration: Double = 1
     public var storiesSlideReloadIndicatorRotationDuration: Double = 17
     
+    //Sdk Stories Slide reload settings
+    public var storiesSlideReloadManually = false
+    public var storiesSlideReloadTimeoutInterval: TimeInterval = 10
+    
+    //Sdk Stories Slide popup settings
     public var storiesSlideReloadPopupMessageError: String = "Failed to retrieve data. Please check your connection and try again"
     public var storiesSlideReloadPopupMessageFontSize: CGFloat = 17
     public var storiesSlideReloadPopupMessageFontWeight: UIFont.Weight = .medium

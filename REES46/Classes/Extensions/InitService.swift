@@ -47,7 +47,6 @@ public struct InitService {
         }
         
         return res as! Data
-        //return String(data: res as! Data, encoding: .utf8)!
     }
     
     static func updateKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
@@ -97,9 +96,5 @@ public struct InitService {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)
         }
-        
-        //print ("SDK Keychain delete success")
-        //var resultMatch: AnyObject?
-        //let statusMatch = SecItemCopyMatching(query, &result)
     }
 }

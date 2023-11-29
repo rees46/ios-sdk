@@ -26,8 +26,8 @@ public final class StoriesSlideReloadIndicator: UIView {
         }
     }
     
-    public var hidesWhenStopped: Bool = true
-    public private(set) var isAnimating = false
+    public var hidesSlidesWhenStopped: Bool = true
+    public private(set) var slideIndicatorIsAnimating = false
     private weak var indReplicatorLayer: CAReplicatorLayer!
     private weak var indSegmentLayer: CAShapeLayer!
     
@@ -63,7 +63,7 @@ public final class StoriesSlideReloadIndicator: UIView {
         
         let maxSize = max(0,min(bounds.width, bounds.height))
         indReplicatorLayer.bounds = CGRect(x: 0, y: 0, width: maxSize, height: maxSize)
-        indReplicatorLayer.position = CGPoint(x: bounds.width/2, y:bounds.height/2)
+        indReplicatorLayer.position = CGPoint(x: bounds.width / 2, y:bounds.height / 2)
         
         updateSegments()
     }
@@ -77,10 +77,10 @@ public final class StoriesSlideReloadIndicator: UIView {
         indReplicatorLayer.instanceDelay = 1.5*animationDuration/Double(numSegments)
         
         let maxRadius = max(0,min(indReplicatorLayer.bounds.width, indReplicatorLayer.bounds.height))/2
-        let radius: CGFloat = maxRadius - lineWidth/2
+        let radius: CGFloat = maxRadius - lineWidth / 2
         
         indSegmentLayer.bounds = CGRect(x:0, y:0, width: 2*maxRadius, height: 2*maxRadius)
-        indSegmentLayer.position = CGPoint(x: indReplicatorLayer.bounds.width/2, y: indReplicatorLayer.bounds.height/2)
+        indSegmentLayer.position = CGPoint(x: indReplicatorLayer.bounds.width / 2, y: indReplicatorLayer.bounds.height/2)
         
         let path = UIBezierPath(arcCenter: CGPoint(x: maxRadius, y: maxRadius), radius: radius, startAngle: -angle/2 - CGFloat.pi/2, endAngle: angle/2 - CGFloat.pi/2, clockwise: true)
         
@@ -89,7 +89,7 @@ public final class StoriesSlideReloadIndicator: UIView {
     
     public func startAnimating() {
         self.isHidden = false
-        isAnimating = true
+        slideIndicatorIsAnimating = true
         
         let rotate = CABasicAnimation(keyPath: "transform.rotation")
         rotate.byValue = CGFloat.pi*2
@@ -127,14 +127,14 @@ public final class StoriesSlideReloadIndicator: UIView {
     }
     
     public func stopAnimating() {
-        isAnimating = false
+        slideIndicatorIsAnimating = false
         
         indReplicatorLayer.removeAnimation(forKey: "rotate")
         indSegmentLayer.removeAnimation(forKey: "start")
         indSegmentLayer.removeAnimation(forKey: "end")
         indSegmentLayer.removeAnimation(forKey: "fade")
         
-        if hidesWhenStopped {
+        if hidesSlidesWhenStopped {
             self.isHidden = true
         }
     }

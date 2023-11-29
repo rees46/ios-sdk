@@ -16,7 +16,7 @@ public var global_EL: Bool = true
 class SimplePersonalizationSDK: PersonalizationSDK {
     private var storiesCode: String? = nil
     var shopId: String
-    var deviceID: String
+    var deviceId: String
     var userSeance: String
     var stream: String
     
@@ -42,7 +42,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     let bodyMutableData = NSMutableData()
     
-    private let semaphore = DispatchSemaphore(value: 0)
+    private let initSemaphore = DispatchSemaphore(value: 0)
+    private let serialSemaphore = DispatchSemaphore(value: 0)
 
     init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
@@ -61,8 +62,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Generate segment
         segment = ["A", "B"].randomElement() ?? "A"
         
-        // Trying to fetch user session (permanent user ID)
-        deviceID = UserDefaults.standard.string(forKey: "device_id") ?? ""
+        // Trying to fetch user session (permanent user Id)
+        deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
         urlSession = URLSession.shared
         sessionQueue.addOperation {
@@ -72,7 +73,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     if let res = try? initResult.get() {
                         self.userInfo = res
                         self.userSeance = res.seance
-                        self.deviceID = res.deviceID
+                        self.deviceId = res.deviceId
                         if let completion = completion {
                             completion(nil)
                         }
@@ -81,7 +82,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.decodeError)
                         }
                     }
-                    self.semaphore.signal()
+                    self.initSemaphore.signal()
                 case .failure(let error):
                     if let completion = completion {
                         completion(error)
@@ -99,16 +100,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.custom(error: typeOfConnection?.description ?? "Network Error" ))
                         }
                     }
-                    self.semaphore.signal()
+                    self.initSemaphore.signal()
                     break
                 }
             }
-            self.semaphore.wait()
+            self.initSemaphore.wait()
         }
     }
 
-    func getDeviceID() -> String {
-        return deviceID
+    func getDeviceId() -> String {
+        return deviceId
     }
 
     func getSession() -> String {
@@ -118,13 +119,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getCurrentSegment() -> String {
         return segment
     }
+    
+    func getShopId() -> String {
+        return shopId
+    }
 
     func setPushTokenNotification(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "token": token,
                 "platform": self.stream,
             ]
@@ -149,7 +154,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "token": token,
                 "platform": "ios",
             ]
@@ -173,7 +178,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionQueue.addOperation {
             let path = "search/blank"
             let params: [String : String] = [
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "shop_id": self.shopId
             ]
             
@@ -198,7 +203,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionQueue.addOperation {
             let path = "nps/create"
             let params: [String : String] = [
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "shop_id": self.shopId,
                 "rate": String(rate),
                 "channel": channel,
@@ -232,7 +237,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "profile/set"
             var paramsTemp: [String: Any?] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
             ]
@@ -360,7 +365,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             var paramEvent = ""
             var params: [String: Any] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment
@@ -494,7 +499,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "push/custom"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment,
@@ -557,7 +562,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "recommend/\(blockId)"
             var params = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "extended": "true",
@@ -604,7 +609,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "search"
             var params: [String: String] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "type": "full_search",
@@ -691,7 +696,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "search"
             var params = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "type": "instant_search",
@@ -730,7 +735,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "track/clicked"
             let params: [String: String] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "code": code,
                 "type": type
             ]
@@ -757,7 +762,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "track/received"
             let params: [String: String] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "code": code,
                 "type": type
             ]
@@ -784,7 +789,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "subscriptions/subscribe_for_product_price"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment,
@@ -818,7 +823,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "subscriptions/subscribe_for_product_available"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment,
@@ -851,7 +856,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let path = "subscriptions/manage"
         var params: [String: Any] = [
             "shop_id": self.shopId,
-            "did": self.deviceID,
+            "did": self.deviceId,
             "seance": self.userSeance,
             "sid": self.userSeance,
             "segment": self.segment
@@ -898,7 +903,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "segments/add"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment_id": segmentId
@@ -930,7 +935,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let path = "segments/remove"
             var params: [String: Any] = [
                 "shop_id": self.shopId,
-                "did": self.deviceID,
+                "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment_id": segmentId
@@ -986,10 +991,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         
-        if self.baseURL != UserDefaults.standard.string(forKey: "base_url") ?? "" {
-            try? FileManager.default.removeItem(at: initFileNamePath)
-        }
-        
         let initData = NSData(contentsOf: initFileNamePath)
         let json = try? JSONSerialization.jsonObject(with: initData as? Data ?? Data())
         if let jsonObject = json as? [String: Any] {
@@ -997,6 +998,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.finalizeInit(result: resultResponse)
             sleep(1)
             completion(.success(resultResponse))
+            self.serialSemaphore.signal()
             
         } else if let ipfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
             let jsonSecret = try? JSONSerialization.jsonObject(with: ipfsSecret)
@@ -1006,16 +1008,22 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case let .success(successResult):
                     let resJSON = successResult
                     let resultResponse = InitResponse(json: resJSON)
+                    //try self.saveDataToJsonFile(ipfsSecret, jsonInitFileName: initFileNamePath)
                     self.finalizeInit(result: resultResponse)
+                    sleep(1)
                     completion(.success(resultResponse))
+                    self.serialSemaphore.signal()
                 case .failure(_):
                     if let jsonObject = jsonSecret as? [String: Any] {
                         let resultResponse = InitResponse(json: jsonObject)
                         self.finalizeInit(result: resultResponse)
                         sleep(1)
                         completion(.success(resultResponse))
+                        self.serialSemaphore.signal()
                     }
                 }
+                
+                try? self.saveDataToJsonFile(ipfsSecret, jsonInitFileName: convertedInitJsonFileName)
             }
         } else {
             getRequest(path: path, params: params, true) { result in
@@ -1025,11 +1033,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     let resultResponse = InitResponse(json: resJSON)
                     self.finalizeInit(result: resultResponse)
                     completion(.success(resultResponse))
+                    self.serialSemaphore.signal()
                 case let .failure(error):
                     completion(.failure(error))
                 }
             }
         }
+        
+        self.serialSemaphore.wait()
     }
     
     public func deleteUserCredentials() {
@@ -1047,7 +1058,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let path = "stories/\(code)"
         let params: [String: String] = [
             "shop_id": shopId,
-            "did": deviceID
+            "did": deviceId
         ]
         let sessionConfig = URLSessionConfiguration.default
         if SdkConfiguration.stories.storiesSlideReloadManually {
@@ -1103,7 +1114,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func finalizeInit(result: InitResponse) {
-        let dId = result.deviceID
+        let dId = result.deviceId
         let sId = result.seance
         let rootDid: String? = UserDefaults.standard.string(forKey: "device_id") ?? ""
         if (rootDid == nil || rootDid == "") {
@@ -1209,15 +1220,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 return
             }
             
-            let boundary = generateBoundary()
-            let jsonData = createDataForBody(withParameters: requestParams, content: [], boundary: boundary)
-            
-            _ = (try? JSONSerialization.data(withJSONObject: requestParams)) ?? Data()
-            
+            let boundary = generateSdkBoundary()
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
             
-            urlSession.postTask(with: request, bodyData: jsonData) { result in
+            urlSession.postTask(with: request) { result in
                 switch result {
                 case .success(let (response, data)):
                     guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
@@ -1267,54 +1275,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func createDataForBody(withParameters params: [String: Any]?, content: [DataUploadStruct]?, boundary: String) -> Data {
-        let lineBreak = "\r\n"
-        var body = Data()
-
-        if let parameters = params {
-            for (key, value) in parameters {
-                body.append("--\(boundary + lineBreak)")
-                body.append("Content-Disposition: form-data; name=\"\(key)\"\(lineBreak + lineBreak)")
-                
-                if let vString = value as? String {
-                    body.append("\(vString + lineBreak)")
-                }
-            }
-        }
-
-        if let content = content {
-            for uploadData in content {
-                body.append("--\(boundary + lineBreak)")
-                body.append("Content-Disposition: form-data; name=\"\(uploadData.key)\"; filename=\"\(uploadData.fileName)\"\(lineBreak)")
-                body.append("Content-Type: \(uploadData.mimeType + lineBreak + lineBreak)")
-                body.append(uploadData.data)
-                body.append(lineBreak)
-            }
-        }
-
-        body.append("--\(boundary)--\(lineBreak)")
-        return body
-    }
-    
-    func generateBoundary() -> String {
+    func generateSdkBoundary() -> String {
         let identifierForVendor = UIDevice.current.identifierForVendor!.uuidString
         return "Boundary-\(identifierForVendor)"
-    }
-    
-    struct DataUploadStruct {
-        let key: String
-        let fileName: String
-        let data: Data
-        let mimeType: String
-
-        init?(withImage image: UIImage, forKey key: String) {
-            self.key = key
-            self.mimeType = "image/jpg"
-            self.fileName = "\(arc4random()).jpeg"
-
-            guard let data = image.jpegData(compressionQuality: 1.0) else { return nil }
-            self.data = data
-        }
     }
 }
 
@@ -1344,7 +1307,7 @@ extension URLSession {
         }
     }
     
-    func postTask(with request: URLRequest, bodyData: Data, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
+    func postTask(with request: URLRequest, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
         return uploadTask(with: request, from: nil) { data, response, error in
             if let error = error {
                 result(.failure(error))

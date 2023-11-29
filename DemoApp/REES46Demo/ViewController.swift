@@ -15,16 +15,18 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var pushTokenLabel: UILabel!
     @IBOutlet private weak var didLabel: UILabel!
     @IBOutlet private weak var scrollView: UIScrollView!
-    @IBOutlet private weak var storiesCollectionView: StoriesView!
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
+    public var waitIndicator: SdkActivityIndicator!
     
+    @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         addSdkObservers()
         setupSdkDemoAppViews()
+        setupSdkActivityIndicator()
     }
     
     func addSdkObservers() {
@@ -36,7 +38,7 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     }
     
     deinit {
-        NotificationCenter.default.removeObserver(self,name: globalSDKNotificationName, object: nil)
+        NotificationCenter.default.removeObserver(self, name: globalSDKNotificationName, object: nil)
     }
     
     @objc
@@ -78,17 +80,19 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     
     @objc
     private func didTapReset() {
+        self.waitIndicator.startAnimating()
+        
         let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
         let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
         try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
         sleep(3)
-
+        
         globalSDK?.resetSdkCache()
         globalSDK?.deleteUserCredentials()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             self.setupSdkLabels()
+            self.waitIndicator.stopAnimating()
         }
-        //viewWillLayoutSubviews()
     }
     
     func setupSdkDemoAppViews() {
@@ -119,6 +123,14 @@ class ViewController: UIViewController, UIScrollViewDelegate {
             self.pushTokenLabel.text = "PUSHTOKEN\n\n" + pushGlobalToken
             self.fcmTokenLabel.text = "FCMTOKEN\n\n" + fcmGlobalToken
         }
+    }
+    
+    func setupSdkActivityIndicator() {
+        self.waitIndicator = SdkActivityIndicator(frame: CGRect(x: 0, y: 0, width: 76, height: 76))
+        self.waitIndicator.indicatorColor = UIColor.sdkDefaultGreenColor
+        self.view.addSubview(self.waitIndicator)
+        self.waitIndicator.center = self.view.center
+        self.waitIndicator.hideIndicatorWhenStopped = true
     }
     
     func fontInterPreload() {

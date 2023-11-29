@@ -1,15 +1,15 @@
 import XCTest
 import REES46
 
-class DeviceIDSaveTest: XCTestCase {
+class DeviceIdSaveTest: XCTestCase {
     
-    // First we start the application so that the deviceID is saved, then we run this test
+    // First we start the application so that the deviceId is saved, then we run this test
     func test_is_device_id_haved_second_run() {
-        let deviceID = UserDefaults.standard.string(forKey: "device_id") ?? "" // Get DeviceID from storage
-        if deviceID.isEmpty{
-            XCTAssert(false, "deviceID bad, init sdk, rerun test")
+        let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "" // Get DeviceId from storage
+        if deviceId.isEmpty{
+            XCTAssert(false, "deviceId bad, init sdk, rerun test")
         } else {
-            XCTAssert(true, "deviceID good")
+            XCTAssert(true, "deviceId good")
         }
     }
 }
@@ -30,26 +30,26 @@ class Tests: XCTestCase {
     func test_device_id_initialization() {
         if let sdk = sdk {
             sdk.track(event: .productView(id: "123")) { (response) in
-                let deviceID = sdk.getDeviceID()
-                if deviceID.isEmpty{
-                    XCTAssert(false, "deviceID bad")
+                let deviceId = sdk.getDeviceId()
+                if deviceId.isEmpty{
+                    XCTAssert(false, "deviceId bad")
                 } else {
-                    XCTAssert(true, "deviceID good")
+                    XCTAssert(true, "deviceId good")
                 }
             }
         }
     }
     
     func test_device_id_rewrite() {
-        let oldDeviceID = sdk?.getDeviceID() // Get the old saved deviceID
+        let oldDeviceId = sdk?.getDeviceId() // Get the old saved deviceId
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in
-                let deviceID = sdk.getDeviceID()
-                if oldDeviceID == deviceID {
-                    XCTAssert(true, "deviceID bad")
+                let deviceId = sdk.getDeviceId()
+                if oldDeviceId == deviceId {
+                    XCTAssert(true, "deviceId bad")
                 } else {
-                    XCTAssert(false, "deviceID good")
+                    XCTAssert(false, "deviceId good")
                 }
             }
         } else {
@@ -58,7 +58,7 @@ class Tests: XCTestCase {
     }
     
     func test_session_generated() {
-        let oldSession = sdk?.getSession() // Get the old saved sessionID
+        let oldSession = sdk?.getSession() // Get the old saved sessionId
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in

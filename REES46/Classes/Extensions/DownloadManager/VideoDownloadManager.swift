@@ -132,7 +132,10 @@ final public class VideoDownloadManager: NSObject {
     }
 
     private func isDownloadInProgress(forUniqueKey key:String?) -> (Bool, VideoDownloadObject?) {
-        guard let key = key else { return (false, nil) }
+        guard let key = key else {
+            return (false, nil)
+        }
+
         for (uniqueKey, download) in self.ongoingDownloads {
             if key == uniqueKey {
                 return (true, download)
@@ -166,7 +169,6 @@ final public class VideoDownloadManager: NSObject {
 }
 
 extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
-    
     public func urlSession(_ session: URLSession,
                              downloadTask: URLSessionDownloadTask,
                              didFinishDownloadingTo location: URL) {

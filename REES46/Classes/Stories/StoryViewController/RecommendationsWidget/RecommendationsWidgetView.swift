@@ -10,13 +10,13 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     
     public var cells = [Recommended]()
     
-    private var ratingStorage = [Double](repeating: 0, count: rowsCount)
-    
-    private static var rowsCount = 100
+    private static var rowsCount = 999
     
     public let recommendationsCollectionWidgetIndicator = StoriesSlideReloadIndicator()
     
     public weak var recommendationsDelegate: RecommendationsWidgetCommunicationProtocol?
+    
+    public var recommendationsIndicatorView: SdkActivityIndicator!
     
     public init() {
         let layout = UICollectionViewFlowLayout()
@@ -36,9 +36,19 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
         
-         for i in 0..<RecommendationsWidgetView.rowsCount {
-             ratingStorage[i] = Double(i) / 99 * 5
-        }
+//        setupRecommendationsActivityIndicator()
+    }
+    
+    func setupRecommendationsActivityIndicator() {
+        self.recommendationsIndicatorView = SdkActivityIndicator(frame: CGRect(x: 0, y: 0, width: 76, height: 76))
+        self.recommendationsIndicatorView.lineWidth = 3
+        self.recommendationsIndicatorView.indicatorColor = UIColor.green
+        self.addSubview(self.recommendationsIndicatorView)
+        
+        self.recommendationsIndicatorView.center = center
+        self.recommendationsIndicatorView.hideIndicatorWhenStopped = true
+        
+        self.recommendationsIndicatorView.startAnimating()
     }
     
     public func loadWidget(sdk: PersonalizationSDK, blockId: String) {
@@ -123,9 +133,6 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         
         let ratingForStars = cells[indexPath.row].rating
         cell.update(Double(ratingForStars))
-        //cell.recommendationsRatingStars.didFinishTouchingRecommendationsStars = { [weak self] ratingForStars in
-            //self?.ratingStorage[indexPath.row] = ratingForStars
-        //}
         
         let pId = cells[indexPath.row].id
         
@@ -157,7 +164,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             }
             
             cell.recommendationsCartButton.setTitle(addTxtStr, for: .normal)
+            
         } else {
+            
             let removeTxtStr = SdkConfiguration.recommendations.widgetRemoveFromCartButtonText
             
             if SdkConfiguration.recommendations.widgetFontName != nil {
@@ -225,7 +234,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB()
             }
             cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
+            
         } else {
+            
             var heartFillIcon = UIImage(named: "iconLikeHeartFillDark", in: frameworkBundle, compatibleWith: nil)
             if SdkConfiguration.isDarkMode {
                 heartFillIcon = UIImage(named: "iconLikeHeartFillLight", in: frameworkBundle, compatibleWith: nil)
@@ -269,6 +280,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 })
                 
             } else {
+                
                 if let index = viewedSlidesCartCachedArray.firstIndex(of: selectedProductForCartFromWidget.id) {
                     viewedSlidesCartCachedArray.remove(at: index)
                 }
@@ -309,21 +321,6 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     public func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
         if let indexPath = indexPath(for: cell) {
             let selectedProductForFavoritesFromWidget = cells[indexPath.row]
-            
-            print("\nUser did tap Add/Remove To Favorites from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
-            print("Favorite product name: \(selectedProductForFavoritesFromWidget.name)")
-            print("Favorite product brand: \(selectedProductForFavoritesFromWidget.brand)")
-            print("Favorite product model: \(selectedProductForFavoritesFromWidget.model)")
-            print("Favorite product imageUrl: \(selectedProductForFavoritesFromWidget.imageUrl)")
-            print("Favorite product resizedImageUrl: \(selectedProductForFavoritesFromWidget.resizedImageUrl)")
-            print("Favorite product url: \(selectedProductForFavoritesFromWidget.url)")
-            print("Favorite product deeplinkIos: \(selectedProductForFavoritesFromWidget.deeplinkIos)")
-            print("Favorite product price: \(selectedProductForFavoritesFromWidget.price)")
-            print("Favorite product priceFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFormatted))")
-            print("Favorite product priceFull: \(selectedProductForFavoritesFromWidget.priceFull)")
-            print("Favorite product priceFullFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFullFormatted))")
-            print("Favorite product currency: \(selectedProductForFavoritesFromWidget.currency)\n")
-            
             let productFavoritesId = "favorites.product." + selectedProductForFavoritesFromWidget.id
             
             var viewedSlidesFavoritesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productFavoritesId)) as? [String] ?? []
@@ -338,7 +335,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 UIView.performWithoutAnimation({
                     self.reloadData()
                 })
+                
             } else {
+                
                 if let index = viewedSlidesFavoritesCachedArray.firstIndex(of: selectedProductForFavoritesFromWidget.id) {
                     viewedSlidesFavoritesCachedArray.remove(at: index)
                 }
@@ -348,6 +347,20 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                     self.reloadData()
                 })
             }
+            
+            print("\nUser did tap Add/Remove To Favorites from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
+            print("Favorite product name: \(selectedProductForFavoritesFromWidget.name)")
+            print("Favorite product brand: \(selectedProductForFavoritesFromWidget.brand)")
+            print("Favorite product model: \(selectedProductForFavoritesFromWidget.model)")
+            print("Favorite product imageUrl: \(selectedProductForFavoritesFromWidget.imageUrl)")
+            print("Favorite product resizedImageUrl: \(selectedProductForFavoritesFromWidget.resizedImageUrl)")
+            print("Favorite product url: \(selectedProductForFavoritesFromWidget.url)")
+            print("Favorite product deeplinkIos: \(selectedProductForFavoritesFromWidget.deeplinkIos)")
+            print("Favorite product price: \(selectedProductForFavoritesFromWidget.price)")
+            print("Favorite product priceFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFormatted))")
+            print("Favorite product priceFull: \(selectedProductForFavoritesFromWidget.priceFull)")
+            print("Favorite product priceFullFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFullFormatted))")
+            print("Favorite product currency: \(selectedProductForFavoritesFromWidget.currency)\n")
             
             recommendationsDelegate?.addToFavoritesProductData(product: selectedProductForFavoritesFromWidget)
         }

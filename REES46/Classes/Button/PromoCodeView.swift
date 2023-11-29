@@ -56,7 +56,7 @@ class PromoCodeView: UIView {
             promocodeSlideProductImage.layer.masksToBounds = true
             promocodeSlideProductImage.layer.cornerRadius = 6.0
             promocodeSlideProductImage.layer.borderColor = UIColor.clear.cgColor
-            promocodeSlideProductImage.frame = CGRect(x: 18, y: frame.maxY/2 - frame.size.width/2, width: frame.size.width - 36, height: frame.size.width - 36)
+            promocodeSlideProductImage.frame = CGRect(x: 18, y: frame.maxY / 2 - frame.size.width / 2, width: frame.size.width - 36, height: frame.size.width - 36)
             
             addSubview(promocodeSlideProductImage)
             

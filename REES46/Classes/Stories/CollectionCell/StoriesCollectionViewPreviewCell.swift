@@ -11,7 +11,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
     let storyAuthorNameLabel = UILabel()
     let pinSymbolView = UIView()
     let pinSymbolLabel = UILabel()
-    let storiesBlockAnimatedLoader = StoriesSlideReloadIndicator()
+    public let storiesBlockAnimatedLoader = StoriesSlideReloadIndicator()
     
     private var task: URLSessionDataTask?
     
@@ -250,9 +250,14 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         
         let sId = storyId
         DispatchQueue.onceTechService(token: sId) {
-            UIView.animate(withDuration: 0.7, animations: {
-                self.storiesBlockAnimatedLoader.alpha = 1
-            })
+            
+            if SdkConfiguration.stories.storiesBlockPreloadIndicatorDisabled {
+                //Cell indicator disabled
+            } else {
+                UIView.animate(withDuration: 0.7, animations: {
+                    self.storiesBlockAnimatedLoader.alpha = 1
+                })
+            }
             storiesBlockAnimatedLoader.startAnimating()
 
             let preffixStart = Double(Int.random(in: 3..<5))

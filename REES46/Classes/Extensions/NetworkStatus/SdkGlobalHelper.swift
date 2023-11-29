@@ -1,33 +1,6 @@
 import UIKit
 import Foundation
 
-struct Profile: Codable {
-    let id: String!
-    let url: URL
-}
-
-public struct UserProfileCache {
-    static let key = "userProfileCache"
-    
-    static func save(_ value: Profile!) {
-         UserDefaults.standard.set(try? PropertyListEncoder().encode(value), forKey: key)
-    }
-    
-    static func get() -> Profile! {
-        var userData: Profile!
-        if let data = UserDefaults.standard.value(forKey: key) as? Data {
-            userData = try? PropertyListDecoder().decode(Profile.self, from: data)
-            return userData!
-        } else {
-            return userData
-        }
-    }
-    
-    static func remove() {
-        UserDefaults.standard.removeObject(forKey: key)
-    }
-}
-
 public class SdkGlobalHelper {
 
     public class var sharedInstance: SdkGlobalHelper {
@@ -104,7 +77,7 @@ public class SdkGlobalHelper {
 }
 
 
-public extension DispatchQueue {
+extension DispatchQueue {
     private static var _onceTracker = [String]()
     
     class func onceTechService(
@@ -131,7 +104,7 @@ public extension DispatchQueue {
 }
 
 
-public extension UIImage {
+extension UIImage {
     func withRoundedCorners(radius: CGFloat? = nil) -> UIImage? {
         let maxRadius = min(size.width, size.height) / 2
         let cornerRadius: CGFloat
@@ -171,15 +144,11 @@ extension UIColor {
             blue: rgb & 0xFF
         )
     }
-    
-    static func generateRandomColor(from colors: [UIColor]) -> UIColor? {
-        return colors.randomElement()
-    }
 }
 
 
 extension UIColor {
-    class func hexStringFromColor(color: UIColor) -> String {
+    public class func hexStringFromColor(color: UIColor) -> String {
         let components = color.cgColor.components
         
         if components?.count == 2 {
@@ -201,7 +170,7 @@ extension UIColor {
         }
     }
     
-    var rgba: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+    public var rgba: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
         var red: CGFloat = 0
         var green: CGFloat = 0
         var blue: CGFloat = 0
@@ -211,7 +180,7 @@ extension UIColor {
         return (red, green, blue, alpha)
     }
     
-    func withBrightness(brightness: CGFloat) -> UIColor {
+    public func withBrightness(brightness: CGFloat) -> UIColor {
         var H: CGFloat = 0, S: CGFloat = 0, B: CGFloat = 0, A: CGFloat = 0
         if getHue(&H, saturation: &S, brightness: &B, alpha: &A) {
             B += (brightness - 1.0)
@@ -221,21 +190,16 @@ extension UIColor {
         return self
     }
     
-    static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
-    static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
-    static let sdkDefaultOrangeColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
-    static let sdkDefaultBlueColor = UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
-    static let sdkDefaultYellowColor = UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
-    static let sdkDefaultGreenColor = UIColor(red: 94/255, green: 193/255, blue: 105/255, alpha: 1.0)
+    public static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
+    public static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
+    public static let sdkDefaultOrangeColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
+    public static let sdkDefaultBlueColor = UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
+    public static let sdkDefaultYellowColor = UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
+    public static let sdkDefaultGreenColor = UIColor(red: 94/255, green: 193/255, blue: 105/255, alpha: 1.0)
 }
 
 
 extension String {
-    var wordCountDeprecated: Int {
-        let rgx = try? NSRegularExpression(pattern: "\\w+")
-        return rgx?.numberOfMatches(in: self, range: NSRange(location: 0, length: self.utf16.count)) ?? 0
-    }
-
     func localizeUI(withComment comment: String? = nil) -> String {
         return NSLocalizedString(self, comment: comment ?? "")
     }

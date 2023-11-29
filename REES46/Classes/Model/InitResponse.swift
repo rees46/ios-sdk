@@ -1,11 +1,11 @@
 struct InitResponse: Codable {
-    var deviceID: String = ""
+    var deviceId: String = ""
     var seance: String = ""
     var currency: String = ""
     var search: Search = Search()
 
     init(json: [String: Any]) {
-        deviceID = json["did"] as? String ?? ""
+        deviceId = json["did"] as? String ?? ""
         seance = json["seance"] as? String ?? ""
         currency = json["currency"] as? String ?? ""
         if let search = json["search"] as? [String: Any] {
