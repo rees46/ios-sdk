@@ -1220,8 +1220,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 return
             }
             
-            let boundary = generateSdkBoundary()
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
             
