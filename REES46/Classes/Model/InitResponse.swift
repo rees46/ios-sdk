@@ -1,4 +1,4 @@
-struct InitResponse: Codable {
+public struct InitResponse: Codable {
     var deviceId: String = ""
     var seance: String = ""
     var currency: String = ""

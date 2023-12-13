@@ -55,6 +55,14 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         return rateStarsView
     }()
     
+    let recommendationsRatingStarsNoReviewsLabel: UILabel = {
+        let rLabel = UILabel()
+        rLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        rLabel.textColor = #colorLiteral(red: 0.6000000238, green: 0.6000000238, blue: 0.6000000238, alpha: 1)
+        rLabel.translatesAutoresizingMaskIntoConstraints = false
+        return rLabel
+    }()
+    
     let recommendationsRatingLabel: UILabel = {
         let rLabel = UILabel()
         rLabel.font = UIFont.systemFont(ofSize: 14, weight: .medium)
@@ -149,7 +157,6 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
     
     @objc
     public func didAddToFavoritesTapButton(_ sender: AnyObject) {
-        //let tapFavCellPosition = sender.location(in: self.contentView)
         let tapFavCellPosition: CGPoint = sender.convert(CGPointZero, to: self)
         widgetCellDelegate?.didTapWidgetAddToFavoritesButtonInside(cell: self, position: tapFavCellPosition)
     }
@@ -165,6 +172,7 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         addSubview(recommendationsDiscountLabel)
         addSubview(recommendationsCreditLabel)
         addSubview(recommendationsRatingStars)
+        addSubview(recommendationsRatingStarsNoReviewsLabel)
         addSubview(recommendationsRatingLabel)
         addSubview(recommendationsProductNameLabel)
         addSubview(recommendationsClearLabel)
@@ -174,22 +182,7 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         addSubview(recommendationsFavoritesButton)
         
         backgroundColor = .white
-        
-//        let customCellPreloadIndicatorColor = SdkConfiguration.recommendations.storiesSlideReloadIndicatorBackgroundColor.hexToRGB()
-//        recommendationsCellWidgetIndicator.strokeColor = UIColor(red: customCellPreloadIndicatorColor.red, green: customCellPreloadIndicatorColor.green, blue: customCellPreloadIndicatorColor.blue, alpha: 1)
-//        recommendationsCellWidgetIndicator.contentMode = .scaleToFill
-//        recommendationsCellWidgetIndicator.lineWidth = SdkConfiguration.stories.storiesSlideReloadIndicatorBorderLineWidth
-//        recommendationsCellWidgetIndicator.numSegments = SdkConfiguration.stories.storiesSlideReloadIndicatorSegmentCount
-//        recommendationsCellWidgetIndicator.animationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorAnimationDuration
-//        recommendationsCellWidgetIndicator.rotationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorRotationDuration
-//        recommendationsCellWidgetIndicator.alpha = 1.0
-//        addSubview(recommendationsCellWidgetIndicator)
-//        
-//        recommendationsCellWidgetIndicator.translatesAutoresizingMaskIntoConstraints = false
-//        recommendationsCellWidgetIndicator.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-//        recommendationsCellWidgetIndicator.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-//        recommendationsCellWidgetIndicator.startAnimating()
-        
+
         saveWidgetStarRating()
         loadWidgetStarRating()
         
@@ -210,20 +203,23 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         recommendationsCreditLabel.isHidden = true //coming soon
         recommendationsDiscountLabel.isHidden = true //coming soon
         
-        recommendationsRatingStars.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 15).isActive = true
-        recommendationsRatingStars.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        recommendationsRatingStars.topAnchor.constraint(equalTo: recommendationsImageView.bottomAnchor, constant: 8).isActive = true
-        
-        recommendationsRatingLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 140).isActive = true
-        recommendationsRatingLabel.topAnchor.constraint(equalTo: recommendationsImageView.bottomAnchor, constant: 10).isActive = true
-        
         recommendationsProductNameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14).isActive = true
         recommendationsProductNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14).isActive = true
-        //recommendationsProductNameLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
-        recommendationsProductNameLabel.topAnchor.constraint(equalTo: recommendationsRatingStars.bottomAnchor, constant: 8).isActive = true
+        recommendationsProductNameLabel.topAnchor.constraint(equalTo: recommendationsImageView.bottomAnchor, constant: 10).isActive = true
+        
+        recommendationsRatingStars.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14).isActive = true
+        recommendationsRatingStars.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        recommendationsRatingStars.bottomAnchor.constraint(equalTo: recommendationsOldPrice.topAnchor, constant: -6).isActive = true
+        
+        recommendationsRatingStarsNoReviewsLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14).isActive = true
+        recommendationsRatingStarsNoReviewsLabel.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        recommendationsRatingStarsNoReviewsLabel.bottomAnchor.constraint(equalTo: recommendationsOldPrice.topAnchor, constant: -4).isActive = true
+        
+        recommendationsRatingLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 140).isActive = true
+        recommendationsRatingLabel.bottomAnchor.constraint(equalTo: recommendationsOldPrice.topAnchor, constant: -8).isActive = true
         
         recommendationsClearLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14).isActive = true
-        recommendationsClearLabel.topAnchor.constraint(equalTo: recommendationsProductNameLabel.bottomAnchor, constant: 8).isActive = true
+        recommendationsClearLabel.topAnchor.constraint(equalTo: recommendationsOldPrice.bottomAnchor, constant: 8).isActive = true
         
         recommendationsOldPrice.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 14).isActive = true
         recommendationsOldPrice.topAnchor.constraint(equalTo: recommendationsPriceLabel.topAnchor, constant: -20).isActive = true

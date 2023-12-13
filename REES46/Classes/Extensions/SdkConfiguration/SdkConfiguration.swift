@@ -73,12 +73,13 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var widgetCartButtonBackgroundColorDarkMode: String = "#ffffff"
     public var widgetAddToCartButtonText: String = "Add to cart"
     public var widgetRemoveFromCartButtonText: String = "Remove from cart"
-    public var widgetAddToCartButtonFontSize: CGFloat? = nil
+    public var widgetAddToCartButtonFontSize: CGFloat? = 17.0
     public var widgetRemoveFromCartButtonFontSize: CGFloat? = 14.0
     public var widgetFavoritesIconColor: String = "#000000"
     public var widgetFavoritesIconColorDarkMode: String = "#ffffff"
     public var widgetCartButtonNeedOpenWebUrl = false
     public var widgetPreloadIndicatorColor: String = "#000000"
+    public var widgetNoReviewsDefaultText: String = "No reviews"
     
     //Sdk Stories Block collection cell indicator
     public var storiesBlockPreloadIndicatorDisabled = false
@@ -552,7 +553,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                                widgetCartButtonNeedOpenWebUrl: Bool? = false,
                                widgetFavoritesIconColor: String? = nil,
                                widgetFavoritesIconColorDarkMode: String? = nil,
-                               widgetPreloadIndicatorColor: String? = nil) {
+                               widgetPreloadIndicatorColor: String? = nil,
+                               widgetNoReviewDefaultMessage: String? = "No reviews") {
         
         if widgetFontName != nil {
             self.widgetFontName = widgetFontName!
@@ -622,6 +624,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         }
         if widgetPreloadIndicatorColor != nil {
             self.widgetPreloadIndicatorColor = widgetPreloadIndicatorColor!
+        }
+        if widgetNoReviewDefaultMessage != nil {
+            self.widgetNoReviewsDefaultText = widgetNoReviewDefaultMessage!
         }
     }
     

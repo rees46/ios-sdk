@@ -156,7 +156,6 @@ class Slide {
                                                         shouldDownloadInBackground: true,
                                                         //shouldDownloadInBackground: false,
                                                         onProgress: {(progress) in
-            
         }) {(error, url) in
             if let error = error {
                 print("Error is \(error as NSError)")

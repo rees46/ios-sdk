@@ -28,6 +28,8 @@
 		9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */; };
 		9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */; };
 		B1C2E48F0AA07BFCE811CD4D /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 530EC96600A5A2F41031D2A4 /* Pods_REES46Demo.framework */; };
+		E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */; };
+		E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */; };
 		E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9EAB8662AF08A43003DC1B5 /* Inter.ttf */; };
 /* End PBXBuildFile section */
 
@@ -107,6 +109,8 @@
 		D924B3361C8AFE61DB780D49 /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
 		DECC29E03D6F5A84BFDD45F5 /* Pods-REES46Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
+		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
 		E9EAB8662AF08A43003DC1B5 /* Inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Inter.ttf; sourceTree = "<group>"; };
 		FBE9AF855404FF3F7E5667EF /* Pods-REES46Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.release.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -284,6 +288,8 @@
 			isa = PBXGroup;
 			children = (
 				E9EAB8662AF08A43003DC1B5 /* Inter.ttf */,
+				E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */,
+				E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -426,6 +432,8 @@
 				9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */,
 				607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */,
 				E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */,
+				E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */,
+				E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */,
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
 			);

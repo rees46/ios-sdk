@@ -327,7 +327,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     private func handleLeftTap() {
-        
         if currentPosition.row > 0 {
             currentPosition.row -= 1
             collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
@@ -632,7 +631,8 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             }
             
             NotificationCenter.default.removeObserver(self, name: NSNotification.Name(cachedSlideMediaId), object: nil)
-            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)), name: Notification.Name(cachedSlideMediaId), object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(self.updateVisibleCells(notification:)),
+                                                   name: Notification.Name(cachedSlideMediaId), object: nil)
         }
     }
     
@@ -988,7 +988,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
         
         storiesSlideReloadIndicator.startAnimating()
         
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else {return UICollectionViewCell()}
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else { return UICollectionViewCell() }
         let slide = stories[indexPath.section].slides[indexPath.row]
         cell.configure(slide: slide)
         cell.cellDelegate = self

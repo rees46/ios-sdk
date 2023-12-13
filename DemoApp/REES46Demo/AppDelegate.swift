@@ -11,15 +11,16 @@ import FirebaseMessaging
 import REES46
 import UIKit
 import UserNotifications
-import AppTrackingTransparency
-import AdSupport
 
 var pushGlobalToken: String = ""
 var fcmGlobalToken: String = ""
 var didToken: String = ""
+
 var globalSDK: PersonalizationSDK?
 var globalSDKNotificationName = Notification.Name("globalSDK")
 
+var globalSDKAdditionalInit: PersonalizationSDK?
+var globalSDKNotificationNameAdditionalInit = Notification.Name("globalSDKAdditionalInit")
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -27,6 +28,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let gcmMessageIDKey = "gcm.message_id"
     var sdk: PersonalizationSDK!
+    var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
     
     
@@ -44,6 +46,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             didToken = self.sdk.getDeviceId()
             globalSDK = self.sdk
             NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
+        })
+        
+        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
+            print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id =", self.sdkAdditionalInit.getShopId())
+            didToken = self.sdk.getDeviceId()
+            globalSDKAdditionalInit = self.sdkAdditionalInit
+            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
         })
         
 //        //SDK Configuration init Font first
@@ -129,11 +138,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           widgetCartButtonNeedOpenWebUrl: false,
 //                                                           widgetFavoritesIconColor: "#000000",
 //                                                           widgetFavoritesIconColorDarkMode: "#ffffff",
-//                                                           widgetPreloadIndicatorColor: "#ffffff")
+//                                                           widgetPreloadIndicatorColor: "#ffffff",
+//                                                           widgetNoReviewDefaultMessage: "No reviews")
 
 //        //SDK Stories block collection cell indicator
 //        sdk.configuration().stories.storiesBlockPreloadIndicatorDisabled = true //default false - cell indicator enabled
-//
+
 //        //SDK Stories Slide default indicator
 //        sdk.configuration().stories.storiesSlideReloadIndicatorDisabled = true //default false - slide indicator enabled
 //        sdk.configuration().stories.storiesSlideReloadIndicatorBackgroundColor = "#ffffff"
@@ -226,8 +236,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        sdk.track(event: .productAddedToFavorities(id: "644")) { trackResponse in
-//            print("   Product added to favorities callback")
+//        sdk.track(event: .productAddedToFavorites(id: "644")) { trackResponse in
+//            print("   Product added to favorites callback")
 //            switch trackResponse {
 //            case let .success(response):
 //                print("     track product add to favorite is success")
@@ -245,11 +255,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        sdk.track(event: .productRemovedToFavorities(id: "644")) { trackResponse in
-//            print("   Product removed from favorities callback")
+//        sdk.track(event: .productRemovedFromFavorites(id: "644")) { trackResponse in
+//            print("   Product removed from favorites callback")
 //            switch trackResponse {
 //            case let .success(response):
-//                print("     track product removed from favorities is success")
+//                print("     track product removed from favorites is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -260,7 +270,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                default:
 //                    print("Error:", error.description)
 //                }
-//                //fatalError("    track product removed from favorities is failure")
+//                //fatalError("    track product removed from favorites is failure")
 //            }
 //        }
 //
@@ -496,7 +506,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
-//        removeAllFilesFromTemporaryDirectory()
+        //removeAllFilesFromTemporaryDirectory()
     }
     
     @available(iOS 13.0, *)
@@ -509,10 +519,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func removeAllFilesFromTemporaryDirectory() {
         let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let fileManager = FileManager.default
-
         do {
             let fileURLs = try fileManager.contentsOfDirectory(at: temporaryDirectoryURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-
             for fileURL in fileURLs {
                 try fileManager.removeItem(at: fileURL)
             }
@@ -524,18 +532,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      handleEventsForBackgroundURLSession identifier: String,
                      completionHandler: @escaping () -> Void) {
-            //backgroundCompletionHandler = completionHandler
+        //backgroundCompletionHandler = completionHandler
     }
 }
 
 // Firebase notifications
 extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        // FOR TEST
+        // FIREBASE TOKEN FOR TEST
         fcmGlobalToken = fcmToken ?? ""
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
-        // END TEST
-        notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
+        // FIREBASE TOKEN SEND TEST
+        // notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
+        // FIREBASE TOKEN END TEST
     }
 }
 
@@ -572,25 +581,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     func getDeliveredNotifications() {
         UNUserNotificationCenter.current().getDeliveredNotifications { (notifications) in
             print(notifications)
-        }
-    }
-    
-    private func requestTrackingAuthorization() {
-        guard #available(iOS 14, *) else { return }
-        ATTrackingManager.requestTrackingAuthorization { status in
-            DispatchQueue.main.async {
-                switch status {
-                case .authorized:
-                    let idfa = ASIdentifierManager.shared().advertisingIdentifier
-                    print("SDK User granted access to ios_advertising_id\nIDFA: ", idfa)
-                case .denied, .restricted:
-                    print("SDK User denied access to IDFA")
-                case .notDetermined:
-                    print("SDK User not received an authorization request to IDFA")
-                @unknown default:
-                    break
-                }
-            }
         }
     }
 }

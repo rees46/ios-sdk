@@ -395,13 +395,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .productAddedToCart(id, amount):
                 params["items"] = [["id":id, "amount":amount] as [String : Any]]
                 paramEvent = "cart"
-            case let .productAddedToFavorities(id):
+            case let .productAddedToFavorites(id):
                 params["items"] = [["id":id]]
                 paramEvent = "wish"
             case let .productRemovedFromCart(id):
                 params["items"] = [["id":id]]
                 paramEvent = "remove_from_cart"
-            case let .productRemovedToFavorities(id):
+            case let .productRemovedFromFavorites(id):
                 params["items"] = [["id":id]]
                 paramEvent = "remove_wish"
             case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
@@ -977,9 +977,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             params["did"] = dId
         }
         
-        let identifierManager = ASIdentifierManager.shared()
-        if identifierManager.isAdvertisingTrackingEnabled {
-            let advId = identifierManager.advertisingIdentifier.uuidString
+        //let advId = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+        let advId = UserDefaults.standard.string(forKey: "IDFA") ?? nil
+        if (advId != "00000000-0000-0000-0000-000000000000" && advId != nil) {
             params["ios_advertising_id"] = advId
         }
         
@@ -1008,7 +1008,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case let .success(successResult):
                     let resJSON = successResult
                     let resultResponse = InitResponse(json: resJSON)
-                    //try self.saveDataToJsonFile(ipfsSecret, jsonInitFileName: initFileNamePath)
                     self.finalizeInit(result: resultResponse)
                     sleep(1)
                     completion(.success(resultResponse))
@@ -1039,8 +1038,46 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
         }
-        
         self.serialSemaphore.wait()
+    }
+    
+    public func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
+        let path = "init"
+        var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
+        let hours = secondsFromGMT/3600
+        
+        var params: [String: String] = [
+            "shop_id": shopId,
+            "tz": String(hours)
+        ]
+        
+        let dId = UserDefaults.standard.string(forKey: "device_id") ?? ""
+        if dId != "" {
+            params["did"] = dId
+        }
+        
+        let advId = idfa.uuidString
+        if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
+            return
+        }
+        params["ios_advertising_id"] = advId
+        UserDefaults.standard.set(advId, forKey: "IDFA")
+        
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 1
+        sessionConfig.waitsForConnectivity = true
+        self.urlSession = URLSession(configuration: sessionConfig)
+        
+        getRequest(path: path, params: params, true) { result in
+            switch result {
+            case let .success(successResult):
+                let resJSON = successResult
+                let resultResponse = InitResponse(json: resJSON)
+                completion(.success(resultResponse))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+        }
     }
     
     public func deleteUserCredentials() {
@@ -1095,24 +1132,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         try data.write(to: jsonFileURL)
     }
     
-    func saveToTextFile(didToken: String) {
-        let didFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("did.txt")
-        do {
-            try didToken.write(to: didFileNamePath, atomically: true, encoding: String.Encoding.utf8)
-        } catch {
-            print("SDK Error Write dId token")
-        }
-    }
-    
-    func saveToTextFile(sidToken: String) {
-        let sidFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent("sid.txt")
-        do {
-            try sidToken.write(to: sidFileNamePath, atomically: true, encoding: String.Encoding.utf8)
-        } catch {
-            print("SDK Error Write seance sId token")
-        }
-    }
-    
     func finalizeInit(result: InitResponse) {
         let dId = result.deviceId
         let sId = result.seance
@@ -1136,7 +1155,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         var url = URLComponents(string: urlString)
 
         var queryItems = [URLQueryItem]()
-        for item in params{
+        for item in params {
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
         
@@ -1220,6 +1239,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 return
             }
             
+            //let boundary = generateSdkBoundary()
+            //request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
             

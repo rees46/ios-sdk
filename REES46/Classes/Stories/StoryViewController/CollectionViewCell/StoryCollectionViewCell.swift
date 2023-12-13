@@ -20,6 +20,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     let storyButton = StoryButton()
     let productsButton = ProductsButton()
     let muteButton = UIButton()
+    let reloadButton = ReloadButton()
     
     private var currentSlide: Slide?
     private var selectedElement: StoriesElement?
@@ -101,6 +102,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
     public func configure(slide: Slide) {
         self.currentSlide = slide
         
+        //reloadButton.configReloadButton()
+        
         if (currentSlide?.backgroundColor != nil || currentSlide?.backgroundColor != "") {
             let color = currentSlide?.backgroundColor.hexToRGB()
             self.backgroundColor = UIColor(red: color!.red, green: color!.green, blue: color!.blue, alpha: 1)
@@ -118,7 +121,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         if slide.type == .video {
             videoView.isHidden = false
             storySlideImageView.isHidden = true
-            //muteButton.isHidden = true
             
             self.videoView.layer.sublayers?.forEach {
                 if $0.name == "VIDEO" {
@@ -139,12 +141,10 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 
                 if playerItem.asset.tracks.filter({$0.mediaType == .audio}).count != 0 {
                     let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
-                    
                     var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
                     frameworkBundle = Bundle.module
 #endif
-                    
                     if soundSetting {
                         player.volume = 1
                         muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
@@ -167,9 +167,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 self.videoView.layer.addSublayer(playerLayer)
                 player.play()
                 UserDefaults.standard.set(currentSlide!.id, forKey: "LastViewedSlideMemorySetting")
-                
             } else {
-                
                 muteButton.isHidden = true
                 storySlideImageView.isHidden = false
                 videoView.isHidden = true
@@ -178,7 +176,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 }
             }
         } else {
-            
             muteButton.isHidden = true
             storySlideImageView.isHidden = false
             videoView.isHidden = true
@@ -801,7 +798,12 @@ class StoryCollectionViewCell: UICollectionViewCell {
         productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        
+
+//        reloadButton.widthAnchor.constraint(equalToConstant: 76).isActive = true
+//        reloadButton.heightAnchor.constraint(equalToConstant: 76).isActive = true
+//        reloadButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+//        reloadButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             
             clearConstraints()

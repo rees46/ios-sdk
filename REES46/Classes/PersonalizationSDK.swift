@@ -12,8 +12,8 @@ import UIKit
 public enum Event {
     case productView (id: String)
     case categoryView (id: String)
-    case productAddedToFavorities(id: String)
-    case productRemovedToFavorities(id: String)
+    case productAddedToFavorites(id: String)
+    case productRemovedFromFavorites(id: String)
     case productAddedToCart (id: String, amount: Int = 1)
     case productRemovedFromCart (id: String)
     case search (query: String)
@@ -108,6 +108,7 @@ public protocol PersonalizationSDK {
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func configuration() -> SdkConfiguration.Type
+    func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SDKError>) -> Void)
     func deleteUserCredentials()
 }
 

@@ -8,8 +8,14 @@
 
 import UIKit
 import REES46
+import AdSupport
+import AppTrackingTransparency
 
 class ViewController: UIViewController, UIScrollViewDelegate {
+    
+    @IBOutlet private weak var menuButton: UIButton!
+    @IBOutlet private weak var searchButton: UIButton!
+    @IBOutlet private weak var cartButton: UIButton!
     
     @IBOutlet private weak var fcmTokenLabel: UILabel!
     @IBOutlet private weak var pushTokenLabel: UILabel!
@@ -17,10 +23,12 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
+    
     public var waitIndicator: SdkActivityIndicator!
     
     @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
+    public var newArrivalsCollectionView = RecommendationsWidgetView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,42 +37,119 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         setupSdkActivityIndicator()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        requestTrackingAuthorization()
+        super.viewDidAppear(animated)
+    }
+    
     func addSdkObservers() {
         NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock),
                                                name: globalSDKNotificationName, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget),
-                                               name: globalSDKNotificationName, object: nil)
+                                               name: globalSDKNotificationNameAdditionalInit, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(loadNewArrivalsWidget),
+                                               name: globalSDKNotificationNameAdditionalInit, object: nil)
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self, name: globalSDKNotificationName, object: nil)
+        NotificationCenter.default.removeObserver(self, name: globalSDKNotificationNameAdditionalInit, object: nil)
     }
     
     @objc
     private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
-            
-            //Recommendation Widget loading if need manually after Sdk full initialization
-            //self.loadRecommendationsWidget()
         }
     }
     
     @objc private func loadRecommendationsWidget() {
         sleep(3)
-        if let globalSDK = globalSDK {
-            
+        if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
-                self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "bc1f41f40bb4f92a705ec9d5ec2ada42")
-                self.view.addSubview(self.recommendationsCollectionView)
+                self.recommendationsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "bc1f41f40bb4f92a705ec9d5ec2ada42")
+                self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
                 self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
-                self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: -25).isActive = true //top
+                self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 10).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
             }
+        }
+    }
+    
+    @objc private func loadNewArrivalsWidget() {
+        if let globalSDKAdditionalInit = globalSDKAdditionalInit {
+            DispatchQueue.main.async {
+                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "a043dbc2f852ffe18861a2cdfc364ef2")
+                self.scrollView.addSubview(self.newArrivalsCollectionView)
+                
+                // Recommendation Widget height and position settings
+                self.newArrivalsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
+                self.newArrivalsCollectionView.topAnchor.constraint(equalTo: self.recommendationsCollectionView.bottomAnchor, constant: 30).isActive = true //top
+                self.newArrivalsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
+                self.newArrivalsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
+            }
+        }
+    }
+    
+    @objc
+    private func didTapMenu() {
+        if #available(iOS 13.0, *) {
+            let popupView = SdkPopupAlertView(
+                title: "",
+                titleFont: .systemFont(ofSize: 5, weight: .light),
+                subtitle: "Coming soon",
+                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
+                icon: nil,
+                iconSpacing: 16,
+                position: .centerCustom,
+                onTap: { print("Coming soon")
+                }
+            )
+            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
+            popupView.show()
+        }
+    }
+    
+    @objc
+    private func didTapSearch() {
+        if #available(iOS 13.0, *) {
+            let popupView = SdkPopupAlertView(
+                title: "",
+                titleFont: .systemFont(ofSize: 5, weight: .light),
+                subtitle: "Coming soon",
+                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
+                icon: nil,
+                iconSpacing: 16,
+                position: .centerCustom,
+                onTap: { print("Coming soon")
+                }
+            )
+            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
+            popupView.show()
+        }
+    }
+    
+    @objc
+    private func didTapCart() {
+        if #available(iOS 13.0, *) {
+            let popupView = SdkPopupAlertView(
+                title: "",
+                titleFont: .systemFont(ofSize: 5, weight: .light),
+                subtitle: "Coming soon",
+                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
+                icon: nil,
+                iconSpacing: 16,
+                position: .centerCustom,
+                onTap: { print("Coming soon")
+                }
+            )
+            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
+            popupView.show()
         }
     }
     
@@ -97,10 +182,14 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
-        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 1400)
+        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2000)
 
+        menuButton.addTarget(self, action: #selector(didTapMenu), for: .touchUpInside)
+        searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
+        cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
         resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
+        
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.setupSdkLabels()
@@ -149,13 +238,40 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         ])
     }
     
+    //Advertising identifier support
+    public func requestTrackingAuthorization() {
+        guard #available(iOS 14, *) else { return }
+        ATTrackingManager.requestTrackingAuthorization { status in
+            DispatchQueue.main.async {
+                switch status {
+                case .authorized:
+                    let idfa = ASIdentifierManager.shared().advertisingIdentifier
+                    globalSDK?.sendIDFARequest(idfa: idfa, completion: { initIdfaResult in
+                        switch initIdfaResult {
+                        case .success:
+                            print("\nSDK User granted access to 'ios_advertising_id'\nIDFA:", idfa, "\n")
+                        case .failure(_):
+                            break
+                        }
+                    })
+                case .denied, .restricted:
+                    print("SDK User denied access to 'ios_advertising_id' IDFA")
+                case .notDetermined:
+                    print("SDK User not received an authorization request to 'ios_advertising_id' IDFA")
+                @unknown default:
+                    break
+                }
+            }
+        }
+    }
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
 }
 
 
-@IBDesignable class UpdateButton: UIButton {
+@IBDesignable class DemoShopButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()
@@ -168,10 +284,11 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     }
 
     func updateButtonCornerRadius() {
-        layer.backgroundColor = UIColor.white.cgColor
+        layer.backgroundColor = UIColor.black.cgColor
         layer.masksToBounds = true
         layer.borderWidth = 2.0
-        layer.borderColor = UIColor.systemGreen.cgColor
-        layer.cornerRadius = frame.size.height / 2
+        layer.borderColor = UIColor.white.cgColor
+        layer.cornerRadius = 8
+        //layer.cornerRadius = frame.size.height / 2
     }
 }

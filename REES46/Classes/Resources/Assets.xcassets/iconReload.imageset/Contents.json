@@ -1,11 +1,11 @@
 {
   "images" : [
     {
+      "filename" : "iconReload.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "leftMenuButton.png",
       "idiom" : "universal",
       "scale" : "2x"
     },

@@ -29,12 +29,7 @@ final public class VideoDownloadManager: NSObject {
             return nil
         }
         
-//        if self.ongoingDownloads.count == 0 {
-//            return nil
-//        }
-        
         if let _ = self.ongoingDownloads[url.absoluteString] {
-            //print("SDK Already in progress")
             return nil
         }
         var downloadTask: URLSessionDownloadTask
@@ -120,16 +115,6 @@ final public class VideoDownloadManager: NSObject {
             }
         }
     }
-    
-    private override init() {
-        super.init()
-        let sessionConfiguration = URLSessionConfiguration.default
-        self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
-        //let ephemeralConfiguration = URLSessionConfiguration.ephemeral
-        //self.eSession = URLSession(configuration: ephemeralConfiguration, delegate: self, delegateQueue: nil)
-        let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
-        self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
-    }
 
     private func isDownloadInProgress(forUniqueKey key:String?) -> (Bool, VideoDownloadObject?) {
         guard let key = key else {
@@ -166,6 +151,14 @@ final public class VideoDownloadManager: NSObject {
             })
         }
     }
+    
+    private override init() {
+        super.init()
+        let sessionConfiguration = URLSessionConfiguration.default
+        self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
+        let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
+        self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
+    }
 }
 
 extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate {
@@ -199,15 +192,6 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
             }
         }
         self.ongoingDownloads.removeValue(forKey:key)
-        
-//        if let removedValue = self.ongoingDownloads.removeValue(forKey: key) {
-//            self.ongoingDownloads.removeValue(forKey:key)
-//            print("SDK VideoDownloadManager Key value \(removedValue) was removed")
-//            //self.ongoingDownloads.removeValue(forKey:key)
-//        } else {
-//            //self.ongoingDownloads.removeValue(forKey:key)
-//            print("SDK VideoDownloadManager dictionary does not contain Key value \(key)")
-//        }
     }
     
     public func urlSession(_ session: URLSession,
