@@ -1,7 +1,7 @@
 import UIKit
 
 private var StoriesCollectionCellLoaderRequestUrlKey = 0
-private let _ioQueue = DispatchQueue(label: "swift.storiescollectioncellloader.queues.io", attributes: .concurrent)
+private let _ioQueue = DispatchQueue(label: "sdk.storiescollectioncellloader.queues", attributes: .concurrent)
 
 extension UIImageView {
     fileprivate var requestUrl: URL? {
@@ -36,10 +36,14 @@ extension SdkImageReloader where Base: UIImageView {
 
     @discardableResult
     public func request(with url: URLLiteralConvertible, placeholder: UIImage?, options: [Option] = [], onCompletion: @escaping (UIImage?, Error?, FetchOperation) -> Void) -> Loader? {
-        guard let storiesCollectionCellLoaderUrl = url.storiesCollectionCellLoaderURL else { return nil }
+        guard let storiesCollectionCellLoaderUrl = url.storiesCollectionCellLoaderURL else {
+            return nil
+        }
 
         let imageCompletion: (UIImage?, Error?, FetchOperation) -> Void = { image, error, operation in
-            guard var image = image else { return onCompletion(nil, error, operation)  }
+            guard var image = image else {
+                return onCompletion(nil, error, operation)
+            }
 
             DispatchQueue.main.async {
                 if options.contains(.adjustSize) {

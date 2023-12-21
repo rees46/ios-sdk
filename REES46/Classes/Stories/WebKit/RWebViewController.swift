@@ -239,7 +239,9 @@ extension RWebViewController:UIGestureRecognizerDelegate {
         
         if gestureRecognizer?.state != .cancelled {
             guard let translation: CGPoint = gestureRecognizer?
-                .translation(in: view) else { return }
+                .translation(in: view) else {
+                return
+            }
             container.center = CGPoint(
                 x: container.center.x,
                 y: lastLocation.y + translation.y)

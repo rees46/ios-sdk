@@ -988,7 +988,9 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
         
         storiesSlideReloadIndicator.startAnimating()
         
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else { return UICollectionViewCell() }
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoryCollectionViewCell.cellId, for: indexPath) as? StoryCollectionViewCell else {
+            return UICollectionViewCell()
+        }
         let slide = stories[indexPath.section].slides[indexPath.row]
         cell.configure(slide: slide)
         cell.cellDelegate = self
@@ -1068,7 +1070,9 @@ extension UICollectionView {
     func isValid(indexPath: IndexPath) -> Bool {
         guard indexPath.section < numberOfSections,
               indexPath.row < numberOfItems(inSection: indexPath.section)
-        else { return false }
+        else {
+            return false
+        }
         return true
     }
 }

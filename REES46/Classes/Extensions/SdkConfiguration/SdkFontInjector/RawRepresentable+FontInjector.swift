@@ -8,7 +8,10 @@ public extension RawRepresentable where Self: Hashable {
             var raw = 0
             return AnyIterator {
                 let current: Self = withUnsafePointer(to: &raw) { $0.withMemoryRebound(to: S.self, capacity: 1) { $0.pointee } }
-                guard current.hashValue == raw else { return nil }
+                guard current.hashValue == raw else {
+                    return nil
+                }
+                
                 raw += 1
                 print("\(current)")
                 return current

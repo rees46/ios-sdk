@@ -7,7 +7,7 @@ extension String {
     }
 }
 
-private let _ioQueue = DispatchQueue(label: "swift.storiescollectioncellloader.queues.disk.set")
+private let _ioQueue = DispatchQueue(label: "sdk.storiescollectioncellloader.disk.set")
 
 public struct Disk {
 
@@ -70,7 +70,9 @@ extension Disk {
     }
 
     public func get(_ aKey: URL) -> Data? {
-        guard let key = aKey.absoluteString.escape() else { return nil }
+        guard let key = aKey.absoluteString.escape() else {
+            return nil
+        }
 
         return get(key)
     }
@@ -93,7 +95,10 @@ extension Disk {
     }
 
     public func set(_ anObject: Data, forKey aKey: URL) {
-        guard let key = aKey.absoluteString.escape() else { return }
+        guard let key = aKey.absoluteString.escape() else {
+            return
+        }
+        
         set(anObject, forKey: key)
     }
 }

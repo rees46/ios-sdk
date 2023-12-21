@@ -34,7 +34,9 @@ open class LoadingPlaceholderView: UIView {
     private var maskLayer = CAShapeLayer()
     private var gradientLayer = CAGradientLayer()
     private var viewToConverObservation: NSKeyValueObservation?
-    private var isCovering: Bool { return superview != nil }
+    private var isCovering: Bool {
+        return superview != nil
+    }
     
     public func cover(_ viewToCover: UIView, animated: Bool = true) {
         viewToCover.layoutIfNeeded()
@@ -45,7 +47,10 @@ open class LoadingPlaceholderView: UIView {
     }
     
     public func uncover(animated: Bool = true) {
-        guard isCovering else { return }
+        guard isCovering else {
+            return
+        }
+        
         fadeOut(animated: animated)
         let dispatchTime: DispatchTime = .now() + promocodeDuration
         DispatchQueue.main.asyncAfter(deadline: dispatchTime) { [weak self] in
@@ -76,7 +81,9 @@ open class LoadingPlaceholderView: UIView {
     }
     
     private func startLoading(animated: Bool) {
-        guard !isCovering, let viewToCover = viewToCover else { return }
+        guard !isCovering, let viewToCover = viewToCover else {
+            return
+        }
         
         viewToCover.addSubview(self)
         translatesAutoresizingMaskIntoConstraints = false
@@ -94,7 +101,10 @@ open class LoadingPlaceholderView: UIView {
     }
     
     private func setupMaskLayerIfNeeded() {
-        guard let superview = superview else { return }
+        guard let superview = superview else {
+            return
+        }
+        
         maskLayer.frame = superview.bounds
         let toalBezierPath = superview
             .coverableSubviews()
@@ -108,7 +118,9 @@ open class LoadingPlaceholderView: UIView {
     }
     
     private func setupGradientLayerIfNeeded() {
-        guard let superview = superview else { return }
+        guard let superview = superview else {
+            return
+        }
         
         gradientLayer.frame = CGRect(x: 0,
                                      y: 0,

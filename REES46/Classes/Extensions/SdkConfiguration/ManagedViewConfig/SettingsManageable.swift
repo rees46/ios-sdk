@@ -57,13 +57,16 @@ extension SettingsManageable where Self: Codable {
             if update() {
                 backupSettingsFile()
                 return true
-            } else { return false }
+            } else {
+                return false
+            }
         }
     }
     
     mutating func preloadUsingSettingsFile() -> Bool {
-        guard let originalSettingsURL = Bundle.main.url(forResource: "\(Self.self)", withExtension: "plist")
-            else { return false }
+        guard let originalSettingsURL = Bundle.main.url(forResource: "\(Self.self)", withExtension: "plist") else {
+            return false
+        }
         
         do {
             if !FileManager.default.fileExists(atPath: settingsAddr().path) {

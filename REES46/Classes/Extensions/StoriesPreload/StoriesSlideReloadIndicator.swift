@@ -69,7 +69,9 @@ public final class StoriesSlideReloadIndicator: UIView {
     }
     
     private func updateSegments() {
-        guard numSegments > 0, let indSegmentLayer = indSegmentLayer else { return }
+        guard numSegments > 0, let indSegmentLayer = indSegmentLayer else {
+            return
+        }
         
         let angle = 2*CGFloat.pi / CGFloat(numSegments)
         indReplicatorLayer.instanceCount = numSegments

@@ -11,7 +11,7 @@ import REES46
 import AdSupport
 import AppTrackingTransparency
 
-class ViewController: UIViewController, UIScrollViewDelegate {
+class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @IBOutlet private weak var menuButton: UIButton!
     @IBOutlet private weak var searchButton: UIButton!
@@ -44,7 +44,7 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     
     func addSdkObservers() {
         NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock),
-                                               name: globalSDKNotificationName, object: nil)
+                                               name: globalSDKNotificationNameMainInit, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget),
                                                name: globalSDKNotificationNameAdditionalInit, object: nil)
@@ -54,7 +54,7 @@ class ViewController: UIViewController, UIScrollViewDelegate {
     }
     
     deinit {
-        NotificationCenter.default.removeObserver(self, name: globalSDKNotificationName, object: nil)
+        NotificationCenter.default.removeObserver(self, name: globalSDKNotificationNameMainInit, object: nil)
         NotificationCenter.default.removeObserver(self, name: globalSDKNotificationNameAdditionalInit, object: nil)
     }
     
@@ -65,7 +65,8 @@ class ViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
-    @objc private func loadRecommendationsWidget() {
+    @objc
+    private func loadRecommendationsWidget() {
         sleep(3)
         if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
@@ -77,11 +78,14 @@ class ViewController: UIViewController, UIScrollViewDelegate {
                 self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 10).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
+                
+                self.didLabel.text = "DID\n\n" + globalSDKAdditionalInit.getDeviceId() //Test delete if needed
             }
         }
     }
     
-    @objc private func loadNewArrivalsWidget() {
+    @objc
+    private func loadNewArrivalsWidget() {
         if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
                 self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "a043dbc2f852ffe18861a2cdfc364ef2")
@@ -92,65 +96,29 @@ class ViewController: UIViewController, UIScrollViewDelegate {
                 self.newArrivalsCollectionView.topAnchor.constraint(equalTo: self.recommendationsCollectionView.bottomAnchor, constant: 30).isActive = true //top
                 self.newArrivalsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.newArrivalsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
+                
+                self.didLabel.text = "DID\n\n" + globalSDKAdditionalInit.getDeviceId()
+                // For test delete if needed
             }
         }
     }
     
     @objc
     private func didTapMenu() {
-        if #available(iOS 13.0, *) {
-            let popupView = SdkPopupAlertView(
-                title: "",
-                titleFont: .systemFont(ofSize: 5, weight: .light),
-                subtitle: "Coming soon",
-                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
-                icon: nil,
-                iconSpacing: 16,
-                position: .centerCustom,
-                onTap: { print("Coming soon")
-                }
-            )
-            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
-            popupView.show()
-        }
+        //
     }
     
     @objc
     private func didTapSearch() {
-        if #available(iOS 13.0, *) {
-            let popupView = SdkPopupAlertView(
-                title: "",
-                titleFont: .systemFont(ofSize: 5, weight: .light),
-                subtitle: "Coming soon",
-                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
-                icon: nil,
-                iconSpacing: 16,
-                position: .centerCustom,
-                onTap: { print("Coming soon")
-                }
-            )
-            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
-            popupView.show()
-        }
+//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+//        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
+//        searchVC.sdk = globalSDKAdditionalInit
+//        self.present(searchVC, animated: true, completion: nil)
     }
     
     @objc
     private func didTapCart() {
-        if #available(iOS 13.0, *) {
-            let popupView = SdkPopupAlertView(
-                title: "",
-                titleFont: .systemFont(ofSize: 5, weight: .light),
-                subtitle: "Coming soon",
-                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
-                icon: nil,
-                iconSpacing: 16,
-                position: .centerCustom,
-                onTap: { print("Coming soon")
-                }
-            )
-            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
-            popupView.show()
-        }
+        //
     }
     
     @objc
@@ -206,8 +174,8 @@ class ViewController: UIViewController, UIScrollViewDelegate {
                 fcmGlobalToken = UserDefaults.standard.string(forKey: "fcmGlobalToken") ?? "No Firebase token"
             }
             
-            let did = UserDefaults.standard.string(forKey: "device_id") ?? "No did token"
-            self.didLabel.text = "DID\n\n" + did
+            let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "No did token"
+            self.didLabel.text = "DID\n\n" + deviceId
             
             self.pushTokenLabel.text = "PUSHTOKEN\n\n" + pushGlobalToken
             self.fcmTokenLabel.text = "FCMTOKEN\n\n" + fcmGlobalToken
@@ -255,9 +223,9 @@ class ViewController: UIViewController, UIScrollViewDelegate {
                         }
                     })
                 case .denied, .restricted:
-                    print("SDK User denied access to 'ios_advertising_id' IDFA")
+                    print("SDK User denied access to 'ios_advertising_id' IDFA\n")
                 case .notDetermined:
-                    print("SDK User not received an authorization request to 'ios_advertising_id' IDFA")
+                    print("SDK User not received an authorization request to 'ios_advertising_id' IDFA\n")
                 @unknown default:
                     break
                 }

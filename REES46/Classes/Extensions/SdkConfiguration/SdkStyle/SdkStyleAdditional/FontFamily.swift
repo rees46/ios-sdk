@@ -5,10 +5,21 @@ public class SdkFontFamily {
     private func mostSimilarFontName(regularName: String, usage: String) -> String? {
         for familyName in UIFont.familyNames {
             for fontName in UIFont.fontNames(forFamilyName: familyName) {
-                guard fontName.lowercased() != regularName.lowercased() + "-" + usage.lowercased() else { return fontName }
-                guard fontName.lowercased() != regularName.lowercased() + "_" + usage.lowercased() else { return fontName }
-                guard fontName.lowercased() != regularName.lowercased() + " " + usage.lowercased() else { return fontName }
-                guard fontName.lowercased() != regularName.lowercased() + usage.lowercased() else { return fontName }
+                guard fontName.lowercased() != regularName.lowercased() + "-" + usage.lowercased() else {
+                    return fontName
+                }
+                
+                guard fontName.lowercased() != regularName.lowercased() + "_" + usage.lowercased() else {
+                    return fontName
+                }
+                
+                guard fontName.lowercased() != regularName.lowercased() + " " + usage.lowercased() else {
+                    return fontName
+                }
+                
+                guard fontName.lowercased() != regularName.lowercased() + usage.lowercased() else {
+                    return fontName
+                }
             }
         }
         return nil

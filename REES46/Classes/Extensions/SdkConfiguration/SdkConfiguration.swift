@@ -632,62 +632,102 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var promoCodeSlideFontNameChanged: String?
     public var promoCodeSlideFontNameConstant: String {
-        get { return "San Francisco (System Font)" }
-        set { promoCodeSlideFontNameChanged = newValue }
+        get {
+            return "San Francisco (System Font)"
+        }
+        set {
+            promoCodeSlideFontNameChanged = newValue
+        }
     }
     
     public var promoCodeSlideFontSizeChanged: CGFloat?
     public var promoCodeSlideFontSizeConstant: CGFloat {
-        get { return 14.0 }
-        set { promoCodeSlideFontSizeChanged = newValue }
+        get {
+            return 14.0
+        }
+        set {
+            promoCodeSlideFontSizeChanged = newValue
+        }
     }
     
     public var promoProductTitleTextColorLightMode: UIColor?
     public var promoCodeSlideFontColorConstant_Light: UIColor {
-        get { return .white }
-        set { promoProductTitleTextColorLightMode = newValue }
+        get {
+            return .white
+        }
+        set {
+            promoProductTitleTextColorLightMode = newValue
+        }
     }
     
     public var promoProductTitleTextColorDarkMode: UIColor?
     public var promoCodeSlideFontColorConstant_Dark: UIColor {
-        get { return .white }
-        set { promoProductTitleTextColorDarkMode = newValue }
+        get {
+            return .white
+        }
+        set {
+            promoProductTitleTextColorDarkMode = newValue
+        }
     }
     
     public var bannerOldPriceSectionFontColor: UIColor?
     public var bannerOldPriceSectionFontColorConstant: UIColor {
-        get { return .white }
-        set { bannerOldPriceSectionFontColor = newValue }
+        get {
+            return .white
+        }
+        set {
+            bannerOldPriceSectionFontColor = newValue
+        }
     }
     
     public var bannerPriceSectionFontColor: UIColor?
     public var bannerPriceSectionFontColorConstant: UIColor {
-        get { return .white }
-        set { bannerPriceSectionFontColor = newValue }
+        get {
+            return .white
+        }
+        set {
+            bannerPriceSectionFontColor = newValue
+        }
     }
 
     public var bannerPromocodeSectionFontColor: UIColor?
     public var bannerPromocodeSectionFontColorConstant: UIColor {
-        get { return .white }
-        set { bannerPromocodeSectionFontColor = newValue }
+        get {
+            return .white
+        }
+        set {
+            bannerPromocodeSectionFontColor = newValue
+        }
     }
     
     public var bannerPriceSectionBackgroundColor: UIColor?
     public var bannerPriceSectionBackgroundConstant: UIColor {
-        get { return .orange }
-        set { bannerPriceSectionBackgroundColor = newValue }
+        get {
+            return .orange
+        }
+        set {
+            bannerPriceSectionBackgroundColor = newValue
+        }
     }
 
     public var bannerPromocodeSectionBackgroundColor: UIColor?
     public var bannerPromocodeSectionBackgroundColorConstant: UIColor {
-        get { return .orange }
-        set { bannerPromocodeSectionBackgroundColor = newValue }
+        get {
+            return .orange
+        }
+        set {
+            bannerPromocodeSectionBackgroundColor = newValue
+        }
     }
     
     public var bannerDiscountSectionBackgroundColor: UIColor?
     public var bannerDiscountSectionBackgroundConstant: UIColor {
-        get { return .yellow }
-        set { bannerDiscountSectionBackgroundColor = newValue }
+        get {
+            return .yellow
+        }
+        set {
+            bannerDiscountSectionBackgroundColor = newValue
+        }
     }
     
     public func setPromocodeCard(productBannerFontName: String? = nil,
@@ -917,122 +957,200 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var storiesBlockFontNameChanged: String?
     public var storiesBlockFontNameConstant: String {
-        get { return "San Francisco (System Font)" }
-        set { storiesBlockFontNameChanged = newValue }
+        get {
+            return "San Francisco (System Font)"
+        }
+        set {
+            storiesBlockFontNameChanged = newValue
+        }
     }
     
     public var storiesBlockMinimumFontSizeChanged: CGFloat?
     public var storiesBlockMinimumFontSizeConstant: CGFloat {
-        get { return 7.0 }
-        set { storiesBlockMinimumFontSizeChanged = newValue }
+        get {
+            return 7.0
+        }
+        set {
+            storiesBlockMinimumFontSizeChanged = newValue
+        }
     }
     
     public var storiesBlockTextColorChanged_Light: UIColor?
     public var storiesBlockTextColorConstant_Light: UIColor {
-        get { return .black }
-        set { storiesBlockTextColorChanged_Light = newValue }
+        get {
+            return .black
+        }
+        set {
+            storiesBlockTextColorChanged_Light = newValue
+        }
     }
     
     public var storiesBlockTextColorChanged_Dark: UIColor?
     public var storiesBlockTextColorConstant_Dark: UIColor {
-        get { return .black }
-        set { storiesBlockTextColorChanged_Dark = newValue }
+        get {
+            return .black
+        }
+        set {
+            storiesBlockTextColorChanged_Dark = newValue
+        }
     }
     
     public var storiesBlockBackgroundColorChanged_Light: UIColor?
     public var storiesBlockBackgroundColorConstant_Light: UIColor {
-        get { return .white }
-        set { storiesBlockBackgroundColorChanged_Light = newValue }
+        get {
+            return .white
+        }
+        set {
+            storiesBlockBackgroundColorChanged_Light = newValue
+        }
     }
     
     public var storiesBlockBackgroundColorChanged_Dark: UIColor?
     public var storiesBlockBackgroundColorConstant_Dark: UIColor {
-        get { return .black }
-        set { storiesBlockBackgroundColorChanged_Dark = newValue }
+        get {
+            return .black
+        }
+        set {
+            storiesBlockBackgroundColorChanged_Dark = newValue
+        }
     }
     
     public var slideDefaultButtonFontNameChanged: String?
     public var slideDefaultButtonFontNameConstant: String {
-        get { return "San Francisco (System Font)" }
-        set { slideDefaultButtonFontNameChanged = newValue }
+        get {
+            return "San Francisco (System Font)"
+        }
+        set {
+            slideDefaultButtonFontNameChanged = newValue
+        }
     }
     
     public var slideDefaultButtonFontSizeChanged: CGFloat?
     public var slideDefaultButtonFontSizeConstant: CGFloat {
-        get { return 14.0 }
-        set { slideDefaultButtonFontSizeChanged = newValue }
+        get {
+            return 14.0
+        }
+        set {
+            slideDefaultButtonFontSizeChanged = newValue
+        }
     }
     
     public var slideDefaultButtonTextColorChanged_Light: UIColor?
     public var slideDefaultButtonTextColorConstant_Light: UIColor {
-        get { return .black }
-        set { slideDefaultButtonTextColorChanged_Light = newValue }
+        get {
+            return .black
+        }
+        set {
+            slideDefaultButtonTextColorChanged_Light = newValue
+        }
     }
     
     public var slideDefaultButtonTextColorChanged_Dark: UIColor?
     public var slideDefaultButtonTextColorConstant_Dark: UIColor {
-        get { return .black }
-        set { slideDefaultButtonTextColorChanged_Dark = newValue }
+        get {
+            return .black
+        }
+        set {
+            slideDefaultButtonTextColorChanged_Dark = newValue
+        }
     }
     
     public var slideDefaultButtonBackgroundColorChanged_Light: UIColor?
     public var slideDefaultButtonBackgroundColorConstant_Light: UIColor {
-        get { return .white }
-        set { slideDefaultButtonBackgroundColorChanged_Light = newValue }
+        get {
+            return .white
+        }
+        set {
+            slideDefaultButtonBackgroundColorChanged_Light = newValue
+        }
     }
     
     public var slideDefaultButtonBackgroundColorChanged_Dark: UIColor?
     public var slideDefaultButtonBackgroundColorConstant_Dark: UIColor {
-        get { return .white }
-        set { slideDefaultButtonBackgroundColorChanged_Dark = newValue }
+        get {
+            return .white
+        }
+        set {
+            slideDefaultButtonBackgroundColorChanged_Dark = newValue
+        }
     }
     
     public var slideProductsButtonFontNameChanged: String?
     public var slideProductsButtonFontNameConstant: String {
-        get { return "San Francisco (System Font)" }
-        set { slideProductsButtonFontNameChanged = newValue }
+        get {
+            return "San Francisco (System Font)" }
+        set {
+            slideProductsButtonFontNameChanged = newValue }
     }
     
     public var slideProductsButtonFontSizeChanged: CGFloat?
     public var slideProductsButtonFontSizeConstant: CGFloat {
-        get { return 14.0 }
-        set { slideProductsButtonFontSizeChanged = newValue }
+        get {
+            return 14.0
+        }
+        set {
+            slideProductsButtonFontSizeChanged = newValue
+        }
     }
     
     public var slideProductsButtonTextColorChanged_Light: UIColor?
     public var slideProductsButtonTextColorConstant_Light: UIColor {
-        get { return .black }
-        set { slideProductsButtonTextColorChanged_Light = newValue }
+        get {
+            return .black
+        }
+        set {
+            slideProductsButtonTextColorChanged_Light = newValue
+        }
     }
     
     public var slideProductsButtonTextColorChanged_Dark: UIColor?
     public var slideProductsButtonTextColorConstant_Dark: UIColor {
-        get { return .black }
-        set { slideProductsButtonTextColorChanged_Dark = newValue }
+        get {
+            return .black
+        }
+        set {
+            slideProductsButtonTextColorChanged_Dark = newValue
+        }
     }
     
     public var slideProductsButtonBackgroundColorChanged_Light: UIColor?
     public var slideProductsButtonBackgroundColorConstant_Light: UIColor {
-        get { return .white }
-        set { slideProductsButtonBackgroundColorChanged_Light = newValue }
+        get {
+            return .white
+        }
+        set {
+            slideProductsButtonBackgroundColorChanged_Light = newValue
+        }
     }
     
     public var slideProductsButtonBackgroundColorChanged_Dark: UIColor?
     public var slideProductsButtonBackgroundColorConstant_Dark: UIColor {
-        get { return .white }
-        set { slideProductsButtonBackgroundColorChanged_Dark = newValue }
+        get {
+            return .white
+        }
+        set {
+            slideProductsButtonBackgroundColorChanged_Dark = newValue
+        }
     }
     
     public var slideProductsHideButtonFontNameChanged: String?
     public var slideProductsHideButtonFontNameConstant: String {
-        get { return "San Francisco (System Font)" }
-        set { slideProductsButtonFontNameChanged = newValue }
+        get {
+            return "San Francisco (System Font)"
+        }
+        set {
+            slideProductsButtonFontNameChanged = newValue
+        }
     }
     
     public var bootRegisteredFontChanged: UIFont?
     public var bootRegisteredFontConstant: UIFont {
-        get { return .systemFont(ofSize: 14.0) }
-        set { bootRegisteredFontChanged = newValue }
+        get {
+            return .systemFont(ofSize: 14.0)
+        }
+        set {
+            bootRegisteredFontChanged = newValue
+        }
     }
 
     public class func customFont(name: String, size: CGFloat) -> UIFont {
@@ -1152,7 +1270,10 @@ extension SdkConfiguration {
     class func font(_ fontUrl: URL) -> sdkFontName? {
         let name = fontUrl.lastPathComponent
         let comps = name.components(separatedBy: ".")
-        if comps.count < 2 { return nil }
+        if comps.count < 2 {
+            return nil
+        }
+        
         let fname = comps[0 ..< comps.count - 1].joined(separator: ".")
         return SdkFontInjector.sdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
     }
@@ -1160,30 +1281,53 @@ extension SdkConfiguration {
 
 
 extension UIColor {
+    convenience init(hexString: String) {
+        let hex = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int = UInt32()
+        Scanner(string: hex).scanHexInt32(&int)
+        let a, r, g, b: UInt32
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(red: CGFloat(r) / 255, green: CGFloat(g) / 255, blue: CGFloat(b) / 255, alpha: CGFloat(a) / 255)
+    }
+    
     convenience init(hexString: String, alpha: CGFloat = 1.0) {
         let hexString: String = hexString.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         let scanner = Scanner(string: hexString)
         if (hexString.hasPrefix("#")) {
             scanner.scanLocation = 1
         }
+        
         var color: UInt32 = 0
         scanner.scanHexInt32(&color)
         let mask = 0x000000FF
         let r = Int(color >> 16) & mask
         let g = Int(color >> 8) & mask
         let b = Int(color) & mask
+        
         let red   = CGFloat(r) / 255.0
         let green = CGFloat(g) / 255.0
         let blue  = CGFloat(b) / 255.0
-        self.init(red:red, green:green, blue:blue, alpha:alpha)
+        
+        self.init(red: red, green: green, blue: blue, alpha: alpha)
     }
+    
     func toHexString() -> String {
         var r:CGFloat = 0
         var g:CGFloat = 0
         var b:CGFloat = 0
         var a:CGFloat = 0
         getRed(&r, green: &g, blue: &b, alpha: &a)
-        let rgb:Int = (Int)(r*255)<<16 | (Int)(g*255)<<8 | (Int)(b*255)<<0
+        
+        let rgb: Int = (Int)(r*255)<<16 | (Int)(g*255)<<8 | (Int)(b*255)<<0
         return String(format:"#%06x", rgb)
     }
 }

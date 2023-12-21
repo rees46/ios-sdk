@@ -9,9 +9,10 @@ typealias CoverableView = UIView & Coverable
 extension Coverable where Self: UIView {
     
     func makeCoverablePath(superview: UIView? = nil) -> UIBezierPath? {
-        guard
-            let superview = superview ?? self.superview
-            else { return nil }
+        guard let superview = superview ?? self.superview else {
+            return nil
+        }
+        
         layoutIfNeeded()
         let offsetPoint = convert(bounds, to: superview).origin
         let relativePath = coverablePath ?? UIBezierPath()
@@ -20,9 +21,9 @@ extension Coverable where Self: UIView {
     }
     
     func addCoverablePath(to totalCoverablePath: UIBezierPath, superview: UIView? = nil) {
-        guard
-            let coverablePath = makeCoverablePath(superview: superview)
-            else { return }
+        guard let coverablePath = makeCoverablePath(superview: superview) else {
+            return
+        }
         totalCoverablePath.append(coverablePath)
     }
     

@@ -133,7 +133,9 @@ public extension UIApplication {
     }
     
     var sdkCurrentViewController: UIViewController? {
-        guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else { return nil}
+        guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+            return nil
+        }
         
         if let presentedViewController = rootViewController.presentedViewController {
             if let navigationController = presentedViewController as? UINavigationController {

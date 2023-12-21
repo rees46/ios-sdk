@@ -358,19 +358,22 @@ struct RecommendationsStarsTouch {
         rating = RecommendationsStarsRating.showRatingStFromPreciseStRating(rating, fillMode: starsSetupSettings.fillMode, summaryRecommendationsStars: starsSetupSettings.summaryRecommendationsStars)
         
         rating = max(starsSetupSettings.minStTchRating, rating)
-            
+        
         return rating
     }
-  
-  static func starRecommendationsPreRating(position: Double, numberOfStars: Int, starSize: Double, rateStMargin: Double) -> Double {
+    
+    static func starRecommendationsPreRating(position: Double, numberOfStars: Int, starSize: Double, rateStMargin: Double) -> Double {
         if position < 0 {
             return 0
+            
         }
         var positionRemainder = position;
         
         var rating: Double = Double(Int(position / (starSize + rateStMargin)))
         
-        if Int(rating) > numberOfStars { return Double(numberOfStars) }
+        if Int(rating) > numberOfStars {
+            return Double(numberOfStars)
+        }
         
         positionRemainder -= rating * (starSize + rateStMargin)
         
@@ -425,7 +428,10 @@ struct RecommendationsStarsRating {
     }
   
     static func numberOfFilledRateStars(_ rating: Double, totalNumberOfStars: Int) -> Double {
-        if rating > Double(totalNumberOfStars) { return Double(totalNumberOfStars) }
+        if rating > Double(totalNumberOfStars) {
+            return Double(totalNumberOfStars)
+        }
+        
         if rating < 0 {
             return 0
         }

@@ -97,7 +97,10 @@ extension DispatchQueue {
         objc_sync_enter(self)
         defer { objc_sync_exit(self) }
         
-        guard !_onceTracker.contains(token) else { return }
+        guard !_onceTracker.contains(token) else {
+            return
+        }
+        
         _onceTracker.append(token)
         block()
     }

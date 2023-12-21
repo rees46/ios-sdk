@@ -64,7 +64,10 @@ extension UIImage {
     internal static func process(data: Data) -> UIImage? {
         switch data.fileType {
         case .gif:
-            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+            guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+                return nil
+            }
+            
             let result = source.process()
             return UIImage.animatedImage(with: result.images, duration: result.duration)
         case .png, .jpeg, .tiff, .webp, .Unknown:

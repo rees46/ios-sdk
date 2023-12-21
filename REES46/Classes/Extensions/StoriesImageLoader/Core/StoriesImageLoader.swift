@@ -5,7 +5,9 @@ public struct StoriesCollectionCellLoader {
 
     @discardableResult
     public static func request(with url: URLLiteralConvertible, onCompletion: @escaping (UIImage?, Error?, FetchOperation) -> Void) -> Loader? {
-        guard let storiesCollectionCellLoaderUrl = url.storiesCollectionCellLoaderURL else { return nil }
+        guard let storiesCollectionCellLoaderUrl = url.storiesCollectionCellLoaderURL else {
+            return nil
+        }
 
         let task = Task(nil, onCompletion: onCompletion)
         let loader = StoriesCollectionCellLoader.session.getLoader(with: storiesCollectionCellLoaderUrl, task: task)
@@ -28,7 +30,9 @@ public struct StoriesCollectionCellLoader {
         static let manager = LoaderManager()
 
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-            guard let loader = getLoader(with: dataTask) else { return }
+            guard let loader = getLoader(with: dataTask) else {
+                return
+            }
             loader.operative.receiveData.append(data)
         }
 
@@ -37,12 +41,16 @@ public struct StoriesCollectionCellLoader {
         }
 
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-            guard let loader = getLoader(with: task) else { return }
+            guard let loader = getLoader(with: task) else {
+                return
+            }
             loader.complete(with: error)
         }
 
         func getLoader(with dataTask: URLSessionTask) -> Loader? {
-            guard let url = dataTask.originalRequest?.url else { return nil }
+            guard let url = dataTask.originalRequest?.url else {
+                return nil
+            }
             return StoriesCollectionCellLoader.manager.storage[url]
         }
 

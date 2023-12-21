@@ -90,7 +90,7 @@ class Slide {
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
-    private let vDownloadManager = VideoDownloadManager.shared
+    public let vDownloadManager = VideoDownloadManager.shared
     var sdkDirectoryName: String = "SDKCacheDirectory"
     
     public init(json: [String: Any]) {

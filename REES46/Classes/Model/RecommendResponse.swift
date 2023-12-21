@@ -1,8 +1,8 @@
 import Foundation
 
 public struct RecommenderResponse {
-    public var recommended: [Recommended] /// products  array
-    public var title: String = "" ///title block recommendation
+    public var recommended: [Recommended]
+    public var title: String = ""
 
     init(json: [String: Any]) {
         let recs = json["recommends"] as? [[String: Any]] ?? []
@@ -74,13 +74,12 @@ public struct Recommended {
         rating = json["rating"] as? Int ?? 0
         resizedImages = json["image_url_resized"] as? [String: String] ?? [:]
         
-        
-        let cats = json["categories"] as? [[String: Any]] ?? []
-        var catsTemp = [Category]()
-        for item in cats {
-            catsTemp.append(Category(json: item))
+        let categoriesArray = json["categories"] as? [[String: Any]] ?? []
+        var categoriesTemp = [Category]()
+        for item in categoriesArray {
+            categoriesTemp.append(Category(json: item))
         }
-        categories = catsTemp
+        categories = categoriesTemp
         
         fashionOriginalSizes = json["fashion_original_sizes"] as? [String] ?? []
         fashionSizes = json["fashion_sizes"] as? [String] ?? []

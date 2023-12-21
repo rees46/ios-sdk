@@ -24,6 +24,7 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
         let sessionConfiguration = URLSessionConfiguration.default
         sessionConfiguration.timeoutIntervalForRequest = 3
         sessionConfiguration.waitsForConnectivity = true
+        sessionConfiguration.shouldUseExtendedBackgroundIdleMode = true
         return URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
     }()
     
@@ -55,12 +56,19 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
     
     public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         
-        if let completedTask = queue.sync(execute: { return dataTasks.first { $0.sessionTask.taskIdentifier == task.taskIdentifier } }) {
+        if let completedTask = queue.sync(execute: {
+            return dataTasks.first { $0.sessionTask.taskIdentifier == task.taskIdentifier }
+        }) {
             taskCompleted?(completedTask, error)
         }
         
-        let completed = queue.sync { return dataTasks.filter { $0.sessionTask.state == .completed } }
-        let allTasks = queue.sync { return dataTasks.count }
+        let completed = queue.sync {
+            return dataTasks.filter { $0.sessionTask.state == .completed }
+        }
+        
+        let allTasks = queue.sync {
+            return dataTasks.count
+        }
         
         if completed.count == allTasks {
             queue.sync {

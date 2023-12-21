@@ -15,7 +15,9 @@ final public class VideoDownloadManager: NSObject {
     public var showLocalNotificationOnBackgroundDownloadSuccess = true
     public var localNotificationText: String?
 
-    public static let shared: VideoDownloadManager = { return VideoDownloadManager() }()
+    public static let shared: VideoDownloadManager = {
+        return VideoDownloadManager()
+    }()
     
     public func downloadStoryMediaFile(withRequest request: URLRequest,
                                        inDirectory directory: String? = nil,

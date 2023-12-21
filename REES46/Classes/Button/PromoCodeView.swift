@@ -102,8 +102,9 @@ class PromoCodeView: UIView {
                         
                         let task = URLSession.shared.dataTask(with: urlImgResize!, completionHandler: { data, _, error in
                             if error == nil {
-                                
-                                guard let unwrappedData = data, let downloadedImage = UIImage(data: unwrappedData) else { return }
+                                guard let unwrappedData = data, let downloadedImage = UIImage(data: unwrappedData) else {
+                                    return
+                                }
                                 
                                 let imageBorderRepresentation = downloadedImage.imageWithInsets(insets: UIEdgeInsets(top: 22, left: 22, bottom: 22, right: 22))
                                 if downloadedImage.hasAlpha {
@@ -168,7 +169,10 @@ extension UIImage {
 
 extension UIImage {
     public var hasAlpha: Bool {
-        guard let alphaInfo = self.cgImage?.alphaInfo else { return false }
+        guard let alphaInfo = self.cgImage?.alphaInfo else {
+            return false
+        }
+        
         switch alphaInfo {
             case .none, .noneSkipLast, .noneSkipFirst:
             return false

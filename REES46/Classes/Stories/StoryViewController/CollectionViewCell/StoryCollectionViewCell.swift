@@ -282,7 +282,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
 
         let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
             if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else { return }
+                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
+                    return
+                }
                 DispatchQueue.main.async {
                     self.storySlideImageView.tintColor = UIColor.black
                     self.storySlideImageView.isOpaque = false

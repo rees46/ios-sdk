@@ -17,7 +17,7 @@ var fcmGlobalToken: String = ""
 var didToken: String = ""
 
 var globalSDK: PersonalizationSDK?
-var globalSDKNotificationName = Notification.Name("globalSDK")
+var globalSDKNotificationNameMainInit = Notification.Name("globalSDK")
 
 var globalSDKAdditionalInit: PersonalizationSDK?
 var globalSDKNotificationNameAdditionalInit = Notification.Name("globalSDKAdditionalInit")
@@ -40,20 +40,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("======")
 
         print("0. Init SDK")
-        
         sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-            print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id =", self.sdk.getShopId())
+            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdk.getShopId())
             didToken = self.sdk.getDeviceId()
             globalSDK = self.sdk
-            NotificationCenter.default.post(name: globalSDKNotificationName, object: nil)
+            NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
         })
-        
-        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-            print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id =", self.sdkAdditionalInit.getShopId())
-            didToken = self.sdk.getDeviceId()
-            globalSDKAdditionalInit = self.sdkAdditionalInit
-            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
-        })
+
+//        print("1. Init additional SDK if needed")
+//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
+//            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
+//            didToken = self.sdkAdditionalInit.getDeviceId()
+//            globalSDKAdditionalInit = self.sdkAdditionalInit
+//            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
+//        })
         
 //        //SDK Configuration init Font first
 //        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
@@ -169,12 +169,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        sdk.configuration().stories.storiesBlockCharWrapping = false
 //        sdk.configuration().stories.storiesBlockCharCountWrap = 15
         
-        print("1. Register push")
+        print("2. Register push")
         notificationService = NotificationService(sdk: sdk)
         notificationService?.pushActionDelegate = self
         print("======")
 
-//        print("2. Testing tracking")
+//        print("3. Testing tracking")
 //        sdk.trackSource(source: .chain, code: "123123")
 //
 //        let rec = RecomendedBy(type: .dynamic, code: "beb620922934b6ba2d6a3fb82b8b3271")
@@ -197,7 +197,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        print("3. Testing tracking")
+//        print("4. Testing tracking")
 //        sdk.track(event: .productView(id: "644")) { trackResponse in
 //            print("   Product view callback")
 //            switch trackResponse {
@@ -354,7 +354,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            print("   Custom track event callback")
 //            switch trackResponse {
 //            case let .success(response):
-//                print("     Custom track event is success")
+//                print("     custom track event is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -369,12 +369,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        print("4. Testing product recommendations")
+//        print("5. Testing product recommendations")
 //        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", currentProductId: "644") { recomendResponse in
-//            print("   Recommendations requested callback")
+//            print("   Recommendations product requested callback")
 //            switch recomendResponse {
 //            case let .success(response):
-//                print("     recommend with prodcut id is success")
+//                print("     recommend with product id is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -385,11 +385,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                default:
 //                    print("Error:", error.localizedDescription)
 //                }
-//                //fatalError("    recommend with prodcut id is failure")
+//                //fatalError("    recommend with product id is failure")
 //            }
 //        }
 //
-//        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", timeOut: 0.5) { recomendResponse in
+//        print("6. Testing recommendations")
+//        sdk.recommend(blockId: "977cb67194a72fdc7b424f49d69a862d", currentProductId: "644", timeOut: 0.5) { recomendResponse in
 //            print("   Recommendations requested callback")
 //            switch recomendResponse {
 //            case let .success(response):
@@ -408,7 +409,47 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        print("5. Testing search")
+//        print("7. Testing products list")
+//        sdk.getProductsList(brands: "Hasbro", categories: "Toys", locations: "Shops", filters: ["Screen size, inch": ["15.6"]]) { productsListResponse in
+//            print("   Testing get products list callback")
+//            switch productsListResponse {
+//            case let .success(response):
+//                print("     get products list is success")
+//                withExtendedLifetime(response) {
+//                    //print("Response:", response) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    get products list is failure")
+//            }
+//        }
+//
+//        print("8. Testing product info by item_id")
+//        sdk.getProductInfo(id: "1930") { productInfoResponse in
+//            print("   Testing get product info callback")
+//            switch productInfoResponse {
+//            case let .success(response):
+//                print("     get product info is success")
+//                withExtendedLifetime(response) {
+//                    //print("Response:", response) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    get product info is failure")
+//            }
+//        }
+//
+//        print("9. Testing search")
 //        sdk.suggest(query: "iphone") { searchResponse in
 //            print("   Instant search callback")
 //            switch searchResponse {
@@ -428,6 +469,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
+//        print("10. Testing detail search")
 //        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
 //            print("   Full search callback")
 //            switch searchResponse {
@@ -447,11 +489,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
+//        print("11. Testing blank search")
 //        sdk.searchBlank { searchResponse in
 //            print("   Search blank callback")
 //            switch searchResponse {
 //            case let .success(response):
-//                print("     Search blank is success")
+//                print("     search blank is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -466,7 +509,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        print("6. Set user Settings")
+//        print("12. Set user profile Settings")
 //        sdk.setProfileData(userEmail: "mail@example.com") { profileResponse in
 //            print("   Profile data set callback")
 //            switch profileResponse {
@@ -483,7 +526,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        print("7. Send review")
+//        print("13. Send review")
 //        sdk.review(rate: 1, channel: "ios_app", category: "delivery", comment: "Nice application, thank you!") { reviewResponse in
 //            print("   Send review response")
 //            switch reviewResponse {
@@ -497,6 +540,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                    print("Error:", error.description)
 //                }
 //                //fatalError("    review is failure")
+//            }
+//        }
+//
+//        print("14. Get all user notificationns")
+//        sdk.getAllNotifications(type: "trigger", channel: "email", limit: 10, page: 1, dateFrom: "2023-09-01") { notificationsResponse in
+//            print("   Get user notifications callback")
+//            switch notificationsResponse {
+//            case let .success(response):
+//                print("     get all user notifications is success")
+//                withExtendedLifetime(response) {
+//                    //print("Response:", response) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                // fatalError("    get all user notifications is failure")
 //            }
 //        }
 //

@@ -12,12 +12,20 @@ public class GenericDataTask<T: Decodable>: SessionDataTaskProtocol {
         self.sessionIdentifier = sessionIdentifier ?? sessionTask.taskIdentifier
     }
     
-    public var sessionTaskElement: T? { return sessionDecodable as? T }
-    public var sessionTaskElements: [T] { return sessionDecodables as? [T] ?? [] }
+    public var sessionTaskElement: T? {
+        return sessionDecodable as? T
+    }
+    
+    public var sessionTaskElements: [T] {
+        return sessionDecodables as? [T] ?? []
+    }
     
     public var sessionDecodable: Decodable? {
         do {
-            guard let sessionData = sessionData else { return nil }
+            guard let sessionData = sessionData else {
+                return nil
+            }
+            
             return try JSONDecoder().decode(T.self, from: sessionData)
         } catch let error {
             debugPrint(error)
@@ -27,7 +35,10 @@ public class GenericDataTask<T: Decodable>: SessionDataTaskProtocol {
     
     public var sessionDecodables: [Decodable] {
         do {
-            guard let data = sessionData else { return [] }
+            guard let data = sessionData else {
+                return []
+            }
+            
             return try JSONDecoder().decode([T].self, from: data)
         } catch let error {
             debugPrint(error)

@@ -59,9 +59,9 @@ public class NotificationService: NotificationServiceProtocol {
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
-                    print("Error:", customError)
+                    print("SDK Push Token Error:", customError)
                 default:
-                    print("Error:", error.description)
+                    print("SDK Push Token server, \(error.description)\n")
                 }
             }
         }
