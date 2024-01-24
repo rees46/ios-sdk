@@ -10,6 +10,47 @@ public struct Filter {
     }
 }
 
+public struct IndustrialFilters {
+    public var fashionSizes: [FashionSizes]
+    public var fashionColors: [FashionColors]
+
+    init(json: [String: Any]) {
+        let sizes = json["fashion_sizes"] as? [[String: Any]] ?? []
+        var fashionSizesTemp = [FashionSizes]()
+        for item in sizes {
+            fashionSizesTemp.append(FashionSizes(json: item))
+        }
+        fashionSizes = fashionSizesTemp
+        
+        let colors = json["colors"] as? [[String: Any]] ?? []
+        var fashionColorsTemp = [FashionColors]()
+        for item in colors {
+            fashionColorsTemp.append(FashionColors(json: item))
+        }
+        fashionColors = fashionColorsTemp
+    }
+}
+
+public struct FashionSizes {
+    public var count: Int
+    public var size: String
+    
+    init(json: [String: Any]) {
+        self.count = json["count"] as? Int  ?? 0
+        self.size = json["size"] as? String ?? ""
+    }
+}
+
+public struct FashionColors {
+    public var count: Int
+    public var color: String
+    
+    init(json: [String: Any]) {
+        self.count = json["count"] as? Int ?? 0
+        self.color = json["color"] as? String ?? ""
+    }
+}
+
 public struct PriceRange {
     public var min: Double
     public var max: Double
@@ -84,6 +125,7 @@ public struct SearchResponse {
     public var productsTotal: Int
     public var queries: [Query]
     public var filters: [String: Filter]?
+    public var industrialFilters: IndustrialFilters?
     public var brands: [String]?
     public var priceRange: PriceRange?
     public var redirect: Redirect?
@@ -130,6 +172,10 @@ public struct SearchResponse {
                 }
             }
             self.brands = brandsResult
+        }
+        
+        if let industrialFiltersJSON = json["industrial_filters"] as? [String: Any] {
+            self.industrialFilters = IndustrialFilters(json: industrialFiltersJSON)
         }
         
         if let priceRangeJSON = json["price_range"] as? [String: Any] {

@@ -60,6 +60,10 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
         self.delegate?.sdkSearchWidgetListViewClicked(object: object)
     }
     
+    open func loadSearchData() {
+        //self.delegate?.loadSearchData()
+    }
+    
     open func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = self.delegate?.sdkSearchWidgetListView(sdkSearchWidgetListView, cellForRowAt: indexPath) else {
             return UITableViewCell()

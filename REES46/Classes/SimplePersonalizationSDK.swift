@@ -284,7 +284,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: String?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
@@ -339,7 +339,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["price_max"] = String(priceMax)
             }
             if let colors = colors {
-                params["colors"] = colors
+                let colorsArray = self.generateString(array: colors)
+                params["colors"] = colorsArray
+            }
+            if let fashionSizes = fashionSizes {
+                let fashionSizesArray = self.generateString(array: fashionSizes)
+                params["fashion_sizes"] = fashionSizesArray
             }
             if let exclude = exclude {
                 params["exclude"] = exclude
@@ -1391,13 +1396,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
                 return
             }
-            
-            //let jsonData = try? JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
-            //request.httpBody = jsonData
 
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
-            //request.setValue("\(String(describing: jsonData?.count))", forHTTPHeaderField: "Content-Length")
             
             urlSession.postTask(with: request) { result in
                 switch result {
@@ -1449,9 +1450,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func generateSdkBoundary() -> String {
-        let identifierForVendor = UIDevice.current.identifierForVendor!.uuidString
-        return "Boundary-\(identifierForVendor)"
+    func generateString(array : [String]) -> String {
+        let mapArray = array.map{ String($0) }
+        return mapArray.joined(separator: ",")
     }
     
     private let jsonDecoder: JSONDecoder = {
@@ -1490,7 +1491,7 @@ extension URLSession {
     }
     
     func postTask(with request: URLRequest, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-        return uploadTask(with: request, from: nil) { data, response, error in
+        return dataTask(with: request) { data, response, error in
             if let error = error {
                 result(.failure(error))
                 return
@@ -1503,24 +1504,4 @@ extension URLSession {
             result(.success((response, data)))
         }
     }
-    
-//    func postTask(with request: URLRequest, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-//        return dataTask(with: request) { data, response, error in
-//            if let error = error {
-//                result(.failure(error))
-//                return
-//            }
-//            guard let data = data, error == nil else {
-//                let error = NSError(domain: "error", code: 0, userInfo: nil)
-//                result(.failure(error))
-//                return
-//            }
-//            
-//            let response = try? JSONSerialization.jsonObject(with: data, options: [])
-//            if let response = response as? HTTPURLResponse {
-//                result(.success((response, data)))
-//                //print(response)
-//            }
-//        }
-//    }
 }

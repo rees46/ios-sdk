@@ -65,7 +65,6 @@ open class SearchWidgetCategoriesButton: UIButton {
         self.setTitleColor(UIColor.darkGray, for: .normal)
         self.setTitleColor(UIColor.lightGray, for: .highlighted)
         self.layer.cornerRadius = self.frame.height * 0.15
-
     }
     
     open func setType(type: SearchWidgetCategoriesButtonType) {
@@ -79,7 +78,7 @@ open class SearchWidgetCategoriesButton: UIButton {
         case .blacked:
             self.layer.borderColor = nil
             self.layer.borderWidth = 0
-            self.backgroundColor = randomizeColorScheme()
+            self.backgroundColor = randomizeSearchColorScheme()
             self.setTitleColor(UIColor.white, for: .normal)
             self.setTitleColor(UIColor.white.withAlphaComponent(0.3), for: .highlighted)
         
@@ -92,7 +91,7 @@ open class SearchWidgetCategoriesButton: UIButton {
         }
     }
     
-    open func randomizeColorScheme() -> UIColor {
+    open func randomizeSearchColorScheme() -> UIColor {
 //        let colorArray = ["ff6699", "ff3366", "ff3333"]
         let colorArray = ["000000"]
         

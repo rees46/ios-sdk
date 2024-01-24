@@ -470,7 +470,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        }
 //
 //        print("10. Testing detail search")
-//        sdk.search(query: "coat", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], timeOut: 0.2) { searchResponse in
+//        sdk.search(query: "shoes", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], colors: ["white", "black"], fashionSizes: ["36", "37", "38", "39", "40"], timeOut: 0.2) { searchResponse in
 //            print("   Full search callback")
 //            switch searchResponse {
 //            case let .success(response):
@@ -540,26 +540,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                    print("Error:", error.description)
 //                }
 //                //fatalError("    review is failure")
-//            }
-//        }
-//
-//        print("14. Get all user notificationns")
-//        sdk.getAllNotifications(type: "trigger", channel: "email", limit: 10, page: 1, dateFrom: "2023-09-01") { notificationsResponse in
-//            print("   Get user notifications callback")
-//            switch notificationsResponse {
-//            case let .success(response):
-//                print("     get all user notifications is success")
-//                withExtendedLifetime(response) {
-//                    //print("Response:", response) //Uncomment it if you want to see response
-//                }
-//            case let .failure(error):
-//                switch error {
-//                case let .custom(customError):
-//                    print("Error:", customError)
-//                default:
-//                    print("Error:", error.description)
-//                }
-//                // fatalError("    get all user notifications is failure")
 //            }
 //        }
 //
