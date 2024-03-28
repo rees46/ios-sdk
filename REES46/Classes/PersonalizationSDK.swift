@@ -96,7 +96,7 @@ public protocol PersonalizationSDK {
     func getSession() -> String
     func getCurrentSegment() -> String
     func getShopId() -> String
-    func setPushTokenNotification(token: String, completion: @escaping(Result<Void, SDKError>) -> Void)
+   func setPushTokenNotification(token: String, platform: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SDKError>) -> Void)
@@ -116,7 +116,9 @@ public protocol PersonalizationSDK {
 }
 
 public extension PersonalizationSDK {
-    
+   func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+      setPushTokenNotification(token: token, platform: platform, completion: completion)
+   }
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }

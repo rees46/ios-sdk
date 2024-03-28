@@ -124,14 +124,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return shopId
     }
 
-    func setPushTokenNotification(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+   func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "token": token,
-                "platform": self.stream,
+                "platform": platform ?? "ios",
             ]
             
             let sessionConfig = URLSessionConfiguration.default
@@ -156,7 +156,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "token": token,
-                "platform": "ios",
+                "platform": "ios_firebase",
             ]
             
             let sessionConfig = URLSessionConfiguration.default
