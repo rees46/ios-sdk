@@ -96,14 +96,14 @@ public protocol PersonalizationSDK {
     func getSession() -> String
     func getCurrentSegment() -> String
     func getShopId() -> String
-   func setPushTokenNotification(token: String, platform: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func setPushTokenNotification(token: String, platform: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SDKError>) -> Void)
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func subscribeForBackInStock(id: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: [String]?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func getStories(code: String, completion: @escaping(Result<StoryContent, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
@@ -116,9 +116,10 @@ public protocol PersonalizationSDK {
 }
 
 public extension PersonalizationSDK {
-   func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
-      setPushTokenNotification(token: token, platform: platform, completion: completion)
-   }
+    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+       setPushTokenNotification(token: token, platform: platform, completion: completion)
+    }
+    
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }
@@ -155,8 +156,8 @@ public extension PersonalizationSDK {
         notificationClicked(type: type, code: code, completion: completion)
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        subscribeForBackInStock(id: id, email: email, phone: phone, completion: completion)
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
     }
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
