@@ -1,7 +1,6 @@
 import Foundation
 
 extension String {
-
     public func escape() -> String? {
         return addingPercentEncoding(withAllowedCharacters: .alphanumerics)
     }
@@ -25,7 +24,6 @@ public struct Disk {
     }
 }
 
-
 extension Disk.Directory {
 
     fileprivate func createDirectory() {
@@ -47,7 +45,6 @@ extension Disk.Directory {
         return cacheDirectory + "/" + directoryName
     }
 }
-
 
 extension Disk {
 

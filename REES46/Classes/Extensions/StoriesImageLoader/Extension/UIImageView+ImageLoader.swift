@@ -21,7 +21,6 @@ extension UIImageView {
     }
 }
 
-
 extension SdkImageReloader where Base: UIImageView {
 
     @discardableResult
@@ -60,11 +59,11 @@ extension SdkImageReloader where Base: UIImageView {
         let task = Task(base, onCompletion: imageCompletion)
 
         if let requestUrl = base.requestUrl {
-            let loader = StoriesCollectionCellLoader.manager.getLoader(with: requestUrl)
-            loader.operative.remove(task)
-            if requestUrl != storiesCollectionCellLoaderUrl, loader.operative.tasks.isEmpty {
-                loader.cancel()
-            }
+            _ = StoriesCollectionCellLoader.manager.getLoader(with: requestUrl)
+//            loader.operative.remove(task)
+//            if requestUrl != storiesCollectionCellLoaderUrl, loader.operative.tasks.isEmpty {
+//                loader.cancel()
+//            }
         }
         base.requestUrl = url.storiesCollectionCellLoaderURL
 

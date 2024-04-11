@@ -61,10 +61,10 @@ class PromoCodeView: UIView {
             addSubview(promocodeSlideProductImage)
             
             let urlImgFullSize: String = promoData.image_url
-            let urlImgResize = URL(string: promoData.image_url_resized?.image_url_resized520 ?? urlImgFullSize)
+            let urlImgDownloadAndResize = URL(string: promoData.image_url_resized?.image_url_resized520 ?? urlImgFullSize)
             
-            if urlImgResize != nil {
-                StoryBlockImageCache.image(for: urlImgResize!.absoluteString) { [self] cachedImage in
+            if urlImgDownloadAndResize != nil {
+                SdkImagesCacheLoader.image(for: urlImgDownloadAndResize!.absoluteString) { [self] cachedImage in
                     if cachedImage != nil {
                         let imageBorderRepresentation = cachedImage!.imageWithInsets(insets: UIEdgeInsets(top: 22, left: 22, bottom: 22, right: 22))
                         if cachedImage!.hasAlpha {
@@ -100,9 +100,9 @@ class PromoCodeView: UIView {
                             //Do nothing
                         })
                         
-                        let task = URLSession.shared.dataTask(with: urlImgResize!, completionHandler: { data, _, error in
+                        let task = URLSession.shared.dataTask(with: urlImgDownloadAndResize!, completionHandler: { data, _, error in
                             if error == nil {
-                                guard let unwrappedData = data, let downloadedImage = UIImage(data: unwrappedData) else {
+                                guard let unwrappedImageData = data, let downloadedImage = UIImage(data: unwrappedImageData) else {
                                     return
                                 }
                                 
@@ -131,7 +131,7 @@ class PromoCodeView: UIView {
                                     }, completion: { (b) in })
                                 }
                                 
-                                StoryBlockImageCache.save(downloadedImage, for: urlImgResize!.absoluteString)
+                                SdkImagesCacheLoader.save(downloadedImage, for: urlImgDownloadAndResize!.absoluteString)
                             }
                         })
                         task.resume()
@@ -151,7 +151,6 @@ class PromoCodeView: UIView {
     }
 }
 
-
 extension UIImage {
     func imageWithInsets(insets: UIEdgeInsets) -> UIImage? {
         UIGraphicsBeginImageContextWithOptions(
@@ -165,7 +164,6 @@ extension UIImage {
         return imageWithInsets
     }
 }
-
 
 extension UIImage {
     public var hasAlpha: Bool {

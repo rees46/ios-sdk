@@ -66,7 +66,7 @@ open class SdkFontInjector: NSObject {
                 var errorRef: Unmanaged<CFError>? = nil
 
                 if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                    print("SDK Error registering font")
+                    print("SDK: Error registering font")
                 } else {
                     let fontName = fontRef!.postScriptName as String?
                     let fontWeightName = "\(String(describing: fontName))".split(separator: ".").last
@@ -79,14 +79,13 @@ open class SdkFontInjector: NSObject {
                         //SdkFontInjector.registeredFont[fontName!]?[fontWeight] = fontName
                     }
                     SdkFontInjector.registeredFont[fontName!]?[UIFont.Weight.regular] = fontName
-                    print("SDK Success registering font")
+                    print("SDK: Success registering font")
                     SdkFontInjector.lastestRegisterFontFamilyName = fontName
                 }
             }
         }
     }
 }
-
 
 extension SdkFontPackage {
     public static func dynamicFont(textStyle: SdkFontTextStyleImplement, weight: UIFont.Weight = .regular) -> UIFont {
@@ -98,7 +97,6 @@ extension SdkFontPackage {
     }
 }
 
-
 extension SdkFontPackage where Self.RawValue == String {
     var fileName: String {
         return rawValue
@@ -108,7 +106,6 @@ extension SdkFontPackage where Self.RawValue == String {
         return "\(self)"
     }
 }
-
 
 extension UIFont.Weight {
     static var mappingKeys: [UIFont.Weight: String] {

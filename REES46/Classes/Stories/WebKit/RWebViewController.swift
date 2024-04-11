@@ -213,7 +213,6 @@ public class RWebViewController:UIViewController, WKUIDelegate {
   }
 }
 
-
 extension RWebViewController:UIGestureRecognizerDelegate {
   
     fileprivate func addPanGestureRecognizer() {
@@ -230,8 +229,7 @@ extension RWebViewController:UIGestureRecognizerDelegate {
         toolbar.gestureRecognizers = [panRecognizer]
     }
     
-    @objc
-    private func handlePanning(_ gestureRecognizer: UIPanGestureRecognizer?) {
+    @objc private func handlePanning(_ gestureRecognizer: UIPanGestureRecognizer?) {
     
         if gestureRecognizer?.state == .began {
             lastLocation = container.center
@@ -268,7 +266,6 @@ extension RWebViewController:UIGestureRecognizerDelegate {
         }
     }
 }
-
 
 extension RWebViewController:WKNavigationDelegate {
     

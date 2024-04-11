@@ -77,7 +77,7 @@ public class Objectification {
         return values
     }
     
-    private func convertOptional(string: String) -> String {
+    public func convertOptional(string: String) -> String {
         if string.hasPrefix("Optional(") && string.hasSuffix(")") {
             let nonOptionalString = string.substring(10..<string.count-2)
             

@@ -183,7 +183,6 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
 }
 
-
 extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
@@ -242,6 +241,42 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         
         return cell
     }
+    
+//    func russianHyphenated() -> String {
+//        return hyphenated(locale: Locale(identifier: "ru_Ru"))
+//    }
+//
+//    func hyphenated(languageCode: String) -> String {
+//        let locale = Locale(identifier: languageCode)
+//        return self.hyphenated(locale: locale)
+//    }
+
+//    func hyphenated(locale: Locale) -> String {
+//        //guard CFStringIsHyphenationAvailableForLocale(locale as CFLocale) else { return }
+//        
+//        var s = self
+//        
+//        let fullRange = CFRangeMake(0, s.utf16.count)
+//        var hyphenationLocations = [CFIndex]()
+//        
+//        for (i, _) in s.utf16.enumerated() {
+//            let location: CFIndex = CFStringGetHyphenationLocationBeforeIndex(s as CFString, i, fullRange, 0, locale as CFLocale, nil)
+//            if hyphenationLocations.last != location {
+//                hyphenationLocations.append(location)
+//            }
+//        }
+//        
+//        for l in hyphenationLocations.reversed() {
+//            guard l > 0 else { continue }
+//            let strIndex = String.Index(utf16Offset: l, in: s)
+//            // insert soft hyphen:
+//            s.insert("\u{00AD}", at: strIndex)
+//            // or insert a regular hyphen to debug:
+//            //s.insert("-", at: strIndex)
+//        }
+//        
+//        return s
+//    }
 
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
@@ -290,29 +325,28 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 }
 
-
 extension StoriesView: StoriesViewLinkProtocol {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
         self.communicationDelegate?.receiveSelectedProductData(products: storySlide)
-        print("\nSDK Received story slide button tap links for external use:")
+        print("\nSDK: Received story slide button tap links for external use:")
         printSlideObject(objElementClass: storySlide)
     }
     
     public func structOfSelectedCarouselProduct(product: StoriesProduct) {
         self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
-        print("\nSDK Received carousel selected product link for external use:")
+        print("\nSDK: Received carousel selected product link for external use:")
         printCarouselObject(objProductClass: product)
     }
     
     public func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement) {
         self.communicationDelegate?.receiveSelectedPromocodeProductData(promoCodeSlide: promoCodeSlide)
-        print("\nSDK Received promocode slide button tap links for external use:")
+        print("\nSDK: Received promocode slide button tap links for external use:")
         printPromoObject(objPromoClass: promoCodeSlide)
     }
     
     public func linkIosExternalUse(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
-        print("\nSDK Received linkIos for external use: \(url)\n\n")
+        print("\nSDK: Received linkIos for external use: \(url)\n\n")
     }
 
     public func reloadStoriesCollectionSubviews() {
@@ -354,11 +388,10 @@ extension StoriesView: StoriesViewLinkProtocol {
 class CustomCollectionViewCell: UICollectionViewCell {
     override var isSelected: Bool {
         didSet {
-            contentView.backgroundColor = isSelected ? .red : .white
+            contentView.backgroundColor = isSelected ? .lightGray : .white
         }
     }
 }
-
 
 extension UIViewController {
     func embedInNavigationController() -> UINavigationController {

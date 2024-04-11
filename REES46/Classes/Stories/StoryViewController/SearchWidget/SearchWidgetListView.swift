@@ -6,14 +6,17 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
     
     open var sdkSearchWidgetListViewDelegate: SearchWidgetListViewDelegate?
     open var sdkSearchWidget = SearchWidget()
-    open var sdkSearchWidgetTextFieldText: String? {
+    
+    open var sdkSearchWidgetTextFieldEnteredText: String? {
         didSet {
-            guard let text = sdkSearchWidgetTextFieldText else {
+            guard let text = sdkSearchWidgetTextFieldEnteredText else {
                 return
             }
 
             let objectification = Objectification(objects: database, type: .all)
             let result = objectification.objects(contain: text)
+            
+            UserDefaults.standard.set(text, forKey: "viewAllSearchResultsButtonClickedFull")
 
             self.searchResultDatabase = result
             if text.isEmpty {
@@ -31,6 +34,7 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
     open func initData(database: [Any]) {
         self.database = database
         self.searchResultDatabase = database
+        
         self.reloadData()
     }
     
@@ -39,7 +43,14 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
     }
     
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+//        if let cell: CustomCell = tableView.dequeueReusableCell(withIdentifier: "revcell", for: indexPath) as? CustomCell
+//        {
+//            return cell
+//        }
+//        return UITableViewCell()
+        
         guard let cell = self.sdkSearchWidgetListViewDelegate?.sdkSearchWidgetListView(tableView, cellForRowAt: indexPath) else {
+            //return CustomCell()
             return UITableViewCell()
         }
         return cell

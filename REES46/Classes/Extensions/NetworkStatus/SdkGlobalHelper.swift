@@ -76,7 +76,6 @@ public class SdkGlobalHelper {
     }
 }
 
-
 extension DispatchQueue {
     private static var _onceTracker = [String]()
     
@@ -106,7 +105,6 @@ extension DispatchQueue {
     }
 }
 
-
 extension UIImage {
     func withRoundedCorners(radius: CGFloat? = nil) -> UIImage? {
         let maxRadius = min(size.width, size.height) / 2
@@ -130,7 +128,6 @@ extension UIImage {
     }
 }
 
-
 extension UIColor {
     convenience init(red: Int, green: Int, blue: Int) {
         assert(red >= 0 && red <= 255, "Invalid red component")
@@ -148,7 +145,6 @@ extension UIColor {
         )
     }
 }
-
 
 extension UIColor {
     public class func hexStringFromColor(color: UIColor) -> String {
@@ -199,8 +195,8 @@ extension UIColor {
     public static let sdkDefaultBlueColor = UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
     public static let sdkDefaultYellowColor = UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
     public static let sdkDefaultGreenColor = UIColor(red: 94/255, green: 193/255, blue: 105/255, alpha: 1.0)
+    public static let sdkDefaultBordoColor = UIColor(red: 141/255, green: 43/255, blue: 100/255, alpha: 1.0)
 }
-
 
 extension String {
     func localizeUI(withComment comment: String? = nil) -> String {
@@ -208,20 +204,17 @@ extension String {
     }
 }
 
-
 extension Int {
     static func parseIntSymbols(from string: String) -> Int? {
         Int(string.components(separatedBy: CharacterSet.decimalDigits.inverted).joined())
     }
 }
 
-
 extension Error {
     var errorCode:Int? {
         return (self as NSError).code
     }
 }
-
 
 extension UIView {
     func fixInView(_ container: UIView!) {
@@ -235,14 +228,13 @@ extension UIView {
     }
 }
 
-
 extension NSObject {
     func safeRemoveObserver(_ observer: NSObject, forKeyPath keyPath: String) {
         switch self.observationInfo {
         case .some:
             self.removeObserver(observer, forKeyPath: keyPath)
         default: break
-            //debugPrint("SDK Error deleting Observer does not exist")
+            //debugprint("SDK: Error deleting Observer does not exist")
         }
     }
 }

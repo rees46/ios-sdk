@@ -1,0 +1,180 @@
+import UIKit
+import REES46
+
+@available(iOS 13.0, *)
+protocol MainFIltersCheckboxCellDelegate: AnyObject {
+    func collapseSection(header: MainFIltersCheckboxCell, section: Int)
+    func updateTableWithFiltersNow(_ section: Int)
+    func reloadSectionsInFiltersTable(_ section: Int)
+}
+
+@available(iOS 13.0, *)
+class MainFIltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
+    func collapseSection(header: FiltersCheckboxItem, section: Int) {
+        //
+    }
+    
+    var menuList = [FiltersMenu]()
+    
+    func collapseSection(header: MainFIltersCheckboxCell, section: Int) {
+        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
+        if !carouselOpenedBoolKey {
+            UserDefaults.standard.set(true, forKey: "FiltersMemorySetting1")
+        } else {
+            UserDefaults.standard.set(false, forKey: "FiltersMemorySetting1")
+        }
+        
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxCall"), object: nil)
+    }
+    
+    func checkboxItemDidSelected(item: FiltersCheckboxItem) {
+        print(item)
+        delegate?.updateTableWithFiltersNow(0)
+        
+        //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxCall"), object: nil)
+    }
+    
+    func checkboxItemDidSelected(item: MainFIltersCheckboxCell) {
+        delegate?.updateTableWithFiltersNow(0)
+        print(item)
+    }
+    
+    @IBOutlet weak var titleLabel: UILabel?
+    @IBOutlet weak var pictureImageView: UIImageView?
+    @IBOutlet weak var nameLabel: UILabel?
+    
+    var section: Int = 0
+    
+    weak var delegate: MainFIltersCheckboxCellDelegate?
+    
+    var items = [FiltersCheckboxItem]()
+    
+    var menu = FiltersMenu(filterId: -99, title: "Menu", titleFiltersValues: ["String"], selected: false)
+    
+//     var items = [FiltersCheckboxItem(title: "All",
+//                                isSelected: true),
+//                 FiltersCheckboxItem(title: "Leather",
+//                                isSelected: true),
+//                 FiltersCheckboxItem(title: "Rubber",
+//                                isSelected: true),
+//                 FiltersCheckboxItem(title: "Cotton",
+//                                isSelected: true),
+//                 
+//                 FiltersCheckboxItem(title: "Show more (2)",
+//                                children: [
+//                                    FiltersCheckboxItem(title: "Wool",
+//                                                   isSelected: true),
+//                                    FiltersCheckboxItem(title: "Jeans",
+//                                                   isSelected: true),
+//                                ], isGroupCollapsed: true),
+//    ]
+
+    let checkboxTree = FiltersCheckboxTree()
+    
+    var itemForFiltersWIdget: FiltersMenu? {
+        didSet {
+            guard let itemForFiltersWIdget = itemForFiltersWIdget else {
+                return
+            }
+            setCollapsed(collapsed: true)
+//            if let pictureUrl = item.pictureURL {
+//                pictureImageView?.image = UIImage(named: pictureUrl)
+//            }
+            
+            nameLabel?.text = itemForFiltersWIdget.title
+            setCollapsed(collapsed: itemForFiltersWIdget.isCollapsed)
+        }
+    }
+    
+    func setCollapsed(collapsed: Bool) {
+        //setSelected(false, animated: false)
+        //arrowImage?.rotate(collapsed ? 0.0 : .pi)
+    }
+    
+    static var nib:UINib {
+        return UINib(nibName: identifier, bundle: nil)
+    }
+    
+    static var identifier: String {
+        return String(describing: self)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateView()
+    }
+    
+    func updateView(){
+        checkboxTree.items = items
+        
+    }
+    
+    @objc private func didTapHeader() {
+        delegate?.collapseSection(header: self, section: section)
+    }
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapHeader)))
+        
+        let scrollView = UIScrollView()
+        scrollView.alwaysBounceVertical = true
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.isScrollEnabled = false
+        
+        addSubview(scrollView)
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.leftAnchor.constraint(equalTo: leftAnchor),
+            scrollView.rightAnchor.constraint(equalTo: rightAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+
+        let contentView = UIView()
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        scrollView.addSubview(contentView)
+        NSLayoutConstraint.activate([
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leftAnchor.constraint(equalTo: scrollView.leftAnchor),
+            contentView.rightAnchor.constraint(equalTo: scrollView.rightAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+
+            contentView.widthAnchor.constraint(equalTo: widthAnchor)
+        ])
+
+        let contentStackView = UIStackView()
+        contentStackView.spacing = 8
+        contentStackView.axis = .vertical
+        contentStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        contentView.addSubview(contentStackView)
+        
+        NSLayoutConstraint.activate([
+            contentStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 0),
+            contentStackView.leftAnchor.constraint(equalTo: contentView.leftAnchor, constant: -18),
+            contentStackView.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: 0),
+            contentStackView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: 0)
+        ])
+        
+        
+        checkboxTree.delegate = self
+        
+        contentStackView.addArrangedSubview(checkboxTree)
+        
+        pictureImageView?.layer.cornerRadius = 40
+        pictureImageView?.clipsToBounds = true
+        pictureImageView?.contentMode = .scaleAspectFit
+        pictureImageView?.backgroundColor = UIColor.lightGray
+    }
+
+    override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        pictureImageView?.image = nil
+    }
+}

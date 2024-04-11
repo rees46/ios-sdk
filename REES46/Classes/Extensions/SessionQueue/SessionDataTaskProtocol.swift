@@ -10,7 +10,6 @@ public protocol SessionDataTaskProtocol {
     func sessionUpdate(data: Data? , newData: Data) -> Data
 }
 
-
 extension SessionDataTaskProtocol {
     
     public func sessionUpdate(data: Data? , newData: Data) -> Data {

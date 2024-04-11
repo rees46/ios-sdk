@@ -3,7 +3,7 @@
 //  REES46
 //
 //  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
+//  Copyright (c) 2024. All rights reserved.
 //
 
 import UIKit
@@ -65,6 +65,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Trying to fetch user session (permanent user Id)
         deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
+        let networkManager = NetworkStatus.nManager
+   //         ..networkManager.addObserver(observer: NetworkStatusObserver.self as! NetworkStatusObserver)
+        
         urlSession = URLSession.shared
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
@@ -90,8 +93,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let networkManager = NetworkStatus.nManager
                         let connectionStatus = networkManager.connectionStatus
                         let typeOfConnection = networkManager.connectionType
-                        //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                        //print("Connection Type: \(typeOfConnection ?? .notdetected)")
+                        print("SDK: Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                        print("Connection Type: \(typeOfConnection ?? .notdetected)")
                         
                         if connectionStatus == .Online {
                             completion(error)
@@ -124,14 +127,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return shopId
     }
 
-    func setPushTokenNotification(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "token": token,
-                "platform": self.stream,
+                "platform": "ios",
             ]
             
             let sessionConfig = URLSessionConfiguration.default
@@ -156,13 +159,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "token": token,
-                "platform": "ios",
+                "platform": "ios_firebase",
             ]
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -245,7 +248,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params) { (result) in
                 switch result {
@@ -269,7 +271,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { (result) in
                 switch result {
@@ -361,7 +362,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -729,7 +729,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
 
             self.getRequest(path: path, params: params) { result in
@@ -768,7 +767,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -824,7 +822,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -854,7 +851,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -884,7 +880,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
@@ -912,7 +907,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
@@ -960,18 +954,54 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "subscriptions/subscribe_for_product_available"
+            
+//            if let fashionSize = fashionSize {
+//                let fashionSizeArray = self.generateString(array: fashionSize)
+//                //params["fashion_size"] = fashionSizeArray
+//            }
+            
             var params: [String: Any] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment,
-                "item_id": id
+                "item_id": id,
+               /// "properties": {"fashion_size": fashionSizesArray, "barcode": "222222"}
             ]
             
+            //{fashion_size: "XL", barcode: "222222"}
+            
+            if let fashionSize = fashionSize {
+               // let words = f.components(separatedBy: [",", " ", "!",".","?"])
+                    
+                    
+          //  } // [Optional(0.01), Optional(2.02), Optional(0.1), Optional(0.0)]
+
+                
+                
+                
+                let tmpSizesArray = self.generateString(array: fashionSize)
+                let words = tmpSizesArray.components(separatedBy: [","])
+                for item in words {
+                    //params["properties"] = ["fashion_size": item]
+                }
+                params["properties"] = ["fashion_size": 36]
+            }
+            
+//            if let fashionSize = fashionSize {
+//                let fashionSizeArray = self.generateString(array: fashionSize)
+//                for item in fashionSizeArray {
+//                    params["properties"] = fashionSizeArray
+//                }
+//                
+//                
+//                params["properties"] = fashionSizeArray
+//            }
+            print(params)
             if let email = email {
                 params["email"] = email
             }
@@ -1114,6 +1144,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             params["ios_advertising_id"] = advId
         }
         
+//        if (advId != "00000000-0000-0000-0000-000000000000" && advId != nil) {
+//            params["ios_advertising_id"] = "80000000-0000-0000-0000-000000000008"
+//        }
+        
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
         sessionConfig.waitsForConnectivity = true
@@ -1195,9 +1229,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
+            completion(.failure(SDKError.custom(error: "SDK: App run on Simulator IDFA 0")))
             return
         }
         params["ios_advertising_id"] = advId
+        //params["ios_advertising_id"] = "70000000-0000-0000-0000-000000000007" //advId
         UserDefaults.standard.set(advId, forKey: "IDFA")
         
         let sessionConfig = URLSessionConfiguration.default
@@ -1212,7 +1248,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 let resultResponse = InitResponse(json: resJSON)
                 completion(.success(resultResponse))
             case let .failure(error):
-                completion(.failure(error))
+                //completion(.failure(error))
+                
+                completion(.failure(.custom(error: "SDK: Successful re-init or IDFA request")))
+                
+//                if let status = error["status"] as? String, status == "error" {
+//                    if let errorMessage = jsonObject["message"] as? String {
+//                        completion(.failure(.custom(error: errorMessage)))
+//                    }
+//                }
             }
         }
     }
@@ -1238,11 +1282,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if SdkConfiguration.stories.storiesSlideReloadManually {
                 sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
                 sessionConfig.waitsForConnectivity = false
-                sessionConfig.shouldUseExtendedBackgroundIdleMode = false
             } else {
-                sessionConfig.timeoutIntervalForRequest = 5
+                sessionConfig.timeoutIntervalForRequest = 3
                 sessionConfig.waitsForConnectivity = true
-                sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             }
             self.urlSession = URLSession(configuration: sessionConfig)
             
@@ -1255,6 +1297,49 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     completion(.failure(error))
                 }
             }
+            
+//            let group = DispatchGroup()
+//                group.enter()
+//                DispatchQueue.global(qos: .background).async{
+//                    
+//                    self.storiesCode = code
+//                    let path = "stories/\(code)"
+//                    let params: [String: String] = [
+//                        "shop_id": self.shopId,
+//                        "did": self.deviceId
+//                    ]
+//                    let sessionConfig = URLSessionConfiguration.default
+//                    if SdkConfiguration.stories.storiesSlideReloadManually {
+//                        sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
+//                        sessionConfig.waitsForConnectivity = false
+//                    } else {
+//                        sessionConfig.timeoutIntervalForRequest = 3
+//                        sessionConfig.waitsForConnectivity = true
+//                    }
+//                    self.urlSession = URLSession(configuration: sessionConfig)
+//                    //
+//                    
+//                    self.getRequest(path: path, params: params, false) { result in
+//                        switch result {
+//                        case let .success(successResult):
+//                            let res = StoryContent(json: successResult)
+//                            completion(.success(res))
+//                          //  group.
+//                        case let .failure(error):
+//                            completion(.failure(error))
+//                        }
+//                    }
+//                    
+//                }
+//            group.wait()
+            
+//            var toreturn: String = ""
+//            if (toreturn == ""){
+//                return  ""// PostCustomerAccount(queue: queue)
+//            }
+//            return toreturn
+                    
+            
         }
     }
     
@@ -1262,7 +1347,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
         do {
             let fileExists = (try? jsonFileURL.checkResourceIsReachable()) ?? false
-            print("SDK Success initialization with exist json file\n\(jsonFileURL)\n")
+            print("SDK: Success initialization with exist json file\n\(jsonFileURL)\n")
             if !fileExists {
                 try data.write(to: jsonFileURL)
             }
@@ -1322,11 +1407,27 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let json = try? JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             let statusMessage = jsonObject["message"] as? String ?? ""
-                            print("\nStatus message: ", statusMessage)
+                            print("\nStatus message:", statusMessage)
+                            print(isInit)
+                            print(path)
+                            let slashSeparator = path.components(separatedBy: "/").first
+                            if (!isInit && slashSeparator == "stories") {
+                                if (statusMessage == "Client not found") {
+                                   // DispatchQueue.main.async {
+                                    
+                                        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "restartApplication"), object: nil)
+                                    completion(.failure(.invalidResponse))
+                                    return
+                                   // }
+                                    //completion(.failure(.invalidResponse))
+                                    //return
+                                }
+                            }
                         }
                         completion(.failure(.invalidResponse))
                         return
                     }
+                    
                     do {
                         if isInit {
                             let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
@@ -1435,8 +1536,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-                    //let typeOfConnection = networkManager.connectionType
-                    //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                    let typeOfConnection = networkManager.connectionType
+                    print("SDK: Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
                     
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
@@ -1472,7 +1573,6 @@ extension Data {
         }
     }
 }
-
 
 extension URLSession {
     func dataTask(with url: URL, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {

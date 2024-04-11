@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="PriceCell" rowHeight="133" id="n1x-FV-Dj7" userLabel="PriceCell" customClass="PriceCell" customModule="REES46Demo" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="385" height="70"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="n1x-FV-Dj7" id="u2K-pG-QgM">
+                <rect key="frame" x="0.0" y="0.0" width="385" height="70"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="to" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9Xy-qm-c9o">
+                        <rect key="frame" x="212" y="8" width="22" height="68.5"/>
+                        <fontDescription key="fontDescription" type="system" weight="medium" pointSize="12"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="From" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3WA-AV-dat">
+                        <rect key="frame" x="16" y="8" width="55" height="70"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="70" id="46N-VL-8Rx"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Select lowest price" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="A6V-43-AHD" customClass="SearchWidgetDropDownTextField" customModule="REES46Demo">
+                        <rect key="frame" x="70" y="18" width="135" height="50"/>
+                        <color key="backgroundColor" red="0.93725490570000003" green="0.93725490570000003" blue="0.95686274770000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="tintColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="50" id="41b-VJ-JdN"/>
+                            <constraint firstAttribute="width" constant="135" id="ojQ-32-zTV"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <textInputTraits key="textInputTraits"/>
+                    </textField>
+                    <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Select highest price" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="wVz-iH-qNO" customClass="SearchWidgetDropDownTextField" customModule="REES46Demo">
+                        <rect key="frame" x="241" y="18" width="135" height="50"/>
+                        <color key="backgroundColor" red="0.93725490570000003" green="0.93725490570000003" blue="0.95686274770000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="tintColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="135" id="fgC-kP-qlt"/>
+                            <constraint firstAttribute="height" constant="50" id="nFl-UD-0Zb"/>
+                        </constraints>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <textInputTraits key="textInputTraits"/>
+                    </textField>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="A6V-43-AHD" firstAttribute="top" secondItem="9Xy-qm-c9o" secondAttribute="top" constant="10" id="0FH-lj-DdN"/>
+                    <constraint firstAttribute="bottom" secondItem="3WA-AV-dat" secondAttribute="bottom" constant="-8" id="5Ch-MR-lQd"/>
+                    <constraint firstItem="9Xy-qm-c9o" firstAttribute="leading" secondItem="A6V-43-AHD" secondAttribute="trailing" constant="7" id="JcR-Pr-dVg"/>
+                    <constraint firstItem="A6V-43-AHD" firstAttribute="centerY" secondItem="u2K-pG-QgM" secondAttribute="centerY" constant="8" id="YYJ-Ih-gIx"/>
+                    <constraint firstItem="A6V-43-AHD" firstAttribute="leading" secondItem="3WA-AV-dat" secondAttribute="trailing" constant="-1" id="bOK-GG-cQP"/>
+                    <constraint firstItem="wVz-iH-qNO" firstAttribute="leading" secondItem="9Xy-qm-c9o" secondAttribute="trailing" constant="7" id="fdB-nI-3kh"/>
+                    <constraint firstItem="A6V-43-AHD" firstAttribute="leading" secondItem="u2K-pG-QgM" secondAttribute="leading" constant="70" id="p6W-vu-8lY"/>
+                    <constraint firstItem="wVz-iH-qNO" firstAttribute="centerY" secondItem="A6V-43-AHD" secondAttribute="centerY" id="pds-8d-g2R"/>
+                    <constraint firstAttribute="trailingMargin" secondItem="wVz-iH-qNO" secondAttribute="trailing" constant="-7" id="rl5-aO-gKA"/>
+                    <constraint firstItem="3WA-AV-dat" firstAttribute="leading" secondItem="u2K-pG-QgM" secondAttribute="leadingMargin" id="rqk-kk-MCa"/>
+                    <constraint firstItem="3WA-AV-dat" firstAttribute="baseline" secondItem="9Xy-qm-c9o" secondAttribute="baseline" id="wqJ-wF-5E2"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="textFieldOptionalTextPicker1" destination="wVz-iH-qNO" id="AlN-gR-PbS"/>
+                <outlet property="textFieldTextPicker1" destination="A6V-43-AHD" id="lVF-0l-uRs"/>
+            </connections>
+            <point key="canvasLocation" x="198.83720930232559" y="-1.2875536480686696"/>
+        </tableViewCell>
+    </objects>
+</document>

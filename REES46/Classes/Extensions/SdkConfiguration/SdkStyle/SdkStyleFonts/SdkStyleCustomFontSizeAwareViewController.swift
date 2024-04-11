@@ -4,7 +4,6 @@ protocol SdkStyleCustomFontsAwareViewController {
     func applySdkCustomFonts(_ fonts: SdkStyleCustomFonts)
 }
 
-
 extension UIViewController: SdkStyleCustomFontsAwareViewController {
     func applySdkCustomFonts(_ fonts: SdkStyleCustomFonts) {
         if let tableVC = self as? UITableViewController {
@@ -18,7 +17,6 @@ extension UIViewController: SdkStyleCustomFontsAwareViewController {
         }
     }
 }
-
 
 extension UIView {
     func downcastSdkAllFonts(_ fonts: SdkStyleCustomFonts) {

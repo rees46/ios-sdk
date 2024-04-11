@@ -153,7 +153,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                         do {
                             try audioSession.setCategory(.playback, mode: .default, options: [])
                         } catch let error {
-                            print("SDK Error in AVAudio Session\(error.localizedDescription)")
+                            print("SDK: Error in AVAudio Session\(error.localizedDescription)")
                         }
                     } else {
                         player.volume = 0
@@ -282,7 +282,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
 
         let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
             if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
+                guard let unwrappedImageData = data, let image = UIImage(data: unwrappedImageData) else {
                     return
                 }
                 DispatchQueue.main.async {
@@ -303,7 +303,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             audioSession.addObserver(self, forKeyPath: "outputVolume", options: NSKeyValueObservingOptions.new, context: nil)
             kAudioLevel = audioSession.outputVolume
         } catch {
-            print("SDK Output volume listener error")
+            print("SDK: Output volume listener error")
         }
     }
         
@@ -345,8 +345,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func didTapOnMute() {
+    @objc private func didTapOnMute() {
         var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
@@ -360,7 +359,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             do {
                 try audioSession.setCategory(.playback, mode: .default, options: [])
             } catch let error {
-                print("SDK Error in AVAudio Session\(error.localizedDescription)")
+                print("SDK: Error in AVAudio Session\(error.localizedDescription)")
             }
             
             muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
@@ -413,7 +412,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 icon: errorIcon,
                 iconSpacing: 16,
                 position: .centerCustom,
-                onTap: { print("SDK Alert popup tapped")
+                onTap: { print("SDK: Alert popup tapped")
                 }
             )
             popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
@@ -527,7 +526,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
             currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .black), .foregroundColor: priceSectionFontColorBySdk]
         }
         
-        //let currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: UIColor.white]
         let currencyTextBoldString = NSMutableAttributedString(string: currencyText, attributes:currencyTextAttrs)
         clearPriceAttributedString.append(currencyTextBoldString)
         
@@ -582,7 +580,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         let v = UIView()
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkNilTap(_:)))
-        //v.addGestureRecognizer(tap)
         promocodeBannerView.addGestureRecognizer(tap)
         v.addSubview(presentedBannerLabel)
         
@@ -599,9 +596,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else {
                 
                 var frameworkBundle = Bundle(for: classForCoder)
-            #if SWIFT_PACKAGE
+        #if SWIFT_PACKAGE
                 frameworkBundle = Bundle.module
-            #endif
+        #endif
                 let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
                 
                 let copyIconImageView = UIImageView(image: copyIcon)
@@ -687,8 +684,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         promocodeBannerView.dismissWithoutAnimation()
     }
     
-    @objc
-    private func didTapOnProductsButton() {
+    @objc private func didTapOnProductsButton() {
         if let productsList = selectedProductsElement?.products, productsList.count != 0 {
             UserDefaults.standard.set(currentSlide!.id, forKey: "LastViewedSlideMemorySetting")
             let products = productsList
@@ -697,8 +693,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func didTapButton() {
+    @objc private func didTapButton() {
         
         if let promoCodeDeeplinkIos = selectedPromoCodeElement?.deeplinkIos, !promoCodeDeeplinkIos.isEmpty {
             if let currentSlide = currentSlide {
@@ -744,8 +739,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func pauseVideo(_ notification: NSNotification) {
+    @objc private func pauseVideo(_ notification: NSNotification) {
         if let slideID = notification.userInfo?["slideID"] as? String {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -755,8 +749,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func playVideo(_ notification: NSNotification) {
+    @objc private func playVideo(_ notification: NSNotification) {
         if let slideID = notification.userInfo?["slideID"] as? String {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -771,7 +764,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         do {
             try audioSession.setCategory(AVAudioSession.Category.playback)
         } catch {
-            print("SDK Error in AVAudio Session\(error.localizedDescription)")
+            print("SDK: Error in AVAudio Session\(error.localizedDescription)")
         }
         player.play()
     }
@@ -800,11 +793,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-
-//        reloadButton.widthAnchor.constraint(equalToConstant: 76).isActive = true
-//        reloadButton.heightAnchor.constraint(equalToConstant: 76).isActive = true
-//        reloadButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-//        reloadButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
 
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             
@@ -993,7 +981,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         audioSession.removeObserver(self, forKeyPath: "outputVolume", context: nil)
     }
 }
-
 
 extension AVPlayer {
     var isAudioAvailable: Bool? {

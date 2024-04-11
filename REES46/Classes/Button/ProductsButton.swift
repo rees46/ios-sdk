@@ -158,7 +158,6 @@ protocol CustomProductButtonDelegate: AnyObject {
     }
 }
 
-
 extension UIButton {
     func addRightIconForProductsBtn(image: UIImage) {
         

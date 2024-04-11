@@ -1,6 +1,7 @@
 import UIKit
 
 open class SearchWidgetListViewCell: UITableViewCell {
+    
     public static let ID = "SearchWidgetListViewCell"
     
     var leftMargin = 15
@@ -29,8 +30,8 @@ open class SearchWidgetListViewCell: UITableViewCell {
         self.addSubview(searchImageView)
         
         self.searchLabel = UILabel(frame: CGRect(x: 40, y: 0, width: self.frame.width - 20, height: self.frame.height))
-        self.searchLabel.textColor = UIColor.darkGray
-        self.searchLabel.font = UIFont.systemFont(ofSize: 13)
+        self.searchLabel.textColor = UIColor.red
+        self.searchLabel.font = UIFont.boldSystemFont(ofSize: 14)
         self.addSubview(searchLabel)
     }
 }

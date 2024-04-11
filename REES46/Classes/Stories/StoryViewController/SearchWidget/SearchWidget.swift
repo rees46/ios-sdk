@@ -9,7 +9,7 @@ open class SearchWidget: NSObject {
         pref = UserDefaults.standard
     }
     
-    open func setCategories(value: [String]) {
+    open func setCategoriesSuggests(value: [String]) {
         pref.set(value, forKey: "categoriesSearch")
     }
     
@@ -19,8 +19,20 @@ open class SearchWidget: NSObject {
         }
         return categories
     }
+    
+    //
+    open func setUserCachedRequests(value: [String]) {
+        pref.set(value, forKey: "userCachedRequests")
+    }
+    
+    open func getUserCachedRequests() -> [String]? {
+        guard let cReq = pref.object(forKey: "userCachedRequests") as? [String] else {
+            return nil
+        }
+        return cReq
+    }
 
-    open func setSearchHistories(value: [String]) {
+    open func setRequestHistories(value: [String]) {
         pref.set(value, forKey: "historiesSearch")
     }
     
@@ -38,17 +50,47 @@ open class SearchWidget: NSObject {
         if let _histories = pref.object(forKey: "historiesSearch") as? [String] {
             histories = _histories
         }
-        //histories.append(value)
+        histories.append(value)
 
         pref.set(histories, forKey: "historiesSearch")
     }
     
     open func getSearchHistories() -> [String]? {
         guard let histories = pref.object(forKey: "historiesSearch") as? [String] else {
-            return nil
-            //return ["Shoes", "Dress", "jacket"]
+            //return nil
+            return ["Shoes", "Dress", "Jacket"]
         }
         
         return histories
+    }
+    
+    open func setSearchSuggest(value: [String]) {
+        pref.set(value, forKey: "suggestSearch")
+    }
+    
+    open func deleteSearchSuggest(index: Int) {
+        guard var suggests = pref.object(forKey: "suggestSearch") as? [String] else {
+            return
+        }
+        suggests.remove(at: index)
+        
+        pref.set(suggests, forKey: "suggestSearch")
+    }
+    
+    open func appendSearchSuggest(value: String) {
+        var suggests = [String]()
+        if let _suggests = pref.object(forKey: "suggestSearch") as? [String] {
+            suggests = _suggests
+        }
+        suggests.append(value)
+
+        pref.set(suggests, forKey: "suggestSearch")
+    }
+    
+    open func getSearchSuggest() -> [String]? {
+        guard let suggest = pref.object(forKey: "suggestSearch") as? [String] else {
+            return nil
+        }
+        return suggest
     }
 }

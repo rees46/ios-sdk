@@ -28,12 +28,31 @@ open class SearchWidgetTextField: UITextField {
         
         self.leftView = searchUIViewWrapper
         self.returnKeyType = .search
-        self.placeholder = "Search"
-        self.font = UIFont.systemFont(ofSize: 14)
+        self.attributedPlaceholder = NSAttributedString(string: "Search",
+                                                        attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+        
+        self.tintColor = UIColor.darkGray
+        self.textColor = UIColor.black
+        self.font = UIFont.systemFont(ofSize: 16)
+        
+        
+        if #available(iOS 13.0, *) {
+            let searchUIViewWrapper2 = UIView(frame: CGRect(x: 50, y: 0, width: 20, height: 15))
+            
+            _ = UIImage(systemName: "text.viewfinder")
+            self.rightView = searchUIViewWrapper2
+            self.attributedPlaceholder = NSAttributedString(string: "Search",
+                                                            attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+            
+            
+          //  self.rightView.sea = true
+        } else {
+            
+        }
     }
     
     deinit {
-        print("SDK deinit UITextField \(self.placeholder ?? "") \(self.text ?? "")")
+        print("SDK: deinit UITextField \(self.placeholder ?? "") \(self.text ?? "")")
     }
 }
 
@@ -60,10 +79,7 @@ open class SearchWidgetTextFieldView: UIView {
         self.sdkSearchWidgetTextField.layer.masksToBounds = true
         self.addSubview(self.sdkSearchWidgetTextField)
         
-        self.cancelButton = UIButton(frame: CGRect(x: self.frame.width - 30, y: 12, width: 26, height: 26))
-        //self.cancelButton.titleLabel?.font = UIFont.systemFont(ofSize: 14)
-        //self.cancelButton.setTitleColor(UIColor.darkGray, for: .normal)
-        //self.cancelButton.setTitleColor(UIColor.darkGray.withAlphaComponent(0.2), for: .highlighted)
+        self.cancelButton = UIButton(frame: CGRect(x: self.frame.width - 35, y: 12, width: 26, height: 26))
         
         var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE

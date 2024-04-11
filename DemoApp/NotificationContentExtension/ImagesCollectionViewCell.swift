@@ -40,7 +40,7 @@ class ImagesCollectionViewCell: UICollectionViewCell {
 
         let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
             if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
+                guard let unwrappedImageData = data, let image = UIImage(data: unwrappedImageData) else {
                     return
                 }
                 

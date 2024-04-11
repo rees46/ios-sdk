@@ -1,8 +1,11 @@
 import UIKit
 
 open class SearchWidgetHistoryView: UIView {
+    
     open var sdkSearchWidgetHistoryButton: SearchWidgetHistoryButton!
+    
     open var deleteButton: UIButton!
+    
     open var bottomLine: UIView!
     
     override init(frame: CGRect) {
@@ -16,7 +19,9 @@ open class SearchWidgetHistoryView: UIView {
     }
     
     open func initView() {
-        self.sdkSearchWidgetHistoryButton = SearchWidgetHistoryButton(frame: CGRect(x: 0, y: 0, width: self.frame.width - 15, height: self.frame.height))
+        //self.sdkSearchWidgetHistoryButton = SearchWidgetHistoryButton(frame: CGRect(x: 0, y: 0, width: self.frame.width - 15, height: self.frame.height))
+        
+        self.sdkSearchWidgetHistoryButton = SearchWidgetHistoryButton(frame: CGRect(x: 0, y: 0, width: self.frame.width + 30, height: self.frame.height))
         self.addSubview(sdkSearchWidgetHistoryButton)
         
         var frameworkBundle = Bundle(for: classForCoder)
@@ -24,7 +29,7 @@ open class SearchWidgetHistoryView: UIView {
         frameworkBundle = Bundle.module
 #endif
         
-        self.deleteButton = UIButton(frame: CGRect(x: self.frame.width - 15, y: (self.frame.height - 15)/2, width: 15, height: 15))
+        self.deleteButton = UIButton(frame: CGRect(x: self.frame.width - 17, y: (self.frame.height - 15)/2, width: 15, height: 15))
         let close = UIImage(named: "iconSearchClose", in: frameworkBundle, compatibleWith: nil)
 
         self.deleteButton.setImage(close, for: .normal)
@@ -38,8 +43,12 @@ open class SearchWidgetHistoryView: UIView {
 }
 
 open class SearchWidgetHistoryButton: UIButton {
-    open var textLabel: UILabel!
-
+    open var searchResultProductTitleLabel: UILabel!
+    open var searchResultProductPriceLabel: UILabel!
+    open var searchResultProductImage: UIImageView!
+    
+    open var searchCategoriesArrowImage: UIImageView!
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -54,29 +63,33 @@ open class SearchWidgetHistoryButton: UIButton {
         didSet {
             switch isHighlighted {
             case true:
-                self.textLabel.textColor = UIColor.darkGray.withAlphaComponent(0.3)
+                self.searchResultProductTitleLabel.textColor = UIColor.darkGray.withAlphaComponent(0.7)//UIColor.darkGray //UIColor.darkGray.withAlphaComponent(0.3)
+                self.searchResultProductPriceLabel.textColor = UIColor.darkGray.withAlphaComponent(0.7)//UIColor.darkGray //UIColor.darkGray.withAlphaComponent(0.3)
+                
             case false:
-                self.textLabel.textColor = UIColor.darkGray
+                self.searchResultProductTitleLabel.textColor = UIColor.darkGray
+                self.searchResultProductPriceLabel.textColor = UIColor.darkGray
             }
         }
     }
     
+    
     open func initView() {
-//        var frameworkBundle = Bundle(for: classForCoder)
-//#if SWIFT_PACKAGE
-//        frameworkBundle = Bundle.module
-//#endif
-//        let searchHistoryImageView = UIImageView(frame: CGRect(x: 0, y: (self.frame.height - 15)/2, width: 15, height: 15))
-//        let search_history = UIImage(named: "iconSearchHistory", in: frameworkBundle, compatibleWith: nil)
-//        searchHistoryImageView.image = search_history
-//        self.addSubview(searchHistoryImageView)
+        searchCategoriesArrowImage = UIImageView(frame: CGRect(x: self.frame.size.width - 40, y: 13, width: 7, height: 11))
+        self.addSubview(searchCategoriesArrowImage)
         
-        self.textLabel = UILabel(frame: CGRect(x: 2, y: 0, width: self.frame.width - 40, height: self.frame.height)) //25
-        self.textLabel.font = UIFont.systemFont(ofSize: 14)
-        self.textLabel.textColor = UIColor.black.withAlphaComponent(0.9)
-        self.addSubview(textLabel)
+        searchResultProductImage = UIImageView(frame: CGRect(x: -17, y: 7, width: 44, height: 44))
+        //searchResultProductImage.alpha = 0
+        self.addSubview(searchResultProductImage)
         
+        self.searchResultProductTitleLabel = UILabel(frame: CGRect(x: 2, y: 0, width: self.frame.width - 40, height: self.frame.height)) //25
+        self.searchResultProductTitleLabel.font = UIFont.systemFont(ofSize: 17)
+        self.searchResultProductTitleLabel.textColor = UIColor.black.withAlphaComponent(0.9)
+        self.addSubview(searchResultProductTitleLabel)
+        
+        self.searchResultProductPriceLabel = UILabel(frame: CGRect(x: 2, y: 19, width: self.frame.width - 40, height: self.frame.height)) //25
+        self.searchResultProductPriceLabel.font = UIFont.systemFont(ofSize: 16)
+        self.searchResultProductPriceLabel.textColor = UIColor.black.withAlphaComponent(0.9)
+        self.addSubview(searchResultProductPriceLabel)
     }
-
 }
-

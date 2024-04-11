@@ -319,8 +319,7 @@ public class SdkPopupAlertView: UIView {
         layer.shadowOpacity = 1
     }
 
-    @objc
-    private func didTap() {
+    @objc private func didTap() {
         if hideOnTap {
             hide()
         }
@@ -367,7 +366,6 @@ class SdkPopupAlertViewWindow: UIWindow {
         return false
     }
 }
-
 
 extension RawRepresentable where RawValue == String {
     public func SdkPopupAlertView() -> String {

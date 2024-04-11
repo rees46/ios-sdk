@@ -78,7 +78,7 @@ public class SdkStyle: NSObject {
     }
 
     internal func registerViewController(_ viewController: UIViewController) {
-        print("SDK SdkStyle registers view controller: \(String(describing: type(of: viewController)))")
+        print("SDK: SdkStyle registers view controller: \(String(describing: type(of: viewController)))")
         if blacklist.contains(String(describing: type(of: viewController))) {
             return
         }
@@ -112,7 +112,6 @@ public class SdkStyle: NSObject {
         blacklist.append(name)
     }
 }
-
 
 extension UIView {
     @objc
@@ -160,7 +159,6 @@ extension UIView {
         }
     }()
 }
-
 
 extension UIViewController {
     @objc

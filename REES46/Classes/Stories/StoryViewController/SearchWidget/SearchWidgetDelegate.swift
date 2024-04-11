@@ -5,7 +5,19 @@ public protocol SearchWidgetDelegate: SearchWidgetMainViewDelegate, SearchWidget
 public protocol SearchWidgetMainViewDelegate {
     func searchWidgetCategoriesButtonClicked(productText: String)
     
+    func sdkSearchWidgetHistoryButtonClickedStart(productText: String)
+    
     func sdkSearchWidgetHistoryButtonClicked(productText: String)
+    
+    func sdkSearchWidgetHistoryButtonClickedFull(productText: String)
+    
+    func reloadBlankSearch()
+    
+    func resetSearchToSimple()
+    
+    func minimizeSearchTextField()
+    
+    func sdkSearchWidgetHistoryButtonClickedOpenProductCard(productId: String, productName: String, productPrice: String, productImage: String, productImagesArray: String)
 
     func sdkSearchWidgetMainViewHistoryChanged()
 }

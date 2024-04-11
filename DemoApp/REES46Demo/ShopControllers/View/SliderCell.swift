@@ -1,0 +1,47 @@
+import UIKit
+import REES46
+
+class SliderCell: UICollectionViewCell {
+    
+    @IBOutlet weak var productImages: UIImageView!
+    
+    override func draw(_ rect: CGRect) {
+        layer.cornerRadius = 5
+        clipsToBounds = true
+    }
+    
+    func updateCell(with image: String) {
+        
+        if let url = URL(string: image) {
+            URLSession.shared.dataTask(with: url) { (data, response, error) in
+                guard let imageData = data else {
+                    return
+                }
+
+                DispatchQueue.main.async {
+                    UIView.animate(withDuration: 1.7, delay: 0.0,
+                        usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
+                        options: .allowAnimatedContent, animations: {
+                        self.productImages.image = UIImage(data: imageData)
+                    }) { (isFinished) in
+                       // self.view.layoutIfNeeded()
+                    }
+                    self.productImages.image = UIImage(data: imageData)
+                }
+            }.resume()
+      }
+        
+//        let urlImgResize = URL(string: image)
+//        SdkImagesCacheLoader.image(for: urlImgResize!.absoluteString) { [self] cachedImage in
+//            productImages.image = cachedImage
+//            
+//            if cachedImage != nil {
+//                
+//                
+//            }
+//            
+//        }
+        //productImages.image = UIImage(named: image)
+    }
+    
+}

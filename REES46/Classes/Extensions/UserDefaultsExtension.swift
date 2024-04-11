@@ -39,7 +39,6 @@ enum GlobalSettings {
     @UserDefault("user", defaultValue: User(slideId:"", slideUrl:"")) static var user: User
 }
 
-
 extension UserDefaults {
     
     public struct Key {

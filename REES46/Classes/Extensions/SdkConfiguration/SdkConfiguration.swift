@@ -44,6 +44,10 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var storiesBlockNumberOfLines: Int = 0
     public var storiesBlockCharWrapping = false
+    //public var storiesBlockCharWrapping = false
+    
+    
+    
     public var storiesBlockCharCountWrap: Int = 10
     public var defaultShowProductsButtonText: String = "See all products"
     public var defaultHideProductsButtonText: String = "Hide products"
@@ -115,7 +119,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         let pathForResourceString = Bundle.main.path(forResource: fileName,
                                                      ofType: fileExtension)
         guard pathForResourceString != nil else {
-            print("SDK Failed locate custom font \(fileName) in App Bundle")
+            print("SDK: Failed locate custom font \(fileName) in App Bundle")
             return
         }
         
@@ -126,9 +130,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             var errorRef: Unmanaged<CFError>? = nil
 
             if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                print("SDK Error registering font")
+                print("SDK: Error registering font")
             } else {
-                print("SDK Success registering font")
+                print("SDK: Success registering font")
             }
         }
         
@@ -158,9 +162,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 var errorRef: Unmanaged<CFError>? = nil
 
                 if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                    print("SDK Error registering font")
+                    print("SDK: Error registering font")
                 } else {
-                    print("SDK Success registering font")
+                    print("SDK: Success registering font")
                 }
             }
         }
@@ -1160,7 +1164,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 let fontNames = UIFont.fontNames(forFamilyName: familyName)
                 print(familyName, fontNames)
             })
-            print("SDK Error Font not found: \(name)")
+            print("SDK: Error Font not found: \(name)")
             return UIFont.systemFont(ofSize: 15.0)
         }
         return sFont
@@ -1188,7 +1192,7 @@ private extension SdkConfiguration {
                     }
                 }
         } catch let error as NSError {
-            print("SDK There was an error loading fonts. Path: \(url). Error: \(error)")
+            print("SDK: There was an error loading fonts. Path: \(url). Error: \(error)")
         }
         return loadedFonts
     }
@@ -1208,7 +1212,7 @@ private extension SdkConfiguration {
                     loadedFonts += loadFonts(at: item)
                 }
             } catch let error as NSError {
-                print("SDK There was an error accessing bundle with url. Path: \(url). Error: \(error) ")
+                print("SDK: There was an error accessing bundle with url. Path: \(url). Error: \(error) ")
             }
         return loadedFonts
     }
@@ -1228,20 +1232,20 @@ private extension SdkConfiguration {
 
             if CTFontManagerRegisterGraphicsFont(sdkRef!, &error) {
                 if let postScriptName = sdkRef?.postScriptName {
-                    print("SDK Successfully loaded custom font: '\(postScriptName)'.")
+                    print("SDK: Successfully loaded custom font: '\(postScriptName)'.")
                     nowLoadedFontName = String(postScriptName)
                 }
             } else if let error = error?.takeRetainedValue() {
                 let errorDescription = CFErrorCopyDescription(error)
-                print("SDK Already installed custom font '\(name)': \(String(describing: errorDescription))")
+                print("SDK: Already installed custom font '\(name)': \(String(describing: errorDescription))")
             }
         } else {
             guard let error = error?.takeRetainedValue() else {
-                print("SDK Failed to load font '\(name)'.")
+                print("SDK: Failed to load font '\(name)'.")
                 return nil
             }
             let errorDescription = CFErrorCopyDescription(error)
-            print("SDK Failed to load font '\(name)': \(String(describing: errorDescription))")
+            print("SDK: Failed to load font '\(name)': \(String(describing: errorDescription))")
         }
 
         if let sdkLfn = nowLoadedFontName {
@@ -1254,7 +1258,6 @@ private extension SdkConfiguration {
         _ = UIFont.systemFont(ofSize: 7)
     }
 }
-
 
 extension SdkConfiguration {
     class func fonts(_ contents: [URL]) -> [sdkFontClass] {
@@ -1278,7 +1281,6 @@ extension SdkConfiguration {
         return SdkFontInjector.sdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
     }
 }
-
 
 extension UIColor {
     convenience init(hexString: String) {

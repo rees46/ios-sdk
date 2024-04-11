@@ -45,7 +45,6 @@ public enum SdkFontTextStyleImplement: Int {
     
 }
 
-
 extension UIFont {
     class func dynamicFont<T: SdkFontPackage>(style: SdkFontTextStyleImplement,
                                                   weight: UIFont.Weight = .regular,

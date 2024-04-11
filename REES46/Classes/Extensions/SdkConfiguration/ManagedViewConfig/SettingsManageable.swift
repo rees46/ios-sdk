@@ -10,7 +10,6 @@ protocol SettingsManageable {
     mutating func reset() -> Bool
 }
 
-
 extension SettingsManageable where Self: Codable {
     
     func settingsAddr() -> URL {

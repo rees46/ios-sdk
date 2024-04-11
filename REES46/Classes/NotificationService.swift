@@ -3,7 +3,7 @@
 //  REES46
 //
 //  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
+//  Copyright (c) 2024. All rights reserved.
 //
 
 import Foundation
@@ -59,9 +59,9 @@ public class NotificationService: NotificationServiceProtocol {
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
-                    print("SDK Push Token Error:", customError)
+                    print("SDK: Push Token Error:", customError)
                 default:
-                    print("SDK Push Token server, \(error.description)\n")
+                    print("SDK: Push Token custom backend Error:\" \(error.description)\n")
                 }
             }
         }
@@ -78,7 +78,7 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-        sdk.setFirebasePushToken(token: fcmToken ?? "") { tokenResponse in
+        sdk.setPushTokenNotification(token: fcmToken!) { tokenResponse in
             switch tokenResponse {
             case .success():
                 return
@@ -121,7 +121,6 @@ public class NotificationService: NotificationServiceProtocol {
     
     private func pushProcessing(userInfo: [AnyHashable: Any]) {
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
-            //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
             guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
                 processingNotSDKPush(userInfo: userInfo)
                 return
@@ -181,7 +180,6 @@ public class NotificationService: NotificationServiceProtocol {
     private func pushRetrieved(userInfo: [AnyHashable: Any]) {
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
             guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
-            //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
                 processingNotSDKPush(userInfo: userInfo)
                 return
             }

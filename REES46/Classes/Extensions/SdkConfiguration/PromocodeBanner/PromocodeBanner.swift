@@ -117,8 +117,7 @@ public class PromocodeBanner: UIView {
         let _ = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(PromocodeBanner.decrementTimer(timer:)), userInfo: nil, repeats: true)
     }
     
-    @objc
-    private func decrementTimer(timer: Timer) {
+    @objc private func decrementTimer(timer: Timer) {
         if displayTime > 0 {
             displayTime -= 1
         } else {
