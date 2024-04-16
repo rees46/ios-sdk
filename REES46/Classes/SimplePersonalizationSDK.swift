@@ -549,7 +549,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .productRemovedFromFavorites(id):
                 params["items"] = [["id":id]]
                 paramEvent = "remove_wish"
-            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
+            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree, customProperties):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in products.enumerated() {
                     tempItems.append([
@@ -575,6 +575,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 if let taxFree = taxFree {
                     params["tax_free"] = taxFree
+                }
+                if let customProperties = customProperties {
+                    var customItems: [[String: Any]] = []
+                    customItems.append(customProperties)
+                    params["custom"] = customItems
                 }
                 paramEvent = "purchase"
             case let .synchronizeCart(items):
@@ -960,7 +965,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "subscriptions/subscribe_for_product_available"
             
@@ -974,8 +979,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             
             if let fashionSize = fashionSize {
-                let tmpSizesArray = self.generateString(array: fashionSize)
-                params["properties"] = ["fashion_size": tmpSizesArray]
+                params["properties"] = ["fashion_size": fashionSize]
             }
             
             if let email = email {
