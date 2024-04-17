@@ -140,7 +140,6 @@ import QuartzCore
     }
     
     func positionForValue(_ value: Double) -> Double {
-        
         return Double(bounds.width - thumbWidth) * (value - minimumValue) /
             (maximumValue - minimumValue) + Double(thumbWidth / 2.0)
     }
@@ -158,7 +157,6 @@ import QuartzCore
         return lowerThumbLayer.highlighted || upperThumbLayer.highlighted
     }
     
-    
     override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         let location = touch.location(in: self)
         
@@ -175,6 +173,7 @@ import QuartzCore
             lowerValue = boundValue(value: lowerValue, toLowerValue: minimumValue, upperValue: upperValue)
 
         }
+        
         if upperThumbLayer.highlighted {
             upperValue += deltaValue
             
@@ -194,5 +193,4 @@ import QuartzCore
         lowerThumbLayer.highlighted = false
         upperThumbLayer.highlighted = false
     }
-
 }

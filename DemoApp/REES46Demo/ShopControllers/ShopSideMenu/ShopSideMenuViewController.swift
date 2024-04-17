@@ -86,14 +86,12 @@ class ShopSideMenuViewController: UIViewController {
     }
 }
 
-
 @available(iOS 13.0, *)
 extension ShopSideMenuViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 48
     }
 }
-
 
 @available(iOS 13.0, *)
 extension ShopSideMenuViewController: UITableViewDataSource {

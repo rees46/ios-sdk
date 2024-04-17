@@ -3,12 +3,24 @@ import UIKit
 class MenuTableViewCell: UITableViewCell {
     
     @IBOutlet weak var collectionView: UICollectionView!
+    
+    public var collectionViewHeightConstraint: NSLayoutConstraint!
+    
     var delegate: MenuTableViewCellDelegate?
+    
     var menuList = [FiltersMenu]()
 
     override func awakeFromNib() {
         super.awakeFromNib()
         collectionView.backgroundColor = UIColor.red
+    }
+    
+    static var nib:UINib {
+        return UINib(nibName: identifier, bundle: nil)
+    }
+    
+    static var identifier: String {
+        return String(describing: self)
     }
     
     override func layoutSubviews() {
@@ -30,9 +42,9 @@ extension MenuTableViewCell: UICollectionViewDataSource, UICollectionViewDelegat
         return count
     }
     
-//    func numberOfSections(in collectionView: UICollectionView) -> Int {
-//        return 1
-//    }
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return 1
+    }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "menuCollectionViewCell", for: indexPath) as! MenuCollectionViewCell

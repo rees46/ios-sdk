@@ -2,21 +2,21 @@ import UIKit
 import REES46
 
 @available(iOS 13.0, *)
-protocol MainFIltersCheckboxCellDelegate: AnyObject {
-    func collapseSection(header: MainFIltersCheckboxCell, section: Int)
+protocol MainFiltersCheckboxCellDelegate: AnyObject {
+    func collapseSection(header: MainFiltersCheckboxCell, section: Int)
     func updateTableWithFiltersNow(_ section: Int)
     func reloadSectionsInFiltersTable(_ section: Int)
 }
 
 @available(iOS 13.0, *)
-class MainFIltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
+class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     func collapseSection(header: FiltersCheckboxItem, section: Int) {
         //
     }
     
     var menuList = [FiltersMenu]()
     
-    func collapseSection(header: MainFIltersCheckboxCell, section: Int) {
+    func collapseSection(header: MainFiltersCheckboxCell, section: Int) {
         let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
         if !carouselOpenedBoolKey {
             UserDefaults.standard.set(true, forKey: "FiltersMemorySetting1")
@@ -30,11 +30,10 @@ class MainFIltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     func checkboxItemDidSelected(item: FiltersCheckboxItem) {
         print(item)
         delegate?.updateTableWithFiltersNow(0)
-        
         //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxCall"), object: nil)
     }
     
-    func checkboxItemDidSelected(item: MainFIltersCheckboxCell) {
+    func checkboxItemDidSelected(item: MainFiltersCheckboxCell) {
         delegate?.updateTableWithFiltersNow(0)
         print(item)
     }
@@ -45,7 +44,7 @@ class MainFIltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     
     var section: Int = 0
     
-    weak var delegate: MainFIltersCheckboxCellDelegate?
+    weak var delegate: MainFiltersCheckboxCellDelegate?
     
     var items = [FiltersCheckboxItem]()
     

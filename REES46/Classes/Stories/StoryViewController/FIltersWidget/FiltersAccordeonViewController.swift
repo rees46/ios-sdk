@@ -2,7 +2,7 @@ import UIKit
 import REES46
 
 @available(iOS 15.0, *)
-class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate, FooterViewDelegate {
+class FiltersAccordeonViewController: UIViewController, MenuTableViewCellDelegate, FooterViewDelegate {
     func headerFooterViewArrowInSection(header: FooterView, section: Int) {
         let item = data[section]
         if item.isCollapsible {
@@ -28,7 +28,7 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
     }
     
     public var data = [FiltersMenu]()
-    
+    public var menuList = [FiltersMenu]()
     let simpleDataArray = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
     var simpleSelectedArray = [String]()
     
@@ -87,6 +87,7 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
         backButton.addTarget(self, action: #selector(closeButtonClicked), for: .touchUpInside)
         
         self.searchPlaceholder.isHidden = true
+        
         if data.count == 0 {
             self.searchPlaceholder.isHidden = false
         }
@@ -99,9 +100,9 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
             switch searchResponse {
             case let .success(response):
                 print("     full search is success")
-                withExtendedLifetime(response) {
-                    
-                }
+//                withExtendedLifetime(response) {
+//                    
+//                }
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
@@ -129,10 +130,11 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
         self.tableView?.register(HeaderView.nib, forHeaderFooterViewReuseIdentifier: HeaderView.identifier)
         self.tableView?.register(FooterView.nib, forHeaderFooterViewReuseIdentifier: FooterView.identifier)
         
-        self.tableView?.register(MainFIltersCheckboxCell.nib, forCellReuseIdentifier: MainFIltersCheckboxCell.identifier)
-        self.tableView?.register(ResetCell.nib, forCellReuseIdentifier: ResetCell.identifier)
+        self.tableView?.register(MainFiltersCheckboxCell.nib, forCellReuseIdentifier: MainFiltersCheckboxCell.identifier)
         self.tableView?.register(PriceRangeCell.nib, forCellReuseIdentifier: PriceRangeCell.identifier)
-
+        self.tableView?.register(MenuTableViewCell.nib, forCellReuseIdentifier: MenuTableViewCell.identifier)
+        self.tableView?.register(ResetCell.nib, forCellReuseIdentifier: ResetCell.identifier)
+        
         checkboxTree.delegate = self
     }
     
@@ -147,7 +149,7 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
                 //let height = CGFloat(s.count) * 32 //self.classTableView.rowHeight
                 //cellHeight = 460
                 
-                let sw = data[indexPath.section].titleValues.count
+                //let sw = data[indexPath.section].titleValues.count
                 //let spentBudgetInt = Int(swwewe1)
                 let spentBudgetInt1 = Int(data[indexPath.section].titleValues.count + 1)
                 print("!!!")
@@ -157,8 +159,7 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
                 print("!!!")
                 return CGFloat(height1)
             }
-                
-                
+            
             let swwewe = data[indexPath.section].titleValues.count
             if swwewe == 3 {
                 return CGFloat(119)
@@ -251,8 +252,7 @@ class FilterAccordeonViewController: UIViewController, MenuTableViewCellDelegate
 }
 
 @available(iOS 15.0, *)
-extension FilterAccordeonViewController: UITableViewDataSource {
-    
+extension FiltersAccordeonViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
         //let s = data[tableView.indexp].titleValues.count
         return data.count //data.count
@@ -285,15 +285,20 @@ extension FilterAccordeonViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
             if let cell = tableView.dequeueReusableCell(withIdentifier: PriceRangeCell.identifier, for: indexPath) as? PriceRangeCell {
+            
+            //if let cell = tableView.dequeueReusableCell(withIdentifier: "menuCell") as? MenuTableViewCell {
+                //cell.menuList = data
+                //cell.delegate = self
+                //cell.collectionViewHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: 125)
                 return cell
             } else {
                 return UITableViewCell()
             }
         } else {
-            if let cell = tableView.dequeueReusableCell(withIdentifier: MainFIltersCheckboxCell.identifier, for: indexPath) as? MainFIltersCheckboxCell {
+            if let cell = tableView.dequeueReusableCell(withIdentifier: MainFiltersCheckboxCell.identifier, for: indexPath) as? MainFiltersCheckboxCell {
                 let index = indexPath.section
                 let menuItem5 = data[index]
-                cell.itemForFiltersWIdget?.isCollapsed = false //menuItem5
+                cell.itemForFiltersWIdget?.isCollapsed = false
                 
                 cell.itemForFiltersWIdget?.isCollapsible = true
                 cell.menuList = data
@@ -337,7 +342,7 @@ extension FilterAccordeonViewController: UITableViewDataSource {
 //            
 //            return cell
 //        } else {
-//        if let cell = tableView.dequeueReusableCell(withIdentifier: MainFIltersCheckboxCell.identifier, for: indexPath) as? MainFIltersCheckboxCell {
+//        if let cell = tableView.dequeueReusableCell(withIdentifier: MainFiltersCheckboxCell.identifier, for: indexPath) as? MainFiltersCheckboxCell {
 //            let index = indexPath.section
 //            let menuItem5 = data[index]
 //            cell.itemForFiltersWIdget?.isCollapsed = false //menuItem5
@@ -379,13 +384,10 @@ extension FilterAccordeonViewController: UITableViewDataSource {
     @IBAction func cancelDataItemSelected(_ sender: Any?) {
         self.dismiss(animated: true, completion: nil)
     }
-    
 }
 
-
 @available(iOS 15.0, *)
-extension FilterAccordeonViewController: UITableViewDelegate {
-    
+extension FiltersAccordeonViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: HeaderView.identifier) as? HeaderView {
             let item = data[section].title // data[section]
@@ -457,9 +459,6 @@ extension FilterAccordeonViewController: UITableViewDelegate {
                 headerViewEnd.titleLabel?.attributedText = completeText
             }
             
-           
-            
-            
             //headerViewEnd.titleLabel?.text = "Show more ("  + String(rre) + ")" //"Show more (  )"
             
 //            var frameworkBundle = Bundle(for: classForCoder)
@@ -484,7 +483,7 @@ extension FilterAccordeonViewController: UITableViewDelegate {
 }
 
 @available(iOS 15.0, *)
-extension FilterAccordeonViewController: SearchWidgetDropDownTextFieldDelegate, SearchWidgetDropDownTextFieldDataSource {
+extension FiltersAccordeonViewController: SearchWidgetDropDownTextFieldDelegate, SearchWidgetDropDownTextFieldDataSource {
     func textField(textField: SearchWidgetDropDownTextField, didSelectItems items: [String?]) {
         //
     }
@@ -503,8 +502,7 @@ extension FilterAccordeonViewController: SearchWidgetDropDownTextFieldDelegate, 
 }
 
 @available(iOS 15.0, *)
-extension FilterAccordeonViewController: HeaderViewDelegate {
-    
+extension FiltersAccordeonViewController: HeaderViewDelegate {
     func headerExpandArrowInSection(header: HeaderView, section: Int) {
         var item = data[section]
 //        if item.isCollapsible {
@@ -537,11 +535,9 @@ extension FilterAccordeonViewController: HeaderViewDelegate {
     }
 }
 
-
 @available(iOS 15.0, *)
-extension FilterAccordeonViewController: MainFIltersCheckboxCellDelegate {
-    
-    func collapseSection(header: MainFIltersCheckboxCell, section: Int) {
+extension FiltersAccordeonViewController: MainFiltersCheckboxCellDelegate {
+    func collapseSection(header: MainFiltersCheckboxCell, section: Int) {
         
         guard let indexPath = self.tableView?.indexPath(for: header) else {
                     return
@@ -585,9 +581,8 @@ extension FilterAccordeonViewController: MainFIltersCheckboxCellDelegate {
     }
 }
 
-
 @available(iOS 15.0, *)
-extension FilterAccordeonViewController: FiltersCheckboxTreeDelegate {
+extension FiltersAccordeonViewController: FiltersCheckboxTreeDelegate {
     func collapseSection(header: FiltersCheckboxItem, section: Int) {
         print("item")
     }

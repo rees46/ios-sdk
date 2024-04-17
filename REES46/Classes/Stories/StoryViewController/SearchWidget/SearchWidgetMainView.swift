@@ -52,12 +52,12 @@ open class SearchWidgetMainView: UIView {
     }
     
     @objc open func searchWidgetCategoriesButtonClicked(_ sender: UIButton) {
-        guard let productText = sdkSearchWidgetCategoriesButtons[sender.tag].titleLabel?.text else {
+        guard let searchText = sdkSearchWidgetCategoriesButtons[sender.tag].titleLabel?.text else {
             return
         }
         
-        self.delegate?.sdkSearchWidgetHistoryButtonClicked(productText: productText)
-        self.delegate?.searchWidgetCategoriesButtonClicked(productText: productText)
+        self.delegate?.sdkSearchWidgetHistoryButtonClicked(searchProductText: searchText)
+        self.delegate?.searchWidgetCategoriesButtonClicked(searchProductText: searchText)
     }
     
     @objc open func sdkSearchWidgetHistoryButtonClicked(_ sender: UIButton) {
@@ -70,9 +70,7 @@ open class SearchWidgetMainView: UIView {
         if suitableCategories.count != 0 {
             if categoryTag < suitableCategories.count {
                 let scName = suitableCategories[categoryTag]
-                //self.delegate?.sdkSearchWidgetListView.sdkSearchWidgetTextFieldEnteredText = textField.text
-                //self.delegate?.sdkSearchWidgetHistoryButtonClicked(productText: "")
-                self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productText: scName)
+                self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(searchProductText: scName)
             } else {
                 //let constructorCategories = sdkSearchWidget.getCategories() ?? [String]()
                 //print("SDK: suitableCategories")
@@ -81,7 +79,7 @@ open class SearchWidgetMainView: UIView {
             if constructorCategories.count != 0 {
                 if categoryTag < constructorCategories.count {
                     let sConstructorName = constructorCategories[categoryTag]
-                    self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productText: sConstructorName)
+                    self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(searchProductText: sConstructorName)
                 } else {
                     //let constructorCategories = sdkSearchWidget.getCategories() ?? [String]()
                     print("SDK: constructorCategories need constructorCategories")
@@ -106,12 +104,12 @@ open class SearchWidgetMainView: UIView {
     }
     
     @objc open func viewAllSearchResultsButtonClicked() {
-        self.delegate?.sdkSearchWidgetHistoryButtonClicked(productText: "")
+        self.delegate?.sdkSearchWidgetHistoryButtonClicked(searchProductText: "")
     }
     
     @objc open func viewAllSearchResultsButtonClickedFull() {
         let productSelectedText = UserDefaults.standard.string(forKey: "viewAllSearchResultsButtonClickedFull") ?? ""
-        self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productText: productSelectedText)
+        self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(searchProductText: productSelectedText)
     }
     
     @objc open func closeButtonClicked(_ sender: UIButton) {
@@ -148,9 +146,11 @@ open class SearchWidgetMainView: UIView {
         if requestsSearchHistoryLabel != nil {
             requestsSearchHistoryLabel.removeFromSuperview()
         }
+        
         if yourReqHistoryLabel != nil {
             yourReqHistoryLabel.removeFromSuperview()
         }
+        
         if searchRecentlyLabel != nil {
             searchRecentlyLabel.removeFromSuperview()
         }
@@ -167,16 +167,15 @@ open class SearchWidgetMainView: UIView {
         let cachedUserRequestsArray = sdkSearchWidget.getUserCachedRequests() ?? [String]()
         
         if suitableCategories.count != 0 {
-            //if cachedUserRequestsArray.count != 0 {
-            if cachedUserRequestsArray.count == 500 {
-                print("SDK: 500 cachedUserRequestsArray")
+            if cachedUserRequestsArray.count == 999999 {
+                //print("SDK: 500 cachedUserRequestsArray")
             } else {
                 for i in 0..<constructorCategories.count {
                     let size = constructorCategories[i].size(withAttributes: userAttributes)
                     if i > 0 {
-                        formerWidth = sdkSearchWidgetCategoriesButtons[i-1].frame.size.width + sdkSearchWidgetCategoriesButtons[i-1].frame.origin.x + 7
+                        formerWidth = sdkSearchWidgetCategoriesButtons[i-1].frame.size.width + sdkSearchWidgetCategoriesButtons[i-1].frame.origin.x + 8
                         if formerWidth + size.width + margin > UIScreen.main.bounds.width {
-                            formerHeight += sdkSearchWidgetCategoriesButtons[i-1].frame.size.height + 5
+                            formerHeight += sdkSearchWidgetCategoriesButtons[i-1].frame.size.height + 11
                             formerWidth = margin
                         }
                     }
@@ -225,11 +224,7 @@ open class SearchWidgetMainView: UIView {
             self.addSubview(self.requestsSearchHistoryLabel)
         } else {
             if constructorCategories.count != 0 {
-//                yourRequestsValue = "1111"
-//                let yourRequestsAttributedString = NSMutableAttributedString(string: yourRequestsValue)
-//                yourRequestsAttributedString.addAttribute(NSAttributedString.Key.kern, value: 1.3, range: NSMakeRange(0, yourRequestsAttributedString.length))
-//                self.requestsSearchHistoryLabel.attributedText = yourRequestsAttributedString
-//                self.addSubview(self.requestsSearchHistoryLabel)
+                //
             }
         }
         
@@ -278,7 +273,6 @@ open class SearchWidgetMainView: UIView {
             let requestsSearchHistoryLabelOriginResultsY: CGFloat = requestsSearchHistoryLabel.frame.origin.y + requestsSearchHistoryLabel.frame.height
             for i in 0..<suitableCategories.count {
                 let categoryForWidget = suitableCategories[i]
-                //let tp = suitableCategories[i].slice(from: "!", to: "!") ?? ""
                 let priceCatProductForWidget = suitableCategories[i].slice(from: "|", to: "|") ?? ""
                 
                 viewMainResults = SearchWidgetHistoryView(frame: CGRect(x: margin, y: requestsSearchHistoryLabelOriginResultsY + CGFloat(i * 40), width: width - (margin * 2), height: 36))
@@ -325,11 +319,11 @@ open class SearchWidgetMainView: UIView {
                             self.lineZeroSectionHelper.layer.borderWidth = 1.1
                             self.lineZeroSectionHelper.layer.borderColor = UIColor.lightGray.cgColor
                             self.addSubview(self.lineZeroSectionHelper)
-                            if (suitableCategories.count == 0 && cachedUserRequestsArray.count == 0) {
-                                //recentlyRequestsValue = ""
-                            } else {
-                               // recentlyRequestsValue = "YOUR REQUESTS HISTORY"
-                            }
+//                            if (suitableCategories.count == 0 && cachedUserRequestsArray.count == 0) {
+//                                recentlyRequestsValue = ""
+//                            } else {
+//                                recentlyRequestsValue = "YOUR REQUESTS HISTORY"
+//                            }
                             recentlyRequestsValue = "YOUR REQUESTS HISTORY"
                         } else {
                             recentlyRequestsValue = "YOUR REQUESTS HISTORY"
@@ -361,15 +355,7 @@ open class SearchWidgetMainView: UIView {
                 }
                 //self.addSubview(self.yourReqHistoryLabel)
                 
-                let originY = (sdkSearchWidgetCategoriesButtons.last?.frame.origin.y ?? +35) + 20
-                
-//                let frameDetect = sdkSearchWidgetHistoryViews.last?.frame.height ?? +22
-//                let requestsSearchHistoryLabelOriginYPositionInContainer: CGFloat = yourReqHistoryLabel.frame.origin.y + yourReqHistoryLabel.frame.height + frameDetect
-//                let dCategory = constructorCategories.count
-//                var sCategory = requestsSearchHistoryLabelOriginYInContainer * CGFloat(dCategory)
-//                if constructorCategories.count == 1 {
-//                    sCategory = requestsSearchHistoryLabelOriginYInContainer * CGFloat(1.6)
-//                }
+                let originY = (sdkSearchWidgetCategoriesButtons.last?.frame.origin.y ?? +55)
                 
                 for i in 0..<constructorCategories.count {
                     let catsWithSuite = constructorCategories[i]
@@ -403,8 +389,6 @@ open class SearchWidgetMainView: UIView {
                         //
                     }
                 }
-            } else {
-                //var recentlyRequestsValue = "YOUR REQUESTS HISTORY" //TODO
             }
         }
         
@@ -463,8 +447,6 @@ open class SearchWidgetMainView: UIView {
                 for i in 0..<cachedUserRequestsArray.count {
                     let test0 = cachedUserRequestsArray[i]
                     _ = cachedUserRequestsArray[i].slice(from: "^", to: "^") ?? ""
-                    //let t = cachedUserRequestsArray[i].slice(from: "!", to: "!") ?? ""
-                    //let p = cachedUserRequestsArray[i].slice(from: "|", to: "|") ?? ""
                     
                     viewAdditionalResults = SearchWidgetHistoryView(frame: CGRect(x: margin, y: self.additionalLabel.frame.origin.y + self.additionalLabel.frame.height + CGFloat(i * 45) + 10, width: width - (margin * 2), height: 36))
                     viewAdditionalResults.sdkSearchWidgetHistoryButton.addTarget(self, action: #selector(sdkSearchWidgetHistoryButtonClicked(_:)), for: .touchUpInside)

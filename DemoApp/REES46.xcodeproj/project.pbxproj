@@ -40,7 +40,7 @@
 		E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */; };
 		E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */; };
 		E9684F552BA7FC3A00F7151D /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9684F542BA7FC3A00F7151D /* MainViewController.swift */; };
-		E996BC892B6196C00045DE00 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E996BC882B6196C00045DE00 /* GoogleService-Info.plist */; };
+		E9883AAF2BCECE7600F5A6E7 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E9883AAE2BCECE7600F5A6E7 /* GoogleService-Info.plist */; };
 		E9A0C6FF2B7F70BD00C60635 /* CheckoutViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A0C6EE2B7F70BD00C60635 /* CheckoutViewController.swift */; };
 		E9A0C7002B7F70BD00C60635 /* ProductsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A0C6EF2B7F70BD00C60635 /* ProductsViewController.swift */; };
 		E9A0C7012B7F70BD00C60635 /* ShopCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A0C6F12B7F70BD00C60635 /* ShopCategory.swift */; };
@@ -149,7 +149,7 @@
 		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
 		E9684F542BA7FC3A00F7151D /* MainViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
-		E996BC882B6196C00045DE00 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		E9883AAE2BCECE7600F5A6E7 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		E9A0C6EE2B7F70BD00C60635 /* CheckoutViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CheckoutViewController.swift; sourceTree = "<group>"; };
 		E9A0C6EF2B7F70BD00C60635 /* ProductsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ProductsViewController.swift; sourceTree = "<group>"; };
 		E9A0C6F12B7F70BD00C60635 /* ShopCategory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShopCategory.swift; sourceTree = "<group>"; };
@@ -261,8 +261,8 @@
 			isa = PBXGroup;
 			children = (
 				E9A0C6ED2B7F70BD00C60635 /* ShopControllers */,
-				E9B1D2F92BC8477200100D14 /* FIltersWidget */,
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
+				E9B1D2FA2BC8477200100D14 /* SearchViewController.swift */,
 				E9684F542BA7FC3A00F7151D /* MainViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -279,7 +279,7 @@
 			children = (
 				E9EAB8652AF08A43003DC1B5 /* Fonts */,
 				607FACD41AFB9204008FA782 /* Info.plist */,
-				E996BC882B6196C00045DE00 /* GoogleService-Info.plist */,
+				E9883AAE2BCECE7600F5A6E7 /* GoogleService-Info.plist */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -414,14 +414,6 @@
 				E9A0C6FA2B7F70BD00C60635 /* RoundedButton.swift */,
 			);
 			path = View;
-			sourceTree = "<group>";
-		};
-		E9B1D2F92BC8477200100D14 /* FIltersWidget */ = {
-			isa = PBXGroup;
-			children = (
-				E9B1D2FA2BC8477200100D14 /* SearchViewController.swift */,
-			);
-			path = FIltersWidget;
 			sourceTree = "<group>";
 		};
 		E9EAB8652AF08A43003DC1B5 /* Fonts */ = {
@@ -574,8 +566,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */,
-				E996BC892B6196C00045DE00 /* GoogleService-Info.plist in Resources */,
 				E903FC2A2BC8427100FF4540 /* ShopSideMenuCell.xib in Resources */,
+				E9883AAF2BCECE7600F5A6E7 /* GoogleService-Info.plist in Resources */,
 				607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */,
 				E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */,
 				E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */,

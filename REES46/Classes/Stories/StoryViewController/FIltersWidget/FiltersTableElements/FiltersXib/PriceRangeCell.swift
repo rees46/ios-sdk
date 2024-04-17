@@ -31,8 +31,8 @@ class PriceRangeCell: UITableViewCell {
         
         minValueTextField.text = "от \(String(describing: min))"
         maxValueTextField.text = "до \(String(describing: max))"
-        rangeSlider.minimumValue = min as! Double //as! Double//77
-        rangeSlider.maximumValue = max as! Double //as! Double//88
+        rangeSlider.minimumValue = min as! Double
+        rangeSlider.maximumValue = max as! Double
         rangeSlider.lowerValue = 0.0
         rangeSlider.upperValue = max as! Double
         rangeSlider.addTarget(self, action: #selector(sliderValueChange(_:)), for: .valueChanged)

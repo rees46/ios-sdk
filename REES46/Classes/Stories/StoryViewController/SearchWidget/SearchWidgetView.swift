@@ -48,24 +48,24 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
         self.delegate?.sdkSearchWidgetListViewDidScroll()
     }
     
-    open func searchWidgetCategoriesButtonClicked(productText: String) {
-        self.delegate?.searchWidgetCategoriesButtonClicked(productText: productText)
+    open func searchWidgetCategoriesButtonClicked(searchProductText: String) {
+        self.delegate?.searchWidgetCategoriesButtonClicked(searchProductText: searchProductText)
     }
     
     public func sdkSearchWidgetHistoryButtonClickedOpenProductCard(productId: String, productName: String, productPrice: String, productImage: String, productImagesArray: String) {
         self.delegate?.sdkSearchWidgetHistoryButtonClickedOpenProductCard(productId: productId, productName: productName, productPrice: productPrice, productImage: productImage, productImagesArray: productImagesArray)
     }
     
-    open func sdkSearchWidgetHistoryButtonClickedStart(productText: String) {
-        self.delegate?.sdkSearchWidgetHistoryButtonClickedStart(productText: productText)
+    open func sdkSearchWidgetHistoryButtonClickedStart(searchProductText: String) {
+        self.delegate?.sdkSearchWidgetHistoryButtonClickedStart(searchProductText: searchProductText)
     }
     
-    open func sdkSearchWidgetHistoryButtonClicked(productText: String) {
-        self.delegate?.sdkSearchWidgetHistoryButtonClicked(productText: productText)
+    open func sdkSearchWidgetHistoryButtonClicked(searchProductText: String) {
+        self.delegate?.sdkSearchWidgetHistoryButtonClicked(searchProductText: searchProductText)
     }
     
-    open func sdkSearchWidgetHistoryButtonClickedFull(productText: String) {
-        self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productText: productText)
+    open func sdkSearchWidgetHistoryButtonClickedFull(searchProductText: String) {
+        self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(searchProductText: searchProductText)
     }
     
     public func reloadBlankSearch() {

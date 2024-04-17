@@ -110,7 +110,6 @@ public class ConnectAbility {
 }
 
 public extension ConnectAbility {
-    
     func startNotifier() throws {
         
         guard let reachabilityRef = reachabilityRef, !notifierRunning else { return }
@@ -190,7 +189,6 @@ public extension ConnectAbility {
 
 
 fileprivate extension ConnectAbility {
-    
     func reachabilityChanged() {
         
         let flags = reachabilityFlags

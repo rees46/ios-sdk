@@ -36,13 +36,14 @@ class FiltersTagsViewController: UIViewController {
 
 extension FiltersTagsViewController: UITableViewDataSource, UITableViewDelegate{
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let ss = menuList[section].titleValues.count
+        //let ss = menuList[section].titleValues.count
         return menuList.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.row == 0 {
             let cell = tableView.dequeueReusableCell(withIdentifier: "tagsCell") as! DetailTableViewCell
+            
             return cell
         }  else {
             let cell = tableView.dequeueReusableCell(withIdentifier: "menuCell") as! MenuTableViewCell
@@ -51,8 +52,6 @@ extension FiltersTagsViewController: UITableViewDataSource, UITableViewDelegate{
             let index = indexPath.row
             let menuItem5 = menuList[index]
             
-            
-            
             cell.menuList = [menuItem5]
             
             cell.delegate = self
@@ -60,6 +59,7 @@ extension FiltersTagsViewController: UITableViewDataSource, UITableViewDelegate{
             //cell.delegate = self
             return cell
         }
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "menuCell") as! MenuTableViewCell
 //        cell.menuList = menuList
         

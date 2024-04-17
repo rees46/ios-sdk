@@ -332,7 +332,6 @@ public class SdkPopupAlertView: UIView {
     }
 }
 
-
 @available(iOSApplicationExtension, unavailable)
 
 class SdkPopupAlertViewWindow: UIWindow {

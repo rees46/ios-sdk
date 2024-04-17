@@ -3,7 +3,7 @@
 //  REES46
 //
 //  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
+//  Copyright (c) 2024. All rights reserved.
 //
 
 import Firebase
@@ -11,6 +11,8 @@ import FirebaseMessaging
 import REES46
 import UIKit
 import UserNotifications
+import AdSupport
+import AppTrackingTransparency
 
 var pushGlobalToken: String = ""
 var fcmGlobalToken: String = ""
@@ -31,25 +33,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
     
+    public typealias BackgroundDownloadCompletionHandler = () -> Void 
+    public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
+//        let nManager = NetworkStatus.nManager=-
+//        nManager.addObserver(observer: self)
         print("A. Init firebase sdk")
         FirebaseApp.configure()
         Messaging.messaging().delegate = self
         print("======")
-
-        print("0. Init SDK")
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdk.getShopId())
+        
+//  sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
+        
+        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749", apiDomain: "api.r46.technodom.kz", enableLogs: true, { error in
+                
+        //sdk = createPersonalizationSDK(shopId: "", userEmail: "", userPhone: "", userLoyaltyId: "", apiDomain: "api.rees46.com", enableLogs: true, { error in
+            
+        //sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
+            print("SDK: Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdk.getShopId())
             didToken = self.sdk.getDeviceId()
             globalSDK = self.sdk
             NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
+                    print("SDK: Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
+                    didToken = self.sdkAdditionalInit.getDeviceId()
+                    globalSDKAdditionalInit = self.sdkAdditionalInit
+                    NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
+                })
+            }
         })
 
 //        print("1. Init additional SDK if needed")
-//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-//            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
+//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
+//            //print("SDK: Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
 //            didToken = self.sdkAdditionalInit.getDeviceId()
 //            globalSDKAdditionalInit = self.sdkAdditionalInit
 //            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
@@ -153,16 +172,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        sdk.configuration().stories.storiesSlideReloadIndicatorAnimationDuration = 1
 //        sdk.configuration().stories.storiesSlideReloadIndicatorRotationDuration = 17
 //
-//        //SDK Stories block autoreload settings
-//        sdk.configuration().stories.storiesSlideReloadManually = false //default false - autoreload enabled
-//        sdk.configuration().stories.storiesSlideReloadTimeoutInterval = 10 //default infinity
-//
-//        //SDK Alert popup connection settings
-//        sdk.configuration().stories.storiesSlideReloadPopupMessageError = "Failed to retrieve data. Please check your connection and try again."
-//        sdk.configuration().stories.storiesSlideReloadPopupMessageFontSize = 17.0
-//        sdk.configuration().stories.storiesSlideReloadPopupMessageFontWeight = .medium
-//        sdk.configuration().stories.storiesSlideReloadPopupMessageDisplayTime = 4
-//        sdk.configuration().stories.storiesSlideReloadPopupPositionY = 120 //default constant
+        //SDK Stories block autoreload settings
+        sdk.configuration().stories.storiesSlideReloadManually = false //default false - autoreload enabled
+        sdk.configuration().stories.storiesSlideReloadTimeoutInterval = 10 //default infinity
+
+        //SDK Alert popup connection settings
+        sdk.configuration().stories.storiesSlideReloadPopupMessageError = "Failed to retrieve data. Please check your connection and try again."
+        sdk.configuration().stories.storiesSlideReloadPopupMessageFontSize = 17.0
+        sdk.configuration().stories.storiesSlideReloadPopupMessageFontWeight = .medium
+        sdk.configuration().stories.storiesSlideReloadPopupMessageDisplayTime = 4
+        sdk.configuration().stories.storiesSlideReloadPopupPositionY = 120 //default constant
         
 //        //SDK Stories block text label characters wrapping settings
 //        sdk.configuration().stories.storiesBlockNumberOfLines = 0
@@ -468,15 +487,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                //fatalError("    instant search is failure")
 //            }
 //        }
-//
+//        
 //        print("10. Testing detail search")
-//        sdk.search(query: "shoes", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], colors: ["white", "black"], fashionSizes: ["36", "37", "38", "39", "40"], timeOut: 0.2) { searchResponse in
+//        sdk.search(query: "dress", sortBy: "popular", timeOut: 0.2) { searchResponse in
 //            print("   Full search callback")
 //            switch searchResponse {
 //            case let .success(response):
 //                print("     full search is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    full search is failure")
+//            }
+//        }
+//
+//        print("10. Testing full search")
+//        sdk.search(query: "jeans", sortBy: "popular", timeOut: 0.2) {
+//            searchResponse in
+//            print("   Full search callback")
+//            switch searchResponse {
+//            case let .success(response):
+//                print("     full search is success")
+//                withExtendedLifetime(response) {
+//                    print("Response:", response) //Uncomment it if you want to see response
 //                }
 //            case let .failure(error):
 //                switch error {
@@ -543,6 +583,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
+//        sdk.subscribeForBackInStock(id: "807", email: "pp@rees46.ru", fashionSize: ["36", "37"]) {
+//            subscribeForBackInStockResponse in
+//            print("   SubscribeForBackInStock callback")
+//            switch subscribeForBackInStockResponse {
+//            case let .success(subscribeForBackInStockResponse):
+//                print("     subscribeForBackInStock is success")
+//                withExtendedLifetime(subscribeForBackInStockResponse) {
+//                    print("Response:", subscribeForBackInStockResponse) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    full search is failure")
+//            }
+//        }
 //        print("===END===")
 
         return true
@@ -568,14 +627,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 try fileManager.removeItem(at: fileURL)
             }
         } catch {
-            print("Error when deleting files from temporary directory: \(error.localizedDescription)")
+            print("SDK: Error when deleting files from temporary directory: \(error.localizedDescription)")
         }
     }
 
     func application(_ application: UIApplication,
                      handleEventsForBackgroundURLSession identifier: String,
                      completionHandler: @escaping () -> Void) {
-        //backgroundCompletionHandler = completionHandler
+        backgroundCompletionHandler = completionHandler
     }
 }
 
@@ -586,7 +645,7 @@ extension AppDelegate: MessagingDelegate {
         fcmGlobalToken = fcmToken ?? ""
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
         // FIREBASE TOKEN SEND TEST
-        // notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
+        notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
         // FIREBASE TOKEN END TEST
     }
 }
@@ -626,8 +685,36 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             print(notifications)
         }
     }
+    
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        if #available(iOS 14, *) {
+            ATTrackingManager.requestTrackingAuthorization { status in
+                DispatchQueue.main.async {
+                    switch status {
+                    case .authorized:
+                        let idfa = ASIdentifierManager.shared().advertisingIdentifier
+                        globalSDK?.sendIDFARequest(idfa: idfa, completion: { initIdfaResult in
+                        switch initIdfaResult {
+                            case .success:
+                                UserDefaults.standard.set(idfa, forKey: "IDFA")
+                                print("\nSDK: User granted access to 'ios_advertising_id'\nIDFA:", idfa, "\n")
+                            case .failure(_):
+                                print("\nSDK: 'ios_advertising_id' Error \nIDFA:", initIdfaResult, "\n")
+                                break
+                            }
+                        })
+                    case .denied, .restricted:
+                        print("SDK: User denied access to 'ios_advertising_id' IDFA\n")
+                    case .notDetermined:
+                        print("SDK: User not received an authorization request to 'ios_advertising_id' IDFA\n")
+                    @unknown default:
+                        break
+                    }
+                }
+            }
+        }
+    }
 }
-
 
 extension AppDelegate: NotificationServicePushDelegate {
     func openCustom(url: String) {

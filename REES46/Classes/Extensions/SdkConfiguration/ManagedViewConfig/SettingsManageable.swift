@@ -11,7 +11,6 @@ protocol SettingsManageable {
 }
 
 extension SettingsManageable where Self: Codable {
-    
     func settingsAddr() -> URL {
         let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         return cachesDirectory.appendingPathComponent("\(Self.self).plist")

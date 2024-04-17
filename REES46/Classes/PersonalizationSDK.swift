@@ -20,7 +20,7 @@ public enum Event {
     case synchronizeCart (items: [CartItem])
     case slideView(storyId: String, slideId: String)
     case slideClick(storyId: String, slideId: String)
-    case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
+    case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil, customProperties: [String: Any?]?)
 }
 
 public enum SDKError: Error, CustomStringConvertible {
@@ -116,7 +116,6 @@ public protocol PersonalizationSDK {
 }
 
 public extension PersonalizationSDK {
-    
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }

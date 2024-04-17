@@ -2,7 +2,6 @@ import Foundation
 import UIKit
 
 public extension UICollectionViewCell {
-    
     func showInCellPromocodeBanner(promoBanner: PromocodeBanner) {
         if PromocodeBanner.OPEN_PROMOCODE_BANNERS >= PromocodeBanner.MAX_ALLOWED_BANNERS {
             return
@@ -76,7 +75,6 @@ public extension UICollectionViewCell {
 
 
 public extension UIViewController {
-    
     func showInViewPromocodeBanner(promoBanner: PromocodeBanner) {
         if PromocodeBanner.OPEN_PROMOCODE_BANNERS >= PromocodeBanner.MAX_ALLOWED_BANNERS {
             return

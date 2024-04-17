@@ -108,7 +108,6 @@ class ExamplePickerCoreViewController: UIViewController, PickerCoreViewDataSourc
 }
 
 extension ExamplePickerCoreViewController {
-    
     func pickerCoreViewHeightForRows(_ pickerCoreView: PickerCoreView) -> CGFloat {
         return 50.0
     }

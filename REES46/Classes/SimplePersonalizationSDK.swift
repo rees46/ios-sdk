@@ -549,7 +549,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .productRemovedFromFavorites(id):
                 params["items"] = [["id":id]]
                 paramEvent = "remove_wish"
-            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
+            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree, customProperties):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in products.enumerated() {
                     tempItems.append([
@@ -575,6 +575,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 if let taxFree = taxFree {
                     params["tax_free"] = taxFree
+                }
+                if let customProperties = customProperties {
+                    params.merge(customProperties) { (_, new) in new }
                 }
                 paramEvent = "purchase"
             case let .synchronizeCart(items):

@@ -121,7 +121,7 @@ open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
         //minimizeSearchTexttField()
         
         self.delegate?.reloadBlankSearch()
-        //self.delegate?.searchWidgetCategoriesButtonClicked(productText: "")
+        //self.delegate?.searchWidgetCategoriesButtonClicked(searchProductText: "")
         
         if textFieldMinimizedSuccesfully {
             if SdkGlobalHelper.DeviceType.IS_IPHONE_14 || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_XS || SdkGlobalHelper.DeviceType.IS_IPHONE_SE || SdkGlobalHelper.DeviceType.IS_IPHONE_8_PLUS || SdkGlobalHelper.DeviceType.IS_IPHONE_5 {
@@ -156,16 +156,16 @@ open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
     
     @objc open func sdkSearchWidgetTextFieldEnteredTextChanged(_ textField: UITextField) {
         self.sdkSearchWidgetView.sdkSearchWidgetListView.sdkSearchWidgetTextFieldEnteredText = textField.text
-        self.delegate?.searchWidgetCategoriesButtonClicked(productText: textField.text ?? "")
+        self.delegate?.searchWidgetCategoriesButtonClicked(searchProductText: textField.text ?? "")
     }
     
     open func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard let text = textField.text else {
+        guard let enteredText = textField.text else {
             return true
         }
         
-        if !text.isEmpty {
-            self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productText: text)
+        if !enteredText.isEmpty {
+            self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(searchProductText: enteredText)
         }
         self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField.endEditing(true)
         

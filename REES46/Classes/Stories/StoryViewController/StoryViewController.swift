@@ -1023,7 +1023,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-//        timer.invalidate()
+        //timer.invalidate()
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {

@@ -61,7 +61,7 @@ public class NotificationService: NotificationServiceProtocol {
                 case let .custom(customError):
                     print("SDK: Push Token Error:", customError)
                 default:
-                    print("SDK: Push Token custom backend Error:\" \(error.description)\n")
+                    print("SDK: Push Token custom Error:\" \(error.description)\n")
                 }
             }
         }

@@ -1,7 +1,6 @@
 import UIKit
 
 extension Sequence where Element == NSLayoutConstraint {
-    
     func activate() {
         if let constraints = self as? [NSLayoutConstraint] {
             NSLayoutConstraint.activate(constraints)
@@ -16,7 +15,6 @@ extension Sequence where Element == NSLayoutConstraint {
 }
 
 extension NSLayoutConstraint {
-    
     func with(_ p: UILayoutPriority) -> Self {
         priority = p
         return self
