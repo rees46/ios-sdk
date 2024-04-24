@@ -30,5 +30,4 @@ class CategoryCell: UITableViewCell {
         categoryImage.image = UIImage(named: category.imageName)
         categoryTitle.text = category.title
     }
-
 }

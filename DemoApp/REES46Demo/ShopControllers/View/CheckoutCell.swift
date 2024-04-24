@@ -28,7 +28,6 @@ class CheckoutCell: UITableViewCell {
         
         productPrice.textColor = UIColor.black
         
-        //if let url = URL(string: product.selectedProduct.imageName[0]) {
         if let url = URL(string: product.selectedProduct.imageName) {
             URLSession.shared.dataTask(with: url) { (data, response, error) in
                 
@@ -41,7 +40,6 @@ class CheckoutCell: UITableViewCell {
                                    options: .allowAnimatedContent, animations: {
                         self.productImage.image = UIImage(data: imageData)
                     }) { (isFinished) in
-                        // self.view.layoutIfNeeded()
                     }
                     
                     self.productImage.image = UIImage(data: imageData)

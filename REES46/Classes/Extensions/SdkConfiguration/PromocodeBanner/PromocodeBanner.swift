@@ -113,8 +113,6 @@ public class PromocodeBanner: UIView {
         if displayTime == 0 {
             return
         }
-        
-        let _ = Timer.scheduledTimer(timeInterval: 1, target: self, selector: #selector(PromocodeBanner.decrementTimer(timer:)), userInfo: nil, repeats: true)
     }
     
     @objc private func decrementTimer(timer: Timer) {
@@ -137,7 +135,7 @@ public class PromocodeBanner: UIView {
             UIView.animate(withDuration: self.animationDuration, animations: {
                 self.frame = CGRect(x: self.padding.0, y: self.padding.1, width: 0, height: self.size.height)
                 self.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 self.removeFromSuperview()
             })
             break
@@ -145,7 +143,7 @@ public class PromocodeBanner: UIView {
             UIView.animate(withDuration: self.animationDuration, animations: {
                 self.frame = CGRect(x: UIScreen.main.bounds.maxX - self.padding.0, y: self.padding.1, width: 0, height: self.size.height)
                 self.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 self.removeFromSuperview()
             })
             break
@@ -153,7 +151,7 @@ public class PromocodeBanner: UIView {
             UIView.animate(withDuration: self.animationDuration, animations: {
                 self.frame = CGRect(x: self.padding.0, y: UIScreen.main.bounds.height - self.size.height - self.padding.1, width: 0, height: self.size.height)
                 self.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 self.removeFromSuperview()
             })
             break
@@ -161,7 +159,7 @@ public class PromocodeBanner: UIView {
             UIView.animate(withDuration: self.animationDuration, animations: {
                 self.frame = CGRect(x: UIScreen.main.bounds.width - self.padding.0, y: UIScreen.main.bounds.height - self.size.height - self.padding.1, width: 0, height: self.size.height)
                 self.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 self.removeFromSuperview()
             })
             break

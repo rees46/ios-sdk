@@ -108,8 +108,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
     }
     
-    @objc
-    func willEnterForeground() {
+    @objc func willEnterForeground() {
         let ds: Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
         if !ds {
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
@@ -118,8 +117,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
 
-    @objc
-    func didEnterBackground() {
+    @objc func didEnterBackground() {
         let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
@@ -402,8 +400,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    @objc
-    func didSwipeLeft() {
+    @objc func didSwipeLeft() {
         if currentPosition.section >= stories.count - 1{
             dismiss(animated: true)
         } else {
@@ -470,8 +467,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         collectionView.setContentOffset(CGPoint(x: sectionFrame.origin.x - collectionView.contentInset.left, y: 0), animated: false)
     }
     
-    @objc
-    func didSwipeRight() {
+    @objc func didSwipeRight() {
         if currentPosition.section > 0 {
             currentPosition.row = 0
             
@@ -635,8 +631,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    @objc
-    func updateVisibleCells(notification: NSNotification) {
+    @objc func updateVisibleCells(notification: NSNotification) {
         DispatchQueue.main.async {
             if let visibleCell = self.collectionView.indexPathsForVisibleItems.first {
                 UIView.animate(withDuration: 0.5, animations: {
@@ -651,8 +646,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
 
-    @objc
-    func updateTime() {
+    @objc func updateTime() {
         if timeLeft > 0 {
             timeLeft = endTime?.timeIntervalSinceNow ?? 0
             currentProgressView?.progress = 1 - Float(timeLeft) / currentDuration
@@ -958,13 +952,11 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         self.sdkLinkDelegate?.sendStructSelectedPromocodeSlide(promoCodeSlide: promoCodeSlide)
     }
     
-    @objc
-    func didSwipeDown() {
+    @objc func didSwipeDown() {
         dismiss(animated: true)
     }
     
-    @objc
-    func didTapCloseButton() {
+    @objc func didTapCloseButton() {
         self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
         dismiss(animated: true)
     }

@@ -86,8 +86,8 @@ class PromoCodeView: UIView {
                         }
                         UIView.animate(withDuration: 0.2, animations: {
                                 self.promocodeSlideProductImage.alpha = 1.0
-                            }, completion: { (b) in
-                                //Do nothing
+                            }, completion: { (isFinished) in
+                                // TODO Implementation
                         })
                     } else {
                         
@@ -96,8 +96,8 @@ class PromoCodeView: UIView {
                         
                         UIView.animate(withDuration: 0.1, animations: {
                             self.loadingPlaceholderView.cover(self, animated: true)
-                        }, completion: { (b) in
-                            //Do nothing
+                        }, completion: { (isFinished) in
+                            // TODO Implementation
                         })
                         
                         let task = URLSession.shared.dataTask(with: urlImgDownloadAndResize!, completionHandler: { data, _, error in
@@ -128,7 +128,7 @@ class PromoCodeView: UIView {
                                 DispatchQueue.main.async { [self] in
                                     UIView.animate(withDuration: 1.8, animations: {
                                         self.promocodeSlideProductImage.alpha = 1.0
-                                    }, completion: { (b) in })
+                                    }, completion: { (isFinished) in })
                                 }
                                 
                                 SdkImagesCacheLoader.save(downloadedImage, for: urlImgDownloadAndResize!.absoluteString)
@@ -156,7 +156,6 @@ extension UIImage {
         UIGraphicsBeginImageContextWithOptions(
             CGSize(width: self.size.width + insets.left + insets.right,
                    height: self.size.height + insets.top + insets.bottom), false, self.scale)
-        let _ = UIGraphicsGetCurrentContext()
         let origin = CGPoint(x: insets.left, y: insets.top)
         self.draw(at: origin)
         let imageWithInsets = UIGraphicsGetImageFromCurrentImageContext()

@@ -14,6 +14,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public static let recommendations: SdkConfiguration = SdkConfiguration()
     
+    public static let search: SdkConfiguration = SdkConfiguration()
+    
     public init() {}
     
     public var allLoadedFonts: [sdkFontClass] = []
@@ -535,7 +537,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         defaultHideProductsButtonText = hideProductsButtonText!
     }
     
-    public func setWidgetBlock(widgetFontName: String? = nil,
+    public func setWidget(widgetFontName: String? = nil,
                                widgetBackgroundColor: String? = nil,
                                widgetBackgroundColorDarkMode: String? = nil,
                                widgetCellBackgroundColor: String? = nil,
@@ -633,6 +635,107 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             self.widgetNoReviewsDefaultText = widgetNoReviewDefaultMessage!
         }
     }
+    
+    
+    public func setWidget(widgetFontName: String? = nil,
+                               widgetBackgroundColor: String? = nil,
+                               widgetBackgroundColorDarkMode: String? = nil,
+                               widgetCellBackgroundColor: String? = nil,
+                               widgetCellBackgroundColorDarkMode: String? = nil,
+                               widgetBorderWidth: CGFloat? = nil,
+                               widgetBorderColor: String? = nil,
+                               widgetBorderColorDarkMode: String? = nil,
+                               widgetBorderTransparent: CGFloat? = nil,
+                               widgetCornerRadius: CGFloat? = nil,
+                               widgetStarsColor: String? = nil,
+                               widgetAddToCartButtonText: String? = nil,
+                               widgetRemoveFromCartButtonText: String? = nil,
+                               widgetAddToCartButtonFontSize: CGFloat? = nil,
+                               widgetRemoveFromCartButtonFontSize: CGFloat? = nil,
+                               widgetCartButtonTextColor: String? = nil,
+                               widgetCartButtonTextColorDarkMode: String? = nil,
+                               widgetCartButtonBackgroundColor: String? = nil,
+                               widgetCartButtonBackgroundColorDarkMode: String? = nil,
+                               widgetCartButtonNeedOpenWebUrl: Bool? = false,
+                               widgetFavoritesIconColor: String? = nil,
+                               widgetFavoritesIconColorDarkMode: String? = nil,
+                               widgetPreloadIndicatorColor: String? = nil,
+                               widgetNoReviewDefaultMessage1: String? = "No reviews") {
+        
+        if widgetFontName != nil {
+            self.widgetFontName = widgetFontName!
+        }
+        if widgetBackgroundColor != nil {
+            self.widgetBackgroundColor = widgetBackgroundColor!
+        }
+        if widgetBackgroundColorDarkMode != nil {
+            self.widgetBackgroundColorDarkMode = widgetBackgroundColorDarkMode!
+        }
+        if widgetCellBackgroundColor != nil {
+            self.widgetCellBackgroundColor = widgetCellBackgroundColor!
+        }
+        if widgetCellBackgroundColorDarkMode != nil {
+            self.widgetCellBackgroundColorDarkMode = widgetCellBackgroundColorDarkMode!
+        }
+        if widgetBorderWidth != nil {
+            self.widgetBorderWidth = widgetBorderWidth!
+        }
+        if widgetBorderColor != nil {
+            self.widgetBorderColor = widgetBorderColor!
+        }
+        if widgetBorderColorDarkMode != nil {
+            self.widgetBorderColorDarkMode = widgetBorderColorDarkMode!
+        }
+        if widgetBorderTransparent != nil {
+            self.widgetBorderTransparent = widgetBorderTransparent!
+        }
+        if widgetCornerRadius != nil {
+            self.widgetCornerRadius = widgetCornerRadius!
+        }
+        if widgetStarsColor != nil {
+            self.widgetStarsColor = widgetStarsColor!
+        }
+        if widgetAddToCartButtonText != nil {
+            self.widgetAddToCartButtonText = widgetAddToCartButtonText!
+        }
+        if widgetRemoveFromCartButtonText != nil {
+            self.widgetRemoveFromCartButtonText = widgetRemoveFromCartButtonText!
+        }
+        if widgetAddToCartButtonFontSize != nil {
+            self.widgetAddToCartButtonFontSize = widgetAddToCartButtonFontSize!
+        }
+        if widgetRemoveFromCartButtonFontSize != nil {
+            self.widgetRemoveFromCartButtonFontSize = widgetRemoveFromCartButtonFontSize!
+        }
+        if widgetCartButtonTextColor != nil {
+            self.widgetCartButtonTextColor = widgetCartButtonTextColor!
+        }
+        if widgetCartButtonTextColorDarkMode != nil {
+            self.widgetCartButtonTextColorDarkMode = widgetCartButtonTextColorDarkMode!
+        }
+        if widgetCartButtonBackgroundColor != nil {
+            self.widgetCartButtonBackgroundColor = widgetCartButtonBackgroundColor!
+        }
+        if widgetCartButtonBackgroundColorDarkMode != nil {
+            self.widgetCartButtonBackgroundColorDarkMode = widgetCartButtonBackgroundColorDarkMode!
+        }
+        if widgetCartButtonNeedOpenWebUrl != nil {
+            self.widgetCartButtonNeedOpenWebUrl = widgetCartButtonNeedOpenWebUrl!
+        }
+        if widgetFavoritesIconColor != nil {
+            self.widgetFavoritesIconColor = widgetFavoritesIconColor!
+        }
+//        if widgetFavoritesIconColorDarkMode != nil {
+//            self.widgetFavoritesIconColorDarkMode = widgetFavoritesIconColorDarkMode!
+//        }
+//        if widgetPreloadIndicatorColor != nil {
+//            self.widgetPreloadIndicatorColor = widgetPreloadIndicatorColor!
+//        }
+//        if widgetNoReviewDefaultMessage != nil {
+//            self.widgetNoReviewsDefaultText = widgetNoReviewDefaultMessage!
+//        }
+//    }
+    
     
     public var promoCodeSlideFontNameChanged: String?
     public var promoCodeSlideFontNameConstant: String {

@@ -44,8 +44,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Messaging.messaging().delegate = self
         print("======")
         
-//  sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
-        
+        //sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
         sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749", apiDomain: "api.r46.technodom.kz", enableLogs: true, { error in
                 
         //sdk = createPersonalizationSDK(shopId: "", userEmail: "", userPhone: "", userLoyaltyId: "", apiDomain: "api.rees46.com", enableLogs: true, { error in
@@ -76,7 +75,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
 //        //SDK Configuration init Font first
 //        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
-
+//
 //        //SDK Configuration settings
 //        sdk.configuration().stories.setStoriesBlock(fontName: "Inter",
 //                                                    fontSize: 15.0,
@@ -101,7 +100,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                    pinColor: "#fd7c50",
 //                                                    pinColorDarkMode: "#fd7c50",
 //                                                    closeIconColor: "#5ec169")
-
+//
 //        sdk.configuration().stories.setSlideDefaultButton(fontName: "Inter",
 //                                                          fontSize: 17.0,
 //                                                          textColor: "#ffffff",
@@ -109,7 +108,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                          textColorDarkMode: "#000000",
 //                                                          backgroundColorDarkMode: "#ffffff",
 //                                                          cornerRadius: 5)
-
+//
 //        sdk.configuration().stories.setSlideProductsButton(fontName: "Inter",
 //                                                           fontSize: 17.0,
 //                                                           textColor: "#ffffff",
@@ -117,11 +116,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                           textColorDarkMode: "#000000",
 //                                                           backgroundColorDarkMode: "#ffffff",
 //                                                           cornerRadius: 5)
-
+//
 //        sdk.configuration().stories.setProductsCard(fontName: "Inter",
 //                                                    showProductsButtonText: "See all products",
 //                                                    hideProductsButtonText: "Hide products")
-
+//
 //        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
 //                                                     productTitleFontSize: 16.0,
 //                                                     productTitleTextColor: "#5ec169",
@@ -133,36 +132,89 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
 //                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
 //                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
-        
+//        
 //        //SDK Recommendations Widget settings
-//        sdk.configuration().recommendations.setWidgetBlock(widgetFontName: "Inter",
-//                                                           widgetBackgroundColor: "#ffffff",
-//                                                           widgetBackgroundColorDarkMode: "#000000",
-//                                                           widgetCellBackgroundColor: "#ffffff",
-//                                                           widgetCellBackgroundColorDarkMode: "#000000",
-//                                                           widgetBorderWidth: 1,
-//                                                           widgetBorderColor: "#c3c3c3",
-//                                                           widgetBorderColorDarkMode: "#c3c3c3",
-//                                                           widgetBorderTransparent: 0.4,
-//                                                           widgetCornerRadius: 9,
-//                                                           widgetStarsColor: "#ff9500",
-//                                                           widgetAddToCartButtonText: "Add to cart",
-//                                                           widgetRemoveFromCartButtonText: "Remove from cart",
-//                                                           widgetAddToCartButtonFontSize: 17,
-//                                                           widgetRemoveFromCartButtonFontSize: 14,
-//                                                           widgetCartButtonTextColor: "#ffffff",
-//                                                           widgetCartButtonTextColorDarkMode: "#ffffff",
-//                                                           widgetCartButtonBackgroundColor: "#000000",
-//                                                           widgetCartButtonBackgroundColorDarkMode: "#ffffff",
-//                                                           widgetCartButtonNeedOpenWebUrl: false,
-//                                                           widgetFavoritesIconColor: "#000000",
-//                                                           widgetFavoritesIconColorDarkMode: "#ffffff",
-//                                                           widgetPreloadIndicatorColor: "#ffffff",
-//                                                           widgetNoReviewDefaultMessage: "No reviews")
-
+//        sdk.configuration().recommendations.setWidget(fontName: "Inter",
+//                                                      backgroundColor: "#ffffff",
+//                                                      backgroundColorDarkMode: "#000000",
+//                                                      cellBackgroundColor: "#ffffff",
+//                                                      cellBackgroundColorDarkMode: "#000000",
+//                                                      borderWidth: 1,
+//                                                      borderColor: "#c3c3c3",
+//                                                      borderColorDarkMode: "#c3c3c3",
+//                                                      borderTransparent: 0.4,
+//                                                      bornerRadius: 9,
+//                                                      starsColor: "#ff9500",
+//                                                      addToCartButtonText: "Add to cart",
+//                                                      removeFromCartButtonText: "Remove from cart",
+//                                                      addToCartButtonFontSize: 17,
+//                                                      removeFromCartButtonFontSize: 14,
+//                                                      cartButtonTextColor: "#ffffff",
+//                                                      cartButtonTextColorDarkMode: "#ffffff",
+//                                                      cartButtonBackgroundColor: "#000000",
+//                                                      cartButtonBackgroundColorDarkMode: "#ffffff",
+//                                                      cartButtonNeedOpenWebUrl: false,
+//                                                      favoritesIconColor: "#000000",
+//                                                      favoritesIconColorDarkMode: "#ffffff",
+//                                                      preloadIndicatorColor: "#ffffff",
+//                                                      defaultMessageNoReviews: "No reviews")
+//        
+//        //SDK Search Widget settings
+//        sdk.configuration().search.setWidget(fontName: "Inter",
+//                                             backgroundColor: "#ffffff",
+//                                             backgroundColorDarkMode: "#000000",
+//                                             
+//                                             searchFieldPlaceholder: "Search",
+//                                             searchFieldCornerRadius: 5,
+//                                             searchFieldFontSize: 17.0,
+//                                             searchFieldFontWeight = .medium,
+//                                             
+//                                             searchFieldFontColor: "#ffffff",
+//                                             searchFieldFontColorDarkMode: "#000000",
+//                                             searchFieldBackgroundColor: "#ffffff",
+//                                             searchFieldBackgroundColorDarkMode: "#000000",
+//                                             
+//                                             textLabelRequestsHistory = "YOUR REQUESTS HISTORY",
+//                                             textLabelSuitableCategories = "SUITABLE CATEGORIES",
+//                                             textLabelSuitableProducts = "SUITABLE PRODUCTS",
+//                                             textLabelFrequent = "FREQUENT QUERIES",
+//                                             textLabelInterestingOffers = "INTERESTING OFFERS FOR YOU",
+//                                             textLabelRecently = "RECENTLY VIEWED PRODUCTS",
+//                                             
+//                                            
+//                                             searchResultsPlaceholder: "Search Results",
+//                                             searchResultsFoundedPlaceholder: "found \(item) products",
+//                                             searchResultsStarsColor: "#ff9500",
+//                                             searchResultsBorderRadius: 9,
+//                                             addToCartButtonText: "Shop",
+//                                             addToCartButtonFontSize: 14,
+//                                             
+//                                             filtersPageName: "Filters",
+//                                             filtersFontColor: "#ffffff",
+//                                             filtersFontColorDarkMode: "#000000",
+//                                             filtersFontSize: 44,
+//                                             filtersFontWeight = .medium,
+//                                             
+//                                             filtersCheckboxColor: "#ffffff",
+//                                             filtersCheckboxColorDarkMode: "#000000",
+//                                             filtersCheckboxType: .square,
+//                                             
+//                                             filtersIconColor: "#000000",
+//                                             filtersIconColorDarkMode: "#ffffff",
+//                                             
+//                                             filtersPriceSliderColor: "#ffffff",
+//                                             filtersPriceSliderColorDarkMode: "#ffffff",
+//                                             
+//                                             closeIconColor: "#ffffff",
+//                                             closeIconColorDarkMode: "#ffffff",
+//                                             
+//                                             defaultMessageViewAllButton: "View All",
+//                                             defaultMessageNoResults: "No results",
+//                                             defaultMessageNoFilters: "No filters available")
+//
 //        //SDK Stories block collection cell indicator
 //        sdk.configuration().stories.storiesBlockPreloadIndicatorDisabled = true //default false - cell indicator enabled
-
+//
 //        //SDK Stories Slide default indicator
 //        sdk.configuration().stories.storiesSlideReloadIndicatorDisabled = true //default false - slide indicator enabled
 //        sdk.configuration().stories.storiesSlideReloadIndicatorBackgroundColor = "#ffffff"
@@ -172,26 +224,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        sdk.configuration().stories.storiesSlideReloadIndicatorAnimationDuration = 1
 //        sdk.configuration().stories.storiesSlideReloadIndicatorRotationDuration = 17
 //
-        //SDK Stories block autoreload settings
-        sdk.configuration().stories.storiesSlideReloadManually = false //default false - autoreload enabled
-        sdk.configuration().stories.storiesSlideReloadTimeoutInterval = 10 //default infinity
-
-        //SDK Alert popup connection settings
-        sdk.configuration().stories.storiesSlideReloadPopupMessageError = "Failed to retrieve data. Please check your connection and try again."
-        sdk.configuration().stories.storiesSlideReloadPopupMessageFontSize = 17.0
-        sdk.configuration().stories.storiesSlideReloadPopupMessageFontWeight = .medium
-        sdk.configuration().stories.storiesSlideReloadPopupMessageDisplayTime = 4
-        sdk.configuration().stories.storiesSlideReloadPopupPositionY = 120 //default constant
-        
+//        //SDK Stories block autoreload settings
+//        sdk.configuration().stories.storiesSlideReloadManually = false //default false - autoreload enabled
+//        sdk.configuration().stories.storiesSlideReloadTimeoutInterval = 10 //default infinity
+//
+//        //SDK Alert popup connection settings
+//        sdk.configuration().stories.storiesSlideReloadPopupMessageError = "Failed to retrieve data. Please check your connection and try again."
+//        sdk.configuration().stories.storiesSlideReloadPopupMessageFontSize = 17.0
+//        sdk.configuration().stories.storiesSlideReloadPopupMessageFontWeight = .medium
+//        sdk.configuration().stories.storiesSlideReloadPopupMessageDisplayTime = 4
+//        sdk.configuration().stories.storiesSlideReloadPopupPositionY = 120 //default constant
+//        
 //        //SDK Stories block text label characters wrapping settings
 //        sdk.configuration().stories.storiesBlockNumberOfLines = 0
 //        sdk.configuration().stories.storiesBlockCharWrapping = false
 //        sdk.configuration().stories.storiesBlockCharCountWrap = 15
-        
-        print("2. Register push")
-        notificationService = NotificationService(sdk: sdk)
-        notificationService?.pushActionDelegate = self
-        print("======")
+//        
+//        print("2. Register push")
+//        notificationService = NotificationService(sdk: sdk)
+//        notificationService?.pushActionDelegate = self
+//        print("======")
 
 //        print("3. Testing tracking")
 //        sdk.trackSource(source: .chain, code: "123123")
@@ -429,7 +481,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        }
 //
 //        print("7. Testing products list")
-//        sdk.getProductsList(brands: "Hasbro", categories: "Toys", locations: "Shops", filters: ["Screen size, inch": ["15.6"]]) { productsListResponse in
+//        sdk.getProductsList(brands: "Hasbro", categories: "Toys", locations: "Shops", filters: ["Screen size, inch": ["15.6"]], filtersSearchBy: "name") { productsListResponse in
 //            print("   Testing get products list callback")
 //            switch productsListResponse {
 //            case let .success(response):
@@ -488,12 +540,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //        
-//        print("10. Testing detail search")
+//        print("10. Testing full search with few parameters")
 //        sdk.search(query: "dress", sortBy: "popular", timeOut: 0.2) { searchResponse in
-//            print("   Full search callback")
+//            print("   Full search with few parameters callback")
 //            switch searchResponse {
 //            case let .success(response):
-//                print("     full search is success")
+//                print("     full search with few parameters is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -504,17 +556,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                default:
 //                    print("Error:", error.description)
 //                }
-//                //fatalError("    full search is failure")
+//                //fatalError("    full search with few parameters is failure")
 //            }
 //        }
 //
-//        print("10. Testing full search")
-//        sdk.search(query: "jeans", sortBy: "popular", timeOut: 0.2) {
+//        print("10. Testing full search with filters")
+//        sdk.search(query: "jeans", sortBy: "popular", filtersSearchBy: "name", timeOut: 0.2) {
 //            searchResponse in
-//            print("   Full search callback")
+//            print("   Full search with filters callback")
 //            switch searchResponse {
 //            case let .success(response):
-//                print("     full search is success")
+//                print("     full search with filters is success")
 //                withExtendedLifetime(response) {
 //                    print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -525,7 +577,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                default:
 //                    print("Error:", error.description)
 //                }
-//                //fatalError("    full search is failure")
+//                //fatalError("    full search with filters is failure")
 //            }
 //        }
 //

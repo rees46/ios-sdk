@@ -9,13 +9,13 @@ import QuartzCore
         }
     }
     
-    @IBInspectable var maximumValue: Double = 9999999 {
+    @IBInspectable var maximumValue: Double = 9999990 {
         didSet {
             updateLayerFrames()
         }
     }
     
-    @IBInspectable var lowerValue: Double = 20 {
+    @IBInspectable var lowerValue: Double = 0 {
         didSet {
             if lowerValue < minimumValue {
                lowerValue = minimumValue
@@ -24,7 +24,7 @@ import QuartzCore
         }
     }
     
-    @IBInspectable var upperValue: Double = 9999999 {
+    @IBInspectable var upperValue: Double = 9999990 {
         didSet {
             if upperValue > maximumValue {
                 upperValue = maximumValue

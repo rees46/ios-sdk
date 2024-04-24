@@ -24,24 +24,11 @@ class SliderCell: UICollectionViewCell {
                         options: .allowAnimatedContent, animations: {
                         self.productImages.image = UIImage(data: imageData)
                     }) { (isFinished) in
-                       // self.view.layoutIfNeeded()
                     }
                     self.productImages.image = UIImage(data: imageData)
                 }
             }.resume()
       }
-        
-//        let urlImgResize = URL(string: image)
-//        SdkImagesCacheLoader.image(for: urlImgResize!.absoluteString) { [self] cachedImage in
-//            productImages.image = cachedImage
-//            
-//            if cachedImage != nil {
-//                
-//                
-//            }
-//            
-//        }
-        //productImages.image = UIImage(named: image)
     }
     
 }

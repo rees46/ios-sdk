@@ -25,7 +25,7 @@ class DataResponse: Codable {
 class DataContent: Codable {
     let id: Int
     let fullName, pictureURL, email, about: String?
-    let filters: [CpllpasedMenuPrepare]
+    let filters: [CollpasedMenuPrepare]
     let rating: [Rating]
     let expand: [Expand]
     let profileAttributes: [ProfileAttribute]
@@ -36,7 +36,7 @@ class DataContent: Codable {
         case email, about, filters, rating, expand, profileAttributes
     }
     
-    init(id: Int, fullName: String, pictureURL: String, email: String, about: String, filters: [CpllpasedMenuPrepare], rating: [Rating], expand: [Expand], profileAttributes: [ProfileAttribute]) {
+    init(id: Int, fullName: String, pictureURL: String, email: String, about: String, filters: [CollpasedMenuPrepare], rating: [Rating], expand: [Expand], profileAttributes: [ProfileAttribute]) {
         self.id = id
         self.fullName = fullName
         self.pictureURL = pictureURL
@@ -49,7 +49,7 @@ class DataContent: Codable {
     }
 }
 
-class CpllpasedMenuPrepare: Codable {
+class CollpasedMenuPrepare: Codable {
     var id: String = ""
     var title: String = ""
     var titleValues: [String] = [""]
@@ -62,8 +62,8 @@ class CpllpasedMenuPrepare: Codable {
         self.selected = selected
     }
     
-    static func fetch()->[CpllpasedMenuPrepare]{
-        let menuList = [CpllpasedMenuPrepare(id: "A1", title: "A1", titleValues: ["A1"], selected: true)]
+    static func fetch()->[CollpasedMenuPrepare]{
+        let menuList = [CollpasedMenuPrepare(id: "A1", title: "A1", titleValues: ["A1"], selected: true)]
         return menuList
     }
 }

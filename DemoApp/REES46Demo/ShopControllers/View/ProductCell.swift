@@ -42,36 +42,25 @@ class ProductCell: UICollectionViewCell {
         
         productOldPrice.attributedText = attributedText
         
-        //productImage.image = UIImage(named: product.imageName[0])
-        //addToCart.setImage(UIImage(systemName: ShopCartDataService.instance.isAddedToCart(product)), for: .normal)
-        
         rateStarsView.starsSetupSettings.filledImage = UIImage(named: "starFilled")?.withRenderingMode(.alwaysOriginal)
         rateStarsView.starsSetupSettings.emptyImage = UIImage(named: "starEmpty")?.withRenderingMode(.alwaysOriginal)
         
-        let randomIntFrom0To10 = Int.random(in: 0 ..< 5)
         let randomDouble = Double.random(in: 1 ... 5)
-        rateStarsView.rating = randomDouble//3.5
+        rateStarsView.rating = randomDouble
         rateStarsView.starsSetupSettings.fillMode = .half
         rateStarsView.starsSetupSettings.reloadOnUserTouch = true
         rateStarsView.translatesAutoresizingMaskIntoConstraints = false
         
         if let url = URL(string: product.imageName) {
-        //if let url = URL(string: product.imageName[0]) {
             URLSession.shared.dataTask(with: url) { (data, response, error) in
-                guard let imageData = data else { return }
-                
+                guard data != nil else { return }
                 DispatchQueue.main.async {
-                    
                     UIView.animate(withDuration: 0.4, delay: 0.0,
                                    usingSpringWithDamping: 0.0, initialSpringVelocity: 0.0,
                                    options: .allowAnimatedContent, animations: {
-                        //self.productImage.image = UIImage(data: imageData)
-                        
-                        //let image = UIImage(data: imageData)
                         guard let imageData = data else { return }
                         let image = UIImage(data: imageData)
                         
-                        //let image = UIImage(named: "adidas")!
                         let imageView = UIImageView(image: image?.imageWithInsets(insets: UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)))
                         imageView.frame = CGRect(x: 2, y: 2, width: self.productImage.frame.width - 4, height: self.productImage.frame.height - 4)
                         imageView.contentMode = .scaleAspectFit
@@ -80,7 +69,6 @@ class ProductCell: UICollectionViewCell {
                         imageView.layer.masksToBounds = true
                         self.productImage.addSubview(imageView)
                     }) { (isFinished) in
-                        // self.view.layoutIfNeeded()
                     }
                 }
             }.resume()
@@ -146,7 +134,6 @@ extension UIImage {
         UIGraphicsBeginImageContextWithOptions(
             CGSize(width: self.size.width + insets.left + insets.right,
                    height: self.size.height + insets.top + insets.bottom), false, self.scale)
-        let _ = UIGraphicsGetCurrentContext()
         let origin = CGPoint(x: insets.left, y: insets.top)
         self.draw(at: origin)
         let imageWithInsets = UIGraphicsGetImageFromCurrentImageContext()

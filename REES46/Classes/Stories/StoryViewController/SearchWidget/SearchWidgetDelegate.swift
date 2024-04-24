@@ -3,13 +3,13 @@ import UIKit
 public protocol SearchWidgetDelegate: SearchWidgetMainViewDelegate, SearchWidgetListViewDelegate { }
 
 public protocol SearchWidgetMainViewDelegate {
-    func searchWidgetCategoriesButtonClicked(searchProductText: String)
+    func searchWidgetCategoriesButtonClicked(productSearchText: String)
     
-    func sdkSearchWidgetHistoryButtonClickedStart(searchProductText: String)
+    func sdkSearchWidgetHistoryButtonClickedStart(productSearchText: String)
     
-    func sdkSearchWidgetHistoryButtonClicked(searchProductText: String)
+    func sdkSearchWidgetHistoryButtonClicked(productSearchText: String)
     
-    func sdkSearchWidgetHistoryButtonClickedFull(searchProductText: String)
+    func sdkSearchWidgetHistoryButtonClickedFull(productSearchText: String)
     
     func reloadBlankSearch()
     
@@ -22,9 +22,8 @@ public protocol SearchWidgetMainViewDelegate {
     func sdkSearchWidgetMainViewHistoryChanged()
 }
 
-
 public protocol SearchWidgetListViewDelegate {
-    func sdkSearchWidgetListViewClicked(productKey: String)
+    func sdkSearchWidgetListViewClicked(productSearchKey: String)
     
     func sdkSearchWidgetListViewClicked(object: Any)
     
@@ -41,7 +40,6 @@ public extension SearchWidgetMainViewDelegate {
         //
     }
 }
-
 
 public extension SearchWidgetListViewDelegate {
     func sdkSearchWidgetListViewClicked(object: Any) {

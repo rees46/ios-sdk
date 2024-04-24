@@ -3,37 +3,9 @@ import REES46
 
 @available(iOS 15.0, *)
 class FiltersAccordeonViewController: UIViewController, MenuTableViewCellDelegate, FooterViewDelegate {
-    func headerFooterViewArrowInSection(header: FooterView, section: Int) {
-        let item = data[section]
-        if item.isCollapsible {
-            
-            let collapsed = !item.isCollapsed
-            item.isCollapsed = collapsed
-            header.setCollapsed(collapsed: collapsed)
-            
-            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
-            if !carouselOpenedBoolKey {
-                let withTag = "CarouselTimerStopMemorySetting" + "\(item)"
-                UserDefaults.standard.set(true, forKey: "FiltersMemorySetting1")
-            } else {
-                UserDefaults.standard.set(false, forKey: "FiltersMemorySetting1")
-            }
-            
-            reloadSectionsInFiltersTable(section)
-        }
-    }
-    
-    func didSelectedMenu(menu: FiltersMenu) {
-        print("SDK: didSelectedMenu FiltersMenu")
-    }
     
     public var data = [FiltersMenu]()
-    public var menuList = [FiltersMenu]()
-    let simpleDataArray = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    var simpleSelectedArray = [String]()
-    
-    let dataArray = ["1s ", "2s ", "3s ", "4s ", "5s ", "6s ", "7s", "8s", "9s"]
-    var selectedDataArray = [String]()
+    public var filtersList = [FiltersMenu]()
     
     var firstRowSelected = true
     
@@ -46,41 +18,30 @@ class FiltersAccordeonViewController: UIViewController, MenuTableViewCellDelegat
     public var allFiltersFinal: [String : Filter]?
     public var indFiltersFinal: IndustrialFilters?
     
-    enum ItemsType : Int {
-        case label, customView
-    }
-    
     @IBOutlet weak var scrollingStyleOption: UISegmentedControl!
     @IBOutlet weak var selectionStyleOption: UISegmentedControl!
     @IBOutlet weak var itemsOption: UISegmentedControl!
     @IBOutlet weak var foundedLabel: UILabel!
     
-    var minPriceRange: Double = 0
-    var maxPriceRange: Double = 0
-    
     var pickedNumber: String?
-    var pickedOSX: String?
 
     fileprivate let viewModel = FiltersCheckboxMainVM()
-    let checkboxTree = FiltersCheckboxTree()
+    let checkboxsTree = FiltersCheckboxTree()
     
     @IBOutlet private weak var backButton: UIButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        UserDefaults.standard.set(false, forKey: "FiltersMemorySetting1")
-        UserDefaults.standard.set(false, forKey: "FiltersMemorySetting2")
-        UserDefaults.standard.set(false, forKey: "FiltersMemorySetting3")
-        UserDefaults.standard.set(false, forKey: "FiltersMemorySetting3")
+        UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
         
         initTableView()
         
-        viewModel.getDataItems { response in
-            //self.data.append(contentsOf: response)
-            self.tableView?.reloadData()
-            print("Data : \(response.count)")
-        }
+//        viewModel.getDataItems { response in
+//            //self.data.append(contentsOf: response)
+//            self.tableView?.reloadData()
+//            //print("Filters Data : \(response.count)")
+//        }
         
         NotificationCenter.default.addObserver(self, selector: #selector(loadTest), name: .init(rawValue: "FiltersInternalCheckboxCall"), object: nil)
         
@@ -93,16 +54,12 @@ class FiltersAccordeonViewController: UIViewController, MenuTableViewCellDelegat
         }
     }
     
-    @objc
-    public func qWithFilters() {
+    @objc public func queryWithFilters() {
         globalSDK?.search(query: "shoes", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], colors: ["white", "black"], fashionSizes: ["36", "37", "38", "39", "40"], timeOut: 0.2) { searchResponse in
             print("   Filters search callback")
             switch searchResponse {
-            case let .success(response):
+            case let .success(searchResponse):
                 print("     full search is success")
-//                withExtendedLifetime(response) {
-//                    
-//                }
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
@@ -135,15 +92,15 @@ class FiltersAccordeonViewController: UIViewController, MenuTableViewCellDelegat
         self.tableView?.register(MenuTableViewCell.nib, forCellReuseIdentifier: MenuTableViewCell.identifier)
         self.tableView?.register(ResetCell.nib, forCellReuseIdentifier: ResetCell.identifier)
         
-        checkboxTree.delegate = self
+        checkboxsTree.delegate = self
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        var cellHeight:CGFloat = CGFloat()
+        //var cellHeight:CGFloat = CGFloat()
         if indexPath.section == 0 {
             return CGFloat(133)
         } else {
-            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
+            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
             if carouselOpenedBoolKey {
                 //let s = data[indexPath.section].titleValues
                 //let height = CGFloat(s.count) * 32 //self.classTableView.rowHeight
@@ -170,76 +127,13 @@ class FiltersAccordeonViewController: UIViewController, MenuTableViewCellDelegat
             } else {
                 let spentBudgetIntww = Int(data[indexPath.section].titleValues.count + 1)
                 let height = spentBudgetIntww*38
-                return CGFloat(119) //119
+                return CGFloat(119)
             }
         }
-//        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
-//        if carouselOpenedBoolKey {
-//            //let s = data[indexPath.section].titleValues
-//            //let height = CGFloat(s.count) * 32 //self.classTableView.rowHeight
-//            //cellHeight = 460
-//            
-//            let swwewe1 = data[indexPath.section].titleValues.count
-//            let spentBudgetInt = Int(swwewe1)
-//            let spentBudgetInt1 = Int(data[indexPath.section].titleValues.count + 1)
-//            print("!!!")
-//            //print("!!!")
-//            let height1 = spentBudgetInt1*38// //+477
-//            print(height1)
-//            print("!!!")
-//            return CGFloat(height1)
-//        }
-//            
-//            
-//        let swwewe = data[indexPath.section].titleValues.count
-//        if swwewe == 3 {
-//            return CGFloat(119)
-//        } else if swwewe == 2 {
-//            return CGFloat(76)
-//        } else if swwewe == 1 {
-//            return CGFloat(38)
-//        } else {
-//            let spentBudgetIntww = Int(data[indexPath.section].titleValues.count + 1)
-//            let height = spentBudgetIntww*38
-//            return CGFloat(119) //119
-//        }
-//        let spentBudgetIntww = Int(data[indexPath.section].titleValues.count + 1)
-//        let height = spentBudgetIntww*38
-//        return CGFloat(119)
-        
-//        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
-//        if !carouselOpenedBoolKey {
-//            let s = data[indexPath.section].titleValues
-//            let height = CGFloat(s.count) * 32 //self.classTableView.rowHeight
-//            //cellHeight = 460
-//            return cellHeight
-//        } else {
-//            let swwewe = data[indexPath.section].titleValues.count
-//            print("==")
-//            print(swwewe)
-//            print("==")
-//            let height = swwewe * 35
-//            return CGFloat(height)
-//            //self.classTableView.rowHeight
-//            //cellHeight = 460
-//        }
-//        
-//        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
-//        if !carouselOpenedBoolKey {
-//            cellHeight = 80 // height// 460
-//        } else {
-//            cellHeight = 560
-//        }
-        //return cellHeight
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-//        self.tableView?.beginUpdates()
-//        self.tableView?.endUpdates()
-//        
-//        self.tableView?.reloadData()
     }
     
     override func didReceiveMemoryWarning() {
@@ -259,37 +153,16 @@ extension FiltersAccordeonViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        //let ss = data[section].titleValues.count
-        
         if section == 0  {
             return 1
         }  else {
             return 1
         }
-//        return 1//ss//data.count//1
-//        let item = data[section]
-//        
-//        //let serena = allFiltersFinal
-//        
-//        guard item.isCollapsible else {
-//            return ss
-//        }
-//        
-//        if item.isCollapsed {
-//            return 1
-//        } else {
-//            return 1 //item.rowCount
-//        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
             if let cell = tableView.dequeueReusableCell(withIdentifier: PriceRangeCell.identifier, for: indexPath) as? PriceRangeCell {
-            
-            //if let cell = tableView.dequeueReusableCell(withIdentifier: "menuCell") as? MenuTableViewCell {
-                //cell.menuList = data
-                //cell.delegate = self
-                //cell.collectionViewHeightConstraint = tableView.heightAnchor.constraint(equalToConstant: 125)
                 return cell
             } else {
                 return UITableViewCell()
@@ -311,9 +184,6 @@ extension FiltersAccordeonViewController: UITableViewDataSource {
                     children.append(FiltersCheckboxItem(indexForFilterTitle: cell.tag,
                                                    title: title,
                                                    isSelected: true))
-                    print("arrWithFinalizedFilters")
-                    print(cell.tag)
-                    print(title)
                 }
                 
                 arrWithFinalizedFilters.removeAll()
@@ -326,7 +196,6 @@ extension FiltersAccordeonViewController: UITableViewDataSource {
                 cell.titleLabel?.tintColor = UIColor.black
                 cell.menu = data[indexPath.section]
                 cell.items = arrWithFinalizedFilters
-                
                 //cell.updateView()
                 
                 return cell
@@ -335,44 +204,6 @@ extension FiltersAccordeonViewController: UITableViewDataSource {
             }
             
         }
-//        if let cell = tableView.dequeueReusableCell(withIdentifier: PriceRangeCell.identifier, for: indexPath) as? PriceRangeCell {
-//            
-//            
-//            //cell.updateView()
-//            
-//            return cell
-//        } else {
-//        if let cell = tableView.dequeueReusableCell(withIdentifier: MainFiltersCheckboxCell.identifier, for: indexPath) as? MainFiltersCheckboxCell {
-//            let index = indexPath.section
-//            let menuItem5 = data[index]
-//            cell.itemForFiltersWIdget?.isCollapsed = false //menuItem5
-//            
-//            cell.itemForFiltersWIdget?.isCollapsible = true
-//            cell.menuList = data
-//            cell.tag = indexPath.row
-//            cell.delegate = self
-//            
-//            var arrWithFinalizedFilters = [FiltersCheckboxItem(indexForFilterTitle: cell.tag, title: "Выбрать все", isSelected: true)]
-//            
-//            //let limitTwoApples5 = menuItem5.titleValues.limit(3)
-//            for title in menuItem5.titleValues {
-//                arrWithFinalizedFilters.append(FiltersCheckboxItem(indexForFilterTitle: cell.tag, title: title, isSelected: true))
-//                print("arrWithFinalizedFilters")
-//                print(cell.tag)
-//                print(title)
-//            }
-//            
-//            //cell.titleLabel?.text = "1111ff"
-//            cell.titleLabel?.tintColor = UIColor.red
-//            cell.menu = data[indexPath.section]
-//            cell.items = arrWithFinalizedFilters
-//            
-//            //cell.updateView()
-//            
-//            return cell
-//        } else {
-//            return UITableViewCell()
-//        }
     }
     
     @IBAction func searchDataItemSelected(_ sender: Any?) {
@@ -384,25 +215,39 @@ extension FiltersAccordeonViewController: UITableViewDataSource {
     @IBAction func cancelDataItemSelected(_ sender: Any?) {
         self.dismiss(animated: true, completion: nil)
     }
+    
+    func headerFooterViewArrowInSection(header: FooterView, section: Int) {
+        let item = data[section]
+        if item.isCollapsible {
+            
+            let collapsed = !item.isCollapsed
+            item.isCollapsed = collapsed
+            header.setCollapsed(collapsed: collapsed)
+            
+            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
+            if !carouselOpenedBoolKey {
+                let withTag = "FiltersMemorySettingKey" + "\(item)"
+                UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
+            } else {
+                UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
+            }
+            
+            reloadSectionsInFiltersTable(section)
+        }
+    }
+    
+    func didSelectedMenu(menu: FiltersMenu) {
+        print("SDK: didSelectedMenu FiltersMenu")
+    }
+    
 }
 
 @available(iOS 15.0, *)
 extension FiltersAccordeonViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: HeaderView.identifier) as? HeaderView {
-            let item = data[section].title // data[section]
-            
+            let item = data[section].title
             headerView.titleLabel?.text = item
-            
-//            var frameworkBundle = Bundle(for: classForCoder)
-//#if SWIFT_PACKAGE
-//            frameworkBundle = Bundle.module
-//#endif
-//            let expandArrowImg = UIImage(named: "angleDownBlackInt", in: frameworkBundle, compatibleWith: nil)
-//            headerView.arrowImage?.isHidden = true
-//            headerView.arrowImage?.image = expandArrowImg
-//            headerViewEnd
-            
             headerView.isUserInteractionEnabled = false
             headerView.section = section
             headerView.delegate = self
@@ -424,7 +269,7 @@ extension FiltersAccordeonViewController: UITableViewDelegate {
             frameworkBundle = Bundle.module
 #endif
             
-            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
+            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
             if carouselOpenedBoolKey {
                 let imageAttachment = NSTextAttachment()
                 imageAttachment.image = UIImage(named: "angleDownBlackIntUp", in: frameworkBundle, compatibleWith: nil)
@@ -432,11 +277,9 @@ extension FiltersAccordeonViewController: UITableViewDelegate {
                 imageAttachment.bounds = CGRect(x: 1, y: imageOffsetY, width: imageAttachment.image!.size.width/4, height: imageAttachment.image!.size.height/4)
                 let attachmentString = NSAttributedString(attachment: imageAttachment)
                 let completeText = NSMutableAttributedString(string: "")
-    //            completeText.append(attachmentString)
                 
-                let v = "Cкрыть"
-                let textAfterIcon = NSAttributedString(string: v)
-                //let textAfterIcon = NSAttributedString(string: "Using attachment.bounds!")
+                let vHide = "Cкрыть"
+                let textAfterIcon = NSAttributedString(string: vHide)
                 completeText.append(textAfterIcon)
                 completeText.append(attachmentString)
                 headerViewEnd.titleLabel?.textAlignment = .left
@@ -448,27 +291,17 @@ extension FiltersAccordeonViewController: UITableViewDelegate {
                 imageAttachment.bounds = CGRect(x: 0, y: imageOffsetY, width: imageAttachment.image!.size.width/4, height: imageAttachment.image!.size.height/4)
                 let attachmentString = NSAttributedString(attachment: imageAttachment)
                 let completeText = NSMutableAttributedString(string: "")
-    //            completeText.append(attachmentString)
+                //completeText.append(attachmentString)
                 
                 let v = "Показать ("  + String(rre) + ")"
                 let textAfterIcon = NSAttributedString(string: v)
-                //let textAfterIcon = NSAttributedString(string: "Using attachment.bounds!")
                 completeText.append(textAfterIcon)
                 completeText.append(attachmentString)
                 headerViewEnd.titleLabel?.textAlignment = .left
                 headerViewEnd.titleLabel?.attributedText = completeText
             }
             
-            //headerViewEnd.titleLabel?.text = "Show more ("  + String(rre) + ")" //"Show more (  )"
-            
-//            var frameworkBundle = Bundle(for: classForCoder)
-//#if SWIFT_PACKAGE
-//            frameworkBundle = Bundle.module
-//#endif
-            //let expandArrowImg = c
             headerViewEnd.arrowImage?.isHidden = true
-            //headerViewEnd.arrowImage?.image = expandArrowImg
-            
             headerViewEnd.isUserInteractionEnabled = true
             headerViewEnd.section = section
             headerViewEnd.delegate = self
@@ -476,10 +309,6 @@ extension FiltersAccordeonViewController: UITableViewDelegate {
         }
         return UIView()
     }
-    
-//    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-//        return UITableView.automaticDimension
-//    }
 }
 
 @available(iOS 15.0, *)
@@ -504,19 +333,19 @@ extension FiltersAccordeonViewController: SearchWidgetDropDownTextFieldDelegate,
 @available(iOS 15.0, *)
 extension FiltersAccordeonViewController: HeaderViewDelegate {
     func headerExpandArrowInSection(header: HeaderView, section: Int) {
-        var item = data[section]
+//        var item = data[section]
 //        if item.isCollapsible {
 //            
 //            let collapsed = !item.isCollapsed
 //            item.isCollapsed = collapsed
 //            header.setCollapsed(collapsed: collapsed)
 //            
-//            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
+//            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
 //            if !carouselOpenedBoolKey {
-//                let withTag = "CarouselTimerStopMemorySetting" + "\(item)"
-//                UserDefaults.standard.set(true, forKey: "FiltersMemorySetting1")
+//                let withTag = "FiltersMemorySettingKey" + "\(item)"
+//                UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
 //            } else {
-//                UserDefaults.standard.set(false, forKey: "FiltersMemorySetting1")
+//                UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
 //            }
 //            
 //            reloadSectionsInFiltersTable(section)
@@ -539,38 +368,22 @@ extension FiltersAccordeonViewController: HeaderViewDelegate {
 extension FiltersAccordeonViewController: MainFiltersCheckboxCellDelegate {
     func collapseSection(header: MainFiltersCheckboxCell, section: Int) {
         
-        guard let indexPath = self.tableView?.indexPath(for: header) else {
-                    return
-                }
-        let item = data[indexPath.section]
-        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
-        if !carouselOpenedBoolKey {
-            UserDefaults.standard.set(true, forKey: "FiltersMemorySetting1")
-        } else {
-            UserDefaults.standard.set(false, forKey: "FiltersMemorySetting1")
+//        guard let indexPath = self.tableView?.indexPath(for: header) else {
+//            return
+//        }
+        
+        guard (self.tableView?.indexPath(for: header)) != nil else {
+            return
         }
         
-        //var item = data[indexPath.row]
-//        if item.isCollapsible {
-//            
-//            let collapsed = !item.isCollapsed
-//            item.isCollapsed = collapsed
-//            header.setCollapsed(collapsed: collapsed)
-//            
-//            let row = tableView?.indexPath(for: header)?.section ?? 0
-//            let sectionIndex = IndexSet(integer: indexPath.section)
-//            let sectionIndexe = IndexSet(integer: indexPath.row)
-//            let indexes = (0..<data.count).map { IndexPath(row: $0, section: 0) }
-//            var indexPaths = self.tableView?.indexPathsForVisibleRows
-//            let selectedIndexPath = indexPath.row
-//            let rowIndexes: [IndexPath] = Array(0...data.count-1).map({
-//                return IndexPath(row: $0, section: data.count)
-//            })
-//            
-//            //let ds = bs_indexPathsForSection(indexPath)
-//            
-//            reloadAllSections(selectedIndexPath)
-//        }
+        //let item = data[indexPath.section]
+        
+        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
+        if !carouselOpenedBoolKey {
+            UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
+        } else {
+            UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
+        }
     }
     
     func updateTableWithFiltersNow(_ section: Int) {

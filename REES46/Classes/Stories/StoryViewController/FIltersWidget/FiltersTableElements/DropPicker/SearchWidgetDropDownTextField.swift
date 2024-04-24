@@ -93,13 +93,13 @@ open class SearchWidgetDropDownTextField: UITextField, UIPickerViewDelegate, UIP
         }
     }
 
-    @available(*, deprecated, message: "use 'selectedItem' instead", renamed: "selectedItem")
+    @available(*, deprecated, message: "SDK: Use 'selectedItem' instead", renamed: "selectedItem")
     open override var text: String? {
         didSet {
         }
     }
 
-    @available(*, deprecated, message: "use 'selectedItem' instead", renamed: "selectedItem")
+    @available(*, deprecated, message: "SDK: Use 'selectedItem' instead", renamed: "selectedItem")
     open override var attributedText: NSAttributedString? {
         didSet {
         }

@@ -39,7 +39,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -47,7 +47,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -55,7 +55,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -63,7 +63,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -112,7 +112,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             }) 
             break
@@ -120,7 +120,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -128,7 +128,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -136,7 +136,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             }) 
             break

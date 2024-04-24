@@ -48,7 +48,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         
         storiesBlockAnimatedLoader.contentMode = .scaleToFill
         storiesBlockAnimatedLoader.translatesAutoresizingMaskIntoConstraints = false
-        storiesBlockAnimatedLoader.lineWidth = SdkConfiguration.stories.iconBorderWidth + 1.6 //3.9
+        storiesBlockAnimatedLoader.lineWidth = SdkConfiguration.stories.iconBorderWidth + 1.6
         storiesBlockAnimatedLoader.numSegments = Int(Double(Int.random(in: 9..<17)))
         storiesBlockAnimatedLoader.animationDuration = Double(Int.random(in: 2..<3))
         storiesBlockAnimatedLoader.rotationDuration = 7
@@ -109,9 +109,9 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         for thing in words {
             if thing == word {
                 count += 1
-    }
-    }
-    return count
+            }
+        }
+        return count
     }
     
     func CountAllWords(str:String) ->[String: Int] {
@@ -240,8 +240,6 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
                     UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1)
                     
                     storiesBlockAnimatedLoader.strokeColor = viewed ?
-                    //UIColor(red: storiesViewdBg.red, green: storiesViewdBg.green, blue: storiesViewdBg.blue, alpha: 1) :
-                    //UIColor(red: storiesNotViewBg.red, green: storiesNotViewBg.green, blue: storiesNotViewBg.blue, alpha: 1)
                     UIColor(red: 255/255, green: 118/255, blue: 0/255, alpha: 1) :
                     UIColor(red: 255/255, green: 118/255, blue: 0/255, alpha: 1)
                 } else {

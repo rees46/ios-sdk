@@ -13,7 +13,6 @@ class HeaderView: UITableViewHeaderFooterView {
             }
             
             titleLabel?.text = item.sectionTitle
-            setCollapsed(collapsed: item.isCollapsed)
         }
     }
     
@@ -34,23 +33,17 @@ class HeaderView: UITableViewHeaderFooterView {
     override func awakeFromNib() {
         super.awakeFromNib()
         if #available(iOS 13.0, *) {
-            self.contentView.backgroundColor = UIColor(red: 252/255, green: 252/255, blue: 252/255, alpha: 1) 
-            //UIColor.blue//(white: 0.5, alpha: 0.5)
+            self.contentView.backgroundColor = UIColor(red: 252/255, green: 252/255, blue: 252/255, alpha: 1)
         } else {
-            // TODO iOS12
+            // TODO Implementation
         }
-
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapHeader)))
     }
     
     @objc private func didTapHeader() {
-        
         delegate?.headerExpandArrowInSection(header: self, section: section)
     }
 
-    func setCollapsed(collapsed: Bool) {
-       // arrowImage?.rotate(collapsed ? 0.0 : .pi)
-    }
 }
 
 extension UIView {

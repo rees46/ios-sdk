@@ -16,6 +16,7 @@ public struct SearchBlankResponse {
     public var lastQueries: [Query]
     public var suggests: [Suggest]
     public var lastProducts: Bool
+    public var clientCurrency: String?
     public var products: [Product]
     
     init(json: [String: Any]) {
@@ -41,6 +42,8 @@ public struct SearchBlankResponse {
             productArr.append(Product(json: item))
         }
         products = productArr
+        
+        self.clientCurrency = json["currency"] as? String ?? ""
     }
 }
 

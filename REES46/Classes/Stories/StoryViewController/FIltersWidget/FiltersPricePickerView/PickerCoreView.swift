@@ -325,8 +325,7 @@ open class PickerCoreView: UIView {
         super.willMove(toWindow: newWindow)
         
         if let _ = newWindow {
-            NotificationCenter.default.addObserver(self, selector: #selector(PickerCoreView.adjustCurrentSelectedAfterOrientationChanges),
-                                                            name: UIDevice.orientationDidChangeNotification, object: nil)
+            NotificationCenter.default.addObserver(self, selector: #selector(PickerCoreView.adjustCurrentSelectedAfterOrientationChanges), name: UIDevice.orientationDidChangeNotification, object: nil)
         } else {
             NotificationCenter.default.removeObserver(self, name: UIDevice.orientationDidChangeNotification, object: nil)
         }
@@ -350,8 +349,7 @@ open class PickerCoreView: UIView {
         }
     }
     
-    @objc
-    func adjustCurrentSelectedAfterOrientationChanges() {
+    @objc func adjustCurrentSelectedAfterOrientationChanges() {
         guard screenSize != UIScreen.main.bounds.size else {
             return
         }

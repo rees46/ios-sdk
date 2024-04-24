@@ -149,14 +149,12 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         return rAddToFavoritesButton
     }()
     
-    @objc
-    public func didAddToCartTapButton(_ sender: AnyObject) {
+    @objc public func didAddToCartTapButton(_ sender: AnyObject) {
         let tapCellPosition: CGPoint = sender.convert(CGPointZero, to: self)
         widgetCellDelegate?.didTapWidgetAddToCartButtonInside(cell: self, position: tapCellPosition)
     }
     
-    @objc
-    public func didAddToFavoritesTapButton(_ sender: AnyObject) {
+    @objc public func didAddToFavoritesTapButton(_ sender: AnyObject) {
         let tapFavCellPosition: CGPoint = sender.convert(CGPointZero, to: self)
         widgetCellDelegate?.didTapWidgetAddToFavoritesButtonInside(cell: self, position: tapFavCellPosition)
     }

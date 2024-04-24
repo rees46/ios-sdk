@@ -26,7 +26,6 @@ extension SettingsManageable where Self: Codable {
         } catch {
             print(error.localizedDescription)
         }
-        
         return nil
     }
     

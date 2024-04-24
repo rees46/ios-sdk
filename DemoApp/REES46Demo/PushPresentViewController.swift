@@ -24,8 +24,7 @@ class PushPresentViewController: UIViewController {
         self.navigationItem.leftBarButtonItem = .init(barButtonSystemItem: .cancel, target: self, action: #selector(closeButton))
     }
     
-    @objc
-    func closeButton() {
+    @objc func closeButton() {
         self.dismiss(animated: true)
     }
 }

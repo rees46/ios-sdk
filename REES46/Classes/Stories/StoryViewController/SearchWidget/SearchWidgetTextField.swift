@@ -28,8 +28,7 @@ open class SearchWidgetTextField: UITextField {
         
         self.leftView = searchUIViewWrapper
         self.returnKeyType = .search
-        self.attributedPlaceholder = NSAttributedString(string: "Search",
-                                                        attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+        self.attributedPlaceholder = NSAttributedString(string: "Search", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
         
         self.tintColor = UIColor.darkGray
         self.textColor = UIColor.black
@@ -38,11 +37,8 @@ open class SearchWidgetTextField: UITextField {
         
         if #available(iOS 13.0, *) {
             let searchUIViewWrapper2 = UIView(frame: CGRect(x: 50, y: 0, width: 20, height: 15))
-            
-            _ = UIImage(systemName: "text.viewfinder")
             self.rightView = searchUIViewWrapper2
-            self.attributedPlaceholder = NSAttributedString(string: "Search",
-                                                            attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
+            self.attributedPlaceholder = NSAttributedString(string: "Search", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
             
             
           //  self.rightView.sea = true
@@ -76,6 +72,7 @@ open class SearchWidgetTextFieldView: UIView {
         self.sdkSearchWidgetTextField.layer.cornerRadius = 10
         self.sdkSearchWidgetTextField.layer.borderWidth = 2.3
         self.sdkSearchWidgetTextField.layer.borderColor = UIColor(red:183/255, green:183/255, blue:183/255, alpha: 1.0).cgColor
+        //self.sdkSearchWidgetTextField.layer.backgroundColor = UIColor.red.cgColor
         self.sdkSearchWidgetTextField.layer.masksToBounds = true
         self.addSubview(self.sdkSearchWidgetTextField)
         

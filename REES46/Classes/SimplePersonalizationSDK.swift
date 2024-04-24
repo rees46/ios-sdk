@@ -19,6 +19,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var deviceId: String
     var userSeance: String
     var stream: String
+    //var clientCurrency: String
     
     var baseURL: String
     let baseInitJsonFileName = ".json"
@@ -55,7 +56,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
-
+        //self.clientCurrency = getCurrentCurrency()
+        
         // Generate seance
         userSeance = UUID().uuidString
         
@@ -65,8 +67,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Trying to fetch user session (permanent user Id)
         deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
-        let networkManager = NetworkStatus.nManager
-   //         ..networkManager.addObserver(observer: NetworkStatusObserver.self as! NetworkStatusObserver)
+       // let networkManager = NetworkStatus.nManager
+        //networkManager.addObserver(observer: NetworkStatusObserver.self as! NetworkStatusObserver)
         
         urlSession = URLSession.shared
         sessionQueue.addOperation {
@@ -77,6 +79,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         self.userInfo = res
                         self.userSeance = res.seance
                         self.deviceId = res.deviceId
+                        //self.clientCurrency = successCurrencyDetect
                         if let completion = completion {
                             completion(nil)
                         }
@@ -126,6 +129,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getShopId() -> String {
         return shopId
     }
+    
+//    func getCurrentCurrency() -> String {
+//        return clientCurrency
+//    }
 
     func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
@@ -285,7 +292,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, filtersSearchBy: String?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
@@ -332,6 +339,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                                              encoding: .utf8)
                     params["filters"] = theJSONText
                 }
+            }
+            if let filtersSearchBy = filtersSearchBy {
+                params["filters_search_by"] = String(filtersSearchBy)
             }
             if let priceMin = priceMin {
                 params["price_min"] = String(priceMin)
@@ -785,7 +795,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping (Result<ProductsListResponse, SDKError>) -> Void) {
+    func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, filtersSearchBy: String?, completion: @escaping (Result<ProductsListResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products"
             var params: [String: String] = [
@@ -820,6 +830,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                                              encoding: .utf8)
                     params["filters"] = theJSONText
                 }
+            }
+            if let filtersSearchBy = filtersSearchBy {
+                params["filters_search_by"] = String(filtersSearchBy)
             }
             
             let sessionConfig = URLSessionConfiguration.default
@@ -1370,6 +1383,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
             }
         }
+        let successCurrencyDetect: String? = result.currency
+        UserDefaults.standard.set(successCurrencyDetect, forKey: "client_currency")
         UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
     }
     

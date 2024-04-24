@@ -32,7 +32,6 @@ class DetailScreenViewController: UIViewController {
     
     func updateView(with selectedProduct: ShopCartPrepareProduct) {
         product = selectedProduct
-        
     }
     
     @IBAction func checkoutTapped(_ sender: UIButton) {
@@ -73,17 +72,10 @@ extension DetailScreenViewController: UICollectionViewDataSource {
         if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImagesCell", for: indexPath) as? SliderCell {
             
             if let image = product?.imageName {
-            //if let image = product?.imageName[indexPath.row] {
                 cell.updateCell(with: image)
                 pageView.currentPage = indexPath.row
                 return cell
             }
-            
-//            if let image = product?.imageName[indexPath.row] {
-//                cell.updateCell(with: image)
-//                pageView.currentPage = indexPath.row
-//                return cell
-//            }
         }
         return SliderCell()
     }

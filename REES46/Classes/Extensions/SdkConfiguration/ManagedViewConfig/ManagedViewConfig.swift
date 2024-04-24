@@ -23,13 +23,13 @@ public class ManagedViewConfig {
         feedbackGrabStates.append(appFeedbackChangedGrabState)
     }
     
-    @objc
-    func didChange() {
+    @objc func didChange() {
         if let configDict = UserDefaults.standard.dictionary(forKey: Self.configurationKey) {
             for hook in configGrabStates {
                 hook(configDict)
             }
         }
+        
         if let feedbackDict = UserDefaults.standard.dictionary(forKey: Self.feedbackKey) {
             for hook in feedbackGrabStates {
                 hook(feedbackDict)

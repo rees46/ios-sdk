@@ -143,8 +143,7 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
         addSubview(stackView)
     }
     
-    @objc
-    func closeButtonTapped(sender: UIButton) {
+    @objc func closeButtonTapped(sender: UIButton) {
         carouselProductsDelegate?.closeProductsCarousel()
     }
     

@@ -1,13 +1,11 @@
 import UIKit
 
 class ExamplePickerCoreViewController: UIViewController, PickerCoreViewDataSource {
-    @objc
-    func pickerCoreViewNumberOfRows(_ pickerCoreView: PickerCoreView) -> Int {
+    @objc func pickerCoreViewNumberOfRows(_ pickerCoreView: PickerCoreView) -> Int {
         return 1
     }
     
-    @objc
-    func pickerCoreView(_ pickerCoreView: PickerCoreView, titleForRow row: Int) -> String {
+    @objc func pickerCoreView(_ pickerCoreView: PickerCoreView, titleForRow row: Int) -> String {
         return "1"
     }
     

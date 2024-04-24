@@ -82,7 +82,6 @@ class ShopSideMenuViewController: UIViewController {
     
     @objc private func didTapBack() {
         self.delegate?.selectedCell(0)
-       // self.dismiss(animated: false, completion: nil)
     }
 }
 
@@ -120,7 +119,6 @@ extension ShopSideMenuViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //self.dismiss(animated: false, completion: nil)
         self.delegate?.selectedCell(indexPath.row)
 //        if indexPath.row == 4 || indexPath.row == 6 {
 //            tableView.deselectRow(at: indexPath, animated: true)

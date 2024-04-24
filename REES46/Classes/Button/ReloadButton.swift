@@ -19,8 +19,7 @@ class ReloadButton: UIButton {
         self.layer.masksToBounds = true
     }
     
-    @objc
-    public func didTapReloadButton() {
+    @objc public func didTapReloadButton() {
         print("didTapReloadButton")
     }
     

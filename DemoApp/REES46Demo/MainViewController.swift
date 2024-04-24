@@ -56,127 +56,16 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         NotificationCenter.default.removeObserver(self, name: .init(rawValue: "restartApplication"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(restartApplication), name: .init(rawValue: "restartApplication"), object: nil)
         
-       // runOnce()
-        
-//        if UserDefaults.standard.object(forKey: "run_once_key_april7") == nil {
-//            UserDefaults.standard.set(true, forKey: "run_once_key_april7")
-//            let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-//            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
-//            try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
-//            sleep(2)
-//            
-//            globalSDK?.resetSdkCache()
-//            globalSDK?.deleteUserCredentials()
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-//                //self.setupSdkLabels()
-//               // self.waitIndicator.stopAnimating()
-//                self.restartApplication()
-//                
-//            }
-//        } else {
-//            addSdkObservers()
-//            setupSdkDemoAppViews()
-//            setupSdkActivityIndicator()
-//            
-//           // DispatchQueue.onceTechService(token: "keychainDidUpdate") {
-//               // UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
-//            //}
-//            
-//            
-//            if #available(iOS 13.0, *) {
-//                BGTaskScheduler.shared.register(
-//                    forTaskWithIdentifier: "r46.example.train",
-//                    using: DispatchQueue.global()
-//                ) { task in
-//                    self.scheduleMLTrain()
-//                }
-//            } else {
-//                // TODO iOS12
-//            }
-//            //return true
-//            
-//            self.setNavBarAppearance(tintColor: .white, barColor: UIColor(#colorLiteral(red: 0.737254902, green: 0.1294117647, blue: 0.2941176471, alpha: 1)))
-//
-//            self.sideMenuShadowView = UIView(frame: self.view.bounds)
-//            self.sideMenuShadowView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//            self.sideMenuShadowView.backgroundColor = .black
-//            self.sideMenuShadowView.alpha = 0.0
-//            if #available(iOS 14.0, *) {
-//                let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(TapGestureRecognizer))
-//                tapGestureRecognizer.numberOfTapsRequired = 1
-//                tapGestureRecognizer.delegate = self
-//                self.sideMenuShadowView.addGestureRecognizer(tapGestureRecognizer)
-//            } else {
-//                // TODO iOS12
-//            }
-//            if self.revealSideMenuOnTop {
-//                view.insertSubview(self.sideMenuShadowView, at: 1)
-//            }
-//
-//            if #available(iOS 14.0, *) {
-//                let storyboard = UIStoryboard(name: "Main", bundle: Bundle.main)
-//                self.sideMenuViewController = storyboard.instantiateViewController(withIdentifier: "SideMenuID") as? SideMenuViewController
-//                self.sideMenuViewController.defaultHighlightedCell = 0
-//                self.sideMenuViewController.delegate = self
-//                view.insertSubview(self.sideMenuViewController!.view, at: self.revealSideMenuOnTop ? 2 : 0)
-//                addChild(self.sideMenuViewController!)
-//                self.sideMenuViewController!.didMove(toParent: self)
-//            } else {
-//                // TODO iOS12
-//            }
-//
-//            self.sideMenuViewController.view.translatesAutoresizingMaskIntoConstraints = false
-//
-//            if self.revealSideMenuOnTop {
-//                self.sideMenuTrailingConstraint = self.sideMenuViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -self.sideMenuRevealWidth - self.paddingForRotation)
-//                self.sideMenuTrailingConstraint.isActive = true
-//            }
-//            NSLayoutConstraint.activate([
-//                self.sideMenuViewController.view.widthAnchor.constraint(equalToConstant: self.sideMenuRevealWidth),
-//                self.sideMenuViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//                self.sideMenuViewController.view.topAnchor.constraint(equalTo: view.topAnchor)
-//            ])
-//
-//            if #available(iOS 14.0, *) {
-//                let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
-//                panGestureRecognizer.delegate = self
-//                view.addGestureRecognizer(panGestureRecognizer)
-//                
-//                //showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
-//                showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
-//            } else {
-//                // TODO iOS12
-//            }
-//        }
-        
         addSdkObservers()
         
         if #available(iOS 14.0, *) {
             self.setupSdkDemoAppViews()
             //setupSdkDemoAppViews()
         } else {
-            // TODO iOS12
+            // TODO Implementation
         }
         
         setupSdkActivityIndicator()
-        
-       // DispatchQueue.onceTechService(token: "keychainDidUpdate") {
-           // UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
-        //}
-        
-        
-//        if #available(iOS 13.0, *) {
-//            BGTaskScheduler.shared.register(
-//                forTaskWithIdentifier: "r46.example.train",
-//                using: DispatchQueue.global()
-//            ) { task in
-//                self.scheduleMLTrain()
-//            }
-//        } else {
-//            // TODO iOS12
-//        }
-        
-        //self.setNavBarAppearance(tintColor: .white, barColor: UIColor(#colorLiteral(red: 0.737254902, green: 0.1294117647, blue: 0.2941176471, alpha: 1)))
 
         self.sideMenuShadowView = UIView(frame: self.view.bounds)
         self.sideMenuShadowView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -189,7 +78,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             tapGestureRecognizer.delegate = self
             self.sideMenuShadowView.addGestureRecognizer(tapGestureRecognizer)
         } else {
-            // TODO iOS12
+            // TODO Implementation
         }
         if self.revealSideMenuOnTop {
             view.insertSubview(self.sideMenuShadowView, at: 1)
@@ -200,12 +89,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             self.sideMenuViewController = storyboard.instantiateViewController(withIdentifier: "SideMenuID") as? ShopSideMenuViewController
             self.sideMenuViewController.defaultHighlightedCell = 1
             self.sideMenuViewController.delegate = self
-            //self.sideMenuViewController.modalPresentationStyle = .fullScreen
             view.insertSubview(self.sideMenuViewController!.view, at: self.revealSideMenuOnTop ? 2 : 0)
             addChild(self.sideMenuViewController!)
             self.sideMenuViewController!.didMove(toParent: self)
         } else {
-            // TODO iOS12
+            // TODO Implementation
         }
 
         self.sideMenuViewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -227,13 +115,13 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             
             showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
         } else {
-            // TODO iOS12
+            // TODO Implementation
         }
     }
     
     func runOnce() {
-        if UserDefaults.standard.object(forKey: "run_once_key8") == nil {
-            UserDefaults.standard.set(true, forKey: "run_once_key8")
+        if UserDefaults.standard.object(forKey: "run_once_key11") == nil {
+            UserDefaults.standard.set(true, forKey: "run_once_key11")
             let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
             let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
             try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
@@ -245,28 +133,17 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                 self.setupSdkLabels()
                 self.waitIndicator.stopAnimating()
                 self.restartApplication()
-                
             }
         } else {
+            //
         }
     }
     
-//    func formattedDateString(format: String? = "MMM d, h:mm a") -> String {
-//        let dateFormatter = DateFormatter()
-//        dateFormatter.locale = Locale(identifier: "en_AU")
-//        dateFormatter.timeZone = TimeZone(abbreviation: "Australia/Sydney");        dateFormatter.amSymbol = "AM"
-//        dateFormatter.pmSymbol = "PM"
-//        dateFormatter.calendar = Calendar(identifier: .gregorian);        dateFormatter.dateFormat = format
-//        return dateFormatter.string(from: self)
-//       
-//    }
-    
-    @objc 
-    func restartApplication () {
-        if UserDefaults.standard.object(forKey: "run_once_key_april9") == nil {
-            UserDefaults.standard.set(true, forKey: "run_once_key_april9")
+    @objc func restartApplication () {
+        if UserDefaults.standard.object(forKey: "run_once_key_april25") == nil {
+            UserDefaults.standard.set(true, forKey: "run_once_key_april25")
             let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
+            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
             try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
             sleep(2)
             
@@ -274,17 +151,16 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             globalSDK?.deleteUserCredentials()
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 //self.setupSdkLabels()
-               // self.waitIndicator.stopAnimating()
-                self.restartS()
+                //self.waitIndicator.stopAnimating()
+                self.restartRootApp()
                 
             }
         }
     }
     
-    private func restartS() {
+    private func restartRootApp() {
         let viewController = MainViewController()
         let navCtrl = UINavigationController(rootViewController: viewController)
-
         guard
             let window = UIApplication.shared.keyWindow,
             let rootViewController = window.rootViewController
@@ -320,13 +196,13 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-       // startObserving()
+        // startObserving()
         ConnectAbilityManager.shared.startMonitoring()
     }
         
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-     //   stopObserving()
+        //stopObserving()
     }
     
     func didChangeConnectionStatus(_ status: REES46.NetworkConnectionStatus) {
@@ -380,10 +256,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     @objc private func loadStoriesViewBlock() {
         
         if let globalSDK = globalSDK {
-           
-        storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
             
-       //    storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
+            //storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
         }
     }
     
@@ -418,65 +293,12 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                 self.newArrivalsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
                 
                 self.didLabel.text = "DID\n\n" + globalSDKAdditionalInit.getDeviceId()
-                // For test delete if needed
             }
         }
     }
     
     @available(iOS 14.0, *)
     @objc private func didTapMenu() {
-//        self.sideMenuState(expanded: self.isExpanded ? false : true)
-        //self.view.backgroundColor = #colorLiteral(red: 0.3411764801, green: 0.6235294342, blue: 0.1686274558, alpha: 1)
-        
-        //self.setNavBarAppearance(tintColor: .white, barColor: UIColor(#colorLiteral(red: 0.737254902, green: 0.1294117647, blue: 0.2941176471, alpha: 1)))
-        //self.sideMenuState(expanded: self.isExpanded ? false : true)
-        
-        
-//        self.sideMenuShadowView = UIView(frame: self.view.bounds)
-//        self.sideMenuShadowView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//        self.sideMenuShadowView.backgroundColor = .red
-//        self.sideMenuShadowView.alpha = 0.0
-//        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(TapGestureRecognizer))
-//        tapGestureRecognizer.numberOfTapsRequired = 1
-//        tapGestureRecognizer.delegate = self
-//        self.sideMenuShadowView.addGestureRecognizer(tapGestureRecognizer)
-//        if self.revealSideMenuOnTop {
-//            view.insertSubview(self.sideMenuShadowView, at: 2)
-//        }
-//
-//        
-//        let storyboard = UIStoryboard(name: "Main", bundle: Bundle.main)
-//        self.sideMenuViewController = storyboard.instantiateViewController(withIdentifier: "SideMenuID") as? SideMenuViewController
-//        self.sideMenuViewController.defaultHighlightedCell = 0
-//        self.sideMenuViewController.delegate = self
-//        view.insertSubview(self.sideMenuViewController!.view, at: self.revealSideMenuOnTop ? 2 : 0)
-//        addChild(self.sideMenuViewController!)
-//        self.sideMenuViewController!.didMove(toParent: self)
-//        
-//        self.view!.insertSubview(self.sideMenuViewController.view, at: 0)
-//
-//        self.sideMenuViewController.view.translatesAutoresizingMaskIntoConstraints = false
-//
-//        if self.revealSideMenuOnTop {
-//            self.sideMenuTrailingConstraint = self.sideMenuViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -self.sideMenuRevealWidth - self.paddingForRotation)
-//            self.sideMenuTrailingConstraint.isActive = true
-//        }
-//        NSLayoutConstraint.activate([
-//            self.sideMenuViewController.view.widthAnchor.constraint(equalToConstant: self.sideMenuRevealWidth),
-//            self.sideMenuViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//            self.sideMenuViewController.view.topAnchor.constraint(equalTo: view.topAnchor)
-//        ])
-//
-//        if #available(iOS 14.0, *) {
-//            let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
-//            panGestureRecognizer.delegate = self
-//            view.addGestureRecognizer(panGestureRecognizer)
-//
-//            showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
-//        } else {
-//            // TODO iOS12
-//        }
-        
         self.sideMenuState(expanded: self.isExpanded ? false : true)
     }
     
@@ -487,28 +309,32 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     func startBlankSearch() {
         globalSDK?.searchBlank { searchResponse in
             switch searchResponse {
-            case let .success(response):
+            case let .success(searchResponse):
                 
                 var suggestArray = [String]()
-                for item in response.suggests {
+                for item in searchResponse.suggests {
                     let product = item.name
                     suggestArray.append(product)
                 }
                 
                 var lastQueriesArray = [String]()
-                for item in response.lastQueries {
+                for item in searchResponse.lastQueries {
                     let product = item.name
                     lastQueriesArray.append(product)
                 }
                 
                 var productsRecentlyViewedArray = [String]()
-                for item in response.products {
+                for item in searchResponse.products {
                     let productId = item.id
                     let product = item.name
                     let price = item.priceFormatted
                     let img = item.imageUrl
                     let description = "^" + productId + "^" + "!" + product + "!" + "\n" + "|" + price + "|" + "[" + img + "]"
                     productsRecentlyViewedArray.append(description)
+                }
+                
+                if (lastQueriesArray.count == 0 && productsRecentlyViewedArray.count == 0) {
+                    return
                 }
                 
                 DispatchQueue.main.async {
@@ -521,7 +347,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                     let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
                     searchVC.modalPresentationStyle = .fullScreen
                     searchVC.sdk = globalSDK
-                    //searchVC.suggestsCategories = suggestArray
                     searchVC.lastQueriesHistories = productsRecentlyViewedArray
                     searchVC.recommendQueries = lastQueriesArray
                     self.present(searchVC, animated: true, completion: nil)
@@ -545,7 +370,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     }
     
     private func openSearchAnyway() {
-        
         let sdkSearchWidget = SearchWidget()
         sdkSearchWidget.setCategoriesSuggests(value: [])
         sdkSearchWidget.setRequestHistories(value: [])
@@ -577,9 +401,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         globalSDK?.resetSdkCache()
         
         if let globalSDK = globalSDK {
-           storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
+          storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
             
-       //  storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
+         //storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
         }
     }
     
@@ -587,7 +411,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         self.waitIndicator.startAnimating()
         
         let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-        let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
+        let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
         try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
         sleep(2)
         
@@ -695,17 +519,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         }
     }
     
-    func setNavBarAppearance(tintColor: UIColor, barColor: UIColor) {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = barColor
-        appearance.titleTextAttributes = [.foregroundColor: tintColor]
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().isTranslucent = false
-        UINavigationBar.appearance().tintColor = tintColor
-    }
-
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         coordinator.animate { _ in
@@ -730,8 +543,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                 self.sideMenuShadowView.alpha = 0.6
                 self.headerSection.alpha = 0.0
             }
-        }
-        else {
+        } else {
             self.animateSideMenu(targetPosition: self.revealSideMenuOnTop ? (-self.sideMenuRevealWidth - self.paddingForRotation) : 0) { _ in
                 self.isExpanded = false
             }
@@ -766,8 +578,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
 
 @available(iOS 14.0, *)
 extension MainViewController: UIGestureRecognizerDelegate {
-    @objc
-    func TapGestureRecognizer(sender: UITapGestureRecognizer) {
+    @objc func TapGestureRecognizer(sender: UITapGestureRecognizer) {
         if sender.state == .ended {
             if self.isExpanded {
                 self.sideMenuState(expanded: false)

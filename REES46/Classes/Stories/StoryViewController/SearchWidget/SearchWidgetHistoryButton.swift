@@ -35,10 +35,6 @@ open class SearchWidgetHistoryView: UIView {
         self.deleteButton.setImage(close, for: .normal)
         self.deleteButton.isHidden = true
         self.addSubview(deleteButton)
-        
-//        self.bottomLine = UIView(frame: CGRect(x: 0, y: self.frame.height-1, width: self.frame.width, height: 1))
-//        self.bottomLine.backgroundColor = UIColor(red: 242.0/255.0, green: 242.0/255.0, blue: 242.0/255.0, alpha: 1.0)
-//        self.addSubview(bottomLine)
     }
 }
 

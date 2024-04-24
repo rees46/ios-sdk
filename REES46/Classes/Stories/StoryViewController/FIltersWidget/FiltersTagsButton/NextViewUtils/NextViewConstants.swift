@@ -1,6 +1,6 @@
 import Foundation
 
-struct K {
+struct MenuSlideHelper {
     struct String {
         static let toNextSegue = "toNextSegue"
         static let tagsCell = "tagsCell"

@@ -73,13 +73,11 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
-    @objc
-    func willEnterForeground() {
+    @objc func willEnterForeground() {
         //
     }
 
-    @objc
-    func didEnterBackground() {
+    @objc func didEnterBackground() {
         //
     }
     

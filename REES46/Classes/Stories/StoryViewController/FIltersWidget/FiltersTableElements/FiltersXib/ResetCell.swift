@@ -14,15 +14,15 @@ class ResetCell: UITableViewCell {
     
     weak var delegate: AboutViewDelegate?
     
-    var item: ItemBaseModel? {
-        didSet {
-            guard  item is ItemAbout else {
-                return
-            }
-            
-//            aboutLabel?.text = item.about
-        }
-    }
+//    var item: ItemBaseModel? {
+//        didSet {
+//            guard  item is ItemAbout else {
+//                return
+//            }
+//            
+////            aboutLabel?.text = item.about
+//        }
+//    }
     
     static var nib:UINib {
         return UINib(nibName: identifier, bundle: nil)

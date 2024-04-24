@@ -5,8 +5,8 @@ class PriceRangeCell: UITableViewCell {
     @IBOutlet weak var maxValueTextField: UITextField!
     @IBOutlet weak var minValueTextField: UITextField!
     @IBOutlet weak var rangeSlider: FiltersPriceSlider!
-    public var minValue: Double = 5
-    public var maxValue: Double = 55
+    public var minValue: Double = 0
+    public var maxValue: Double = 9999990
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -26,27 +26,27 @@ class PriceRangeCell: UITableViewCell {
         maxValueTextField.layer.cornerRadius = 5
         minValueTextField.clipsToBounds = true
         
-        let min = UserDefaults.standard.object(forKey: "pMin") ?? 0
-        let max = UserDefaults.standard.object(forKey: "pMax") ?? 9999999
+        let min = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? 0
+        let max = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? 9999990
         
         minValueTextField.text = "от \(String(describing: min))"
         maxValueTextField.text = "до \(String(describing: max))"
         rangeSlider.minimumValue = min as! Double
         rangeSlider.maximumValue = max as! Double
-        rangeSlider.lowerValue = 0.0
+        rangeSlider.lowerValue = 0
         rangeSlider.upperValue = max as! Double
         rangeSlider.addTarget(self, action: #selector(sliderValueChange(_:)), for: .valueChanged)
         
-        UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "upMin")
-        UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "upMax")
+        UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "minimumPriceConstant")
+        UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "maximumPriceConstant")
     }
     
     @objc func sliderValueChange(_ sender: FiltersPriceSlider) {
         minValueTextField.text = "от \(Int(rangeSlider.lowerValue))"
         maxValueTextField.text = "до \(Int(rangeSlider.upperValue))"
         
-        UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "upMin")
-        UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "upMax")
+        UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "minimumPriceConstant")
+        UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "maximumPriceConstant")
     }
     
     static var nib:UINib {
@@ -62,31 +62,31 @@ extension PriceRangeCell: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         
         if (textField == minValueTextField) {
-            if let text1 = textField.text, let textRange = Range(range, in: text1) {
+            if let textMinValue = textField.text, let textRange = Range(range, in: textMinValue) {
                 //let str0 = text.decimalDigits
                 //let strDec = text.unicodeScalars.filter(CharacterSet.decimalDigits.contains)
                 //print(strDec)
                 
-                let stringArray1 = text1.components(separatedBy: CharacterSet.decimalDigits.inverted)
-                for item1 in stringArray1 {
-                    if let number1 = Int(item1) {
-                        print(number1)
-                        UserDefaults.standard.set(number1, forKey: "upMin")
+                let stringArrayForMin = textMinValue.components(separatedBy: CharacterSet.decimalDigits.inverted)
+                for itemMin in stringArrayForMin {
+                    if let numberMin = Int(itemMin) {
+                        print(numberMin)
+                        UserDefaults.standard.set(numberMin, forKey: "minimumPriceConstant")
                     }
                 }
             }
             return true
         } else {
-            if let text2 = textField.text, let textRange = Range(range, in: text2) {
+            if let textMaxValue = textField.text, let textRange = Range(range, in: textMaxValue) {
                 //let str0 = text.decimalDigits
                 //let strDec = text.unicodeScalars.filter(CharacterSet.decimalDigits.contains)
-                //;print(strDec)
+                //print(strDec)
                 
-                let stringArray2 = text2.components(separatedBy: CharacterSet.decimalDigits.inverted)
-                for item2 in stringArray2 {
-                    if let number2 = Int(item2) {
-                        print(number2)
-                        UserDefaults.standard.set(number2, forKey: "upMax")
+                let stringArrayForMax = textMaxValue.components(separatedBy: CharacterSet.decimalDigits.inverted)
+                for itemMax in stringArrayForMax {
+                    if let numberMax = Int(itemMax) {
+                        print(numberMax)
+                        UserDefaults.standard.set(numberMax, forKey: "maximumPriceConstant")
                     }
                 }
             }
@@ -96,14 +96,14 @@ extension PriceRangeCell: UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         if (textField == minValueTextField) {
-            let min = UserDefaults.standard.object(forKey: "upMin") ?? ""
+            let min = UserDefaults.standard.object(forKey: "minimumPriceConstant") ?? ""
             if String(describing: min) != "" {
                 minValueTextField.text = "\(String(describing: min))"
             } else {
                 minValueTextField.text = "\(Int(rangeSlider.lowerValue))"
             }
         } else {
-            let max = UserDefaults.standard.object(forKey: "upMax") ?? ""
+            let max = UserDefaults.standard.object(forKey: "maximumPriceConstant") ?? ""
             if String(describing: max) != "" {
                 maxValueTextField.text = "\(String(describing: max))"
             } else {
@@ -113,40 +113,40 @@ extension PriceRangeCell: UITextFieldDelegate {
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        let min = UserDefaults.standard.object(forKey: "pMin") ?? ""
+        let min = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? ""
         minValueTextField.text = "от \(String(describing: min))"
         
-        let max = UserDefaults.standard.object(forKey: "pMax") ?? ""
+        let max = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? ""
         maxValueTextField.text = "до \(String(describing: max))"
         
-        let minx = UserDefaults.standard.object(forKey: "upMin") ?? ""
-        let maxx = UserDefaults.standard.object(forKey: "upMax") ?? ""
+        let minX = UserDefaults.standard.object(forKey: "minimumPriceConstant") ?? ""
+        let maxX = UserDefaults.standard.object(forKey: "maximumPriceConstant") ?? ""
         
         if (textField == minValueTextField) {
-            if String(describing: minx) != "" {
-                var n1 = Int(0)
-                var n2 = Int(0)
-                let stringArray1 = String(describing: minx).components(separatedBy: CharacterSet.decimalDigits.inverted)
-                for item1 in stringArray1 {
-                    if let number1 = Int(item1) {
-                        print(number1)
-                        n1 = number1
+            if String(describing: minX) != "" {
+                var intDefault = Int(0)
+                var intCompare = Int(0)
+                let stringArrayMin = String(describing: minX).components(separatedBy: CharacterSet.decimalDigits.inverted)
+                for itemMin in stringArrayMin {
+                    if let numberMin = Int(itemMin) {
+                        print(numberMin)
+                        intDefault = numberMin
                     }
                     
-                    let stringArray2 = String(describing: maxx).components(separatedBy: CharacterSet.decimalDigits.inverted)
-                    for item2 in stringArray2 {
-                        if let number2 = Int(item2) {
-                            print(number2)
-                            n2 = number2
+                    let stringArrayMax = String(describing: maxX).components(separatedBy: CharacterSet.decimalDigits.inverted)
+                    for itemMax in stringArrayMax {
+                        if let numberMax = Int(itemMax) {
+                            print(numberMax)
+                            intCompare = numberMax
                         }
                     }
                     
-                    if (n1 > n2) {
-                        rangeSlider.lowerValue = Double(n2)
-                        minValueTextField.text = "от \(String(describing: n2))"
+                    if (intDefault > intCompare) {
+                        rangeSlider.lowerValue = Double(intCompare)
+                        minValueTextField.text = "от \(String(describing: intCompare))"
                     } else {
-                        rangeSlider.lowerValue = Double(n1)
-                        minValueTextField.text = "от \(String(describing: n1))"
+                        rangeSlider.lowerValue = Double(intDefault)
+                        minValueTextField.text = "от \(String(describing: intDefault))"
                     }
                 }
             } else {
@@ -154,34 +154,34 @@ extension PriceRangeCell: UITextFieldDelegate {
                 minValueTextField.text = "от \(Int(rangeSlider.lowerValue))"
             }
         } else {
-            if String(describing: maxx) != "" {
-                var n1 = Int(0)
-                var n2 = Int(0)
-                let stringArray1 = String(describing: minx).components(separatedBy: CharacterSet.decimalDigits.inverted)
-                for item1 in stringArray1 {
-                    if let number1 = Int(item1) {
-                        print(number1)
-                        n1 = number1
+            if String(describing: maxX) != "" {
+                var intDefaultMax = Int(0)
+                var intCompareMax = Int(0)
+                let stringArrayForMin = String(describing: minX).components(separatedBy: CharacterSet.decimalDigits.inverted)
+                for itemMin in stringArrayForMin {
+                    if let numberMin = Int(itemMin) {
+                        print(numberMin)
+                        intDefaultMax = numberMin
                     }
                     
-                    let stringArray2 = String(describing: maxx).components(separatedBy: CharacterSet.decimalDigits.inverted)
-                    for item2 in stringArray2 {
-                        if let number2 = Int(item2) {
-                            print(number2)
-                            n2 = number2
+                    let stringArrayForMax = String(describing: maxX).components(separatedBy: CharacterSet.decimalDigits.inverted)
+                    for itemMax in stringArrayForMax {
+                        if let numberMax = Int(itemMax) {
+                            print(numberMax)
+                            intCompareMax = numberMax
                         }
                     }
                     
-                    if (n2 < n1) {
-                        rangeSlider.upperValue = Double(n1)
-                        maxValueTextField.text = "до \(String(describing: n1))"
+                    if (intCompareMax < intDefaultMax) {
+                        rangeSlider.upperValue = Double(intDefaultMax)
+                        maxValueTextField.text = "до \(String(describing: intDefaultMax))"
                     } else {
-                        rangeSlider.upperValue = Double(n2)
-                        maxValueTextField.text = "до \(String(describing: n2))"
+                        rangeSlider.upperValue = Double(intCompareMax)
+                        maxValueTextField.text = "до \(String(describing: intCompareMax))"
                     }
                 }
             } else {
-                rangeSlider.upperValue = Double(maxValueTextField.text ?? "99999999") ?? 99999999
+                rangeSlider.upperValue = Double(maxValueTextField.text ?? "9999990") ?? 9999990
                 maxValueTextField.text = "до \(Int(rangeSlider.upperValue))"
             }
         }
@@ -201,8 +201,8 @@ extension PriceRangeCell: UITextFieldDelegate {
         toolBar.isTranslucent = true
         toolBar.barTintColor = UIColor.init(red: 250/255, green: 250/255, blue: 250/255, alpha: 1)
         let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        var buttonTitle = "Done"
-        var cancelButtonTitle = "Cancel"
+        let buttonTitle = "Done"
+        let cancelButtonTitle = "Cancel"
         let doneButton = UIBarButtonItem(title: buttonTitle, style: .done, target: self, action: #selector(onClickDoneButton))
         let cancelButton = UIBarButtonItem(title: cancelButtonTitle, style: .plain, target: self, action: #selector(onClickCancelButton))
         doneButton.tintColor = .darkGray
@@ -213,14 +213,11 @@ extension PriceRangeCell: UITextFieldDelegate {
         return toolBar
     }
 
-    @objc
-    func onClickDoneButton() {
-        // let y = maxValueTextField.text
+    @objc func onClickDoneButton() {
         self.endEditing(true)
     }
 
-    @objc
-    func onClickCancelButton() {
+    @objc func onClickCancelButton() {
         self.endEditing(true)
     }
 }

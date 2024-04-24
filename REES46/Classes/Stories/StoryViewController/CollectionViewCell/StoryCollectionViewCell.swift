@@ -56,6 +56,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         } else {
             self.backgroundColor = .black
         }
+        
         videoView.backgroundColor = .black
         
         NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -209,7 +210,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 makeConstraints()
                 
             } else if element.product != nil {
-                //print("Do nothing coming soon")
+                // Not needed action
             } else {
                 UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
                 storyButton.configButton(buttonData: element)
@@ -390,13 +391,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
         addSubview(muteButton)
     }
     
-    @objc
-    func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
+    @objc func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
         //
     }
     
-    @objc
-    func sdkErrorReloadTapHandle(_ sender: UITapGestureRecognizer? = nil) {
+    @objc func sdkErrorReloadTapHandle(_ sender: UITapGestureRecognizer? = nil) {
         var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
@@ -658,8 +657,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    public func copyPromocodeToClipboard() {
+    @objc public func copyPromocodeToClipboard() {
         let pasteboard = UIPasteboard.general
         pasteboard.string = selectedPromoCodeElement?.promocode
         
@@ -669,18 +667,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
         sdkPopupAlertView.show()
     }
     
-    @objc
-    public func hideSdkPopupAlertView() {
+    @objc public func hideSdkPopupAlertView() {
         sdkPopupAlertView.hideImmediately()
     }
     
-    @objc
-    public func dismissPromocodeBanner() {
+    @objc public func dismissPromocodeBanner() {
         promocodeBannerView.dismiss()
     }
     
-    @objc
-    public func dismissPromocodeBannerWithoutAnimation() {
+    @objc public func dismissPromocodeBannerWithoutAnimation() {
         promocodeBannerView.dismissWithoutAnimation()
     }
     
@@ -759,8 +754,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    func willEnterForeground() {
+    @objc func willEnterForeground() {
         do {
             try audioSession.setCategory(AVAudioSession.Category.playback)
         } catch {
@@ -769,8 +763,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         player.play()
     }
 
-    @objc
-    func didEnterBackground() {
+    @objc func didEnterBackground() {
         player.pause()
     }
     

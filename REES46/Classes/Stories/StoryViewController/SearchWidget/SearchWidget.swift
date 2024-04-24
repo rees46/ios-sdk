@@ -57,8 +57,7 @@ open class SearchWidget: NSObject {
     
     open func getSearchHistories() -> [String]? {
         guard let histories = pref.object(forKey: "historiesSearch") as? [String] else {
-            //return nil
-            return ["Shoes", "Dress", "Jacket"]
+            return ["SampleShoes", "SampleDress", "SampleJacket"]
         }
         
         return histories

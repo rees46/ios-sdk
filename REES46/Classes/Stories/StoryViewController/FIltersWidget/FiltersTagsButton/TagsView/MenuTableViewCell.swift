@@ -50,9 +50,7 @@ extension MenuTableViewCell: UICollectionViewDataSource, UICollectionViewDelegat
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "menuCollectionViewCell", for: indexPath) as! MenuCollectionViewCell
         
         let index = indexPath.row
-        //let menuItem = menuList[index].titleValues
-        
-        let ss = menuList[indexPath.section].titleValues[index]
+        let menuItem = menuList[indexPath.section].titleValues[index]
         cell.menu = menuList[indexPath.section]
         return cell
     }

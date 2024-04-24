@@ -17,11 +17,11 @@ class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     var menuList = [FiltersMenu]()
     
     func collapseSection(header: MainFiltersCheckboxCell, section: Int) {
-        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySetting1")
+        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
         if !carouselOpenedBoolKey {
-            UserDefaults.standard.set(true, forKey: "FiltersMemorySetting1")
+            UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
         } else {
-            UserDefaults.standard.set(false, forKey: "FiltersMemorySetting1")
+            UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
         }
         
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxCall"), object: nil)

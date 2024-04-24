@@ -6,16 +6,16 @@ protocol FooterViewDelegate: AnyObject {
 
 class FooterView: UITableViewHeaderFooterView {
 
-    var item: ItemBaseModel? {
-        didSet {
-            guard let item = item else {
-                return
-            }
-            
-            titleLabel?.text = item.sectionTitle
-            setCollapsed(collapsed: item.isCollapsed)
-        }
-    }
+//    var item: ItemBaseModel? {
+//        didSet {
+//            guard let item = item else {
+//                return
+//            }
+//            
+//            titleLabel?.text = item.sectionTitle
+//            setCollapsed(collapsed: item.isCollapsed)
+//        }
+//    }
     
     @IBOutlet weak var titleLabel: UILabel?
     @IBOutlet weak var arrowImage: UIImageView?

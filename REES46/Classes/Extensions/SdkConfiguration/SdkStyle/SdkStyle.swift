@@ -114,8 +114,7 @@ public class SdkStyle: NSObject {
 }
 
 extension UIView {
-    @objc
-    func apppear_willMove(toSuperview newSuperview: UIView?) {
+    @objc func apppear_willMove(toSuperview newSuperview: UIView?) {
         apppear_willMove(toSuperview: newSuperview)
 
 
@@ -161,8 +160,7 @@ extension UIView {
 }
 
 extension UIViewController {
-    @objc
-    func apppear_viewDidLoad() {
+    @objc func apppear_viewDidLoad() {
         apppear_viewDidLoad()
         SdkStyle.shared.registerViewController(self)
     }

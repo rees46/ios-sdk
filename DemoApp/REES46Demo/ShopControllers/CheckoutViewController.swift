@@ -143,7 +143,7 @@ extension CheckoutViewController: UpdateTotalQuantity {
         let cd: String = String(format: "%.0f", items)
         
         if cd != "0.0" || cd != "0" {
-            let dd = "\(ShopCartDataService.instance.getTotalAmount())"
+            //let dd = "\(ShopCartDataService.instance.getTotalAmount())"
             
             let cw: String = String(format: "%.0f", (ShopCartDataService.instance.getQuantityCount()))
             

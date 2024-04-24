@@ -149,7 +149,7 @@ final public class SdkVideoDownloadManager: NSObject {
                                                 content: content, trigger: trigger)
             notificationCenter.add(request, withCompletionHandler: { (error) in
                 if let error = error {
-                    //print("SDK: could not schedule notification with error: \(error)")
+                    print("SDK: сould not schedule Download notification with error: \(error)")
                 }
             })
         }
