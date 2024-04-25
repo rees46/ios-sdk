@@ -60,8 +60,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var defaultCopyToClipboardMessageWidth: CGFloat = 150
     
     //Sdk Recommendations Widget settings
-    public var fontNameWidget: String? = nil
-    public var backgroundColorWidget: String = "#ffffff"
+    public var fontName: String? = nil
+    public var backgroundColor: String = "#ffffff"
     public var backgroundColorDarkMode: String = "#000000"
     public var cellBackgroundColor: String = "#ffffff"
     public var cellBackgroundColorDarkMode: String = "#000000"
@@ -83,7 +83,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var favoritesIconColorDarkMode: String = "#ffffff"
     public var cartButtonNeedOpenWebUrl = false
     public var preloadIndicatorColor: String = "#000000"
-    public var defaultMessageNoReviews: String = "No reviews"
+    public var defaultMessageNoReviews: String? = "No reviews"
     
     //Sdk Stories Block collection cell indicator
     public var storiesBlockPreloadIndicatorDisabled = false
@@ -535,108 +535,107 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         defaultHideProductsButtonText = hideProductsButtonText!
     }
     
-    //    public func setWidget(wfontName: String? = nil,
-    //                          wbackgroundColor: String? = nil,
-    //                          backgroundColorDarkMode: String? = nil,
-    //                          cellBackgroundColor: String? = nil,
-    //                          cellBackgroundColorDarkMode: String? = nil,
-    //                          borderWidth: CGFloat? = nil,
-    //                          borderColor: String? = nil,
-    //                          colorDarkMode: String? = nil,
-    //                          borderTransparent: CGFloat? = nil,
-    //                          cornerRadius: CGFloat? = nil,
-    //                          starsColor: String? = nil,
-    //                          addToCartButtonText: String? = nil,
-    //                          removeFromCartButtonText: String? = nil,
-    //                          addToCartButtonFontSize: CGFloat? = nil,
-    //                          removeFromCartButtonFontSize: CGFloat? = nil,
-    //                          cartButtonTextColor: String? = nil,
-    //                          cartButtonTextColorDarkMode: String? = nil,
-    //                          cartButtonBackgroundColor: String? = nil,
-    //                          cartButtonBackgroundColorDarkMode: String? = nil,
-    //                          cartButtonNeedOpenWebUrl: Bool? = false,
-    //                          favoritesIconColor: String? = nil,
-    //                          favoritesIconColorDarkMode: String? = nil,
-    //                          preloadIndicatorColor: String? = nil,
-    //                          defaultMessageNoReview: String? = "No reviews") {
-    //
-    //        if fontNameWidget != nil {
-    //            self.wfontName = fontNameWidget!
-    //        }
-    //        if wbackgroundColor != nil {
-    //            self.wbackgroundColor = wbackgroundColor!
-    //        }
-    //        if backgroundColorDarkMode != nil {
-    //            self.backgroundColorDarkMode = backgroundColorDarkMode!
-    //        }
-    //        if cellBackgroundColor != nil {
-    //            self.cellBackgroundColor = cellBackgroundColor!
-    //        }
-    //        if cellBackgroundColorDarkMode != nil {
-    //            self.cellBackgroundColorDarkMode = cellBackgroundColorDarkMode!
-    //        }
-    //        if borderWidth != nil {
-    //            self.borderWidth = borderWidth!
-    //        }
-    //        if borderColor != nil {
-    //            self.borderColor = borderColor!
-    //        }
-    //        if colorDarkMode != nil {
-    //            self.colorDarkMode = colorDarkMode!
-    //        }
-    //        if borderTransparent != nil {
-    //            self.borderTransparent = borderTransparent!
-    //        }
-    //        if cornerRadius != nil {
-    //            self.cornerRadius = cornerRadius!
-    //        }
-    //        if starsColor != nil {
-    //            self.starsColor = starsColor!
-    //        }
-    //        if addToCartButtonText != nil {
-    //            self.addToCartButtonText = addToCartButtonText!
-    //        }
-    //        if removeFromCartButtonText != nil {
-    //            self.removeFromCartButtonText = removeFromCartButtonText!
-    //        }
-    //        if addToCartButtonFontSize != nil {
-    //            self.addToCartButtonFontSize = addToCartButtonFontSize!
-    //        }
-    //        if removeFromCartButtonFontSize != nil {
-    //            self.removeFromCartButtonFontSize = removeFromCartButtonFontSize!
-    //        }
-    //        if cartButtonTextColor != nil {
-    //            self.cartButtonTextColor = cartButtonTextColor!
-    //        }
-    //        if cartButtonTextColorDarkMode != nil {
-    //            self.cartButtonTextColorDarkMode = cartButtonTextColorDarkMode!
-    //        }
-    //        if cartButtonBackgroundColor != nil {
-    //            self.cartButtonBackgroundColor = cartButtonBackgroundColor!
-    //        }
-    //        if cartButtonBackgroundColorDarkMode != nil {
-    //            self.cartButtonBackgroundColorDarkMode = cartButtonBackgroundColorDarkMode!
-    //        }
-    //        if cartButtonNeedOpenWebUrl != nil {
-    //            self.cartButtonNeedOpenWebUrl = cartButtonNeedOpenWebUrl!
-    //        }
-    //        if favoritesIconColor != nil {
-    //            self.favoritesIconColor = favoritesIconColor!
-    //        }
-    //        if favoritesIconColorDarkMode != nil {
-    //            self.favoritesIconColorDarkMode = favoritesIconColorDarkMode!
-    //        }
-    //        if preloadIndicatorColor != nil {
-    //            self.preloadIndicatorColor = preloadIndicatorColor!
-    //        }
-    //        if defaultMessageNoReviews != nil {
-    //            self.defaultMessageNoReviews = defaultMessageNoReviews!
-    //        }
-    //    }
+        public func setWidget(fontName: String? = nil,
+                              backgroundColor111: String? = nil,
+                              backgroundColorDarkMode: String? = nil,
+                              cellBackgroundColor: String? = nil,
+                              cellBackgroundColorDarkMode: String? = nil,
+                              borderWidth: CGFloat? = nil,
+                              borderColor: String? = nil,
+                              borderColorDarkMode: String? = nil,
+                              borderTransparent: CGFloat? = nil,
+                              cornerRadius: CGFloat? = nil,
+                              starsColor: String? = nil,
+                              addToCartButtonText: String? = nil,
+                              removeFromCartButtonText: String? = nil,
+                              addToCartButtonFontSize: CGFloat? = nil,
+                              removeFromCartButtonFontSize: CGFloat? = nil,
+                              cartButtonTextColor: String? = nil,
+                              cartButtonTextColorDarkMode: String? = nil,
+                              cartButtonBackgroundColor: String? = nil,
+                              cartButtonBackgroundColorDarkMode: String? = nil,
+                              cartButtonNeedOpenWebUrl: Bool? = false,
+                              favoritesIconColor: String? = nil,
+                              favoritesIconColorDarkMode: String? = nil,
+                              preloadIndicatorColor: String? = nil,
+                              defaultMessageNoReview: String? = "No reviews") {
     
+            if fontName != nil {
+                self.fontName = fontName!
+            }
+            if backgroundColor111 != nil {
+                self.backgroundColor = backgroundColor111!
+            }
+            if backgroundColorDarkMode != nil {
+                self.backgroundColorDarkMode = backgroundColorDarkMode!
+            }
+            if cellBackgroundColor != nil {
+                self.cellBackgroundColor = cellBackgroundColor!
+            }
+            if cellBackgroundColorDarkMode != nil {
+                self.cellBackgroundColorDarkMode = cellBackgroundColorDarkMode!
+            }
+            if borderWidth != nil {
+                self.borderWidth = borderWidth!
+            }
+            if borderColor != nil {
+                self.borderColor = borderColor!
+            }
+            if borderColorDarkMode != nil {
+                self.borderColorDarkMode = borderColorDarkMode!
+            }
+            if borderTransparent != nil {
+                self.borderTransparent = borderTransparent!
+            }
+            if cornerRadius != nil {
+                self.cornerRadius = cornerRadius!
+            }
+            if starsColor != nil {
+                self.starsColor = starsColor!
+            }
+            if addToCartButtonText != nil {
+                self.addToCartButtonText = addToCartButtonText!
+            }
+            if removeFromCartButtonText != nil {
+                self.removeFromCartButtonText = removeFromCartButtonText!
+            }
+            if addToCartButtonFontSize != nil {
+                self.addToCartButtonFontSize = addToCartButtonFontSize!
+            }
+            if removeFromCartButtonFontSize != nil {
+                self.removeFromCartButtonFontSize = removeFromCartButtonFontSize!
+            }
+            if cartButtonTextColor != nil {
+                self.cartButtonTextColor = cartButtonTextColor!
+            }
+            if cartButtonTextColorDarkMode != nil {
+                self.cartButtonTextColorDarkMode = cartButtonTextColorDarkMode!
+            }
+            if cartButtonBackgroundColor != nil {
+                self.cartButtonBackgroundColor = cartButtonBackgroundColor!
+            }
+            if cartButtonBackgroundColorDarkMode != nil {
+                self.cartButtonBackgroundColorDarkMode = cartButtonBackgroundColorDarkMode!
+            }
+            if cartButtonNeedOpenWebUrl != nil {
+                self.cartButtonNeedOpenWebUrl = cartButtonNeedOpenWebUrl!
+            }
+            if favoritesIconColor != nil {
+                self.favoritesIconColor = favoritesIconColor!
+            }
+            if favoritesIconColorDarkMode != nil {
+                self.favoritesIconColorDarkMode = favoritesIconColorDarkMode!
+            }
+            if preloadIndicatorColor != nil {
+                self.preloadIndicatorColor = preloadIndicatorColor!
+            }
+            if defaultMessageNoReviews != nil {
+                self.defaultMessageNoReviews = defaultMessageNoReviews!
+            }
+        }
     
-    public func setWidget(fontNameWidget: String? = nil,
-                          backgroundColorWidget: String? = nil,
+    public func setWidget(fontName: String? = nil,
+                          backgroundColor: String? = nil,
                           backgroundColorDarkMode: String? = nil,
                           cellBackgroundColor: String? = nil,
                           cellBackgroundColorDarkMode: String? = nil,
@@ -660,11 +659,11 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                           preloadIndicatorColor: String? = nil,
                           defaultMessageNoReviews: String? = "No reviews") {
         
-        if fontNameWidget != nil {
-            self.fontNameWidget = fontNameWidget!
+        if fontName != nil {
+            self.fontName = fontName!
         }
-        if backgroundColorWidget != nil {
-            self.backgroundColorWidget = backgroundColorWidget!
+        if backgroundColor != nil {
+            self.backgroundColor = backgroundColor!
         }
         if backgroundColorDarkMode != nil {
             self.backgroundColorDarkMode = backgroundColorDarkMode!

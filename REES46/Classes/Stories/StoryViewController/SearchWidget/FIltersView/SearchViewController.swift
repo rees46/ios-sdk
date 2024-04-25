@@ -1,6 +1,5 @@
 //import UIKit
-//import UIKit
-//
+
 //class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
 //    
 //    public var suggestsCategories: [String] = []

@@ -134,7 +134,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "token": token,
-                "platform": "ios",
+                "platform": platform ?? "ios",
             ]
             
             let sessionConfig = URLSessionConfiguration.default

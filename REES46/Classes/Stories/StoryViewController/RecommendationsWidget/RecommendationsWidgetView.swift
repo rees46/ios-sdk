@@ -82,7 +82,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             let bgColor = SdkConfiguration.recommendations.backgroundColorDarkMode.hexToRGB()
             backgroundColor = UIColor(red: bgColor.red, green: bgColor.green, blue: bgColor.blue, alpha: 1)
         } else {
-            let bgColor = SdkConfiguration.recommendations.backgroundColorWidget.hexToRGB()
+            let bgColor = SdkConfiguration.recommendations.backgroundColor.hexToRGB()
             backgroundColor = UIColor(red: bgColor.red, green: bgColor.green, blue: bgColor.blue, alpha: 1)
         }
     }
@@ -308,12 +308,12 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     public func configureCartButton(cell: RecommendationsWidgetViewCell, itemIdExistInCart: Bool) {
         if !itemIdExistInCart {
             let addTxtStr = SdkConfiguration.recommendations.addToCartButtonText
-            if SdkConfiguration.recommendations.fontNameWidget != nil {
-                var fontAddToCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontNameWidget!, size: 17.0)
+            if SdkConfiguration.recommendations.fontName != nil {
+                var fontAddToCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontName!, size: 17.0)
                 cell.recommendationsCartButton.titleLabel?.font = fontAddToCartProvidedBySdk
                 
                 if SdkConfiguration.recommendations.addToCartButtonFontSize != nil {
-                    fontAddToCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontNameWidget!, size: SdkConfiguration.recommendations.addToCartButtonFontSize!)
+                    fontAddToCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontName!, size: SdkConfiguration.recommendations.addToCartButtonFontSize!)
                     cell.recommendationsCartButton.titleLabel?.font = fontAddToCartProvidedBySdk
                 }
             } else {
@@ -326,12 +326,12 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             cell.recommendationsCartButton.setTitle(addTxtStr, for: .normal)
         } else {
             let removeTxtStr = SdkConfiguration.recommendations.removeFromCartButtonText
-            if SdkConfiguration.recommendations.fontNameWidget != nil {
-                var fontRemoveFromCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontNameWidget!, size: 17.0)
+            if SdkConfiguration.recommendations.fontName != nil {
+                var fontRemoveFromCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontName!, size: 17.0)
                 cell.recommendationsCartButton.titleLabel?.font = fontRemoveFromCartProvidedBySdk
                 
                 if SdkConfiguration.recommendations.removeFromCartButtonFontSize != nil {
-                    fontRemoveFromCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontNameWidget!, size: SdkConfiguration.recommendations.removeFromCartButtonFontSize!)
+                    fontRemoveFromCartProvidedBySdk = UIFont(name: SdkConfiguration.recommendations.fontName!, size: SdkConfiguration.recommendations.removeFromCartButtonFontSize!)
                     cell.recommendationsCartButton.titleLabel?.font = fontRemoveFromCartProvidedBySdk
                 }
             } else {

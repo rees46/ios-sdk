@@ -58,93 +58,93 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            globalSDKAdditionalInit = self.sdkAdditionalInit
 //            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
 //        })
-        
-        //SDK Configuration init Font first
-        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
-
-        //SDK Configuration settings
-        sdk.configuration().stories.setStoriesBlock(fontName: "Inter",
-                                                    fontSize: 15.0,
-                                                    textColor: "#5ec169",
-                                                    textColorDarkMode: "#5ec169",
-                                                    backgroundColor: "#ffffff",
-                                                    backgroundColorDarkMode: "#000000",
-                                                    iconSize: 76,
-                                                    iconBorderWidth: 2.3,
-                                                    iconMarginX: 18,
-                                                    iconMarginBottom: 8,
-                                                    iconNotViewedBorderColor: "#fd7c50",
-                                                    iconNotViewedBorderColorDarkMode: "#fd7c50",
-                                                    iconViewedBorderColor: "#fdc2a1",
-                                                    iconViewedBorderColorDarkMode: "#fdc2a1",
-                                                    iconViewedTransparency: 1.0,
-                                                    iconAnimatedLoaderColor: "#5ec169",
-                                                    iconPlaceholderColor: "#d6d6d6",
-                                                    iconPlaceholderColorDarkMode: "#d6d6d6",
-                                                    iconDisplayFormatSquare: false,
-                                                    labelWidth: 76,
-                                                    pinColor: "#fd7c50",
-                                                    pinColorDarkMode: "#fd7c50",
-                                                    closeIconColor: "#5ec169")
-
-        sdk.configuration().stories.setSlideDefaultButton(fontName: "Inter",
-                                                          fontSize: 17.0,
-                                                          textColor: "#ffffff",
-                                                          backgroundColor: "#5ec169",
-                                                          textColorDarkMode: "#000000",
-                                                          backgroundColorDarkMode: "#ffffff",
-                                                          cornerRadius: 5)
-
-        sdk.configuration().stories.setSlideProductsButton(fontName: "Inter",
-                                                           fontSize: 17.0,
-                                                           textColor: "#ffffff",
-                                                           backgroundColor: "#5ec169",
-                                                           textColorDarkMode: "#000000",
-                                                           backgroundColorDarkMode: "#ffffff",
-                                                           cornerRadius: 5)
-
-        sdk.configuration().stories.setProductsCard(fontName: "Inter",
-                                                    showProductsButtonText: "See all products",
-                                                    hideProductsButtonText: "Hide products")
-
-        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
-                                                     productTitleFontSize: 16.0,
-                                                     productTitleTextColor: "#5ec169",
-                                                     productTitleTextColorDarkMode: "#5ec169",
-                                                     productBannerOldPriceSectionFontColor: "#5ec169",
-                                                     productBannerPriceSectionFontColor: "#5ec169",
-                                                     productBannerPriceSectionBackgroundColor: "#ffffff",
-                                                     productBannerPromocodeSectionFontColor: "#ff0000",
-                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
-                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
-                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
-        
-        //SDK Recommendations Widget settings
-        sdk.configuration().recommendations.setWidget(fontNameWidget: "Inter",
-                                                      backgroundColorWidget: "#ffffff",
-                                                      backgroundColorDarkMode: "#000000",
-                                                      cellBackgroundColor: "#ffffff",
-                                                      cellBackgroundColorDarkMode: "#000000",
-                                                      borderWidth: 1,
-                                                      borderColor: "#c3c3c3",
-                                                      borderColorDarkMode: "#c3c3c3",
-                                                      borderTransparent: 0.4,
-                                                      cornerRadius: 9,
-                                                      starsColor: "#ff9500",
-                                                      addToCartButtonText: "Add to cart",
-                                                      removeFromCartButtonText: "Remove from cart",
-                                                      addToCartButtonFontSize: 17,
-                                                      removeFromCartButtonFontSize: 14,
-                                                      cartButtonTextColor: "#ffffff",
-                                                      cartButtonTextColorDarkMode: "#ffffff",
-                                                      cartButtonBackgroundColor: "#000000",
-                                                      cartButtonBackgroundColorDarkMode: "#ffffff",
-                                                      cartButtonNeedOpenWebUrl: false,
-                                                      favoritesIconColor: "#000000",
-                                                      favoritesIconColorDarkMode: "#ffffff",
-                                                      preloadIndicatorColor: "#ffffff",
-                                                      defaultMessageNoReviews: "No reviews")
-        
+//        
+//        //SDK Configuration init Font first
+//        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
+//
+//        //SDK Configuration settings
+//        sdk.configuration().stories.setStoriesBlock(fontName: "Inter",
+//                                                    fontSize: 15.0,
+//                                                    textColor: "#5ec169",
+//                                                    textColorDarkMode: "#5ec169",
+//                                                    backgroundColor: "#ffffff",
+//                                                    backgroundColorDarkMode: "#000000",
+//                                                    iconSize: 76,
+//                                                    iconBorderWidth: 2.3,
+//                                                    iconMarginX: 18,
+//                                                    iconMarginBottom: 8,
+//                                                    iconNotViewedBorderColor: "#fd7c50",
+//                                                    iconNotViewedBorderColorDarkMode: "#fd7c50",
+//                                                    iconViewedBorderColor: "#fdc2a1",
+//                                                    iconViewedBorderColorDarkMode: "#fdc2a1",
+//                                                    iconViewedTransparency: 1.0,
+//                                                    iconAnimatedLoaderColor: "#5ec169",
+//                                                    iconPlaceholderColor: "#d6d6d6",
+//                                                    iconPlaceholderColorDarkMode: "#d6d6d6",
+//                                                    iconDisplayFormatSquare: false,
+//                                                    labelWidth: 76,
+//                                                    pinColor: "#fd7c50",
+//                                                    pinColorDarkMode: "#fd7c50",
+//                                                    closeIconColor: "#5ec169")
+//
+//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Inter",
+//                                                          fontSize: 17.0,
+//                                                          textColor: "#ffffff",
+//                                                          backgroundColor: "#5ec169",
+//                                                          textColorDarkMode: "#000000",
+//                                                          backgroundColorDarkMode: "#ffffff",
+//                                                          cornerRadius: 5)
+//
+//        sdk.configuration().stories.setSlideProductsButton(fontName: "Inter",
+//                                                           fontSize: 17.0,
+//                                                           textColor: "#ffffff",
+//                                                           backgroundColor: "#5ec169",
+//                                                           textColorDarkMode: "#000000",
+//                                                           backgroundColorDarkMode: "#ffffff",
+//                                                           cornerRadius: 5)
+//
+//        sdk.configuration().stories.setProductsCard(fontName: "Inter",
+//                                                    showProductsButtonText: "See all products",
+//                                                    hideProductsButtonText: "Hide products")
+//
+//        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
+//                                                     productTitleFontSize: 16.0,
+//                                                     productTitleTextColor: "#5ec169",
+//                                                     productTitleTextColorDarkMode: "#5ec169",
+//                                                     productBannerOldPriceSectionFontColor: "#5ec169",
+//                                                     productBannerPriceSectionFontColor: "#5ec169",
+//                                                     productBannerPriceSectionBackgroundColor: "#ffffff",
+//                                                     productBannerPromocodeSectionFontColor: "#ff0000",
+//                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
+//                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
+//                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
+//        
+//        //SDK Recommendations Widget settings
+//        sdk.configuration().recommendations.setWidget(fontName: "Inter",
+//                                                      backgroundColor: "#ffffff",
+//                                                      backgroundColorDarkMode: "#000000",
+//                                                      cellBackgroundColor: "#ffffff",
+//                                                      cellBackgroundColorDarkMode: "#000000",
+//                                                      borderWidth: 1,
+//                                                      borderColor: "#c3c3c3",
+//                                                      borderColorDarkMode: "#c3c3c3",
+//                                                      borderTransparent: 0.4,
+//                                                      cornerRadius: 9,
+//                                                      starsColor: "#ff9500",
+//                                                      addToCartButtonText: "Add to cart",
+//                                                      removeFromCartButtonText: "Remove from cart",
+//                                                      addToCartButtonFontSize: 17,
+//                                                      removeFromCartButtonFontSize: 14,
+//                                                      cartButtonTextColor: "#ffffff",
+//                                                      cartButtonTextColorDarkMode: "#ffffff",
+//                                                      cartButtonBackgroundColor: "#000000",
+//                                                      cartButtonBackgroundColorDarkMode: "#ffffff",
+//                                                      cartButtonNeedOpenWebUrl: false,
+//                                                      favoritesIconColor: "#000000",
+//                                                      favoritesIconColorDarkMode: "#ffffff",
+//                                                      preloadIndicatorColor: "#ffffff",
+//                                                      defaultMessageNoReviews: "No reviews")
+//        
 //        //SDK Stories block collection cell indicator
 //        sdk.configuration().stories.storiesBlockPreloadIndicatorDisabled = true //default false - cell indicator enabled
 
@@ -476,7 +476,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //
 //        print("10. Testing full search with filters")
 //        //Available options for filtersSearchBy: "name", "popularity", "quantity"
-//        sdk.search(query: "jeans", sortBy: "popular", filtersSearchBy: "popularity", fashionSizes: ["36", "37", "38", "39", "42"], timeOut: 0.2) {
+//        sdk.search(query: "jeans", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], filtersSearchBy: "popularity", colors: ["white", "black"], fashionSizes: ["36", "37", "38", "39", "42"], timeOut: 0.2) {
 //            searchResponse in
 //            print("   Full search with filters callback")
 //            switch searchResponse {
@@ -550,26 +550,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-        sdk.subscribeForBackInStock(id: "807", email: "mail@example.com", fashionSize: "36") {
-            subscribeForBackInStockResponse in
-            print("   SubscribeForBackInStock callback")
-            switch subscribeForBackInStockResponse {
-            case let .success(subscribeForBackInStockResponse):
-                print("     subscribeForBackInStock is success")
-                withExtendedLifetime(subscribeForBackInStockResponse) {
-                    //print("Response:", subscribeForBackInStockResponse) //Uncomment it if you want to see response
-                }
-            case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
-                //fatalError("    subscribeForBackInStock is failure")
-            }
-        }
-        print("===END===")
+//        sdk.subscribeForBackInStock(id: "807", email: "mail@example.com", fashionSize: "36") {
+//            subscribeForBackInStockResponse in
+//            print("   SubscribeForBackInStock callback")
+//            switch subscribeForBackInStockResponse {
+//            case let .success(subscribeForBackInStockResponse):
+//                print("     subscribeForBackInStock is success")
+//                withExtendedLifetime(subscribeForBackInStockResponse) {
+//                    //print("Response:", subscribeForBackInStockResponse) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    subscribeForBackInStock is failure")
+//            }
+//        }
+//        print("===END===")
 
         return true
     }
