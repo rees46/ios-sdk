@@ -45,7 +45,8 @@ open class SearchWidgetCategoriesButton: UIButton {
                         layer.borderColor = UIColor.white.cgColor
                     }
                     
-                case .colored: break
+                case .colored:
+                    break
                 }
                 
             } else {

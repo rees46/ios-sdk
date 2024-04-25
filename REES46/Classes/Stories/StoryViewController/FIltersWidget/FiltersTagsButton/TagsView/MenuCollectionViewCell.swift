@@ -1,5 +1,4 @@
 import UIKit
-import REES46
 
 class MenuCollectionViewCell: UICollectionViewCell {
     
@@ -53,6 +52,4 @@ class MenuCollectionViewCell: UICollectionViewCell {
         }
         return layoutAttributes
     }
-    
-    
 }

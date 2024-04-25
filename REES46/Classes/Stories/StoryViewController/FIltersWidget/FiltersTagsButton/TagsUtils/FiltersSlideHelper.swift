@@ -1,6 +1,6 @@
 import Foundation
 
-struct MenuSlideHelper {
+struct FiltersSlideHelper {
     struct String {
         static let toNextSegue = "toNextSegue"
         static let tagsCell = "tagsCell"

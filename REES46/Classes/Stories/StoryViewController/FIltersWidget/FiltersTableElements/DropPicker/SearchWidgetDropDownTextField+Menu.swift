@@ -1,6 +1,5 @@
 import UIKit
 
-@available(iOS 15.0, *)
 @MainActor
 extension SearchWidgetDropDownTextField {
     
@@ -29,60 +28,72 @@ extension SearchWidgetDropDownTextField {
     }
     
     internal func initializeMenu() {
-        privateMenuButton.setImage(UIImage(systemName: "chevron.up.chevron.down"), for: .normal)
+        if #available(iOS 13.0, *) {
+            privateMenuButton.setImage(UIImage(systemName: "chevron.up.chevron.down"), for: .normal)
+        } else {
+            //
+        }
         privateMenuButton.contentHorizontalAlignment = .trailing
         privateMenuButton.contentEdgeInsets = .init(top: 0, left: 5, bottom: 0, right: 5)
         privateMenuButton.translatesAutoresizingMaskIntoConstraints = false
-        privateMenuButton.addTarget(self, action: #selector(menuActionTriggered), for: .menuActionTriggered)
-        privateMenuButton.showsMenuAsPrimaryAction = true
+        if #available(iOS 14.0, *) {
+            privateMenuButton.addTarget(self, action: #selector(menuActionTriggered), for: .menuActionTriggered)
+        } else {
+            //
+        }
+        if #available(iOS 14.0, *) {
+            privateMenuButton.showsMenuAsPrimaryAction = true
+        } else {
+            //
+        }
     }
     
     internal func reconfigureMenu() {
-        switch dropDownMode {
-            
-        case .list, .multiList:
-            let deferredMenuElement = UIDeferredMenuElement.uncached({ completion in
-                var actions: [UIMenuElement] = []
-                if self.multiItemList.count <= 1 {
-                    let selectedItem = self.selectedItem
-                    actions = self.itemList.map { item in
-                        return UIAction(title: item, image: nil,
-                                        state: item == selectedItem ? .on : .off) { (_) in
-                            self.privateSetSelectedItems(selectedItems: [item], animated: true, shouldNotifyDelegate: true)
-                        }
-                    }
-                } else {
-                    var selectedItems = self.selectedItems
-                    for (index, itemList) in self.multiItemList.enumerated() {
-                        let selectedItem = selectedItems[index]
-                        let childrens: [UIMenuElement] = itemList.map { item in
-                            return UIAction(title: item, image: nil,
-                                            state: item == selectedItem ? .on : .off) { (_) in
-                                selectedItems[index] = item
-                                self.privateSetSelectedItems(selectedItems: selectedItems, animated: true, shouldNotifyDelegate: true)
-                            }
-                        }
-                        
-                        let title: String
-                        if index < self.optionalItemTexts.count {
-                            title = self.optionalItemTexts[index] ?? self.optionalItemText ?? ""
-                        } else {
-                            title = self.optionalItemText ?? ""
-                        }
-                        let subMenu = UIMenu(title: title, children: childrens)
-
-                        actions.append(subMenu)
-                    }
-                }
-                completion(actions)
-            })
-            let deferredMenus = UIMenu(title: self.placeholder ?? "", children: [deferredMenuElement])
-            privateMenuButton.menu = deferredMenus
-            privateMenuButton.isHidden = false
-        case .textField:
-            privateMenuButton.isHidden = true
-            privateMenuButton.menu = nil
-        }
+//        switch dropDownMode {
+//            
+//        case .list, .multiList:
+//            let deferredMenuElement = UIDeferredMenuElement.uncached({ completion in
+//                var actions: [UIMenuElement] = []
+//                if self.multiItemList.count <= 1 {
+//                    let selectedItem = self.selectedItem
+//                    actions = self.itemList.map { item in
+//                        return UIAction(title: item, image: nil,
+//                                        state: item == selectedItem ? .on : .off) { (_) in
+//                            self.privateSetSelectedItems(selectedItems: [item], animated: true, shouldNotifyDelegate: true)
+//                        }
+//                    }
+//                } else {
+//                    var selectedItems = self.selectedItems
+//                    for (index, itemList) in self.multiItemList.enumerated() {
+//                        let selectedItem = selectedItems[index]
+//                        let childrens: [UIMenuElement] = itemList.map { item in
+//                            return UIAction(title: item, image: nil,
+//                                            state: item == selectedItem ? .on : .off) { (_) in
+//                                selectedItems[index] = item
+//                                self.privateSetSelectedItems(selectedItems: selectedItems, animated: true, shouldNotifyDelegate: true)
+//                            }
+//                        }
+//                        
+//                        let title: String
+//                        if index < self.optionalItemTexts.count {
+//                            title = self.optionalItemTexts[index] ?? self.optionalItemText ?? ""
+//                        } else {
+//                            title = self.optionalItemText ?? ""
+//                        }
+//                        let subMenu = UIMenu(title: title, children: childrens)
+//
+//                        actions.append(subMenu)
+//                    }
+//                }
+//                completion(actions)
+//            })
+//            let deferredMenus = UIMenu(title: self.placeholder ?? "", children: [deferredMenuElement])
+//            privateMenuButton.menu = deferredMenus
+//            privateMenuButton.isHidden = false
+//        case .textField:
+//            privateMenuButton.isHidden = true
+//            privateMenuButton.menu = nil
+//        }
     }
     
     @objc private func menuActionTriggered() {

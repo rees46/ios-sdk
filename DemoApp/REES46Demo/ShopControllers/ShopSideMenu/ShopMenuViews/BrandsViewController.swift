@@ -1,7 +1,7 @@
 import UIKit
 
-@available(iOS 14.0, *)
 class BrandsViewController: UIViewController {
+    
     @IBOutlet var sideMenuBtn: UIBarButtonItem!
     
     override func viewDidLoad() {

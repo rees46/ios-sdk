@@ -56,7 +56,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         } else {
             self.backgroundColor = .black
         }
-        
         videoView.backgroundColor = .black
         
         NotificationCenter.default.addObserver(self, selector: #selector(willEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -102,8 +101,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     public func configure(slide: Slide) {
         self.currentSlide = slide
-        
-        //reloadButton.configReloadButton()
         
         if (currentSlide?.backgroundColor != nil || currentSlide?.backgroundColor != "") {
             let color = currentSlide?.backgroundColor.hexToRGB()
@@ -391,7 +388,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         addSubview(muteButton)
     }
     
-    @objc func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
+    @objc func sdkMustDetectNilTap(_ sender: UITapGestureRecognizer? = nil) {
         //
     }
     
@@ -578,7 +575,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         
         let v = UIView()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkNilTap(_:)))
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkMustDetectNilTap(_:)))
         promocodeBannerView.addGestureRecognizer(tap)
         v.addSubview(presentedBannerLabel)
         
@@ -595,9 +592,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else {
                 
                 var frameworkBundle = Bundle(for: classForCoder)
-        #if SWIFT_PACKAGE
+#if SWIFT_PACKAGE
                 frameworkBundle = Bundle.module
-        #endif
+#endif
                 let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
                 
                 let copyIconImageView = UIImageView(image: copyIcon)

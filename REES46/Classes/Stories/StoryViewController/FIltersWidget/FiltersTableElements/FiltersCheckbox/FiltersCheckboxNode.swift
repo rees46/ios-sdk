@@ -1,6 +1,5 @@
 import UIKit
 
-@available(iOS 13.0, *)
 class FiltersCheckboxNode<T: FiltersCheckboxItem> {
 
     private(set) var style: FiltersCheckboxTreeStyle<T>

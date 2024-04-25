@@ -4,7 +4,6 @@ protocol ShopSideMenuViewControllerDelegate {
     func selectedCell(_ row: Int)
 }
 
-@available(iOS 13.0, *)
 class ShopSideMenuViewController: UIViewController {
     @IBOutlet var headerImageView: UIImageView!
     @IBOutlet var sideMenuTableView: UITableView!
@@ -21,19 +20,20 @@ class ShopSideMenuViewController: UIViewController {
     var defaultHighlightedCell: Int = 0
 
     var menu: [ShopSideMenuModel] = [
-        ShopSideMenuModel(icon: UIImage(systemName: "house.fill")!, title: "Home"),
-        ShopSideMenuModel(icon: UIImage(systemName: "house.fill")!, title: "WOMENS"),
-        ShopSideMenuModel(icon: UIImage(systemName: "music.note")!, title: "MENS"),
-        ShopSideMenuModel(icon: UIImage(systemName: "film.fill")!, title: "GIRLS"),
-        ShopSideMenuModel(icon: UIImage(systemName: "book.fill")!, title: "BOYS"),
-        ShopSideMenuModel(icon: UIImage(systemName: "person.fill")!, title: "BABY"),
-        ShopSideMenuModel(icon: UIImage(systemName: "slider.horizontal.3")!, title: "HOLIDAY SHOP"),
-        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "BRANDS"),
-        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "TREDING"),
-        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "SALE"),
-        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "Delivery"),
-        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "Returns"),
-        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "Shopping cart")
+        
+//        ShopSideMenuModel(icon: UIImage(systemName: "house.fill")!, title: "Home"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "house.fill")!, title: "WOMENS"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "music.note")!, title: "MENS"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "film.fill")!, title: "GIRLS"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "book.fill")!, title: "BOYS"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "person.fill")!, title: "BABY"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "slider.horizontal.3")!, title: "HOLIDAY SHOP"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "book.fill")!, title: "BRANDS"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "TREDING"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "music.note")!, title: "SALE"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "Delivery"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "hand.thumbsup.fill")!, title: "Returns"),
+//        ShopSideMenuModel(icon: UIImage(systemName: "house.fill")!, title: "Shopping cart")
         
     ]
 
@@ -44,11 +44,6 @@ class ShopSideMenuViewController: UIViewController {
         self.sideMenuTableView.dataSource = self
         self.sideMenuTableView.backgroundColor = #colorLiteral(red: 0.9921568627, green: 0.9921568627, blue: 0.9921568627, alpha: 1)
         self.sideMenuTableView.separatorStyle = .none
-
-//        DispatchQueue.main.async {
-//            let defaultRow = IndexPath(row: self.defaultHighlightedCell, section: 0)
-//            self.sideMenuTableView.selectRow(at: defaultRow, animated: false, scrollPosition: .none)
-//        }
 
         self.footerLabel.textColor = UIColor.white
         //self.footerLabel.font = UIFont.systemFont(ofSize: 14, weight: .bold)
@@ -85,14 +80,12 @@ class ShopSideMenuViewController: UIViewController {
     }
 }
 
-@available(iOS 13.0, *)
 extension ShopSideMenuViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 48
     }
 }
 
-@available(iOS 13.0, *)
 extension ShopSideMenuViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.menu.count

@@ -20,7 +20,7 @@ public enum Event {
     case synchronizeCart (items: [CartItem])
     case slideView(storyId: String, slideId: String)
     case slideClick(storyId: String, slideId: String)
-    case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil, customProperties: [String: Any?]?)
+    case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil, customProperties: [String: Any]? = nil)
 }
 
 public enum SDKError: Error, CustomStringConvertible {
@@ -103,7 +103,7 @@ public protocol PersonalizationSDK {
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, filtersSearchBy: String?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: [String]?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func getStories(code: String, completion: @escaping(Result<StoryContent, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
@@ -116,6 +116,10 @@ public protocol PersonalizationSDK {
 }
 
 public extension PersonalizationSDK {
+    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
+       setPushTokenNotification(token: token, platform: platform, completion: completion)
+    }
+    
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }
@@ -148,15 +152,11 @@ public extension PersonalizationSDK {
         trackEvent(event: event, category: category, label: label, value: value, completion: completion)
     }
     
-    func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping(Result<Void, SDKError>) -> Void) {
-           setPushTokenNotification(token: token, platform: platform, completion: completion)
-    }
-    
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         notificationClicked(type: type, code: code, completion: completion)
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
     }
     

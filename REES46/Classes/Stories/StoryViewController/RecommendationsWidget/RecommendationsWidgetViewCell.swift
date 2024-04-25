@@ -244,22 +244,22 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
     public override func layoutSubviews() {
         super.layoutSubviews()
         
-        var widgetCellBackgroundColor = SdkConfiguration.recommendations.widgetCellBackgroundColor.hexToRGB()
+        var cellBackgroundColor = SdkConfiguration.recommendations.cellBackgroundColor.hexToRGB()
         if SdkConfiguration.isDarkMode {
-            widgetCellBackgroundColor = SdkConfiguration.recommendations.widgetCellBackgroundColorDarkMode.hexToRGB()
+            cellBackgroundColor = SdkConfiguration.recommendations.cellBackgroundColorDarkMode.hexToRGB()
         }
-        layer.backgroundColor = UIColor(red: widgetCellBackgroundColor.red, green: widgetCellBackgroundColor.green, blue: widgetCellBackgroundColor.blue, alpha: 1).cgColor
+        layer.backgroundColor = UIColor(red: cellBackgroundColor.red, green: cellBackgroundColor.green, blue: cellBackgroundColor.blue, alpha: 1).cgColor
         
         layer.masksToBounds = true
-        layer.borderWidth = SdkConfiguration.recommendations.widgetBorderWidth
+        layer.borderWidth = SdkConfiguration.recommendations.borderWidth
         
-        var widgetCellBorderColor = SdkConfiguration.recommendations.widgetBorderColor.hexToRGB()
+        var cellBorderColor = SdkConfiguration.recommendations.borderColor.hexToRGB()
         if SdkConfiguration.isDarkMode {
-            widgetCellBorderColor = SdkConfiguration.recommendations.widgetBorderColorDarkMode.hexToRGB()
+            cellBorderColor = SdkConfiguration.recommendations.borderColorDarkMode.hexToRGB()
         }
-        layer.borderColor = UIColor(red: widgetCellBorderColor.red, green: widgetCellBorderColor.green, blue: widgetCellBorderColor.blue, alpha: 1).withAlphaComponent(SdkConfiguration.recommendations.widgetBorderTransparent).cgColor
+        layer.borderColor = UIColor(red: cellBorderColor.red, green: cellBorderColor.green, blue: cellBorderColor.blue, alpha: 1).withAlphaComponent(SdkConfiguration.recommendations.borderTransparent).cgColor
         
-        layer.cornerRadius = SdkConfiguration.recommendations.widgetCornerRadius
+        layer.cornerRadius = SdkConfiguration.recommendations.cornerRadius
     }
     
     func saveWidgetStarRating() {

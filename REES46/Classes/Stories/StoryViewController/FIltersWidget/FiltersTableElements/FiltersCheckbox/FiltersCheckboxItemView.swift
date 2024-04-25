@@ -1,6 +1,5 @@
 import UIKit
 
-@available(iOS 13.0, *)
 open class FiltersCheckboxItemView<T: FiltersCheckboxItem>: UIView {
 
     public private(set) var style: FiltersCheckboxTreeStyle<T>
@@ -39,18 +38,12 @@ open class FiltersCheckboxItemView<T: FiltersCheckboxItem>: UIView {
     open func updateSelectionImage(item: FiltersCheckboxItem) {
         let resultPrefix = item.title.prefix(9)
         switch item.selectionState {
-//            if item.title = "Show more" {
-//                
-//            }
-            
         case .on:
             if resultPrefix == "Show more" {
                 selectionImageView?.image = style.images.checkboxOn
             } else {
                 selectionImageView?.image = style.images.checkboxOn
             }
-            
-           // selectionImageView?.image = style.images.checkboxOn
         case .off:
             
             if resultPrefix == "Show more" {
@@ -58,15 +51,12 @@ open class FiltersCheckboxItemView<T: FiltersCheckboxItem>: UIView {
             } else {
                 selectionImageView?.image = style.images.checkboxOff
             }
-            
-            //selectionImageView?.image = style.images.checkboxOff
         case .mixed:
             if resultPrefix == "Show more" {
                 selectionImageView?.image = style.images.checkboxMixed
             } else {
                 selectionImageView?.image = style.images.checkboxMixed
             }
-           // selectionImageView?.image = style.images.checkboxMixed
         }
 
         if !item.isEnabled {

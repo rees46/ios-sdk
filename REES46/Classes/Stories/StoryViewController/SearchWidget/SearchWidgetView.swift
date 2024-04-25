@@ -25,7 +25,7 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
         self.sdkSearchWidgetListView.sdkSearchWidgetListViewDelegate = self
         self.sdkSearchWidgetListView.isHidden = true
         
-        if let viewAllSearchResultsButton = self.sdkSearchWidgetMainView.viewAllSearchResultsButton {
+        if self.sdkSearchWidgetMainView.viewAllSearchResultsButton != nil {
             let size = CGSize(width: self.frame.width, height: self.sdkSearchWidgetMainView.viewAllSearchResultsButton.frame.origin.y + self.sdkSearchWidgetMainView.viewAllSearchResultsButton.frame.height + 1000)
             self.sdkSearchWidgetScrollView.contentSize = size
         } else {

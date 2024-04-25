@@ -19,7 +19,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var deviceId: String
     var userSeance: String
     var stream: String
-    //var clientCurrency: String
     
     var baseURL: String
     let baseInitJsonFileName = ".json"
@@ -56,7 +55,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
-        //self.clientCurrency = getCurrentCurrency()
         
         // Generate seance
         userSeance = UUID().uuidString
@@ -67,7 +65,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Trying to fetch user session (permanent user Id)
         deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
-       // let networkManager = NetworkStatus.nManager
+        //let networkManager = NetworkStatus.nManager
         //networkManager.addObserver(observer: NetworkStatusObserver.self as! NetworkStatusObserver)
         
         urlSession = URLSession.shared
@@ -79,7 +77,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         self.userInfo = res
                         self.userSeance = res.seance
                         self.deviceId = res.deviceId
-                        //self.clientCurrency = successCurrencyDetect
                         if let completion = completion {
                             completion(nil)
                         }
@@ -129,10 +126,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getShopId() -> String {
         return shopId
     }
-    
-//    func getCurrentCurrency() -> String {
-//        return clientCurrency
-//    }
 
     func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
@@ -587,7 +580,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     params["tax_free"] = taxFree
                 }
                 if let customProperties = customProperties {
-                    params.merge(customProperties) { (_, new) in new }
+                    var customItems: [[String: Any]] = []
+                    customItems.append(customProperties)
+                    params["custom"] = customItems
                 }
                 paramEvent = "purchase"
             case let .synchronizeCart(items):
@@ -970,14 +965,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "subscriptions/subscribe_for_product_available"
-            
-//            if let fashionSize = fashionSize {
-//                let fashionSizeArray = self.generateString(array: fashionSize)
-//                //params["fashion_size"] = fashionSizeArray
-//            }
             
             var params: [String: Any] = [
                 "shop_id": self.shopId,
@@ -985,39 +975,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment,
-                "item_id": id,
-               /// "properties": {"fashion_size": fashionSizesArray, "barcode": "222222"}
+                "item_id": id
             ]
             
-            //{fashion_size: "XL", barcode: "222222"}
-            
             if let fashionSize = fashionSize {
-               // let words = f.components(separatedBy: [",", " ", "!",".","?"])
-                    
-                    
-          //  } // [Optional(0.01), Optional(2.02), Optional(0.1), Optional(0.0)]
-
-                
-                
-                
-                let tmpSizesArray = self.generateString(array: fashionSize)
-                let words = tmpSizesArray.components(separatedBy: [","])
-                for item in words {
-                    //params["properties"] = ["fashion_size": item]
-                }
-                params["properties"] = ["fashion_size": 36]
+                params["properties"] = ["fashion_size": fashionSize]
             }
             
-//            if let fashionSize = fashionSize {
-//                let fashionSizeArray = self.generateString(array: fashionSize)
-//                for item in fashionSizeArray {
-//                    params["properties"] = fashionSizeArray
-//                }
-//                
-//                
-//                params["properties"] = fashionSizeArray
-//            }
-            print(params)
             if let email = email {
                 params["email"] = email
             }
@@ -1263,7 +1227,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
                 completion(.success(resultResponse))
-            case let .failure(error):
+            case .failure(_):
                 //completion(.failure(error))
                 
                 completion(.failure(.custom(error: "SDK: Successful re-init or IDFA request")))

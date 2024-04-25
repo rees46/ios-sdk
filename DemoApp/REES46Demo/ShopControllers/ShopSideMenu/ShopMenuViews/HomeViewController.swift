@@ -1,6 +1,5 @@
 import UIKit
 
-@available(iOS 14.0, *)
 class HomeViewController: UIViewController {
     @IBOutlet var sideMenuBtn: UIBarButtonItem!
 

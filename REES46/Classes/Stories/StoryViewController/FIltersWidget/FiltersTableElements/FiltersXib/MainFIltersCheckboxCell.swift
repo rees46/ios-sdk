@@ -1,17 +1,14 @@
 import UIKit
-import REES46
 
-@available(iOS 13.0, *)
 protocol MainFiltersCheckboxCellDelegate: AnyObject {
     func collapseSection(header: MainFiltersCheckboxCell, section: Int)
     func updateTableWithFiltersNow(_ section: Int)
     func reloadSectionsInFiltersTable(_ section: Int)
 }
 
-@available(iOS 13.0, *)
 class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
-    func collapseSection(header: FiltersCheckboxItem, section: Int) {
-        //
+    public func collapseSection(header: FiltersCheckboxItem, section: Int) {
+        //SDK: Detect tap callback
     }
     
     var menuList = [FiltersMenu]()
@@ -49,24 +46,6 @@ class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     var items = [FiltersCheckboxItem]()
     
     var menu = FiltersMenu(filterId: -99, title: "Menu", titleFiltersValues: ["String"], selected: false)
-    
-//     var items = [FiltersCheckboxItem(title: "All",
-//                                isSelected: true),
-//                 FiltersCheckboxItem(title: "Leather",
-//                                isSelected: true),
-//                 FiltersCheckboxItem(title: "Rubber",
-//                                isSelected: true),
-//                 FiltersCheckboxItem(title: "Cotton",
-//                                isSelected: true),
-//                 
-//                 FiltersCheckboxItem(title: "Show more (2)",
-//                                children: [
-//                                    FiltersCheckboxItem(title: "Wool",
-//                                                   isSelected: true),
-//                                    FiltersCheckboxItem(title: "Jeans",
-//                                                   isSelected: true),
-//                                ], isGroupCollapsed: true),
-//    ]
 
     let checkboxTree = FiltersCheckboxTree()
     
@@ -76,9 +55,6 @@ class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
                 return
             }
             setCollapsed(collapsed: true)
-//            if let pictureUrl = item.pictureURL {
-//                pictureImageView?.image = UIImage(named: pictureUrl)
-//            }
             
             nameLabel?.text = itemForFiltersWIdget.title
             setCollapsed(collapsed: itemForFiltersWIdget.isCollapsed)
@@ -139,7 +115,6 @@ class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
             contentView.leftAnchor.constraint(equalTo: scrollView.leftAnchor),
             contentView.rightAnchor.constraint(equalTo: scrollView.rightAnchor),
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-
             contentView.widthAnchor.constraint(equalTo: widthAnchor)
         ])
 
@@ -156,7 +131,6 @@ class MainFiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
             contentStackView.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: 0),
             contentStackView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: 0)
         ])
-        
         
         checkboxTree.delegate = self
         

@@ -37,184 +37,117 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-//        let nManager = NetworkStatus.nManager=-
-//        nManager.addObserver(observer: self)
+        
         print("A. Init firebase sdk")
         FirebaseApp.configure()
         Messaging.messaging().delegate = self
         print("======")
-        
-        //sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
-        sdk = createPersonalizationSDK(shopId: "74fd3b613553b97107bc4502752749", apiDomain: "api.r46.technodom.kz", enableLogs: true, { error in
-                
-        //sdk = createPersonalizationSDK(shopId: "", userEmail: "", userPhone: "", userLoyaltyId: "", apiDomain: "api.rees46.com", enableLogs: true, { error in
-            
-        //sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
-            print("SDK: Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdk.getShopId())
+
+        print("0. Init SDK")
+        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
+            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdk.getShopId())
             didToken = self.sdk.getDeviceId()
             globalSDK = self.sdk
             NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
-                    print("SDK: Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
-                    didToken = self.sdkAdditionalInit.getDeviceId()
-                    globalSDKAdditionalInit = self.sdkAdditionalInit
-                    NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
-                })
-            }
         })
 
 //        print("1. Init additional SDK if needed")
-//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.rees46.ru", enableLogs: true, { error in
-//            //print("SDK: Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
+//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.domain", enableLogs: true, { error in
+//            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
 //            didToken = self.sdkAdditionalInit.getDeviceId()
 //            globalSDKAdditionalInit = self.sdkAdditionalInit
 //            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
 //        })
         
-//        //SDK Configuration init Font first
-//        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
-//
-//        //SDK Configuration settings
-//        sdk.configuration().stories.setStoriesBlock(fontName: "Inter",
-//                                                    fontSize: 15.0,
-//                                                    textColor: "#5ec169",
-//                                                    textColorDarkMode: "#5ec169",
-//                                                    backgroundColor: "#ffffff",
-//                                                    backgroundColorDarkMode: "#000000",
-//                                                    iconSize: 76,
-//                                                    iconBorderWidth: 2.3,
-//                                                    iconMarginX: 18,
-//                                                    iconMarginBottom: 8,
-//                                                    iconNotViewedBorderColor: "#fd7c50",
-//                                                    iconNotViewedBorderColorDarkMode: "#fd7c50",
-//                                                    iconViewedBorderColor: "#fdc2a1",
-//                                                    iconViewedBorderColorDarkMode: "#fdc2a1",
-//                                                    iconViewedTransparency: 1.0,
-//                                                    iconAnimatedLoaderColor: "#5ec169",
-//                                                    iconPlaceholderColor: "#d6d6d6",
-//                                                    iconPlaceholderColorDarkMode: "#d6d6d6",
-//                                                    iconDisplayFormatSquare: false,
-//                                                    labelWidth: 76,
-//                                                    pinColor: "#fd7c50",
-//                                                    pinColorDarkMode: "#fd7c50",
-//                                                    closeIconColor: "#5ec169")
-//
-//        sdk.configuration().stories.setSlideDefaultButton(fontName: "Inter",
-//                                                          fontSize: 17.0,
-//                                                          textColor: "#ffffff",
-//                                                          backgroundColor: "#5ec169",
-//                                                          textColorDarkMode: "#000000",
-//                                                          backgroundColorDarkMode: "#ffffff",
-//                                                          cornerRadius: 5)
-//
-//        sdk.configuration().stories.setSlideProductsButton(fontName: "Inter",
-//                                                           fontSize: 17.0,
-//                                                           textColor: "#ffffff",
-//                                                           backgroundColor: "#5ec169",
-//                                                           textColorDarkMode: "#000000",
-//                                                           backgroundColorDarkMode: "#ffffff",
-//                                                           cornerRadius: 5)
-//
-//        sdk.configuration().stories.setProductsCard(fontName: "Inter",
-//                                                    showProductsButtonText: "See all products",
-//                                                    hideProductsButtonText: "Hide products")
-//
-//        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
-//                                                     productTitleFontSize: 16.0,
-//                                                     productTitleTextColor: "#5ec169",
-//                                                     productTitleTextColorDarkMode: "#5ec169",
-//                                                     productBannerOldPriceSectionFontColor: "#5ec169",
-//                                                     productBannerPriceSectionFontColor: "#5ec169",
-//                                                     productBannerPriceSectionBackgroundColor: "#ffffff",
-//                                                     productBannerPromocodeSectionFontColor: "#ff0000",
-//                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
-//                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
-//                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
-//        
-//        //SDK Recommendations Widget settings
-//        sdk.configuration().recommendations.setWidget(fontName: "Inter",
-//                                                      backgroundColor: "#ffffff",
-//                                                      backgroundColorDarkMode: "#000000",
-//                                                      cellBackgroundColor: "#ffffff",
-//                                                      cellBackgroundColorDarkMode: "#000000",
-//                                                      borderWidth: 1,
-//                                                      borderColor: "#c3c3c3",
-//                                                      borderColorDarkMode: "#c3c3c3",
-//                                                      borderTransparent: 0.4,
-//                                                      bornerRadius: 9,
-//                                                      starsColor: "#ff9500",
-//                                                      addToCartButtonText: "Add to cart",
-//                                                      removeFromCartButtonText: "Remove from cart",
-//                                                      addToCartButtonFontSize: 17,
-//                                                      removeFromCartButtonFontSize: 14,
-//                                                      cartButtonTextColor: "#ffffff",
-//                                                      cartButtonTextColorDarkMode: "#ffffff",
-//                                                      cartButtonBackgroundColor: "#000000",
-//                                                      cartButtonBackgroundColorDarkMode: "#ffffff",
-//                                                      cartButtonNeedOpenWebUrl: false,
-//                                                      favoritesIconColor: "#000000",
-//                                                      favoritesIconColorDarkMode: "#ffffff",
-//                                                      preloadIndicatorColor: "#ffffff",
-//                                                      defaultMessageNoReviews: "No reviews")
-//        
-//        //SDK Search Widget settings
-//        sdk.configuration().search.setWidget(fontName: "Inter",
-//                                             backgroundColor: "#ffffff",
-//                                             backgroundColorDarkMode: "#000000",
-//                                             
-//                                             searchFieldPlaceholder: "Search",
-//                                             searchFieldCornerRadius: 5,
-//                                             searchFieldFontSize: 17.0,
-//                                             searchFieldFontWeight = .medium,
-//                                             
-//                                             searchFieldFontColor: "#ffffff",
-//                                             searchFieldFontColorDarkMode: "#000000",
-//                                             searchFieldBackgroundColor: "#ffffff",
-//                                             searchFieldBackgroundColorDarkMode: "#000000",
-//                                             
-//                                             textLabelRequestsHistory = "YOUR REQUESTS HISTORY",
-//                                             textLabelSuitableCategories = "SUITABLE CATEGORIES",
-//                                             textLabelSuitableProducts = "SUITABLE PRODUCTS",
-//                                             textLabelFrequent = "FREQUENT QUERIES",
-//                                             textLabelInterestingOffers = "INTERESTING OFFERS FOR YOU",
-//                                             textLabelRecently = "RECENTLY VIEWED PRODUCTS",
-//                                             
-//                                            
-//                                             searchResultsPlaceholder: "Search Results",
-//                                             searchResultsFoundedPlaceholder: "found \(item) products",
-//                                             searchResultsStarsColor: "#ff9500",
-//                                             searchResultsBorderRadius: 9,
-//                                             addToCartButtonText: "Shop",
-//                                             addToCartButtonFontSize: 14,
-//                                             
-//                                             filtersPageName: "Filters",
-//                                             filtersFontColor: "#ffffff",
-//                                             filtersFontColorDarkMode: "#000000",
-//                                             filtersFontSize: 44,
-//                                             filtersFontWeight = .medium,
-//                                             
-//                                             filtersCheckboxColor: "#ffffff",
-//                                             filtersCheckboxColorDarkMode: "#000000",
-//                                             filtersCheckboxType: .square,
-//                                             
-//                                             filtersIconColor: "#000000",
-//                                             filtersIconColorDarkMode: "#ffffff",
-//                                             
-//                                             filtersPriceSliderColor: "#ffffff",
-//                                             filtersPriceSliderColorDarkMode: "#ffffff",
-//                                             
-//                                             closeIconColor: "#ffffff",
-//                                             closeIconColorDarkMode: "#ffffff",
-//                                             
-//                                             defaultMessageViewAllButton: "View All",
-//                                             defaultMessageNoResults: "No results",
-//                                             defaultMessageNoFilters: "No filters available")
-//
+        //SDK Configuration init Font first
+        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
+
+        //SDK Configuration settings
+        sdk.configuration().stories.setStoriesBlock(fontName: "Inter",
+                                                    fontSize: 15.0,
+                                                    textColor: "#5ec169",
+                                                    textColorDarkMode: "#5ec169",
+                                                    backgroundColor: "#ffffff",
+                                                    backgroundColorDarkMode: "#000000",
+                                                    iconSize: 76,
+                                                    iconBorderWidth: 2.3,
+                                                    iconMarginX: 18,
+                                                    iconMarginBottom: 8,
+                                                    iconNotViewedBorderColor: "#fd7c50",
+                                                    iconNotViewedBorderColorDarkMode: "#fd7c50",
+                                                    iconViewedBorderColor: "#fdc2a1",
+                                                    iconViewedBorderColorDarkMode: "#fdc2a1",
+                                                    iconViewedTransparency: 1.0,
+                                                    iconAnimatedLoaderColor: "#5ec169",
+                                                    iconPlaceholderColor: "#d6d6d6",
+                                                    iconPlaceholderColorDarkMode: "#d6d6d6",
+                                                    iconDisplayFormatSquare: false,
+                                                    labelWidth: 76,
+                                                    pinColor: "#fd7c50",
+                                                    pinColorDarkMode: "#fd7c50",
+                                                    closeIconColor: "#5ec169")
+
+        sdk.configuration().stories.setSlideDefaultButton(fontName: "Inter",
+                                                          fontSize: 17.0,
+                                                          textColor: "#ffffff",
+                                                          backgroundColor: "#5ec169",
+                                                          textColorDarkMode: "#000000",
+                                                          backgroundColorDarkMode: "#ffffff",
+                                                          cornerRadius: 5)
+
+        sdk.configuration().stories.setSlideProductsButton(fontName: "Inter",
+                                                           fontSize: 17.0,
+                                                           textColor: "#ffffff",
+                                                           backgroundColor: "#5ec169",
+                                                           textColorDarkMode: "#000000",
+                                                           backgroundColorDarkMode: "#ffffff",
+                                                           cornerRadius: 5)
+
+        sdk.configuration().stories.setProductsCard(fontName: "Inter",
+                                                    showProductsButtonText: "See all products",
+                                                    hideProductsButtonText: "Hide products")
+
+        sdk.configuration().stories.setPromocodeCard(productBannerFontName: "Inter",
+                                                     productTitleFontSize: 16.0,
+                                                     productTitleTextColor: "#5ec169",
+                                                     productTitleTextColorDarkMode: "#5ec169",
+                                                     productBannerOldPriceSectionFontColor: "#5ec169",
+                                                     productBannerPriceSectionFontColor: "#5ec169",
+                                                     productBannerPriceSectionBackgroundColor: "#ffffff",
+                                                     productBannerPromocodeSectionFontColor: "#ff0000",
+                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
+                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
+                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
+        
+        //SDK Recommendations Widget settings
+        sdk.configuration().recommendations.setWidget(fontNameWidget: "Inter",
+                                                      backgroundColorWidget: "#ffffff",
+                                                      backgroundColorDarkMode: "#000000",
+                                                      cellBackgroundColor: "#ffffff",
+                                                      cellBackgroundColorDarkMode: "#000000",
+                                                      borderWidth: 1,
+                                                      borderColor: "#c3c3c3",
+                                                      borderColorDarkMode: "#c3c3c3",
+                                                      borderTransparent: 0.4,
+                                                      cornerRadius: 9,
+                                                      starsColor: "#ff9500",
+                                                      addToCartButtonText: "Add to cart",
+                                                      removeFromCartButtonText: "Remove from cart",
+                                                      addToCartButtonFontSize: 17,
+                                                      removeFromCartButtonFontSize: 14,
+                                                      cartButtonTextColor: "#ffffff",
+                                                      cartButtonTextColorDarkMode: "#ffffff",
+                                                      cartButtonBackgroundColor: "#000000",
+                                                      cartButtonBackgroundColorDarkMode: "#ffffff",
+                                                      cartButtonNeedOpenWebUrl: false,
+                                                      favoritesIconColor: "#000000",
+                                                      favoritesIconColorDarkMode: "#ffffff",
+                                                      preloadIndicatorColor: "#ffffff",
+                                                      defaultMessageNoReviews: "No reviews")
+        
 //        //SDK Stories block collection cell indicator
 //        sdk.configuration().stories.storiesBlockPreloadIndicatorDisabled = true //default false - cell indicator enabled
-//
+
 //        //SDK Stories Slide default indicator
 //        sdk.configuration().stories.storiesSlideReloadIndicatorDisabled = true //default false - slide indicator enabled
 //        sdk.configuration().stories.storiesSlideReloadIndicatorBackgroundColor = "#ffffff"
@@ -234,16 +167,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        sdk.configuration().stories.storiesSlideReloadPopupMessageFontWeight = .medium
 //        sdk.configuration().stories.storiesSlideReloadPopupMessageDisplayTime = 4
 //        sdk.configuration().stories.storiesSlideReloadPopupPositionY = 120 //default constant
-//        
+        
 //        //SDK Stories block text label characters wrapping settings
 //        sdk.configuration().stories.storiesBlockNumberOfLines = 0
 //        sdk.configuration().stories.storiesBlockCharWrapping = false
 //        sdk.configuration().stories.storiesBlockCharCountWrap = 15
-//        
-//        print("2. Register push")
-//        notificationService = NotificationService(sdk: sdk)
-//        notificationService?.pushActionDelegate = self
-//        print("======")
+        
+        print("2. Register push")
+        notificationService = NotificationService(sdk: sdk)
+        notificationService?.pushActionDelegate = self
+        print("======")
 
 //        print("3. Testing tracking")
 //        sdk.trackSource(source: .chain, code: "123123")
@@ -481,6 +414,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        }
 //
 //        print("7. Testing products list")
+//        //Available options for filtersSearchBy: "name", "popularity", "quantity"
 //        sdk.getProductsList(brands: "Hasbro", categories: "Toys", locations: "Shops", filters: ["Screen size, inch": ["15.6"]], filtersSearchBy: "name") { productsListResponse in
 //            print("   Testing get products list callback")
 //            switch productsListResponse {
@@ -539,36 +473,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                //fatalError("    instant search is failure")
 //            }
 //        }
-//        
-//        print("10. Testing full search with few parameters")
-//        sdk.search(query: "dress", sortBy: "popular", timeOut: 0.2) { searchResponse in
-//            print("   Full search with few parameters callback")
-//            switch searchResponse {
-//            case let .success(response):
-//                print("     full search with few parameters is success")
-//                withExtendedLifetime(response) {
-//                    //print("Response:", response) //Uncomment it if you want to see response
-//                }
-//            case let .failure(error):
-//                switch error {
-//                case let .custom(customError):
-//                    print("Error:", customError)
-//                default:
-//                    print("Error:", error.description)
-//                }
-//                //fatalError("    full search with few parameters is failure")
-//            }
-//        }
 //
 //        print("10. Testing full search with filters")
-//        sdk.search(query: "jeans", sortBy: "popular", filtersSearchBy: "name", timeOut: 0.2) {
+//        //Available options for filtersSearchBy: "name", "popularity", "quantity"
+//        sdk.search(query: "jeans", sortBy: "popular", filtersSearchBy: "popularity", fashionSizes: ["36", "37", "38", "39", "42"], timeOut: 0.2) {
 //            searchResponse in
 //            print("   Full search with filters callback")
 //            switch searchResponse {
-//            case let .success(response):
+//            case let .success(searchResponse):
 //                print("     full search with filters is success")
-//                withExtendedLifetime(response) {
-//                    print("Response:", response) //Uncomment it if you want to see response
+//                withExtendedLifetime(searchResponse) {
+//                    //print("Response:", searchResponse) //Uncomment it if you want to see response
 //                }
 //            case let .failure(error):
 //                switch error {
@@ -635,32 +550,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        sdk.subscribeForBackInStock(id: "807", email: "pp@rees46.ru", fashionSize: ["36", "37"]) {
-//            subscribeForBackInStockResponse in
-//            print("   SubscribeForBackInStock callback")
-//            switch subscribeForBackInStockResponse {
-//            case let .success(subscribeForBackInStockResponse):
-//                print("     subscribeForBackInStock is success")
-//                withExtendedLifetime(subscribeForBackInStockResponse) {
-//                    print("Response:", subscribeForBackInStockResponse) //Uncomment it if you want to see response
-//                }
-//            case let .failure(error):
-//                switch error {
-//                case let .custom(customError):
-//                    print("Error:", customError)
-//                default:
-//                    print("Error:", error.description)
-//                }
-//                //fatalError("    full search is failure")
-//            }
-//        }
-//        print("===END===")
+        sdk.subscribeForBackInStock(id: "807", email: "mail@example.com", fashionSize: "36") {
+            subscribeForBackInStockResponse in
+            print("   SubscribeForBackInStock callback")
+            switch subscribeForBackInStockResponse {
+            case let .success(subscribeForBackInStockResponse):
+                print("     subscribeForBackInStock is success")
+                withExtendedLifetime(subscribeForBackInStockResponse) {
+                    //print("Response:", subscribeForBackInStockResponse) //Uncomment it if you want to see response
+                }
+            case let .failure(error):
+                switch error {
+                case let .custom(customError):
+                    print("Error:", customError)
+                default:
+                    print("Error:", error.description)
+                }
+                //fatalError("    subscribeForBackInStock is failure")
+            }
+        }
+        print("===END===")
 
         return true
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
-        //removeAllFilesFromTemporaryDirectory()
     }
     
     @available(iOS 13.0, *)
@@ -697,7 +611,7 @@ extension AppDelegate: MessagingDelegate {
         fcmGlobalToken = fcmToken ?? ""
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
         // FIREBASE TOKEN SEND TEST
-        notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
+        //notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
         // FIREBASE TOKEN END TEST
     }
 }

@@ -6,15 +6,15 @@ protocol HeaderViewDelegate: AnyObject {
 
 class HeaderView: UITableViewHeaderFooterView {
 
-    var item: ItemBaseModel? {
-        didSet {
-            guard let item = item else {
-                return
-            }
-            
-            titleLabel?.text = item.sectionTitle
-        }
-    }
+//    var item: ItemBaseModel? {
+//        didSet {
+//            guard let item = item else {
+//                return
+//            }
+//            
+//            titleLabel?.text = item.sectionTitle
+//        }
+//    }
     
     @IBOutlet weak var titleLabel: UILabel?
     

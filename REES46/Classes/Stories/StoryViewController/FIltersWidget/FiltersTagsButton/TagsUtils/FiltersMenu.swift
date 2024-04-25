@@ -24,11 +24,11 @@ class FiltersMenu {
         self.isCollapsible = true
     }
     
-    static func fetch()->[FiltersMenu]{
-        let fList = [FiltersMenu(filterId: -1, title: "T", titleFiltersValues: ["String"], selected: true),
+    static func fetch()->[FiltersMenu] {
+        let fetchList = [FiltersMenu(filterId: -1, title: "T", titleFiltersValues: ["String"], selected: true),
                         FiltersMenu(filterId: -2, title: "S", titleFiltersValues: ["String"], selected: true),
         ]
-        return fList
+        return fetchList
     }
 }
 

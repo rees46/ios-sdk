@@ -1,6 +1,5 @@
 import UIKit
 
-@available(iOS 13.0, *)
 open class FiltersCheckboxTree<T: FiltersCheckboxItem>: UIView {
     
     public var items: [T] = [] {
@@ -76,7 +75,6 @@ open class FiltersCheckboxTree<T: FiltersCheckboxItem>: UIView {
     }
 }
 
-@available(iOS 13.0, *)
 extension FiltersCheckboxTree: FiltersCheckboxItemDelegate {
     func collapseItemDidSelected(item: FiltersCheckboxItem) {
         delegate?.collapseSection(header: item, section: 0)

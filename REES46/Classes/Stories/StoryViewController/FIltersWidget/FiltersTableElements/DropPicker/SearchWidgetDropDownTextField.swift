@@ -43,13 +43,13 @@ open class SearchWidgetDropDownTextField: UITextField, UIPickerViewDelegate, UIP
 
     open var widthsForComponents: [CGFloat]?
     open var heightsForComponents: [CGFloat]?
-
-    weak open var dropDownDelegate: SearchWidgetDropDownTextFieldDelegate?
-    weak open override var delegate: UITextFieldDelegate? {
-        didSet {
-            dropDownDelegate = delegate as? SearchWidgetDropDownTextFieldDelegate
-        }
-    }
+//
+//    weak open var dropDownDelegate: SearchWidgetDropDownTextFieldDelegate?
+//    weak open override var delegate: UITextFieldDelegate? {
+//        didSet {
+//            dropDownDelegate = delegate as? SearchWidgetDropDownTextFieldDelegate
+//        }
+//    }
 
     open var dataSource: SearchWidgetDropDownTextFieldDataSource?
 
@@ -93,13 +93,13 @@ open class SearchWidgetDropDownTextField: UITextField, UIPickerViewDelegate, UIP
         }
     }
 
-    @available(*, deprecated, message: "SDK: Use 'selectedItem' instead", renamed: "selectedItem")
+    @available(*, deprecated, message: "SDK: Use 'selectedItem'", renamed: "selectedItem")
     open override var text: String? {
         didSet {
         }
     }
 
-    @available(*, deprecated, message: "SDK: Use 'selectedItem' instead", renamed: "selectedItem")
+    @available(*, deprecated, message: "SDK: Use 'selectedItem'", renamed: "selectedItem")
     open override var attributedText: NSAttributedString? {
         didSet {
         }
@@ -147,7 +147,7 @@ open class SearchWidgetDropDownTextField: UITextField, UIPickerViewDelegate, UIP
 
             isOptionalDropDown = hasSetInitialIsOptional ? isOptionalDropDown : true
         }
-        if #available(iOS 15.0, *) {
+        if #available(iOS 13.0, *) {
             initializeMenu()
         }
     }
@@ -444,65 +444,65 @@ extension SearchWidgetDropDownTextField {
         }
         
         set {
-            privateSetSelectedItems(selectedItems: newValue, animated: false, shouldNotifyDelegate: false)
+            //privateSetSelectedItems(selectedItems: newValue, animated: false, shouldNotifyDelegate: false)
         }
     }
 
     @objc open func setSelectedItem(selectedItem: String?, animated: Bool) {
-        privateSetSelectedItems(selectedItems: [selectedItem], animated: animated, shouldNotifyDelegate: false)
+        //privateSetSelectedItems(selectedItems: [selectedItem], animated: animated, shouldNotifyDelegate: false)
     }
 
     public func setSelectedItems(selectedItems: [String?], animated: Bool) {
-        privateSetSelectedItems(selectedItems: selectedItems, animated: animated, shouldNotifyDelegate: false)
+        //privateSetSelectedItems(selectedItems: selectedItems, animated: animated, shouldNotifyDelegate: false)
     }
 }
 
-@MainActor
-internal extension SearchWidgetDropDownTextField {
-    func privateSetSelectedItems(selectedItems: [String?], animated: Bool, shouldNotifyDelegate: Bool) {
-        switch dropDownMode {
-        case .list, .multiList:
-
-            var finalIndexes: [Int] = []
-            var finalSelection: [String?] = []
-
-            for (index, selectedItem) in selectedItems.enumerated() {
-
-                if let selectedItem = selectedItem,
-                   index < multiItemList.count,
-                   let index = multiItemList[index].firstIndex(of: selectedItem) {
-                    finalIndexes.append(index)
-                    finalSelection.append(selectedItem)
-
-                } else {
-
-                    let isOptionalDropDown: Bool
-                    if index < isOptionalDropDowns.count {
-                        isOptionalDropDown = isOptionalDropDowns[index]
-                    } else if let last = isOptionalDropDowns.last {
-                        isOptionalDropDown = last
-                    } else {
-                        isOptionalDropDown = true
-                    }
-
-                    let selectedIndex = isOptionalDropDown ? Self.optionalItemIndex : 0
-                    finalIndexes.append(selectedIndex)
-                    finalSelection.append(nil)
-                }
-            }
-
-            setSelectedRows(rows: finalIndexes, animated: animated)
-
-            if shouldNotifyDelegate {
-                if dropDownMode == .multiList {
-                    dropDownDelegate?.textField(textField: self, didSelectItems: finalSelection)
-                } else if let selectedItem = finalSelection.first {
-                    dropDownDelegate?.textField(textField: self, didSelectItem: selectedItem)
-                }
-            }
-
-        case .textField:
-            super.text = selectedItems.compactMap({ $0 }).joined(separator: ", ")
-        }
-    }
-}
+//@MainActor
+//internal extension SearchWidgetDropDownTextField {
+//    func privateSetSelectedItems(selectedItems: [String?], animated: Bool, shouldNotifyDelegate: Bool) {
+//        switch dropDownMode {
+//        case .list, .multiList:
+//
+//            var finalIndexes: [Int] = []
+//            var finalSelection: [String?] = []
+//
+//            for (index, selectedItem) in selectedItems.enumerated() {
+//
+//                if let selectedItem = selectedItem,
+//                   index < multiItemList.count,
+//                   let index = multiItemList[index].firstIndex(of: selectedItem) {
+//                    finalIndexes.append(index)
+//                    finalSelection.append(selectedItem)
+//
+//                } else {
+//
+//                    let isOptionalDropDown: Bool
+//                    if index < isOptionalDropDowns.count {
+//                        isOptionalDropDown = isOptionalDropDowns[index]
+//                    } else if let last = isOptionalDropDowns.last {
+//                        isOptionalDropDown = last
+//                    } else {
+//                        isOptionalDropDown = true
+//                    }
+//
+//                    let selectedIndex = isOptionalDropDown ? Self.optionalItemIndex : 0
+//                    finalIndexes.append(selectedIndex)
+//                    finalSelection.append(nil)
+//                }
+//            }
+//
+//            setSelectedRows(rows: finalIndexes, animated: animated)
+//
+//            if shouldNotifyDelegate {
+//                if dropDownMode == .multiList {
+//                    dropDownDelegate?.textField(textField: self, didSelectItems: finalSelection)
+//                } else if let selectedItem = finalSelection.first {
+//                    dropDownDelegate?.textField(textField: self, didSelectItem: selectedItem)
+//                }
+//            }
+//
+//        case .textField:
+//            super.text = selectedItems.compactMap({ $0 }).joined(separator: ", ")
+//        }
+//    }
+//}

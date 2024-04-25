@@ -13,7 +13,6 @@ import AppTrackingTransparency
 import SafariServices
 import BackgroundTasks
 
-@available(iOS 13.0, *)
 class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusObserver {
     
     @IBOutlet private weak var menuButton: UIButton!
@@ -58,12 +57,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         
         addSdkObservers()
         
-        if #available(iOS 14.0, *) {
-            self.setupSdkDemoAppViews()
-            //setupSdkDemoAppViews()
-        } else {
-            // TODO Implementation
-        }
+        self.setupSdkDemoAppViews()
         
         setupSdkActivityIndicator()
 
@@ -72,29 +66,22 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         self.sideMenuShadowView.backgroundColor = .black
         self.sideMenuShadowView.alpha = 0.0
         
-        if #available(iOS 14.0, *) {
-            let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(TapGestureRecognizer))
-            tapGestureRecognizer.numberOfTapsRequired = 1
-            tapGestureRecognizer.delegate = self
-            self.sideMenuShadowView.addGestureRecognizer(tapGestureRecognizer)
-        } else {
-            // TODO Implementation
-        }
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(menuTapGestureRecognizer))
+        tapGestureRecognizer.numberOfTapsRequired = 1
+        tapGestureRecognizer.delegate = self
+        self.sideMenuShadowView.addGestureRecognizer(tapGestureRecognizer)
+        
         if self.revealSideMenuOnTop {
             view.insertSubview(self.sideMenuShadowView, at: 1)
         }
 
-        if #available(iOS 14.0, *) {
-            let storyboard = UIStoryboard(name: "Main", bundle: Bundle.main)
-            self.sideMenuViewController = storyboard.instantiateViewController(withIdentifier: "SideMenuID") as? ShopSideMenuViewController
-            self.sideMenuViewController.defaultHighlightedCell = 1
-            self.sideMenuViewController.delegate = self
-            view.insertSubview(self.sideMenuViewController!.view, at: self.revealSideMenuOnTop ? 2 : 0)
-            addChild(self.sideMenuViewController!)
-            self.sideMenuViewController!.didMove(toParent: self)
-        } else {
-            // TODO Implementation
-        }
+        let storyboard = UIStoryboard(name: "Main", bundle: Bundle.main)
+        self.sideMenuViewController = storyboard.instantiateViewController(withIdentifier: "SideMenuID") as? ShopSideMenuViewController
+        self.sideMenuViewController.defaultHighlightedCell = 1
+        self.sideMenuViewController.delegate = self
+        view.insertSubview(self.sideMenuViewController!.view, at: self.revealSideMenuOnTop ? 2 : 0)
+        addChild(self.sideMenuViewController!)
+        self.sideMenuViewController!.didMove(toParent: self)
 
         self.sideMenuViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
@@ -108,15 +95,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             self.sideMenuViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        if #available(iOS 14.0, *) {
-            let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
-            panGestureRecognizer.delegate = self
-            view.addGestureRecognizer(panGestureRecognizer)
-            
-            showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
-        } else {
-            // TODO Implementation
-        }
+        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
+        panGestureRecognizer.delegate = self
+        view.addGestureRecognizer(panGestureRecognizer)
+        
+        showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
     }
     
     func runOnce() {
@@ -134,54 +117,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                 self.waitIndicator.stopAnimating()
                 self.restartApplication()
             }
-        } else {
-            //
         }
     }
     
-    @objc func restartApplication () {
-        if UserDefaults.standard.object(forKey: "run_once_key_april25") == nil {
-            UserDefaults.standard.set(true, forKey: "run_once_key_april25")
-            let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-            try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
-            sleep(2)
-            
-            globalSDK?.resetSdkCache()
-            globalSDK?.deleteUserCredentials()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                //self.setupSdkLabels()
-                //self.waitIndicator.stopAnimating()
-                self.restartRootApp()
-                
-            }
-        }
-    }
-    
-    private func restartRootApp() {
-        let viewController = MainViewController()
-        let navCtrl = UINavigationController(rootViewController: viewController)
-        guard
-            let window = UIApplication.shared.keyWindow,
-            let rootViewController = window.rootViewController
 
-        else {
-            return
-        }
-
-        navCtrl.view.frame = rootViewController.view.frame
-        navCtrl.view.layoutIfNeeded()
-        navCtrl.modalPresentationStyle = .fullScreen
-
-        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: {
-            window.rootViewController = navCtrl
-        })
-    }
-    
     @available(iOS 13.0, *)
     private func scheduleMLTrain() {
         do {
-            let request = BGProcessingTaskRequest(identifier: "r46.example.train")
+            let request = BGProcessingTaskRequest(identifier: "sdk.background.train.processing")
             request.requiresExternalPower = false
             request.requiresNetworkConnectivity = true
             try BGTaskScheduler.shared.submit(request)
@@ -196,8 +139,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // startObserving()
-        ConnectAbilityManager.shared.startMonitoring()
+        //startObserving()
+        //ConnectAbilityManager.shared.startMonitoring()
     }
         
     override func viewWillDisappear(_ animated: Bool) {
@@ -209,10 +152,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         DispatchQueue.main.async {
             switch status {
             case .Online: break
-                //self.statusLabel.text = "Online"
                 //self.statusLabel.backgroundColor = .systemGreen
             case .Offline: break
-                //self.statusLabel.text = "Offline"
                 //self.statusLabel.backgroundColor = .systemRed
             }
         }
@@ -238,14 +179,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
        }
     
     func addSdkObservers() {
-        NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock),
-                                               name: globalSDKNotificationNameMainInit, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock), name: globalSDKNotificationNameMainInit, object: nil)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget),
-                                               name: globalSDKNotificationNameAdditionalInit, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget), name: globalSDKNotificationNameAdditionalInit, object: nil)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(loadNewArrivalsWidget),
-                                               name: globalSDKNotificationNameAdditionalInit, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(loadNewArrivalsWidget), name: globalSDKNotificationNameAdditionalInit, object: nil)
     }
     
     deinit {
@@ -254,11 +192,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     }
     
     @objc private func loadStoriesViewBlock() {
-        
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
-            
-            //storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
     
@@ -297,103 +232,81 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         }
     }
     
-    @available(iOS 14.0, *)
-    @objc private func didTapMenu() {
-        self.sideMenuState(expanded: self.isExpanded ? false : true)
+    @objc private func didTapSlideMenu() {
+        //self.sideMenuState(expanded: self.isExpanded ? false : true)
     }
     
     @objc private func didTapSearch() {
-        startBlankSearch()
+        //startInstantSearch()
     }
     
-    func startBlankSearch() {
-        globalSDK?.searchBlank { searchResponse in
-            switch searchResponse {
-            case let .success(searchResponse):
-                
-                var suggestArray = [String]()
-                for item in searchResponse.suggests {
-                    let product = item.name
-                    suggestArray.append(product)
-                }
-                
-                var lastQueriesArray = [String]()
-                for item in searchResponse.lastQueries {
-                    let product = item.name
-                    lastQueriesArray.append(product)
-                }
-                
-                var productsRecentlyViewedArray = [String]()
-                for item in searchResponse.products {
-                    let productId = item.id
-                    let product = item.name
-                    let price = item.priceFormatted
-                    let img = item.imageUrl
-                    let description = "^" + productId + "^" + "!" + product + "!" + "\n" + "|" + price + "|" + "[" + img + "]"
-                    productsRecentlyViewedArray.append(description)
-                }
-                
-                if (lastQueriesArray.count == 0 && productsRecentlyViewedArray.count == 0) {
-                    return
-                }
-                
-                DispatchQueue.main.async {
-                    let sdkSearchWidget = SearchWidget()
-                    sdkSearchWidget.setCategoriesSuggests(value: [])
-                    sdkSearchWidget.setRequestHistories(value: productsRecentlyViewedArray)
-                    sdkSearchWidget.setSearchSuggest(value: lastQueriesArray)
-                    
-                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                    let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-                    searchVC.modalPresentationStyle = .fullScreen
-                    searchVC.sdk = globalSDK
-                    searchVC.lastQueriesHistories = productsRecentlyViewedArray
-                    searchVC.recommendQueries = lastQueriesArray
-                    self.present(searchVC, animated: true, completion: nil)
-                }
-                
-            case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    DispatchQueue.main.async {
-                        self.openSearchAnyway()
-                    }
-                    print("Error:", customError)
-                default:
-                    DispatchQueue.main.async {
-                        self.openSearchAnyway()
-                    }
-                    print("Error:", error.description)
-                }
-            }
-        }
+    func startInstantSearch() {
+//        globalSDK?.searchBlank { searchResponse in
+//            switch searchResponse {
+//            case let .success(searchResponse):
+//                
+//                var suggestArray = [String]()
+//                for item in searchResponse.suggests {
+//                    let product = item.name
+//                    suggestArray.append(product)
+//                }
+//                
+//                var lastQueriesArray = [String]()
+//                for item in searchResponse.lastQueries {
+//                    let product = item.name
+//                    lastQueriesArray.append(product)
+//                }
+//                
+//                var productsRecentlyViewedArray = [String]()
+//                for item in searchResponse.products {
+//                    let productId = item.id
+//                    let product = item.name
+//                    let price = item.priceFormatted
+//                    let img = item.imageUrl
+//                    let description = "^" + productId + "^" + "!" + product + "!" + "\n" + "|" + price + "|" + "[" + img + "]"
+//                    productsRecentlyViewedArray.append(description)
+//                }
+//                
+//                if (lastQueriesArray.count == 0 && productsRecentlyViewedArray.count == 0) {
+//                    return
+//                }
+//                
+//                DispatchQueue.main.async {
+//                    let sdkSearchWidget = SearchWidget()
+//                    sdkSearchWidget.setCategoriesSuggests(value: [])
+//                    sdkSearchWidget.setRequestHistories(value: productsRecentlyViewedArray)
+//                    sdkSearchWidget.setSearchSuggest(value: lastQueriesArray)
+//                    
+//                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
+//                    let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
+//                    searchVC.modalPresentationStyle = .fullScreen
+//                    searchVC.sdk = globalSDK
+//                    searchVC.lastQueriesHistories = productsRecentlyViewedArray
+//                    searchVC.recommendQueries = lastQueriesArray
+//                    self.present(searchVC, animated: true, completion: nil)
+//                }
+//                
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    DispatchQueue.main.async {
+//                        self.openSearchAnyway()
+//                    }
+//                    print("Error:", customError)
+//                default:
+//                    DispatchQueue.main.async {
+//                        self.openSearchAnyway()
+//                    }
+//                    print("Error:", error.description)
+//                }
+//            }
+//        }
     }
     
     private func openSearchAnyway() {
-        let sdkSearchWidget = SearchWidget()
-        sdkSearchWidget.setCategoriesSuggests(value: [])
-        sdkSearchWidget.setRequestHistories(value: [])
-        sdkSearchWidget.setSearchSuggest(value: [])
-        
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-        searchVC.modalPresentationStyle = .fullScreen
-        searchVC.sdk = globalSDK
-        searchVC.suggestsCategories = []
-        searchVC.lastQueriesHistories = []
-        
-        self.present(searchVC, animated: true, completion: nil)
     }
     
     @objc private func didTapCart() {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-        searchVC.modalPresentationStyle = .fullScreen
-        searchVC.sdk = globalSDK
-        searchVC.suggestsCategories = []
-        searchVC.lastQueriesHistories = []
-        
-        self.present(searchVC, animated: true, completion: nil)
     }
     
     @objc private func didTapUpdate() {
@@ -401,9 +314,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         globalSDK?.resetSdkCache()
         
         if let globalSDK = globalSDK {
-          storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "be7fd883efcc4518b08cda32bb836306")
-            
-         //storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "8e073a72b527adc33241b3da0c981855")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
         }
     }
     
@@ -419,16 +330,15 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         globalSDK?.deleteUserCredentials()
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
             self.setupSdkLabels()
-            self.waitIndicator.stopAnimating()    
+            self.waitIndicator.stopAnimating()
         }
     }
     
-    @available(iOS 14.0, *)
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
         scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2100)
 
-        menuButton.addTarget(self, action: #selector(didTapMenu), for: .touchUpInside)
+        menuButton.addTarget(self, action: #selector(didTapSlideMenu), for: .touchUpInside)
         searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
@@ -530,7 +440,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
 
     func animateShadow(targetPosition: CGFloat) {
         UIView.animate(withDuration: 0.5) {
-            self.sideMenuShadowView.alpha = (targetPosition == 0) ? 0.6 : 0.0
+            self.sideMenuShadowView.alpha = (targetPosition == 0) ? 0.8 : 0.0
         }
     }
 
@@ -539,8 +449,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             self.animateSideMenu(targetPosition: self.revealSideMenuOnTop ? 0 : self.sideMenuRevealWidth) { _ in
                 self.isExpanded = true
             }
-            UIView.animate(withDuration: 0.5) {
-                self.sideMenuShadowView.alpha = 0.6
+            UIView.animate(withDuration: 0.8) {
+                self.sideMenuShadowView.alpha = 0.8
                 self.headerSection.alpha = 0.0
             }
         } else {
@@ -576,9 +486,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     }
 }
 
-@available(iOS 14.0, *)
 extension MainViewController: UIGestureRecognizerDelegate {
-    @objc func TapGestureRecognizer(sender: UITapGestureRecognizer) {
+    @objc func menuTapGestureRecognizer(sender: UITapGestureRecognizer) {
         if sender.state == .ended {
             if self.isExpanded {
                 self.sideMenuState(expanded: false)
@@ -679,8 +588,7 @@ extension MainViewController: UIGestureRecognizerDelegate {
 }
 
 extension UIViewController {
-    @objc @available(iOS 14.0, *)
-    func revealViewController() -> MainViewController? {
+    @objc func revealViewController() -> MainViewController? {
         var viewController: UIViewController? = self
         
         if viewController != nil && viewController is MainViewController {
@@ -696,7 +604,6 @@ extension UIViewController {
     }
 }
 
-@available(iOS 14.0, *)
 extension MainViewController: ShopSideMenuViewControllerDelegate {
     func selectedCell(_ row: Int) {
 //        switch row {
@@ -721,7 +628,9 @@ extension MainViewController: ShopSideMenuViewControllerDelegate {
 //            break
 //        }
 
-        DispatchQueue.main.async { self.sideMenuState(expanded: false) }
+        DispatchQueue.main.async {
+            self.sideMenuState(expanded: false)
+        }
     }
 
     func showViewController<T: UIViewController>(viewController: T.Type, storyboardId: String) -> () {
@@ -755,6 +664,45 @@ extension MainViewController: ShopSideMenuViewControllerDelegate {
             }
         }
         vc.didMove(toParent: self)
+    }
+    
+    @objc func restartApplication () {
+        if UserDefaults.standard.object(forKey: "run_once_key_b") == nil {
+            UserDefaults.standard.set(true, forKey: "run_once_key_b")
+            let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
+            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
+            try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
+            sleep(2)
+
+            globalSDK?.resetSdkCache()
+            globalSDK?.deleteUserCredentials()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                //self.setupSdkLabels()
+                //self.waitIndicator.stopAnimating()
+                self.restartBundleRootApp()
+
+            }
+        }
+    }
+
+    private func restartBundleRootApp() {
+        let viewController = MainViewController()
+        let navCtrl = UINavigationController(rootViewController: viewController)
+        guard
+            let window = UIApplication.shared.keyWindow,
+            let rootViewController = window.rootViewController
+
+        else {
+            return
+        }
+
+        navCtrl.view.frame = rootViewController.view.frame
+        navCtrl.view.layoutIfNeeded()
+        navCtrl.modalPresentationStyle = .fullScreen
+
+        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: {
+            window.rootViewController = navCtrl
+        })
     }
 }
 

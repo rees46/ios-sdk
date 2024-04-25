@@ -1,5 +1,4 @@
 import UIKit
-import REES46
 
 class FiltersTagsViewController: UIViewController {
 
@@ -22,9 +21,9 @@ class FiltersTagsViewController: UIViewController {
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.destination is NextViewController {
-            let vc = segue.destination as? NextViewController
-            vc?.menuList = menuList.filter{$0.selected}
+        if segue.destination is MenuSlideViewController {
+            let vc = segue.destination as? MenuSlideViewController
+            vc?.filtersMenuList = menuList.filter{$0.selected}
         }
     }
     
@@ -57,8 +56,8 @@ extension FiltersTagsViewController: UITableViewDataSource, UITableViewDelegate{
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let cell = tableView.dequeueReusableCell(withIdentifier: MenuSlideHelper.String.menuCell) as! MenuTableViewCell
-        //let layout = cell.collectionView.frame.size.height
+        let cell = tableView.dequeueReusableCell(withIdentifier: FiltersSlideHelper.String.menuCell) as! MenuTableViewCell
+        // let layout = cell.collectionView.frame.size.height
         if indexPath.row == 0 {
             //let cell = tableView.dequeueReusableCell(withIdentifier: "tagsCell") as! DetailTableViewCell
             return 60
@@ -68,7 +67,7 @@ extension FiltersTagsViewController: UITableViewDataSource, UITableViewDelegate{
         } else {
             return cell.bounds.height
         }
-        return cell.bounds.height
+        // return cell.bounds.height
 
     }
 }
@@ -76,7 +75,7 @@ extension FiltersTagsViewController: UITableViewDataSource, UITableViewDelegate{
 extension FiltersTagsViewController: MenuTableViewCellDelegate{
     func didSelectedMenu(menu: FiltersMenu) {
         if let tempMenu = menuList.first(where: {$0.titleValues == menu.titleValues}) {
-//            print("selected \(menu.title) \(menu.selected)")
+            // print("selected \(menu.title) \(menu.selected)")
             if tempMenu.selected {
                 menuList.filter {$0.filterId == menu.filterId}.first?.selected = false
             } else {
@@ -91,7 +90,7 @@ extension FiltersTagsViewController: MenuTableViewCellDelegate{
 
 extension FiltersTagsViewController: DoneDelegate{
     func didDoneTapped() {
-        performSegue(withIdentifier: MenuSlideHelper.String.toNextSegue, sender: self)
+        performSegue(withIdentifier: FiltersSlideHelper.String.toNextSegue, sender: self)
     }
 }
 

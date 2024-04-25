@@ -13,6 +13,34 @@ public class SdkGlobalHelper {
     init() {
     }
     
+//    public static let recommendations: SdkConfiguration = SdkConfiguration()
+//    
+//Sdk Recommendations Widget settings
+//    public var fontoName: String? = nil
+//    public var backgroundColor: String = "#ffffff"
+//    public var backgroundColorDarkMode: String = "#000000"
+//    public var cellBackgroundColor: String = "#ffffff"
+//    public var cellBackgroundColorDarkMode: String = "#000000"
+//    public var borderWidth: CGFloat = 1
+//    public var borderColor: String = "#d3d3d3"
+//    public var brderColorDarkMode: String = "#d3d3d3"
+//    public var borderTransparent: CGFloat = 0.5
+//    public var cornerRadius: CGFloat = 9
+//    public var starsColor: String = "#ff9500"
+//    public var cartButtonTextColor: String = "#ffffff"
+//    public var cartButtonTextColorDarkMode: String = "#000000"
+//    public var cartButtonBackgroundColor: String = "#000000"
+//    public var cartButtonBackgroundColorDarkMode: String = "#ffffff"
+//    public var addToCartButtonText: String = "Add to cart"
+//    public var removeFromCartButtonText: String = "Remove from cart"
+//    public var addToCartButtonFontSize: CGFloat? = 17.0
+//    public var cartButtonFontSize: CGFloat? = 14.0
+//    public var favoritesIconColor: String = "#000000"
+//    public var favoritesIconColorDarkMode: String = "#ffffff"
+//    public var cartButtonNeedOpenWebUrl = false
+//    public var preloadIndicatorColor: String = "#000000"
+//    public var noReviewsDefaultText: String = "No reviews"
+    
     public struct ScreenSize {
         static let SCREEN_WIDTH = UIScreen.main.bounds.size.width
         static let SCREEN_HEIGHT = UIScreen.main.bounds.size.height
