@@ -11,7 +11,7 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="gTV-IL-0wX" customClass="StoryCollectionViewCell" customModule="REES46" customModuleProvider="target">
+        <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" id="gTV-IL-0wX" userLabel="StoryCollectionViewCell" customClass="StoryCollectionViewCell" customModule="REES46">
             <rect key="frame" x="0.0" y="0.0" width="302" height="352"/>
             <autoresizingMask key="autoresizingMask"/>
             <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
@@ -32,7 +32,7 @@
                         </constraints>
                         <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <state key="normal" title="Button"/>
-                        <buttonConfiguration key="configuration" style="plain" title="TAP ME"/>
+                        <buttonConfiguration key="configuration" style="plain"/>
                     </button>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="XCQ-jK-yKE" userLabel="ProductsButton" customClass="ProductsButton" customModule="REES46" customModuleProvider="target">
                         <rect key="frame" x="16" y="248" width="270" height="60"/>
@@ -41,7 +41,7 @@
                         </constraints>
                         <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <state key="normal" title="Button"/>
-                        <buttonConfiguration key="configuration" style="plain" title="TAP ME"/>
+                        <buttonConfiguration key="configuration" style="plain"/>
                         <userDefinedRuntimeAttributes>
                             <userDefinedRuntimeAttribute type="boolean" keyPath="rounded" value="YES"/>
                         </userDefinedRuntimeAttributes>
@@ -76,7 +76,7 @@
     </objects>
     <designables>
         <designable name="XCQ-jK-yKE">
-            <size key="intrinsicContentSize" width="83" height="34.5"/>
+            <size key="intrinsicContentSize" width="24" height="14"/>
         </designable>
     </designables>
     <resources>

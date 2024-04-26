@@ -313,14 +313,14 @@
                                                                 <autoresizingMask key="autoresizingMask"/>
                                                                 <subviews>
                                                                     <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="eYe-JG-qsE">
-                                                                        <rect key="frame" x="48" y="54" width="0.0" height="0.0"/>
+                                                                        <rect key="frame" x="48" y="57" width="0.0" height="0.0"/>
                                                                         <constraints>
                                                                             <constraint firstAttribute="width" relation="lessThanOrEqual" constant="150" id="HV7-Ce-eWb"/>
                                                                             <constraint firstAttribute="width" secondItem="eYe-JG-qsE" secondAttribute="height" multiplier="1:1" id="j6W-eN-a0q"/>
                                                                         </constraints>
                                                                     </imageView>
                                                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" distribution="equalSpacing" alignment="top" spacing="1" translatesAutoresizingMaskIntoConstraints="NO" id="REz-Mt-Kfj">
-                                                                        <rect key="frame" x="-48" y="56" width="0.0" height="0.0"/>
+                                                                        <rect key="frame" x="-48" y="59" width="0.0" height="0.0"/>
                                                                         <subviews>
                                                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" placeholderIntrinsicWidth="216" placeholderIntrinsicHeight="36.333333333333336" text=" " lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="k4A-Fd-mlR">
                                                                                 <fontDescription key="fontDescription" type="system" weight="medium" pointSize="13"/>
@@ -593,7 +593,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="naN-St-meT" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2043" y="1675"/>
+            <point key="canvasLocation" x="136" y="969"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="a5s-mi-l20">
@@ -616,7 +616,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="ZW6-ik-VQQ" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-2043" y="929"/>
+            <point key="canvasLocation" x="136" y="223"/>
         </scene>
         <!--Profile View Controller-->
         <scene sceneID="dMN-jd-534">
@@ -643,7 +643,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="F9H-5a-OsJ" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1170" y="929"/>
+            <point key="canvasLocation" x="3349" y="223"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="CCj-MN-un4">
@@ -666,7 +666,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="cY5-gP-7Eg" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1280" y="929"/>
+            <point key="canvasLocation" x="899" y="223"/>
         </scene>
         <!--Brands-->
         <scene sceneID="G12-O8-T2Q">
@@ -710,7 +710,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="9EN-2Y-EZp" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-1281" y="1675"/>
+            <point key="canvasLocation" x="899" y="969"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="uAR-sy-gDz">
@@ -733,7 +733,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Nfx-3i-mNi" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-481" y="929"/>
+            <point key="canvasLocation" x="1698" y="223"/>
         </scene>
         <!--Categories-->
         <scene sceneID="EZW-E0-d78">
@@ -766,7 +766,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="kue-LH-NEW" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-481" y="1675"/>
+            <point key="canvasLocation" x="1698" y="969"/>
         </scene>
         <!--Merchant-->
         <scene sceneID="0Z4-DB-PCh">
@@ -805,7 +805,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="rX6-6L-Lkg" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="286" y="929"/>
+            <point key="canvasLocation" x="2466" y="223"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="CFX-Mk-rZp">
@@ -828,7 +828,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="aXV-KZ-Wjs" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2012" y="929"/>
+            <point key="canvasLocation" x="4192" y="223"/>
         </scene>
         <!--Settings-->
         <scene sceneID="e0p-Jd-AoJ">
@@ -861,39 +861,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Vck-74-QiM" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2012" y="1675"/>
-        </scene>
-        <!--Filters Main View Controller-->
-        <scene sceneID="XSO-Vi-Adl">
-            <objects>
-                <viewController storyboardIdentifier="filtersVC" id="EX6-xE-f5B" customClass="FiltersMainViewController" customModule="REES46Demo" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" contentMode="scaleToFill" id="br1-Rd-uVy">
-                        <rect key="frame" x="0.0" y="0.0" width="428" height="926"/>
-                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Filters" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="16D-8W-Jbs">
-                                <rect key="frame" x="29" y="62" width="353" height="33"/>
-                                <autoresizingMask key="autoresizingMask"/>
-                                <fontDescription key="fontDescription" name="Inter-Bold" family="Inter" pointSize="35"/>
-                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jU2-JV-EYZ">
-                                <rect key="frame" x="366" y="56" width="47" height="47"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                <state key="normal" image="iconMenuClose"/>
-                            </button>
-                        </subviews>
-                        <viewLayoutGuide key="safeArea" id="i6a-E0-uHD"/>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                    </view>
-                    <connections>
-                        <outlet property="backButton" destination="jU2-JV-EYZ" id="0hZ-mY-RMS"/>
-                    </connections>
-                </viewController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="9dt-aw-FS8" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="5317" y="-347"/>
+            <point key="canvasLocation" x="4192" y="969"/>
         </scene>
         <!--Shoe Shock-->
         <scene sceneID="ti6-iZ-s2O">
@@ -907,13 +875,13 @@
                                 <rect key="frame" x="16" y="583" width="396" height="44"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text=" " lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="vDe-gj-XcH">
-                                        <rect key="frame" x="0.0" y="0.0" width="5.333333333333333" height="44"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="4.666666666666667" height="44"/>
                                         <fontDescription key="fontDescription" name="Inter-SemiBold" family="Inter" pointSize="18"/>
                                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="751" text=" " lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" preferredMaxLayoutWidth="172" translatesAutoresizingMaskIntoConstraints="NO" id="iV6-LC-uJS">
-                                        <rect key="frame" x="390" y="0.0" width="6" height="44"/>
+                                        <rect key="frame" x="391" y="0.0" width="5" height="44"/>
                                         <fontDescription key="fontDescription" name="Inter-Bold" family="Inter" pointSize="21"/>
                                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
@@ -1165,7 +1133,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="y6i-8R-7eW" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-464" y="-617"/>
+            <point key="canvasLocation" x="-568" y="223"/>
         </scene>
     </scenes>
     <designables>
@@ -1196,7 +1164,7 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGray2Color">
-            <color red="0.68235294117647061" green="0.68235294117647061" blue="0.69803921568627447" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.68235294120000001" green="0.68235294120000001" blue="0.69803921570000005" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

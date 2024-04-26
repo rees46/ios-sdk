@@ -1270,7 +1270,6 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     }
 }
 
-
 private extension SdkConfiguration {
     class func loadFonts(at url: URL) -> [sdkFontClass] {
         var loadedFonts: [sdkFontClass] = []

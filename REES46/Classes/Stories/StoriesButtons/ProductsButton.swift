@@ -60,7 +60,6 @@ protocol CustomProductButtonDelegate: AnyObject {
 #if SWIFT_PACKAGE
             frameworkBundle = Bundle.module
 #endif
-            
             let angleUpIcon = UIImage(named: "angleUpBlack", in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
             
             if SdkConfiguration.isDarkMode {

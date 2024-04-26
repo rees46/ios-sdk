@@ -75,7 +75,7 @@ open class SearchWidgetMainView: UIView {
                     let sConstructorName = constructorCategories[categoryTag]
                     self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productSearchText: sConstructorName)
                 } else {
-                    print("SDK: Need constructorCategories")
+                    print("SDK: Need implement constructorCategories")
                 }
             }
         }

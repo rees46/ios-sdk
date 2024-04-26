@@ -254,7 +254,7 @@
 				E97C5BCA2BD90B6600E88453 /* Main.storyboard */,
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				9AFB9EE328044E4D001462AC /* PushPresent */,
-				E9A0C6ED2B7F70BD00C60635 /* ShopControllers */,
+				E9A0C6ED2B7F70BD00C60635 /* DemoShopControllers */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
 			);
 			name = Rees46Demo;
@@ -329,7 +329,7 @@
 			name = PushPresent;
 			sourceTree = "<group>";
 		};
-		E903FC1C2BC8427100FF4540 /* ShopSideMenu */ = {
+		E903FC1C2BC8427100FF4540 /* DemoShopSideMenu */ = {
 			isa = PBXGroup;
 			children = (
 				E903FC222BC8427100FF4540 /* ShopMenuViews */,
@@ -337,7 +337,7 @@
 				E903FC1D2BC8427100FF4540 /* ShopSideMenuModel.swift */,
 				E903FC212BC8427100FF4540 /* ShopSideMenuViewController.swift */,
 			);
-			path = ShopSideMenu;
+			path = DemoShopSideMenu;
 			sourceTree = "<group>";
 		};
 		E903FC1E2BC8427100FF4540 /* ShopSideMenuCell */ = {
@@ -362,32 +362,32 @@
 			path = ShopMenuViews;
 			sourceTree = "<group>";
 		};
-		E9A0C6ED2B7F70BD00C60635 /* ShopControllers */ = {
+		E9A0C6ED2B7F70BD00C60635 /* DemoShopControllers */ = {
 			isa = PBXGroup;
 			children = (
-				E903FC1C2BC8427100FF4540 /* ShopSideMenu */,
-				E9A0C6F02B7F70BD00C60635 /* ShopCartModel */,
-				E9A0C6F42B7F70BD00C60635 /* View */,
+				E903FC1C2BC8427100FF4540 /* DemoShopSideMenu */,
+				E9A0C6F02B7F70BD00C60635 /* DemoShopCartModel */,
+				E9A0C6F42B7F70BD00C60635 /* DemoShopViews */,
 				E9A0C6FB2B7F70BD00C60635 /* CategoryViewController.swift */,
 				E9A0C6EF2B7F70BD00C60635 /* ProductsViewController.swift */,
 				E9A0C6FE2B7F70BD00C60635 /* ShopProductDetailsViewController.swift */,
 				E9A0C6EE2B7F70BD00C60635 /* CheckoutViewController.swift */,
 				E9A0C6FD2B7F70BD00C60635 /* ShopCartDataService.swift */,
 			);
-			path = ShopControllers;
+			path = DemoShopControllers;
 			sourceTree = "<group>";
 		};
-		E9A0C6F02B7F70BD00C60635 /* ShopCartModel */ = {
+		E9A0C6F02B7F70BD00C60635 /* DemoShopCartModel */ = {
 			isa = PBXGroup;
 			children = (
 				E9A0C6F32B7F70BD00C60635 /* ShopSelectedProduct.swift */,
 				E9A0C6F12B7F70BD00C60635 /* ShopCategory.swift */,
 				E9A0C6F22B7F70BD00C60635 /* ShopCartPrepareProduct.swift */,
 			);
-			path = ShopCartModel;
+			path = DemoShopCartModel;
 			sourceTree = "<group>";
 		};
-		E9A0C6F42B7F70BD00C60635 /* View */ = {
+		E9A0C6F42B7F70BD00C60635 /* DemoShopViews */ = {
 			isa = PBXGroup;
 			children = (
 				E9CC02492BB3B3A50051053B /* ConnectAbilityManager.swift */,
@@ -399,7 +399,7 @@
 				E9A0C6F92B7F70BD00C60635 /* SliderCell.swift */,
 				E9A0C6FA2B7F70BD00C60635 /* RoundedButton.swift */,
 			);
-			path = View;
+			path = DemoShopViews;
 			sourceTree = "<group>";
 		};
 		E9EAB8652AF08A43003DC1B5 /* Fonts */ = {

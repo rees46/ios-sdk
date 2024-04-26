@@ -28,7 +28,7 @@
                             <constraint firstAttribute="height" constant="36" id="rYo-gS-WWf"/>
                         </constraints>
                     </view>
-                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="до" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="TkZ-Et-q0K">
+                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="to" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="TkZ-Et-q0K">
                         <rect key="frame" x="192" y="66" width="158" height="52"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -42,7 +42,7 @@
                             <outlet property="delegate" destination="cAu-C1-u9h" id="pVC-vz-xgl"/>
                         </connections>
                     </textField>
-                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="от" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Tcn-GR-Dkg">
+                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="from" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Tcn-GR-Dkg">
                         <rect key="frame" x="25" y="66" width="158" height="52"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>

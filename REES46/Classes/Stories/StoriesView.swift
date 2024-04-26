@@ -19,7 +19,7 @@ public protocol StoriesViewLinkProtocol: AnyObject {
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
     
-    let cellId = "StoriesCollectionViewPreviewCell"
+    let cellId = "StoriesCollectionPreviewCell"
     
     private var collectionView: UICollectionView = {
         let testFrame = CGRect(x: 0, y: 0, width: 300, height: 135)
@@ -117,7 +117,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
-        collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
+        collectionView.register(StoriesCollectionPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionPreviewCell.cellId)
         self.setBgColor()
         
         UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
@@ -199,7 +199,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionPreviewCell.cellId, for: indexPath) as? StoriesCollectionPreviewCell else {return UICollectionViewCell()}
         
         if let currentStory = stories?[indexPath.row] {
             
@@ -240,42 +240,6 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         return cell
     }
     
-//    func russianHyphenated() -> String {
-//        return hyphenated(locale: Locale(identifier: "ru_Ru"))
-//    }
-//
-//    func hyphenated(languageCode: String) -> String {
-//        let locale = Locale(identifier: languageCode)
-//        return self.hyphenated(locale: locale)
-//    }
-
-//    func hyphenated(locale: Locale) -> String {
-//        //guard CFStringIsHyphenationAvailableForLocale(locale as CFLocale) else { return }
-//        
-//        var s = self
-//        
-//        let fullRange = CFRangeMake(0, s.utf16.count)
-//        var hyphenationLocations = [CFIndex]()
-//        
-//        for (i, _) in s.utf16.enumerated() {
-//            let location: CFIndex = CFStringGetHyphenationLocationBeforeIndex(s as CFString, i, fullRange, 0, locale as CFLocale, nil)
-//            if hyphenationLocations.last != location {
-//                hyphenationLocations.append(location)
-//            }
-//        }
-//        
-//        for l in hyphenationLocations.reversed() {
-//            guard l > 0 else { continue }
-//            let strIndex = String.Index(utf16Offset: l, in: s)
-//            // insert soft hyphen:
-//            s.insert("\u{00AD}", at: strIndex)
-//            // or insert a regular hyphen to debug:
-//            //s.insert("-", at: strIndex)
-//        }
-//        
-//        return s
-//    }
-
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
         if let currentStory = stories?[indexPath.row] {

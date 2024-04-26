@@ -29,8 +29,8 @@ class PriceRangeCell: UITableViewCell {
         let min = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? 0
         let max = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? 9999990
         
-        minValueTextField.text = "от \(String(describing: min))"
-        maxValueTextField.text = "до \(String(describing: max))"
+        minValueTextField.text = "from \(String(describing: min))"
+        maxValueTextField.text = "to \(String(describing: max))"
         rangeSlider.minimumValue = min as! Double
         rangeSlider.maximumValue = max as! Double
         rangeSlider.lowerValue = 0
@@ -42,8 +42,8 @@ class PriceRangeCell: UITableViewCell {
     }
     
     @objc func sliderValueChange(_ sender: FiltersPriceSlider) {
-        minValueTextField.text = "от \(Int(rangeSlider.lowerValue))"
-        maxValueTextField.text = "до \(Int(rangeSlider.upperValue))"
+        minValueTextField.text = "from \(Int(rangeSlider.lowerValue))"
+        maxValueTextField.text = "to \(Int(rangeSlider.upperValue))"
         
         UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "minimumPriceConstant")
         UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "maximumPriceConstant")
@@ -62,11 +62,7 @@ extension PriceRangeCell: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         
         if (textField == minValueTextField) {
-            if let textMinValue = textField.text, let textRange = Range(range, in: textMinValue) {
-                //let str0 = text.decimalDigits
-                //let strDec = text.unicodeScalars.filter(CharacterSet.decimalDigits.contains)
-                //print(strDec)
-                
+            if let textMinValue = textField.text {
                 let stringArrayForMin = textMinValue.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 for itemMin in stringArrayForMin {
                     if let numberMin = Int(itemMin) {
@@ -77,11 +73,7 @@ extension PriceRangeCell: UITextFieldDelegate {
             }
             return true
         } else {
-            if let textMaxValue = textField.text, let textRange = Range(range, in: textMaxValue) {
-                //let str0 = text.decimalDigits
-                //let strDec = text.unicodeScalars.filter(CharacterSet.decimalDigits.contains)
-                //print(strDec)
-                
+            if let textMaxValue = textField.text {
                 let stringArrayForMax = textMaxValue.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 for itemMax in stringArrayForMax {
                     if let numberMax = Int(itemMax) {
@@ -114,10 +106,10 @@ extension PriceRangeCell: UITextFieldDelegate {
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         let min = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? ""
-        minValueTextField.text = "от \(String(describing: min))"
+        minValueTextField.text = "from \(String(describing: min))"
         
         let max = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? ""
-        maxValueTextField.text = "до \(String(describing: max))"
+        maxValueTextField.text = "to \(String(describing: max))"
         
         let minX = UserDefaults.standard.object(forKey: "minimumPriceConstant") ?? ""
         let maxX = UserDefaults.standard.object(forKey: "maximumPriceConstant") ?? ""
@@ -143,15 +135,15 @@ extension PriceRangeCell: UITextFieldDelegate {
                     
                     if (intDefault > intCompare) {
                         rangeSlider.lowerValue = Double(intCompare)
-                        minValueTextField.text = "от \(String(describing: intCompare))"
+                        minValueTextField.text = "from \(String(describing: intCompare))"
                     } else {
                         rangeSlider.lowerValue = Double(intDefault)
-                        minValueTextField.text = "от \(String(describing: intDefault))"
+                        minValueTextField.text = "from \(String(describing: intDefault))"
                     }
                 }
             } else {
                 rangeSlider.lowerValue = Double(minValueTextField.text ?? "0") ?? 0
-                minValueTextField.text = "от \(Int(rangeSlider.lowerValue))"
+                minValueTextField.text = "from \(Int(rangeSlider.lowerValue))"
             }
         } else {
             if String(describing: maxX) != "" {
@@ -174,15 +166,15 @@ extension PriceRangeCell: UITextFieldDelegate {
                     
                     if (intCompareMax < intDefaultMax) {
                         rangeSlider.upperValue = Double(intDefaultMax)
-                        maxValueTextField.text = "до \(String(describing: intDefaultMax))"
+                        maxValueTextField.text = "to \(String(describing: intDefaultMax))"
                     } else {
                         rangeSlider.upperValue = Double(intCompareMax)
-                        maxValueTextField.text = "до \(String(describing: intCompareMax))"
+                        maxValueTextField.text = "to \(String(describing: intCompareMax))"
                     }
                 }
             } else {
                 rangeSlider.upperValue = Double(maxValueTextField.text ?? "9999990") ?? 9999990
-                maxValueTextField.text = "до \(Int(rangeSlider.upperValue))"
+                maxValueTextField.text = "to \(Int(rangeSlider.upperValue))"
             }
         }
     }

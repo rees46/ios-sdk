@@ -1124,10 +1124,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             params["ios_advertising_id"] = advId
         }
         
-//        if (advId != "00000000-0000-0000-0000-000000000000" && advId != nil) {
-//            params["ios_advertising_id"] = "80000000-0000-0000-0000-000000000008"
-//        }
-        
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
         sessionConfig.waitsForConnectivity = true
@@ -1228,15 +1224,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 let resultResponse = InitResponse(json: resJSON)
                 completion(.success(resultResponse))
             case .failure(_):
-                //completion(.failure(error))
-                
                 completion(.failure(.custom(error: "SDK: Successful re-init or IDFA request")))
-                
-//                if let status = error["status"] as? String, status == "error" {
-//                    if let errorMessage = jsonObject["message"] as? String {
-//                        completion(.failure(.custom(error: errorMessage)))
-//                    }
-//                }
             }
         }
     }
@@ -1277,49 +1265,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     completion(.failure(error))
                 }
             }
-            
-//            let group = DispatchGroup()
-//                group.enter()
-//                DispatchQueue.global(qos: .background).async{
-//                    
-//                    self.storiesCode = code
-//                    let path = "stories/\(code)"
-//                    let params: [String: String] = [
-//                        "shop_id": self.shopId,
-//                        "did": self.deviceId
-//                    ]
-//                    let sessionConfig = URLSessionConfiguration.default
-//                    if SdkConfiguration.stories.storiesSlideReloadManually {
-//                        sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
-//                        sessionConfig.waitsForConnectivity = false
-//                    } else {
-//                        sessionConfig.timeoutIntervalForRequest = 3
-//                        sessionConfig.waitsForConnectivity = true
-//                    }
-//                    self.urlSession = URLSession(configuration: sessionConfig)
-//                    //
-//                    
-//                    self.getRequest(path: path, params: params, false) { result in
-//                        switch result {
-//                        case let .success(successResult):
-//                            let res = StoryContent(json: successResult)
-//                            completion(.success(res))
-//                          //  group.
-//                        case let .failure(error):
-//                            completion(.failure(error))
-//                        }
-//                    }
-//                    
-//                }
-//            group.wait()
-            
-//            var toreturn: String = ""
-//            if (toreturn == ""){
-//                return  ""// PostCustomerAccount(queue: queue)
-//            }
-//            return toreturn
-                    
-            
         }
     }
     
@@ -1395,14 +1340,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             let slashSeparator = path.components(separatedBy: "/").first
                             if (!isInit && slashSeparator == "stories") {
                                 if (statusMessage == "Client not found") {
-                                   // DispatchQueue.main.async {
-                                    
-                                        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "restartApplication"), object: nil)
+                                    //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "restartApplication"), object: nil)
                                     completion(.failure(.invalidResponse))
                                     return
-                                   // }
-                                    //completion(.failure(.invalidResponse))
-                                    //return
                                 }
                             }
                         }

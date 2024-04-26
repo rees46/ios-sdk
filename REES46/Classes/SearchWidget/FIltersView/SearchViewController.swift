@@ -516,7 +516,7 @@
 //                
 //                let clientCurrencyDetect: Bool = UserDefaults.standard.bool(forKey: "clientCurrencyDetect")
 //                if !clientCurrencyDetect {
-//                    let currencyFilterTitle = "Цена ( " + clientCurrency + " )"
+//                    let currencyFilterTitle = "Price ( " + clientCurrency + " )"
 //                    self.filtersList.insert(FiltersMenu(filterId: 9999990, title: currencyFilterTitle, titleFiltersValues: [], selected: false), at: 0)
 //                    UserDefaults.standard.set(true, forKey: "clientCurrencyDetect")
 //                }

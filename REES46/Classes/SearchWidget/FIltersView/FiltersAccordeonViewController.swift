@@ -260,9 +260,9 @@
 //            return nil
 //        }
 //        if let headerViewEnd = tableView.dequeueReusableHeaderFooterView(withIdentifier: FooterView.identifier) as? FooterView {
-//            let rre = data[section].titleValues.count// data[section]
-//            print(rre)
-//            
+//            let countInOneFilter = data[section].titleValues.count// data[section]
+//            print(countInOneFilter)
+//
 //            var frameworkBundle = Bundle(for: classForCoder)
 //#if SWIFT_PACKAGE
 //            frameworkBundle = Bundle.module
@@ -277,7 +277,7 @@
 //                let attachmentString = NSAttributedString(attachment: imageAttachment)
 //                let completeText = NSMutableAttributedString(string: "")
 //                
-//                let vHide = "Cкрыть"
+//                let vHide = "Hide"
 //                let textAfterIcon = NSAttributedString(string: vHide)
 //                completeText.append(textAfterIcon)
 //                completeText.append(attachmentString)
@@ -292,7 +292,7 @@
 //                let completeText = NSMutableAttributedString(string: "")
 //                //completeText.append(attachmentString)
 //                
-//                let v = "Показать ("  + String(rre) + ")"
+//                let v = "Show all ("  + String(countInOneFilter) + ")"
 //                let textAfterIcon = NSAttributedString(string: v)
 //                completeText.append(textAfterIcon)
 //                completeText.append(attachmentString)

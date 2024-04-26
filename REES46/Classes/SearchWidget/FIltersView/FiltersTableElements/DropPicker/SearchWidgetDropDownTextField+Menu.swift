@@ -101,18 +101,18 @@ extension SearchWidgetDropDownTextField {
     }
     
     @objc private func menuButtonTapped() {
-        guard let containerViewController = containerViewController else {
-            return
-        }
-        let popoverViewController = UIViewController()
-        popoverViewController.modalPresentationStyle = .popover
-        popoverViewController.popoverPresentationController?.sourceView = privateMenuButton
-        popoverViewController.popoverPresentationController?.sourceRect = privateMenuButton.bounds
-        popoverViewController.popoverPresentationController?.delegate = self
-        switch dropDownMode {
-        case .list, .multiList, .textField:
-            break
-        }
+//        guard let containerViewController = containerViewController else {
+//            return
+//        }
+//        let popoverViewController = UIViewController()
+//        popoverViewController.modalPresentationStyle = .popover
+//        popoverViewController.popoverPresentationController?.sourceView = privateMenuButton
+//        popoverViewController.popoverPresentationController?.sourceRect = privateMenuButton.bounds
+//        popoverViewController.popoverPresentationController?.delegate = self
+//        switch dropDownMode {
+//        case .list, .multiList, .textField:
+//            break
+//        }
     }
 }
 
