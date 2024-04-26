@@ -126,8 +126,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getShopId() -> String {
         return shopId
     }
-
-    func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping (Result<Void, SDKError>) -> Void) {
+  
+    func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping (Result<Void, SDKError>) -> Void) { 
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
