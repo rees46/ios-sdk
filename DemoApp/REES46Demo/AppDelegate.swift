@@ -58,7 +58,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            globalSDKAdditionalInit = self.sdkAdditionalInit
 //            NotificationCenter.default.post(name: globalSDKNotificationNameAdditionalInit, object: nil)
 //        })
-//        
+//
 //        //SDK Configuration init Font first
 //        sdk.configuration().stories.registerFont(fileName: "Inter", fileExtension: FontExtension.ttf.rawValue) //ttf or otf
 //
@@ -480,10 +480,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            searchResponse in
 //            print("   Full search with filters callback")
 //            switch searchResponse {
-//            case let .success(searchResponse):
+//            case let .success(response):
 //                print("     full search with filters is success")
-//                withExtendedLifetime(searchResponse) {
-//                    //print("Response:", searchResponse) //Uncomment it if you want to see response
+//                withExtendedLifetime(response) {
+//                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
 //            case let .failure(error):
 //                switch error {
@@ -653,7 +653,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
-        if #available(iOS 14, *) {
+        //SDK Advertising identifier support at init user request
+        if #available(iOS 14.0, *) {
             ATTrackingManager.requestTrackingAuthorization { status in
                 DispatchQueue.main.async {
                     switch status {

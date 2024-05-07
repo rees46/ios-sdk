@@ -52,9 +52,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NotificationCenter.default.removeObserver(self, name: .init(rawValue: "restartApplication"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(restartApplication), name: .init(rawValue: "restartApplication"), object: nil)
-        
         addSdkObservers()
         
         self.setupSdkDemoAppViews()
@@ -102,59 +99,23 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
     }
     
-    func runOnce() {
-        if UserDefaults.standard.object(forKey: "run_once_key11") == nil {
-            UserDefaults.standard.set(true, forKey: "run_once_key11")
-            let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
-            try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
-            sleep(2)
-            
-            globalSDK?.resetSdkCache()
-            globalSDK?.deleteUserCredentials()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                self.setupSdkLabels()
-                self.waitIndicator.stopAnimating()
-                self.restartApplication()
-            }
-        }
-    }
-    
-
-    @available(iOS 13.0, *)
-    private func scheduleMLTrain() {
-        do {
-            let request = BGProcessingTaskRequest(identifier: "sdk.background.train.processing")
-            request.requiresExternalPower = false
-            request.requiresNetworkConnectivity = true
-            try BGTaskScheduler.shared.submit(request)
-        } catch {
-            print(error)
-        }
-    }
-    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        //startObserving()
-        //ConnectAbilityManager.shared.startMonitoring()
     }
         
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        //stopObserving()
     }
     
     func didChangeConnectionStatus(_ status: REES46.NetworkConnectionStatus) {
         DispatchQueue.main.async {
             switch status {
             case .Online: break
-                //self.statusLabel.backgroundColor = .systemGreen
             case .Offline: break
-                //self.statusLabel.backgroundColor = .systemRed
             }
         }
     }
@@ -232,83 +193,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         }
     }
     
-    @objc private func didTapSlideMenu() {
-        //self.sideMenuState(expanded: self.isExpanded ? false : true)
-    }
-    
-    @objc private func didTapSearch() {
-        //startInstantSearch()
-    }
-    
-    func startInstantSearch() {
-//        globalSDK?.searchBlank { searchResponse in
-//            switch searchResponse {
-//            case let .success(searchResponse):
-//                
-//                var suggestArray = [String]()
-//                for item in searchResponse.suggests {
-//                    let product = item.name
-//                    suggestArray.append(product)
-//                }
-//                
-//                var lastQueriesArray = [String]()
-//                for item in searchResponse.lastQueries {
-//                    let product = item.name
-//                    lastQueriesArray.append(product)
-//                }
-//                
-//                var productsRecentlyViewedArray = [String]()
-//                for item in searchResponse.products {
-//                    let productId = item.id
-//                    let product = item.name
-//                    let price = item.priceFormatted
-//                    let img = item.imageUrl
-//                    let description = "^" + productId + "^" + "!" + product + "!" + "\n" + "|" + price + "|" + "[" + img + "]"
-//                    productsRecentlyViewedArray.append(description)
-//                }
-//                
-//                if (lastQueriesArray.count == 0 && productsRecentlyViewedArray.count == 0) {
-//                    return
-//                }
-//                
-//                DispatchQueue.main.async {
-//                    let sdkSearchWidget = SearchWidget()
-//                    sdkSearchWidget.setCategoriesSuggests(value: [])
-//                    sdkSearchWidget.setRequestHistories(value: productsRecentlyViewedArray)
-//                    sdkSearchWidget.setSearchSuggest(value: lastQueriesArray)
-//                    
-//                    let storyboard = UIStoryboard(name: "Main", bundle: nil)
-//                    let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-//                    searchVC.modalPresentationStyle = .fullScreen
-//                    searchVC.sdk = globalSDK
-//                    searchVC.lastQueriesHistories = productsRecentlyViewedArray
-//                    searchVC.recommendQueries = lastQueriesArray
-//                    self.present(searchVC, animated: true, completion: nil)
-//                }
-//                
-//            case let .failure(error):
-//                switch error {
-//                case let .custom(customError):
-//                    DispatchQueue.main.async {
-//                        self.openSearchAnyway()
-//                    }
-//                    print("Error:", customError)
-//                default:
-//                    DispatchQueue.main.async {
-//                        self.openSearchAnyway()
-//                    }
-//                    print("Error:", error.description)
-//                }
-//            }
-//        }
-    }
-    
-    private func openSearchAnyway() {
-    }
-    
-    @objc private func didTapCart() {
-    }
-    
     @objc private func didTapUpdate() {
         setupSdkLabels()
         globalSDK?.resetSdkCache()
@@ -318,20 +202,24 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         }
     }
     
-    @objc private func didTapReset() {
-        self.waitIndicator.startAnimating()
-        
-        let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-        let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-        try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
-        sleep(2)
-        
-        globalSDK?.resetSdkCache()
-        globalSDK?.deleteUserCredentials()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.setupSdkLabels()
-            self.waitIndicator.stopAnimating()
-        }
+    @objc private func didTapSlideMenu() {
+        self.sideMenuState(expanded: self.isExpanded ? false : true)
+    }
+    
+    @objc private func didTapSearch() {
+        startInstantSearch()
+    }
+    
+    func startInstantSearch() {
+        //
+    }
+    
+    private func openSearchAnyway() {
+        //
+    }
+    
+    @objc private func didTapCart() {
+        //
     }
     
     func setupSdkDemoAppViews() {
@@ -342,7 +230,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
-        resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
+        //resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -396,36 +284,15 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         ])
     }
     
-    //SDK Advertising identifier support at init user request
-    public func requestTrackingAuthorization() {
-        guard #available(iOS 14, *) else { return }
-        ATTrackingManager.requestTrackingAuthorization { status in
-            DispatchQueue.main.async {
-                switch status {
-                case .authorized:
-                    let idfa = ASIdentifierManager.shared().advertisingIdentifier
-                    globalSDK?.sendIDFARequest(idfa: idfa, completion: { initIdfaResult in
-                        switch initIdfaResult {
-                        case .success:
-                            self.idfaLabel.text = idfa.uuidString
-                            print("\nSDK: User granted access to 'ios_advertising_id'\nIDFA:", idfa, "\n")
-                        case .failure(_):
-                            self.idfaLabel.text = "IDFA 0"
-                            print("\nSDK: 'ios_advertising_id' Error \nIDFA:", initIdfaResult, "\n")
-                            break
-                        }
-                    })
-                case .denied, .restricted:
-                    self.idfaLabel.text = "SDK: User denied access to 'ios_advertising_id' IDFA"
-                    print("SDK: User denied access to 'ios_advertising_id' IDFA\n")
-                case .notDetermined:
-                    self.idfaLabel.text = "SDK: User not received an authorization request to 'ios_advertising_id' IDFA"
-                    print("SDK: User not received an authorization request to 'ios_advertising_id' IDFA\n")
-                @unknown default:
-                    self.idfaLabel.text = "SDK: User unknown to 'ios_advertising_id' IDFA"
-                    break
-                }
-            }
+    @available(iOS 13.0, *)
+    private func scheduleBGProcessingTrain() {
+        do {
+            let request = BGProcessingTaskRequest(identifier: "sdk.background.train.processing")
+            request.requiresExternalPower = false
+            request.requiresNetworkConnectivity = true
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print(error)
         }
     }
     
@@ -665,47 +532,7 @@ extension MainViewController: ShopSideMenuViewControllerDelegate {
         }
         vc.didMove(toParent: self)
     }
-    
-    @objc func restartApplication () {
-        if UserDefaults.standard.object(forKey: "run_once_key_b") == nil {
-            UserDefaults.standard.set(true, forKey: "run_once_key_b")
-            let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-            let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-            try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
-            sleep(2)
-
-            globalSDK?.resetSdkCache()
-            globalSDK?.deleteUserCredentials()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                //self.setupSdkLabels()
-                //self.waitIndicator.stopAnimating()
-                self.restartBundleRootApp()
-
-            }
-        }
-    }
-
-    private func restartBundleRootApp() {
-        let viewController = MainViewController()
-        let navCtrl = UINavigationController(rootViewController: viewController)
-        guard
-            let window = UIApplication.shared.keyWindow,
-            let rootViewController = window.rootViewController
-
-        else {
-            return
-        }
-
-        navCtrl.view.frame = rootViewController.view.frame
-        navCtrl.view.layoutIfNeeded()
-        navCtrl.modalPresentationStyle = .fullScreen
-
-        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: {
-            window.rootViewController = navCtrl
-        })
-    }
 }
-
 
 @IBDesignable class DemoShopButton: UIButton {
     override func layoutSubviews() {
@@ -725,6 +552,5 @@ extension MainViewController: ShopSideMenuViewControllerDelegate {
         layer.borderWidth = 2.0
         layer.borderColor = UIColor.white.cgColor
         layer.cornerRadius = 11
-        //layer.cornerRadius = frame.size.height / 2
     }
 }

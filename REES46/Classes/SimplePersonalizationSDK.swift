@@ -1148,7 +1148,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             } else {
-                if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
+                if let keychainIpfsSecret = try? KeychainService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
                     try? FileManager.default.removeItem(at: initFileNamePath)
                     let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
                     let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
@@ -1161,7 +1161,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 self.serialSemaphore.signal()
             }
             
-        } else if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
+        } else if let keychainIpfsSecret = try? KeychainService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
             try? FileManager.default.removeItem(at: initFileNamePath)
             let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
             let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
@@ -1354,7 +1354,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         if isInit {
                             let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
-                            try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
+                            try KeychainService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
                         }
                         
                         let json = try JSONSerialization.jsonObject(with: data)
@@ -1364,18 +1364,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.failure(.decodeError))
                         }
                     } catch {
-//                        self.sendInitRequest { initResult in
-//                            switch initResult {
-//                            case .success:
-//                                if let res = try? initResult.get() {
-//                                    self.userInfo = res
-//                                    self.userSeance = res.seance
-//                                    self.deviceId = res.deviceId
-//                                }
-//                            case .failure(_):
-//                                break
-//                            }
-//                        }
                         completion(.failure(.decodeError))
                     }
                 case .failure:

@@ -249,26 +249,26 @@ extension SdkVideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelega
     public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         session.getTasksWithCompletionHandler { (dataTasks, uploadTasks, downloadTasks) in
             downloadTasks.forEach {_ in
-                //print("oop")(
+                //
             }
             
             if downloadTasks.count == 0 {
-                OperationQueue.main.addOperation({
-                    if let completion = self.backgroundCompletionHandler {
-                        completion()
-                    }
-                    
-                    if self.showLocalNotificationOnBackgroundDownloadSuccess {
-                        var notificationText = "SDK: Internal Notification Downloading task completed"
-                        if let userNotificationText = self.localNotificationText {
-                            notificationText = userNotificationText
-                        }
-                        
-                        self.showSdkDownloaderNotification(withText: notificationText)
-                    }
-                    
-                    self.backgroundCompletionHandler = nil
-                })
+//                OperationQueue.main.addOperation({
+//                    if let completion = self.backgroundCompletionHandler {
+//                        completion()
+//                    }
+//                    
+//                    if self.showLocalNotificationOnBackgroundDownloadSuccess {
+//                        var notificationText = "SDK: Internal Notification Downloading task completed"
+//                        if let userNotificationText = self.localNotificationText {
+//                            notificationText = userNotificationText
+//                        }
+//                        
+//                        self.showSdkDownloaderNotification(withText: notificationText)
+//                    }
+//                    
+//                    self.backgroundCompletionHandler = nil
+//                })
             }
         }
     }

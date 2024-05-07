@@ -52,13 +52,8 @@ public class SdkPopupAlertView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.numberOfLines = 0 //1
-        
-        if #available(iOS 13.0, *) {
-            label.textColor = .black //.label
-        } else {
-            label.textColor = .black
-        }
+        label.numberOfLines = 0
+        label.textColor = .black
         return label
     }()
 
@@ -143,11 +138,7 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 28)
             ])
             
-            if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .black //.label
-            } else {
-                iconImageView.tintColor = .black
-            }
+            iconImageView.tintColor = .black
             
             iconImageView.image = icon
             hStack.addArrangedSubview(iconImageView)
@@ -163,11 +154,7 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 26)
             ])
             
-            if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .black //.label
-            } else {
-                iconImageView.tintColor = .black
-            }
+            iconImageView.tintColor = .black
             
             var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
@@ -180,13 +167,7 @@ public class SdkPopupAlertView: UIView {
 
         if let subtitle = subtitle {
             let subtitleLabel = UILabel()
-            
-            if #available(iOS 13.0, *) {
-                subtitleLabel.textColor = .black
-            } else {
-                subtitleLabel.textColor = .lightGray
-            }
-            
+            subtitleLabel.textColor = .black
             subtitleLabel.textAlignment = .center
             subtitleLabel.numberOfLines = 0
             subtitleLabel.font = subtitleFont

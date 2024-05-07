@@ -15,7 +15,7 @@ public class SdkGlobalHelper {
     
 //    public static let recommendations: SdkConfiguration = SdkConfiguration()
 //    
-//Sdk Recommendations Widget settings
+//    //Sdk Recommendations Widget settings
 //    public var fontoName: String? = nil
 //    public var backgroundColor: String = "#ffffff"
 //    public var backgroundColorDarkMode: String = "#000000"

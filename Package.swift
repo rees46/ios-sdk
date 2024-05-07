@@ -15,7 +15,7 @@ let package = Package(
         dependencies: [
              // Dependencies declare other packages that REES46 depends on.
              // .package(url: /* rees46.com */, now: pod "3.6.8"),
-             // Copyright © 2024 REES46 Inc.
+             // Copyright © 2023 REES46 Inc.
         ],
         targets: [
             .target(
