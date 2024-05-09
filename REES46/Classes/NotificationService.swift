@@ -32,6 +32,9 @@ public class NotificationService: NotificationServiceProtocol {
     
     public let sdk: PersonalizationSDK
     
+    //MARK: - private properties
+    private let mainPushTokenLastUploadDateKey = "mainPushTokenLastUploadDateKey"
+    
     public init(sdk: PersonalizationSDK) {
         self.sdk = sdk
         requireUserPrivacy { res in
@@ -47,14 +50,31 @@ public class NotificationService: NotificationServiceProtocol {
     }
 
     public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
+        guard let sdk = sdk as? SimplePersonalizationSDK,
+              sdk.autoSendPushToken == true
+        else { return }
+        
+        if let pushTokenLastUpdateDate = UserDefaults.standard.value(forKey: self.mainPushTokenLastUploadDateKey) as? Date {
+            let currentDate = Date()
+            let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
+            let oneWeekInSeconds: TimeInterval = 7 * 24 * 60 * 60
+            
+            guard timeSincePushTokenLastUpdate >= oneWeekInSeconds else {
+                return
+            }
+        }
+        
+        
         let tokenParts = deviceToken.map { data -> String in
             String(format: "%02.2hhx", data)
         }
 
         let token = tokenParts.joined()
-        sdk.setPushTokenNotification(token: token) { tokenResponse in
+        sdk.setPushTokenNotification(token: token) { [weak self] tokenResponse in
+            guard let self = self else { return }
             switch tokenResponse {
             case .success():
+                UserDefaults.standard.setValue(Date(), forKey: self.mainPushTokenLastUploadDateKey)
                 return
             case let .failure(error):
                 switch error {
