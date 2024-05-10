@@ -32,7 +32,6 @@ public class NotificationService: NotificationServiceProtocol {
     
     public let sdk: PersonalizationSDK
     
-    //MARK: - private properties
     private let mainPushTokenLastUploadDateKey = "mainPushTokenLastUploadDateKey"
     
     public init(sdk: PersonalizationSDK) {
@@ -54,7 +53,7 @@ public class NotificationService: NotificationServiceProtocol {
               sdk.autoSendPushToken == true
         else { return }
         
-        if let pushTokenLastUpdateDate = UserDefaults.standard.value(forKey: self.mainPushTokenLastUploadDateKey) as? Date {
+        if let pushTokenLastUpdateDate = UserDefaults.standard.object(forKey: self.mainPushTokenLastUploadDateKey) as? Date {
             let currentDate = Date()
             let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
             let oneWeekInSeconds: TimeInterval = 7 * 24 * 60 * 60

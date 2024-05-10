@@ -46,15 +46,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let initSemaphore = DispatchSemaphore(value: 0)
     private let serialSemaphore = DispatchSemaphore(value: 0)
 
-    init(shopId: String, 
-         userEmail: String? = nil,
-         userPhone: String? = nil,
-         userLoyaltyId: String? = nil,
-         apiDomain: String,
-         stream: String = "ios",
-         enableLogs: Bool = false,
-         autoSendPushToken: Bool = true,
-         completion: ((SDKError?) -> Void)? = nil) {
+    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, autoSendPushToken: Bool = true, completion: ((SDKError?) -> Void)? = nil) {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
         
