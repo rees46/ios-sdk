@@ -31,57 +31,28 @@ public class NotificationService: NotificationServiceProtocol {
     public var pushActionDelegate: NotificationServicePushDelegate?
     
     public let sdk: PersonalizationSDK
-    
+    private let notificationRegistrar: NotificationRegistrar
+
     private let mainPushTokenLastUploadDateKey = "mainPushTokenLastUploadDateKey"
     
     public init(sdk: PersonalizationSDK) {
         self.sdk = sdk
+        self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
+        setupNotificationCategories()
+    }
+
+    public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
+        notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
+    }
+
+    private func setupNotificationCategories() {
         requireUserPrivacy { res in
             if res {
                 let categoryIdentifier = "carousel"
                 let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "Next", options: [])
                 let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Previous", options: [])
-
                 let carouselCategory = UNNotificationCategory(identifier: categoryIdentifier, actions: [carouselNext, carouselPrevious], intentIdentifiers: [], options: [])
                 UNUserNotificationCenter.current().setNotificationCategories([carouselCategory])
-            }
-        }
-    }
-
-    public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
-        guard let sdk = sdk as? SimplePersonalizationSDK,
-              sdk.autoSendPushToken == true
-        else { return }
-        
-        if let pushTokenLastUpdateDate = UserDefaults.standard.object(forKey: self.mainPushTokenLastUploadDateKey) as? Date {
-            let currentDate = Date()
-            let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
-            let oneWeekInSeconds: TimeInterval = 7 * 24 * 60 * 60
-            
-            guard timeSincePushTokenLastUpdate >= oneWeekInSeconds else {
-                return
-            }
-        }
-        
-        
-        let tokenParts = deviceToken.map { data -> String in
-            String(format: "%02.2hhx", data)
-        }
-
-        let token = tokenParts.joined()
-        sdk.setPushTokenNotification(token: token) { [weak self] tokenResponse in
-            guard let self = self else { return }
-            switch tokenResponse {
-            case .success():
-                UserDefaults.standard.setValue(Date(), forKey: self.mainPushTokenLastUploadDateKey)
-                return
-            case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("SDK Push Token Error:", customError)
-                default:
-                    print("SDK Push Token server, \(error.description)\n")
-                }
             }
         }
     }
