@@ -37,7 +37,7 @@ class NotificationRegistrar {
         }
     }
 
-    private func handleRegistrationError(_ error: NotificationError) {
+    private func handleRegistrationError(_ error: SDKError) {
         switch error {
         case let .custom(customError):
             print("SDK Push Token Error:", customError)

@@ -32,8 +32,6 @@ public class NotificationService: NotificationServiceProtocol {
     
     public let sdk: PersonalizationSDK
     private let notificationRegistrar: NotificationRegistrar
-
-    private let mainPushTokenLastUploadDateKey = "mainPushTokenLastUploadDateKey"
     
     public init(sdk: PersonalizationSDK) {
         self.sdk = sdk
