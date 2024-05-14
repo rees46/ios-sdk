@@ -56,24 +56,8 @@ class StoriesCollectionPreviewCell: UICollectionViewCell {
         storyWhiteBackCircle.addSubview(storiesBlockAnimatedLoader)
         
         storyAuthorNameLabel.textAlignment = .center
-        //storyAuthorNameLabel.numberOfLines = 0//SdkConfiguration.stories.storiesBlockNumberOfLines
-        
-        
-        
-        //storyAuthorNameLabel.lineBreakMode = .byTruncatingMiddle
-        
-//        if SdkConfiguration.stories.storiesBlockCharWrapping {
-//            storyAuthorNameLabel.lineBreakMode = .byTruncatingTail
-//        } else {
-//            storyAuthorNameLabel.lineBreakMode = .byWordWrapping //.byTruncatingTail
-//            //storyAuthorNameLabel.allowsDefaultTighteningForTruncation = false
-//        }
         storyAuthorNameLabel.translatesAutoresizingMaskIntoConstraints = false
         storyAuthorNameLabel.backgroundColor = bgColor
-        //storyAuthorNameLabel.hyphenate()
-        
-        
-        
         addSubview(storyAuthorNameLabel)
         
         pinSymbolView.backgroundColor = .white
@@ -104,7 +88,7 @@ class StoriesCollectionPreviewCell: UICollectionViewCell {
         self.storyImage.load.request(with: url)
     }
     
-    func SpecificWordCount(str:String, word:String) ->Int {
+    func specificWordCount(str:String, word:String) ->Int {
         let words = str.components(separatedBy:" "); var count = 0
         for thing in words {
             if thing == word {
@@ -114,11 +98,11 @@ class StoriesCollectionPreviewCell: UICollectionViewCell {
         return count
     }
     
-    func CountAllWords(str:String) ->[String: Int] {
+    func countAllWords(str:String) ->[String: Int] {
         let words = str.components(separatedBy: " ");
         var wordcount = [String: Int]()
         for word in words {
-            wordcount.updateValue(SpecificWordCount(str: str, word: word), forKey: word)
+            wordcount.updateValue(specificWordCount(str: str, word: word), forKey: word)
     }
     return wordcount
     }
@@ -128,47 +112,17 @@ class StoriesCollectionPreviewCell: UICollectionViewCell {
         if SdkConfiguration.stories.storiesBlockCharWrapping {
             storyAuthorNameLabel.text = "\(story.name)".truncWords(length: SdkConfiguration.stories.storiesBlockCharCountWrap)
         } else {
-            
-            let attributedStrings = AttributedStrings()
-            _ = attributedStrings.string("\(story.name)", font: .systemFont(ofSize: 17), color: .black)
-            _ = attributedStrings.string("\(story.name)", font: .systemFont(ofSize: 16), color: .black, hyphenate: true)
-            _ = attributedStrings.string("\(story.name)", font: .systemFont(ofSize: 18), color: .black, alignment: .center)
-
-            //let label = UILabel()
-            //storyAuthorNameLabel.attributedText = attributedString1
-            
-//            let paragraphStyle = NSMutableParagraphStyle()
-//            let attstr = NSMutableAttributedString(attributedString: story.name )
-//            paragraphStyle.hyphenationFactor = 1.0
-//            attstr.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(0..<attstr.length))
-//            self.attributedText = attstr
-            
-            
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineBreakMode = .byTruncatingMiddle
-
-            //let myString = "\(story.name)"
-            //let range = NSRange(location: 0, length: attributedString1.mutableString.length)
-            //myString.addAttribute(NSParagraphStyleAttributeName, value: paragraphStyle, range: range)
+            let cWords = countAllWords(str: "\(story.name)")
             
-            let kk = CountAllWords(str: "\(story.name)")
-            
-            if kk.count <= 1 {
+            if cWords.count <= 1 {
                 storyAuthorNameLabel.numberOfLines = 1
             } else {
                 storyAuthorNameLabel.numberOfLines = 0
             }
             storyAuthorNameLabel.sizeToFit()
-            
-            ///storyAuthorNameLabel.sizeToFit()
-            //storyAuthorNameLabel.attributedText = attributedString1
             storyAuthorNameLabel.text = "\(story.name)"
-            
-            
-            
-            //let attributedStringsa = AttributedStrings()
-            //let attributedString1s = attributedStringsa.string("Пришли гуси пить водичку", font: .systemFont(ofSize: CGFloat(15)), color: .black)
-            //storyAuthorNameLabel.attributedText = attributedString1s
         }
         pinSymbolView.isHidden = !story.pinned
     }
@@ -418,7 +372,6 @@ class StoriesCollectionPreviewCell: UICollectionViewCell {
     }
 }
 
-
 private extension UIColor {
    private var rgbHexAlpha: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
        var red = CGFloat.zero
@@ -478,15 +431,3 @@ class AttributedStrings {
         return NSAttributedString(string: string, attributes: attributes)
     }
 }
-
-
-
-//extension UILabel {
-//    func hyphenate() {
-//        let paragraphStyle = NSMutableParagraphStyle()
-//        let attstr = NSMutableAttributedString(attributedString: self.attributedText!)
-//        paragraphStyle.hyphenationFactor = 1.0
-//        attstr.addAttribute(.paragraphStyle, value: paragraphStyle, range: NSRange(0..<attstr.length))
-//        self.attributedText = attstr
-//    }
-//}

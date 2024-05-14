@@ -1,6 +1,7 @@
 import UIKit
 
 class HomeViewController: UIViewController {
+    
     @IBOutlet var sideMenuBtn: UIBarButtonItem!
 
     override func viewDidLoad() {

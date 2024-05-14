@@ -6,8 +6,8 @@ enum KeychainError: LocalizedError {
     case unexpectedStatus(OSStatus)
 }
 
-let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
-let instanceKeychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
+public let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
+public let instanceKeychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
 
 struct KeychainService {
     static func insertKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
@@ -77,7 +77,29 @@ struct KeychainService {
         }
     }
 
-    static func deleteKeychainDidToken(identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
+//    public static func deleteKeychainDidToken(identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
+//        let query = [
+//            kSecClass: kSecClassGenericPassword,
+//            kSecAttrService: instanceKeychainService,
+//            kSecAttrAccount: identifier
+//        ] as CFDictionary
+//
+//        let status = SecItemDelete(query)
+//        
+//        if status == errSecItemNotFound {
+//            //debugPrint ("SDK: Keychain errSecItemNotFound")
+//        } else if status == errSecNoSuchKeychain {
+//            //debugPrint ("SDK: Keychain errSecNoSuchKeychain")
+//        }
+//        
+//        guard status == errSecSuccess || status == errSecItemNotFound else {
+//            throw KeychainError.unexpectedStatus(status)
+//        }
+//    }
+}
+
+public struct KeychainResetService {
+    public static func deleteKeychainDidToken(identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
         let query = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: instanceKeychainService,

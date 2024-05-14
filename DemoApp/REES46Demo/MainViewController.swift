@@ -48,6 +48,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
     public var newArrivalsCollectionView = RecommendationsWidgetView()
+    
+    public var searchWidgetController = SearchViewController()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -99,6 +101,18 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         showViewController(viewController: UINavigationController.self, storyboardId: "HomeNavID")
     }
     
+    @available(iOS 13.0, *)
+    private func scheduleMLTrain() {
+        do {
+            let request = BGProcessingTaskRequest(identifier: "sdk.background.train.processing")
+            request.requiresExternalPower = false
+            request.requiresNetworkConnectivity = true
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print(error)
+        }
+    }
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
     }
@@ -114,8 +128,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     func didChangeConnectionStatus(_ status: REES46.NetworkConnectionStatus) {
         DispatchQueue.main.async {
             switch status {
-            case .Online: break
-            case .Offline: break
+            case .Online:
+                break
+            case .Offline:
+                break
             }
         }
     }
@@ -127,14 +143,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                }
                
                switch connectionType {
-               case .cellular(_): break
-                   
-               case .wifi: break
-                   
-               case .ethernet: break
-                   
-               case .notdetected: break
-                   
+               case .cellular(_):
+                   break
+               case .wifi:
+                   break
+               case .ethernet:
+                   break
+               case .notdetected:
+                   break
                }
            }
        }
@@ -193,15 +209,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         }
     }
     
-    @objc private func didTapUpdate() {
-        setupSdkLabels()
-        globalSDK?.resetSdkCache()
-        
-        if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
-        }
-    }
-    
     @objc private func didTapSlideMenu() {
         self.sideMenuState(expanded: self.isExpanded ? false : true)
     }
@@ -211,15 +218,121 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     }
     
     func startInstantSearch() {
-        //
+        globalSDK?.searchBlank { searchResponse in
+            switch searchResponse {
+            case let .success(searchResponse):
+                
+                var suggestArray = [String]()
+                for item in searchResponse.suggests {
+                    let product = item.name
+                    suggestArray.append(product)
+                }
+                
+                var lastQueriesArray = [String]()
+                for item in searchResponse.lastQueries {
+                    let product = item.name
+                    lastQueriesArray.append(product)
+                }
+                
+                var productsRecentlyViewedArray = [String]()
+                for item in searchResponse.products {
+                    let productId = item.id
+                    let product = item.name
+                    let price = item.priceFormatted
+                    let img = item.imageUrl
+                    let description = "^" + productId + "^" + "!" + product + "!" + "\n" + "|" + price + "|" + "[" + img + "]"
+                    productsRecentlyViewedArray.append(description)
+                }
+                
+                if (lastQueriesArray.count == 0 && productsRecentlyViewedArray.count == 0) {
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    let sdkSearchWidget = SearchWidget()
+                    sdkSearchWidget.setCategoriesSuggests(value: [])
+                    sdkSearchWidget.setRequestHistories(value: productsRecentlyViewedArray)
+                    sdkSearchWidget.setSearchSuggest(value: lastQueriesArray)
+                    
+                    var frameworkBundle = Bundle(for: REES46.SearchViewController.self)
+#if SWIFT_PACKAGE
+                    frameworkBundle = Bundle.module
+#endif
+                    let searchVC = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchViewController
+                    searchVC.modalPresentationStyle = .fullScreen
+                    searchVC.sdk = globalSDK
+                    searchVC.lastQueriesHistories = productsRecentlyViewedArray
+                    searchVC.recommendQueries = lastQueriesArray
+                    self.present(searchVC, animated: true, completion: nil)
+                }
+                
+            case let .failure(error):
+                switch error {
+                case let .custom(customError):
+                    DispatchQueue.main.async {
+                        self.openSearchAnyway()
+                    }
+                    print("Error:", customError)
+                default:
+                    DispatchQueue.main.async {
+                        self.openSearchAnyway()
+                    }
+                    print("Error:", error.description)
+                }
+            }
+        }
     }
     
     private func openSearchAnyway() {
-        //
+        let sdkSearchWidget = SearchWidget()
+        sdkSearchWidget.setCategoriesSuggests(value: [])
+        sdkSearchWidget.setRequestHistories(value: [])
+        sdkSearchWidget.setSearchSuggest(value: [])
+        
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
+        searchVC.modalPresentationStyle = .fullScreen
+        searchVC.sdk = globalSDK
+        searchVC.suggestsCategories = []
+        searchVC.lastQueriesHistories = []
+        
+        self.present(searchVC, animated: true, completion: nil)
     }
     
     @objc private func didTapCart() {
-        //
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
+        searchVC.modalPresentationStyle = .fullScreen
+        searchVC.sdk = globalSDK
+        searchVC.suggestsCategories = []
+        searchVC.lastQueriesHistories = []
+        
+        self.present(searchVC, animated: true, completion: nil)
+    }
+    
+    @objc private func didTapUpdate() {
+        setupSdkLabels()
+        globalSDK?.resetSdkCache()
+        
+        if let globalSDK = globalSDK {
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+        }
+    }
+    
+    @objc private func didTapReset() {
+        self.waitIndicator.startAnimating()
+        
+        let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
+        let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
+        try? KeychainResetService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
+        sleep(2)
+        
+        globalSDK?.resetSdkCache()
+        globalSDK?.deleteUserCredentials()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.setupSdkLabels()
+            self.waitIndicator.stopAnimating()
+        }
     }
     
     func setupSdkDemoAppViews() {
@@ -230,7 +343,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
-        //resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
+        resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -282,18 +395,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-    }
-    
-    @available(iOS 13.0, *)
-    private func scheduleBGProcessingTrain() {
-        do {
-            let request = BGProcessingTaskRequest(identifier: "sdk.background.train.processing")
-            request.requiresExternalPower = false
-            request.requiresNetworkConnectivity = true
-            try BGTaskScheduler.shared.submit(request)
-        } catch {
-            print(error)
-        }
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

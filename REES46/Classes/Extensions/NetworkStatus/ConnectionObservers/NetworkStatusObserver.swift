@@ -7,7 +7,6 @@ public protocol NetworkStatusObserver {
     func didChangeConnectionType(_ type: NetworkConnectionType?)
 }
 
-
 public extension NetworkStatusObserver {
     internal var connectionObserverId: String {
         get {

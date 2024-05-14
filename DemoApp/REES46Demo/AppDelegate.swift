@@ -33,11 +33,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
     
-    public typealias BackgroundDownloadCompletionHandler = () -> Void 
+    public typealias BackgroundDownloadCompletionHandler = () -> Void
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
         print("A. Init firebase sdk")
         FirebaseApp.configure()
         Messaging.messaging().delegate = self
@@ -118,7 +117,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
 //                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
 //                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
-//        
+
 //        //SDK Recommendations Widget settings
 //        sdk.configuration().recommendations.setWidget(fontName: "Inter",
 //                                                      backgroundColor: "#ffffff",
@@ -144,7 +143,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                      favoritesIconColorDarkMode: "#ffffff",
 //                                                      preloadIndicatorColor: "#ffffff",
 //                                                      defaultMessageNoReviews: "No reviews")
-//        
+//
 //        //SDK Stories block collection cell indicator
 //        sdk.configuration().stories.storiesBlockPreloadIndicatorDisabled = true //default false - cell indicator enabled
 
