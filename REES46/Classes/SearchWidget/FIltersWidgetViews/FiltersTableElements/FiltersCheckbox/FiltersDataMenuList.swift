@@ -5,7 +5,7 @@ protocol FiltersTagsMenuBaseModel {
     var isCollapsed: Bool { get set }
 }
 
-public class FiltersDataMenuList {
+open class FiltersDataMenuList {
     var filterId: Int = -1
     var title: String = ""
     var titleValues: [String] = [""]

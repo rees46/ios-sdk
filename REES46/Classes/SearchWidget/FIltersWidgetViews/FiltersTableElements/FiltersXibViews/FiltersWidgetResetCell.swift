@@ -4,7 +4,7 @@ protocol FiltersWidgetResetDelegate: AnyObject {
     func dismissNow()
 }
 
-public class FiltersWidgetResetCell: UITableViewCell {
+open class FiltersWidgetResetCell: UITableViewCell {
     
     weak var delegate: FiltersWidgetResetDelegate?
     
@@ -29,8 +29,8 @@ public class FiltersWidgetResetCell: UITableViewCell {
     }
 }
 
-@IBDesignable class FiltersResetButton: UIButton {
-    override func layoutSubviews() {
+@IBDesignable open class FiltersResetButton: UIButton {
+    open override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()
     }
@@ -50,8 +50,8 @@ public class FiltersWidgetResetCell: UITableViewCell {
     }
 }
 
-@IBDesignable class FiltersSelectedShowButton: UIButton {
-    override func layoutSubviews() {
+@IBDesignable open class FiltersSelectedShowButton: UIButton {
+    open override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()
     }

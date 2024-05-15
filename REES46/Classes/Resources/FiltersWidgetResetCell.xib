@@ -24,7 +24,7 @@
                         <state key="normal" title="Button"/>
                         <buttonConfiguration key="configuration" style="plain" title="Show"/>
                         <connections>
-                            <action selector="searchDataItemSelected:" destination="hQj-Ft-N3f" eventType="touchUpInside" id="xId-ik-w1L"/>
+                            <action selector="searchDataItemSelected:" destination="hQj-Ft-N3f" eventType="touchUpInside" id="mSZ-w3-2xp"/>
                         </connections>
                     </button>
                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="TP6-fd-dIM" customClass="FiltersResetButton" customModule="REES46" customModuleProvider="target">
@@ -35,7 +35,7 @@
                         <state key="normal" title="Button"/>
                         <buttonConfiguration key="configuration" style="plain" title="Reset"/>
                         <connections>
-                            <action selector="cancelDataItemSelected:" destination="hQj-Ft-N3f" eventType="touchUpInside" id="hSG-ER-2bc"/>
+                            <action selector="cancelDataItemSelected:" destination="hQj-Ft-N3f" eventType="touchUpInside" id="l76-qP-2fl"/>
                         </connections>
                     </button>
                 </subviews>

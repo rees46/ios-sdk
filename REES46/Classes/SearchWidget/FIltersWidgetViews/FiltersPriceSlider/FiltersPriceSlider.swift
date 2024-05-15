@@ -1,7 +1,7 @@
 import UIKit
 import QuartzCore
 
-@IBDesignable class FiltersPriceSlider: UIControl {
+@IBDesignable open class FiltersPriceSlider: UIControl {
    
     @IBInspectable var minimumValue: Double = 0 {
         didSet {
@@ -39,7 +39,6 @@ import QuartzCore
         }
     }
     
-    //@IBInspectable var trackHighlightTintColor = UIColor(red: 0.0, green: 0.45, blue: 0.94, alpha: 1.0) {
     @IBInspectable var trackHighlightTintColor = UIColor.black {
         didSet {
             trackLayer.setNeedsDisplay()
@@ -78,13 +77,13 @@ import QuartzCore
         return CGFloat(bounds.height)
     }
     
-    override var frame: CGRect {
+    public override var frame: CGRect {
         didSet {
             updateLayerFrames()
         }
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
         updateLayerFrames()
     }
@@ -106,7 +105,7 @@ import QuartzCore
         updateLayerFrames()
     }
     
-    required init(coder: NSCoder) {
+    required public init(coder: NSCoder) {
         super.init(coder: coder)!
         trackLayer.rangeSlider = self
         trackLayer.contentsScale = UIScreen.main.scale
@@ -130,12 +129,12 @@ import QuartzCore
         let lowerThumbCenter = CGFloat(positionForValue(lowerValue))
         
         lowerThumbLayer.frame = CGRect(x: lowerThumbCenter - thumbWidth / 2.0, y: 0.0, width: thumbWidth, height: thumbWidth)
-        print("SDK: Price new X Position \(lowerThumbCenter)")
+        //print("SDK: Price range slider new X Position \(lowerThumbCenter)")
         lowerThumbLayer.setNeedsDisplay()
         
         let upperThumbCenter = CGFloat(positionForValue(upperValue))
         upperThumbLayer.frame = CGRect(x: upperThumbCenter - thumbWidth / 2.0, y: 0.0, width: thumbWidth, height: thumbWidth)
-        print("SDK: Price new X Position \(upperThumbCenter)")
+        //print("SDK: Price range slider new X Position \(upperThumbCenter)")
         upperThumbLayer.setNeedsDisplay()
     }
     
@@ -144,9 +143,9 @@ import QuartzCore
             (maximumValue - minimumValue) + Double(thumbWidth / 2.0)
     }
     
-    override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+    public override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         previousLocation = touch.location(in: self)
-        print("SDK: PricePreviousLocation \(previousLocation)")
+        //print("SDK: Price range slider previous location \(previousLocation)")
         
         if lowerThumbLayer.frame.contains(previousLocation) {
             lowerThumbLayer.highlighted = true
@@ -157,11 +156,11 @@ import QuartzCore
         return lowerThumbLayer.highlighted || upperThumbLayer.highlighted
     }
     
-    override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+    public override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
         let location = touch.location(in: self)
         
         let deltaX = Double(location.x - previousLocation.x)
-        print("SDK: PriceNewLocation : \(location.x) PriceOldLocation:\(previousLocation)")
+        //print("SDK: Price range slider NewLocation : \(location.x) PriceOldLocation:\(previousLocation)")
         
         let unitDistance = (maximumValue - minimumValue) / Double(bounds.width - thumbWidth)
         let deltaValue =  unitDistance * deltaX
@@ -171,14 +170,13 @@ import QuartzCore
         if lowerThumbLayer.highlighted {
             lowerValue += deltaValue
             lowerValue = boundValue(value: lowerValue, toLowerValue: minimumValue, upperValue: upperValue)
-
         }
         
         if upperThumbLayer.highlighted {
             upperValue += deltaValue
             
             upperValue = boundValue(value: upperValue, toLowerValue: lowerValue, upperValue: maximumValue)
-            print("SDK: PriceUpperValue \(upperValue)")
+            //print("SDK: Price range slider upper value \(upperValue)")
         }
        
         sendActions(for: .valueChanged)
@@ -189,7 +187,7 @@ import QuartzCore
         return min(max(value, lowerValue), upperValue)
     }
     
-    override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+    public override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
         lowerThumbLayer.highlighted = false
         upperThumbLayer.highlighted = false
     }

@@ -254,7 +254,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                     sdkSearchWidget.setRequestHistories(value: productsRecentlyViewedArray)
                     sdkSearchWidget.setSearchSuggest(value: lastQueriesArray)
                     
-                    var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
+                    var frameworkBundle = Bundle(for: SearchWidgetMainView.self)
 #if SWIFT_PACKAGE
                     frameworkBundle = Bundle.module
 #endif
@@ -289,7 +289,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         sdkSearchWidget.setRequestHistories(value: [])
         sdkSearchWidget.setSearchSuggest(value: [])
         
-        var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
+        var frameworkBundle = Bundle(for: SearchWidgetMainView.self)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
 #endif
@@ -303,7 +303,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     }
     
     @objc private func didTapCart() {
-        var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
+        var frameworkBundle = Bundle(for: SearchWidgetMainView.self)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
 #endif

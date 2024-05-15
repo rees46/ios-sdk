@@ -6,28 +6,25 @@ protocol FiltersWidgetCheckboxCellDelegate: AnyObject {
     func reloadSectionsInFiltersTable(_ section: Int)
 }
 
-public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
+open class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     public func collapseSection(header: FiltersCheckboxItem, section: Int) {
         //SDK: Detect tap filters collape callback
     }
     
-    var menuList = [FiltersDataMenuList]()
+    var cellFiltersList = [FiltersDataMenuList]()
     
     func collapseSection(header: FiltersWidgetCheckboxCell, section: Int) {
-        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
-        if !carouselOpenedBoolKey {
+        let checkboxCellOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
+        if !checkboxCellOpenedBoolKey {
             UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
         } else {
             UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
         }
-        
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxObserver"), object: nil)
     }
     
     public func checkboxItemDidSelected(item: FiltersCheckboxItem) {
         print(item)
         delegate?.updateTableWithFiltersNow(0)
-        //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxObserver"), object: nil)
     }
     
     func checkboxItemDidSelected(item: FiltersWidgetCheckboxCell) {
@@ -45,7 +42,7 @@ public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDele
     
     var items = [FiltersCheckboxItem]()
     
-    var menu = FiltersDataMenuList(filterId: -99, title: "Menu", titleFiltersValues: ["String"], selected: false)
+    var cellFiltersDataList = FiltersDataMenuList(filterId: -99, title: "Menu", titleFiltersValues: ["String"], selected: false)
 
     let checkboxTree = FiltersCheckboxTree()
     
@@ -81,7 +78,6 @@ public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDele
     
     func updateView(){
         checkboxTree.items = items
-        
     }
     
     @objc private func didTapHeader() {

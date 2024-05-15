@@ -73,8 +73,7 @@ class FiltersCheckboxNode<T: FiltersCheckboxItem> {
             }
 
             if self.item.selectionState == .mixed {
-
-                if self.item.children.filter({ item in
+                if self.item.childrenCheckboxArray.filter({ item in
                     item.isEnabled
                 }).contains(where: { item in
                     item.isSelected == false
@@ -122,7 +121,7 @@ class FiltersCheckboxNode<T: FiltersCheckboxItem> {
     }
 
     private func generateChildNodes() {
-        for item in item.children {
+        for item in item.childrenCheckboxArray {
             let node = FiltersCheckboxNode(item: item as! T,
                                     depth: 0,
                                     parentNode: self,

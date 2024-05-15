@@ -14,19 +14,8 @@ open class SearchWidgetTextField: UITextField {
     open func initView() {
         self.leftViewMode = .always
         
-        let searchUIViewWrapper = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 15))
-        
-//        var frameworkBundle = Bundle(for: classForCoder)
-//#if SWIFT_PACKAGE
-//        frameworkBundle = Bundle.module
-//#endif
-//        
-//        let searchImageView = UIImageView(frame: CGRect(x: 10, y: 0, width: 15, height: 15))
-//        let search = UIImage(named: "iconSearch", in: frameworkBundle, compatibleWith: nil)
-//        searchImageView.image = search
-//        searchUIViewWrapper.addSubview(searchImageView)
-        
-        self.leftView = searchUIViewWrapper
+        let searchUILeftViewWrapper = UIView(frame: CGRect(x: 0, y: 0, width: 20, height: 15))
+        self.leftView = searchUILeftViewWrapper
         self.returnKeyType = .search
         self.attributedPlaceholder = NSAttributedString(string: "Search", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
         
@@ -34,13 +23,9 @@ open class SearchWidgetTextField: UITextField {
         self.textColor = UIColor.black
         self.font = UIFont.systemFont(ofSize: 16)
         
-        if #available(iOS 13.0, *) {
-            let searchUIViewWrapper2 = UIView(frame: CGRect(x: 50, y: 0, width: 20, height: 15))
-            self.rightView = searchUIViewWrapper2
-            self.attributedPlaceholder = NSAttributedString(string: "Search", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
-        } else {
-            //
-        }
+        let searchUIRightViewWrapper = UIView(frame: CGRect(x: 50, y: 0, width: 20, height: 15))
+        self.rightView = searchUIRightViewWrapper
+        self.attributedPlaceholder = NSAttributedString(string: "Search", attributes: [NSAttributedString.Key.foregroundColor: UIColor.lightGray])
     }
     
     deinit {

@@ -1,11 +1,11 @@
 import Foundation
 import UIKit
 
-class FiltersPriceSliderTrackerLayer: CALayer {
+open class FiltersPriceSliderTrackerLayer: CALayer {
     
-    weak var rangeSlider: FiltersPriceSlider?
+    public weak var rangeSlider: FiltersPriceSlider?
     
-    override func draw(in ctx: CGContext) {
+    public override func draw(in ctx: CGContext) {
         super.draw(in: ctx)
         if let slider = rangeSlider {
             

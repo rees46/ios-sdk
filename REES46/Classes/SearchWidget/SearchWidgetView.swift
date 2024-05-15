@@ -39,7 +39,8 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     var addToCart = SearchWidgetCartButton(image: UIImage(named: "cart"))
     var cartItemCount: Int = 0
     
-    var filtersList = [FiltersDataMenuList]()
+    var filtersDataList = [FiltersDataMenuList]()
+    
     var minP: Double = 0
     var maxP: Double = 0
     
@@ -55,9 +56,13 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         searchProductsCollectionView.dataSource = self
         searchProductsCollectionView.isHidden = true
         
-        searchProductsCollectionView.register(UINib(nibName: "SearchWidgetProductCell", bundle: frameworkBundle), forCellWithReuseIdentifier: "SearchWidgetProductCell")
+        var frameworkBundle1 = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        frameworkBundle1 = Bundle.module
+#endif
+        searchProductsCollectionView.register(UINib(nibName: "SearchWidgetProductCell", bundle: frameworkBundle1), forCellWithReuseIdentifier: "SearchWidgetProductCell")
         
-        searchProductsCollectionView.register(UINib(nibName: "FiltersWidgetView", bundle: frameworkBundle), forCellWithReuseIdentifier: "FiltersWidgetView")
+        //searchProductsCollectionView.register(UINib(nibName: "FiltersWidgetView", bundle: frameworkBundle1), forCellWithReuseIdentifier: "FiltersWidgetView")
         
         blankHeaderView.isHidden = true
         searchHeaderView.isHidden = true
@@ -77,7 +82,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         self.setSearchWidgetCategoriesButtonType(type: .blacked)
         
         backButton.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
-        filtersButton.addTarget(self, action: #selector(filtersOpenTap), for: .touchUpInside)
+        filtersButton.addTarget(self, action: #selector(filtersOpenViewTap), for: .touchUpInside)
         filtersButton.isHidden = true
         
         foundProductsCoutLbl.text = ""
@@ -93,27 +98,23 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                 self.backButton.frame.origin.x += 3
             }, completion: { (isFinished) in
             })
-            
         } else if SdkGlobalHelper.DeviceType.IS_IPHONE_XS {
             UIView.animate(withDuration: 0.5, animations: {
                 self.backButton.frame.origin.y += 7
             }, completion: { (isFinished) in
             })
-            
         } else if SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
             UIView.animate(withDuration: 0.5, animations: {
                 self.backButton.frame.origin.y += 3
                 self.backButton.frame.origin.x += 3
             }, completion: { (isFinished) in
             })
-            
         } else if SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
             UIView.animate(withDuration: 0.5, animations: {
                 self.backButton.frame.origin.y += 7
                 self.backButton.frame.origin.x += 3
             }, completion: { (isFinished) in
             })
-            
         } else {
             UIView.animate(withDuration: 0.5, animations: {
                 self.backButton.frame.origin.y += 3
@@ -188,15 +189,15 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         self.sdkSearchWidgetTextFieldView.cancelButton.isHidden = false
         self.delegate?.minimizeSearchTextField()
         
-        UserDefaults.standard.set(false, forKey: "client_currency")
+        UserDefaults.standard.set(false, forKey: "clientCurrencyValue")
         self.pushFullSearchWidgetMainView(productText: productSearchText)
     }
     
     public func searchWidgetCategoriesButtonClicked(productSearchText: String) {
         UserDefaults.standard.set(false, forKey: "needShowOnTapButtonsResults")
         
-        sdk?.suggest(query: productSearchText) { searchResponse in
-            switch searchResponse {
+        sdk?.suggest(query: productSearchText) { response in
+            switch response {
             case let .success(searchResponse):
                 
                 var queriesArray = [String]()
@@ -244,9 +245,9 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                 print(categoriesRecommendedInputArray.count)
                 print(self.suggestsCategories.count)
                 
-                let productSelectedSearchText1 = UserDefaults.standard.string(forKey: "savedSearchWidgetLastButtonTap") ?? ""
-                print(productSelectedSearchText1)
-                if (productSearchText == productSelectedSearchText1 && self.suggestsCategories.count == 0) {
+                let productSelectedSearchText = UserDefaults.standard.string(forKey: "savedSearchWidgetLastButtonTap") ?? ""
+                print(productSelectedSearchText)
+                if (productSearchText == productSelectedSearchText && self.suggestsCategories.count == 0) {
                     UserDefaults.standard.set(true, forKey: "needShowOnTapButtonsResults")
                     UserDefaults.standard.set("", forKey: "savedSearchWidgetLastButtonTap")
                 } else {
@@ -279,7 +280,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     public func reloadBlankSearch() {
         UserDefaults.standard.set(true, forKey: "notNeedShowInteresting")
         UserDefaults.standard.set(false, forKey: "needShowOnTapButtonsResults")
-        UserDefaults.standard.set(false, forKey: "client_currency")
+        UserDefaults.standard.set(false, forKey: "clientCurrencyValue")
         
 //        DispatchQueue.main.async {
 //            self.searchProductsCollectionView.isHidden = true
@@ -486,7 +487,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     
     public func sdkSearchWidgetListViewClicked(productSearchKey: String) {
         self.pushFullSearchWidgetMainView(productText: productSearchKey)
-        UserDefaults.standard.set(false, forKey: "client_currency")
+        UserDefaults.standard.set(false, forKey: "clientCurrencyValue")
     }
     
     public func sdkSearchWidgetListViewClicked(object: Any) {
@@ -511,21 +512,25 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     
     func pushFullSearchWidgetMainView(productText: String) {
         self.findedProducts.removeAll()
-        self.filtersList.removeAll()
+        self.filtersDataList.removeAll()
         
         sdk?.search(query: productText, sortBy: "popular", filtersSearchBy: "name", timeOut: 0.3) { searchResponse in
             switch searchResponse {
             case let .success(searchResponse):
-                var imagesFindedProductArray = [String]()
+                var imagesProductArray = [String]()
                 var arrayOfPreparedFilters = [String]()
                 let strToFiltersRepresentation: [String : Filter] = searchResponse.filters ?? [:]
                 
-                let clientCurrencyValue = UserDefaults.standard.string(forKey: "client_currency") ?? ""
-                let clientCurrencyDetect: Bool = UserDefaults.standard.bool(forKey: "client_currency")
+                let clientCurrencyValue = UserDefaults.standard.string(forKey: "clientCurrencyValue") ?? ""
+                let clientCurrencyDetect: Bool = UserDefaults.standard.bool(forKey: "clientCurrencyValue")
                 if !clientCurrencyDetect {
                     let currencyFilterTitle = "Price ( " + clientCurrencyValue + " )"
-                    self.filtersList.insert(FiltersDataMenuList(filterId: 9999990, title: currencyFilterTitle, titleFiltersValues: [], selected: false), at: 0)
-                    UserDefaults.standard.set(true, forKey: "client_currency")
+                    self.filtersDataList.insert(FiltersDataMenuList(filterId: 9999990,
+                                                                    title: currencyFilterTitle,
+                                                                    titleFiltersValues: [],
+                                                                    selected: false),
+                                                at: 0)
+                    UserDefaults.standard.set(true, forKey: "clientCurrencyValue")
                 }
                 
                 for (index, key) in strToFiltersRepresentation {
@@ -538,7 +543,10 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                     if dsValue.count == 0 {
                         print("SDK: Command Not found Filters in Category")
                     } else {
-                        self.filtersList.append(FiltersDataMenuList(filterId: index.count, title: index, titleFiltersValues: dsValue, selected: true))
+                        self.filtersDataList.append(FiltersDataMenuList(filterId: index.count,
+                                                                    title: index,
+                                                                    titleFiltersValues: dsValue,
+                                                                    selected: true))
                     }
                 }
                 
@@ -586,17 +594,17 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                     let img = item.imageUrl
                     let desc = item.productDescription
                     
-                    imagesFindedProductArray.insert(img, at: 0)
+                    imagesProductArray.insert(img, at: 0)
                     
                     let productSearchedByUser = SearchWidgetProductDataPrepare(productId: productId,
-                                                                           brandTitle: brandProduct,
-                                                                           title: product,
-                                                                           price: price,
-                                                                           priceNum: priceNum,
-                                                                           oldPrice: oldPrice,
-                                                                           description: desc,
-                                                                           mainImage: img,
-                                                                           imagesArray: imagesFindedProductArray)
+                                                                               brandTitle: brandProduct,
+                                                                               title: product,
+                                                                               price: price,
+                                                                               priceNum: priceNum,
+                                                                               oldPrice: oldPrice,
+                                                                               description: desc,
+                                                                               mainImage: img,
+                                                                               imagesArray: imagesProductArray)
                     self.findedProducts.append(productSearchedByUser)
                 }
                 
@@ -616,9 +624,12 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                     self.view.bringSubviewToFront(self.sdkSearchWidgetTextFieldView)
                     
                     if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO_MAX {
-                        UIView.animate(withDuration: 0.5, delay: 0.0,
-                                       usingSpringWithDamping: 0.0, initialSpringVelocity: 0.0,
-                                       options: .allowAnimatedContent, animations: {
+                        UIView.animate(withDuration: 0.5,
+                                       delay: 0.0,
+                                       usingSpringWithDamping: 0.0,
+                                       initialSpringVelocity: 0.0,
+                                       options: .allowAnimatedContent,
+                                       animations: {
                             self.filtersButton.frame.origin.x += 5
                             
                             self.filtersButton.isHidden = false
@@ -714,22 +725,21 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         }
     }
     
-    @objc private func filtersOpenTap() {
+    @objc private func filtersOpenViewTap() {
         var frameworkBundle = Bundle(for: FiltersWidgetView.self)
         //var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
             frameworkBundle = Bundle.module
 #endif
-        //'let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
-        
-        let filtersWidgetMainView = FiltersWidgetView()
+        let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
+        //let filtersWidgetMainView = FiltersWidgetView()
         filtersWidgetMainView.modalPresentationStyle = .fullScreen
-        filtersWidgetMainView.filtersList = self.filtersList
+        filtersWidgetMainView.filtersList = self.filtersDataList
         self.present(filtersWidgetMainView, animated: true, completion: nil)
     }
     
     @objc private func didTapBack() {
-        UserDefaults.standard.set(false, forKey: "client_currency")
+        UserDefaults.standard.set(false, forKey: "clientCurrencyValue")
         filtersButton.isHidden = true
         self.dontNeedFiltersSelectedShowButton = true
         self.dismiss(animated: false, completion: nil)

@@ -2,17 +2,17 @@ import Foundation
 import UIKit
 
 extension UIColor {
-    static var primary: UIColor {
+    static var tagsPrimaryColor: UIColor {
         return hexStringToUIColor(hex: "#EBA1A1")
     }
-    static var title: UIColor {
+    static var tagsPrimaryTitleColor: UIColor {
         return #colorLiteral(red: 0.1450980392, green: 0.1450980392, blue: 0.1450980392, alpha: 1)
     }
-    static var subtitle: UIColor {
+    static var tagsPrimarySubtitleColor: UIColor {
         return #colorLiteral(red: 0.3333333333, green: 0.3333333333, blue: 0.3333333333, alpha: 1)
     }
     
-    static var tranparent: UIColor {
+    static var tagsPrimaryTransparentColor: UIColor {
         return #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0)
     }
 }

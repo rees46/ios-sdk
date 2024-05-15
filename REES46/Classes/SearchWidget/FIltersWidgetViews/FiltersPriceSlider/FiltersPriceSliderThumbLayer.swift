@@ -1,15 +1,15 @@
 import UIKit
 
-class FiltersPriceSliderThumbLayer: CALayer {
+open class FiltersPriceSliderThumbLayer: CALayer {
     var highlighted = false {
         didSet {
             setNeedsDisplay()
         }
     }
     
-    weak var rangeSlider: FiltersPriceSlider?
+    public weak var rangeSlider: FiltersPriceSlider?
     
-    override func draw(in ctx: CGContext) {
+    public override func draw(in ctx: CGContext) {
         super.draw(in: ctx)
         if let slider = rangeSlider {
             let thumbFrame = bounds.insetBy(dx: 1.0, dy: 1.0)

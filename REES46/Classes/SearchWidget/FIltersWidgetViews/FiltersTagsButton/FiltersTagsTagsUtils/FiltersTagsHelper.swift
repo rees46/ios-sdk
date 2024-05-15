@@ -9,7 +9,7 @@ struct FiltersTagsHelper {
     
     struct FiltersTagsModel {
         struct FiltersTagsModelMenu {
-            static let CLOSED = "CLOSED"
+            static let closed = "Closed"
         }
     }
 }

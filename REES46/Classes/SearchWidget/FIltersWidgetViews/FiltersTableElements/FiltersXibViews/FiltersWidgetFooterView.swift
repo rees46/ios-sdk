@@ -4,21 +4,23 @@ protocol FiltersWidgetFooterViewDelegate: AnyObject {
     func headerFooterViewArrowInSection(header: FiltersWidgetFooterView, section: Int)
 }
 
-public class FiltersWidgetFooterView: UITableViewHeaderFooterView {
+open class FiltersWidgetFooterView: UITableViewHeaderFooterView {
+    
     @IBOutlet weak var titleLabel: UILabel?
+    
     @IBOutlet weak var arrowImage: UIImageView?
     
     var section: Int = 0
     
     weak var delegate: FiltersWidgetFooterViewDelegate?
     
-    static var nib:UINib {
-        return UINib(nibName: identifier, bundle: nil)
-    }
-    
-    static var identifier: String {
-        return String(describing: self)
-    }
+//    static var nib:UINib {
+//        return UINib(nibName: identifier, bundle: nil)
+//    }
+//    
+//    static var identifier: String {
+//        return String(describing: self)
+//    }
     
     public override func awakeFromNib() {
         super.awakeFromNib()

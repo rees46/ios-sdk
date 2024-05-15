@@ -1,11 +1,15 @@
 import UIKit
 
 class FiltersTagsCollectionViewCell: UICollectionViewCell {
-    @IBOutlet weak var menuLabel: UILabel!
-    var menu = FiltersDataMenuList(filterId: -88, title: "Menu", titleFiltersValues: ["String"], selected: false)
     
-    var menuString = String()
+    @IBOutlet weak var tagLabel: UILabel!
+    
+    var tagsFiltersData = FiltersDataMenuList(filterId: -88, title: "Menu", titleFiltersValues: ["String"], selected: false)
+    
+    var tagString = String()
+    
     override func awakeFromNib() {
+        super.awakeFromNib()
     }
     
     override func layoutSubviews() {
@@ -13,8 +17,8 @@ class FiltersTagsCollectionViewCell: UICollectionViewCell {
     }
     
     func updateView(){
-        menuLabel.text = menuString
-        if menu.selected {
+        tagLabel.text = tagString
+        if tagsFiltersData.selected {
             selectedCollectionStyle()
         } else {
            unselectedCollectionStyle()
@@ -25,15 +29,15 @@ class FiltersTagsCollectionViewCell: UICollectionViewCell {
         layer.borderWidth = 0
         layer.backgroundColor = UIColor.sdkDefaultBordoColor.cgColor
         layer.cornerRadius = layer.bounds.height/2
-        menuLabel.textColor = UIColor.white
+        tagLabel.textColor = UIColor.white
     }
     
     func unselectedCollectionStyle() {
         layer.borderColor = UIColor.sdkDefaultBordoColor.cgColor
-        layer.backgroundColor = UIColor.tranparent.cgColor
+        layer.backgroundColor = UIColor.tagsPrimaryTransparentColor.cgColor
         layer.borderWidth = 1
         layer.cornerRadius = layer.bounds.height/2
-        menuLabel.textColor = UIColor.primary
+        tagLabel.textColor = UIColor.tagsPrimaryColor
     }
     
     var isHeightCalculated: Bool = false

@@ -8,20 +8,20 @@ public class FiltersTagsTableViewCell: UITableViewCell {
     
     var delegate: FiltersTagsTableViewCellDelegate?
     
-    var menuList = [FiltersDataMenuList]()
+    var cellFiltersList = [FiltersDataMenuList]()
 
     public override func awakeFromNib() {
         super.awakeFromNib()
         collectionView.backgroundColor = UIColor.red
     }
     
-    static var nib:UINib {
-        return UINib(nibName: identifier, bundle: nil)
-    }
-    
-    static var identifier: String {
-        return String(describing: self)
-    }
+//    static var nib:UINib {
+//        return UINib(nibName: identifier, bundle: nil)
+//    }
+//    
+//    static var identifier: String {
+//        return String(describing: self)
+//    }
     
     public override func layoutSubviews() {
         collectionView.delegate = self
@@ -37,7 +37,7 @@ public class FiltersTagsTableViewCell: UITableViewCell {
 extension FiltersTagsTableViewCell: UICollectionViewDataSource, UICollectionViewDelegate {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let index = section
-        let count = menuList[index].titleValues.count
+        let count = cellFiltersList[index].titleValues.count
         
         return count
     }
@@ -50,13 +50,13 @@ extension FiltersTagsTableViewCell: UICollectionViewDataSource, UICollectionView
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FiltersTagsCollectionViewCell", for: indexPath) as! FiltersTagsCollectionViewCell
         
         let index = indexPath.row
-        _ = menuList[indexPath.section].titleValues[index]
-        cell.menu = menuList[indexPath.section]
+        _ = cellFiltersList[indexPath.section].titleValues[index]
+        cell.tagsFiltersData = cellFiltersList[indexPath.section]
         return cell
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        delegate?.didSelectedMenu(menu: menuList[indexPath.section])
+        delegate?.didSelectedMenu(menu: cellFiltersList[indexPath.section])
     }
 }
 

@@ -2,6 +2,7 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
+        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -13,21 +14,21 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="FiltersWidgetPriceRangeCell" rowHeight="134" id="cAu-C1-u9h" userLabel="FiltersWidgetPriceRangeCell" customClass="FiltersWidgetPriceRangeCell" customModule="REES46" customModuleProvider="target">
+        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="FiltersWidgetPriceRangeCell" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="FiltersWidgetPriceRangeCell" rowHeight="134" id="cAu-C1-u9h" userLabel="FiltersWidgetPriceRangeCell" customClass="FiltersWidgetPriceRangeCell" customModule="REES46" customModuleProvider="target">
             <rect key="frame" x="0.0" y="0.0" width="375" height="134"/>
             <autoresizingMask key="autoresizingMask"/>
             <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="cAu-C1-u9h" id="QPK-i9-bKF">
                 <rect key="frame" x="0.0" y="0.0" width="375" height="134"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="NOe-bs-kW2" customClass="FiltersPriceSlider" customModule="REES46" customModuleProvider="target">
+                    <view contentMode="scaleToFill" restorationIdentifier="FiltersPriceSlider" translatesAutoresizingMaskIntoConstraints="NO" id="NOe-bs-kW2" customClass="FiltersPriceSlider" customModule="REES46" customModuleProvider="target">
                         <rect key="frame" x="22" y="8" width="331" height="36"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="36" id="rYo-gS-WWf"/>
                         </constraints>
                     </view>
-                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="до" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="TkZ-Et-q0K">
+                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="to" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="TkZ-Et-q0K">
                         <rect key="frame" x="192" y="66" width="158" height="52"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -41,7 +42,7 @@
                             <outlet property="delegate" destination="cAu-C1-u9h" id="pVC-vz-xgl"/>
                         </connections>
                     </textField>
-                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="от" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Tcn-GR-Dkg">
+                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="from" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Tcn-GR-Dkg">
                         <rect key="frame" x="25" y="66" width="158" height="52"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -72,7 +73,7 @@
             <connections>
                 <outlet property="filtersPriceMaxValueTextField" destination="TkZ-Et-q0K" id="wwH-nn-V7Q"/>
                 <outlet property="filtersPriceMinValueTextField" destination="Tcn-GR-Dkg" id="6xA-GV-7KZ"/>
-                <outlet property="filtertsPriceRangeSlider" destination="NOe-bs-kW2" id="TWJ-dg-Bu9"/>
+                <outlet property="filtertsPriceRangeSlider" destination="NOe-bs-kW2" id="0pX-7F-sev"/>
             </connections>
             <point key="canvasLocation" x="108" y="-129.53523238380811"/>
         </tableViewCell>

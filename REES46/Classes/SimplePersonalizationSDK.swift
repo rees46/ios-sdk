@@ -1293,7 +1293,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
         let successCurrencyDetect: String? = result.currency
-        UserDefaults.standard.set(successCurrencyDetect, forKey: "client_currency")
+        UserDefaults.standard.set(successCurrencyDetect, forKey: "clientCurrencyValue")
         UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
     }
     
@@ -1334,13 +1334,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let json = try? JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             let statusMessage = jsonObject["message"] as? String ?? ""
-                            print("\nStatus message:", statusMessage)
-                            print(isInit)
-                            print(path)
+                            //print("\nStatus message:", statusMessage)
                             let slashSeparator = path.components(separatedBy: "/").first
                             if (!isInit && slashSeparator == "stories") {
                                 if (statusMessage == "Client not found") {
-                                    //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "restartApplication"), object: nil)
                                     completion(.failure(.invalidResponse))
                                     return
                                 }

@@ -15,31 +15,100 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <viewController restorationIdentifier="filtersView" storyboardIdentifier="filtersVC" id="aC7-q2-ORC" userLabel="FiltersWidgetView" customClass="FiltersWidgetView" customModule="REES46" customModuleProvider="target">
-            <view key="view" contentMode="scaleToFill" id="AQI-8o-yfL">
+        <viewController restorationIdentifier="FiltersWidgetView" storyboardIdentifier="FilterVC" id="tmX-K8-otL" userLabel="FiltersWidgetView" customClass="FiltersWidgetView" customModule="REES46" customModuleProvider="target">
+            <view key="view" contentMode="scaleToFill" id="7Jm-E5-qzo">
                 <rect key="frame" x="0.0" y="0.0" width="430" height="932"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
-                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Filters" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5v3-uG-FLp">
-                        <rect key="frame" x="29" y="62" width="353" height="33"/>
+                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="zl4-lV-oqU">
+                        <rect key="frame" x="368" y="56" width="47" height="47"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                        <state key="normal" image="iconMenuClose"/>
+                    </button>
+                    <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="ucx-iw-8zx">
+                        <rect key="frame" x="0.0" y="111" width="430" height="751"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <color key="sectionIndexBackgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <connections>
+                            <outlet property="dataSource" destination="tmX-K8-otL" id="6Zi-Ys-U6f"/>
+                            <outlet property="delegate" destination="tmX-K8-otL" id="9H3-Xd-Bjd"/>
+                        </connections>
+                    </tableView>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Filters" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="E0g-p0-FgD">
+                        <rect key="frame" x="29" y="56" width="353" height="47"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <fontDescription key="fontDescription" name="Inter-Bold" family="Inter" pointSize="35"/>
                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NGZ-Sd-3cS">
-                        <rect key="frame" x="368" y="56" width="47" height="47"/>
-                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                        <state key="normal" image="iconMenuClose"/>
-                    </button>
+                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="ResetCell" rowHeight="88" id="OeI-f8-8ed" userLabel="ResetCell" customClass="FiltersWidgetResetCell" customModule="REES46" customModuleProvider="target">
+                        <rect key="frame" x="0.0" y="829" width="430" height="88"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="OeI-f8-8ed" id="kyF-YO-5b7">
+                            <rect key="frame" x="0.0" y="0.0" width="430" height="88"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                            <subviews>
+                                <button opaque="NO" contentMode="scaleToFill" restorationIdentifier="FiltersSelectedShowButton" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="icm-3e-Usu" customClass="FiltersSelectedShowButton" customModule="REES46" customModuleProvider="target">
+                                    <rect key="frame" x="193" y="19" width="220" height="51"/>
+                                    <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxY="YES"/>
+                                    <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <state key="normal" title="Button"/>
+                                    <buttonConfiguration key="configuration" style="plain" title="Show"/>
+                                    <connections>
+                                        <action selector="cancelDataItemSelected:" destination="tmX-K8-otL" eventType="touchUpInside" id="r9k-PJ-ppF"/>
+                                    </connections>
+                                </button>
+                                <button opaque="NO" contentMode="scaleToFill" restorationIdentifier="FiltersResetButton" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="dE8-DV-C3A" customClass="FiltersResetButton" customModule="REES46" customModuleProvider="target">
+                                    <rect key="frame" x="16" y="20" width="167" height="49"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <color key="tintColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    <state key="normal" title="Button"/>
+                                    <buttonConfiguration key="configuration" style="plain" title="Reset"/>
+                                    <connections>
+                                        <action selector="searchDataItemSelected:" destination="tmX-K8-otL" eventType="touchUpInside" id="kAf-Sy-y7H"/>
+                                    </connections>
+                                </button>
+                            </subviews>
+                            <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </tableViewCellContentView>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    </tableViewCell>
+                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3c7-p8-zna">
+                        <rect key="frame" x="0.0" y="99" width="428" height="827"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES"/>
+                        <subviews>
+                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tqF-5c-ABK">
+                                <rect key="frame" x="27" y="40" width="374" height="310"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                    </view>
                 </subviews>
-                <viewLayoutGuide key="safeArea" id="OcS-N5-eBU"/>
-                <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                <viewLayoutGuide key="safeArea" id="mUS-3V-Ank"/>
+                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                <constraints>
+                    <constraint firstItem="mUS-3V-Ank" firstAttribute="trailing" secondItem="ucx-iw-8zx" secondAttribute="trailing" id="DI9-dX-GYE"/>
+                    <constraint firstItem="ucx-iw-8zx" firstAttribute="top" secondItem="mUS-3V-Ank" secondAttribute="top" constant="52" id="Yx4-1K-KcV"/>
+                    <constraint firstItem="mUS-3V-Ank" firstAttribute="bottom" secondItem="ucx-iw-8zx" secondAttribute="bottom" constant="36" id="qgG-9V-ZS9"/>
+                    <constraint firstItem="ucx-iw-8zx" firstAttribute="leading" secondItem="mUS-3V-Ank" secondAttribute="leading" id="vC5-Z0-Jll"/>
+                </constraints>
+                <variation key="default">
+                    <mask key="subviews">
+                        <exclude reference="3c7-p8-zna"/>
+                    </mask>
+                </variation>
             </view>
+            <navigationItem key="navigationItem" title="Expandable TableView" id="Miz-1y-hR5"/>
             <connections>
-                <outlet property="backButton" destination="NGZ-Sd-3cS" id="EZR-Kx-AH3"/>
+                <outlet property="backButton" destination="zl4-lV-oqU" id="sh9-XK-sO4"/>
+                <outlet property="searchPlaceholder" destination="3c7-p8-zna" id="WBF-Aq-sgf"/>
+                <outlet property="tableView" destination="ucx-iw-8zx" id="0CB-MK-wJT"/>
             </connections>
-            <point key="canvasLocation" x="5317" y="-347"/>
+            <point key="canvasLocation" x="3620" y="-607"/>
         </viewController>
     </objects>
     <resources>

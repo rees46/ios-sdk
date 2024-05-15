@@ -4,20 +4,21 @@ protocol FiltersWidgetHeaderViewDelegate: AnyObject {
     func headerExpandArrowInSection(header: FiltersWidgetHeaderView, section: Int)
 }
 
-public class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
+open class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
+    
     @IBOutlet weak var titleLabel: UILabel?
     
     var section: Int = 0
     
     weak var delegate: FiltersWidgetHeaderViewDelegate?
     
-    static var nib:UINib {
-        return UINib(nibName: identifier, bundle: nil)
-    }
-    
-    static var identifier: String {
-        return String(describing: self)
-    }
+//    static var nib:UINib {
+//        return UINib(nibName: identifier, bundle: nil)
+//    }
+//    
+//    static var identifier: String {
+//        return String(describing: self)
+//    }
     
     public override func awakeFromNib() {
         super.awakeFromNib()
