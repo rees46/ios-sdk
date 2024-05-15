@@ -1,12 +1,12 @@
 import UIKit
 
-class TagsTableViewCell: UITableViewCell {
+class FiltersTagsTableViewCell: UITableViewCell {
     
     @IBOutlet weak var collectionView: UICollectionView!
     
     public var collectionViewHeightConstraint: NSLayoutConstraint!
     
-    var delegate: MenuTableViewCellDelegate?
+    var delegate: FiltersTagsTableViewCellDelegate?
     
     var menuList = [FiltersTagsMenu]()
 
@@ -34,7 +34,7 @@ class TagsTableViewCell: UITableViewCell {
     }
 }
 
-extension TagsTableViewCell: UICollectionViewDataSource, UICollectionViewDelegate{
+extension FiltersTagsTableViewCell: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let index = section
         let count = menuList[index].titleValues.count
@@ -47,7 +47,7 @@ extension TagsTableViewCell: UICollectionViewDataSource, UICollectionViewDelegat
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "tagsCollectionViewCell", for: indexPath) as! TagsCollectionViewCell
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FiltersTagsCollectionViewCell", for: indexPath) as! FiltersTagsCollectionViewCell
         
         let index = indexPath.row
         _ = menuList[indexPath.section].titleValues[index]
@@ -60,6 +60,6 @@ extension TagsTableViewCell: UICollectionViewDataSource, UICollectionViewDelegat
     }
 }
 
-protocol MenuTableViewCellDelegate {
+protocol FiltersTagsTableViewCellDelegate {
     func didSelectedMenu(menu: FiltersTagsMenu)
 }

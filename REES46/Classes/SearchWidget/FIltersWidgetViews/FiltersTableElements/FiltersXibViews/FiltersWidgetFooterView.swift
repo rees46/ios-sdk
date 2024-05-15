@@ -1,16 +1,16 @@
 import UIKit
 
-protocol FooterViewDelegate: AnyObject {
-    func headerFooterViewArrowInSection(header: FooterView, section: Int)
+protocol FiltersWidgetFooterViewDelegate: AnyObject {
+    func headerFooterViewArrowInSection(header: FiltersWidgetFooterView, section: Int)
 }
 
-class FooterView: UITableViewHeaderFooterView {
+class FiltersWidgetFooterView: UITableViewHeaderFooterView {
     @IBOutlet weak var titleLabel: UILabel?
     @IBOutlet weak var arrowImage: UIImageView?
     
     var section: Int = 0
     
-    weak var delegate: FooterViewDelegate?
+    weak var delegate: FiltersWidgetFooterViewDelegate?
     
     static var nib:UINib {
         return UINib(nibName: identifier, bundle: nil)
@@ -27,7 +27,6 @@ class FooterView: UITableViewHeaderFooterView {
     }
     
     @objc private func didTapHeader() {
-        
         delegate?.headerFooterViewArrowInSection(header: self, section: section)
     }
 

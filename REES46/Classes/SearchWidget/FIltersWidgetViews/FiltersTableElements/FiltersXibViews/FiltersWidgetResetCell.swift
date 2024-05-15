@@ -4,7 +4,7 @@ protocol AboutViewDelegate: AnyObject {
     func dismissNow()
 }
 
-class ResetCell: UITableViewCell {
+class FiltersWidgetResetCell: UITableViewCell {
 
     @IBOutlet weak var aboutLabel: UILabel?
     @IBOutlet weak var label: UILabel!
@@ -31,7 +31,6 @@ class ResetCell: UITableViewCell {
         super.setSelected(selected, animated: animated)
     }
 }
-
 
 @IBDesignable class ResetFiltersButton: UIButton {
     override func layoutSubviews() {

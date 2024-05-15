@@ -23,7 +23,7 @@ open class SearchWidgetProductCell: UICollectionViewCell {
     
     @IBOutlet weak var addToCart: UIButton!
     
-    var product: SearchWidgetProductPrepare?
+    var product: SearchWidgetProductDataPrepare?
     var addedToCart: Bool = false
     
     var delegate: updateCartCountDelegate?
@@ -42,7 +42,7 @@ open class SearchWidgetProductCell: UICollectionViewCell {
        super.awakeFromNib()
     }
     
-    func updateCell(with product: SearchWidgetProductPrepare) {
+    func updateCell(with product: SearchWidgetProductDataPrepare) {
         self.product = product
         productBrand.text = product.brandTitle
         productTitle.text = product.title

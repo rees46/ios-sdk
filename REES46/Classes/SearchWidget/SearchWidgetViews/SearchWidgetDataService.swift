@@ -15,12 +15,12 @@ struct SearchWidgetDataService {
 //    
 //    private(set) public var cart = ShopCart()
 //    
-//    mutating func addProduct(toCart product: SearchWidgetProductPrepare, numberOfProduct: Int, status: Bool) {
+//    mutating func addProduct(toCart product: SearchWidgetProductDataPrepare, numberOfProduct: Int, status: Bool) {
 //        let selectedProduct =  ShopSelectedProduct(selectedProduct: product, addToCart: status, quantity: numberOfProduct)
 //        cart.products.append(selectedProduct)
 //    }
 //    
-//    mutating func removeProduct(fromCart product: SearchWidgetProductPrepare?, selectedProduct:  ShopSelectedProduct?) {
+//    mutating func removeProduct(fromCart product: SearchWidgetProductDataPrepare?, selectedProduct:  ShopSelectedProduct?) {
 //        if let product = product {
 //            for (index, value) in cart.products.enumerated() {
 //                if value.selectedProduct.title == product.title && value.quantity != 0 {
@@ -52,7 +52,7 @@ struct SearchWidgetDataService {
 //        return count
 //    }
     
-//    func isAddedToCart(_ product: SearchWidgetProductPrepare) -> String {
+//    func isAddedToCart(_ product: SearchWidgetProductDataPrepare) -> String {
 //        if cart.products.isEmpty { return "heart" }
 //        for (_, value) in cart.products.enumerated() {
 //            if value.selectedProduct.title == product.title && value.addToCart == true {
@@ -62,7 +62,7 @@ struct SearchWidgetDataService {
 //        return "heart"
 //    }
 //    
-//    func isProductInCart(_ product: SearchWidgetProductPrepare) -> Bool {
+//    func isProductInCart(_ product: SearchWidgetProductDataPrepare) -> Bool {
 //        for (_, value) in cart.products.enumerated() {
 //            if value.selectedProduct.title == product.title && value.addToCart == true {
 //                return true
@@ -71,7 +71,7 @@ struct SearchWidgetDataService {
 //        return false
 //    }
 //    
-//    mutating func updateQuantity(incart withItem:  ShopSelectedProduct?,optionalItem: SearchWidgetProductPrepare? = nil , with quantity: Int) {
+//    mutating func updateQuantity(incart withItem:  ShopSelectedProduct?,optionalItem: SearchWidgetProductDataPrepare? = nil , with quantity: Int) {
 //        
 //        if let product = withItem {
 //            for (index, value) in cart.products.enumerated() {

@@ -14,7 +14,7 @@ open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
     
     open var sdkSearchWidgetTextFieldView: SearchWidgetTextFieldView!
     
-    open var sdkSearchWidgetView: SearchWidgetView!
+    open var sdkSearchWidgetView: SearchWidgetScrollView!
     
     open var sWidget = SearchWidget()
     
@@ -59,7 +59,7 @@ open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
         self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField.spellCheckingType = .yes
         self.view.addSubview(self.sdkSearchWidgetTextFieldView)
         
-        self.sdkSearchWidgetView = SearchWidgetView(frame: CGRect(x: 0, y: 70, width: width, height: height - 70))
+        self.sdkSearchWidgetView = SearchWidgetScrollView(frame: CGRect(x: 0, y: 70, width: width, height: height - 70))
         self.view.addSubview(self.sdkSearchWidgetView)
     }
     

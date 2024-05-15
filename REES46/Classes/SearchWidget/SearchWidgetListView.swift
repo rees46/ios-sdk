@@ -43,14 +43,7 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
     }
     
     open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        if let cell: CustomCell = tableView.dequeueReusableCell(withIdentifier: "revcell", for: indexPath) as? CustomCell
-//        {
-//            return cell
-//        }
-//        return UITableViewCell()
-        
         guard let cell = self.sdkSearchWidgetListViewDelegate?.sdkSearchWidgetListView(tableView, cellForRowAt: indexPath) else {
-            //return CustomCell()
             return UITableViewCell()
         }
         return cell

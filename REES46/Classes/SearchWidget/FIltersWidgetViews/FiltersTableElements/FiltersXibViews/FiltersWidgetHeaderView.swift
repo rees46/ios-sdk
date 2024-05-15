@@ -1,15 +1,15 @@
 import UIKit
 
-protocol HeaderViewDelegate: AnyObject {
-    func headerExpandArrowInSection(header: HeaderView, section: Int)
+protocol FiltersWidgetHeaderViewDelegate: AnyObject {
+    func headerExpandArrowInSection(header: FiltersWidgetHeaderView, section: Int)
 }
 
-class HeaderView: UITableViewHeaderFooterView {
+class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
     @IBOutlet weak var titleLabel: UILabel?
     
     var section: Int = 0
     
-    weak var delegate: HeaderViewDelegate?
+    weak var delegate: FiltersWidgetHeaderViewDelegate?
     
     static var nib:UINib {
         return UINib(nibName: identifier, bundle: nil)

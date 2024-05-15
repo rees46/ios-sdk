@@ -1,6 +1,6 @@
 import UIKit
 
-class TagsDetailTableViewCell: UITableViewCell {
+class FiltersTagsDetailTableViewCell: UITableViewCell {
 
     override func awakeFromNib() {
         super.awakeFromNib()

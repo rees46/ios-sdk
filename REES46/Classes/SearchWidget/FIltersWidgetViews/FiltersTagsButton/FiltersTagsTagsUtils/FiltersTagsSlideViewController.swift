@@ -1,6 +1,6 @@
 import UIKit
 
-class TagsSlideViewController: UIViewController {
+class FiltersTagsSlideViewController: UIViewController {
     
     var filtersMenuList = [FiltersTagsMenu]()
 

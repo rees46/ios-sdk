@@ -1,6 +1,6 @@
 import Foundation
 
-open class MainSearchModel {
+open class SearchWidgetModel {
     public init(key: String) {
         self.key = key
     }

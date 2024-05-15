@@ -1,6 +1,6 @@
 import UIKit
 
-class TagsCollectionView: UICollectionView {
+class FiltersTagsCollectionView: UICollectionView {
     var isDynamicSizeRequired = false
     
     override func layoutSubviews() {

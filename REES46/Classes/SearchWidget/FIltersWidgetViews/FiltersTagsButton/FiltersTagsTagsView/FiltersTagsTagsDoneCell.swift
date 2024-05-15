@@ -1,8 +1,8 @@
 import UIKit
 
-class TagsDoneTableViewCell: UITableViewCell {
+class FiltersWidgetTagsDoneCell: UITableViewCell {
     
-    var delegate : DoneDelegate?
+    var delegate : FiltersWidgetDoneDelegate?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -17,6 +17,6 @@ class TagsDoneTableViewCell: UITableViewCell {
     }
 }
 
-protocol DoneDelegate {
+protocol FiltersWidgetDoneDelegate {
     func didDoneTapped()
 }

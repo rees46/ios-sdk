@@ -1,19 +1,19 @@
 import UIKit
 
-protocol FiltersCheckboxCellDelegate: AnyObject {
-    func collapseSection(header: FiltersCheckboxCell, section: Int)
+protocol FiltersWidgetCheckboxCellDelegate: AnyObject {
+    func collapseSection(header: FiltersWidgetCheckboxCell, section: Int)
     func updateTableWithFiltersNow(_ section: Int)
     func reloadSectionsInFiltersTable(_ section: Int)
 }
 
-class FiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
+class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     public func collapseSection(header: FiltersCheckboxItem, section: Int) {
         //SDK: Detect tap callback
     }
     
     var menuList = [FiltersTagsMenu]()
     
-    func collapseSection(header: FiltersCheckboxCell, section: Int) {
+    func collapseSection(header: FiltersWidgetCheckboxCell, section: Int) {
         let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
         if !carouselOpenedBoolKey {
             UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
@@ -30,7 +30,7 @@ class FiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxObserver"), object: nil)
     }
     
-    func checkboxItemDidSelected(item: FiltersCheckboxCell) {
+    func checkboxItemDidSelected(item: FiltersWidgetCheckboxCell) {
         delegate?.updateTableWithFiltersNow(0)
         print(item)
     }
@@ -41,7 +41,7 @@ class FiltersCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     
     var section: Int = 0
     
-    weak var delegate: FiltersCheckboxCellDelegate?
+    weak var delegate: FiltersWidgetCheckboxCellDelegate?
     
     var items = [FiltersCheckboxItem]()
     

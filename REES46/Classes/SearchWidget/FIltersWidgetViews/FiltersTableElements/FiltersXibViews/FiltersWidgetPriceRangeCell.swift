@@ -1,6 +1,6 @@
 import UIKit
 
-class PriceRangeCell: UITableViewCell {
+class FiltersWidgetPriceRangeCell: UITableViewCell {
     
     @IBOutlet weak var maxValueTextField: UITextField!
     @IBOutlet weak var minValueTextField: UITextField!
@@ -58,7 +58,7 @@ class PriceRangeCell: UITableViewCell {
     }
 }
 
-extension PriceRangeCell: UITextFieldDelegate {
+extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         
         if (textField == minValueTextField) {

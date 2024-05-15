@@ -1,6 +1,6 @@
 import Foundation
 
-public struct SearchWidgetProductPrepare {
+public struct SearchWidgetProductDataPrepare {
     private(set) public var productId: String
     private(set) public var brandTitle: String
     private(set) public var title: String

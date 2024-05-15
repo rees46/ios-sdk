@@ -49,7 +49,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
     public var recommendationsCollectionView = RecommendationsWidgetView()
     public var newArrivalsCollectionView = RecommendationsWidgetView()
     
-    public var searchWidgetController = SearchViewController()
+    public var searchWidgetController = SearchWidgetMainView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -254,16 +254,16 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
                     sdkSearchWidget.setRequestHistories(value: productsRecentlyViewedArray)
                     sdkSearchWidget.setSearchSuggest(value: lastQueriesArray)
                     
-                    var frameworkBundle = Bundle(for: REES46.SearchViewController.self)
+                    var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
 #if SWIFT_PACKAGE
                     frameworkBundle = Bundle.module
 #endif
-                    let searchVC = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchViewController
-                    searchVC.modalPresentationStyle = .fullScreen
-                    searchVC.sdk = globalSDK
-                    searchVC.lastQueriesHistories = productsRecentlyViewedArray
-                    searchVC.recommendQueries = lastQueriesArray
-                    self.present(searchVC, animated: true, completion: nil)
+                    let searchView = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchWidgetView
+                    searchView.modalPresentationStyle = .fullScreen
+                    searchView.sdk = globalSDK
+                    searchView.lastQueriesHistories = productsRecentlyViewedArray
+                    searchView.recommendQueries = lastQueriesArray
+                    self.present(searchView, animated: true, completion: nil)
                 }
                 
             case let .failure(error):
@@ -289,25 +289,31 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
         sdkSearchWidget.setRequestHistories(value: [])
         sdkSearchWidget.setSearchSuggest(value: [])
         
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-        searchVC.modalPresentationStyle = .fullScreen
-        searchVC.sdk = globalSDK
-        searchVC.suggestsCategories = []
-        searchVC.lastQueriesHistories = []
+        var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
+        let searchView = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchWidgetView
+        searchView.modalPresentationStyle = .fullScreen
+        searchView.sdk = globalSDK
+        searchView.suggestsCategories = []
+        searchView.lastQueriesHistories = []
         
-        self.present(searchVC, animated: true, completion: nil)
+        self.present(searchView, animated: true, completion: nil)
     }
     
     @objc private func didTapCart() {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-        searchVC.modalPresentationStyle = .fullScreen
-        searchVC.sdk = globalSDK
-        searchVC.suggestsCategories = []
-        searchVC.lastQueriesHistories = []
+        var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
+        let searchView = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchWidgetView
+        searchView.modalPresentationStyle = .fullScreen
+        searchView.sdk = globalSDK
+        searchView.suggestsCategories = []
+        searchView.lastQueriesHistories = []
         
-        self.present(searchVC, animated: true, completion: nil)
+        self.present(searchView, animated: true, completion: nil)
     }
     
     @objc private func didTapUpdate() {
