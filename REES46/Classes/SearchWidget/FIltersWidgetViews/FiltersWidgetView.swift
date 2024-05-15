@@ -6,26 +6,26 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
     
     @IBOutlet weak var tableView: UITableView?
     
-    @IBOutlet var searchPlaceholder: UIView!
+    @IBOutlet weak var searchPlaceholder: UIView!
     
     public let filtersCheckboxTree = FiltersCheckboxTree()
     
-    @IBOutlet public weak var backButton: UIButton!
+    @IBOutlet weak var backButton: UIButton!
     
     public override func viewDidLoad() {
         super.viewDidLoad()
         
-        UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
+        //UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
         
         initTableView()
         
         backButton.addTarget(self, action: #selector(closeButtonClicked), for: .touchUpInside)
         
-        self.searchPlaceholder.isHidden = true
-        
-        if filtersList.count == 0 {
-            self.searchPlaceholder.isHidden = false
-        }
+//        self.searchPlaceholder.isHidden = true
+//        
+//        if filtersList.count == 0 {
+//            self.searchPlaceholder.isHidden = false
+//        }
     }
 
     func initTableView() {
@@ -42,9 +42,6 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
         
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetTagsDoneCell", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetTagsDoneCell")
         
-        //self.tableView?.register(FiltersWidgetHeaderView.nib, forHeaderFooterViewReuseIdentifier: FiltersWidgetHeaderView.identifier)
-        //self.tableView?.register(FiltersWidgetFooterView.nib, forHeaderFooterViewReuseIdentifier: FiltersWidgetFooterView.identifier)
-        
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetHeaderView", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetHeaderView")
         
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetFooterView", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetFooterView")
@@ -56,12 +53,6 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
         self.tableView?.register(UINib.init(nibName: "FiltersTagsTableViewCell", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersTagsTableViewCell")
         
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetResetCell", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetResetCell")
-        
-        //self.tableView?.register(FiltersWidgetCheckboxCell.nib, forCellReuseIdentifier: FiltersWidgetCheckboxCell.identifier)
-        //self.tableView?.register(FiltersWidgetPriceRangeCell.nib, forCellReuseIdentifier: FiltersWidgetPriceRangeCell.identifier)
-        //self.tableView?.register(UINib.init(nibName: "FiltersWidgetPriceRangeCell", bundle: nil), forCellReuseIdentifier:"FiltersWidgetPriceRangeCell")
-        //self.tableView?.register(FiltersTagsTableViewCell.nib, forCellReuseIdentifier: FiltersTagsTableViewCell.identifier)
-        //self.tableView?.register(FiltersWidgetResetCell.nib, forCellReuseIdentifier: FiltersWidgetResetCell.identifier)
         
         filtersCheckboxTree.delegate = self
     }
@@ -159,7 +150,6 @@ extension FiltersWidgetView: UITableViewDataSource {
             } else {
                 return UITableViewCell()
             }
-            
         }
     }
     
@@ -223,8 +213,8 @@ extension FiltersWidgetView: UITableViewDelegate {
             frameworkBundle = Bundle.module
 #endif
             
-            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
-            if carouselOpenedBoolKey {
+            let filtersOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
+            if filtersOpenedBoolKey {
                 let imageAttachment = NSTextAttachment()
                 imageAttachment.image = UIImage(named: "angleDownBlackIntUp", in: frameworkBundle, compatibleWith: nil)
                 let imageOffsetY: CGFloat = -9.0
@@ -271,7 +261,6 @@ extension FiltersWidgetView: FiltersWidgetHeaderViewDelegate {
     }
     
     func reloadSectionsInFiltersTable(_ section: Int) {
-        
         self.tableView?.beginUpdates()
         let indexPath = IndexPath(row: 0, section: section)
         self.tableView?.reloadRows(at: [indexPath], with: .fade)
@@ -288,8 +277,8 @@ extension FiltersWidgetView: FiltersWidgetCheckboxCellDelegate {
             return
         }
         
-        let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
-        if !carouselOpenedBoolKey {
+        let filtersOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
+        if !filtersOpenedBoolKey {
             UserDefaults.standard.set(true, forKey: "FiltersMemorySettingKey")
         } else {
             UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
@@ -298,7 +287,6 @@ extension FiltersWidgetView: FiltersWidgetCheckboxCellDelegate {
     
     func updateTableWithFiltersNow(_ section: Int) {
 //        let item = filtersList[section]
-//        let iterm = filtersList[section]
 //        filtersList.removeAll()
 //        tableView?.reloadData()
     }

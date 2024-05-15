@@ -12,14 +12,6 @@ open class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
     
     weak var delegate: FiltersWidgetHeaderViewDelegate?
     
-//    static var nib:UINib {
-//        return UINib(nibName: identifier, bundle: nil)
-//    }
-//    
-//    static var identifier: String {
-//        return String(describing: self)
-//    }
-    
     public override func awakeFromNib() {
         super.awakeFromNib()
         if #available(iOS 13.0, *) {

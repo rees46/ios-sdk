@@ -52,14 +52,6 @@ open class FiltersWidgetPriceRangeCell: UITableViewCell {
         UserDefaults.standard.set(Int(filtertsPriceRangeSlider.lowerValue), forKey: "minimumPriceConstant")
         UserDefaults.standard.set(Int(filtertsPriceRangeSlider.upperValue), forKey: "maximumPriceConstant")
     }
-    
-//    static var nib:UINib {
-//        return UINib(nibName: identifier, bundle: nil)
-//    }
-//    
-//    static var identifier: String {
-//        return String(describing: self)
-//    }
 }
 
 extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {

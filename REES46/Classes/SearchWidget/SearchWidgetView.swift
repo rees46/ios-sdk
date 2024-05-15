@@ -44,11 +44,6 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     var minP: Double = 0
     var maxP: Double = 0
     
-    public var frameworkBundle:Bundle? {
-        let bundleId = "org.cocoapods.REES46"
-        return Bundle(identifier: bundleId)
-    }
-    
     public override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -56,13 +51,13 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         searchProductsCollectionView.dataSource = self
         searchProductsCollectionView.isHidden = true
         
-        var frameworkBundle1 = Bundle(for: classForCoder)
+        var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-        frameworkBundle1 = Bundle.module
+        frameworkBundle = Bundle.module
 #endif
-        searchProductsCollectionView.register(UINib(nibName: "SearchWidgetProductCell", bundle: frameworkBundle1), forCellWithReuseIdentifier: "SearchWidgetProductCell")
+        searchProductsCollectionView.register(UINib(nibName: "SearchWidgetProductCell", bundle: frameworkBundle), forCellWithReuseIdentifier: "SearchWidgetProductCell")
         
-        //searchProductsCollectionView.register(UINib(nibName: "FiltersWidgetView", bundle: frameworkBundle1), forCellWithReuseIdentifier: "FiltersWidgetView")
+        searchProductsCollectionView.register(UINib(nibName: "FiltersWidgetView", bundle: frameworkBundle), forCellWithReuseIdentifier: "FiltersWidgetView")
         
         blankHeaderView.isHidden = true
         searchHeaderView.isHidden = true
@@ -534,19 +529,19 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                 }
                 
                 for (index, key) in strToFiltersRepresentation {
-                    var dsValue = [String]()
-                    for va in key.values {
-                        dsValue.append(va.key)
+                    var fTitleValue = [String]()
+                    for fValue in key.values {
+                        fTitleValue.append(fValue.key)
                     }
                     arrayOfPreparedFilters.append(index)
                     
-                    if dsValue.count == 0 {
+                    if fTitleValue.count == 0 {
                         print("SDK: Command Not found Filters in Category")
                     } else {
                         self.filtersDataList.append(FiltersDataMenuList(filterId: index.count,
-                                                                    title: index,
-                                                                    titleFiltersValues: dsValue,
-                                                                    selected: true))
+                                                                        title: index,
+                                                                        titleFiltersValues: fTitleValue,
+                                                                        selected: true))
                     }
                 }
                 
@@ -726,13 +721,13 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     }
     
     @objc private func filtersOpenViewTap() {
-        var frameworkBundle = Bundle(for: FiltersWidgetView.self)
-        //var frameworkBundle = Bundle(for: classForCoder)
+        //var frameworkBundle = Bundle(for: FiltersWidgetView.self)
+        var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
             frameworkBundle = Bundle.module
 #endif
-        let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
-        //let filtersWidgetMainView = FiltersWidgetView()
+        //let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
+        let filtersWidgetMainView = FiltersWidgetView()
         filtersWidgetMainView.modalPresentationStyle = .fullScreen
         filtersWidgetMainView.filtersList = self.filtersDataList
         self.present(filtersWidgetMainView, animated: true, completion: nil)
@@ -788,12 +783,6 @@ extension SearchWidgetView: UICollectionViewDataSource {
                 }
             }
         }
-
-//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-//        let productWidgetMainView = storyboard.instantiateViewController(withIdentifier: "productView") as! ShopProductDetailsViewController
-//        productWidgetMainView.modalPresentationStyle = .fullScreen
-//        productWidgetMainView.product = selectedProduct
-//        self.present(productWidgetMainView, animated: true, completion: nil)
     }
 }
 

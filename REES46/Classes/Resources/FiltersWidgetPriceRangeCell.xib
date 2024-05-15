@@ -21,7 +21,7 @@
                 <rect key="frame" x="0.0" y="0.0" width="375" height="134"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <view contentMode="scaleToFill" restorationIdentifier="FiltersPriceSlider" translatesAutoresizingMaskIntoConstraints="NO" id="NOe-bs-kW2" customClass="FiltersPriceSlider" customModule="REES46" customModuleProvider="target">
+                    <view contentMode="scaleToFill" restorationIdentifier="FiltersPriceSlider" translatesAutoresizingMaskIntoConstraints="NO" id="NOe-bs-kW2" userLabel="FiltersPriceSlider" customClass="FiltersPriceSlider" customModule="REES46" customModuleProvider="target">
                         <rect key="frame" x="22" y="8" width="331" height="36"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>

@@ -41,7 +41,7 @@
                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <nil key="highlightedColor"/>
                     </label>
-                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="ResetCell" rowHeight="88" id="OeI-f8-8ed" userLabel="ResetCell" customClass="FiltersWidgetResetCell" customModule="REES46" customModuleProvider="target">
+                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="FiltersWidgetResetCell" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="FiltersWidgetResetCell" rowHeight="88" id="OeI-f8-8ed" userLabel="ResetCell" customClass="FiltersWidgetResetCell" customModule="REES46" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="829" width="430" height="88"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="OeI-f8-8ed" id="kyF-YO-5b7">
@@ -111,6 +111,14 @@
             <point key="canvasLocation" x="3620" y="-607"/>
         </viewController>
     </objects>
+    <designables>
+        <designable name="dE8-DV-C3A">
+            <size key="intrinsicContentSize" width="67.333333333333329" height="34.333333333333336"/>
+        </designable>
+        <designable name="icm-3e-Usu">
+            <size key="intrinsicContentSize" width="66" height="34.333333333333336"/>
+        </designable>
+    </designables>
     <resources>
         <image name="iconMenuClose" width="128" height="128"/>
     </resources>
