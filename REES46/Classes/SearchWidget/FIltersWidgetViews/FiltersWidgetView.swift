@@ -1,11 +1,8 @@
 import UIKit
 
-class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelegate, FiltersWidgetFooterViewDelegate {
+public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelegate, FiltersWidgetFooterViewDelegate {
     
-    public var data = [FiltersTagsMenu]()
-    public var filtersList = [FiltersTagsMenu]()
-    
-    var firstRowSelected = true
+    public var filtersList = [FiltersDataMenuList]()
     
     @IBOutlet weak var tableView: UITableView?
     
@@ -13,19 +10,11 @@ class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelegate, Fil
     
     @IBOutlet var searchPlaceholder: UIView!
     
-    public var allFiltersFinal: [String : Filter]?
-    public var indFiltersFinal: IndustrialFilters?
+    let filtersCheckboxTree = FiltersCheckboxTree()
     
-    @IBOutlet weak var scrollingStyleOption: UISegmentedControl!
-    @IBOutlet weak var selectionStyleOption: UISegmentedControl!
-    @IBOutlet weak var itemsOption: UISegmentedControl!
-    @IBOutlet weak var foundedLabel: UILabel!
-
-    let checkboxsTree = FiltersCheckboxTree()
+    @IBOutlet public weak var backButton: UIButton!
     
-    @IBOutlet private weak var backButton: UIButton!
-    
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
         
         UserDefaults.standard.set(false, forKey: "FiltersMemorySettingKey")
@@ -36,7 +25,7 @@ class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelegate, Fil
         
         self.searchPlaceholder.isHidden = true
         
-        if data.count == 0 {
+        if filtersList.count == 0 {
             self.searchPlaceholder.isHidden = false
         }
     }
@@ -58,41 +47,41 @@ class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelegate, Fil
         self.tableView?.register(FiltersTagsTableViewCell.nib, forCellReuseIdentifier: FiltersTagsTableViewCell.identifier)
         self.tableView?.register(FiltersWidgetResetCell.nib, forCellReuseIdentifier: FiltersWidgetResetCell.identifier)
         
-        checkboxsTree.delegate = self
+        filtersCheckboxTree.delegate = self
     }
     
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+    public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         //var cellHeight:CGFloat = CGFloat()
         if indexPath.section == 0 {
             return CGFloat(133)
         } else {
-            let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
-            if carouselOpenedBoolKey {
-                let spentBudgetInt1 = Int(data[indexPath.section].titleValues.count + 1)
-                let height1 = spentBudgetInt1*38
-                return CGFloat(height1)
+            let filtersOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
+            if filtersOpenedBoolKey {
+                let spentBudgetInt1 = Int(filtersList[indexPath.section].titleValues.count + 1)
+                let height = spentBudgetInt1*38
+                return CGFloat(height)
             }
             
-            let sHeight = data[indexPath.section].titleValues.count
-            if sHeight == 3 {
+            let filterCellHeight = filtersList[indexPath.section].titleValues.count
+            if filterCellHeight == 3 {
                 return CGFloat(119)
-            } else if sHeight == 2 {
+            } else if filterCellHeight == 2 {
                 return CGFloat(76)
-            } else if sHeight == 1 {
+            } else if filterCellHeight == 1 {
                 return CGFloat(38)
             } else {
-                let spentBudgetIntWeight = Int(data[indexPath.section].titleValues.count + 1)
-                _ = spentBudgetIntWeight*38
+                //let filterCellIntHeight = Int(data[indexPath.section].titleValues.count + 1)
+                //_ = filterCellIntHeight*38
                 return CGFloat(119)
             }
         }
     }
     
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
     }
     
-    override func didReceiveMemoryWarning() {
+    public override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
@@ -102,11 +91,11 @@ class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelegate, Fil
 }
 
 extension FiltersWidgetView: UITableViewDataSource {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return data.count
+    public func numberOfSections(in tableView: UITableView) -> Int {
+        return filtersList.count
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if section == 0  {
             return 1
         }  else {
@@ -114,7 +103,7 @@ extension FiltersWidgetView: UITableViewDataSource {
         }
     }
     
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
             if let cell = tableView.dequeueReusableCell(withIdentifier: FiltersWidgetPriceRangeCell.identifier, for: indexPath) as? FiltersWidgetPriceRangeCell {
                 return cell
@@ -124,11 +113,11 @@ extension FiltersWidgetView: UITableViewDataSource {
         } else {
             if let cell = tableView.dequeueReusableCell(withIdentifier: FiltersWidgetCheckboxCell.identifier, for: indexPath) as? FiltersWidgetCheckboxCell {
                 let index = indexPath.section
-                let menuItem5 = data[index]
+                let menuItem5 = filtersList[index]
                 cell.itemForFiltersWidget?.isCollapsed = false
                 
                 cell.itemForFiltersWidget?.isCollapsible = true
-                cell.menuList = data
+                cell.menuList = filtersList
                 cell.tag = indexPath.row
                 cell.delegate = self
                 
@@ -148,7 +137,7 @@ extension FiltersWidgetView: UITableViewDataSource {
                                                               isGroupCollapsed: false))
                 
                 cell.titleLabel?.tintColor = UIColor.black
-                cell.menu = data[indexPath.section]
+                cell.menu = filtersList[indexPath.section]
                 cell.items = arrWithFinalizedFilters
                 //cell.updateView()
                 
@@ -170,7 +159,7 @@ extension FiltersWidgetView: UITableViewDataSource {
     }
     
     func headerFooterViewArrowInSection(header: FiltersWidgetFooterView, section: Int) {
-        let item = data[section]
+        let item = filtersList[section]
         if item.isCollapsible {
             
             let collapsed = !item.isCollapsed
@@ -189,15 +178,15 @@ extension FiltersWidgetView: UITableViewDataSource {
         }
     }
     
-    func didSelectedMenu(menu: FiltersTagsMenu) {
+    func didSelectedMenu(menu: FiltersDataMenuList) {
         print("SDK: didSelectedMenu FiltersTagsMenu")
     }
 }
 
 extension FiltersWidgetView: UITableViewDelegate {
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+    public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         if let headerView = tableView.dequeueReusableHeaderFooterView(withIdentifier: FiltersWidgetHeaderView.identifier) as? FiltersWidgetHeaderView {
-            let item = data[section].title
+            let item = filtersList[section].title
             headerView.titleLabel?.text = item
             headerView.isUserInteractionEnabled = false
             headerView.section = section
@@ -207,12 +196,12 @@ extension FiltersWidgetView: UITableViewDelegate {
         return UIView()
     }
     
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+    public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         if section == 0 {
             return nil
         }
         if let headerViewEnd = tableView.dequeueReusableHeaderFooterView(withIdentifier: FiltersWidgetFooterView.identifier) as? FiltersWidgetFooterView {
-            let rre = data[section].titleValues.count
+            let rre = filtersList[section].titleValues.count
             print(rre)
             
             var frameworkBundle = Bundle(for: classForCoder)
@@ -302,11 +291,11 @@ extension FiltersWidgetView: FiltersWidgetCheckboxCellDelegate {
 }
 
 extension FiltersWidgetView: FiltersCheckboxTreeDelegate {
-    func collapseSection(header: FiltersCheckboxItem, section: Int) {
+    public func collapseSection(header: FiltersCheckboxItem, section: Int) {
         //print("item")
     }
     
-    func checkboxItemDidSelected(item: FiltersCheckboxItem) {
+    public func checkboxItemDidSelected(item: FiltersCheckboxItem) {
         //print(item)
     }
 }

@@ -2,7 +2,7 @@ import UIKit
 
 class FiltersTagsSlideViewController: UIViewController {
     
-    var filtersMenuList = [FiltersTagsMenu]()
+    var filtersMenuList = [FiltersDataMenuList]()
 
     override func viewDidLoad() {
         super.viewDidLoad()

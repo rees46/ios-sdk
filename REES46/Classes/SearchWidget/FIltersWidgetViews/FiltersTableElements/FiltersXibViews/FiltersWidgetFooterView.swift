@@ -4,7 +4,7 @@ protocol FiltersWidgetFooterViewDelegate: AnyObject {
     func headerFooterViewArrowInSection(header: FiltersWidgetFooterView, section: Int)
 }
 
-class FiltersWidgetFooterView: UITableViewHeaderFooterView {
+public class FiltersWidgetFooterView: UITableViewHeaderFooterView {
     @IBOutlet weak var titleLabel: UILabel?
     @IBOutlet weak var arrowImage: UIImageView?
     
@@ -20,7 +20,7 @@ class FiltersWidgetFooterView: UITableViewHeaderFooterView {
         return String(describing: self)
     }
     
-    override func awakeFromNib() {
+    public override func awakeFromNib() {
         super.awakeFromNib()
         
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapHeader)))

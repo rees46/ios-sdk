@@ -17,15 +17,6 @@ extension UIColor {
     }
 }
 
-extension UIFont {
-    static var myAppTitle: UIFont {
-        return UIFont.systemFont(ofSize: 17)
-    }
-    static var myAppBody: UIFont {
-        return UIFont.systemFont(ofSize: 13)
-    }
-}
-
 func hexStringToUIColor (hex:String) -> UIColor {
     var cString:String = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
 

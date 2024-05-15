@@ -1,6 +1,6 @@
 import UIKit
 
-class FiltersTagsTableViewCell: UITableViewCell {
+public class FiltersTagsTableViewCell: UITableViewCell {
     
     @IBOutlet weak var collectionView: UICollectionView!
     
@@ -8,9 +8,9 @@ class FiltersTagsTableViewCell: UITableViewCell {
     
     var delegate: FiltersTagsTableViewCellDelegate?
     
-    var menuList = [FiltersTagsMenu]()
+    var menuList = [FiltersDataMenuList]()
 
-    override func awakeFromNib() {
+    public override func awakeFromNib() {
         super.awakeFromNib()
         collectionView.backgroundColor = UIColor.red
     }
@@ -23,30 +23,30 @@ class FiltersTagsTableViewCell: UITableViewCell {
         return String(describing: self)
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.reloadData()
     }
 
-    override func setSelected(_ selected: Bool, animated: Bool) {
+    public override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
     }
 }
 
 extension FiltersTagsTableViewCell: UICollectionViewDataSource, UICollectionViewDelegate {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let index = section
         let count = menuList[index].titleValues.count
         
         return count
     }
     
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
+    public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FiltersTagsCollectionViewCell", for: indexPath) as! FiltersTagsCollectionViewCell
         
         let index = indexPath.row
@@ -55,11 +55,11 @@ extension FiltersTagsTableViewCell: UICollectionViewDataSource, UICollectionView
         return cell
     }
     
-    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         delegate?.didSelectedMenu(menu: menuList[indexPath.section])
     }
 }
 
 protocol FiltersTagsTableViewCellDelegate {
-    func didSelectedMenu(menu: FiltersTagsMenu)
+    func didSelectedMenu(menu: FiltersDataMenuList)
 }

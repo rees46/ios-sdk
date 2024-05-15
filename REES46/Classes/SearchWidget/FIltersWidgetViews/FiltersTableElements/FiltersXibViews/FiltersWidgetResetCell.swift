@@ -1,15 +1,12 @@
 import UIKit
 
-protocol AboutViewDelegate: AnyObject {
+protocol FiltersWidgetResetDelegate: AnyObject {
     func dismissNow()
 }
 
-class FiltersWidgetResetCell: UITableViewCell {
-
-    @IBOutlet weak var aboutLabel: UILabel?
-    @IBOutlet weak var label: UILabel!
+public class FiltersWidgetResetCell: UITableViewCell {
     
-    weak var delegate: AboutViewDelegate?
+    weak var delegate: FiltersWidgetResetDelegate?
     
     static var nib:UINib {
         return UINib(nibName: identifier, bundle: nil)
@@ -27,12 +24,12 @@ class FiltersWidgetResetCell: UITableViewCell {
         delegate?.dismissNow()
     }
     
-    override func setSelected(_ selected: Bool, animated: Bool) {
+    public override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
     }
 }
 
-@IBDesignable class ResetFiltersButton: UIButton {
+@IBDesignable class FiltersResetButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()
@@ -50,13 +47,10 @@ class FiltersWidgetResetCell: UITableViewCell {
         layer.borderWidth = 2.0
         layer.borderColor = UIColor.black.cgColor
         layer.cornerRadius = 8
-        //layer.cornerRadius = frame.size.height / 2
     }
 }
 
-
-
-@IBDesignable class ShowFiltersButton: UIButton {
+@IBDesignable class FiltersSelectedShowButton: UIButton {
     override func layoutSubviews() {
         super.layoutSubviews()
         updateButtonCornerRadius()
@@ -74,6 +68,5 @@ class FiltersWidgetResetCell: UITableViewCell {
         layer.borderWidth = 2.0
         layer.borderColor = UIColor.white.cgColor
         layer.cornerRadius = 8
-        //layer.cornerRadius = frame.size.height / 2
     }
 }

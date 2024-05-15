@@ -2,51 +2,52 @@ import UIKit
 
 class FiltersWidgetPriceRangeCell: UITableViewCell {
     
-    @IBOutlet weak var maxValueTextField: UITextField!
-    @IBOutlet weak var minValueTextField: UITextField!
-    @IBOutlet weak var rangeSlider: FiltersPriceSlider!
+    @IBOutlet weak var filtersPriceMaxValueTextField: UITextField!
+    @IBOutlet weak var filtersPriceMinValueTextField: UITextField!
+    @IBOutlet weak var filtertsPriceRangeSlider: FiltersPriceSlider!
+    
     public var minValue: Double = 0
     public var maxValue: Double = 9999990
     
     override func awakeFromNib() {
         super.awakeFromNib()
         
-        minValueTextField.delegate = self
-        maxValueTextField.delegate = self
-        minValueTextField.inputAccessoryView = toolBar()
-        maxValueTextField.inputAccessoryView = toolBar()
+        filtersPriceMinValueTextField.delegate = self
+        filtersPriceMaxValueTextField.delegate = self
+        filtersPriceMinValueTextField.inputAccessoryView = toolBar()
+        filtersPriceMaxValueTextField.inputAccessoryView = toolBar()
         
-        minValueTextField.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
-        minValueTextField.layer.borderWidth = 0.8
-        minValueTextField.layer.cornerRadius = 5
-        minValueTextField.clipsToBounds = true
+        filtersPriceMinValueTextField.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
+        filtersPriceMinValueTextField.layer.borderWidth = 0.8
+        filtersPriceMinValueTextField.layer.cornerRadius = 5
+        filtersPriceMinValueTextField.clipsToBounds = true
         
-        maxValueTextField.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
-        maxValueTextField.layer.borderWidth = 1.0
-        maxValueTextField.layer.cornerRadius = 5
-        minValueTextField.clipsToBounds = true
+        filtersPriceMaxValueTextField.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.7).cgColor
+        filtersPriceMaxValueTextField.layer.borderWidth = 1.0
+        filtersPriceMaxValueTextField.layer.cornerRadius = 5
+        filtersPriceMinValueTextField.clipsToBounds = true
         
-        let min = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? 0
-        let max = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? 9999990
+        let minV = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? 0
+        let maxV = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? 9999990
         
-        minValueTextField.text = "от \(String(describing: min))"
-        maxValueTextField.text = "до \(String(describing: max))"
-        rangeSlider.minimumValue = min as! Double
-        rangeSlider.maximumValue = max as! Double
-        rangeSlider.lowerValue = 0
-        rangeSlider.upperValue = max as! Double
-        rangeSlider.addTarget(self, action: #selector(sliderValueChange(_:)), for: .valueChanged)
+        filtersPriceMinValueTextField.text = "от \(String(describing: minV))"
+        filtersPriceMaxValueTextField.text = "до \(String(describing: maxV))"
+        filtertsPriceRangeSlider.minimumValue = minV as! Double
+        filtertsPriceRangeSlider.maximumValue = maxV as! Double
+        filtertsPriceRangeSlider.lowerValue = 0
+        filtertsPriceRangeSlider.upperValue = maxV as! Double
+        filtertsPriceRangeSlider.addTarget(self, action: #selector(sliderValueChange(_:)), for: .valueChanged)
         
-        UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "minimumPriceConstant")
-        UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "maximumPriceConstant")
+        UserDefaults.standard.set(Int(filtertsPriceRangeSlider.lowerValue), forKey: "minimumPriceConstant")
+        UserDefaults.standard.set(Int(filtertsPriceRangeSlider.upperValue), forKey: "maximumPriceConstant")
     }
     
     @objc func sliderValueChange(_ sender: FiltersPriceSlider) {
-        minValueTextField.text = "от \(Int(rangeSlider.lowerValue))"
-        maxValueTextField.text = "до \(Int(rangeSlider.upperValue))"
+        filtersPriceMinValueTextField.text = "от \(Int(filtertsPriceRangeSlider.lowerValue))"
+        filtersPriceMaxValueTextField.text = "до \(Int(filtertsPriceRangeSlider.upperValue))"
         
-        UserDefaults.standard.set(Int(rangeSlider.lowerValue), forKey: "minimumPriceConstant")
-        UserDefaults.standard.set(Int(rangeSlider.upperValue), forKey: "maximumPriceConstant")
+        UserDefaults.standard.set(Int(filtertsPriceRangeSlider.lowerValue), forKey: "minimumPriceConstant")
+        UserDefaults.standard.set(Int(filtertsPriceRangeSlider.upperValue), forKey: "maximumPriceConstant")
     }
     
     static var nib:UINib {
@@ -61,12 +62,8 @@ class FiltersWidgetPriceRangeCell: UITableViewCell {
 extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         
-        if (textField == minValueTextField) {
+        if (textField == filtersPriceMinValueTextField) {
             if let textMinValue = textField.text {
-                //let str0 = text.decimalDigits
-                //let strDec = text.unicodeScalars.filter(CharacterSet.decimalDigits.contains)
-                //print(strDec)
-                
                 let stringArrayForMin = textMinValue.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 for itemMin in stringArrayForMin {
                     if let numberMin = Int(itemMin) {
@@ -78,10 +75,6 @@ extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
             return true
         } else {
             if let textMaxValue = textField.text {
-                //let str0 = text.decimalDigits
-                //let strDec = text.unicodeScalars.filter(CharacterSet.decimalDigits.contains)
-                //print(strDec)
-                
                 let stringArrayForMax = textMaxValue.components(separatedBy: CharacterSet.decimalDigits.inverted)
                 for itemMax in stringArrayForMax {
                     if let numberMax = Int(itemMax) {
@@ -95,34 +88,34 @@ extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        if (textField == minValueTextField) {
-            let min = UserDefaults.standard.object(forKey: "minimumPriceConstant") ?? ""
-            if String(describing: min) != "" {
-                minValueTextField.text = "\(String(describing: min))"
+        if (textField == filtersPriceMinValueTextField) {
+            let minV = UserDefaults.standard.object(forKey: "minimumPriceConstant") ?? ""
+            if String(describing: minV) != "" {
+                filtersPriceMinValueTextField.text = "\(String(describing: minV))"
             } else {
-                minValueTextField.text = "\(Int(rangeSlider.lowerValue))"
+                filtersPriceMinValueTextField.text = "\(Int(filtertsPriceRangeSlider.lowerValue))"
             }
         } else {
-            let max = UserDefaults.standard.object(forKey: "maximumPriceConstant") ?? ""
-            if String(describing: max) != "" {
-                maxValueTextField.text = "\(String(describing: max))"
+            let maxV = UserDefaults.standard.object(forKey: "maximumPriceConstant") ?? ""
+            if String(describing: maxV) != "" {
+                filtersPriceMaxValueTextField.text = "\(String(describing: maxV))"
             } else {
-                maxValueTextField.text = "\(Int(rangeSlider.upperValue))"
+                filtersPriceMaxValueTextField.text = "\(Int(filtertsPriceRangeSlider.upperValue))"
             }
         }
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        let min = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? ""
-        minValueTextField.text = "от \(String(describing: min))"
+        let minV = UserDefaults.standard.object(forKey: "minimumInstalledPriceConstant") ?? ""
+        filtersPriceMinValueTextField.text = "от \(String(describing: minV))"
         
-        let max = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? ""
-        maxValueTextField.text = "до \(String(describing: max))"
+        let maxV = UserDefaults.standard.object(forKey: "maximumInstalledPriceConstant") ?? ""
+        filtersPriceMaxValueTextField.text = "до \(String(describing: maxV))"
         
         let minX = UserDefaults.standard.object(forKey: "minimumPriceConstant") ?? ""
         let maxX = UserDefaults.standard.object(forKey: "maximumPriceConstant") ?? ""
         
-        if (textField == minValueTextField) {
+        if (textField == filtersPriceMinValueTextField) {
             if String(describing: minX) != "" {
                 var intDefault = Int(0)
                 var intCompare = Int(0)
@@ -142,16 +135,16 @@ extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
                     }
                     
                     if (intDefault > intCompare) {
-                        rangeSlider.lowerValue = Double(intCompare)
-                        minValueTextField.text = "от \(String(describing: intCompare))"
+                        filtertsPriceRangeSlider.lowerValue = Double(intCompare)
+                        filtersPriceMinValueTextField.text = "от \(String(describing: intCompare))"
                     } else {
-                        rangeSlider.lowerValue = Double(intDefault)
-                        minValueTextField.text = "от \(String(describing: intDefault))"
+                        filtertsPriceRangeSlider.lowerValue = Double(intDefault)
+                        filtersPriceMinValueTextField.text = "от \(String(describing: intDefault))"
                     }
                 }
             } else {
-                rangeSlider.lowerValue = Double(minValueTextField.text ?? "0") ?? 0
-                minValueTextField.text = "от \(Int(rangeSlider.lowerValue))"
+                filtertsPriceRangeSlider.lowerValue = Double(filtersPriceMinValueTextField.text ?? "0") ?? 0
+                filtersPriceMinValueTextField.text = "от \(Int(filtertsPriceRangeSlider.lowerValue))"
             }
         } else {
             if String(describing: maxX) != "" {
@@ -173,16 +166,16 @@ extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
                     }
                     
                     if (intCompareMax < intDefaultMax) {
-                        rangeSlider.upperValue = Double(intDefaultMax)
-                        maxValueTextField.text = "до \(String(describing: intDefaultMax))"
+                        filtertsPriceRangeSlider.upperValue = Double(intDefaultMax)
+                        filtersPriceMaxValueTextField.text = "до \(String(describing: intDefaultMax))"
                     } else {
-                        rangeSlider.upperValue = Double(intCompareMax)
-                        maxValueTextField.text = "до \(String(describing: intCompareMax))"
+                        filtertsPriceRangeSlider.upperValue = Double(intCompareMax)
+                        filtersPriceMaxValueTextField.text = "до \(String(describing: intCompareMax))"
                     }
                 }
             } else {
-                rangeSlider.upperValue = Double(maxValueTextField.text ?? "9999990") ?? 9999990
-                maxValueTextField.text = "до \(Int(rangeSlider.upperValue))"
+                filtertsPriceRangeSlider.upperValue = Double(filtersPriceMaxValueTextField.text ?? "9999990") ?? 9999990
+                filtersPriceMaxValueTextField.text = "до \(Int(filtertsPriceRangeSlider.upperValue))"
             }
         }
     }

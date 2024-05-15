@@ -6,12 +6,12 @@ protocol FiltersWidgetCheckboxCellDelegate: AnyObject {
     func reloadSectionsInFiltersTable(_ section: Int)
 }
 
-class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
+public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     public func collapseSection(header: FiltersCheckboxItem, section: Int) {
-        //SDK: Detect tap callback
+        //SDK: Detect tap filters collape callback
     }
     
-    var menuList = [FiltersTagsMenu]()
+    var menuList = [FiltersDataMenuList]()
     
     func collapseSection(header: FiltersWidgetCheckboxCell, section: Int) {
         let carouselOpenedBoolKey: Bool = UserDefaults.standard.bool(forKey: "FiltersMemorySettingKey")
@@ -24,7 +24,7 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxObserver"), object: nil)
     }
     
-    func checkboxItemDidSelected(item: FiltersCheckboxItem) {
+    public func checkboxItemDidSelected(item: FiltersCheckboxItem) {
         print(item)
         delegate?.updateTableWithFiltersNow(0)
         //NotificationCenter.default.post(name: NSNotification.Name(rawValue: "FiltersInternalCheckboxObserver"), object: nil)
@@ -45,11 +45,11 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
     
     var items = [FiltersCheckboxItem]()
     
-    var menu = FiltersTagsMenu(filterId: -99, title: "Menu", titleFiltersValues: ["String"], selected: false)
+    var menu = FiltersDataMenuList(filterId: -99, title: "Menu", titleFiltersValues: ["String"], selected: false)
 
     let checkboxTree = FiltersCheckboxTree()
     
-    var itemForFiltersWidget: FiltersTagsMenu? {
+    var itemForFiltersWidget: FiltersDataMenuList? {
         didSet {
             guard let itemForFiltersWidget = itemForFiltersWidget else {
                 return
@@ -74,7 +74,7 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         return String(describing: self)
     }
     
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
         updateView()
     }
@@ -88,7 +88,7 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         delegate?.collapseSection(header: self, section: section)
     }
     
-    override func awakeFromNib() {
+    public override func awakeFromNib() {
         super.awakeFromNib()
         
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapHeader)))
@@ -97,8 +97,8 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         scrollView.alwaysBounceVertical = true
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.isScrollEnabled = false
-        
         addSubview(scrollView)
+        
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.leftAnchor.constraint(equalTo: leftAnchor),
@@ -122,7 +122,6 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         contentStackView.spacing = 8
         contentStackView.axis = .vertical
         contentStackView.translatesAutoresizingMaskIntoConstraints = false
-
         contentView.addSubview(contentStackView)
         
         NSLayoutConstraint.activate([
@@ -142,11 +141,11 @@ class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDelegate {
         pictureImageView?.backgroundColor = UIColor.lightGray
     }
 
-    override func setSelected(_ selected: Bool, animated: Bool) {
+    public override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
     }
     
-    override func prepareForReuse() {
+    public override func prepareForReuse() {
         super.prepareForReuse()
         pictureImageView?.image = nil
     }

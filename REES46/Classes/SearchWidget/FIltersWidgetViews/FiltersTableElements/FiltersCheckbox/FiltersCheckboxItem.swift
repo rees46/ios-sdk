@@ -13,7 +13,7 @@ open class FiltersCheckboxItem: CustomStringConvertible {
         case mixed
     }
     
-    var menuList = [FiltersTagsMenu]()
+    var menuList = [FiltersDataMenuList]()
     
     public var title: String
     

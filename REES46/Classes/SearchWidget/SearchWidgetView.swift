@@ -9,8 +9,8 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     
     public var allProductFilters: [String: Filter]?
     
-    public var indFilters: IndustrialFilters?
-    public var indColorsFilters: IndustrialFilters?
+    public var industrialFilters: IndustrialFilters?
+    public var industrialColorsFilters: IndustrialFilters?
     
     public var currentCurrency: String?
     
@@ -31,7 +31,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     var selectedProduct: String?
     
     public var notNeedShowInteresting: Bool = false
-    public var dontShowFiltersButton: Bool = false
+    public var dontNeedFiltersSelectedShowButton: Bool = false
     
     //private(set)
     public var findedProducts = [SearchWidgetProductDataPrepare]()
@@ -39,11 +39,11 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     var addToCart = SearchWidgetCartButton(image: UIImage(named: "cart"))
     var cartItemCount: Int = 0
     
-    var filtersList = [FiltersTagsMenu]()
+    var filtersList = [FiltersDataMenuList]()
     var minP: Double = 0
     var maxP: Double = 0
     
-    var frameworkBundle:Bundle? {
+    public var frameworkBundle:Bundle? {
         let bundleId = "org.cocoapods.REES46"
         return Bundle(identifier: bundleId)
     }
@@ -57,13 +57,14 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         
         searchProductsCollectionView.register(UINib(nibName: "SearchWidgetProductCell", bundle: frameworkBundle), forCellWithReuseIdentifier: "SearchWidgetProductCell")
         
+        searchProductsCollectionView.register(UINib(nibName: "FiltersWidgetView", bundle: frameworkBundle), forCellWithReuseIdentifier: "FiltersWidgetView")
+        
         blankHeaderView.isHidden = true
         searchHeaderView.isHidden = true
         
-        //addToCart.setBadge(with: cartItemCount)
-        
+//        addToCart.setBadge(with: cartItemCount)
 //        addToCart.tapAction = {
-//            self.performSegue(withIdentifier: "CheckoutVC", sender: self)
+//            self.performSegue(withIdentifier: "searchCheckoutView", sender: self)
 //        }
         
         self.searchPlaceholder.isHidden = true
@@ -123,7 +124,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     }
     
     public override func viewWillAppear(_ animated: Bool) {
-        if dontShowFiltersButton {
+        if dontNeedFiltersSelectedShowButton {
             filtersButton.isHidden = true
         }
     }
@@ -470,7 +471,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         sdkSearchWidget.setRequestHistories(value: [])
         sdkSearchWidget.setSearchSuggest(value: [])
         
-        var frameworkBundle = Bundle(for: REES46.SearchWidgetMainView.self)
+        var frameworkBundle = Bundle(for: SearchWidgetMainView.self)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
 #endif
@@ -494,8 +495,8 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     
     public func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = self.sdkSearchWidgetView.sdkSearchWidgetListView.dequeueReusableCell(withIdentifier: SearchWidgetListViewCell.ID) as! SearchWidgetListViewCell
-        if let sModel = self.sdkSearchWidgetView.sdkSearchWidgetListView.searchResultDatabase[indexPath.row] as? SearchWidgetModel {
-            cell.searchLabel.text = sModel.key
+        if let searchModel = self.sdkSearchWidgetView.sdkSearchWidgetListView.searchResultDatabase[indexPath.row] as? SearchWidgetModel {
+            cell.searchLabel.text = searchModel.key
         }
         return cell
     }
@@ -515,7 +516,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
         sdk?.search(query: productText, sortBy: "popular", filtersSearchBy: "name", timeOut: 0.3) { searchResponse in
             switch searchResponse {
             case let .success(searchResponse):
-                var                     imagesFindedProductArray = [String]()
+                var imagesFindedProductArray = [String]()
                 var arrayOfPreparedFilters = [String]()
                 let strToFiltersRepresentation: [String : Filter] = searchResponse.filters ?? [:]
                 
@@ -523,7 +524,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                 let clientCurrencyDetect: Bool = UserDefaults.standard.bool(forKey: "client_currency")
                 if !clientCurrencyDetect {
                     let currencyFilterTitle = "Price ( " + clientCurrencyValue + " )"
-                    self.filtersList.insert(FiltersTagsMenu(filterId: 9999990, title: currencyFilterTitle, titleFiltersValues: [], selected: false), at: 0)
+                    self.filtersList.insert(FiltersDataMenuList(filterId: 9999990, title: currencyFilterTitle, titleFiltersValues: [], selected: false), at: 0)
                     UserDefaults.standard.set(true, forKey: "client_currency")
                 }
                 
@@ -537,11 +538,11 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                     if dsValue.count == 0 {
                         print("SDK: Command Not found Filters in Category")
                     } else {
-                        self.filtersList.append(FiltersTagsMenu(filterId: index.count, title: index, titleFiltersValues: dsValue, selected: true))
+                        self.filtersList.append(FiltersDataMenuList(filterId: index.count, title: index, titleFiltersValues: dsValue, selected: true))
                     }
                 }
                 
-                self.indFilters = searchResponse.industrialFilters
+                self.industrialFilters = searchResponse.industrialFilters
                 
                 self.minP = searchResponse.priceRange?.min ?? 0
                 self.maxP = searchResponse.priceRange?.max ?? 9999990
@@ -666,7 +667,6 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                             self.filtersButton.alpha = 1.0
                             self.filtersButton.isUserInteractionEnabled = true
                         }
-                        
                     } else if SdkGlobalHelper.DeviceType.IS_IPHONE_XS_MAX {
                         UIView.animate(withDuration: 0.5, delay: 0.0,
                                        usingSpringWithDamping: 0.0, initialSpringVelocity: 0.0,
@@ -679,7 +679,6 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                             self.filtersButton.alpha = 1.0
                             self.filtersButton.isUserInteractionEnabled = true
                         }
-                        
                     } else if SdkGlobalHelper.DeviceType.IS_IPHONE_SE {
                         UIView.animate(withDuration: 0.5, delay: 0.0,
                                        usingSpringWithDamping: 0.0, initialSpringVelocity: 0.0,
@@ -691,13 +690,13 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
                             self.filtersButton.alpha = 1.0
                             self.filtersButton.isUserInteractionEnabled = true
                         }
-                        
                     } else {
                         UIView.animate(withDuration: 0.5, animations: {
                             self.backButton.frame.origin.y += 0.5
                             self.filtersButton.frame.origin.x += 5
                             self.filtersButton.frame.origin.y += 3
                         }, completion: { (isFinished) in
+                            //Implementation
                         })
                     }
                     
@@ -716,20 +715,23 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate 
     }
     
     @objc private func filtersOpenTap() {
-        var frameworkBundle = Bundle(for: REES46.FiltersWidgetView.self)
+        var frameworkBundle = Bundle(for: FiltersWidgetView.self)
+        //var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
-        frameworkBundle = Bundle.module
+            frameworkBundle = Bundle.module
 #endif
-        let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
+        //'let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
+        
+        let filtersWidgetMainView = FiltersWidgetView()
         filtersWidgetMainView.modalPresentationStyle = .fullScreen
-        filtersWidgetMainView.data = self.filtersList
+        filtersWidgetMainView.filtersList = self.filtersList
         self.present(filtersWidgetMainView, animated: true, completion: nil)
     }
     
     @objc private func didTapBack() {
         UserDefaults.standard.set(false, forKey: "client_currency")
         filtersButton.isHidden = true
-        self.dontShowFiltersButton = true
+        self.dontNeedFiltersSelectedShowButton = true
         self.dismiss(animated: false, completion: nil)
     }
     

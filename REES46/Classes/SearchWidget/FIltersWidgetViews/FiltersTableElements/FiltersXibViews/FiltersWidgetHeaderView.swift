@@ -4,7 +4,7 @@ protocol FiltersWidgetHeaderViewDelegate: AnyObject {
     func headerExpandArrowInSection(header: FiltersWidgetHeaderView, section: Int)
 }
 
-class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
+public class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
     @IBOutlet weak var titleLabel: UILabel?
     
     var section: Int = 0
@@ -19,7 +19,7 @@ class FiltersWidgetHeaderView: UITableViewHeaderFooterView {
         return String(describing: self)
     }
     
-    override func awakeFromNib() {
+    public override func awakeFromNib() {
         super.awakeFromNib()
         if #available(iOS 13.0, *) {
             self.contentView.backgroundColor = UIColor(red: 252/255, green: 252/255, blue: 252/255, alpha: 1)

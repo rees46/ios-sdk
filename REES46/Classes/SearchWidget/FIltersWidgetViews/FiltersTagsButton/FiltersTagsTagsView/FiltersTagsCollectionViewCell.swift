@@ -2,7 +2,7 @@ import UIKit
 
 class FiltersTagsCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var menuLabel: UILabel!
-    var menu = FiltersTagsMenu(filterId: -88, title: "Menu", titleFiltersValues: ["String"], selected: false)
+    var menu = FiltersDataMenuList(filterId: -88, title: "Menu", titleFiltersValues: ["String"], selected: false)
     
     var menuString = String()
     override func awakeFromNib() {

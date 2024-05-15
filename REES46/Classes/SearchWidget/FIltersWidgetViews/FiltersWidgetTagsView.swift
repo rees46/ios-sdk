@@ -4,10 +4,8 @@ class FiltersWidgetTagsView: UIViewController {
 
     @IBOutlet weak var tabelView: UITableView!
     
-    public var menuList = [FiltersTagsMenu]()
+    public var menuList = [FiltersDataMenuList]()
     
-    public var allFiltersFinal1: [String : Filter]?
-    public var indFiltersFinal1: IndustrialFilters?
     @IBOutlet private weak var backButton: UIButton!
 
     override func viewDidLoad() {
@@ -70,7 +68,7 @@ extension FiltersWidgetTagsView: UITableViewDataSource, UITableViewDelegate{
 }
 
 extension FiltersWidgetTagsView: FiltersTagsTableViewCellDelegate {
-    func didSelectedMenu(menu: FiltersTagsMenu) {
+    func didSelectedMenu(menu: FiltersDataMenuList) {
         if let tempMenu = menuList.first(where: {$0.titleValues == menu.titleValues}) {
             if tempMenu.selected {
                 menuList.filter {$0.filterId == menu.filterId}.first?.selected = false

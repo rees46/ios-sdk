@@ -2,7 +2,6 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -71,9 +70,9 @@
                 </constraints>
             </tableViewCellContentView>
             <connections>
-                <outlet property="maxValueTextField" destination="TkZ-Et-q0K" id="wwH-nn-V7Q"/>
-                <outlet property="minValueTextField" destination="Tcn-GR-Dkg" id="6xA-GV-7KZ"/>
-                <outlet property="rangeSlider" destination="NOe-bs-kW2" id="TWJ-dg-Bu9"/>
+                <outlet property="filtersPriceMaxValueTextField" destination="TkZ-Et-q0K" id="wwH-nn-V7Q"/>
+                <outlet property="filtersPriceMinValueTextField" destination="Tcn-GR-Dkg" id="6xA-GV-7KZ"/>
+                <outlet property="filtertsPriceRangeSlider" destination="NOe-bs-kW2" id="TWJ-dg-Bu9"/>
             </connections>
             <point key="canvasLocation" x="108" y="-129.53523238380811"/>
         </tableViewCell>
