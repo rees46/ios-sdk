@@ -253,6 +253,17 @@ class Slide {
 public class StoriesElement {
     public var link: String?
     public var deeplinkIos: String?
+    let uID: String?
+    let fontType: FontType?
+    let fontSize: Double?
+    let textItalic: Bool?
+    let textBackgroundColorOpacity: String?
+    private(set) var textBackgroundColor: UIColor?
+    let textColor: UIColor?
+    let textInput: String?
+    let textAlignment: String?
+    let textLineSpacing: Double?
+    let yOffset: Double?
     let type: ElementType
     let color: String?
     let title, linkIos: String?
@@ -266,12 +277,23 @@ public class StoriesElement {
     public init(json: [String: Any]) {
         self.link = json["link"] as? String
         self.deeplinkIos = json["deeplink_ios"] as? String
+        self.fontType = FontType(rawValue: json["font_type"] as? String ?? "")
+        self.fontSize = Double(json["font_size"] as? String ?? "")
+        self.textItalic = json["italic"] as? Bool ?? false
+        self.textBackgroundColorOpacity = json["text_background_color_opacity"] as? String
+        self.textBackgroundColor = UIColor(hexString: json["text_background_color"] as? String ?? "")
+        self.textColor = UIColor(hexString: json["text_color"] as? String ?? "")
+        self.textInput = json["text_input"] as? String
+        self.textAlignment = json["text_align"] as? String
+        self.textLineSpacing = Double(json["text_line_spacing"] as? String ?? "1.5")
+        self.yOffset = Double(json["y_offset"] as? String ?? "")
+        self.uID = json["uniqid"] as? String
         let _type = json["type"] as? String ?? ""
         self.type = ElementType(rawValue: _type) ?? .unknown
         self.color = json["color"] as? String
         self.title = json["title"] as? String
         self.linkIos = json["link_ios"] as? String
-        self.textBold = json["text_bold"] as? Bool
+        self.textBold = json["text_bold"] as? Bool ?? json["bold"] as? Bool
         self.background = json["background"] as? String
         self.cornerRadius = json["corner_radius"] as? Int ?? 12
         let _labels = json["labels"] as? [String: Any] ?? [:]
@@ -280,6 +302,23 @@ public class StoriesElement {
         self.products = _products.map({StoriesProduct(json: $0)})
         let _product = json["item"] as? [String: Any] ?? [:]
         self.product = StoriesPromoCodeElement(json: _product)
+        
+        applyTextBackgroundOpacity()
+    }
+    
+    private func applyTextBackgroundOpacity() {
+        guard let opacityString = textBackgroundColorOpacity,
+              let opacityValue = extractOpacity(from: opacityString),
+              let color = textBackgroundColor else { return }
+        self.textBackgroundColor = color.withAlphaComponent(opacityValue)
+    }
+    
+    private func extractOpacity(from opacityString: String) -> CGFloat? {
+        let percentageString = opacityString.trimmingCharacters(in: CharacterSet(charactersIn: "%"))
+        if let percentage = Double(percentageString) {
+            return CGFloat(percentage) / 100.0
+        }
+        return nil
     }
 }
 
@@ -401,6 +440,14 @@ enum ElementType: String {
     case button = "button"
     case products = "products"
     case product = "product"
+    case textBlock = "text_block"
+    case unknown
+}
+
+enum FontType: String {
+    case monospaced = "monospaced"
+    case serif = "serif"
+    case sansSerif = "sans-serif"
     case unknown
 }
 
