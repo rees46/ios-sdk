@@ -1,5 +1,5 @@
 import UIKit
-import REES46
+import PersonaClick
 
 class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     

@@ -1,14 +1,14 @@
 //
 //  AppDelegate.swift
-//  REES46
+//  PersonaClick
 //
-//  Created by REES46
+//  Created by PersonaClick
 //  Copyright (c) 2023. All rights reserved.
 //
 
 import Firebase
 import FirebaseMessaging
-import REES46
+import PersonaClick
 import UIKit
 import UserNotifications
 
