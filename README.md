@@ -20,8 +20,10 @@ For detailed information on methods, please refer to the documentation available
 
 ## Author
 
+
 REES46, desk@rees46.com
 
 ## License
+
 
 REES46 SDK is available under the MIT license. See the LICENSE file for more info.

@@ -39,7 +39,7 @@ Pod::Spec.new do |s|
 
   s.source_files     = 'REES46/Classes/**/*.{swift}'
   s.resources        = 'REES46/Classes/Resources/*.{xcassets,xib,storyboard,json,png}'
-   
+
   s.swift_version = '5'
 
 end
