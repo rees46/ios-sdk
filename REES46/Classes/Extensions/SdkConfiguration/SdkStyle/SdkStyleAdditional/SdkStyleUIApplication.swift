@@ -9,7 +9,6 @@ public protocol sdkStyleManagerProtocol {
 
 @objc
 public extension UIApplication {
-    
     func setStoriesViewFont(fontName: String) {
         _ = {
             $0.isUserInteractionEnabled = true

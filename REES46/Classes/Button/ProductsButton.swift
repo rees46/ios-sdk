@@ -126,9 +126,7 @@ protocol CustomProductButtonDelegate: AnyObject {
         super.layoutSubviews()
     }
     
-    @objc
-    public func didTapButton() {
-        
+    @objc public func didTapButton() {
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)
             return
@@ -157,7 +155,6 @@ protocol CustomProductButtonDelegate: AnyObject {
         super.layoutSubviews()
     }
 }
-
 
 extension UIButton {
     func addRightIconForProductsBtn(image: UIImage) {

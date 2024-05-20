@@ -75,7 +75,7 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
                 allTasksCompletedHandler?(dataTasks)
             }
         } else {
-            debugPrint("SDK Tasks completed: \(completed.count)/\(dataTasks.count)")
+            print("SDK: Tasks completed: \(completed.count)/\(dataTasks.count)")
         }
     }
     

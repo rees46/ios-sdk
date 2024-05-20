@@ -24,7 +24,7 @@ public struct Loader {
 
     public func cancel() {
         task.cancel()
-        let reason = "SDK Loader cancel to request: \(baseReqUrl)"
+        let reason = "SDK: Loader cancel to request: \(baseReqUrl)"
         onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: 0, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
     }
 
@@ -41,7 +41,7 @@ public struct Loader {
         }
 
         if let statusCode = (task.response as? HTTPURLResponse)?.statusCode, statusCode >= 200, statusCode < 400 {
-            let reason = "SDK Disconnect on downloading caused by HTTPStatusCode: \(statusCode)"
+            let reason = "SDK: Disconnect on downloading caused by HTTPStatusCode: \(statusCode)"
             onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: statusCode, userInfo: [NSLocalizedFailureReasonErrorKey: reason]))
             return
         }
@@ -50,7 +50,7 @@ public struct Loader {
     }
 
     private func failOnConvertToImage() {
-        onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: -999, userInfo: [NSLocalizedFailureReasonErrorKey: "SDK Failure when convert image"]))
+        onFailure(with: NSError(domain: "StoriesCollectionCellLoader", code: -999, userInfo: [NSLocalizedFailureReasonErrorKey: "SDK: Failure when convert image"]))
     }
 
     private func onSuccess(with image: UIImage) {
@@ -69,7 +69,6 @@ public struct Loader {
         delegate.remove(self)
     }
 }
-
 
 extension Loader: Equatable {}
 

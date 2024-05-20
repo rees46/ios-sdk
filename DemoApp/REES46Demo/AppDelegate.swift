@@ -3,7 +3,7 @@
 //  REES46
 //
 //  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
+//  Copyright (c) 2024. All rights reserved.
 //
 
 import Firebase
@@ -11,6 +11,8 @@ import FirebaseMessaging
 import REES46
 import UIKit
 import UserNotifications
+import AdSupport
+import AppTrackingTransparency
 
 var pushGlobalToken: String = ""
 var fcmGlobalToken: String = ""
@@ -31,9 +33,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
     
+    public typealias BackgroundDownloadCompletionHandler = () -> Void
+    public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
         print("A. Init firebase sdk")
         FirebaseApp.configure()
         Messaging.messaging().delegate = self
@@ -48,7 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         })
 
 //        print("1. Init additional SDK if needed")
-//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
+//        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", apiDomain: "api.domain", enableLogs: true, { error in
 //            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
 //            didToken = self.sdkAdditionalInit.getDeviceId()
 //            globalSDKAdditionalInit = self.sdkAdditionalInit
@@ -114,33 +117,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                                                     productBannerPromocodeSectionBackgroundColor: "#5ec169",
 //                                                     productBannerDiscountSectionBackgroundColor: "#5ec169",
 //                                                     productBannerPromocodeCopyToClipboardMessage: "Copied")
-        
-//        //SDK Recommendations Widget settings
-//        sdk.configuration().recommendations.setWidgetBlock(widgetFontName: "Inter",
-//                                                           widgetBackgroundColor: "#ffffff",
-//                                                           widgetBackgroundColorDarkMode: "#000000",
-//                                                           widgetCellBackgroundColor: "#ffffff",
-//                                                           widgetCellBackgroundColorDarkMode: "#000000",
-//                                                           widgetBorderWidth: 1,
-//                                                           widgetBorderColor: "#c3c3c3",
-//                                                           widgetBorderColorDarkMode: "#c3c3c3",
-//                                                           widgetBorderTransparent: 0.4,
-//                                                           widgetCornerRadius: 9,
-//                                                           widgetStarsColor: "#ff9500",
-//                                                           widgetAddToCartButtonText: "Add to cart",
-//                                                           widgetRemoveFromCartButtonText: "Remove from cart",
-//                                                           widgetAddToCartButtonFontSize: 17,
-//                                                           widgetRemoveFromCartButtonFontSize: 14,
-//                                                           widgetCartButtonTextColor: "#ffffff",
-//                                                           widgetCartButtonTextColorDarkMode: "#ffffff",
-//                                                           widgetCartButtonBackgroundColor: "#000000",
-//                                                           widgetCartButtonBackgroundColorDarkMode: "#ffffff",
-//                                                           widgetCartButtonNeedOpenWebUrl: false,
-//                                                           widgetFavoritesIconColor: "#000000",
-//                                                           widgetFavoritesIconColorDarkMode: "#ffffff",
-//                                                           widgetPreloadIndicatorColor: "#ffffff",
-//                                                           widgetNoReviewDefaultMessage: "No reviews")
 
+//        //SDK Recommendations Widget settings
+//        sdk.configuration().recommendations.setWidget(fontName: "Inter",
+//                                                      backgroundColor: "#ffffff",
+//                                                      backgroundColorDarkMode: "#000000",
+//                                                      cellBackgroundColor: "#ffffff",
+//                                                      cellBackgroundColorDarkMode: "#000000",
+//                                                      borderWidth: 1,
+//                                                      borderColor: "#c3c3c3",
+//                                                      borderColorDarkMode: "#c3c3c3",
+//                                                      borderTransparent: 0.4,
+//                                                      cornerRadius: 9,
+//                                                      starsColor: "#ff9500",
+//                                                      addToCartButtonText: "Add to cart",
+//                                                      removeFromCartButtonText: "Remove from cart",
+//                                                      addToCartButtonFontSize: 17,
+//                                                      removeFromCartButtonFontSize: 14,
+//                                                      cartButtonTextColor: "#ffffff",
+//                                                      cartButtonTextColorDarkMode: "#ffffff",
+//                                                      cartButtonBackgroundColor: "#000000",
+//                                                      cartButtonBackgroundColorDarkMode: "#ffffff",
+//                                                      cartButtonNeedOpenWebUrl: false,
+//                                                      favoritesIconColor: "#000000",
+//                                                      favoritesIconColorDarkMode: "#ffffff",
+//                                                      preloadIndicatorColor: "#ffffff",
+//                                                      defaultMessageNoReviews: "No reviews")
+//
 //        //SDK Stories block collection cell indicator
 //        sdk.configuration().stories.storiesBlockPreloadIndicatorDisabled = true //default false - cell indicator enabled
 
@@ -410,7 +413,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        }
 //
 //        print("7. Testing products list")
-//        sdk.getProductsList(brands: "Hasbro", categories: "Toys", locations: "Shops", filters: ["Screen size, inch": ["15.6"]]) { productsListResponse in
+//        //Available options for filtersSearchBy: "name", "popularity", "quantity"
+//        sdk.getProductsList(brands: "Hasbro", categories: "Toys", locations: "Shops", filters: ["Screen size, inch": ["15.6"]], filtersSearchBy: "name") { productsListResponse in
 //            print("   Testing get products list callback")
 //            switch productsListResponse {
 //            case let .success(response):
@@ -469,12 +473,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
-//        print("10. Testing detail search")
-//        sdk.search(query: "shoes", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], colors: ["white", "black"], fashionSizes: ["36", "37", "38", "39", "40"], timeOut: 0.2) { searchResponse in
-//            print("   Full search callback")
+//        print("10. Testing full search with filters")
+//        //Available options for filtersSearchBy: "name", "popularity", "quantity"
+//        sdk.search(query: "jeans", sortBy: "popular", locations: "10", filters: ["Screen size, inch": ["15.6"]], filtersSearchBy: "popularity", colors: ["white", "black"], fashionSizes: ["36", "37", "38", "39", "42"], timeOut: 0.2) {
+//            searchResponse in
+//            print("   Full search with filters callback")
 //            switch searchResponse {
 //            case let .success(response):
-//                print("     full search is success")
+//                print("     full search with filters is success")
 //                withExtendedLifetime(response) {
 //                    //print("Response:", response) //Uncomment it if you want to see response
 //                }
@@ -485,7 +491,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                default:
 //                    print("Error:", error.description)
 //                }
-//                //fatalError("    full search is failure")
+//                //fatalError("    full search with filters is failure")
 //            }
 //        }
 //
@@ -543,13 +549,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //            }
 //        }
 //
+//        sdk.subscribeForBackInStock(id: "807", email: "mail@example.com", fashionSize: "36") {
+//            subscribeForBackInStockResponse in
+//            print("   SubscribeForBackInStock callback")
+//            switch subscribeForBackInStockResponse {
+//            case let .success(subscribeForBackInStockResponse):
+//                print("     subscribeForBackInStock is success")
+//                withExtendedLifetime(subscribeForBackInStockResponse) {
+//                    //print("Response:", subscribeForBackInStockResponse) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    subscribeForBackInStock is failure")
+//            }
+//        }
 //        print("===END===")
 
         return true
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
-        //removeAllFilesFromTemporaryDirectory()
     }
     
     @available(iOS 13.0, *)
@@ -568,14 +592,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 try fileManager.removeItem(at: fileURL)
             }
         } catch {
-            print("Error when deleting files from temporary directory: \(error.localizedDescription)")
+            print("SDK: Error when deleting files from temporary directory: \(error.localizedDescription)")
         }
     }
 
     func application(_ application: UIApplication,
                      handleEventsForBackgroundURLSession identifier: String,
                      completionHandler: @escaping () -> Void) {
-        //backgroundCompletionHandler = completionHandler
+        backgroundCompletionHandler = completionHandler
     }
 }
 
@@ -586,7 +610,7 @@ extension AppDelegate: MessagingDelegate {
         fcmGlobalToken = fcmToken ?? ""
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
         // FIREBASE TOKEN SEND TEST
-        // notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
+        //notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
         // FIREBASE TOKEN END TEST
     }
 }
@@ -626,8 +650,37 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             print(notifications)
         }
     }
+    
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        //SDK Advertising identifier support at init user request
+        if #available(iOS 14.0, *) {
+            ATTrackingManager.requestTrackingAuthorization { status in
+                DispatchQueue.main.async {
+                    switch status {
+                    case .authorized:
+                        let idfa = ASIdentifierManager.shared().advertisingIdentifier
+                        globalSDK?.sendIDFARequest(idfa: idfa, completion: { initIdfaResult in
+                        switch initIdfaResult {
+                            case .success:
+                                UserDefaults.standard.set(idfa, forKey: "IDFA")
+                                print("\nSDK: User granted access to 'ios_advertising_id'\nIDFA:", idfa, "\n")
+                            case .failure(_):
+                                print("\nSDK: 'ios_advertising_id' Error \nIDFA:", initIdfaResult, "\n")
+                                break
+                            }
+                        })
+                    case .denied, .restricted:
+                        print("SDK: User denied access to 'ios_advertising_id' IDFA\n")
+                    case .notDetermined:
+                        print("SDK: User not received an authorization request to 'ios_advertising_id' IDFA\n")
+                    @unknown default:
+                        break
+                    }
+                }
+            }
+        }
+    }
 }
-
 
 extension AppDelegate: NotificationServicePushDelegate {
     func openCustom(url: String) {

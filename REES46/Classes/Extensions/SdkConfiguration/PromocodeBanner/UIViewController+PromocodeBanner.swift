@@ -2,7 +2,6 @@ import Foundation
 import UIKit
 
 public extension UICollectionViewCell {
-    
     func showInCellPromocodeBanner(promoBanner: PromocodeBanner) {
         if PromocodeBanner.OPEN_PROMOCODE_BANNERS >= PromocodeBanner.MAX_ALLOWED_BANNERS {
             return
@@ -40,7 +39,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -48,7 +47,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -56,7 +55,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -64,7 +63,7 @@ public extension UICollectionViewCell {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -76,7 +75,6 @@ public extension UICollectionViewCell {
 
 
 public extension UIViewController {
-    
     func showInViewPromocodeBanner(promoBanner: PromocodeBanner) {
         if PromocodeBanner.OPEN_PROMOCODE_BANNERS >= PromocodeBanner.MAX_ALLOWED_BANNERS {
             return
@@ -114,7 +112,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             }) 
             break
@@ -122,7 +120,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -130,7 +128,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: promoBanner.frame.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             })
             break
@@ -138,7 +136,7 @@ public extension UIViewController {
             UIView.animate(withDuration: promoBanner.animationDuration, animations: {
                 promoBanner.frame = CGRect(x: needToSetup.minX, y: promoBanner.frame.minY, width: needToSetup.width, height: promoBanner.frame.height)
                 promoBanner.updateSubviews()
-            }, completion: { (b) in
+            }, completion: { (isFinished) in
                 promoBanner.startTimer()
             }) 
             break

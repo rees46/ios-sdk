@@ -6,7 +6,6 @@ struct User:Codable {
 }
 
 @propertyWrapper
-
     struct UserDefault<T: Codable> {
         let key: String
         let defaultValue: T
@@ -18,13 +17,10 @@ struct User:Codable {
 
         var wrappedValue: T {
             get {
-
                 if let data = UserDefaults.standard.object(forKey: key) as? Data,
                     let user = try? JSONDecoder().decode(T.self, from: data) {
                     return user
-
                 }
-
                 return  defaultValue
             }
             set {
@@ -34,11 +30,6 @@ struct User:Codable {
             }
         }
     }
-
-enum GlobalSettings {
-    @UserDefault("user", defaultValue: User(slideId:"", slideUrl:"")) static var user: User
-}
-
 
 extension UserDefaults {
     

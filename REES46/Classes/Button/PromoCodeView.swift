@@ -61,10 +61,10 @@ class PromoCodeView: UIView {
             addSubview(promocodeSlideProductImage)
             
             let urlImgFullSize: String = promoData.image_url
-            let urlImgResize = URL(string: promoData.image_url_resized?.image_url_resized520 ?? urlImgFullSize)
+            let urlImgDownloadAndResize = URL(string: promoData.image_url_resized?.image_url_resized520 ?? urlImgFullSize)
             
-            if urlImgResize != nil {
-                StoryBlockImageCache.image(for: urlImgResize!.absoluteString) { [self] cachedImage in
+            if urlImgDownloadAndResize != nil {
+                SdkImagesCacheLoader.image(for: urlImgDownloadAndResize!.absoluteString) { [self] cachedImage in
                     if cachedImage != nil {
                         let imageBorderRepresentation = cachedImage!.imageWithInsets(insets: UIEdgeInsets(top: 22, left: 22, bottom: 22, right: 22))
                         if cachedImage!.hasAlpha {
@@ -86,8 +86,8 @@ class PromoCodeView: UIView {
                         }
                         UIView.animate(withDuration: 0.2, animations: {
                                 self.promocodeSlideProductImage.alpha = 1.0
-                            }, completion: { (b) in
-                                //Do nothing
+                            }, completion: { (isFinished) in
+                                // TODO Implementation
                         })
                     } else {
                         
@@ -96,13 +96,13 @@ class PromoCodeView: UIView {
                         
                         UIView.animate(withDuration: 0.1, animations: {
                             self.loadingPlaceholderView.cover(self, animated: true)
-                        }, completion: { (b) in
-                            //Do nothing
+                        }, completion: { (isFinished) in
+                            // TODO Implementation
                         })
                         
-                        let task = URLSession.shared.dataTask(with: urlImgResize!, completionHandler: { data, _, error in
+                        let task = URLSession.shared.dataTask(with: urlImgDownloadAndResize!, completionHandler: { data, _, error in
                             if error == nil {
-                                guard let unwrappedData = data, let downloadedImage = UIImage(data: unwrappedData) else {
+                                guard let unwrappedImageData = data, let downloadedImage = UIImage(data: unwrappedImageData) else {
                                     return
                                 }
                                 
@@ -128,10 +128,10 @@ class PromoCodeView: UIView {
                                 DispatchQueue.main.async { [self] in
                                     UIView.animate(withDuration: 1.8, animations: {
                                         self.promocodeSlideProductImage.alpha = 1.0
-                                    }, completion: { (b) in })
+                                    }, completion: { (isFinished) in })
                                 }
                                 
-                                StoryBlockImageCache.save(downloadedImage, for: urlImgResize!.absoluteString)
+                                SdkImagesCacheLoader.save(downloadedImage, for: urlImgDownloadAndResize!.absoluteString)
                             }
                         })
                         task.resume()
@@ -151,13 +151,11 @@ class PromoCodeView: UIView {
     }
 }
 
-
 extension UIImage {
     func imageWithInsets(insets: UIEdgeInsets) -> UIImage? {
         UIGraphicsBeginImageContextWithOptions(
             CGSize(width: self.size.width + insets.left + insets.right,
                    height: self.size.height + insets.top + insets.bottom), false, self.scale)
-        let _ = UIGraphicsGetCurrentContext()
         let origin = CGPoint(x: insets.left, y: insets.top)
         self.draw(at: origin)
         let imageWithInsets = UIGraphicsGetImageFromCurrentImageContext()
@@ -165,7 +163,6 @@ extension UIImage {
         return imageWithInsets
     }
 }
-
 
 extension UIImage {
     public var hasAlpha: Bool {

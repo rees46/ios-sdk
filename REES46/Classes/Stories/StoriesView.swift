@@ -19,7 +19,7 @@ public protocol StoriesViewLinkProtocol: AnyObject {
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
     
-    let cellId = "StoriesCollectionViewPreviewCell"
+    let cellId = "StoriesCollectionPreviewCell"
     
     private var collectionView: UICollectionView = {
         let testFrame = CGRect(x: 0, y: 0, width: 300, height: 135)
@@ -73,13 +73,11 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(didEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
     }
     
-    @objc
-    func willEnterForeground() {
+    @objc func willEnterForeground() {
         //
     }
 
-    @objc
-    func didEnterBackground() {
+    @objc func didEnterBackground() {
         //
     }
     
@@ -119,7 +117,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
-        collectionView.register(StoriesCollectionViewPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionViewPreviewCell.cellId)
+        collectionView.register(StoriesCollectionPreviewCell.self, forCellWithReuseIdentifier: StoriesCollectionPreviewCell.cellId)
         self.setBgColor()
         
         UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
@@ -183,7 +181,6 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
 }
 
-
 extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
@@ -202,7 +199,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionPreviewCell.cellId, for: indexPath) as? StoriesCollectionPreviewCell else {return UICollectionViewCell()}
         
         if let currentStory = stories?[indexPath.row] {
             
@@ -242,7 +239,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         
         return cell
     }
-
+    
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
         if let currentStory = stories?[indexPath.row] {
@@ -290,29 +287,28 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
 }
 
-
 extension StoriesView: StoriesViewLinkProtocol {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
         self.communicationDelegate?.receiveSelectedProductData(products: storySlide)
-        print("\nSDK Received story slide button tap links for external use:")
+        print("\nSDK: Received story slide button tap links for external use:")
         printSlideObject(objElementClass: storySlide)
     }
     
     public func structOfSelectedCarouselProduct(product: StoriesProduct) {
         self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
-        print("\nSDK Received carousel selected product link for external use:")
+        print("\nSDK: Received carousel selected product link for external use:")
         printCarouselObject(objProductClass: product)
     }
     
     public func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement) {
         self.communicationDelegate?.receiveSelectedPromocodeProductData(promoCodeSlide: promoCodeSlide)
-        print("\nSDK Received promocode slide button tap links for external use:")
+        print("\nSDK: Received promocode slide button tap links for external use:")
         printPromoObject(objPromoClass: promoCodeSlide)
     }
     
     public func linkIosExternalUse(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
-        print("\nSDK Received linkIos for external use: \(url)\n\n")
+        print("\nSDK: Received linkIos for external use: \(url)\n\n")
     }
 
     public func reloadStoriesCollectionSubviews() {
@@ -354,11 +350,10 @@ extension StoriesView: StoriesViewLinkProtocol {
 class CustomCollectionViewCell: UICollectionViewCell {
     override var isSelected: Bool {
         didSet {
-            contentView.backgroundColor = isSelected ? .red : .white
+            contentView.backgroundColor = isSelected ? .lightGray : .white
         }
     }
 }
-
 
 extension UIViewController {
     func embedInNavigationController() -> UINavigationController {

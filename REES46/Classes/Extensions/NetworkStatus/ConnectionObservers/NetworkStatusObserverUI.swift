@@ -13,8 +13,10 @@ public class NetworkStatusObserverUI: ObservableObject {
     
     public init() {
         self.hiddenObserver = HiddenObserver()
+        
         self.connectionStatus = .Offline
         self.connectionType = .none
+        
         self.hiddenObserver.setExternalObserver(observer: self)
     }
     

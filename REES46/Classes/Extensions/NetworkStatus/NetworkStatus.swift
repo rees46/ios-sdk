@@ -93,7 +93,7 @@ public class NetworkStatus {
                 }
             #else
                 newConnectionType = .cellular(radioType: .notdeterminedcellular)
-            #endif
+        #endif
         } else if path.usesInterfaceType(.wifi) {
             newConnectionType = .wifi
         } else if path.usesInterfaceType(.wiredEthernet) {
@@ -110,13 +110,13 @@ public class NetworkStatus {
         semaphore?.signal()
     }
     
-    internal func addObserver(observer: NetworkStatusObserver) {
+    public func addObserver(observer: NetworkStatusObserver) {
         observer.didChangeConnectionStatus(connectionStatus)
         observer.didChangeConnectionType(connectionType)
         observers[observer.connectionObserverId] = observer
     }
     
-    internal func removeObserver(observer: NetworkStatusObserver) {
+    public func removeObserver(observer: NetworkStatusObserver) {
         observers[observer.connectionObserverId] = nil
     }
     

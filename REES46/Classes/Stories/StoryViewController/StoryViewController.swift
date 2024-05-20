@@ -108,8 +108,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
     }
     
-    @objc
-    func willEnterForeground() {
+    @objc func willEnterForeground() {
         let ds: Bool = UserDefaults.standard.bool(forKey: "CarouselTimerStopMemorySetting")
         if !ds {
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
@@ -118,8 +117,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
 
-    @objc
-    func didEnterBackground() {
+    @objc func didEnterBackground() {
         let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
         NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
         pauseTimer()
@@ -232,8 +230,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
     }
     
-    @objc
-    private func didSingleTapOnScreen(_ gestureRecognizer: UITapGestureRecognizer) {
+    @objc private func didSingleTapOnScreen(_ gestureRecognizer: UITapGestureRecognizer) {
         let tapLocation = gestureRecognizer.location(in: self.view)
         let halfWidth = self.view.bounds.width / 2.0
         if tapLocation.x < halfWidth {
@@ -403,8 +400,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    @objc
-    func didSwipeLeft() {
+    @objc func didSwipeLeft() {
         if currentPosition.section >= stories.count - 1{
             dismiss(animated: true)
         } else {
@@ -471,8 +467,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         collectionView.setContentOffset(CGPoint(x: sectionFrame.origin.x - collectionView.contentInset.left, y: 0), animated: false)
     }
     
-    @objc
-    func didSwipeRight() {
+    @objc func didSwipeRight() {
         if currentPosition.section > 0 {
             currentPosition.row = 0
             
@@ -563,9 +558,9 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             let videoDurationInCache = SdkGlobalHelper.sharedInstance.retrieveVideoCachedParamsDictionary(parentSlideId: storySlideMedia.id)
             if let videoDurationSeconds = videoDurationInCache[storySlideMedia.id] {
                 storyTime = Int(videoDurationSeconds) ?? storySlideMedia.duration
-                //print("SDK Video duration is \(videoDurationSeconds)")
+                //print("SDK: Video duration is \(videoDurationSeconds)")
             } else {
-                //print("SDK Error can not detect video duration")
+                //print("SDK: Error can not detect video duration")
                 //let duration = AVURLAsset(url: storySlideMedia.videoURL!).duration.seconds
                 //let vTime = String(format:"%d", Int(duration.truncatingRemainder(dividingBy: 60)))
                 //print(vTime)
@@ -636,8 +631,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    @objc
-    func updateVisibleCells(notification: NSNotification) {
+    @objc func updateVisibleCells(notification: NSNotification) {
         DispatchQueue.main.async {
             if let visibleCell = self.collectionView.indexPathsForVisibleItems.first {
                 UIView.animate(withDuration: 0.5, animations: {
@@ -652,8 +646,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
 
-    @objc
-    func updateTime() {
+    @objc func updateTime() {
         if timeLeft > 0 {
             timeLeft = endTime?.timeIntervalSinceNow ?? 0
             currentProgressView?.progress = 1 - Float(timeLeft) / currentDuration
@@ -760,13 +753,11 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
     }
     
-    @objc
-    private func pauseTimer() {
+    @objc private func pauseTimer() {
         timer.invalidate()
     }
     
-    @objc
-    private func continueTimer() {
+    @objc private func continueTimer() {
         endTime = Date().addingTimeInterval(timeLeft)
         timer = Timer.scheduledTimer(timeInterval: 0.05, target: self, selector: #selector(updateTime), userInfo: nil, repeats: true)
     }
@@ -819,8 +810,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         return false
     }
     
-    @objc
-    private func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
+    @objc private func handleLongPress(gestureRecognizer: UILongPressGestureRecognizer) {
         let positionNumber = gestureRecognizer.location(in: collectionView)
         if gestureRecognizer.state == .ended {
             if let indexPath = collectionView.indexPathForItem(at: positionNumber) {
@@ -929,10 +919,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
             NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-            print("SDK Start Timer Play Content")
+            //print("SDK: Start Timer Play Content")
             UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
         } else {
-            print("SDK Pause Timer\n")
+            //print("SDK: Pause Timer\n")
             UserDefaults.standard.set(true, forKey: "LastTapButtonMemorySdkSetting")
         }
     }
@@ -962,18 +952,15 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         self.sdkLinkDelegate?.sendStructSelectedPromocodeSlide(promoCodeSlide: promoCodeSlide)
     }
     
-    @objc
-    func didSwipeDown() {
+    @objc func didSwipeDown() {
         dismiss(animated: true)
     }
     
-    @objc
-    func didTapCloseButton() {
+    @objc func didTapCloseButton() {
         self.sdkLinkDelegate?.reloadStoriesCollectionSubviews()
         dismiss(animated: true)
     }
 }
-
 
 extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -1028,7 +1015,7 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-//        timer.invalidate()
+        //timer.invalidate()
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -1051,7 +1038,6 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     }
 }
 
-
 extension StoryViewController: StoryCollectionViewCellDelegate {
     public func didTapUrlButton(url: String, slide: Slide) {
         self.openUrl(link: url)
@@ -1065,7 +1051,6 @@ extension StoryViewController: StoryCollectionViewCellDelegate {
     }
 }
 
-
 extension UICollectionView {
     func isValid(indexPath: IndexPath) -> Bool {
         guard indexPath.section < numberOfSections,
@@ -1076,7 +1061,6 @@ extension UICollectionView {
         return true
     }
 }
-
 
 extension NavigationStackController: UINavigationControllerDelegate {
     public func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {

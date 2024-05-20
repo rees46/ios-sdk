@@ -3,7 +3,7 @@
 //  REES46
 //
 //  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
+//  Copyright (c) 2024. All rights reserved.
 //
 
 import UIKit
@@ -24,8 +24,7 @@ class PushPresentViewController: UIViewController {
         self.navigationItem.leftBarButtonItem = .init(barButtonSystemItem: .cancel, target: self, action: #selector(closeButton))
     }
     
-    @objc
-    func closeButton() {
+    @objc func closeButton() {
         self.dismiss(animated: true)
     }
 }

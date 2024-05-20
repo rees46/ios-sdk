@@ -31,7 +31,6 @@ class Operative {
     }
 }
 
-
 extension Task: Equatable {}
     func ==(lhs: Task, rhs: Task) -> Bool {
         guard let leftTaskOwner = lhs.owner, let rightTaskOwner = rhs.owner else {

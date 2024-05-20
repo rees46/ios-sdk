@@ -11,16 +11,17 @@ public struct SdkImageReloader<Base> {
 
 public protocol SdkImageReloaderCompatible {
     associatedtype CompatibleType
-    var load: SdkImageReloader<CompatibleType> { get }
+    var load: SdkImageReloader<CompatibleType> {
+        get
+    }
 }
 
-
 extension SdkImageReloaderCompatible {
-
     public var load: SdkImageReloader<Self> {
         return SdkImageReloader(self)
     }
 }
 
-
-extension UIImageView: SdkImageReloaderCompatible {}
+extension UIImageView: SdkImageReloaderCompatible {
+    //SdkImageReloaderCompatible
+}

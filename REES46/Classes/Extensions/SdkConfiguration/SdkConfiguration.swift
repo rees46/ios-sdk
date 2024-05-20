@@ -14,6 +14,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public static let recommendations: SdkConfiguration = SdkConfiguration()
     
+    //public static let search: SdkConfiguration = SdkConfiguration()
+    
     public init() {}
     
     public var allLoadedFonts: [sdkFontClass] = []
@@ -44,6 +46,8 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     
     public var storiesBlockNumberOfLines: Int = 0
     public var storiesBlockCharWrapping = false
+    //public var storiesBlockCharWrapping = false
+    
     public var storiesBlockCharCountWrap: Int = 10
     public var defaultShowProductsButtonText: String = "See all products"
     public var defaultHideProductsButtonText: String = "Hide products"
@@ -56,30 +60,30 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public var defaultCopyToClipboardMessageWidth: CGFloat = 150
     
     //Sdk Recommendations Widget settings
-    public var widgetFontName: String? = nil
-    public var widgetBackgroundColor: String = "#ffffff"
-    public var widgetBackgroundColorDarkMode: String = "#000000"
-    public var widgetCellBackgroundColor: String = "#ffffff"
-    public var widgetCellBackgroundColorDarkMode: String = "#000000"
-    public var widgetBorderWidth: CGFloat = 1
-    public var widgetBorderColor: String = "#d3d3d3"
-    public var widgetBorderColorDarkMode: String = "#d3d3d3"
-    public var widgetBorderTransparent: CGFloat = 0.5
-    public var widgetCornerRadius: CGFloat = 9
-    public var widgetStarsColor: String = "#ff9500"
-    public var widgetCartButtonTextColor: String = "#ffffff"
-    public var widgetCartButtonTextColorDarkMode: String = "#000000"
-    public var widgetCartButtonBackgroundColor: String = "#000000"
-    public var widgetCartButtonBackgroundColorDarkMode: String = "#ffffff"
-    public var widgetAddToCartButtonText: String = "Add to cart"
-    public var widgetRemoveFromCartButtonText: String = "Remove from cart"
-    public var widgetAddToCartButtonFontSize: CGFloat? = 17.0
-    public var widgetRemoveFromCartButtonFontSize: CGFloat? = 14.0
-    public var widgetFavoritesIconColor: String = "#000000"
-    public var widgetFavoritesIconColorDarkMode: String = "#ffffff"
-    public var widgetCartButtonNeedOpenWebUrl = false
-    public var widgetPreloadIndicatorColor: String = "#000000"
-    public var widgetNoReviewsDefaultText: String = "No reviews"
+    public var fontName: String? = nil
+    public var backgroundColor: String = "#ffffff"
+    public var backgroundColorDarkMode: String = "#000000"
+    public var cellBackgroundColor: String = "#ffffff"
+    public var cellBackgroundColorDarkMode: String = "#000000"
+    public var borderWidth: CGFloat = 1
+    public var borderColor: String = "#d3d3d3"
+    public var borderColorDarkMode: String = "#d3d3d3"
+    public var borderTransparent: CGFloat = 0.5
+    public var cornerRadius: CGFloat = 9
+    public var starsColor: String = "#ff9500"
+    public var cartButtonTextColor: String = "#ffffff"
+    public var cartButtonTextColorDarkMode: String = "#000000"
+    public var cartButtonBackgroundColor: String = "#000000"
+    public var cartButtonBackgroundColorDarkMode: String = "#ffffff"
+    public var addToCartButtonText: String = "Add to cart"
+    public var removeFromCartButtonText: String = "Remove from cart"
+    public var addToCartButtonFontSize: CGFloat? = 17.0
+    public var removeFromCartButtonFontSize: CGFloat? = 14.0
+    public var favoritesIconColor: String = "#000000"
+    public var favoritesIconColorDarkMode: String = "#ffffff"
+    public var cartButtonNeedOpenWebUrl = false
+    public var preloadIndicatorColor: String = "#000000"
+    public var defaultMessageNoReviews: String? = "No reviews"
     
     //Sdk Stories Block collection cell indicator
     public var storiesBlockPreloadIndicatorDisabled = false
@@ -115,7 +119,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         let pathForResourceString = Bundle.main.path(forResource: fileName,
                                                      ofType: fileExtension)
         guard pathForResourceString != nil else {
-            print("SDK Failed locate custom font \(fileName) in App Bundle")
+            print("SDK: Failed locate custom font \(fileName) in App Bundle")
             return
         }
         
@@ -126,9 +130,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             var errorRef: Unmanaged<CFError>? = nil
 
             if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                print("SDK Error registering font")
+                print("SDK: Error registering custom font")
             } else {
-                print("SDK Success registering font")
+                print("SDK: Success registering custom font")
             }
         }
         
@@ -158,9 +162,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 var errorRef: Unmanaged<CFError>? = nil
 
                 if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                    print("SDK Error registering font")
+                    print("SDK: Error registering font")
                 } else {
-                    print("SDK Success registering font")
+                    print("SDK: Success registering font")
                 }
             }
         }
@@ -454,7 +458,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                                                           productsButtonSelectFontSize: 12.0,
                                                           productsButtonFontColor: .black,
                                                           productsButtonBackgroundColor: .white
-                                                          ),
+                                                         ),
                                  for: SdkStyleApperanceTypes.storiesBlockDark)
 
         
@@ -531,102 +535,201 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         defaultHideProductsButtonText = hideProductsButtonText!
     }
     
-    public func setWidgetBlock(widgetFontName: String? = nil,
-                               widgetBackgroundColor: String? = nil,
-                               widgetBackgroundColorDarkMode: String? = nil,
-                               widgetCellBackgroundColor: String? = nil,
-                               widgetCellBackgroundColorDarkMode: String? = nil,
-                               widgetBorderWidth: CGFloat? = nil,
-                               widgetBorderColor: String? = nil,
-                               widgetBorderColorDarkMode: String? = nil,
-                               widgetBorderTransparent: CGFloat? = nil,
-                               widgetCornerRadius: CGFloat? = nil,
-                               widgetStarsColor: String? = nil,
-                               widgetAddToCartButtonText: String? = nil,
-                               widgetRemoveFromCartButtonText: String? = nil,
-                               widgetAddToCartButtonFontSize: CGFloat? = nil,
-                               widgetRemoveFromCartButtonFontSize: CGFloat? = nil,
-                               widgetCartButtonTextColor: String? = nil,
-                               widgetCartButtonTextColorDarkMode: String? = nil,
-                               widgetCartButtonBackgroundColor: String? = nil,
-                               widgetCartButtonBackgroundColorDarkMode: String? = nil,
-                               widgetCartButtonNeedOpenWebUrl: Bool? = false,
-                               widgetFavoritesIconColor: String? = nil,
-                               widgetFavoritesIconColorDarkMode: String? = nil,
-                               widgetPreloadIndicatorColor: String? = nil,
-                               widgetNoReviewDefaultMessage: String? = "No reviews") {
+        public func setWidget(fontName: String? = nil,
+                              backgroundColor111: String? = nil,
+                              backgroundColorDarkMode: String? = nil,
+                              cellBackgroundColor: String? = nil,
+                              cellBackgroundColorDarkMode: String? = nil,
+                              borderWidth: CGFloat? = nil,
+                              borderColor: String? = nil,
+                              borderColorDarkMode: String? = nil,
+                              borderTransparent: CGFloat? = nil,
+                              cornerRadius: CGFloat? = nil,
+                              starsColor: String? = nil,
+                              addToCartButtonText: String? = nil,
+                              removeFromCartButtonText: String? = nil,
+                              addToCartButtonFontSize: CGFloat? = nil,
+                              removeFromCartButtonFontSize: CGFloat? = nil,
+                              cartButtonTextColor: String? = nil,
+                              cartButtonTextColorDarkMode: String? = nil,
+                              cartButtonBackgroundColor: String? = nil,
+                              cartButtonBackgroundColorDarkMode: String? = nil,
+                              cartButtonNeedOpenWebUrl: Bool? = false,
+                              favoritesIconColor: String? = nil,
+                              favoritesIconColorDarkMode: String? = nil,
+                              preloadIndicatorColor: String? = nil,
+                              defaultMessageNoReview: String? = "No reviews") {
+    
+            if fontName != nil {
+                self.fontName = fontName!
+            }
+            if backgroundColor111 != nil {
+                self.backgroundColor = backgroundColor111!
+            }
+            if backgroundColorDarkMode != nil {
+                self.backgroundColorDarkMode = backgroundColorDarkMode!
+            }
+            if cellBackgroundColor != nil {
+                self.cellBackgroundColor = cellBackgroundColor!
+            }
+            if cellBackgroundColorDarkMode != nil {
+                self.cellBackgroundColorDarkMode = cellBackgroundColorDarkMode!
+            }
+            if borderWidth != nil {
+                self.borderWidth = borderWidth!
+            }
+            if borderColor != nil {
+                self.borderColor = borderColor!
+            }
+            if borderColorDarkMode != nil {
+                self.borderColorDarkMode = borderColorDarkMode!
+            }
+            if borderTransparent != nil {
+                self.borderTransparent = borderTransparent!
+            }
+            if cornerRadius != nil {
+                self.cornerRadius = cornerRadius!
+            }
+            if starsColor != nil {
+                self.starsColor = starsColor!
+            }
+            if addToCartButtonText != nil {
+                self.addToCartButtonText = addToCartButtonText!
+            }
+            if removeFromCartButtonText != nil {
+                self.removeFromCartButtonText = removeFromCartButtonText!
+            }
+            if addToCartButtonFontSize != nil {
+                self.addToCartButtonFontSize = addToCartButtonFontSize!
+            }
+            if removeFromCartButtonFontSize != nil {
+                self.removeFromCartButtonFontSize = removeFromCartButtonFontSize!
+            }
+            if cartButtonTextColor != nil {
+                self.cartButtonTextColor = cartButtonTextColor!
+            }
+            if cartButtonTextColorDarkMode != nil {
+                self.cartButtonTextColorDarkMode = cartButtonTextColorDarkMode!
+            }
+            if cartButtonBackgroundColor != nil {
+                self.cartButtonBackgroundColor = cartButtonBackgroundColor!
+            }
+            if cartButtonBackgroundColorDarkMode != nil {
+                self.cartButtonBackgroundColorDarkMode = cartButtonBackgroundColorDarkMode!
+            }
+            if cartButtonNeedOpenWebUrl != nil {
+                self.cartButtonNeedOpenWebUrl = cartButtonNeedOpenWebUrl!
+            }
+            if favoritesIconColor != nil {
+                self.favoritesIconColor = favoritesIconColor!
+            }
+            if favoritesIconColorDarkMode != nil {
+                self.favoritesIconColorDarkMode = favoritesIconColorDarkMode!
+            }
+            if preloadIndicatorColor != nil {
+                self.preloadIndicatorColor = preloadIndicatorColor!
+            }
+            if defaultMessageNoReviews != nil {
+                self.defaultMessageNoReviews = defaultMessageNoReviews!
+            }
+        }
+    
+    public func setWidget(fontName: String? = nil,
+                          backgroundColor: String? = nil,
+                          backgroundColorDarkMode: String? = nil,
+                          cellBackgroundColor: String? = nil,
+                          cellBackgroundColorDarkMode: String? = nil,
+                          borderWidth: CGFloat? = nil,
+                          borderColor: String? = nil,
+                          borderColorDarkMode: String? = nil,
+                          borderTransparent: CGFloat? = nil,
+                          cornerRadius: CGFloat? = nil,
+                          starsColor: String? = nil,
+                          addToCartButtonText: String? = nil,
+                          removeFromCartButtonText: String? = nil,
+                          addToCartButtonFontSize: CGFloat? = nil,
+                          removeFromCartButtonFontSize: CGFloat? = nil,
+                          cartButtonTextColor: String? = nil,
+                          cartButtonTextColorDarkMode: String? = nil,
+                          cartButtonBackgroundColor: String? = nil,
+                          cartButtonBackgroundColorDarkMode: String? = nil,
+                          cartButtonNeedOpenWebUrl: Bool? = false,
+                          favoritesIconColor: String? = nil,
+                          favoritesIconColorDarkMode: String? = nil,
+                          preloadIndicatorColor: String? = nil,
+                          defaultMessageNoReviews: String? = "No reviews") {
         
-        if widgetFontName != nil {
-            self.widgetFontName = widgetFontName!
+        if fontName != nil {
+            self.fontName = fontName!
         }
-        if widgetBackgroundColor != nil {
-            self.widgetBackgroundColor = widgetBackgroundColor!
+        if backgroundColor != nil {
+            self.backgroundColor = backgroundColor!
         }
-        if widgetBackgroundColorDarkMode != nil {
-            self.widgetBackgroundColorDarkMode = widgetBackgroundColorDarkMode!
+        if backgroundColorDarkMode != nil {
+            self.backgroundColorDarkMode = backgroundColorDarkMode!
         }
-        if widgetCellBackgroundColor != nil {
-            self.widgetCellBackgroundColor = widgetCellBackgroundColor!
+        if cellBackgroundColor != nil {
+            self.cellBackgroundColor = cellBackgroundColor!
         }
-        if widgetCellBackgroundColorDarkMode != nil {
-            self.widgetCellBackgroundColorDarkMode = widgetCellBackgroundColorDarkMode!
+        if cellBackgroundColorDarkMode != nil {
+            self.cellBackgroundColorDarkMode = cellBackgroundColorDarkMode!
         }
-        if widgetBorderWidth != nil {
-            self.widgetBorderWidth = widgetBorderWidth!
+        if borderWidth != nil {
+            self.borderWidth = borderWidth!
         }
-        if widgetBorderColor != nil {
-            self.widgetBorderColor = widgetBorderColor!
+        if borderColor != nil {
+            self.borderColor = borderColor!
         }
-        if widgetBorderColorDarkMode != nil {
-            self.widgetBorderColorDarkMode = widgetBorderColorDarkMode!
+        if borderColorDarkMode != nil {
+            self.borderColorDarkMode = borderColorDarkMode!
         }
-        if widgetBorderTransparent != nil {
-            self.widgetBorderTransparent = widgetBorderTransparent!
+        if borderTransparent != nil {
+            self.borderTransparent = borderTransparent!
         }
-        if widgetCornerRadius != nil {
-            self.widgetCornerRadius = widgetCornerRadius!
+        if cornerRadius != nil {
+            self.cornerRadius = cornerRadius!
         }
-        if widgetStarsColor != nil {
-            self.widgetStarsColor = widgetStarsColor!
+        if starsColor != nil {
+            self.starsColor = starsColor!
         }
-        if widgetAddToCartButtonText != nil {
-            self.widgetAddToCartButtonText = widgetAddToCartButtonText!
+        if addToCartButtonText != nil {
+            self.addToCartButtonText = addToCartButtonText!
         }
-        if widgetRemoveFromCartButtonText != nil {
-            self.widgetRemoveFromCartButtonText = widgetRemoveFromCartButtonText!
+        if removeFromCartButtonText != nil {
+            self.removeFromCartButtonText = removeFromCartButtonText!
         }
-        if widgetAddToCartButtonFontSize != nil {
-            self.widgetAddToCartButtonFontSize = widgetAddToCartButtonFontSize!
+        if addToCartButtonFontSize != nil {
+            self.addToCartButtonFontSize = addToCartButtonFontSize!
         }
-        if widgetRemoveFromCartButtonFontSize != nil {
-            self.widgetRemoveFromCartButtonFontSize = widgetRemoveFromCartButtonFontSize!
+        if removeFromCartButtonFontSize != nil {
+            self.removeFromCartButtonFontSize = removeFromCartButtonFontSize!
         }
-        if widgetCartButtonTextColor != nil {
-            self.widgetCartButtonTextColor = widgetCartButtonTextColor!
+        if cartButtonTextColor != nil {
+            self.cartButtonTextColor = cartButtonTextColor!
         }
-        if widgetCartButtonTextColorDarkMode != nil {
-            self.widgetCartButtonTextColorDarkMode = widgetCartButtonTextColorDarkMode!
+        if cartButtonTextColorDarkMode != nil {
+            self.cartButtonTextColorDarkMode = cartButtonTextColorDarkMode!
         }
-        if widgetCartButtonBackgroundColor != nil {
-            self.widgetCartButtonBackgroundColor = widgetCartButtonBackgroundColor!
+        if cartButtonBackgroundColor != nil {
+            self.cartButtonBackgroundColor = cartButtonBackgroundColor!
         }
-        if widgetCartButtonBackgroundColorDarkMode != nil {
-            self.widgetCartButtonBackgroundColorDarkMode = widgetCartButtonBackgroundColorDarkMode!
+        if cartButtonBackgroundColorDarkMode != nil {
+            self.cartButtonBackgroundColorDarkMode = cartButtonBackgroundColorDarkMode!
         }
-        if widgetCartButtonNeedOpenWebUrl != nil {
-            self.widgetCartButtonNeedOpenWebUrl = widgetCartButtonNeedOpenWebUrl!
+        if cartButtonNeedOpenWebUrl != nil {
+            self.cartButtonNeedOpenWebUrl = cartButtonNeedOpenWebUrl!
         }
-        if widgetFavoritesIconColor != nil {
-            self.widgetFavoritesIconColor = widgetFavoritesIconColor!
+        if favoritesIconColor != nil {
+            self.favoritesIconColor = favoritesIconColor!
         }
-        if widgetFavoritesIconColorDarkMode != nil {
-            self.widgetFavoritesIconColorDarkMode = widgetFavoritesIconColorDarkMode!
+        if favoritesIconColorDarkMode != nil {
+            self.favoritesIconColorDarkMode = favoritesIconColorDarkMode!
         }
-        if widgetPreloadIndicatorColor != nil {
-            self.widgetPreloadIndicatorColor = widgetPreloadIndicatorColor!
+        if preloadIndicatorColor != nil {
+            self.preloadIndicatorColor = preloadIndicatorColor!
         }
-        if widgetNoReviewDefaultMessage != nil {
-            self.widgetNoReviewsDefaultText = widgetNoReviewDefaultMessage!
+        if defaultMessageNoReviews != nil {
+            self.defaultMessageNoReviews = defaultMessageNoReviews!
         }
     }
     
@@ -689,7 +792,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             bannerPriceSectionFontColor = newValue
         }
     }
-
+    
     public var bannerPromocodeSectionFontColor: UIColor?
     public var bannerPromocodeSectionFontColorConstant: UIColor {
         get {
@@ -709,7 +812,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             bannerPriceSectionBackgroundColor = newValue
         }
     }
-
+    
     public var bannerPromocodeSectionBackgroundColor: UIColor?
     public var bannerPromocodeSectionBackgroundColorConstant: UIColor {
         get {
@@ -788,7 +891,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         let components = name.split{$0 == "."}.map { String($0) }
         return (components[0], components[1])
     }
-
+    
     public struct lightSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
         
         public var storiesBlockSelectFontName: UIFont
@@ -814,7 +917,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let viewBackgroundColor = UIColor.magenta
         public let labelTextColor = UIColor.black
         public let buttonTintColor = UIColor.blue
-
+        
         public let tableViewBackgroundColor = UIColor.lightGray
         public var tableViewSeparatorColor = UIColor.gray
         public let headerBackgroundColor = UIColor.white
@@ -822,11 +925,11 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let cellBackgroundColor = UIColor.white
         public let cellTextColorColor = UIColor.black
         public let cellSubTextColorColor = UIColor.darkGray
-
+        
         public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.magenta,
-                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple]
+                                   CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple]
     }
-
+    
     public struct darkSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
         
         public var storiesBlockSelectFontName: UIFont
@@ -851,7 +954,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let viewBackgroundColor = UIColor.yellow
         public let labelTextColor = UIColor.white
         public let buttonTintColor = UIColor.blue
-
+        
         public let tableViewBackgroundColor = UIColor.darkGray
         public var tableViewSeparatorColor = UIColor.gray
         public let headerBackgroundColor = UIColor.black
@@ -859,11 +962,11 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let cellBackgroundColor = UIColor.black
         public let cellTextColorColor = UIColor.white
         public let cellSubTextColorColor = UIColor.lightGray
-
+        
         public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.purple,
-                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.magenta ]
+                                   CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.magenta ]
     }
-
+    
     public struct customSdkStyleApperance: SdkStyleColorScheme, SdkStyleViewColorScheme, SdkStyleLabelColorScheme, SdkStyleButtonColorScheme, SdkStyleTableViewColorScheme, SdkStyleCustomColorScheme {
         
         public var storiesBlockSelectFontName: UIFont
@@ -889,7 +992,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let viewBackgroundColor = UIColor.black
         public let labelTextColor = UIColor.white
         public let buttonTintColor = UIColor.blue
-
+        
         public let tableViewBackgroundColor = UIColor.lightGray
         public var tableViewSeparatorColor = UIColor.gray
         public let headerBackgroundColor = UIColor.white
@@ -897,11 +1000,11 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         public let cellBackgroundColor = UIColor.white
         public let cellTextColorColor = UIColor.black
         public let cellSubTextColorColor = UIColor.darkGray
-
+        
         public let customColors = [CustomTableCellColors.cellBackground.SdkApperanceViewScheme() : UIColor.magenta,
-                            CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple]
+                                   CustomTableCellColors.cellTextColor.SdkApperanceViewScheme() : UIColor.purple]
     }
-
+    
     public enum SdkStyleApperanceTypes: String, SdkApperanceViewScheme {
         case storiesBlockLight
         case storiesBlockDark
@@ -923,21 +1026,21 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     }
     
     public func getInstalledFontsFrom(bundle: Bundle = .main,
-        completion: (([String]) -> Void)? = nil) {
+                                      completion: (([String]) -> Void)? = nil) {
         getInstalledFontsFrom(at: bundle.bundleURL, completion: completion)
     }
-
+    
     public func getInstalledFontsFrom(at url: URL?,
                                       completion: (([String]) -> Void)? = nil) {
         
         guard let url = url else { completion?([])
             return
         }
-
+        
         var loadedForSDKFonts: [sdkFontClass] = []
         loadedForSDKFonts += SdkConfiguration.loadFonts(at: url)
         loadedForSDKFonts += SdkConfiguration.loadFontsFromBundles(at: url)
-
+        
         let alreadyLoaded = allLoadedFonts.map { $0.url }
         let justLoaded = loadedForSDKFonts.map { $0.url }
         for i in 0 ..< justLoaded.count {
@@ -946,7 +1049,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 allLoadedFonts.append(loadedForSDKFonts[i])
             }
         }
-
+        
         completion?(loadedForSDKFonts.map { $0.name })
     }
     
@@ -1152,7 +1255,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             bootRegisteredFontChanged = newValue
         }
     }
-
+    
     public class func customFont(name: String, size: CGFloat) -> UIFont {
         let sizeWithOffset = size
         guard let sFont = UIFont(name: name, size: sizeWithOffset) else {
@@ -1160,13 +1263,12 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 let fontNames = UIFont.fontNames(forFamilyName: familyName)
                 print(familyName, fontNames)
             })
-            print("SDK Error Font not found: \(name)")
+            print("SDK: Error Font not found: \(name)")
             return UIFont.systemFont(ofSize: 15.0)
         }
         return sFont
     }
 }
-
 
 private extension SdkConfiguration {
     class func loadFonts(at url: URL) -> [sdkFontClass] {
@@ -1188,7 +1290,7 @@ private extension SdkConfiguration {
                     }
                 }
         } catch let error as NSError {
-            print("SDK There was an error loading fonts. Path: \(url). Error: \(error)")
+            print("SDK: There was an error loading fonts. Path: \(url). Error: \(error)")
         }
         return loadedFonts
     }
@@ -1208,7 +1310,7 @@ private extension SdkConfiguration {
                     loadedFonts += loadFonts(at: item)
                 }
             } catch let error as NSError {
-                print("SDK There was an error accessing bundle with url. Path: \(url). Error: \(error) ")
+                print("SDK: There was an error accessing bundle with url. Path: \(url). Error: \(error) ")
             }
         return loadedFonts
     }
@@ -1228,20 +1330,20 @@ private extension SdkConfiguration {
 
             if CTFontManagerRegisterGraphicsFont(sdkRef!, &error) {
                 if let postScriptName = sdkRef?.postScriptName {
-                    print("SDK Successfully loaded custom font: '\(postScriptName)'.")
+                    print("SDK: Successfully loaded custom font: '\(postScriptName)'.")
                     nowLoadedFontName = String(postScriptName)
                 }
             } else if let error = error?.takeRetainedValue() {
                 let errorDescription = CFErrorCopyDescription(error)
-                print("SDK Already installed custom font '\(name)': \(String(describing: errorDescription))")
+                print("SDK: Already installed custom font '\(name)': \(String(describing: errorDescription))")
             }
         } else {
             guard let error = error?.takeRetainedValue() else {
-                print("SDK Failed to load font '\(name)'.")
+                print("SDK: Failed to load font '\(name)'.")
                 return nil
             }
             let errorDescription = CFErrorCopyDescription(error)
-            print("SDK Failed to load font '\(name)': \(String(describing: errorDescription))")
+            print("SDK: Failed to load font '\(name)': \(String(describing: errorDescription))")
         }
 
         if let sdkLfn = nowLoadedFontName {
@@ -1254,7 +1356,6 @@ private extension SdkConfiguration {
         _ = UIFont.systemFont(ofSize: 7)
     }
 }
-
 
 extension SdkConfiguration {
     class func fonts(_ contents: [URL]) -> [sdkFontClass] {
@@ -1278,7 +1379,6 @@ extension SdkConfiguration {
         return SdkFontInjector.sdkSupportedFontExtensions(comps.last!) != nil ? fname : nil
     }
 }
-
 
 extension UIColor {
     convenience init(hexString: String) {

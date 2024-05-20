@@ -113,8 +113,7 @@ class StoryButton: UIButton {
         self.layer.masksToBounds = true
     }
     
-    @objc
-    public func didTapOnButton() {
+    @objc public func didTapOnButton() {
         if let iosLink = _buttonData?.linkIos {
             delegate?.openLinkIosExternal(url: iosLink)
             return

@@ -4,7 +4,6 @@ public protocol SdkStyleCustomFonts {
     var customFonts: [String : UIFont] { get set }
 }
 
-
 extension SdkStyleCustomFonts {
     public subscript(key: SdkApperanceViewScheme) -> UIFont {
         get {

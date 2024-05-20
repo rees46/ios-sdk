@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <customFonts key="customFonts">
+        <array key="Inter.ttf">
+            <string>Inter-Regular</string>
+        </array>
+    </customFonts>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="FiltersWidgetPriceRangeCell" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="FiltersWidgetPriceRangeCell" rowHeight="134" id="cAu-C1-u9h" userLabel="FiltersWidgetPriceRangeCell" customClass="FiltersWidgetPriceRangeCell" customModule="REES46" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="375" height="134"/>
+            <autoresizingMask key="autoresizingMask"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="cAu-C1-u9h" id="QPK-i9-bKF">
+                <rect key="frame" x="0.0" y="0.0" width="375" height="134"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <view contentMode="scaleToFill" restorationIdentifier="FiltersPriceSlider" translatesAutoresizingMaskIntoConstraints="NO" id="NOe-bs-kW2" userLabel="FiltersPriceSlider" customClass="FiltersPriceSlider" customModule="REES46" customModuleProvider="target">
+                        <rect key="frame" x="22" y="8" width="331" height="36"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="36" id="rYo-gS-WWf"/>
+                        </constraints>
+                    </view>
+                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="to" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="TkZ-Et-q0K">
+                        <rect key="frame" x="192" y="66" width="158" height="52"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="height" constant="52" id="S8B-Tb-xTc"/>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="158" id="wFk-8r-IDI"/>
+                        </constraints>
+                        <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="17"/>
+                        <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="decimalPad" returnKeyType="done" enablesReturnKeyAutomatically="YES"/>
+                        <connections>
+                            <outlet property="delegate" destination="cAu-C1-u9h" id="pVC-vz-xgl"/>
+                        </connections>
+                    </textField>
+                    <textField opaque="NO" alpha="0.84999999999999998" contentMode="scaleToFill" horizontalHuggingPriority="248" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="from" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Tcn-GR-Dkg">
+                        <rect key="frame" x="25" y="66" width="158" height="52"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="158" id="auf-54-bH2"/>
+                            <constraint firstAttribute="height" constant="52" id="iS4-mD-vax"/>
+                        </constraints>
+                        <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <fontDescription key="fontDescription" name="Inter-Regular" family="Inter" pointSize="17"/>
+                        <textInputTraits key="textInputTraits" autocorrectionType="no" keyboardType="decimalPad" returnKeyType="continue"/>
+                        <connections>
+                            <outlet property="delegate" destination="cAu-C1-u9h" id="gZq-5O-GCQ"/>
+                        </connections>
+                    </textField>
+                </subviews>
+                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                <constraints>
+                    <constraint firstItem="NOe-bs-kW2" firstAttribute="top" secondItem="QPK-i9-bKF" secondAttribute="top" constant="8" id="B4P-Or-Qjw"/>
+                    <constraint firstItem="NOe-bs-kW2" firstAttribute="leading" secondItem="Tcn-GR-Dkg" secondAttribute="leading" constant="-3" id="FWg-aJ-eqV"/>
+                    <constraint firstItem="TkZ-Et-q0K" firstAttribute="centerY" secondItem="Tcn-GR-Dkg" secondAttribute="centerY" id="GAS-oE-goc"/>
+                    <constraint firstItem="TkZ-Et-q0K" firstAttribute="top" secondItem="NOe-bs-kW2" secondAttribute="bottom" constant="22" id="T7P-rB-JDs"/>
+                    <constraint firstItem="NOe-bs-kW2" firstAttribute="leading" secondItem="QPK-i9-bKF" secondAttribute="leadingMargin" constant="6" id="Y1X-5W-DW8"/>
+                    <constraint firstItem="NOe-bs-kW2" firstAttribute="trailing" secondItem="TkZ-Et-q0K" secondAttribute="trailing" constant="3" id="l2Z-RK-8gg"/>
+                    <constraint firstItem="TkZ-Et-q0K" firstAttribute="leading" secondItem="Tcn-GR-Dkg" secondAttribute="trailing" constant="9" id="ocy-1I-p2J"/>
+                    <constraint firstItem="NOe-bs-kW2" firstAttribute="centerX" secondItem="QPK-i9-bKF" secondAttribute="centerX" id="rO4-8H-V3a"/>
+                    <constraint firstItem="TkZ-Et-q0K" firstAttribute="width" secondItem="Tcn-GR-Dkg" secondAttribute="width" id="vcp-l5-ZLy"/>
+                </constraints>
+            </tableViewCellContentView>
+            <connections>
+                <outlet property="filtersPriceMaxValueTextField" destination="TkZ-Et-q0K" id="wwH-nn-V7Q"/>
+                <outlet property="filtersPriceMinValueTextField" destination="Tcn-GR-Dkg" id="6xA-GV-7KZ"/>
+                <outlet property="filtertsPriceRangeSlider" destination="NOe-bs-kW2" id="0pX-7F-sev"/>
+            </connections>
+            <point key="canvasLocation" x="108" y="-129.53523238380811"/>
+        </tableViewCell>
+    </objects>
+</document>

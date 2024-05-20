@@ -102,8 +102,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     public func configure(slide: Slide) {
         self.currentSlide = slide
         
-        //reloadButton.configReloadButton()
-        
         if (currentSlide?.backgroundColor != nil || currentSlide?.backgroundColor != "") {
             let color = currentSlide?.backgroundColor.hexToRGB()
             self.backgroundColor = UIColor(red: color!.red, green: color!.green, blue: color!.blue, alpha: 1)
@@ -117,48 +115,73 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         promocodeBannerView.removeFromSuperview()
         insertSubview(productWithPromocodeSuperview, belowSubview: storySlideImageView)
-        self.subviews.filter { $0 is TextBlockView }.forEach { $0.removeFromSuperview() }
         
         if slide.type == .video {
-            configureVideoView(for: slide)
+            videoView.isHidden = false
+            storySlideImageView.isHidden = true
+            
+            self.videoView.layer.sublayers?.forEach {
+                if $0.name == "VIDEO" {
+                    $0.removeFromSuperlayer()
+                }
+            }
+            if let videoURL = slide.videoURL {
+                videoView.isHidden = false
+                storySlideImageView.isHidden = true
+
+                let asset = AVAsset(url: videoURL)
+                let playerItem = AVPlayerItem(asset: asset)
+                self.player = AVPlayer(playerItem: playerItem)
+                let playerLayer = AVPlayerLayer(player: player)
+                let screenSize = UIScreen.main.bounds.size
+                playerLayer.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
+                playerLayer.name = "VIDEO"
+                
+                if playerItem.asset.tracks.filter({$0.mediaType == .audio}).count != 0 {
+                    let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
+                    var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+                    frameworkBundle = Bundle.module
+#endif
+                    if soundSetting {
+                        player.volume = 1
+                        muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
+                        UserDefaults.standard.set(true, forKey: "MuteSoundSetting")
+                        
+                        do {
+                            try audioSession.setCategory(.playback, mode: .default, options: [])
+                        } catch let error {
+                            print("SDK: Error in AVAudio Session\(error.localizedDescription)")
+                        }
+                    } else {
+                        player.volume = 0
+                        muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
+                        UserDefaults.standard.set(false, forKey: "MuteSoundSetting")
+                    }
+                    muteButton.isHidden = false
+                } else {
+                    muteButton.isHidden = true
+                }
+                self.videoView.layer.addSublayer(playerLayer)
+                player.play()
+                UserDefaults.standard.set(currentSlide!.id, forKey: "LastViewedSlideMemorySetting")
+            } else {
+                muteButton.isHidden = true
+                storySlideImageView.isHidden = false
+                videoView.isHidden = true
+                if let preview = slide.previewImage {
+                    self.storySlideImageView.image = preview
+                }
+            }
         } else {
-            configureImageView(for: slide)
+            muteButton.isHidden = true
+            storySlideImageView.isHidden = false
+            videoView.isHidden = true
+            if let image = slide.downloadedImage {
+                self.storySlideImageView.image = image
+            }
         }
         
-        let textBlockViews: [TextBlockView] = slide.elements
-            .filter { $0.type == .textBlock }
-            .map { TextBlockView(textBlockObject: $0) }
-        if !textBlockViews.isEmpty {
-            configure(textBlockViews, for: slide)
-        }
-        
-        configureButtons(for: slide)
-        
-        bringSubviewsToFront([storyButton, productsButton, muteButton, productWithPromocodeSuperview, promocodeBannerView])
-    }
-    
-    private func bringSubviewsToFront(_ subviews: [UIView]) {
-        subviews.forEach { bringSubviewToFront($0) }
-    }
-    
-    private func configure(_ textBlockViews: [TextBlockView], for slide: Slide) {
-        textBlockViews.enumerated().forEach { [weak self] (index, textBlockView) in
-            guard let self = self else { return }
-            textBlockView.translatesAutoresizingMaskIntoConstraints = false
-            
-            self.addSubview(textBlockView)
-            
-            guard let yOffset = textBlockView.textBlockObject.yOffset else { return }
-            
-            NSLayoutConstraint.activate([
-                textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 20),
-                textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor, constant: -20),
-                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor, constant: ((self.bounds.size.height / 10) + CGFloat(yOffset)))
-            ])
-        }
-    }
-    
-    private func configureButtons(for slide: Slide) {
         if let element = slide.elements.first(where: {$0.type == .button}) {
             UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
             selectedElement = element
@@ -184,7 +207,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 makeConstraints()
                 
             } else if element.product != nil {
-                //print("Do nothing coming soon")
+                // Not needed action
             } else {
                 UserDefaults.standard.set(false, forKey: "DoubleProductButtonSetting")
                 storyButton.configButton(buttonData: element)
@@ -250,60 +273,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    private func configureVideoView(for slide: Slide) {
-        videoView.isHidden = false
-        storySlideImageView.isHidden = true
-        videoView.layer.sublayers?.forEach { $0.name == "VIDEO" ? $0.removeFromSuperlayer() : () }
-        
-        if let videoURL = slide.videoURL {
-            let asset = AVAsset(url: videoURL)
-            let playerItem = AVPlayerItem(asset: asset)
-            player = AVPlayer(playerItem: playerItem)
-            let playerLayer = AVPlayerLayer(player: player)
-            playerLayer.frame = bounds
-            playerLayer.name = "VIDEO"
-            
-            if asset.tracks(withMediaType: .audio).count > 0 {
-                let soundSetting: Bool = UserDefaults.standard.bool(forKey: "MuteSoundSetting")
-                player.volume = soundSetting ? 1 : 0
-                muteButton.isHidden = false
-                updateMuteButtonImage(isMuted: !soundSetting)
-            } else {
-                muteButton.isHidden = true
-            }
-
-            self.videoView.layer.addSublayer(playerLayer)
-            player.play()
-            UserDefaults.standard.set(currentSlide!.id, forKey: "LastViewedSlideMemorySetting")
-        } else {
-            muteButton.isHidden = true
-            storySlideImageView.isHidden = false
-            videoView.isHidden = true
-            if let preview = slide.previewImage {
-                self.storySlideImageView.image = preview
-            }
-        }
-    }
-    
-    private func updateMuteButtonImage(isMuted: Bool) {
-           var frameworkBundle = Bundle(for: classForCoder)
-   #if SWIFT_PACKAGE
-           frameworkBundle = Bundle.module
-   #endif
-           let imageName = isMuted ? "iconStoryMute" : "iconStoryVolumeUp"
-           muteButton.setImage(UIImage(named: imageName, in: frameworkBundle, compatibleWith: nil), for: .normal)
-       }
-    
-    private func configureImageView(for slide: Slide) {
-        muteButton.isHidden = true
-        storySlideImageView.isHidden = false
-        videoView.isHidden = true
-        
-        if let image = slide.downloadedImage {
-            storySlideImageView.image = image
-        }
-    }
-    
     private func setImage(imagePath: String) {
         guard let url = URL(string: imagePath) else {
             return
@@ -311,7 +280,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
 
         let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
             if error == nil {
-                guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
+                guard let unwrappedImageData = data, let image = UIImage(data: unwrappedImageData) else {
                     return
                 }
                 DispatchQueue.main.async {
@@ -332,7 +301,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             audioSession.addObserver(self, forKeyPath: "outputVolume", options: NSKeyValueObservingOptions.new, context: nil)
             kAudioLevel = audioSession.outputVolume
         } catch {
-            print("SDK Output volume listener error")
+            print("SDK: Output volume listener error")
         }
     }
         
@@ -374,8 +343,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func didTapOnMute() {
+    @objc private func didTapOnMute() {
         var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
@@ -389,7 +357,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             do {
                 try audioSession.setCategory(.playback, mode: .default, options: [])
             } catch let error {
-                print("SDK Error in AVAudio Session\(error.localizedDescription)")
+                print("SDK: Error in AVAudio Session\(error.localizedDescription)")
             }
             
             muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
@@ -420,13 +388,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
         addSubview(muteButton)
     }
     
-    @objc
-    func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
+    @objc func sdkMustDetectNilTap(_ sender: UITapGestureRecognizer? = nil) {
         //
     }
     
-    @objc
-    func sdkErrorReloadTapHandle(_ sender: UITapGestureRecognizer? = nil) {
+    @objc func sdkErrorReloadTapHandle(_ sender: UITapGestureRecognizer? = nil) {
         var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
@@ -442,7 +408,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 icon: errorIcon,
                 iconSpacing: 16,
                 position: .centerCustom,
-                onTap: { print("SDK Alert popup tapped")
+                onTap: { print("SDK: Alert popup tapped")
                 }
             )
             popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
@@ -556,7 +522,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
             currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .black), .foregroundColor: priceSectionFontColorBySdk]
         }
         
-        //let currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: UIColor.white]
         let currencyTextBoldString = NSMutableAttributedString(string: currencyText, attributes:currencyTextAttrs)
         clearPriceAttributedString.append(currencyTextBoldString)
         
@@ -610,8 +575,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         
         let v = UIView()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkNilTap(_:)))
-        //v.addGestureRecognizer(tap)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkMustDetectNilTap(_:)))
         promocodeBannerView.addGestureRecognizer(tap)
         v.addSubview(presentedBannerLabel)
         
@@ -628,9 +592,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else {
                 
                 var frameworkBundle = Bundle(for: classForCoder)
-            #if SWIFT_PACKAGE
+#if SWIFT_PACKAGE
                 frameworkBundle = Bundle.module
-            #endif
+#endif
                 let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
                 
                 let copyIconImageView = UIImageView(image: copyIcon)
@@ -690,8 +654,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    public func copyPromocodeToClipboard() {
+    @objc public func copyPromocodeToClipboard() {
         let pasteboard = UIPasteboard.general
         pasteboard.string = selectedPromoCodeElement?.promocode
         
@@ -701,23 +664,19 @@ class StoryCollectionViewCell: UICollectionViewCell {
         sdkPopupAlertView.show()
     }
     
-    @objc
-    public func hideSdkPopupAlertView() {
+    @objc public func hideSdkPopupAlertView() {
         sdkPopupAlertView.hideImmediately()
     }
     
-    @objc
-    public func dismissPromocodeBanner() {
+    @objc public func dismissPromocodeBanner() {
         promocodeBannerView.dismiss()
     }
     
-    @objc
-    public func dismissPromocodeBannerWithoutAnimation() {
+    @objc public func dismissPromocodeBannerWithoutAnimation() {
         promocodeBannerView.dismissWithoutAnimation()
     }
     
-    @objc
-    private func didTapOnProductsButton() {
+    @objc private func didTapOnProductsButton() {
         if let productsList = selectedProductsElement?.products, productsList.count != 0 {
             UserDefaults.standard.set(currentSlide!.id, forKey: "LastViewedSlideMemorySetting")
             let products = productsList
@@ -726,8 +685,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func didTapButton() {
+    @objc private func didTapButton() {
         
         if let promoCodeDeeplinkIos = selectedPromoCodeElement?.deeplinkIos, !promoCodeDeeplinkIos.isEmpty {
             if let currentSlide = currentSlide {
@@ -773,8 +731,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func pauseVideo(_ notification: NSNotification) {
+    @objc private func pauseVideo(_ notification: NSNotification) {
         if let slideID = notification.userInfo?["slideID"] as? String {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -784,8 +741,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    private func playVideo(_ notification: NSNotification) {
+    @objc private func playVideo(_ notification: NSNotification) {
         if let slideID = notification.userInfo?["slideID"] as? String {
             if let currentSlide = currentSlide {
                 if currentSlide.id == slideID {
@@ -795,18 +751,16 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-    @objc
-    func willEnterForeground() {
+    @objc func willEnterForeground() {
         do {
             try audioSession.setCategory(AVAudioSession.Category.playback)
         } catch {
-            print("SDK Error in AVAudio Session\(error.localizedDescription)")
+            print("SDK: Error in AVAudio Session\(error.localizedDescription)")
         }
         player.play()
     }
 
-    @objc
-    func didEnterBackground() {
+    @objc func didEnterBackground() {
         player.pause()
     }
     
@@ -829,11 +783,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-
-//        reloadButton.widthAnchor.constraint(equalToConstant: 76).isActive = true
-//        reloadButton.heightAnchor.constraint(equalToConstant: 76).isActive = true
-//        reloadButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-//        reloadButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
 
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             
@@ -1022,7 +971,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         audioSession.removeObserver(self, forKeyPath: "outputVolume", context: nil)
     }
 }
-
 
 extension AVPlayer {
     var isAudioAvailable: Bool? {

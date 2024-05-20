@@ -3,7 +3,7 @@
 //  REES46
 //
 //  Created by REES46
-//  Copyright (c) 2023. All rights reserved.
+//  Copyright (c) 2024. All rights reserved.
 //
 
 import UIKit
@@ -90,8 +90,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let networkManager = NetworkStatus.nManager
                         let connectionStatus = networkManager.connectionStatus
                         let typeOfConnection = networkManager.connectionType
-                        //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                        //print("Connection Type: \(typeOfConnection ?? .notdetected)")
+                        print("SDK: Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                        print("Connection Type: \(typeOfConnection ?? .notdetected)")
                         
                         if connectionStatus == .Online {
                             completion(error)
@@ -123,8 +123,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getShopId() -> String {
         return shopId
     }
-
-    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+  
+    func setPushTokenNotification(token: String, platform: String? = "ios", completion: @escaping (Result<Void, SDKError>) -> Void) { 
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
             let params = [
@@ -162,7 +162,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -245,7 +245,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params) { (result) in
                 switch result {
@@ -269,7 +268,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.getRequest(path: path, params: params) { (result) in
                 switch result {
@@ -284,7 +282,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, filtersSearchBy: String?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
@@ -332,6 +330,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     params["filters"] = theJSONText
                 }
             }
+            if let filtersSearchBy = filtersSearchBy {
+                params["filters_search_by"] = String(filtersSearchBy)
+            }
             if let priceMin = priceMin {
                 params["price_min"] = String(priceMin)
             }
@@ -361,7 +362,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -549,7 +549,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .productRemovedFromFavorites(id):
                 params["items"] = [["id":id]]
                 paramEvent = "remove_wish"
-            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
+            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree, customProperties):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in products.enumerated() {
                     tempItems.append([
@@ -575,6 +575,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 if let taxFree = taxFree {
                     params["tax_free"] = taxFree
+                }
+                if let customProperties = customProperties {
+                    var customItems: [[String: Any]] = []
+                    customItems.append(customProperties)
+                    params["custom"] = customItems
                 }
                 paramEvent = "purchase"
             case let .synchronizeCart(items):
@@ -729,7 +734,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
 
             self.getRequest(path: path, params: params) { result in
@@ -768,7 +772,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -784,7 +787,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping (Result<ProductsListResponse, SDKError>) -> Void) {
+    func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, filtersSearchBy: String?, completion: @escaping (Result<ProductsListResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products"
             var params: [String: String] = [
@@ -820,11 +823,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     params["filters"] = theJSONText
                 }
             }
+            if let filtersSearchBy = filtersSearchBy {
+                params["filters_search_by"] = String(filtersSearchBy)
+            }
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -854,7 +859,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.getRequest(path: path, params: params) { result in
@@ -884,7 +888,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
@@ -912,7 +915,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             
             self.postRequest(path: path, params: params, completion: { result in
@@ -960,7 +962,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "subscriptions/subscribe_for_product_available"
             
@@ -974,8 +976,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             ]
             
             if let fashionSize = fashionSize {
-                let tmpSizesArray = self.generateString(array: fashionSize)
-                params["properties"] = ["fashion_size": tmpSizesArray]
+                params["properties"] = ["fashion_size": fashionSize]
             }
             
             if let email = email {
@@ -1144,7 +1145,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             } else {
-                if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
+                if let keychainIpfsSecret = try? KeychainService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
                     try? FileManager.default.removeItem(at: initFileNamePath)
                     let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
                     let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
@@ -1157,7 +1158,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 self.serialSemaphore.signal()
             }
             
-        } else if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
+        } else if let keychainIpfsSecret = try? KeychainService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
             try? FileManager.default.removeItem(at: initFileNamePath)
             let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
             let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
@@ -1201,9 +1202,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
+            completion(.failure(SDKError.custom(error: "SDK: App run on Simulator IDFA 0")))
             return
         }
         params["ios_advertising_id"] = advId
+        //params["ios_advertising_id"] = "70000000-0000-0000-0000-000000000007" //advId
         UserDefaults.standard.set(advId, forKey: "IDFA")
         
         let sessionConfig = URLSessionConfiguration.default
@@ -1217,8 +1220,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
                 completion(.success(resultResponse))
-            case let .failure(error):
-                completion(.failure(error))
+            case .failure(_):
+                completion(.failure(.custom(error: "SDK: Successful re-init or IDFA request")))
             }
         }
     }
@@ -1244,11 +1247,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if SdkConfiguration.stories.storiesSlideReloadManually {
                 sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
                 sessionConfig.waitsForConnectivity = false
-                sessionConfig.shouldUseExtendedBackgroundIdleMode = false
             } else {
-                sessionConfig.timeoutIntervalForRequest = 5
+                sessionConfig.timeoutIntervalForRequest = 3
                 sessionConfig.waitsForConnectivity = true
-                sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             }
             self.urlSession = URLSession(configuration: sessionConfig)
             
@@ -1268,7 +1269,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
         do {
             let fileExists = (try? jsonFileURL.checkResourceIsReachable()) ?? false
-            print("SDK Success initialization with exist json file\n\(jsonFileURL)\n")
+            print("SDK: Success initialization with exist json file\n\(jsonFileURL)\n")
             if !fileExists {
                 try data.write(to: jsonFileURL)
             }
@@ -1288,6 +1289,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
             }
         }
+        let successCurrencyDetect: String? = result.currency
+        UserDefaults.standard.set(successCurrencyDetect, forKey: "clientCurrencyValue")
         UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
     }
     
@@ -1328,16 +1331,24 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let json = try? JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             let statusMessage = jsonObject["message"] as? String ?? ""
-                            print("\nStatus message: ", statusMessage)
+                            //print("\nStatus message:", statusMessage)
+                            let slashSeparator = path.components(separatedBy: "/").first
+                            if (!isInit && slashSeparator == "stories") {
+                                if (statusMessage == "Client not found") {
+                                    completion(.failure(.invalidResponse))
+                                    return
+                                }
+                            }
                         }
                         completion(.failure(.invalidResponse))
                         return
                     }
+                    
                     do {
                         if isInit {
                             let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
-                            try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
+                            try KeychainService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
                         }
                         
                         let json = try JSONSerialization.jsonObject(with: data)
@@ -1347,18 +1358,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.failure(.decodeError))
                         }
                     } catch {
-//                        self.sendInitRequest { initResult in
-//                            switch initResult {
-//                            case .success:
-//                                if let res = try? initResult.get() {
-//                                    self.userInfo = res
-//                                    self.userSeance = res.seance
-//                                    self.deviceId = res.deviceId
-//                                }
-//                            case .failure(_):
-//                                break
-//                            }
-//                        }
                         completion(.failure(.decodeError))
                     }
                 case .failure:
@@ -1441,8 +1440,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-                    //let typeOfConnection = networkManager.connectionType
-                    //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
+                    let typeOfConnection = networkManager.connectionType
+                    print("SDK: Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
                     
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
@@ -1478,7 +1477,6 @@ extension Data {
         }
     }
 }
-
 
 extension URLSession {
     func dataTask(with url: URL, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {

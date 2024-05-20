@@ -7,7 +7,6 @@ public protocol Coverable {
 typealias CoverableView = UIView & Coverable
 
 extension Coverable where Self: UIView {
-    
     func makeCoverablePath(superview: UIView? = nil) -> UIBezierPath? {
         guard let superview = superview ?? self.superview else {
             return nil
@@ -33,7 +32,6 @@ extension Coverable where Self: UIView {
     }
 }
 
-
 extension Array where Element: CoverableView {
     var coverablePath: UIBezierPath {
         return reduce(UIBezierPath(), { totalPath, cell in
@@ -42,7 +40,6 @@ extension Array where Element: CoverableView {
         })
     }
 }
-
 
 extension UIView {
     func coverableSubviews() -> [CoverableView] {

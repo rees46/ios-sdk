@@ -90,7 +90,7 @@ class Slide {
     var downloadedImage: UIImage? = nil
     var previewImage: UIImage? = nil
     
-    public let vDownloadManager = VideoDownloadManager.shared
+    public let vDownloadManager = SdkVideoDownloadManager.shared
     var sdkDirectoryName: String = "SDKCacheDirectory"
     
     public init(json: [String: Any]) {
@@ -197,7 +197,7 @@ class Slide {
             return
         }
         
-        StoryBlockImageCache.image(for: url.absoluteString) { cachedImage in
+        SdkImagesCacheLoader.image(for: url.absoluteString) { cachedImage in
             if isPreview {
                 self.previewImage = cachedImage
                 //print("Downloaded preview for image for video story with id = \(self.id)")
@@ -219,7 +219,7 @@ class Slide {
                         } else {
                             self.downloadedImage = image
                             
-                            StoryBlockImageCache.save(image, for: url.absoluteString)
+                            SdkImagesCacheLoader.save(image, for: url.absoluteString)
                             self.completionCached(slideWithId: self.id, actualSlideUrl: "")
                             //print("SDK Downloaded image for story id = \(self.id)")
                         }

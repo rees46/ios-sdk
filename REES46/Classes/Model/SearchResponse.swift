@@ -1,66 +1,5 @@
 import Foundation
 
-public struct Filter {
-    public var count: Int
-    public var values: [String: Int]
-    
-    init(json: [String: Any]) {
-        self.count = json["count"] as? Int ?? 0
-        self.values = json["values"] as? [String: Int] ?? [:]
-    }
-}
-
-public struct IndustrialFilters {
-    public var fashionSizes: [FashionSizes]
-    public var fashionColors: [FashionColors]
-
-    init(json: [String: Any]) {
-        let sizes = json["fashion_sizes"] as? [[String: Any]] ?? []
-        var fashionSizesTemp = [FashionSizes]()
-        for item in sizes {
-            fashionSizesTemp.append(FashionSizes(json: item))
-        }
-        fashionSizes = fashionSizesTemp
-        
-        let colors = json["colors"] as? [[String: Any]] ?? []
-        var fashionColorsTemp = [FashionColors]()
-        for item in colors {
-            fashionColorsTemp.append(FashionColors(json: item))
-        }
-        fashionColors = fashionColorsTemp
-    }
-}
-
-public struct FashionSizes {
-    public var count: Int
-    public var size: String
-    
-    init(json: [String: Any]) {
-        self.count = json["count"] as? Int  ?? 0
-        self.size = json["size"] as? String ?? ""
-    }
-}
-
-public struct FashionColors {
-    public var count: Int
-    public var color: String
-    
-    init(json: [String: Any]) {
-        self.count = json["count"] as? Int ?? 0
-        self.color = json["color"] as? String ?? ""
-    }
-}
-
-public struct PriceRange {
-    public var min: Double
-    public var max: Double
-    
-    init(json: [String: Any]) {
-        self.min = json["min"] as? Double ?? 0
-        self.max = json["max"] as? Double ?? 0
-    }
-}
-
 public struct Suggest {
     public var name: String
     public var url: String
@@ -77,6 +16,7 @@ public struct SearchBlankResponse {
     public var lastQueries: [Query]
     public var suggests: [Suggest]
     public var lastProducts: Bool
+    public var clientCurrency: String?
     public var products: [Product]
     
     init(json: [String: Any]) {
@@ -102,20 +42,8 @@ public struct SearchBlankResponse {
             productArr.append(Product(json: item))
         }
         products = productArr
-    }
-}
-
-public struct Redirect {
-    public var query: String = ""
-    public var redirectUrl: String = ""
-    public var deeplink: String?
-    public var deeplinkIos: String?
-    
-    init(json: [String: Any]) {
-        self.query = json["query"] as? String ?? ""
-        self.redirectUrl = json["redirect_link"] as? String ?? ""
-        self.deeplink = json["deep_link"] as? String
-        self.deeplinkIos = json["deeplink_ios"] as? String
+        
+        self.clientCurrency = json["currency"] as? String ?? ""
     }
 }
 
@@ -194,7 +122,7 @@ public struct Product {
     public var name: String = ""
     public var brand: String = ""
     public var model: String = ""
-    public var description: String = ""
+    public var productDescription: String = ""
     public var imageUrl: String = ""
     public var resizedImageUrl: String = ""
     public var resizedImages: [String: String] = [:]
@@ -223,7 +151,7 @@ public struct Product {
         name = json["name"] as? String ?? ""
         brand = json["brand"] as? String ?? ""
         model = json["model"] as? String ?? ""
-        description = json["description"] as? String ?? ""
+        productDescription = json["description"] as? String ?? ""
         imageUrl = json["image_url"] as? String ?? ""
         resizedImageUrl = json["picture"] as? String ?? ""
         resizedImages = json["image_url_resized"] as? [String: String] ?? [:]
@@ -255,6 +183,12 @@ public struct Query {
 
     init(json: [String: Any]) {
         name = json["name"] as? String ?? ""
+        
+        if (name.contains("&amp;")) {
+            let replaced = name.replacingOccurrences(of: "&amp;", with: "&")
+            name = replaced
+        }
+        
         url = json["url"] as? String ?? ""
         deeplinkIos = json["deeplink_ios"] as? String ?? ""
     }
@@ -273,5 +207,80 @@ public struct Category {
         url = json["url"] as? String
         alias = json["alias"] as? String
         parentId = json["parent"] as? String
+    }
+}
+
+public struct Filter {
+    public var count: Int
+    public var values: [String: Int]
+    
+    init(json: [String: Any]) {
+        self.count = json["count"] as? Int ?? 0
+        self.values = json["values"] as? [String: Int] ?? [:]
+    }
+}
+
+public struct IndustrialFilters {
+    public var fashionSizes: [FashionSizes]
+    public var fashionColors: [FashionColors]
+
+    init(json: [String: Any]) {
+        let sizes = json["fashion_sizes"] as? [[String: Any]] ?? []
+        var fashionSizesTemp = [FashionSizes]()
+        for item in sizes {
+            fashionSizesTemp.append(FashionSizes(json: item))
+        }
+        fashionSizes = fashionSizesTemp
+        
+        let colors = json["colors"] as? [[String: Any]] ?? []
+        var fashionColorsTemp = [FashionColors]()
+        for item in colors {
+            fashionColorsTemp.append(FashionColors(json: item))
+        }
+        fashionColors = fashionColorsTemp
+    }
+}
+
+public struct FashionSizes {
+    public var count: Int
+    public var size: Int
+    
+    init(json: [String: Any]) {
+        self.count = json["count"] as? Int  ?? 0
+        self.size = json["size"] as? Int ?? 0
+    }
+}
+
+public struct FashionColors {
+    public var count: Int
+    public var color: String
+    
+    init(json: [String: Any]) {
+        self.count = json["count"] as? Int ?? 0
+        self.color = json["color"] as? String ?? ""
+    }
+}
+
+public struct PriceRange {
+    public var min: Double
+    public var max: Double
+    
+    init(json: [String: Any]) {
+        self.min = json["min"] as? Double ?? 0
+        self.max = json["max"] as? Double ?? 0
+    }
+}
+
+public struct Redirect {
+    public var query: String = ""
+    public var redirectUrl: String = ""
+    public var deeplink: String?
+    public var deeplinkIos: String?
+    
+    init(json: [String: Any]) {
+        self.query = json["query"] as? String ?? ""
+        self.redirectUrl = json["redirect_link"] as? String ?? ""
+        self.deeplink = json["deep_link"] as? String
+        self.deeplinkIos = json["deeplink_ios"] as? String
     }
 }
