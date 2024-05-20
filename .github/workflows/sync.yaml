@@ -1,3 +1,5 @@
+name: Sync repositories
+
 on:
   workflow_run:
     workflows:
@@ -8,6 +10,7 @@ on:
 
 jobs:
   run:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@master
     permissions: write-all
     secrets:
