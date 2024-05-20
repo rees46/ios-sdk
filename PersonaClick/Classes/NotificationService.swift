@@ -1,8 +1,8 @@
 //
 //  NotificationService.swift
-//  REES46
+//  PersonaClick
 //
-//  Created by REES46
+//  Created by PersonaClick
 //  Copyright (c) 2023. All rights reserved.
 //
 

@@ -2,25 +2,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "REES46",
+    name: "PersonaClick",
     platforms: [
             .iOS(.v11),
             .macOS(.v10_15)
         ],
         products: [
-            // REES46 SDK and libraries produced by a package.
-            .library(name: "REES46",
-            targets: ["REES46"]),
+            // PersonaClick SDK and libraries produced by a package.
+            .library(name: "PersonaClick",
+            targets: ["PersonaClick"]),
         ],
         dependencies: [
-             // Dependencies declare other packages that REES46 depends on.
-             // .package(url: /* rees46.com */, now: pod "3.6.7"),
-             // Copyright © 2023 REES46 Inc.
+             // Dependencies declare other packages that PersonaClick depends on.
+             // .package(url: /* personaClick.com */, now: pod "3.6.7"),
+             // Copyright © 2023 PersonaClick Inc.
         ],
         targets: [
             .target(
-                name: "REES46",
-                path: "REES46/Classes",
+                name: "PersonaClick",
+                path: "PersonaClick/Classes",
                 exclude: ["Resources/Assets.swift"],
                 resources: [
                     .process("Resources")

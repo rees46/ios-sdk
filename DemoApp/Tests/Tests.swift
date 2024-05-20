@@ -1,5 +1,5 @@
 import XCTest
-import REES46
+import PersonaClick
 
 class DeviceIdSaveTest: XCTestCase {
     

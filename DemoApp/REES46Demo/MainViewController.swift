@@ -1,13 +1,13 @@
 //
 //  ViewController.swift
-//  REES46
+//  PersonaClick
 //
-//  Created by REES46
+//  Created by PersonaClick
 //  Copyright (c) 2023. All rights reserved.
 //
 
 import UIKit
-import REES46
+import PersonaClick
 import AdSupport
 import AppTrackingTransparency
 
@@ -135,8 +135,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func didTapReset() {
         self.waitIndicator.startAnimating()
         
-        let sdkBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier
-        let appBundleId = Bundle(for: REES46.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
+        let sdkBundleId = Bundle(for: PersonaClick.StoriesView.self).bundleIdentifier
+        let appBundleId = Bundle(for: PersonaClick.StoriesView.self).bundleIdentifier //Bundle.main.bundleIdentifier
         try? InitService.deleteKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!)
         sleep(3)
         
