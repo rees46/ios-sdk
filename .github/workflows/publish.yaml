@@ -6,6 +6,8 @@ on:
       - closed
     branches:
       - master
+    paths:
+      - '!.github/**'
   workflow_dispatch:
 
 jobs:
