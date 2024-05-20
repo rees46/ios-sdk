@@ -4,13 +4,13 @@ public class FiltersCheckboxItem: CustomStringConvertible {
     
     public enum ItemType {
         case groupCheckbox
-        case single
+        case singleCheckbox
     }
     
     public enum ItemSelectionState {
-        case on
-        case off
-        case mixed
+        case currentFilterOn
+        case currentFilterOff
+        case currentFilterMixed
     }
     
     public var filtersList = [FiltersDataMenuList]()
@@ -19,7 +19,7 @@ public class FiltersCheckboxItem: CustomStringConvertible {
     public var subtitle: String?
     
     public var type: ItemType {
-        return childrenCheckboxArray.isEmpty ? .single : .groupCheckbox
+        return childrenCheckboxArray.isEmpty ? .singleCheckbox : .groupCheckbox
     }
     
     public var childrenCheckboxArray: [FiltersCheckboxItem] = []
@@ -46,7 +46,7 @@ public class FiltersCheckboxItem: CustomStringConvertible {
     public var isSelected: Bool {
         get {
             if type == .groupCheckbox {
-                return selectionState == .on
+                return selectionState == .currentFilterOn
             } else {
                 return _isSelected
             }
@@ -68,26 +68,26 @@ public class FiltersCheckboxItem: CustomStringConvertible {
         if type == .groupCheckbox {
             
             if childrenCheckboxArray.isEmpty {
-                return .off
+                return .currentFilterOff
             }
             
-            let hasMixedChild = childrenCheckboxArray.contains{ $0.selectionState == .mixed }
+            let hasMixedChild = childrenCheckboxArray.contains{ $0.selectionState == .currentFilterMixed }
             if hasMixedChild {
-                return .mixed
+                return .currentFilterMixed
             }
             
-            let hasSelectedChild = childrenCheckboxArray.contains{ $0.selectionState == .on }
-            let hasUnselectedChild = childrenCheckboxArray.contains{ $0.selectionState == .off }
+            let hasSelectedChild = childrenCheckboxArray.contains{ $0.selectionState == .currentFilterOn }
+            let hasUnselectedChild = childrenCheckboxArray.contains{ $0.selectionState == .currentFilterOff }
             
             if hasSelectedChild && !hasUnselectedChild {
-                return .on
+                return .currentFilterOn
             } else if !hasSelectedChild && hasUnselectedChild {
-                return .off
+                return .currentFilterOff
             } else {
-                return .mixed
+                return .currentFilterMixed
             }
         }
-        return isSelected ? .on : .off
+        return isSelected ? .currentFilterOn : .currentFilterOff
     }
     
     public convenience init(indexForFilterTitle: Int, title: String, subtitle: String? = nil, children: [FiltersCheckboxItem] = [], isGroupCollapsed: Bool = false) {
@@ -107,7 +107,7 @@ public class FiltersCheckboxItem: CustomStringConvertible {
     }
     
     public var description: String {
-        var descriptionString = "title = \(title), state = \(selectionState)"
+        var descriptionString = "Filter title = \(title), state = \(selectionState)"
         if !isEnabled {
             descriptionString += ", isEnabled = false"
         }

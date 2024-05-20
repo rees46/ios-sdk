@@ -6,7 +6,7 @@ public protocol RecommendationsWidgetCommunicationProtocol: AnyObject {
     func didTapOnProduct(product: Recommended)
 }
 
-open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, RecommendationsWidgetViewCellDelegate {
+public class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, RecommendationsWidgetViewCellDelegate {
     
     public var cells = [Recommended]()
     
@@ -116,8 +116,8 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             cell.recommendationsOldPrice.attributedText = strikeThrough(str: cells[indexPath.row].oldPriceFormatted ?? "")
         }
         
-        cell.recommendationsDiscountLabel.text = " Cashback 20% " //sample coming soon
-        cell.recommendationsCreditLabel.text = " 0-0-12 " //sample coming soon
+        //cell.recommendationsDiscountLabel.text = " Cashback 20% "
+        //cell.recommendationsCreditLabel.text = " 0-0-12 "
         
         let currentCurrency = cells[indexPath.row].currency
         let priceNotFormatted = cells[indexPath.row].priceFullFormatted

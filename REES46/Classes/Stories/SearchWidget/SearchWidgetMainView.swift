@@ -1,6 +1,6 @@
 import UIKit
 
-open class SearchWidgetMainView: UIView {
+public class SearchWidgetMainView: UIView {
     
     let width = UIScreen.main.bounds.width
     let height = UIScreen.main.bounds.height
@@ -75,7 +75,7 @@ open class SearchWidgetMainView: UIView {
                     let sConstructorName = constructorCategories[categoryTag]
                     self.delegate?.sdkSearchWidgetHistoryButtonClickedFull(productSearchText: sConstructorName)
                 } else {
-                    print("SDK: Need constructorCategories")
+                    //print("SDK: Need constructorCategories")
                 }
             }
         }
@@ -163,7 +163,7 @@ open class SearchWidgetMainView: UIView {
         
         if suitableCategories.count != 0 {
             if cachedUserRequestsArray.count == 9999990 {
-                print("SDK: 500 cachedUserRequestsArray")
+                //print("SDK: 500 cachedUserRequestsArray")
             } else {
                 for i in 0..<constructorCategories.count {
                     let size = constructorCategories[i].size(withAttributes: userAttributes)
@@ -184,7 +184,7 @@ open class SearchWidgetMainView: UIView {
                 }
             }
         } else {
-            print("SDK: Zero suitableCategories")
+            //print("SDK: Zero suitableCategories")
         }
         
         var originYq = (sdkSearchWidgetCategoriesButtons.last?.frame.origin.y ?? +36)
@@ -487,8 +487,8 @@ open class SearchWidgetMainView: UIView {
                         
                         print("SDK: Zero Count suitableCategories")
                         
-                        let productSelectedSearchText1 = UserDefaults.standard.string(forKey: "savedSearchWidgetLastButtonTap") ?? ""
-                        print(productSelectedSearchText1)
+                        let productSelectedSearchText = UserDefaults.standard.string(forKey: "savedSearchWidgetLastButtonTap") ?? ""
+                        print(productSelectedSearchText)
                         
                         let notNeedShowOnTapButtonsResults: Bool = UserDefaults.standard.bool(forKey: "needShowOnTapButtonsResults")
                         if !notNeedShowOnTapButtonsResults {

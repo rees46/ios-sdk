@@ -1,6 +1,6 @@
 import UIKit
 
-open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
+public class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
     open var delegate: SearchWidgetDelegate? {
         didSet {
             self.sdkSearchWidgetView.delegate = delegate

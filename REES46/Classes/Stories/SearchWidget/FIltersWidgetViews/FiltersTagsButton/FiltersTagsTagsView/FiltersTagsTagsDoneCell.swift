@@ -1,9 +1,9 @@
 import UIKit
 
-open class FiltersWidgetTagsDoneCell: UITableViewCell {
+public class FiltersWidgetTagsDoneCell: UITableViewCell {
     
     var delegate : FiltersWidgetDoneDelegate?
-
+    
     open override func awakeFromNib() {
         super.awakeFromNib()
     }

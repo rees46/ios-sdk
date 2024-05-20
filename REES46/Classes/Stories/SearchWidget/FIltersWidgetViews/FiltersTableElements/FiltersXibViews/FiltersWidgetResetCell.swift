@@ -1,49 +1,39 @@
 import UIKit
 
-protocol FiltersWidgetResetDelegate: AnyObject {
-    func dismissNow()
+public protocol FiltersWidgetResetDelegate: AnyObject {
+    func searchSelectedFiltersDataItemSelected()
+    func cancelSelectedFiltersDataItemSelected()
 }
 
 public class FiltersWidgetResetCell: UITableViewCell {
-    
-    @IBOutlet private weak var searchDataButton: UIButton!
-    @IBOutlet private weak var resetDataButton: UIButton!
-    
     weak var delegate: FiltersWidgetResetDelegate?
     
     public override func awakeFromNib() {
         super.awakeFromNib()
-        searchDataButton.addTarget(self, action: #selector(searchDataItemSelected), for: .touchUpInside)
-        resetDataButton.addTarget(self, action: #selector(cancelDataItemSelected), for: .touchUpInside)
     }
     
     @objc public func searchDataItemSelected() {
-        delegate?.dismissNow()
+        delegate?.searchSelectedFiltersDataItemSelected()
     }
     
     @objc public func cancelDataItemSelected() {
-        delegate?.dismissNow()
-    }
-    
-    public override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
+        delegate?.cancelSelectedFiltersDataItemSelected()
     }
 }
 
-@IBDesignable open class FiltersResetButton: UIButton {
-    open override func layoutSubviews() {
+@IBDesignable class FiltersResetButton: UIButton {
+    override func layoutSubviews() {
         super.layoutSubviews()
-        
-        updateButtonCornerRadius()
+        updateResetButtonCornerRadius()
     }
-
+    
     @IBInspectable var rounded: Bool = false {
         didSet {
-            updateButtonCornerRadius()
+            updateResetButtonCornerRadius()
         }
     }
-
-    func updateButtonCornerRadius() {
+    
+    func updateResetButtonCornerRadius() {
         layer.backgroundColor = UIColor.white.cgColor
         layer.masksToBounds = true
         layer.borderWidth = 2.0
@@ -52,19 +42,19 @@ public class FiltersWidgetResetCell: UITableViewCell {
     }
 }
 
-@IBDesignable open class FiltersSelectedShowButton: UIButton {
-    open override func layoutSubviews() {
+@IBDesignable class FiltersSelectedShowButton: UIButton {
+    override func layoutSubviews() {
         super.layoutSubviews()
-        updateButtonCornerRadius()
+        updateShowButtonCornerRadius()
     }
-
+    
     @IBInspectable var rounded: Bool = false {
         didSet {
-            updateButtonCornerRadius()
+            updateShowButtonCornerRadius()
         }
     }
-
-    func updateButtonCornerRadius() {
+    
+    func updateShowButtonCornerRadius() {
         layer.backgroundColor = UIColor.black.cgColor
         layer.masksToBounds = true
         layer.borderWidth = 2.0

@@ -2,7 +2,6 @@ import UIKit
 import QuartzCore
 
 @IBDesignable public class FiltersPriceSlider: UIControl {
-   
     @IBInspectable var minimumValue: Double = 0 {
         didSet {
             updateLayerFrames()

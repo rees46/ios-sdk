@@ -257,6 +257,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
 #if SWIFT_PACKAGE
                     frameworkBundle = Bundle.module
 #endif
+                    
+                    guard frameworkBundle.path(forResource: "SearchWidgetView", ofType: "nib") != nil else {
+                        return
+                    }
                     let searchView = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchWidgetView
                     searchView.modalPresentationStyle = .fullScreen
                     searchView.sdk = globalSDK
@@ -292,6 +296,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate, NetworkStatusO
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
 #endif
+        
+        guard frameworkBundle.path(forResource: "SearchWidgetView", ofType: "nib") != nil else {
+            return
+        }
         let searchView = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchWidgetView
         searchView.modalPresentationStyle = .fullScreen
         searchView.sdk = globalSDK

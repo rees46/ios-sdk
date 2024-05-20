@@ -12,12 +12,12 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
             guard let searchFieldText = sdkSearchWidgetTextFieldEnteredText else {
                 return
             }
-
+            
             let objectification = Objectification(objects: database, type: .all)
             let result = objectification.objects(contain: searchFieldText)
             
             UserDefaults.standard.set(searchFieldText, forKey: "viewAllSearchResultsButtonClickedFull")
-
+            
             self.searchResultDatabase = result
             if searchFieldText.isEmpty {
                 self.initData(database: database)
@@ -25,7 +25,7 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
             self.reloadData()
         }
     }
-
+    
     public override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
         self.initView()

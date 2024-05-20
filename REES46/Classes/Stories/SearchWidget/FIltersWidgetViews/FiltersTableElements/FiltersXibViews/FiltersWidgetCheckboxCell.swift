@@ -23,12 +23,12 @@ public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDele
     }
     
     public func checkboxItemDidSelected(item: FiltersCheckboxItem) {
-        print(item)
+        debugPrint(item)
         delegate?.updateTableWithFiltersNow(0)
     }
     
     public func checkboxItemDidSelected(item: FiltersWidgetCheckboxCell) {
-        print(item)
+        debugPrint(item)
         delegate?.updateTableWithFiltersNow(0)
     }
     
@@ -91,10 +91,10 @@ public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDele
             scrollView.rightAnchor.constraint(equalTo: rightAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
-
+        
         let contentView = UIView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
-
+        
         scrollView.addSubview(contentView)
         NSLayoutConstraint.activate([
             contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
@@ -103,7 +103,7 @@ public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDele
             contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             contentView.widthAnchor.constraint(equalTo: widthAnchor)
         ])
-
+        
         let contentStackView = UIStackView()
         contentStackView.spacing = 8
         contentStackView.axis = .vertical
@@ -121,7 +121,7 @@ public class FiltersWidgetCheckboxCell: UITableViewCell, FiltersCheckboxTreeDele
         
         contentStackView.addArrangedSubview(checkboxTree)
     }
-
+    
     public override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
     }

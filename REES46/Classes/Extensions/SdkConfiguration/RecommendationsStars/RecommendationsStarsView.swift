@@ -435,14 +435,11 @@ struct RecommendationsStarsRating {
         if rating < 0 {
             return 0
         }
-    
         return rating
     }
 }
 
-
 public struct RecommendationsStarsSettings {
-
     public static var `default`: RecommendationsStarsSettings {
         return RecommendationsStarsSettings()
     }
@@ -488,7 +485,6 @@ public struct RecommendationsStarsSettings {
     public var reloadOnUserTouch = RecommendationsStarsDefaultSettings.reloadOnUserTouch
 }
 
-
 struct RecommendationsStarsTouchTarget {
     static func optimize(_ bounds: CGRect) -> CGRect {
         let recommendedHitSize: CGFloat = 44
@@ -509,16 +505,13 @@ struct RecommendationsStarsTouchTarget {
     }
 }
 
-
 struct actionRightStarsToLeft {
     static func isactionRightStarsToLeft(_ view: UIView) -> Bool {
         return false
     }
 }
 
-
-@IBDesignable open class RecommendationsStarsView: UIView {
-    
+@IBDesignable class RecommendationsStarsView: UIView {
     @IBInspectable open var rating: Double = RecommendationsStarsDefaultSettings.rating {
         didSet {
             if oldValue != rating {

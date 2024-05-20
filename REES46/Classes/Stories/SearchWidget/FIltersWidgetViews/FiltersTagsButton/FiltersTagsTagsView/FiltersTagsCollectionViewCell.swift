@@ -1,6 +1,6 @@
 import UIKit
 
-open class FiltersTagsCollectionViewCell: UICollectionViewCell {
+public class FiltersTagsCollectionViewCell: UICollectionViewCell {
     
     @IBOutlet weak var tagLabel: UILabel!
     

@@ -11,6 +11,8 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
     public let filtersCheckboxTree = FiltersCheckboxTree()
     
     @IBOutlet weak var backButton: UIButton!
+    @IBOutlet weak var searchDataButton: UIButton!
+    @IBOutlet weak var resetDataButton: UIButton!
     
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -20,12 +22,10 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
         initTableView()
         
         backButton.addTarget(self, action: #selector(closeButtonClicked), for: .touchUpInside)
+        searchDataButton.addTarget(self, action: #selector(searchDataItemSelected), for: .touchUpInside)
+        resetDataButton.addTarget(self, action: #selector(cancelDataItemSelected), for: .touchUpInside)
         
         searchPlaceholder.isHidden = true
-        
-        if filtersList.count == 0 {
-            searchPlaceholder.isHidden = true
-        }
     }
     
     func initTableView() {
@@ -46,10 +46,6 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
         
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetTagsDoneCell", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetTagsDoneCell")
         
-        //self.tableView?.register(UINib.init(nibName: "FiltersWidgetHeaderView", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetHeaderView")
-        
-        //self.tableView?.register(UINib.init(nibName: "FiltersWidgetFooterView", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetFooterView")
-        
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetCheckboxCell", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetCheckboxCell")
         
         self.tableView?.register(UINib.init(nibName: "FiltersWidgetPriceRangeCell", bundle: frameworkBundle), forCellReuseIdentifier:"FiltersWidgetPriceRangeCell")
@@ -62,7 +58,6 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
     }
     
     public func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        //var cellHeight:CGFloat = CGFloat()
         if indexPath.section == 0 {
             return CGFloat(133)
         } else {
@@ -81,8 +76,6 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
             } else if filterCellHeight == 1 {
                 return CGFloat(38)
             } else {
-                //let filterCellIntHeight = Int(data[indexPath.section].titleValues.count + 1)
-                //_ = filterCellIntHeight*38
                 return CGFloat(119)
             }
         }
@@ -90,14 +83,28 @@ public class FiltersWidgetView: UIViewController, FiltersTagsTableViewCellDelega
     
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        
+        if filtersList.count == 0 {
+            searchPlaceholder.isHidden = false
+        } else {
+            searchPlaceholder.isHidden = true
+        }
+    }
+    
+    @objc public func closeButtonClicked() {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
+    @objc public func searchDataItemSelected() {
+        self.dismiss(animated: true, completion: nil)
+    }
+    
+    @objc public func cancelDataItemSelected() {
+        self.dismiss(animated: true, completion: nil)
     }
     
     public override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-    }
-    
-    @objc func closeButtonClicked() {
-        self.dismiss(animated: true, completion: nil)
     }
 }
 
@@ -155,15 +162,6 @@ extension FiltersWidgetView: UITableViewDataSource {
                 return UITableViewCell()
             }
         }
-    }
-    
-    func searchDataItemSelected() {
-        self.tableView?.reloadData()
-        //self.dismiss(animated: true, completion: nil)
-    }
-    
-    func cancelDataItemSelected() {
-        self.dismiss(animated: true, completion: nil)
     }
     
     public func headerFooterViewArrowInSection(header: FiltersWidgetFooterView, section: Int) {

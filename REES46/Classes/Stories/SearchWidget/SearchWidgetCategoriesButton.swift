@@ -6,7 +6,7 @@ public enum SearchWidgetCategoriesButtonType {
     case colored
 }
 
-open class SearchWidgetCategoriesButton: UIButton {
+public class SearchWidgetCategoriesButton: UIButton {
     open var type: SearchWidgetCategoriesButtonType? {
         didSet {
             guard let _type = type else {

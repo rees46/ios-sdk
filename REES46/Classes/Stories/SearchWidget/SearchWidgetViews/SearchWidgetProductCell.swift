@@ -1,6 +1,6 @@
 import UIKit
 
-protocol updateCartCountDelegate {
+public protocol UpdateCartCountDelegate {
     func updateCart(with count: Int)
 }
 
@@ -23,23 +23,15 @@ public class SearchWidgetProductCell: UICollectionViewCell {
     
     @IBOutlet weak var addToCart: UIButton!
     
-    var product: SearchWidgetProductDataPrepare?
-    var addedToCart: Bool = false
+    public var product: SearchWidgetProductDataPrepare?
+    public var addedToCart: Bool = false
     
-    var delegate: updateCartCountDelegate?
+    public var delegate: UpdateCartCountDelegate?
     
     static let searchWidgetProductCell = "SearchWidgetProductCell"
     
     class var identifier: String {
         return String(describing: self)
-    }
-    
-    class var nib: UINib {
-        return UINib(nibName: identifier, bundle: nil)
-    }
-    
-    public override func awakeFromNib() {
-       super.awakeFromNib()
     }
     
     func updateCell(with product: SearchWidgetProductDataPrepare) {
@@ -82,12 +74,13 @@ public class SearchWidgetProductCell: UICollectionViewCell {
                         imageView.layer.masksToBounds = true
                         self.productImage.addSubview(imageView)
                     }) { (isFinished) in
+                        //
                     }
                 }
             }.resume()
         }
         
-        //delegate?.updateCart(with: SearchWidgetDataService.instance.getQuantityCount())
+        //delegate?.updateCart(with: SearchWidgetProductDataPrepare.instance.getQuantityCount())
     }
     
     public override func draw(_ rect: CGRect) {
@@ -97,7 +90,7 @@ public class SearchWidgetProductCell: UICollectionViewCell {
         layer.masksToBounds = true
     }
     
-    @objc func addToCartTapped() {
+    @objc public func addToCartTappedFromSearchWidget() {
 //        addedToCart.toggle()
 //        guard let selectedProduct = product else { return }
 //        
@@ -106,36 +99,22 @@ public class SearchWidgetProductCell: UICollectionViewCell {
 //        frameworkBundle = Bundle.module
 //#endif
 //        
-//        if !SearchWidgetDataService.instance.isProductInCart(selectedProduct) {
-//            SearchWidgetDataService.instance.addProduct(toCart: selectedProduct, numberOfProduct: 1, status: true)
+//        if !dataser.instance.isProductInCart(selectedProduct) {
+//            SearchWidgetProductDataPrepare.instance.addProduct(toCart: selectedProduct, numberOfProduct: 1, status: true)
 //            if #available(iOS 13.0, *) {
 //                addToCart.setImage(UIImage(systemName: "cart"), for: .normal)
 //            } else {
 //                addToCart.setImage(UIImage(named: "cart", in: frameworkBundle, compatibleWith: nil), for: .normal)
 //            }
 //        } else {
-//            SearchWidgetDataService.instance.removeProduct(fromCart: selectedProduct, selectedProduct: nil)
+//            SearchWidgetProductDataPrepare.instance.removeProduct(fromCart: selectedProduct, selectedProduct: nil)
 //            if #available(iOS 13.0, *) {
 //                addToCart.setImage(UIImage(systemName: "nil"), for: .normal)
 //            } else {
 //                addToCart.setImage(UIImage(named: "nil", in: frameworkBundle, compatibleWith: nil), for: .normal)
 //            }
 //        }
-//        
-//        delegate?.updateCart(with: SearchWidgetDataService.instance.getQuantityCount())
-    }
-}
-
-extension UIImage {
-    func addImagePadding(x: CGFloat, y: CGFloat) -> UIImage? {
-        let width: CGFloat = size.width + x
-        let height: CGFloat = size.height + y
-        UIGraphicsBeginImageContextWithOptions(CGSize(width: width, height: height), false, 0)
-        let origin: CGPoint = CGPoint(x: (width - size.width) / 2, y: (height - size.height) / 2)
-        draw(at: origin)
-        let imageWithPadding = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-
-        return imageWithPadding
+//
+//            delegate?.updateCart(with: SearchWidgetProductDataPrepare.instance.getQuantityCount())
     }
 }

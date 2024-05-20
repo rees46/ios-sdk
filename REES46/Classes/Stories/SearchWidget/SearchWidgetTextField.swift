@@ -1,6 +1,6 @@
 import UIKit
 
-open class SearchWidgetTextField: UITextField {
+public class SearchWidgetTextField: UITextField {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -33,7 +33,7 @@ open class SearchWidgetTextField: UITextField {
     }
 }
 
-open class SearchWidgetTextFieldView: UIView {
+public class SearchWidgetTextFieldView: UIView {
     open var sdkSearchWidgetTextField: SearchWidgetTextField!
     open var cancelButton: UIButton!
     
@@ -53,7 +53,6 @@ open class SearchWidgetTextFieldView: UIView {
         self.sdkSearchWidgetTextField.layer.cornerRadius = 10
         self.sdkSearchWidgetTextField.layer.borderWidth = 2.3
         self.sdkSearchWidgetTextField.layer.borderColor = UIColor(red:183/255, green:183/255, blue:183/255, alpha: 1.0).cgColor
-        //self.sdkSearchWidgetTextField.layer.backgroundColor = UIColor.red.cgColor
         self.sdkSearchWidgetTextField.layer.masksToBounds = true
         self.addSubview(self.sdkSearchWidgetTextField)
         

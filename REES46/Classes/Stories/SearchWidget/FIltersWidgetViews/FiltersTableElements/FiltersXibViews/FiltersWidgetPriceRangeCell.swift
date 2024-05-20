@@ -1,6 +1,6 @@
 import UIKit
 
-open class FiltersWidgetPriceRangeCell: UITableViewCell {
+public class FiltersWidgetPriceRangeCell: UITableViewCell {
     
     @IBOutlet public weak var filtersPriceMaxValueTextField: UITextField!
     @IBOutlet public weak var filtersPriceMinValueTextField: UITextField!
@@ -117,14 +117,12 @@ extension FiltersWidgetPriceRangeCell: UITextFieldDelegate {
                 let stringArrayMin = String(describing: minX).components(separatedBy: CharacterSet.decimalDigits.inverted)
                 for itemMin in stringArrayMin {
                     if let numberMin = Int(itemMin) {
-                        //debugPrint(numberMin)
                         intDefault = numberMin
                     }
                     
                     let stringArrayMax = String(describing: maxX).components(separatedBy: CharacterSet.decimalDigits.inverted)
                     for itemMax in stringArrayMax {
                         if let numberMax = Int(itemMax) {
-                            //debugPrint(numberMax)
                             intCompare = numberMax
                         }
                     }

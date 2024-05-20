@@ -1,6 +1,6 @@
 import UIKit
 
-open class FiltersTagsCollectionView: UICollectionView {
+public class FiltersTagsCollectionView: UICollectionView {
     
     var isDynamicSizeRequired = false
     

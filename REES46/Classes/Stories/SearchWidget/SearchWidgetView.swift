@@ -28,15 +28,15 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
     
     @IBOutlet weak var foundProductsCoutLbl: UILabel!
     
-    var selectedProduct: String?
+    public var selectedProduct: String?
     
     public var notNeedShowInteresting: Bool = false
     public var dontNeedFiltersSelectedShowButton: Bool = false
     
-    private(set) var findedProducts = [SearchWidgetProductDataPrepare]()
+    private(set) var foundedProducts = [SearchWidgetProductDataPrepare]()
     
-    var addToCart = SearchWidgetCartButton(image: UIImage(named: "cart"))
-    var cartItemCount: Int = 0
+    public var addToCartWidgetButton = SearchWidgetCartButton(image: UIImage(named: "cart"))
+    public var cartItemCount: Int = 0
     
     var filtersDataList = [FiltersDataMenuList]()
     
@@ -56,15 +56,13 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
 #endif
         searchProductsCollectionView.register(UINib(nibName: "SearchWidgetProductCell", bundle: frameworkBundle), forCellWithReuseIdentifier: "SearchWidgetProductCell")
         
-        //searchProductsCollectionView.register(UINib(nibName: "FiltersWidgetView", bundle: frameworkBundle), forCellWithReuseIdentifier: "FiltersWidgetView")
-        
         blankHeaderView.isHidden = true
         searchHeaderView.isHidden = true
         
-//        addToCart.setBadge(with: cartItemCount)
-//        addToCart.tapAction = {
-//            self.performSegue(withIdentifier: "searchCheckoutView", sender: self)
-//        }
+        addToCartWidgetButton.setBadge(with: cartItemCount)
+        addToCartWidgetButton.tapAction = {
+            //self.performSegue(withIdentifier: "searchCheckoutView", sender: self)
+        }
         
         self.searchPlaceholder.isHidden = true
         
@@ -184,6 +182,8 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
         self.delegate?.minimizeSearchTextField()
         
         UserDefaults.standard.set(false, forKey: "clientCurrencyValueDetect")
+        UserDefaults.standard.set(productSearchText, forKey: "viewAllSearchResultsButtonClickedFull")
+        
         self.pushFullSearchWidgetMainView(productText: productSearchText)
     }
     
@@ -470,6 +470,10 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
 #endif
+        
+        guard frameworkBundle.path(forResource: "SearchWidgetView", ofType: "nib") != nil else {
+            return
+        }
         let searchView = frameworkBundle.loadNibNamed("SearchWidgetView", owner: nil, options: nil)?.first as! SearchWidgetView
         searchView.modalPresentationStyle = .fullScreen
         searchView.sdk = sdk
@@ -505,7 +509,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
     }
     
     func pushFullSearchWidgetMainView(productText: String) {
-        self.findedProducts.removeAll()
+        self.foundedProducts.removeAll()
         self.filtersDataList.removeAll()
         
         sdk?.search(query: productText, sortBy: "popular", filtersSearchBy: "name", timeOut: 0.3) { searchResponse in
@@ -599,7 +603,7 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
                                                                                description: desc,
                                                                                mainImage: img,
                                                                                imagesArray: imagesProductArray)
-                    self.findedProducts.append(productSearchedByUser)
+                    self.foundedProducts.append(productSearchedByUser)
                 }
                 
                 let totalFindedProducts = searchResponse.productsTotal
@@ -719,63 +723,33 @@ public class SearchWidgetView: SearchWidgetViewController, SearchWidgetDelegate,
         }
     }
     
-    func getTopMostViewController() -> UIViewController? {
-        var topMostViewController = UIApplication.shared.keyWindow?.rootViewController
-        
-        while let presentedViewController = topMostViewController?.presentedViewController {
-            topMostViewController = presentedViewController
-        }
-        
-        return topMostViewController
-    }
-    
     @objc func filtersOpenViewTap() {
         var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
             frameworkBundle = Bundle.module
 #endif
-        //let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
         
-      //  weak var pvc = self.presentingViewController
-
-//        self.dismiss(animated: true, completion: {
-//            let vc = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
-//            //vc.modalPresentationStyle = .fullScreen
-//            vc.filtersList = self.filtersDataList
-//            pvc?.present(vc, animated: true, completion: nil)
-//        })
-        
+        guard frameworkBundle.path(forResource: "FiltersWidgetView", ofType: "nib") != nil else {
+            return
+        }
         let filtersWidgetMainView = frameworkBundle.loadNibNamed("FiltersWidgetView", owner: nil, options: nil)?.first as! FiltersWidgetView
-        
-        //let filtersWidgetMainView = FiltersWidgetView()
         filtersWidgetMainView.modalPresentationStyle = .fullScreen
         filtersWidgetMainView.filtersList = self.filtersDataList
         
         DispatchQueue.main.async {
             self.getTopMostViewController()?.present(filtersWidgetMainView, animated: true, completion: nil)
         }
-        
-        //self.view.addSubview(filtersWidgetMainView)
-        //self.present(filtersWidgetMainView, animated: true, completion: nil)
-        //self.navigationController?.pushViewController(filtersWidgetMainView, animated: true)
-            //var window: UIWindow?
-        //let pushVC = FiltersWidgetView()
-        //let navigationController = UINavigationController(rootViewController: filtersWidgetMainView)
-       // mainVC?.addSubview(filtersWidgetMainView.view)// present(filtersWidgetMainView, animated: true)
-        
-        
-//        self.view1 = UINib(nibName: self.nibName1, bundle: Bundle(for: type(of: self))).instantiate(withOwner: self, options: nil)[0] as! UIView //as! FiltersWidgetView
-//        self.view1.frame = self.view.bounds
-//        self.view1.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//        self.view.addSubview(self.view1)
-        
-        
-        //let vc = self.storyboard?.instantiateViewControllerWithIdentifier("YourViewController") as! YourViewController
-        //let navigationController = UINavigationController(rootViewController: filtersWidgetMainView)
-        //self.present(navigationController, animated: true, completion: nil)
     }
     
-    @objc private func didTapBack() {
+    func getTopMostViewController() -> UIViewController? {
+        var topMostViewController = UIApplication.shared.keyWindow?.rootViewController
+        while let presentedViewController = topMostViewController?.presentedViewController {
+            topMostViewController = presentedViewController
+        }
+        return topMostViewController
+    }
+    
+    @objc public func didTapBack() {
         UserDefaults.standard.set(false, forKey: "clientCurrencyValueDetect")
         filtersButton.isHidden = true
         self.dontNeedFiltersSelectedShowButton = true
@@ -797,13 +771,13 @@ extension SearchWidgetView: UICollectionViewDelegate {
 
 extension SearchWidgetView: UICollectionViewDataSource {
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return findedProducts.count
+        return foundedProducts.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "SearchWidgetProductCell", for: indexPath) as? SearchWidgetProductCell {
             cell.delegate = self
-            let product = findedProducts[indexPath.row]
+            let product = foundedProducts[indexPath.row]
             cell.updateCell(with: product)
             return cell
         }
@@ -811,7 +785,7 @@ extension SearchWidgetView: UICollectionViewDataSource {
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let selectedProduct = findedProducts[indexPath.row]
+        let selectedProduct = foundedProducts[indexPath.row]
         sdk?.track(event: .productView(id: selectedProduct.productId)) { trackResponse in
             switch trackResponse {
             case .success(_):
@@ -819,18 +793,18 @@ extension SearchWidgetView: UICollectionViewDataSource {
             case let .failure(error):
                 switch error {
                 case let .custom(customError):
-                    print("Error:", customError)
+                    print("Error product track:", customError)
                 default:
-                    print("Error:", error.description)
+                    print("Error product track:", error.description)
                 }
             }
         }
     }
 }
 
-extension SearchWidgetView: updateCartCountDelegate {
-    func updateCart(with count: Int) {
+extension SearchWidgetView: UpdateCartCountDelegate {
+    public func updateCart(with count: Int) {
         cartItemCount = count
-        addToCart.setBadge(with: count)
+        addToCartWidgetButton.setBadge(with: count)
     }
 }

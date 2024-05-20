@@ -1,15 +1,15 @@
 import UIKit
 
-class FiltersTagsSlideViewController: UIViewController {
+public class FiltersTagsSlideViewController: UIViewController {
     
     var filtersMenuList = [FiltersDataMenuList]()
-
-    override func viewDidLoad() {
+    
+    public override func viewDidLoad() {
         super.viewDidLoad()
         
-        print("menuList ", filtersMenuList.count)
+        //print("filtersMenuList ", filtersMenuList.count)
         for (i, menu) in filtersMenuList.enumerated(){
-            print("menu \(i+1) : \(menu.title)")
+            print("filtersMenuList \(i+1) : \(menu.title)")
         }
     }
 }

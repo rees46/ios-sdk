@@ -46,11 +46,11 @@ public class FiltersCheckboxItemView<T: FiltersCheckboxItem>: UIView {
         //let groupArrowImg = UIImage(named: "angleDownBlack", in: frameworkBundle, compatibleWith: nil)
         
         switch item.selectionState {
-        case .on:
+        case .currentFilterOn:
             selectionImageView?.image = checkboxOnImg //style.images.checkboxOn
-        case .off:
+        case .currentFilterOff:
             selectionImageView?.image = checkboxOffImg //style.images.checkboxOff
-        case .mixed:
+        case .currentFilterMixed:
             selectionImageView?.image = checkboxMixedImg //style.images.checkboxMixed
         }
         
