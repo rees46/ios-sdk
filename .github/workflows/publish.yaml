@@ -15,5 +15,7 @@ jobs:
     permissions: write-all
     with:
       podSpecFilePath: 'REES46.podspec'
+      appId: ${{ vars.PUBLIVERSIONER_ID }}
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
+      appToken: ${{ secrets.PUBLIVERSIONER_SECRET }}
