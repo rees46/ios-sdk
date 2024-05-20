@@ -18,4 +18,4 @@ jobs:
       appId: ${{ vars.PUBLIVERSIONER_ID }}
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
-      appToken: ${{ secrets.PUBLIVERSIONER_SECRET }}
+      appSecret: ${{ secrets.PUBLIVERSIONER_SECRET }}
