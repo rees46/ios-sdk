@@ -143,17 +143,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
     
     private func configure(_ textBlockViews: [TextBlockView], for slide: Slide) {
         textBlockViews.enumerated().forEach { [weak self] (index, textBlockView) in
-            guard let self = self else { return }
+            guard let self = self,
+                  let yOffset = textBlockView.textBlockObject.yOffset else { return }
             textBlockView.translatesAutoresizingMaskIntoConstraints = false
-            
             self.addSubview(textBlockView)
-            
-            guard let yOffset = textBlockView.textBlockObject.yOffset else { return }
             
             NSLayoutConstraint.activate([
                 textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 20),
                 textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor, constant: -20),
-                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor, constant: ((self.bounds.size.height / 10) + CGFloat(yOffset)))
+                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor, constant:  yOffset)
             ])
         }
     }

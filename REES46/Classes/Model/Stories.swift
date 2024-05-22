@@ -258,8 +258,8 @@ public class StoriesElement {
     let fontSize: Double?
     let textItalic: Bool?
     let textBackgroundColorOpacity: String?
-    private(set) var textBackgroundColor: UIColor?
-    let textColor: UIColor?
+    let textBackgroundColor: String?
+    let textColor: String?
     let textInput: String?
     let textAlignment: String?
     let textLineSpacing: Double?
@@ -281,8 +281,8 @@ public class StoriesElement {
         self.fontSize = Double(json["font_size"] as? String ?? "")
         self.textItalic = json["italic"] as? Bool ?? false
         self.textBackgroundColorOpacity = json["text_background_color_opacity"] as? String
-        self.textBackgroundColor = UIColor(hexString: json["text_background_color"] as? String ?? "")
-        self.textColor = UIColor(hexString: json["text_color"] as? String ?? "")
+        self.textBackgroundColor = json["text_background_color"] as? String ?? ""
+        self.textColor = json["text_color"] as? String ?? ""
         self.textInput = json["text_input"] as? String
         self.textAlignment = json["text_align"] as? String
         self.textLineSpacing = Double(json["text_line_spacing"] as? String ?? "1.5")
@@ -302,23 +302,6 @@ public class StoriesElement {
         self.products = _products.map({StoriesProduct(json: $0)})
         let _product = json["item"] as? [String: Any] ?? [:]
         self.product = StoriesPromoCodeElement(json: _product)
-        
-        applyTextBackgroundOpacity()
-    }
-    
-    private func applyTextBackgroundOpacity() {
-        guard let opacityString = textBackgroundColorOpacity,
-              let opacityValue = extractOpacity(from: opacityString),
-              let color = textBackgroundColor else { return }
-        self.textBackgroundColor = color.withAlphaComponent(opacityValue)
-    }
-    
-    private func extractOpacity(from opacityString: String) -> CGFloat? {
-        let percentageString = opacityString.trimmingCharacters(in: CharacterSet(charactersIn: "%"))
-        if let percentage = Double(percentageString) {
-            return CGFloat(percentage) / 100.0
-        }
-        return nil
     }
 }
 
@@ -445,8 +428,8 @@ enum ElementType: String {
 }
 
 enum FontType: String {
-    case monospaced = "monospaced"
-    case serif = "serif"
+    case monospaced
+    case serif
     case sansSerif = "sans-serif"
     case unknown
 }

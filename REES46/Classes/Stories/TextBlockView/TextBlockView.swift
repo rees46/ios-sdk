@@ -23,28 +23,34 @@ class TextBlockView: UIView {
             .monospaced: "Menlo",
             .serif: "Georgia",
             .sansSerif: "Arial",
-            .unknown: "Helvetica-Neue"
+            .unknown: ""
         ]
         
-        let fontName = fontMap[fontType] ?? "Helvetica-Neue"
-        var fontDescriptor = UIFontDescriptor(name: fontName, size: fontSize)
+        var fontName = fontMap[fontType] ?? ""
         
-        if textBlockObject.textBold == true {
-            fontDescriptor = fontDescriptor.withSymbolicTraits(.traitBold) ?? fontDescriptor
+        if textBlockObject.textBold == true && textBlockObject.textItalic == true {
+            fontName += "-BoldItalic"
+        } else if textBlockObject.textBold == true {
+            fontName += "-Bold"
+        } else if textBlockObject.textItalic == true {
+            fontName += "-Italic"
         }
         
-        if textBlockObject.textItalic == true {
-            fontDescriptor = fontDescriptor.withSymbolicTraits(.traitItalic) ?? fontDescriptor
-        }
-        
-        label.font = UIFont(descriptor: fontDescriptor, size: fontSize)
-        print(label.font.fontName)
-        
-        
-        label.textColor = textBlockObject.textColor
-        self.layer.cornerRadius = 5
+        label.font = UIFont(name: fontName, size: fontSize)
+        label.textColor = UIColor(hexString:textBlockObject.textColor ?? "#000000")
+        self.layer.cornerRadius = CGFloat(textBlockObject.cornerRadius)
         self.clipsToBounds = true
-        self.backgroundColor = textBlockObject.textBackgroundColor
+        self.backgroundColor = textBackgroundWithOpacity(from: textBlockObject)
+        
+        if let textLineSpacing = textBlockObject.textLineSpacing {
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = textLineSpacing
+            let attributedText = NSAttributedString(string: textBlockObject.textInput ?? "", attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle])
+            label.attributedText = attributedText
+        } else {
+            label.text = textBlockObject.textInput
+        }
+        
         label.textAlignment = {
             switch textBlockObject.textAlignment {
             case "left":
@@ -57,15 +63,6 @@ class TextBlockView: UIView {
                 return .left
             }
         }()
-        
-        if let textLineSpacing = textBlockObject.textLineSpacing {
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = textLineSpacing
-            let attributedText = NSAttributedString(string: textBlockObject.textInput ?? "", attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle])
-            label.attributedText = attributedText
-        } else {
-            label.text = textBlockObject.textInput
-        }
     }
     
     required init?(coder: NSCoder) {
@@ -80,5 +77,23 @@ class TextBlockView: UIView {
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5)
         ])
+    }
+    
+    private func textBackgroundWithOpacity(from textBlockObject: StoriesElement) -> UIColor {
+        guard let opacityString = textBlockObject.textBackgroundColorOpacity,
+              let opacityValue = extractOpacity(from: opacityString) else {
+            return UIColor(hexString: textBlockObject.textBackgroundColor ?? "") }
+        
+        let color = UIColor(hexString: textBlockObject.textBackgroundColor ?? "").withAlphaComponent(opacityValue)
+        
+        return color.withAlphaComponent(opacityValue)
+    }
+    
+    private func extractOpacity(from opacityString: String) -> CGFloat? {
+        let percentageString = opacityString.trimmingCharacters(in: CharacterSet(charactersIn: "%"))
+        if let percentage = Double(percentageString) {
+            return CGFloat(percentage) / 100.0
+        }
+        return nil
     }
 }
