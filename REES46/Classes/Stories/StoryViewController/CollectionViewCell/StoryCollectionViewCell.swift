@@ -142,6 +142,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     private func configure(_ textBlockViews: [TextBlockView], for slide: Slide) {
+        let screenSize: CGRect = UIScreen.main.bounds
+        
         textBlockViews.enumerated().forEach { [weak self] (index, textBlockView) in
             guard let self = self,
                   let yOffset = textBlockView.textBlockObject.yOffset else { return }
@@ -149,10 +151,19 @@ class StoryCollectionViewCell: UICollectionViewCell {
             self.addSubview(textBlockView)
             
             NSLayoutConstraint.activate([
-                textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 20),
-                textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor, constant: -20),
-                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor, constant:  yOffset)
+                textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor,
+                                                       constant: screenSize.width / 20),
+                textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor,
+                                                        constant: -(screenSize.width / 20))
             ])
+            
+            if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
+                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor,
+                                                   constant: StoryTextBlockConstants.constantToAvoidProgressViewWithNotch + yOffset).isActive = true
+            } else {
+                textBlockView.topAnchor.constraint(lessThanOrEqualTo: self.topAnchor,
+                                                   constant:  StoryTextBlockConstants.constantToAvoidProgressViewNoNotch + yOffset).isActive = true
+            }
         }
     }
     

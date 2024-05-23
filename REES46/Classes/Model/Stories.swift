@@ -261,7 +261,7 @@ public class StoriesElement {
     let textBackgroundColor: String?
     let textColor: String?
     let textInput: String?
-    let textAlignment: String?
+    let textAlignment: TextAlignment?
     let textLineSpacing: Double?
     let yOffset: Double?
     let type: ElementType
@@ -284,7 +284,7 @@ public class StoriesElement {
         self.textBackgroundColor = json["text_background_color"] as? String ?? ""
         self.textColor = json["text_color"] as? String ?? ""
         self.textInput = json["text_input"] as? String
-        self.textAlignment = json["text_align"] as? String
+        self.textAlignment = TextAlignment(rawValue: json["text_align"] as? String ?? TextAlignment.left.rawValue)
         self.textLineSpacing = Double(json["text_line_spacing"] as? String ?? "1.5")
         self.yOffset = Double(json["y_offset"] as? String ?? "")
         self.uID = json["uniqid"] as? String
@@ -427,7 +427,7 @@ enum ElementType: String {
     case unknown
 }
 
-enum FontType: String {
+public enum FontType: String {
     case monospaced
     case serif
     case sansSerif = "sans-serif"
@@ -438,4 +438,10 @@ enum SlideType: String {
     case image = "image"
     case video = "video"
     case unknown = ""
+}
+
+enum TextAlignment: String {
+    case left
+    case right
+    case center
 }

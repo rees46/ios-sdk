@@ -15,54 +15,8 @@ class TextBlockView: UIView {
     init(textBlockObject: StoriesElement) {
         self.textBlockObject = textBlockObject
         super.init(frame: .zero)
-        setupView()
         
-        let fontType = textBlockObject.fontType ?? .unknown
-        let fontSize = textBlockObject.fontSize ?? 14
-        let fontMap: [FontType: String] = [
-            .monospaced: "Menlo",
-            .serif: "Georgia",
-            .sansSerif: "Arial",
-            .unknown: ""
-        ]
-        
-        var fontName = fontMap[fontType] ?? ""
-        
-        if textBlockObject.textBold == true && textBlockObject.textItalic == true {
-            fontName += "-BoldItalic"
-        } else if textBlockObject.textBold == true {
-            fontName += "-Bold"
-        } else if textBlockObject.textItalic == true {
-            fontName += "-Italic"
-        }
-        
-        label.font = UIFont(name: fontName, size: fontSize)
-        label.textColor = UIColor(hexString:textBlockObject.textColor ?? "#000000")
-        self.layer.cornerRadius = CGFloat(textBlockObject.cornerRadius)
-        self.clipsToBounds = true
-        self.backgroundColor = textBackgroundWithOpacity(from: textBlockObject)
-        
-        if let textLineSpacing = textBlockObject.textLineSpacing {
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = textLineSpacing
-            let attributedText = NSAttributedString(string: textBlockObject.textInput ?? "", attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle])
-            label.attributedText = attributedText
-        } else {
-            label.text = textBlockObject.textInput
-        }
-        
-        label.textAlignment = {
-            switch textBlockObject.textAlignment {
-            case "left":
-                return .left
-            case "right":
-                return .right
-            case "center":
-                return .center
-            default:
-                return .left
-            }
-        }()
+        configureLabel()
     }
     
     required init?(coder: NSCoder) {
@@ -72,28 +26,61 @@ class TextBlockView: UIView {
     private func setupView() {
         addSubview(label)
         NSLayoutConstraint.activate([
-            label.topAnchor.constraint(equalTo: topAnchor, constant: 2),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5)
+            label.topAnchor.constraint(equalTo: topAnchor, constant: StoryTextBlockConstants.topAnchorOffsetConstant),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: StoryTextBlockConstants.bottomAnchorOffsetConstant),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: StoryTextBlockConstants.leftAnchorOffsetConstant),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: StoryTextBlockConstants.rightAnchorOffsetConstant)
         ])
     }
     
-    private func textBackgroundWithOpacity(from textBlockObject: StoriesElement) -> UIColor {
-        guard let opacityString = textBlockObject.textBackgroundColorOpacity,
-              let opacityValue = extractOpacity(from: opacityString) else {
-            return UIColor(hexString: textBlockObject.textBackgroundColor ?? "") }
+    private func configureLabel() {
+        let fontType = textBlockObject.fontType ?? .unknown
+        let fontSize = textBlockObject.fontSize ?? UIFont.systemFontSize
         
-        let color = UIColor(hexString: textBlockObject.textBackgroundColor ?? "").withAlphaComponent(opacityValue)
+        let font = SdkConfiguration.stories.getFont(
+            for: fontType,
+            isBold: textBlockObject.textBold ?? false,
+            isItalic: textBlockObject.textItalic ?? false,
+            fontSize: fontSize
+        )
         
-        return color.withAlphaComponent(opacityValue)
+        label.font = font
+        label.textColor = textBlockObject.textColor != nil
+        ? UIColor(hexString: textBlockObject.textColor!)
+        : .black
+        
+        self.layer.cornerRadius = CGFloat(textBlockObject.cornerRadius)
+        self.clipsToBounds = true
+        self.backgroundColor = textBlockObject.textBackgroundColor != nil
+        ? UIColor(hexString: textBlockObject.textBackgroundColor!).withOpacity(from: textBlockObject.textBackgroundColorOpacity ?? "")
+        : UIColor.clear
+        
+        if let textLineSpacing = textBlockObject.textLineSpacing,
+           let textBlockInput = textBlockObject.textInput {
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineSpacing = textLineSpacing
+            let attributedText = NSAttributedString(string: textBlockInput,
+                                                    attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle])
+            label.attributedText = attributedText
+        } else {
+            label.text = textBlockObject.textInput
+        }
+        
+        label.textAlignment = {
+            switch textBlockObject.textAlignment {
+            case .left:
+                return .left
+            case .right:
+                return .right
+            case .center:
+                return .center
+            default:
+                return .left
+            }
+        }()
     }
     
-    private func extractOpacity(from opacityString: String) -> CGFloat? {
-        let percentageString = opacityString.trimmingCharacters(in: CharacterSet(charactersIn: "%"))
-        if let percentage = Double(percentageString) {
-            return CGFloat(percentage) / 100.0
-        }
-        return nil
+    override func layoutSubviews() {
+        setupView()
     }
 }

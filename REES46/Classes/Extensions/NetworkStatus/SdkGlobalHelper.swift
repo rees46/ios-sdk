@@ -193,6 +193,23 @@ extension UIColor {
         return self
     }
     
+    public func withOpacity(from opacityString: String) -> UIColor {
+        guard let opacityValue = extractOpacity(from: opacityString) else {
+            return self
+        }
+        let colorWithOpacity = self.withAlphaComponent(opacityValue)
+        
+        return colorWithOpacity
+    }
+    
+    private func extractOpacity(from opacityString: String) -> CGFloat? {
+        let percentageString = opacityString.trimmingCharacters(in: CharacterSet(charactersIn: "%"))
+        if let percentage = Double(percentageString) {
+            return CGFloat(percentage) / 100.0
+        }
+        return nil
+    }
+    
     public static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
     public static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)
     public static let sdkDefaultOrangeColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
