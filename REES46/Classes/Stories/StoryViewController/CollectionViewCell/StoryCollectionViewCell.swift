@@ -127,7 +127,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         let textBlockViews: [TextBlockView] = slide.elements
             .filter { $0.type == .textBlock }
-            .map { TextBlockView(textBlockObject: $0) }
+            .map { TextBlockConfiguration(from: $0) }
+            .map { TextBlockView(with: $0) }
         if !textBlockViews.isEmpty {
             configure(textBlockViews, for: slide)
         }
@@ -145,16 +146,16 @@ class StoryCollectionViewCell: UICollectionViewCell {
         let screenSize: CGRect = UIScreen.main.bounds
         
         textBlockViews.enumerated().forEach { [weak self] (index, textBlockView) in
-            guard let self = self,
-                  let yOffset = textBlockView.textBlockObject.yOffset else { return }
+            guard let self = self else { return }
+            let yOffset = textBlockView.yOffset
             textBlockView.translatesAutoresizingMaskIntoConstraints = false
             self.addSubview(textBlockView)
             
             NSLayoutConstraint.activate([
                 textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor,
-                                                       constant: screenSize.width / 20),
+                                                       constant: screenSize.width / StoryTextBlockConstants.aspectRationRelatedConstant),
                 textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor,
-                                                        constant: -(screenSize.width / 20))
+                                                        constant: -(screenSize.width / StoryTextBlockConstants.aspectRationRelatedConstant))
             ])
             
             if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {

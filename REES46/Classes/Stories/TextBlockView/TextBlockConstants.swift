@@ -1,10 +1,3 @@
-//
-//  TextBlockConstants.swift
-//  FirebaseCore
-//
-//  Created by  Максим Мартынов on 23.05.2024.
-//
-
 import Foundation
 import UIKit
 
@@ -22,5 +15,6 @@ public struct StoryTextBlockConstants {
     public static let bottomAnchorOffsetConstant: CGFloat = -2
     public static let constantToAvoidProgressViewNoNotch: CGFloat = 44
     public static let constantToAvoidProgressViewWithNotch: CGFloat = 10
+    public static let aspectRationRelatedConstant: CGFloat = 20
 }
 

@@ -2,8 +2,7 @@ import UIKit
 import Foundation
 
 class TextBlockView: UIView {
-    
-    let textBlockObject: StoriesElement
+    let yOffset: CGFloat
     
     private let label: UILabel = {
         let label = UILabel()
@@ -12,11 +11,10 @@ class TextBlockView: UIView {
         return label
     }()
 
-    init(textBlockObject: StoriesElement) {
-        self.textBlockObject = textBlockObject
+    init(with textBlockConfiguration: TextBlockConfiguration) {
+        self.yOffset = textBlockConfiguration.appearanceConfiguration.yOffset
         super.init(frame: .zero)
-        
-        configureLabel()
+        configureLabel(with: textBlockConfiguration)
     }
     
     required init?(coder: NSCoder) {
@@ -25,6 +23,7 @@ class TextBlockView: UIView {
     
     private func setupView() {
         addSubview(label)
+        
         NSLayoutConstraint.activate([
             label.topAnchor.constraint(equalTo: topAnchor, constant: StoryTextBlockConstants.topAnchorOffsetConstant),
             label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: StoryTextBlockConstants.bottomAnchorOffsetConstant),
@@ -33,51 +32,14 @@ class TextBlockView: UIView {
         ])
     }
     
-    private func configureLabel() {
-        let fontType = textBlockObject.fontType ?? .unknown
-        let fontSize = textBlockObject.fontSize ?? UIFont.systemFontSize
-        
-        let font = SdkConfiguration.stories.getFont(
-            for: fontType,
-            isBold: textBlockObject.textBold ?? false,
-            isItalic: textBlockObject.textItalic ?? false,
-            fontSize: fontSize
-        )
-        
-        label.font = font
-        label.textColor = textBlockObject.textColor != nil
-        ? UIColor(hexString: textBlockObject.textColor!)
-        : .black
-        
-        self.layer.cornerRadius = CGFloat(textBlockObject.cornerRadius)
-        self.clipsToBounds = true
-        self.backgroundColor = textBlockObject.textBackgroundColor != nil
-        ? UIColor(hexString: textBlockObject.textBackgroundColor!).withOpacity(from: textBlockObject.textBackgroundColorOpacity ?? "")
-        : UIColor.clear
-        
-        if let textLineSpacing = textBlockObject.textLineSpacing,
-           let textBlockInput = textBlockObject.textInput {
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.lineSpacing = textLineSpacing
-            let attributedText = NSAttributedString(string: textBlockInput,
-                                                    attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle])
-            label.attributedText = attributedText
-        } else {
-            label.text = textBlockObject.textInput
-        }
-        
-        label.textAlignment = {
-            switch textBlockObject.textAlignment {
-            case .left:
-                return .left
-            case .right:
-                return .right
-            case .center:
-                return .center
-            default:
-                return .left
-            }
-        }()
+    private func configureLabel(with config: TextBlockConfiguration) {
+        label.font = config.fontConfiguration.font
+        label.textColor = config.appearanceConfiguration.textColor
+        self.layer.cornerRadius = config.appearanceConfiguration.cornerRadius
+        self.clipsToBounds = config.appearanceConfiguration.clipsToBounds
+        self.backgroundColor = config.appearanceConfiguration.backgroundColor
+        label.attributedText = config.textConfiguration.text
+        label.textAlignment = config.textConfiguration.textAlignment
     }
     
     override func layoutSubviews() {
