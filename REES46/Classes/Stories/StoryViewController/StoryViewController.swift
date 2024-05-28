@@ -198,13 +198,41 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 0).isActive = true
 
         pageIndicator.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 11).isActive = true
-        NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: -11).isActive = true
-        NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.notAnAttribute, multiplier: 1, constant: 4).isActive = true
+        NSLayoutConstraint(item: pageIndicator, 
+                           attribute: NSLayoutConstraint.Attribute.left,
+                           relatedBy: NSLayoutConstraint.Relation.equal,
+                           toItem: view, attribute: NSLayoutConstraint.Attribute.left,
+                           multiplier: 1,
+                           constant: 11).isActive = true
+        NSLayoutConstraint(item: pageIndicator, 
+                           attribute: NSLayoutConstraint.Attribute.right,
+                           relatedBy: NSLayoutConstraint.Relation.equal,
+                           toItem: view, attribute: NSLayoutConstraint.Attribute.right,
+                           multiplier: 1,
+                           constant: -11).isActive = true
+        NSLayoutConstraint(item: pageIndicator, 
+                           attribute: NSLayoutConstraint.Attribute.height,
+                           relatedBy: NSLayoutConstraint.Relation.equal,
+                           toItem: nil,
+                           attribute: NSLayoutConstraint.Attribute.notAnAttribute,
+                           multiplier: 1,
+                           constant: 4).isActive = true
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
-            NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 62).isActive = true }
+            NSLayoutConstraint(item: pageIndicator, 
+                               attribute: NSLayoutConstraint.Attribute.top,
+                               relatedBy: NSLayoutConstraint.Relation.equal, 
+                               toItem: view,
+                               attribute: NSLayoutConstraint.Attribute.top,
+                               multiplier: 1,
+                               constant: 62).isActive = true }
         else {
-            NSLayoutConstraint(item: pageIndicator, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 40).isActive = true
+            NSLayoutConstraint(item: pageIndicator, 
+                               attribute: NSLayoutConstraint.Attribute.top,
+                               relatedBy: NSLayoutConstraint.Relation.equal,
+                               toItem: view,
+                               attribute: NSLayoutConstraint.Attribute.top,
+                               multiplier: 1,
+                               constant: 40).isActive = true
         }
         
         closeButton.translatesAutoresizingMaskIntoConstraints = false

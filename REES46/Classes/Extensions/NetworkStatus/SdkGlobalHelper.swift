@@ -183,15 +183,6 @@ extension UIColor {
         return (red, green, blue, alpha)
     }
     
-    public func withBrightness(brightness: CGFloat) -> UIColor {
-        var H: CGFloat = 0, S: CGFloat = 0, B: CGFloat = 0, A: CGFloat = 0
-        if getHue(&H, saturation: &S, brightness: &B, alpha: &A) {
-            B += (brightness - 1.0)
-            B = max(min(B, 1.0), 0.0)
-            return UIColor(hue: H, saturation: S, brightness: B, alpha: A)
-        }
-        return self
-    }
     
     public static let sdkDefaultWhiteColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.9)
     public static let sdkDefaultBlackColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.9)

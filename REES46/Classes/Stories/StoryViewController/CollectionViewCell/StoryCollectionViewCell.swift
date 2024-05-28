@@ -127,7 +127,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         let textBlockViews: [TextBlockView] = slide.elements
             .filter { $0.type == .textBlock }
-            .map { TextBlockView(textBlockObject: $0) }
+            .map { TextBlockConfiguration(from: $0) }
+            .map { TextBlockView(with: $0) }
         if !textBlockViews.isEmpty {
             configure(textBlockViews, for: slide)
         }
@@ -142,19 +143,28 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     private func configure(_ textBlockViews: [TextBlockView], for slide: Slide) {
+        let screenSize: CGRect = UIScreen.main.bounds
+        
         textBlockViews.enumerated().forEach { [weak self] (index, textBlockView) in
             guard let self = self else { return }
+            let yOffset = textBlockView.yOffset
             textBlockView.translatesAutoresizingMaskIntoConstraints = false
-            
             self.addSubview(textBlockView)
             
-            guard let yOffset = textBlockView.textBlockObject.yOffset else { return }
-            
             NSLayoutConstraint.activate([
-                textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 20),
-                textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor, constant: -20),
-                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor, constant: ((self.bounds.size.height / 10) + CGFloat(yOffset)))
+                textBlockView.leadingAnchor.constraint(equalTo: self.leadingAnchor,
+                                                       constant: screenSize.width / StoryTextBlockConstants.aspectRationRelatedConstant),
+                textBlockView.trailingAnchor.constraint(lessThanOrEqualTo: self.trailingAnchor,
+                                                        constant: -(screenSize.width / StoryTextBlockConstants.aspectRationRelatedConstant))
             ])
+            
+            if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
+                textBlockView.topAnchor.constraint(equalTo: self.safeAreaLayoutGuide.topAnchor,
+                                                   constant: StoryTextBlockConstants.constantToAvoidProgressViewWithNotch + yOffset).isActive = true
+            } else {
+                textBlockView.topAnchor.constraint(lessThanOrEqualTo: self.topAnchor,
+                                                   constant:  StoryTextBlockConstants.constantToAvoidProgressViewNoNotch + yOffset).isActive = true
+            }
         }
     }
     
