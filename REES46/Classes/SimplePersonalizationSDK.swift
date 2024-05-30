@@ -588,6 +588,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["items"] = tempItems
                 params["full_cart"] = "true"
                 paramEvent = "cart"
+            case let .synchronizeFavorites(items):
+                var tempItems: [[String: Any]] = []
+                for (_, item) in items.enumerated() {
+                    tempItems.append([
+                        "id": item.productId
+                    ])
+                }
+                params["items"] = tempItems
+                params["full_wish"] = "true"
+                paramEvent = "wish"
             }
             
             params["event"] = paramEvent

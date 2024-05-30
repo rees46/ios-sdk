@@ -330,6 +330,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                //fatalError("    track cart syncronized is failure")
 //            }
 //        }
+//        sdk.track(event: .synchronizeFavorites(items: [CartItem(productId: "784")])) { trackResponse in
+//            print("   favorites syncronized callback")
+//            switch trackResponse {
+//            case let .success(response):
+//                print("     track favorites syncronized is success")
+//                withExtendedLifetime(response) {
+//                    //print("Response:", response) //Uncomment it if you want to see response
+//                }
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//                //fatalError("    track favorites syncronized is failure")
+//            }
+//        }
 //
 //        sdk.track(event: .orderCreated(orderId: "123", totalValue: 33.3, products: [(id: "644", amount: 3, price: 500)], deliveryAddress: "Address" , deliveryType: "post", promocode: "999", paymentType: "cash", taxFree: true)) { trackResponse in
 //            print("   Order created callback")
