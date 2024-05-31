@@ -446,6 +446,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                //fatalError("    get products list is failure")
 //            }
 //        }
+//        sdk.getProductsFromCart { result in
+//            switch result {
+//            case .success(let items):
+//                print("cart items: \n \(items)")
+//            case .failure(let error):
+//                print("error: \(error)")
+//            }
+//        }
 //
 //        print("8. Testing product info by item_id")
 //        sdk.getProductInfo(id: "1930") { productInfoResponse in

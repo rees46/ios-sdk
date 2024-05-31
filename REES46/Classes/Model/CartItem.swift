@@ -8,4 +8,9 @@ public struct CartItem {
         self.productId = productId
         self.quantity = quantity
     }
+    
+    public init(json: [String: Any]) {
+        self.productId = json["uniqid"] as? String ?? ""
+        self.quantity = json["quantity"] as? Int ?? 1
+    }
 }
