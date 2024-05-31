@@ -9,3 +9,4 @@ jobs:
     permissions: write-all
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
+      googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
