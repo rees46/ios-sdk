@@ -31,38 +31,26 @@ public class NotificationService: NotificationServiceProtocol {
     public var pushActionDelegate: NotificationServicePushDelegate?
     
     public let sdk: PersonalizationSDK
+    private let notificationRegistrar: NotificationRegistrar
     
     public init(sdk: PersonalizationSDK) {
         self.sdk = sdk
+        self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
+        setupNotificationCategories()
+    }
+
+    public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
+        notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
+    }
+
+    private func setupNotificationCategories() {
         requireUserPrivacy { res in
             if res {
                 let categoryIdentifier = "carousel"
                 let carouselNext = UNNotificationAction(identifier: "carousel.next", title: "Next", options: [])
                 let carouselPrevious = UNNotificationAction(identifier: "carousel.previous", title: "Previous", options: [])
-
                 let carouselCategory = UNNotificationCategory(identifier: categoryIdentifier, actions: [carouselNext, carouselPrevious], intentIdentifiers: [], options: [])
                 UNUserNotificationCenter.current().setNotificationCategories([carouselCategory])
-            }
-        }
-    }
-
-    public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
-        let tokenParts = deviceToken.map { data -> String in
-            String(format: "%02.2hhx", data)
-        }
-
-        let token = tokenParts.joined()
-        sdk.setPushTokenNotification(token: token) { tokenResponse in
-            switch tokenResponse {
-            case .success():
-                return
-            case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("SDK Push Token Error:", customError)
-                default:
-                    print("SDK Push Token server, \(error.description)\n")
-                }
             }
         }
     }
