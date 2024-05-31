@@ -885,7 +885,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/cart"
-            var params: [String : String] = [
+            let params: [String : String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId
             ]
