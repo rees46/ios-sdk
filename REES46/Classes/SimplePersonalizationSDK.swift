@@ -880,6 +880,38 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
+        sessionQueue.addOperation {
+            let path = "products/cart"
+            var params: [String : String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId
+            ]
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+            
+            self.getRequest(path: path, params: params) { result in
+                switch result {
+                case let .success(responseJson):
+                    guard let data = responseJson["data"] as? [String: Any],
+                          let itemsJSON = data["items"] as? [[String: Any]]
+                    else {
+                        completion(.failure(.custom(error: "cant find JSON data")))
+                        return
+                    }
+                    let items = itemsJSON.map({ CartItem(json: $0)})
+                    completion(.success(items))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
     // Send tracking event when user clicked mobile push notification
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
