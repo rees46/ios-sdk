@@ -1,8 +1,6 @@
-//
-//  ImageLoading.swift
-//  FirebaseCore
-//
-//  Created by Elizaveta Eremyonok on 03.06.2024.
-//
-
 import Foundation
+import UIKit
+
+protocol ImageLoading {
+    func loadImage(from url: URL, completion: @escaping (Result<UIImage, Error>) -> Void)
+}
