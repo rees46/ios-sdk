@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-class SlidePresenter {
+public class SlidePresenter {
     private let imageLoader: ImageLoading
     weak var view: SlideView?
 

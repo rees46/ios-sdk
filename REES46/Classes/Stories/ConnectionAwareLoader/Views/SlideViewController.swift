@@ -1,6 +1,6 @@
 import UIKit
 
-class SlideViewController: UIViewController, SlideView {
+public class SlideViewController: UIViewController, SlideView {
 
     var presenter: SlidePresenter!
     var imageView: UIImageView!
@@ -10,10 +10,16 @@ class SlideViewController: UIViewController, SlideView {
     var loadTimer: Timer?
     var autoReloadTimer: Timer?
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
+            setupUI()
+        super.viewDidLoad()
+        
         setupUI()
         presenter.loadImage(from: URL(string: "https://example.com/image.jpg")!)
+        
+        let loadTimer = Timer.scheduledTimer(timeInterval: 15, target: self, selector: #selector(checkLoadingTimeout), userInfo: nil, repeats: false)
+            self.loadTimer = loadTimer
     }
 
     func setupUI() {
@@ -65,5 +71,10 @@ class SlideViewController: UIViewController, SlideView {
 
     @objc func reloadData() {
         presenter.loadImage(from: URL(string: "https://example.com/image.jpg")!)
+    }
+    @objc func checkLoadingTimeout() {
+        if imageView.image == nil {
+            showLoadingIndicator()
+        }
     }
 }

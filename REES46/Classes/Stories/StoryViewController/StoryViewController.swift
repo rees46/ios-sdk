@@ -93,6 +93,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     private var carouselProductsSlideCollectionView = CarouselCollectionView()
     
     private let storiesSlideReloadIndicator = StoriesSlideReloadIndicator()
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
