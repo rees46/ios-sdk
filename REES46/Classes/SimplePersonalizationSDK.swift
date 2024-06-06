@@ -712,7 +712,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
     }
 
-    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "recommend/\(blockId)"
             var params = [
@@ -738,6 +738,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["locations"] = locations
             }
             
+            if extended {
+                params["extended"] = "true"
+                if withLocations {
+                    params["with_locations"] = "true"
+                }
+            } else {
+                params.removeValue(forKey: "with_locations")
+            }
+
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true

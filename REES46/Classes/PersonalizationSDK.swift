@@ -89,7 +89,7 @@ public protocol PersonalizationSDK {
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
+    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void)
     func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping(Result<ProductsListResponse, SDKError>) -> Void)
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SDKError>) -> Void)
@@ -130,8 +130,8 @@ public extension PersonalizationSDK {
         setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, lastName: lastName, location: location, gender: gender, fbID: fbID, vkID: vkID, telegramId: telegramId, loyaltyCardLocation: loyaltyCardLocation, loyaltyStatus: loyaltyStatus, loyaltyBonuses: loyaltyBonuses, loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel, boughtSomething: boughtSomething, userId: userId, customProperties: customProperties, completion: completion)
     }
 
-    func recommend(blockId: String, currentProductId: String? = nil, currentCategoryId: String? = nil, locations: String? = nil, imageSize: String? = nil, timeOut: Double? = nil, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
-        recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, completion: completion)
+    func recommend(blockId: String, currentProductId: String? = nil, currentCategoryId: String? = nil, locations: String? = nil, imageSize: String? = nil, timeOut: Double? = nil, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+        recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
     }
     
     func suggest(query: String, locations: String? = nil, timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {
