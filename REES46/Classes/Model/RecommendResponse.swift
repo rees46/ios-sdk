@@ -3,6 +3,7 @@ import Foundation
 public struct RecommenderResponse {
     public var recommended: [Recommended]
     public var title: String = ""
+    public var locations: [Location]?
 
     init(json: [String: Any]) {
         let recs = json["recommends"] as? [[String: Any]] ?? []
@@ -12,6 +13,14 @@ public struct RecommenderResponse {
         }
         recommended = recsTemp
         title = (json["title"] as? String) ?? ""
+        
+        if let locationsArray = json["locations"] as? [[String: Any]] {
+            var locationsTemp = [Location]()
+            for locationItem in locationsArray {
+                locationsTemp.append(Location(json: locationItem))
+            }
+            locations = locationsTemp
+        }
     }
 }
 
@@ -27,6 +36,7 @@ public struct Recommended {
     public var url: String = ""
     public var deeplinkIos: String = ""
     public var categories = [Category]()
+    public var locations = [Location]()
 
     public var price: Double = 0
     public var priceFormatted: String?
@@ -81,6 +91,20 @@ public struct Recommended {
         }
         categories = categoriesTemp
         
+        if let withLocations = json["with_locations"] as? Bool, withLocations,
+                   let extended = json["extended"] as? Bool, extended,
+                   let locationsArray = json["locations"] as? [[String: Any]] {
+                    self.locations = locationsArray.map { Location(json: $0) }
+                }
+
+                if let locationsArray = json["locations"] as? [[String: Any]] {
+                            var locationsTemp = [Location]()
+                            for item in locationsArray {
+                                locationsTemp.append(Location(json: item))
+                            }
+                            locations = locationsTemp
+                        }
+
         fashionOriginalSizes = json["fashion_original_sizes"] as? [String] ?? []
         fashionSizes = json["fashion_sizes"] as? [String] ?? []
         fashionColors = json["fashion_colors"] as? [String] ?? []
