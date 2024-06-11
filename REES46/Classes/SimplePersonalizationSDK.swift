@@ -126,15 +126,25 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return shopId
     }
 
-    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setPushTokenNotification(
+        token: String,
+        isFirebaseNotification: Bool = false,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
-            let params = [
+            var params = [
                 "shop_id": self.shopId,
                 "did": self.deviceId,
-                "token": token,
-                "platform": platform ?? "ios",
+                "token": token
             ]
+            
+            // Устанавливаем платформу в зависимости от значения isFirebaseNotification
+            if isFirebaseNotification {
+                params["platform"] = "ios_firebase"
+            } else {
+                params["platform"] = "ios"
+            }
             
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
@@ -150,33 +160,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
-    
-    func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "mobile_push_tokens"
-            let params = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "token": token,
-                "platform": "ios_firebase",
-            ]
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case .success:
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
-    }
-    
+
     func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "notifications"
@@ -885,7 +869,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/cart"
-            let params: [String : String] = [
+            var params: [String : String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId
             ]

@@ -66,7 +66,7 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-        sdk.setFirebasePushToken(token: fcmToken ?? "") { tokenResponse in
+        sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in
             switch tokenResponse {
             case .success():
                 return

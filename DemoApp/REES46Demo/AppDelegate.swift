@@ -610,6 +610,7 @@ extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         // FIREBASE TOKEN FOR TEST
         fcmGlobalToken = fcmToken ?? ""
+        print("Firebase Notification Token:", fcmGlobalToken)
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
         // FIREBASE TOKEN SEND TEST
         // notificationService?.didReceiveRegistrationFCMToken(fcmToken: fcmToken)
