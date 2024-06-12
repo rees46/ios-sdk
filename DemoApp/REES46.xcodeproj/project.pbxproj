@@ -15,6 +15,7 @@
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
 		751DABB62C187BE5006109EC /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 751DABB52C187BE5006109EC /* GoogleService-Info.plist */; };
+		751DABB82C1A2655006109EC /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 751DABB72C1A2655006109EC /* README.md */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
 		9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */; };
 		9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */; };
@@ -91,6 +92,7 @@
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		698BA54B2E0AE8F8FCD07BC8 /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		751DABB52C187BE5006109EC /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "../../../Downloads/GoogleService-Info.plist"; sourceTree = "<group>"; };
+		751DABB72C1A2655006109EC /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -180,6 +182,7 @@
 		607FACC71AFB9204008FA782 = {
 			isa = PBXGroup;
 			children = (
+				751DABB72C1A2655006109EC /* README.md */,
 				751DABB52C187BE5006109EC /* GoogleService-Info.plist */,
 				9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */,
 				9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */,
@@ -441,6 +444,7 @@
 				E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */,
 				E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */,
 				E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */,
+				751DABB82C1A2655006109EC /* README.md in Resources */,
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
 			);

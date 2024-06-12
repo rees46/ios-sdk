@@ -139,7 +139,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "token": token
             ]
             
-            // Устанавливаем платформу в зависимости от значения isFirebaseNotification
             if isFirebaseNotification {
                 params["platform"] = "ios_firebase"
             } else {
