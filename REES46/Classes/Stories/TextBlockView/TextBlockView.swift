@@ -10,25 +10,26 @@ class TextBlockView: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
+    
     init(with textBlockConfiguration: TextBlockConfiguration) {
         self.yOffset = textBlockConfiguration.appearanceConfiguration.yOffset
         super.init(frame: .zero)
         configureLabel(with: textBlockConfiguration)
+        setupView(hasBackground: textBlockConfiguration.appearanceConfiguration.backgroundColor != .clear)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func setupView() {
+    private func setupView(hasBackground: Bool) {
         addSubview(label)
         
         NSLayoutConstraint.activate([
-            label.topAnchor.constraint(equalTo: topAnchor, constant: StoryTextBlockConstants.topAnchorOffsetConstant),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: StoryTextBlockConstants.bottomAnchorOffsetConstant),
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: StoryTextBlockConstants.leftAnchorOffsetConstant),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: StoryTextBlockConstants.rightAnchorOffsetConstant)
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: hasBackground ? 16 : 0),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: hasBackground ? -16 : 0)
         ])
     }
     
@@ -42,7 +43,12 @@ class TextBlockView: UIView {
         label.textAlignment = config.textConfiguration.textAlignment
     }
     
+    override var intrinsicContentSize: CGSize {
+        let labelSize = label.intrinsicContentSize
+        return CGSize(width: labelSize.width + 32, height: labelSize.height + 16)
+    }
+    
     override func layoutSubviews() {
-        setupView()
+        super.layoutSubviews()
     }
 }

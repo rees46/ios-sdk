@@ -48,17 +48,17 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private var code: String = ""
     
     private var isInDownloadMode: Bool = true
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         commonInit()
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         commonInit()
     }
-
+    
     private func commonInit() {
         self.addSubview(collectionView)
         
@@ -77,7 +77,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     func willEnterForeground() {
         //
     }
-
+    
     @objc
     func didEnterBackground() {
         //
@@ -152,7 +152,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
             self.collectionView.backgroundColor = UIColor(red: hex.red, green: hex.green, blue: hex.blue, alpha: 0)
         }
     }
-
+    
     private func loadStoriesData() {
         sdk?.getStories(code: code) { result in
             switch result {
@@ -188,11 +188,11 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     public func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
-
+    
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return isInDownloadMode ? 4 : stories?.count ?? 0
     }
-
+    
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
         if (SdkConfiguration.stories.labelWidth > SdkConfiguration.stories.iconSize) {
             return SdkConfiguration.stories.labelWidth / 2 + SdkConfiguration.stories.iconMarginX * 2
@@ -242,7 +242,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         
         return cell
     }
-
+    
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
         if let currentStory = stories?[indexPath.row] {
@@ -314,7 +314,7 @@ extension StoriesView: StoriesViewLinkProtocol {
         self.communicationDelegate?.receiveIosLink(text: url)
         print("\nSDK Received linkIos for external use: \(url)\n\n")
     }
-
+    
     public func reloadStoriesCollectionSubviews() {
         UICollectionView.performWithoutAnimation {
             self.collectionView.layoutIfNeeded()
