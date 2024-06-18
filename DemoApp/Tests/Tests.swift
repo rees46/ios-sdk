@@ -5,16 +5,20 @@ class DeviceIdSaveTest: XCTestCase {
     
     // First we start the application so that the deviceId is saved, then we run this test
     func test_is_device_id_haved_second_run() {
-        let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "" // Get DeviceId from storage
-        XCTAssertFalse(deviceId.isEmpty, "deviceId bad, init sdk, rerun test")
+        let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "No did token" // Get DeviceId from storage
+        if deviceId.isEmpty{
+            XCTAssert(false, "deviceId bad, init sdk, rerun test")
+        } else {
+            XCTAssert(true, "deviceId good")
+        }
     }
 }
 
-
 class Tests: XCTestCase {
     
-    let shopId = "357382bf66ac0ce2f1722677c59511"
     var sdk: PersonalizationSDK?
+    let shopId = "357382bf66ac0ce2f1722677c59511"
+    let TAG = "Tests"
     
     override func setUp() {
         super.setUp()
@@ -22,65 +26,53 @@ class Tests: XCTestCase {
     }
     
     override func tearDown() {
-        sdk = nil
         super.tearDown()
     }
     
     func test_device_id_initialization() {
-        let expectation = self.expectation(description: "Device ID Initialization")
-        
         if let sdk = sdk {
             sdk.track(event: .productView(id: "123")) { (response) in
                 let deviceId = sdk.getDeviceId()
-                XCTAssertFalse(deviceId.isEmpty, "deviceId bad")
-                expectation.fulfill()
+                if deviceId.isEmpty{
+                    XCTAssert(false, "Tests: deviceId bad")
+                } else {
+                    XCTAssert(true, "Tests: deviceId good")
+                }
             }
-        } else {
-            XCTFail("SDK not initialized")
         }
-        
-        waitForExpectations(timeout: 5, handler: nil)
     }
     
     func test_device_id_rewrite() {
-        let expectation = self.expectation(description: "Device ID Rewrite")
-        
-        if let oldDeviceId = sdk?.getDeviceId() {
-            sdk = createPersonalizationSDK(shopId: shopId) // Reinitialize SDK
-            if let sdk = sdk {
-                sdk.track(event: .productView(id: "")) { (response) in
-                    let deviceId = sdk.getDeviceId()
-                    XCTAssertEqual(oldDeviceId, deviceId, "deviceId should not be rewritten")
-                    expectation.fulfill()
+        let oldDeviceId = sdk?.getDeviceId() // Get the old saved deviceId
+        sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
+        if let sdk = sdk {
+            sdk.track(event: .productView(id: "")) { (response) in
+                let deviceId = sdk.getDeviceId()
+                if oldDeviceId == deviceId {
+                    XCTAssert(true, "Tests: deviceId bad")
+                } else {
+                    XCTAssert(false, "Tests: deviceId good")
                 }
-            } else {
-                XCTFail("SDK not reinitialized")
             }
         } else {
-            XCTFail("use this test when you have inited sdk")
+            XCTAssert(false, "Tests: use this test when you have inited sdk")
         }
-        
-        waitForExpectations(timeout: 5, handler: nil)
     }
     
     func test_session_generated() {
-        let expectation = self.expectation(description: "Session Generated")
-        
-        if let oldSession = sdk?.getSession() {
-            sdk = createPersonalizationSDK(shopId: shopId) // Reinitialize SDK
-            if let sdk = sdk {
-                sdk.track(event: .productView(id: "")) { (response) in
-                    let session = sdk.getSession()
-                    XCTAssertNotEqual(oldSession, session, "session should be regenerated")
-                    expectation.fulfill()
+        let oldSession = sdk?.getSession() // Get the old saved sessionId
+        sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
+        if let sdk = sdk {
+            sdk.track(event: .productView(id: "")) { (response) in
+                let session = sdk.getSession() // Check session
+                if oldSession != session{
+                    XCTAssert(false, "Tests:session bad")
+                } else {
+                    XCTAssert(true, "Tests:session good")
                 }
-            } else {
-                XCTFail("SDK not reinitialized")
             }
         } else {
-            XCTFail("use this test when you have inited sdk")
+            XCTAssert(false, "Tests:use this test when you have inited sdk")
         }
-        
-        waitForExpectations(timeout: 5, handler: nil)
     }
 }

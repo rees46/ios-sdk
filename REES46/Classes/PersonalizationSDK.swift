@@ -119,17 +119,17 @@ public protocol PersonalizationSDK {
 
 public extension PersonalizationSDK {
     func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
-       setPushTokenNotification(token: token, platform: platform, completion: completion)
+        setPushTokenNotification(token: token, platform: platform, completion: completion)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }
-
+    
     func setProfileData(userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, birthday: Date? = nil, age: Int? = nil, firstName: String? = nil, lastName: String? = nil, location: String? = nil, gender: Gender? = nil, fbID: String? = nil, vkID: String? = nil, telegramId: String? = nil, loyaltyCardLocation: String? = nil, loyaltyStatus: String? = nil, loyaltyBonuses: Int? = nil, loyaltyBonusesToNextLevel: Int? = nil, boughtSomething: Bool? = nil, userId: String? = nil, customProperties: [String: Any?]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, lastName: lastName, location: location, gender: gender, fbID: fbID, vkID: vkID, telegramId: telegramId, loyaltyCardLocation: loyaltyCardLocation, loyaltyStatus: loyaltyStatus, loyaltyBonuses: loyaltyBonuses, loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel, boughtSomething: boughtSomething, userId: userId, customProperties: customProperties, completion: completion)
     }
-
+    
     func recommend(blockId: String, currentProductId: String? = nil, currentCategoryId: String? = nil, locations: String? = nil, imageSize: String? = nil, timeOut: Double? = nil, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, completion: completion)
     }
@@ -182,9 +182,9 @@ public extension PersonalizationSDK {
         manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, completion: completion)
     }
     
-//    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String? = nil, limit: Int? = nil, page: Int? = nil, dateFrom: String? = nil, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
-//        getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId:userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
-//    }
+    //    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String? = nil, limit: Int? = nil, page: Int? = nil, dateFrom: String? = nil, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
+    //        getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId:userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
+    //    }
     
     func deleteUserCredentials() {
         deleteUserCredentials()
@@ -272,7 +272,17 @@ public extension PersonalizationSDK {
 }
 
 
-public func createPersonalizationSDK(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String = "api.rees46.com", stream: String = "ios", enableLogs: Bool = false, autoSendPushToken: Bool = true, _ completion: ((SDKError?) -> Void)? = nil) -> PersonalizationSDK {
+public func createPersonalizationSDK(
+    shopId: String,
+    userEmail: String? = nil,
+    userPhone: String? = nil,
+    userLoyaltyId: String? = nil,
+    apiDomain: String = "api.rees46.com",
+    stream: String = "ios",
+    enableLogs: Bool = false,
+    autoSendPushToken: Bool = true,
+    _ completion: ((SDKError?) -> Void)? = nil
+) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(shopId: shopId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, apiDomain: apiDomain, stream: stream, enableLogs: enableLogs, autoSendPushToken: autoSendPushToken, completion: completion)
     
     sdk.resetSdkCache()

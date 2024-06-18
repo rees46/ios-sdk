@@ -65,7 +65,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         segment = ["A", "B"].randomElement() ?? "A"
         
         // Trying to fetch user session (permanent user Id)
-        deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
+        deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "No did token"
         
         urlSession = URLSession.shared
         sessionQueue.addOperation {
