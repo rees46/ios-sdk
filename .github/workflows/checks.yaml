@@ -5,18 +5,8 @@ on:
 
 jobs:
   run:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Run reusable iOS checks
-        uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
-        with:
-          cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
-          googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
-
-      - name: Delete GoogleService-Info.plist files
-        run: |
-          find . -name 'GoogleService-Info.plist' -type f -delete
+    uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
+    permissions: write-all
+    secrets:
+      cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
+      googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
