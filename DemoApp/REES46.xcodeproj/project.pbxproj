@@ -13,6 +13,7 @@
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
+		7543E4972C237091006EF699 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7543E4962C237091006EF699 /* GoogleService-Info.plist */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
 		9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */; };
 		9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */; };
@@ -26,10 +27,12 @@
 		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */; };
 		9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */; };
+		C88B764CEA73C7D377236281 /* Pods_REES46Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD1453C9B5032451D244C23C /* Pods_REES46Tests.framework */; };
 		E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */; };
 		E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */; };
 		E9CF44412B30809C000F53F1 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CF44402B30809C000F53F1 /* SearchViewController.swift */; };
 		E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9EAB8662AF08A43003DC1B5 /* Inter.ttf */; };
+		FF5E6D1B9D333DB089304041 /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8528B24096218FBD0ACFAB8F /* Pods_REES46Demo.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,6 +77,7 @@
 /* Begin PBXFileReference section */
 		53578CC38C4B3A4AA9973CCC /* REES46.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = REES46.podspec; path = ../REES46.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		5AE5CCEEB00A5EF1E5E39AFF /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		5DEF1F1B857A143F902AF805 /* Pods-REES46Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		607FACD01AFB9204008FA782 /* REES46Demo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = REES46Demo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -84,6 +88,10 @@
 		607FACE51AFB9204008FA782 /* REES46Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
+		71286D905A512A7E7CB22F15 /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
+		7543E4962C237091006EF699 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		7ABE8C9710E344E5AE254848 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
+		8528B24096218FBD0ACFAB8F /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +110,8 @@
 		9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotificationsUI.framework; path = System/Library/Frameworks/UserNotificationsUI.framework; sourceTree = SDKROOT; };
 		9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPresentViewController.swift; sourceTree = "<group>"; };
 		9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PushPresentViewController.xib; sourceTree = "<group>"; };
+		A07B98B1D63963F5C248C677 /* Pods-REES46Demo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.release.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.release.xcconfig"; sourceTree = "<group>"; };
+		DD1453C9B5032451D244C23C /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
@@ -114,6 +124,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FF5E6D1B9D333DB089304041 /* Pods_REES46Demo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -121,6 +132,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C88B764CEA73C7D377236281 /* Pods_REES46Tests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,6 +158,10 @@
 		4F88B19B361A54409BF39837 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
+				71286D905A512A7E7CB22F15 /* Pods-REES46Demo.debug.xcconfig */,
+				A07B98B1D63963F5C248C677 /* Pods-REES46Demo.release.xcconfig */,
+				5DEF1F1B857A143F902AF805 /* Pods-REES46Tests.debug.xcconfig */,
+				7ABE8C9710E344E5AE254848 /* Pods-REES46Tests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -155,6 +171,8 @@
 			children = (
 				9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */,
 				9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */,
+				8528B24096218FBD0ACFAB8F /* Pods_REES46Demo.framework */,
+				DD1453C9B5032451D244C23C /* Pods_REES46Tests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -162,6 +180,7 @@
 		607FACC71AFB9204008FA782 = {
 			isa = PBXGroup;
 			children = (
+				7543E4962C237091006EF699 /* GoogleService-Info.plist */,
 				9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */,
 				9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */,
 				9ADC31BF25A1C2D600D9D1AA /* REES46Demo.entitlements */,
@@ -288,10 +307,12 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Demo" */;
 			buildPhases = (
+				624D52604975D7DB45E398AF /* [CP] Check Pods Manifest.lock */,
 				607FACCC1AFB9204008FA782 /* Sources */,
 				607FACCD1AFB9204008FA782 /* Frameworks */,
 				607FACCE1AFB9204008FA782 /* Resources */,
 				9ADC31D525A1C6B300D9D1AA /* Embed App Extensions */,
+				9247DE4137B200339B8A28B0 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -308,6 +329,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Tests" */;
 			buildPhases = (
+				EF3EFBFF691EE4B5A6351781 /* [CP] Check Pods Manifest.lock */,
 				607FACE11AFB9204008FA782 /* Sources */,
 				607FACE21AFB9204008FA782 /* Frameworks */,
 				607FACE31AFB9204008FA782 /* Resources */,
@@ -414,6 +436,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */,
+				7543E4972C237091006EF699 /* GoogleService-Info.plist in Resources */,
 				607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */,
 				E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */,
 				E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */,
@@ -448,6 +471,87 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		624D52604975D7DB45E398AF /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-REES46Demo-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		9247DE4137B200339B8A28B0 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-REES46Demo/Pods-REES46Demo-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/FirebaseCore/FirebaseCore.framework",
+				"${BUILT_PRODUCTS_DIR}/FirebaseCoreInternal/FirebaseCoreInternal.framework",
+				"${BUILT_PRODUCTS_DIR}/FirebaseInstallations/FirebaseInstallations.framework",
+				"${BUILT_PRODUCTS_DIR}/FirebaseMessaging/FirebaseMessaging.framework",
+				"${BUILT_PRODUCTS_DIR}/GoogleDataTransport/GoogleDataTransport.framework",
+				"${BUILT_PRODUCTS_DIR}/GoogleUtilities/GoogleUtilities.framework",
+				"${BUILT_PRODUCTS_DIR}/PromisesObjC/FBLPromises.framework",
+				"${BUILT_PRODUCTS_DIR}/REES46/REES46.framework",
+				"${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCore.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCoreInternal.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseInstallations.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseMessaging.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleDataTransport.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleUtilities.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FBLPromises.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/REES46.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-REES46Demo/Pods-REES46Demo-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		EF3EFBFF691EE4B5A6351781 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-REES46Tests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		607FACCC1AFB9204008FA782 /* Sources */ = {
@@ -642,6 +746,7 @@
 		};
 		607FACF01AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 71286D905A512A7E7CB22F15 /* Pods-REES46Demo.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -666,6 +771,7 @@
 		};
 		607FACF11AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = A07B98B1D63963F5C248C677 /* Pods-REES46Demo.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -690,6 +796,7 @@
 		};
 		607FACF31AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5DEF1F1B857A143F902AF805 /* Pods-REES46Tests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
@@ -716,6 +823,7 @@
 		};
 		607FACF41AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7ABE8C9710E344E5AE254848 /* Pods-REES46Tests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
