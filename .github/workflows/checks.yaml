@@ -2,8 +2,6 @@ name: Check PR
 
 on:
   pull_request:
-    branches:
-      - '*'
 
 jobs:
   run:
@@ -19,7 +17,8 @@ jobs:
           cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
           googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
 
+      # Добавляем шаг для удаления GoogleService-Info.plist после всех остальных операций
       - name: Delete GoogleService-Info.plist files
-        if: success()  # File will be delete if workflow success
+        if: success()  # Выполнять только в случае успешного завершения предыдущих шагов
         run: |
           find . -name 'GoogleService-Info.plist' -type f -delete
