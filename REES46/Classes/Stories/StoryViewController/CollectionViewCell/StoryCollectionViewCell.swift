@@ -102,41 +102,120 @@ class StoryCollectionViewCell: UICollectionViewCell {
     public func configure(slide: Slide) {
         self.currentSlide = slide
         
-        //reloadButton.configReloadButton()
+        // Set the background color
+        setupBackgroundColor()
         
-        if (currentSlide?.backgroundColor != nil || currentSlide?.backgroundColor != "") {
-            let color = currentSlide?.backgroundColor.hexToRGB()
-            self.backgroundColor = UIColor(red: color!.red, green: color!.green, blue: color!.blue, alpha: 1)
+        // Hide sdkPopupAlertView if it exists
+        hideSdkPopupAlertIfNeeded()
+        
+        // Delete previous text blocks
+        removePreviousTextBlocks()
+        
+        // Setting for video or image
+        configureMedia(for: slide)
+        
+        // Create and configure text blocks
+        setupTextBlocks(for: slide.elements)
+        
+        // Button configuration
+        configureButtons(for: slide)
+        
+        // Move important subviews to the top
+        bringImportantSubviewsToFront()
+    }
+    
+    private func setupBackgroundColor() {
+        if let backgroundColorHex = currentSlide?.backgroundColor, !backgroundColorHex.isEmpty {
+            let color = backgroundColorHex.hexToRGB()
+            self.backgroundColor = UIColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
         } else {
             self.backgroundColor = UIColor.black
         }
-        
-        if (sdkPopupAlertView.window != nil) {
+    }
+    
+    private func hideSdkPopupAlertIfNeeded() {
+        if sdkPopupAlertView.window != nil {
             hideSdkPopupAlertView()
         }
-        
-        promocodeBannerView.removeFromSuperview()
-        insertSubview(productWithPromocodeSuperview, belowSubview: storySlideImageView)
-        self.subviews.filter { $0 is TextBlockView }.forEach { $0.removeFromSuperview() }
-        
+    }
+    
+    private func removePreviousTextBlocks() {
+        self.subviews.filter { $0 is TextBlockView || $0 is UIStackView }.forEach { $0.removeFromSuperview() }
+    }
+    
+    private func configureMedia(for slide: Slide) {
         if slide.type == .video {
             configureVideoView(for: slide)
         } else {
             configureImageView(for: slide)
         }
-        
-        let textBlockViews: [TextBlockView] = slide.elements
+    }
+    
+    private func setupTextBlocks(for elements: [StoriesElement]) {
+        let textBlockViews = elements
             .filter { $0.type == .textBlock }
             .map { TextBlockConfiguration(from: $0) }
             .map { TextBlockView(with: $0) }
-        if !textBlockViews.isEmpty {
-            configure(textBlockViews, for: slide)
+        
+        guard !textBlockViews.isEmpty else { return }
+        
+        let stackView = createStackView()
+        addStackView(stackView)
+    
+        for textBlockView in textBlockViews {
+            stackView.addArrangedSubview(textBlockView)
         }
         
-        configureButtons(for: slide)
+        addSpacers(to: stackView, with: textBlockViews)
+    }
+    
+    private func createStackView() -> UIStackView {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.distribution = .equalSpacing
+        stackView.spacing = 32
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }
+    
+    private func addStackView(_ stackView: UIStackView) {
+        addSubview(stackView)
         
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            stackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 16),
+            stackView.bottomAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.bottomAnchor, constant: -32)
+        ])
+    }
+    
+    private func addSpacers(to stackView: UIStackView, with textBlockViews: [TextBlockView]) {
+        if let firstTextBlockView = textBlockViews.first {
+            let topSpacingView = UIView()
+            topSpacingView.translatesAutoresizingMaskIntoConstraints = false
+            topSpacingView.heightAnchor.constraint(equalToConstant: 32).isActive = true
+            stackView.addArrangedSubview(topSpacingView)
+            
+            stackView.addArrangedSubview(firstTextBlockView)
+        }
+        
+        for index in 1..<textBlockViews.count {
+            let textBlockView = textBlockViews[index]
+            stackView.addArrangedSubview(textBlockView)
+        }
+        
+        if textBlockViews.last != nil {
+            let bottomSpacingView = UIView()
+            bottomSpacingView.translatesAutoresizingMaskIntoConstraints = false
+            bottomSpacingView.heightAnchor.constraint(equalToConstant: 40).isActive = true
+            stackView.addArrangedSubview(bottomSpacingView)
+        }
+    }
+    
+    private func bringImportantSubviewsToFront() {
         bringSubviewsToFront([storyButton, productsButton, muteButton, productWithPromocodeSuperview, promocodeBannerView])
     }
+    
     
     private func bringSubviewsToFront(_ subviews: [UIView]) {
         subviews.forEach { bringSubviewToFront($0) }
@@ -214,15 +293,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 } else {
                     self.displayPromocodeBanner(promoTitle: elementProduct.title, promoCodeData: self.selectedPromoCodeElement!)
                 }
-
+                
                 insertSubview(muteButton, aboveSubview: productWithPromocodeSuperview)
                 insertSubview(muteButton, aboveSubview: promocodeBannerView)
                 insertSubview(muteButton, aboveSubview: storySlideImageView)
-
+                
                 insertSubview(storyButton, aboveSubview: productWithPromocodeSuperview)
                 insertSubview(storyButton, aboveSubview: promocodeBannerView)
                 insertSubview(storyButton, aboveSubview: storySlideImageView)
-
+                
                 insertSubview(productWithPromocodeSuperview, aboveSubview: storySlideImageView)
                 
                 bringSubviewToFront(muteButton)
@@ -281,7 +360,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else {
                 muteButton.isHidden = true
             }
-
+            
             self.videoView.layer.addSublayer(playerLayer)
             player.play()
             UserDefaults.standard.set(currentSlide!.id, forKey: "LastViewedSlideMemorySetting")
@@ -296,13 +375,13 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     private func updateMuteButtonImage(isMuted: Bool) {
-           var frameworkBundle = Bundle(for: classForCoder)
-   #if SWIFT_PACKAGE
-           frameworkBundle = Bundle.module
-   #endif
-           let imageName = isMuted ? "iconStoryMute" : "iconStoryVolumeUp"
-           muteButton.setImage(UIImage(named: imageName, in: frameworkBundle, compatibleWith: nil), for: .normal)
-       }
+        var frameworkBundle = Bundle(for: classForCoder)
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
+        let imageName = isMuted ? "iconStoryMute" : "iconStoryVolumeUp"
+        muteButton.setImage(UIImage(named: imageName, in: frameworkBundle, compatibleWith: nil), for: .normal)
+    }
     
     private func configureImageView(for slide: Slide) {
         muteButton.isHidden = true
@@ -318,7 +397,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         guard let url = URL(string: imagePath) else {
             return
         }
-
+        
         let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
             if error == nil {
                 guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
@@ -345,7 +424,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             print("SDK Output volume listener error")
         }
     }
-        
+    
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "outputVolume"{
             if audioSession.outputVolume > kAudioLevel {
@@ -499,14 +578,14 @@ class StoryCollectionViewCell: UICollectionViewCell {
             }
             
             var oldPriceTextAttrs = [NSAttributedString.Key.font: promocodeBannerFontNameBySdk,
-                         NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
-                         .foregroundColor: oldPriceTextColorBySdk] as [NSAttributedString.Key: Any]
+                                     NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                                     .foregroundColor: oldPriceTextColorBySdk] as [NSAttributedString.Key: Any]
             
             if oldPriceText.utf16.count >= 10 {
                 //oldPriceText = "    " + String(promoData.oldprice)
                 oldPriceTextAttrs = [NSAttributedString.Key.font: promocodeBannerFontNameBySdk,
-                             NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
-                             .foregroundColor: oldPriceTextColorBySdk] as [NSAttributedString.Key: Any]
+                                     NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                                     .foregroundColor: oldPriceTextColorBySdk] as [NSAttributedString.Key: Any]
             }
             
             let boldString = NSMutableAttributedString(string: oldPriceText, attributes:oldPriceTextAttrs)
@@ -630,7 +709,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             promoBtn.setAttributedTitle(attributedDiscountSectionString, for: .normal)
             promoBtn.titleLabel?.textAlignment = .left
             promoBtn.titleLabel?.numberOfLines = 3
-
+            
             var bgAdditionalColor = SdkConfiguration.stories.bannerPromocodeSectionBackgroundColor ?? UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
             
             if codePromo == "" {
@@ -638,9 +717,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             } else {
                 
                 var frameworkBundle = Bundle(for: classForCoder)
-            #if SWIFT_PACKAGE
+#if SWIFT_PACKAGE
                 frameworkBundle = Bundle.module
-            #endif
+#endif
                 let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
                 
                 let copyIconImageView = UIImageView(image: copyIcon)
@@ -744,7 +823,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 
                 UserDefaults.standard.set(currentSlide.id, forKey: "LastViewedSlideMemorySetting")
                 
-//#warning ("TODO Production")
+                //#warning ("TODO Production")
                 //cellDelegate?.didTapUrlButton(url: promoCodeDeeplinkIos, slide: currentSlide)
                 
                 cellDelegate?.sendStructSelectedPromocodeSlide(promoCodeSlide: selectedPromoCodeElement!)
@@ -814,7 +893,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         player.play()
     }
-
+    
     @objc
     func didEnterBackground() {
         player.pause()
@@ -839,12 +918,12 @@ class StoryCollectionViewCell: UICollectionViewCell {
         productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-
-//        reloadButton.widthAnchor.constraint(equalToConstant: 76).isActive = true
-//        reloadButton.heightAnchor.constraint(equalToConstant: 76).isActive = true
-//        reloadButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-//        reloadButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-
+        
+        //        reloadButton.widthAnchor.constraint(equalToConstant: 76).isActive = true
+        //        reloadButton.heightAnchor.constraint(equalToConstant: 76).isActive = true
+        //        reloadButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
+        //        reloadButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
+        
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             
             clearConstraints()
@@ -929,7 +1008,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             layoutIfNeeded()
             
         } else {
-
+            
             clearConstraints()
             
             let ds: Bool = UserDefaults.standard.bool(forKey: "DoubleProductButtonSetting")
@@ -1038,7 +1117,7 @@ extension AVPlayer {
     var isAudioAvailable: Bool? {
         return self.currentItem?.asset.tracks.filter({$0.mediaType == .audio}).count != 0
     }
-
+    
     var isVideoAvailable: Bool? {
         return self.currentItem?.asset.tracks.filter({$0.mediaType == .video}).count != 0
     }
