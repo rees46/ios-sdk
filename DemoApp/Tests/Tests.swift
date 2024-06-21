@@ -5,7 +5,7 @@ class DeviceIdSaveTest: XCTestCase {
     
     // First we start the application so that the deviceId is saved, then we run this test
     func test_is_device_id_haved_second_run() {
-        let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "" // Get DeviceId from storage
+        let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "No did token" // Get DeviceId from storage
         if deviceId.isEmpty{
             XCTAssert(false, "deviceId bad, init sdk, rerun test")
         } else {
@@ -17,10 +17,12 @@ class DeviceIdSaveTest: XCTestCase {
 class Tests: XCTestCase {
     
     var sdk: PersonalizationSDK?
+    let shopId = "357382bf66ac0ce2f1722677c59511"
+    let TAG = "Tests"
     
     override func setUp() {
         super.setUp()
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511")
+        sdk = createPersonalizationSDK(shopId: shopId)
     }
     
     override func tearDown() {
@@ -32,9 +34,9 @@ class Tests: XCTestCase {
             sdk.track(event: .productView(id: "123")) { (response) in
                 let deviceId = sdk.getDeviceId()
                 if deviceId.isEmpty{
-                    XCTAssert(false, "deviceId bad")
+                    XCTAssert(false, "Tests: deviceId bad")
                 } else {
-                    XCTAssert(true, "deviceId good")
+                    XCTAssert(true, "Tests: deviceId good")
                 }
             }
         }
@@ -42,36 +44,35 @@ class Tests: XCTestCase {
     
     func test_device_id_rewrite() {
         let oldDeviceId = sdk?.getDeviceId() // Get the old saved deviceId
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
+        sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in
                 let deviceId = sdk.getDeviceId()
                 if oldDeviceId == deviceId {
-                    XCTAssert(true, "deviceId bad")
+                    XCTAssert(true, "Tests: deviceId bad")
                 } else {
-                    XCTAssert(false, "deviceId good")
+                    XCTAssert(false, "Tests: deviceId good")
                 }
             }
         } else {
-            XCTAssert(false, "use this test when you have inited sdk")
+            XCTAssert(false, "Tests: use this test when you have inited sdk")
         }
     }
     
     func test_session_generated() {
         let oldSession = sdk?.getSession() // Get the old saved sessionId
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511") // We reinitialize SDK (as if we are reloading the app)
+        sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
         if let sdk = sdk {
             sdk.track(event: .productView(id: "")) { (response) in
                 let session = sdk.getSession() // Check session
                 if oldSession != session{
-                    XCTAssert(false, "session bad")
+                    XCTAssert(false, "Tests:session bad")
                 } else {
-                    XCTAssert(true, "session good")
+                    XCTAssert(true, "Tests:session good")
                 }
             }
         } else {
-            XCTAssert(false, "use this test when you have inited sdk")
+            XCTAssert(false, "Tests:use this test when you have inited sdk")
         }
     }
-    
 }
