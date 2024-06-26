@@ -14,6 +14,35 @@ import AppTrackingTransparency
 public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
+
+    struct Constants {
+        static let shopId: String = "shop_id"
+        static let searchQuery: String = "search_query"
+        static let deviceId: String = "did"
+        static let userSeance: String = "seance"
+        static let type: String = "type"
+        static let segment: String = "segment"
+        static let limit: String = "limit"
+        static let offset: String = "offset"
+        static let categoryLimit: String = "category_limit"
+        static let categories: String = "categories"
+        static let extended: String = "extended"
+        static let sortBy: String = "sort_by"
+        static let sortDir: String = "sort_dir"
+        static let locations: String = "locations"
+        static let brands: String = "brands"
+        static let filters: String = "filters"
+        static let priceMin: String = "price_min"
+        static let priceMax: String = "price_max"
+        static let colors: String = "colors"
+        static let fashionSizes: String = "fashion_sizes"
+        static let exclude: String = "exclude"
+        static let email: String = "email"
+        static let disableClarification: String = "no_clarification"
+        static let defaultTimeout: Double = 1.0
+        static let noClarificationValue: String = "1"
+    }
+
     private var storiesCode: String? = nil
     var shopId: String
     var deviceId: String
@@ -267,43 +296,45 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+
         sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "type": "full_search",
-                "search_query": query,
-                "segment": self.segment
+                Constants.shopId: self.shopId,
+                Constants.deviceId: self.deviceId,
+                Constants.userSeance: self.userSeance,
+                Constants.segment: Constants.type,
+                Constants.segment: self.segment,
+                Constants.type: "full_search",
+                Constants.searchQuery: query,
             ]
+
             if let limit = limit {
-                params["limit"] = String(limit)
+                params[Constants.limit] = String(limit)
             }
             if let offset = offset {
-                params["offset"] = String(offset)
+                params[Constants.offset] = String(offset)
             }
-            if let categoryLimit = categoryLimit{
-                params["category_limit"] = String(categoryLimit)
+            if let categoryLimit = categoryLimit {
+                params[Constants.categoryLimit] = String(categoryLimit)
             }
             if let categories = categories {
-                params["categories"] = categories
+                params[Constants.categories] = categories
             }
             if let extended = extended {
-                params["extended"] = extended
+                params[Constants.extended] = extended
             }
             if let sortBy = sortBy {
-                params["sort_by"] = String(sortBy)
+                params[Constants.sortBy] = String(sortBy)
             }
             if let sortDir = sortDir {
-                params["sort_dir"] = String(sortDir)
+                params[Constants.sortDir] = String(sortDir)
             }
             if let locations = locations {
-                params["locations"] = locations
+                params[Constants.locations] = locations
             }
             if let brands = brands {
-                params["brands"] = brands
+                params[Constants.brands] = brands
             }
             if let filters = filters {
                 if let theJSONData = try? JSONSerialization.data(
@@ -311,37 +342,37 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     options: []) {
                     let theJSONText = String(data: theJSONData,
                                              encoding: .utf8)
-                    params["filters"] = theJSONText
+                    params[Constants.filters] = theJSONText
                 }
             }
             if let priceMin = priceMin {
-                params["price_min"] = String(priceMin)
+                params[Constants.priceMin] = String(priceMin)
             }
             if let priceMax = priceMax {
-                params["price_max"] = String(priceMax)
+                params[Constants.priceMax] = String(priceMax)
             }
             if let colors = colors {
                 let colorsArray = self.generateString(array: colors)
-                params["colors"] = colorsArray
+                params[Constants.colors] = colorsArray
             }
             if let fashionSizes = fashionSizes {
                 let fashionSizesArray = self.generateString(array: fashionSizes)
-                params["fashion_sizes"] = fashionSizesArray
+                params[Constants.fashionSizes] = fashionSizesArray
             }
             if let exclude = exclude {
-                params["exclude"] = exclude
+                params[Constants.exclude] = exclude
             }
             if let email = email {
-                params["email"] = email
+                params[Constants.email] = email
             }
             if let disableClarification = disableClarification {
                 if disableClarification == true {
-                    params["no_clarification"] = "1"
+                    params[Constants.disableClarification] = Constants.noClarificationValue
                 }
             }
             
             let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            sessionConfig.timeoutIntervalForRequest = timeOut ?? Constants.defaultTimeout
             sessionConfig.waitsForConnectivity = true
             sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
