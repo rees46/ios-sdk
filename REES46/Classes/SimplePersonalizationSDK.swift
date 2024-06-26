@@ -92,13 +92,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let networkManager = NetworkStatus.nManager
                         let connectionStatus = networkManager.connectionStatus
                         let typeOfConnection = networkManager.connectionType
-                        //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                        //print("Connection Type: \(typeOfConnection ?? .notdetected)")
                         
                         if connectionStatus == .Online {
                             completion(error)
                         } else if connectionStatus == .Offline {
-                            //completion(.networkOfflineError)
                             completion(.custom(error: typeOfConnection?.description ?? "Network Error" ))
                         }
                     }
@@ -1374,18 +1371,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.failure(.decodeError))
                         }
                     } catch {
-                        //                        self.sendInitRequest { initResult in
-                        //                            switch initResult {
-                        //                            case .success:
-                        //                                if let res = try? initResult.get() {
-                        //                                    self.userInfo = res
-                        //                                    self.userSeance = res.seance
-                        //                                    self.deviceId = res.deviceId
-                        //                                }
-                        //                            case .failure(_):
-                        //                                break
-                        //                            }
-                        //                        }
                         completion(.failure(.decodeError))
                     }
                 case .failure:
@@ -1468,8 +1453,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-                    //let typeOfConnection = networkManager.connectionType
-                    //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
                     
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
