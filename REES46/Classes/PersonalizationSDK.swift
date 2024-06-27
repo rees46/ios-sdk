@@ -105,6 +105,7 @@ public protocol PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: [String]?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func unsubscribeForBackInStock(itemIds: [String], email: String?, phone: String? , completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func getStories(code: String, completion: @escaping(Result<StoryContent, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
@@ -124,11 +125,11 @@ public extension PersonalizationSDK {
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }
-
+    
     func setProfileData(userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, birthday: Date? = nil, age: Int? = nil, firstName: String? = nil, lastName: String? = nil, location: String? = nil, gender: Gender? = nil, fbID: String? = nil, vkID: String? = nil, telegramId: String? = nil, loyaltyCardLocation: String? = nil, loyaltyStatus: String? = nil, loyaltyBonuses: Int? = nil, loyaltyBonusesToNextLevel: Int? = nil, boughtSomething: Bool? = nil, userId: String? = nil, customProperties: [String: Any?]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, lastName: lastName, location: location, gender: gender, fbID: fbID, vkID: vkID, telegramId: telegramId, loyaltyCardLocation: loyaltyCardLocation, loyaltyStatus: loyaltyStatus, loyaltyBonuses: loyaltyBonuses, loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel, boughtSomething: boughtSomething, userId: userId, customProperties: customProperties, completion: completion)
     }
-
+    
     func recommend(blockId: String, currentProductId: String? = nil, currentCategoryId: String? = nil, locations: String? = nil, imageSize: String? = nil, timeOut: Double? = nil, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
     }
@@ -163,6 +164,10 @@ public extension PersonalizationSDK {
     
     func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
+    }
+    
+    func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        unsubscribeForBackInStock(itemIds: itemIds, email: email,phone:phone,completion: completion)
     }
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
