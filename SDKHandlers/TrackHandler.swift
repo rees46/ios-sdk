@@ -11,11 +11,14 @@ class TrackHandler{
         self.sessionQueue = sdk.sessionQueue
     }
     
-    
     private struct Constants {
-        static let mobilePushTokensPath = "mobile_push_tokens"
-        static let notificationPath = "notifications"
+        static let trackPath = "push"
+        static let trackStoriesPath = "track/stories"
+        static let trackCustomEventPath = "push/custom"
         
+        static let id = "id"
+        static let amount = "amount"
+        static let price = "price"
         static let shopId = "shop_id"
         static let did = "did"
         static let seance = "seance"
@@ -24,117 +27,149 @@ class TrackHandler{
         static let itemId = "item_id"
         static let email = "email"
         static let phone = "phone"
-        static let type = "type"
-        static let token = "token"
-        static let iosFirebase = "ios_firebase"
-        static let ios = "ios"
-        static let platform = "platform"
-        static let externalId = "external_id"
-        static let loyaltyId = "loyalty_id"
-        static let channel = "channel"
-        static let limit = "limit"
-        static let page = "page"
+        static let event = "event"
+        static let label = "label"
+        static let value = "value"
+        static let source = "source"
+        static let status = "status"
+        static let success = "success"
+        static let cart = "cart"
+        static let items = "items"
+        static let timeStartSaveKey = "timeStartSave"
+        static let recomendedCode = "recomendedCode"
+        static let recomendedType = "recomendedType"
+        static let sourceFrom = "from"
+        static let sourceCode = "code"
+        static let fullCartValue = "true"
+        static let statusSuccess = "success"
+        static let storyId = "story_id"
+        static let slideId = "slide_id"
+        static let view = "view"
+        static let click = "click"
+        static let searchQuery = "search_query"
+        static let search = "search"
+        static let categoryId = "category_id"
+        static let category = "category"
+        static let recomendedCode = "recomendedCode"
+        static let recomendedType = "recomendedType"
+        static let timeStartSave = "timeStartSave"
+        static let orderId = "order_id"
+        static let orderPrice = "order_price"
+        static let promocode = "promocode"
+        static let deliveryType = "delivery_type"
+        static let deliveryAddress = "delivery_address"
+        static let removeFromCart = "remove_from_cart"
+        static let removeWish = "remove_wish"
+        static let paymentType = "payment_type"
+        static let taxFree = "tax_free"
+        static let fullCart = "full_cart"
+        static let cart = "cart"
+        static let fullWish = "full_wish"
+        static let wish = "wish"
+        static let purchase = "purchase"
     }
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
-            var path = "push"
+            
             var paramEvent = ""
             var params: [String: Any] = [
-                "shop_id": sdk.shopId,
-                "did": sdk.deviceId,
-                "seance": sdk.userSeance,
-                "sid": sdk.userSeance,
-                "segment": sdk.segment
+                Constants.shopId: sdk.shopId,
+                Constants.did: sdk.deviceId,
+                Constants. seance: sdk.userSeance,
+                Constants.sid: sdk.userSeance,
+                Constants. segment: sdk.segment
             ]
             switch event {
             case let .slideView(storyId, slideId):
-                params["story_id"] = storyId
-                params["slide_id"] = slideId
-                params["code"] = self.storiesCode
-                path = "track/stories"
-                paramEvent = "view"
+                params[Constants.storyId] = storyId
+                params[Constants.slideId] = slideId
+                params[Constants.sourceCode] = self.storiesCode
+                path = Constants.trackStoriesPath
+                
+                paramEvent = Constants.view
             case let .slideClick(storyId, slideId):
-                params["story_id"] = storyId
-                params["slide_id"] = slideId
-                params["code"] = self.storiesCode
-                path = "track/stories"
-                paramEvent = "click"
+                params[Constants.storyId] = storyId
+                params[Constants.slideId] = slideId
+                params[Constants.sourceCode] = self.storiesCode
+                path = Constants.trackStoriesPath
+                
+                paramEvent = Constants.click
             case let .search(query):
-                params["search_query"] = query
-                paramEvent = "search"
+                params[Constants.searchQuery] = query
+                paramEvent = Constants.search
             case let .categoryView(id):
-                params["category_id"] = id
-                paramEvent = "category"
+                params[Constants.categoryId] = id
+                paramEvent = Constants.category
             case let .productView(id):
-                params["items"] = [["id":id]]
-                paramEvent = "view"
+                params[Constants.items] = [[Constants.id:id]]
+                paramEvent =Constants.view
             case let .productAddedToCart(id, amount):
-                params["items"] = [["id":id, "amount":amount] as [String : Any]]
-                paramEvent = "cart"
+                params[Constants.items] = [[Constants.id:id, Constants.amount:amount] as [String : Any]]
+                paramEvent = Constants.cart
             case let .productAddedToFavorites(id):
-                params["items"] = [["id":id]]
-                paramEvent = "wish"
+                params[Constants.items] = [[Constants.id:id]]
+                paramEvent = Constants.wish
             case let .productRemovedFromCart(id):
-                params["items"] = [["id":id]]
-                paramEvent = "remove_from_cart"
+                params[Constants.items] = [[Constants.id:id]]
+                paramEvent = Constants.removeFromCart
             case let .productRemovedFromFavorites(id):
-                params["items"] = [["id":id]]
-                paramEvent = "remove_wish"
+                params[Constants.items] = [[Constants.id:id]]
+                paramEvent = Constants.removeWish
             case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in products.enumerated() {
                     tempItems.append([
-                        "id": item.id,
-                        "amount": String(item.amount),
-                        "price": item.price
+                        Constants.id: item.id,
+                        Constants.amount: String(item.amount),
+                        Constants.price: item.price
                     ])
                 }
-                params["items"] = tempItems
-                params["order_id"] = orderId
-                params["order_price"] = "\(totalValue)"
+                params[Constants.items] = tempItems
+                params[Constants.orderId] = orderId
+                params[Constants.orderPrice] = "\(totalValue)"
                 if let deliveryAddress = deliveryAddress {
-                    params["delivery_address"] = deliveryAddress
+                    params[Constants.deliveryAddress] = deliveryAddress
                 }
                 if let deliveryType = deliveryType {
-                    params["delivery_type"] = deliveryType
+                    params[Constants.deliveryType] = deliveryType
                 }
                 if let promocode = promocode {
-                    params["promocode"] = promocode
+                    params[Constants.promocode] = promocode
                 }
                 if let paymentType = paymentType {
-                    params["payment_type"] = paymentType
+                    params[Constants.paymentType] = paymentType
                 }
                 if let taxFree = taxFree {
-                    params["tax_free"] = taxFree
+                    params[Constants.taxFree] = taxFree
                 }
-                paramEvent = "purchase"
+                paramEvent = Constants.purchase
             case let .synchronizeCart(items):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in items.enumerated() {
                     tempItems.append([
-                        "id": item.productId,
-                        "amount": String(item.quantity)
+                        Constants.id: item.productId,
+                        Constants.amount: String(item.quantity)
                     ])
                 }
-                params["items"] = tempItems
-                params["full_cart"] = "true"
-                paramEvent = "cart"
+                params[Constants.items] = tempItems
+                params[Constants.fullCart] = Constants.fullCartValue
+                paramEvent = Constants.cart
             case let .synchronizeFavorites(items):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in items.enumerated() {
                     tempItems.append([
-                        "id": item.productId
+                        Constants.id: item.productId
                     ])
                 }
-                params["items"] = tempItems
-                params["full_wish"] = "true"
-                paramEvent = "wish"
+                params[Constants.items] = tempItems
+                params[Constants.fullWish] = Constants.fullCartValue
+                paramEvent = Constants.wish
             }
             
-            params["event"] = paramEvent
+            params[Constants.event] = paramEvent
             
             // Process recommendedBy parameter
             if let recommendedBy = recommendedBy {
@@ -145,29 +180,29 @@ class TrackHandler{
             }
             
             // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
+            let timeValue = UserDefaults.standard.double(forKey: Constants.timeStartSaveKey)
             let nowTimeValue = Date().timeIntervalSince1970
             let diff = nowTimeValue - timeValue
             if diff > 48*60*60 {
                 // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
-                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
+                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedCode)
+                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedType)
             } else {
-                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
-                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
+                let savedCode = UserDefaults.standard.string(forKey: Constants.recomendedCode) ?? ""
+                let savedType = UserDefaults.standard.string(forKey: Constants.recomendedType) ?? ""
                 let sourceParams: [String: Any] = [
-                    "from": savedType,
-                    "code": savedCode
+                    Constants.sourceFrom: savedType,
+                    Constants.sourceCode: savedCode
                 ]
-                params["source"] = sourceParams
+                params[Constants.source] = sourceParams
             }
             
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
+                    let status = resJSON[Constants.status] as? String ?? ""
+                    if status == Constants.success {
                         completion(.success(Void()))
                     } else {
                         completion(.failure(.responseError))
@@ -179,56 +214,54 @@ class TrackHandler{
         }
     }
     
-    
-    // Track custom event
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
-            let path = "push/custom"
+            
             var params: [String: Any] = [
-                "shop_id": sdk.shopId,
-                "did": sdk.deviceId,
-                "seance": sdk.userSeance,
-                "sid": sdk.userSeance,
-                "segment": sdk.segment,
-                "event": event
+                Constants.shopId: sdk.shopId,
+                Constants.did: sdk.deviceId,
+                Constants. seance: sdk.userSeance,
+                Constants.sid: sdk.userSeance,
+                Constants. segment: sdk.segment
+                Constants.event: event
             ]
             
             if let category = category {
-                params["category"] = category
+                params[Constants.category] = category
             }
             if let label = label {
-                params["label"] = label
+                params[Constants.label] = label
             }
             if let value = value {
-                params["value"] = String(value)
+                params[Constants.value] = String(value)
             }
             
             // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
+            let timeValue = UserDefaults.standard.double(forKey: Constants.timeStartSave)
             let nowTimeValue = Date().timeIntervalSince1970
             let diff = nowTimeValue - timeValue
             if diff > 48*60*60 {
                 // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
-                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
+                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedCode)
+                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedType)
             } else {
-                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
-                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
+                let savedCode = UserDefaults.standard.string(forKey: Constants.recomendedCode) ?? ""
+                let savedType = UserDefaults.standard.string(forKey: Constants.recomendedType) ?? ""
                 let sourceParams: [String: Any] = [
-                    "from": savedType,
-                    "code": savedCode
+                    Constants.sourceFrom: savedType,
+                    Constants.sourceCode: savedCode
                 ]
-                params["source"] = sourceParams
+                params[Constants.source] = sourceParams
             }
             
-            sdk.postRequest(path: path, params: params, completion: { result in
+            sdk.postRequest(path: Constants.trackCustomEventPath, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
+                    let status = resJSON[Constants.status] as? String ?? ""
+                    if status == Constants.success {
                         completion(.success(Void()))
                     } else {
                         completion(.failure(.responseError))
@@ -241,8 +274,8 @@ class TrackHandler{
     }
     
     func trackSource(source: RecommendedByCase, code: String) {
-        UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "timeStartSave")
-        UserDefaults.standard.setValue(code, forKey: "recomendedCode")
-        UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
+        UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: Constants.timeStartSave)
+        UserDefaults.standard.setValue(code, forKey: Constants.recomendedCode)
+        UserDefaults.standard.setValue(source.rawValue, forKey: Constants.recomendedType)
     }
 }

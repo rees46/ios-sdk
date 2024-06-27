@@ -23,6 +23,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return NotificationHandler(sdk: self)
     }()
     
+    private lazy var trackHandler: TrackHandler = {
+        return TrackHandler(sdk: self)
+    }()
+    
     struct Constants {
         static let shopId: String = "shop_id"
         static let searchQuery: String = "search_query"
@@ -465,203 +469,23 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            var path = "push"
-            var paramEvent = ""
-            var params: [String: Any] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment
-            ]
-            switch event {
-            case let .slideView(storyId, slideId):
-                params["story_id"] = storyId
-                params["slide_id"] = slideId
-                params["code"] = self.storiesCode
-                path = "track/stories"
-                paramEvent = "view"
-            case let .slideClick(storyId, slideId):
-                params["story_id"] = storyId
-                params["slide_id"] = slideId
-                params["code"] = self.storiesCode
-                path = "track/stories"
-                paramEvent = "click"
-            case let .search(query):
-                params["search_query"] = query
-                paramEvent = "search"
-            case let .categoryView(id):
-                params["category_id"] = id
-                paramEvent = "category"
-            case let .productView(id):
-                params["items"] = [["id":id]]
-                paramEvent = "view"
-            case let .productAddedToCart(id, amount):
-                params["items"] = [["id":id, "amount":amount] as [String : Any]]
-                paramEvent = "cart"
-            case let .productAddedToFavorites(id):
-                params["items"] = [["id":id]]
-                paramEvent = "wish"
-            case let .productRemovedFromCart(id):
-                params["items"] = [["id":id]]
-                paramEvent = "remove_from_cart"
-            case let .productRemovedFromFavorites(id):
-                params["items"] = [["id":id]]
-                paramEvent = "remove_wish"
-            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in products.enumerated() {
-                    tempItems.append([
-                        "id": item.id,
-                        "amount": String(item.amount),
-                        "price": item.price
-                    ])
-                }
-                params["items"] = tempItems
-                params["order_id"] = orderId
-                params["order_price"] = "\(totalValue)"
-                if let deliveryAddress = deliveryAddress {
-                    params["delivery_address"] = deliveryAddress
-                }
-                if let deliveryType = deliveryType {
-                    params["delivery_type"] = deliveryType
-                }
-                if let promocode = promocode {
-                    params["promocode"] = promocode
-                }
-                if let paymentType = paymentType {
-                    params["payment_type"] = paymentType
-                }
-                if let taxFree = taxFree {
-                    params["tax_free"] = taxFree
-                }
-                paramEvent = "purchase"
-            case let .synchronizeCart(items):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
-                    tempItems.append([
-                        "id": item.productId,
-                        "amount": String(item.quantity)
-                    ])
-                }
-                params["items"] = tempItems
-                params["full_cart"] = "true"
-                paramEvent = "cart"
-            case let .synchronizeFavorites(items):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
-                    tempItems.append([
-                        "id": item.productId
-                    ])
-                }
-                params["items"] = tempItems
-                params["full_wish"] = "true"
-                paramEvent = "wish"
-            }
-            
-            params["event"] = paramEvent
-            
-            // Process recommendedBy parameter
-            if let recommendedBy = recommendedBy {
-                let recomendedParams = recommendedBy.getParams()
-                for item in recomendedParams {
-                    params[item.key] = item.value
-                }
-            }
-            
-            // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
-                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
-                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
-                let sourceParams: [String: Any] = [
-                    "from": savedType,
-                    "code": savedCode
-                ]
-                params["source"] = sourceParams
-            }
-            
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        trackHandler.track(
+            event:event,
+            recommendedBy:recommendedBy,
+            completion:completion
+        )
     }
     
     
     // Track custom event
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "push/custom"
-            var params: [String: Any] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment,
-                "event": event
-            ]
-            
-            if let category = category {
-                params["category"] = category
-            }
-            if let label = label {
-                params["label"] = label
-            }
-            if let value = value {
-                params["value"] = String(value)
-            }
-            
-            // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
-                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
-                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
-                let sourceParams: [String: Any] = [
-                    "from": savedType,
-                    "code": savedCode
-                ]
-                params["source"] = sourceParams
-            }
-            
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        trackHandler.trackEvent(
+            event:event,
+            category:category,
+            label:label,
+            value:value,
+            completion:completion
+        )
     }
     
     func trackSource(source: RecommendedByCase, code: String) {
