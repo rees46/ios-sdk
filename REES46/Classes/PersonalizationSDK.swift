@@ -118,8 +118,8 @@ public protocol PersonalizationSDK {
 }
 
 public extension PersonalizationSDK {
-    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
-        setPushTokenNotification(token: token, platform: platform, completion: completion)
+    func setPushTokenNotification(token: String,isFirebaseNotification: Bool = false, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {

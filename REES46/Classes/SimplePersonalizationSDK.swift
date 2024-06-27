@@ -55,7 +55,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         static let noClarificationValue: String = "1"
     }
     
-    private var storiesCode: String? = nil
+    var storiesCode: String? = nil
     var shopId: String
     var deviceId: String
     var userSeance: String
@@ -489,9 +489,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func trackSource(source: RecommendedByCase, code: String) {
-        UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "timeStartSave")
-        UserDefaults.standard.setValue(code, forKey: "recomendedCode")
-        UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
+        trackHandler.trackSource(source: source, code: code)
     }
     
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
@@ -676,7 +674,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/cart"
-            var params: [String : String] = [
+            let params: [String : String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId
             ]

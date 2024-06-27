@@ -12,7 +12,6 @@ class TrackHandler{
     }
     
     private struct Constants {
-        static let trackPath = "push"
         static let trackStoriesPath = "track/stories"
         static let trackCustomEventPath = "push/custom"
         
@@ -36,8 +35,6 @@ class TrackHandler{
         static let cart = "cart"
         static let items = "items"
         static let timeStartSaveKey = "timeStartSave"
-        static let recomendedCode = "recomendedCode"
-        static let recomendedType = "recomendedType"
         static let sourceFrom = "from"
         static let sourceCode = "code"
         static let fullCartValue = "true"
@@ -63,7 +60,6 @@ class TrackHandler{
         static let paymentType = "payment_type"
         static let taxFree = "tax_free"
         static let fullCart = "full_cart"
-        static let cart = "cart"
         static let fullWish = "full_wish"
         static let wish = "wish"
         static let purchase = "purchase"
@@ -73,27 +69,28 @@ class TrackHandler{
         guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
+            var path = "push"
             
             var paramEvent = ""
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
-                Constants. seance: sdk.userSeance,
+                Constants.seance: sdk.userSeance,
                 Constants.sid: sdk.userSeance,
-                Constants. segment: sdk.segment
+                Constants.segment: sdk.segment
             ]
             switch event {
             case let .slideView(storyId, slideId):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = self.storiesCode
+                params[Constants.sourceCode] = sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.view
             case let .slideClick(storyId, slideId):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = self.storiesCode
+                params[Constants.sourceCode] = sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.click
@@ -105,7 +102,7 @@ class TrackHandler{
                 paramEvent = Constants.category
             case let .productView(id):
                 params[Constants.items] = [[Constants.id:id]]
-                paramEvent =Constants.view
+                paramEvent = Constants.view
             case let .productAddedToCart(id, amount):
                 params[Constants.items] = [[Constants.id:id, Constants.amount:amount] as [String : Any]]
                 paramEvent = Constants.cart
@@ -197,7 +194,7 @@ class TrackHandler{
                 params[Constants.source] = sourceParams
             }
             
-            self.postRequest(path: path, params: params, completion: { result in
+            sdk.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -222,9 +219,9 @@ class TrackHandler{
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
-                Constants. seance: sdk.userSeance,
+                Constants.seance: sdk.userSeance,
                 Constants.sid: sdk.userSeance,
-                Constants. segment: sdk.segment
+                Constants.segment: sdk.segment,
                 Constants.event: event
             ]
             
