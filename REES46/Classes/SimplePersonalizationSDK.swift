@@ -19,6 +19,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SubscriptionHandler(sdk: self)
     }()
     
+    private lazy var notificationHandler: NotificationHandler = {
+        return NotificationHandler(sdk: self)
+    }()
+    
     struct Constants {
         static let shopId: String = "shop_id"
         static let searchQuery: String = "search_query"
@@ -161,83 +165,22 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         isFirebaseNotification: Bool = false,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        sessionQueue.addOperation {
-            let path = "mobile_push_tokens"
-            var params = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "token": token
-            ]
-            
-            if isFirebaseNotification {
-                params["platform"] = "ios_firebase"
-            } else {
-                params["platform"] = "ios"
-            }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case .success:
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        notificationHandler.setPushTokenNotification(token: token,isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
-    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "notifications"
-            var params = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment,
-                "type": type,
-            ]
-            
-            if let userPhone = phone {
-                params["phone"] = String(userPhone)
-            }
-            if let userEmail = email {
-                params["email"] = String(userEmail)
-            }
-            if let userExternalId = userExternalId {
-                params["external_id"] = String(userExternalId)
-            }
-            if let userLoyaltyId = userLoyaltyId {
-                params["loyalty_id"] = String(userLoyaltyId)
-            }
-            if let channel = channel {
-                params["channel"] = String(channel)
-            }
-            if let limit = limit {
-                params["limit"] = String(limit)
-            }
-            if let page = page {
-                params["page"] = String(page)
-            }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.getRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let result = UserPayloadResponse(json: resJSON)
-                    completion(.success(result))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+    func getAllNotifications(
+        type: String,
+        phone: String? = nil,
+        email: String? = nil,
+        userExternalId: String? = nil,
+        userLoyaltyId: String? = nil,
+        channel: String?,
+        limit: Int?,
+        page: Int?,
+        dateFrom: String?,
+        completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void
+    ) {
+        notificationHandler.getAllNotifications(type: type, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion:completion)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
@@ -1315,7 +1258,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SdkConfiguration.self
     }
     
-    private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+    func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
         
         let urlString = baseURL + path
         var url = URLComponents(string: urlString)
