@@ -38,11 +38,11 @@ public class NotificationService: NotificationServiceProtocol {
         self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
         setupNotificationCategories()
     }
-
+    
     public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
     }
-
+    
     private func setupNotificationCategories() {
         requireUserPrivacy { res in
             if res {
@@ -54,7 +54,7 @@ public class NotificationService: NotificationServiceProtocol {
             }
         }
     }
-
+    
     public func didReceiveRemoteNotifications(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void) {
         if application.applicationState == .active {
             // SKIP FOR NOW
@@ -66,7 +66,7 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-        sdk.setFirebasePushToken(token: fcmToken ?? "") { tokenResponse in
+        sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in
             switch tokenResponse {
             case .success():
                 return
@@ -169,7 +169,7 @@ public class NotificationService: NotificationServiceProtocol {
     private func pushRetrieved(userInfo: [AnyHashable: Any]) {
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
             guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
-            //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
+                //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
                 processingNotSDKPush(userInfo: userInfo)
                 return
             }
@@ -251,7 +251,7 @@ public class NotificationService: NotificationServiceProtocol {
             openCustom(url: eventLink)
         }
     }
-
+    
     private func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
         let eventUserInfo = userInfo[key]
         if let eventJSONString = eventUserInfo as? String {
@@ -275,19 +275,19 @@ public class NotificationService: NotificationServiceProtocol {
     private func processingUnknownLink() {
         print("Unknown url link")
     }
-
+    
     private func openCategory(categoryId: String) {
         pushActionDelegate?.openCategory(categoryId: categoryId)
     }
-
+    
     private func openProduct(productId: String) {
         pushActionDelegate?.openProduct(productId: productId)
     }
-
+    
     private func openWeb(url: String) {
         pushActionDelegate?.openWeb(url: url)
     }
-        
+    
     private func openCustom(url: String) {
         pushActionDelegate?.openCustom(url: url)
     }

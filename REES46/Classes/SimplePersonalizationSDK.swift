@@ -14,6 +14,35 @@ import AppTrackingTransparency
 public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
+
+    struct Constants {
+        static let shopId: String = "shop_id"
+        static let searchQuery: String = "search_query"
+        static let deviceId: String = "did"
+        static let userSeance: String = "seance"
+        static let type: String = "type"
+        static let segment: String = "segment"
+        static let limit: String = "limit"
+        static let offset: String = "offset"
+        static let categoryLimit: String = "category_limit"
+        static let categories: String = "categories"
+        static let extended: String = "extended"
+        static let sortBy: String = "sort_by"
+        static let sortDir: String = "sort_dir"
+        static let locations: String = "locations"
+        static let brands: String = "brands"
+        static let filters: String = "filters"
+        static let priceMin: String = "price_min"
+        static let priceMax: String = "price_max"
+        static let colors: String = "colors"
+        static let fashionSizes: String = "fashion_sizes"
+        static let exclude: String = "exclude"
+        static let email: String = "email"
+        static let disableClarification: String = "no_clarification"
+        static let defaultTimeout: Double = 1.0
+        static let noClarificationValue: String = "1"
+    }
+
     private var storiesCode: String? = nil
     var shopId: String
     var deviceId: String
@@ -65,7 +94,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         segment = ["A", "B"].randomElement() ?? "A"
         
         // Trying to fetch user session (permanent user Id)
-        deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "No did token"
+        deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
         urlSession = URLSession.shared
         sessionQueue.addOperation {
@@ -92,13 +121,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let networkManager = NetworkStatus.nManager
                         let connectionStatus = networkManager.connectionStatus
                         let typeOfConnection = networkManager.connectionType
-                        //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
-                        //print("Connection Type: \(typeOfConnection ?? .notdetected)")
                         
                         if connectionStatus == .Online {
                             completion(error)
                         } else if connectionStatus == .Offline {
-                            //completion(.networkOfflineError)
                             completion(.custom(error: typeOfConnection?.description ?? "Network Error" ))
                         }
                     }
@@ -125,46 +151,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getShopId() -> String {
         return shopId
     }
-
-    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "mobile_push_tokens"
-            let params = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "token": token,
-                "platform": platform ?? "ios",
-            ]
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case .success:
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
-    }
     
-    func setFirebasePushToken(token: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setPushTokenNotification(
+        token: String,
+        isFirebaseNotification: Bool = false,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
         sessionQueue.addOperation {
             let path = "mobile_push_tokens"
-            let params = [
+            var params = [
                 "shop_id": self.shopId,
                 "did": self.deviceId,
-                "token": token,
-                "platform": "ios_firebase",
+                "token": token
             ]
-            
+
+            if isFirebaseNotification {
+                params["platform"] = "ios_firebase"
+            } else {
+                params["platform"] = "ios"
+            }
+
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
             sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
@@ -287,43 +296,45 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+
         sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "type": "full_search",
-                "search_query": query,
-                "segment": self.segment
+                Constants.shopId: self.shopId,
+                Constants.deviceId: self.deviceId,
+                Constants.userSeance: self.userSeance,
+                Constants.segment: Constants.type,
+                Constants.segment: self.segment,
+                Constants.type: "full_search",
+                Constants.searchQuery: query,
             ]
+
             if let limit = limit {
-                params["limit"] = String(limit)
+                params[Constants.limit] = String(limit)
             }
             if let offset = offset {
-                params["offset"] = String(offset)
+                params[Constants.offset] = String(offset)
             }
-            if let categoryLimit = categoryLimit{
-                params["category_limit"] = String(categoryLimit)
+            if let categoryLimit = categoryLimit {
+                params[Constants.categoryLimit] = String(categoryLimit)
             }
             if let categories = categories {
-                params["categories"] = categories
+                params[Constants.categories] = categories
             }
             if let extended = extended {
-                params["extended"] = extended
+                params[Constants.extended] = extended
             }
             if let sortBy = sortBy {
-                params["sort_by"] = String(sortBy)
+                params[Constants.sortBy] = String(sortBy)
             }
             if let sortDir = sortDir {
-                params["sort_dir"] = String(sortDir)
+                params[Constants.sortDir] = String(sortDir)
             }
             if let locations = locations {
-                params["locations"] = locations
+                params[Constants.locations] = locations
             }
             if let brands = brands {
-                params["brands"] = brands
+                params[Constants.brands] = brands
             }
             if let filters = filters {
                 if let theJSONData = try? JSONSerialization.data(
@@ -331,37 +342,37 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     options: []) {
                     let theJSONText = String(data: theJSONData,
                                              encoding: .utf8)
-                    params["filters"] = theJSONText
+                    params[Constants.filters] = theJSONText
                 }
             }
             if let priceMin = priceMin {
-                params["price_min"] = String(priceMin)
+                params[Constants.priceMin] = String(priceMin)
             }
             if let priceMax = priceMax {
-                params["price_max"] = String(priceMax)
+                params[Constants.priceMax] = String(priceMax)
             }
             if let colors = colors {
                 let colorsArray = self.generateString(array: colors)
-                params["colors"] = colorsArray
+                params[Constants.colors] = colorsArray
             }
             if let fashionSizes = fashionSizes {
                 let fashionSizesArray = self.generateString(array: fashionSizes)
-                params["fashion_sizes"] = fashionSizesArray
+                params[Constants.fashionSizes] = fashionSizesArray
             }
             if let exclude = exclude {
-                params["exclude"] = exclude
+                params[Constants.exclude] = exclude
             }
             if let email = email {
-                params["email"] = email
+                params[Constants.email] = email
             }
             if let disableClarification = disableClarification {
                 if disableClarification == true {
-                    params["no_clarification"] = "1"
+                    params[Constants.disableClarification] = Constants.noClarificationValue
                 }
             }
             
             let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
+            sessionConfig.timeoutIntervalForRequest = timeOut ?? Constants.defaultTimeout
             sessionConfig.waitsForConnectivity = true
             sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
@@ -712,7 +723,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
     }
 
-    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "recommend/\(blockId)"
             var params = [
@@ -738,6 +749,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["locations"] = locations
             }
             
+            if extended {
+                params["extended"] = "true"
+                if withLocations {
+                    params["with_locations"] = "true"
+                }
+            } else {
+                params.removeValue(forKey: "with_locations")
+            }
+
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
@@ -851,7 +871,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
-        
+
     func getProductInfo(id: String, completion: @escaping (Result<ProductInfo, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/get"
@@ -885,7 +905,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/cart"
-            let params: [String : String] = [
+            var params: [String : String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId
             ]
@@ -1391,18 +1411,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             completion(.failure(.decodeError))
                         }
                     } catch {
-//                        self.sendInitRequest { initResult in
-//                            switch initResult {
-//                            case .success:
-//                                if let res = try? initResult.get() {
-//                                    self.userInfo = res
-//                                    self.userSeance = res.seance
-//                                    self.deviceId = res.deviceId
-//                                }
-//                            case .failure(_):
-//                                break
-//                            }
-//                        }
                         completion(.failure(.decodeError))
                     }
                 case .failure:
@@ -1485,8 +1493,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-                    //let typeOfConnection = networkManager.connectionType
-                    //print("SDK Network status: \(connectionStatus) \nConnection Type: \(typeOfConnection ?? .notdetected)")
                     
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
