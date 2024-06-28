@@ -18,7 +18,7 @@ public enum Event {
     case productRemovedFromCart (id: String)
     case search (query: String)
     case synchronizeCart (items: [CartItem])
-    case synchronizeFavorites(items: [CartItem])
+    case synchronizeFavorites(ids: [String])
     case slideView(storyId: String, slideId: String)
     case slideClick(storyId: String, slideId: String)
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)

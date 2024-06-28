@@ -330,7 +330,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //                //fatalError("    track cart syncronized is failure")
 //            }
 //        }
-//        sdk.track(event: .synchronizeFavorites(items: [CartItem(productId: "784")])) { trackResponse in
+//       sdk.track(event: .synchronizeFavorites(ids: ["784"])) { trackResponse in
 //            print("   favorites syncronized callback")
 //            switch trackResponse {
 //            case let .success(response):

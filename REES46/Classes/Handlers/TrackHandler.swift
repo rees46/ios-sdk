@@ -154,11 +154,11 @@ class TrackHandler{
                 params[Constants.items] = tempItems
                 params[Constants.fullCart] = Constants.fullCartValue
                 paramEvent = Constants.cart
-            case let .synchronizeFavorites(items):
+            case let .synchronizeFavorites(ids):
                 var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
+                for id in ids {
                     tempItems.append([
-                        Constants.id: item.productId
+                        Constants.id: id
                     ])
                 }
                 params[Constants.items] = tempItems
