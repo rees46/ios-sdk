@@ -1,27 +1,38 @@
 import UIKit
 
-
 public class SlideViewController: UIViewController, SlideView {
     
-    var presenter: SlidePresenter!
     var imageView: UIImageView!
     var loadingIndicator: UIActivityIndicatorView!
     var reloadButton: UIButton!
     var errorLabel: UILabel!
     var loadTimer: Timer?
     var autoReloadTimer: Timer?
+    var currentURL: URL?
+    private var reloadTimer: Timer?
+    private let imageLoader: ImageLoadingProtocol
     
     struct Constants {
         static let imageURL = URL(string: "https://example.com/image.jpg")!
         static let loadingTimeout: TimeInterval = 15
         static let reloadIconName = "iconReload"
         static let messageKey = "error_message_failed_to_load"
+        static let errorMessageComment = "Error message for failed data loading"
+    }
+    
+    init(imageLoader: ImageLoadingProtocol) {
+        self.imageLoader = imageLoader
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     public override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        presenter.loadImage(from: Constants.imageURL)
+        loadImage(from: Constants.imageURL)
         loadTimer = Timer.scheduledTimer(timeInterval: Constants.loadingTimeout, target: self, selector: #selector(checkLoadingTimeout), userInfo: nil, repeats: false)
     }
     
@@ -67,7 +78,7 @@ public class SlideViewController: UIViewController, SlideView {
     
     func showError() {
         hideLoadingIndicator()
-        errorLabel.text = NSLocalizedString(Constants.messageKey, comment: "Error message for failed data loading")
+        errorLabel.text = NSLocalizedString(Constants.messageKey, comment: Constants.errorMessageComment)
         
         errorLabel.isHidden = false
         reloadButton.isHidden = false
@@ -81,12 +92,51 @@ public class SlideViewController: UIViewController, SlideView {
     }
     
     @objc func reloadData() {
-        presenter.reloadImage()
+        if let url = currentURL {
+            loadImage(from: url)
+        }
     }
     
     @objc func checkLoadingTimeout() {
         if imageView.image == nil {
             showReloadButton()
+        }
+    }
+    
+    func loadImage(from url: URL) {
+        currentURL = url
+        showLoadingIndicator()
+        startLoadingTimeout()
+        
+        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.loadTimer?.invalidate()
+                
+                if let error = error {
+                    self.showError()
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
+                    self.showError()
+                    return
+                }
+                
+                guard let data = data, let image = UIImage(data: data) else {
+                    self.showError()
+                    return
+                }
+                
+                self.showImage(image)
+            }
+        }
+        task.resume()
+    }
+    
+    private func startLoadingTimeout() {
+        reloadTimer = Timer.scheduledTimer(withTimeInterval: Constants.loadingTimeout, repeats: false) { [weak self] _ in
+            self?.showReloadButton()
         }
     }
 }
