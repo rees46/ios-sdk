@@ -1,14 +1,9 @@
-//
-//  PushTokenNotificationServiceImpl.swift
-//  Pods
-//
-//  Created by Daniel Green on 2024-07-01.
-//
 
 import Foundation
 import UIKit
 
 class PushTokenNotificationServiceImpl: PushTokenNotificationService {
+    
     private let sdk: SimplePersonalizationSDK
     private let sessionQueue: SessionQueue
 
@@ -17,7 +12,7 @@ class PushTokenNotificationServiceImpl: PushTokenNotificationService {
         self.sessionQueue = sessionQueue
     }
 
-    func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setPushToken(token: String, isFirebaseNotification: Bool, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             var params = [
                 "shop_id": self.sdk.shopId,

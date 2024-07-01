@@ -1,7 +1,7 @@
 
 import Foundation
 
-protocol PushTokenHandlingService {
+protocol PushTokenNotificationService {
     func setPushToken(
         token: String,
         isFirebaseNotification: Bool,

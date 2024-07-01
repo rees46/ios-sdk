@@ -91,7 +91,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return NotificationHandlerServiceImpl(sdk: self)
     }()
     
-    lazy var pushTokenService: PushTokenHandlingService = {
+    lazy var pushTokenService: PushTokenNotificationService = {
         return PushTokenHandlerServiceImpl(sdk: self)
     }()
     
