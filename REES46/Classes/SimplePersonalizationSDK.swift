@@ -15,17 +15,12 @@ public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
     
-    private lazy var subscriptionHandler: SubscriptionHandler = {
-        return SubscriptionHandler(sdk: self)
-    }()
+    let trackEventService: TrackEventService
+    let trackSourceService: TrackSourceService
+    let subscriptionService: SubscriptionService
     
-    private lazy var notificationHandler: NotificationHandler = {
-        return NotificationHandler(sdk: self)
-    }()
-    
-    private lazy var trackHandler: TrackHandler = {
-        return TrackHandler(sdk: self)
-    }()
+    //    private let notificationService: NotificationService
+  
     
     struct Constants {
         static let shopId: String = "shop_id"
@@ -87,7 +82,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let initSemaphore = DispatchSemaphore(value: 0)
     private let serialSemaphore = DispatchSemaphore(value: 0)
     
-    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, autoSendPushToken: Bool = true, completion: ((SDKError?) -> Void)? = nil) {
+    init(
+        shopId: String,
+        userEmail: String? = nil,
+        userPhone: String? = nil,
+        userLoyaltyId: String? = nil,
+        apiDomain: String,
+        stream: String = "ios",
+        enableLogs: Bool = false,
+        autoSendPushToken: Bool = true,
+        completion: ((SDKError?) -> Void)? = nil
+    ) {
+        self.trackEventService = TrackEventServiceImpl(sdk: self, sessionQueue: SessionQueue.manager)
+        self.trackSourceService = TrackSourceServiceImpl()
+        self.subscriptionService = SubscriptionServiceImpl(sdk: self)
+        
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
         
@@ -164,27 +173,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return shopId
     }
     
-    func setPushTokenNotification(
-        token: String,
-        isFirebaseNotification: Bool = false,
-        completion: @escaping (Result<Void, SDKError>) -> Void
-    ) {
-        notificationHandler.setPushTokenNotification(token: token,isFirebaseNotification: isFirebaseNotification, completion: completion)
+    func setPushTokenNotification(token: String, isFirebaseNotification: Bool = false, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        pushTokenService.setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
-    func getAllNotifications(
-        type: String,
-        phone: String? = nil,
-        email: String? = nil,
-        userExternalId: String? = nil,
-        userLoyaltyId: String? = nil,
-        channel: String?,
-        limit: Int?,
-        page: Int?,
-        dateFrom: String?,
-        completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void
-    ) {
-        notificationHandler.getAllNotifications(type: type, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion:completion)
+    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void) {
+        notificationService.getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
@@ -469,27 +463,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        trackHandler.track(
-            event:event,
-            recommendedBy:recommendedBy,
-            completion:completion
-        )
+        trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
     
-    
-    // Track custom event
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        trackHandler.trackEvent(
-            event:event,
-            category:category,
-            label:label,
-            value:value,
-            completion:completion
-        )
+        trackEventService.trackEvent(event: event, category: category, label: label, value: value, completion: completion)
     }
     
     func trackSource(source: RecommendedByCase, code: String) {
-        trackHandler.trackSource(source: source, code: code)
+        trackSourceService.trackSource(source: source, code: code)
     }
     
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
@@ -766,7 +748,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         phone: String? = nil,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        subscriptionHandler.subscribeForPriceDrop(
+        subscriptionService.subscribeForPriceDrop(
             id:id,
             currentPrice: currentPrice,
             email: email,
@@ -776,11 +758,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        subscriptionHandler.subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
+        subscriptionService.subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
     }
     
     func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        subscriptionHandler.unsubscribeForBackInStock(itemIds: itemIds, email: email, phone: phone, completion: completion)
+        subscriptionService.unsubscribeForBackInStock(itemIds: itemIds, email: email, phone: phone, completion: completion)
     }
     
     func manageSubscription(
@@ -803,7 +785,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         mobilePushTransactional: Bool? = nil,
         completion: @escaping(Result<Void, SDKError>) -> Void
     ) {
-        subscriptionHandler.manageSubscription(
+        subscriptionService.manageSubscription(
             email:email,
             phone:phone,
             userExternalId:userExternalId,

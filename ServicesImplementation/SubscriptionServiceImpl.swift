@@ -1,8 +1,9 @@
 import Foundation
 import UIKit
 
-class SubscriptionHandler {
-    private weak var sdk: SimplePersonalizationSDK?
+class SubscriptionServiceImpl: SubscriptionService {
+    
+    private let sdk: SimplePersonalizationSDK
     private let sessionQueue: SessionQueue
     
     init(sdk: SimplePersonalizationSDK) {
@@ -47,15 +48,14 @@ class SubscriptionHandler {
     }
     
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
             var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
-                Constants.segment: sdk.segment,
+                Constants.shopId: self.sdk.shopId,
+                Constants.did: self.sdk.deviceId,
+                Constants.seance:self.sdk.userSeance,
+                Constants.sid: self.sdk.userSeance,
+                Constants.segment: self.sdk.segment,
                 Constants.itemId: id,
                 Constants.price: currentPrice
             ]
@@ -68,7 +68,7 @@ class SubscriptionHandler {
                 params[Constants.phone] = phone
             }
             
-            sdk.postRequest(path: Constants.subscribeForProductPricePath, params: params, completion: { result in
+            self.sdk.postRequest(path: Constants.subscribeForProductPricePath, params: params, completion: { result in
                 switch result {
                 case .success(_):
                     completion(.success(Void()))
@@ -80,20 +80,19 @@ class SubscriptionHandler {
     }
     
     func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        guard let sdk = sdk else { return }
         
-        sdk.sessionQueue.addOperation {
+        self.sdk.sessionQueue.addOperation {
             var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
-                Constants.segment: sdk.segment,
+                Constants.shopId: self.sdk.shopId,
+                Constants.did: self.sdk.deviceId,
+                Constants.seance: self.sdk.userSeance,
+                Constants.sid: self.sdk.userSeance,
+                Constants.segment: self.sdk.segment,
                 Constants.itemId: id
             ]
             
             if let fashionSize = fashionSize {
-                let tmpSizesArray = sdk.generateString(array: fashionSize)
+                let tmpSizesArray = self.sdk.generateString(array: fashionSize)
                 params[Constants.properties] = [Constants.fashionSize: tmpSizesArray]
             }
             
@@ -104,48 +103,69 @@ class SubscriptionHandler {
                 params[Constants.phone] = phone
             }
             
-            sdk.postRequest(path: Constants.subscribePath, params: params, completion: { result in
-                switch result {
-                case .success(_):
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
+            self.sdk.postRequest(
+                path: Constants.subscribePath, params: params, completion: { result in
+                    switch result {
+                    case .success(_):
+                        completion(.success(Void()))
+                    case let .failure(error):
+                        completion(.failure(error))
+                    }
                 }
-            })
+            )
         }
     }
     
-    func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        guard let sdk = sdk else { return }
-        
-        sdk.sessionQueue.addOperation {
-            var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.itemIds: itemIds
-            ]
+    func unsubscribeForBackInStock(
+        itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
             
-            if let email = email {
-                params[Constants.email] = email
-            }
-            if let phone = phone {
-                params[Constants.phone] = phone
-            }
-            
-            sdk.postRequest(path: Constants.unsubscribePath, params: params, completion: { result in
-                switch result {
-                case .success(_):
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
+            sdk.sessionQueue.addOperation {
+                var params: [String: Any] = [
+                    Constants.shopId: self.sdk.shopId,
+                    Constants.did: self.sdk.deviceId,
+                    Constants.itemIds: itemIds
+                ]
+                
+                if let email = email {
+                    params[Constants.email] = email
                 }
-            })
+                if let phone = phone {
+                    params[Constants.phone] = phone
+                }
+                
+                self.sdk.postRequest(
+                    path: Constants.unsubscribePath, params: params, completion: { result in
+                        switch result {
+                        case .success(_):
+                            completion(.success(Void()))
+                        case let .failure(error):
+                            completion(.failure(error))
+                        }
+                    }
+                )
+            }
         }
-    }
     
-    func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramId: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
-        
-        guard let sdk = sdk else { return }
+    func manageSubscription(
+        email: String? = nil,
+        phone: String? = nil,
+        userExternalId: String? = nil,
+        userLoyaltyId: String? = nil,
+        telegramId: String? = nil,
+        emailBulk: Bool? = nil,
+        emailChain: Bool? = nil,
+        emailTransactional: Bool? = nil,
+        smsBulk: Bool? = nil,
+        smsChain: Bool? = nil,
+        smsTransactional: Bool? = nil,
+        webPushBulk: Bool? = nil,
+        webPushChain: Bool? = nil,
+        webPushTransactional: Bool? = nil,
+        mobilePushBulk: Bool? = nil,
+        mobilePushChain: Bool? = nil,
+        mobilePushTransactional: Bool? = nil,
+        completion: @escaping(Result<Void, SDKError>) -> Void
+    ) {
         
         var params: [String: Any] = [
             Constants.shopId: sdk.shopId,
@@ -178,13 +198,15 @@ class SubscriptionHandler {
         if let mobilePushChain         = mobilePushChain            { params[Constants.mobilePushChain]           = mobilePushChain }
         if let mobilePushTransactional = mobilePushTransactional    { params[Constants.mobilePushTransactional]   = mobilePushTransactional }
         
-        sdk.postRequest(path: Constants.manageSubscriptionPath, params: params, completion: { result in
-            switch result {
-            case .success(_):
-                completion(.success(Void()))
-            case let .failure(error):
-                completion(.failure(error))
+        sdk.postRequest(
+            path: Constants.manageSubscriptionPath, params: params, completion: { result in
+                switch result {
+                case .success(_):
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
             }
-        })
+        )
     }
 }

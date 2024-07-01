@@ -1,14 +1,13 @@
-import Foundation
-import UIKit
 
-class TrackHandler{
-    
-    private weak var sdk: SimplePersonalizationSDK?
+import Foundation
+
+class TrackEventServiceImpl: TrackEventService {
+    private let sdk: SimplePersonalizationSDK
     private let sessionQueue: SessionQueue
     
-    init(sdk: SimplePersonalizationSDK) {
+    init(sdk: SimplePersonalizationSDK, sessionQueue: SessionQueue) {
         self.sdk = sdk
-        self.sessionQueue = sdk.sessionQueue
+        self.sessionQueue = sessionQueue
     }
     
     private struct Constants {
@@ -66,31 +65,30 @@ class TrackHandler{
     }
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
             var path = "push"
             
             var paramEvent = ""
             var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
-                Constants.segment: sdk.segment
+                Constants.shopId: self.sdk.shopId,
+                Constants.did: self.sdk.deviceId,
+                Constants.seance: self.sdk.userSeance,
+                Constants.sid: self.sdk.userSeance,
+                Constants.segment: self.sdk.segment
             ]
             switch event {
             case let .slideView(storyId, slideId):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = sdk.storiesCode
+                params[Constants.sourceCode] = self.sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.view
             case let .slideClick(storyId, slideId):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = sdk.storiesCode
+                params[Constants.sourceCode] = self.sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.click
@@ -194,7 +192,7 @@ class TrackHandler{
                 params[Constants.source] = sourceParams
             }
             
-            sdk.postRequest(path: path, params: params, completion: { result in
+            self.sdk.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -212,16 +210,15 @@ class TrackHandler{
     }
     
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
             
             var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
-                Constants.segment: sdk.segment,
+                Constants.shopId: self.sdk.shopId,
+                Constants.did: self.sdk.deviceId,
+                Constants.seance: self.sdk.userSeance,
+                Constants.sid: self.sdk.userSeance,
+                Constants.segment: self.sdk.segment,
                 Constants.event: event
             ]
             
@@ -253,7 +250,7 @@ class TrackHandler{
                 params[Constants.source] = sourceParams
             }
             
-            sdk.postRequest(path: Constants.trackCustomEventPath, params: params, completion: { result in
+            self.sdk.postRequest(path: Constants.trackCustomEventPath, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -269,7 +266,14 @@ class TrackHandler{
             })
         }
     }
-    
+}
+
+class TrackSourceServiceImpl: TrackSourceService {
+    private struct Constants {
+        static let recomendedCode = "recomendedCode"
+        static let recomendedType = "recomendedType"
+        static let timeStartSave = "timeStartSave"
+    }
     func trackSource(source: RecommendedByCase, code: String) {
         UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: Constants.timeStartSave)
         UserDefaults.standard.setValue(code, forKey: Constants.recomendedCode)

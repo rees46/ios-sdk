@@ -71,7 +71,17 @@ class NotificationHandler{
         }
     }
     
-    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
+    func getAllNotifications(
+        type: String,
+        phone: String? = nil,
+        email: String? = nil,
+        userExternalId: String? = nil,
+        userLoyaltyId: String? = nil,
+        channel: String?, limit: Int?,
+        page: Int?,
+        dateFrom: String?,
+        completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void
+    ) {
         guard let sdk = sdk else { return }
         
         sessionQueue.addOperation {
@@ -110,16 +120,18 @@ class NotificationHandler{
             sessionConfig.timeoutIntervalForRequest = 1
             sdk.urlSession = URLSession(configuration: sessionConfig)
             
-            sdk.getRequest(path: Constants.notificationPath, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let result = UserPayloadResponse(json: resJSON)
-                    completion(.success(result))
-                case let .failure(error):
-                    completion(.failure(error))
+            sdk.getRequest(
+                path: Constants.notificationPath, params: params, completion: { result in
+                    switch result {
+                    case let .success(successResult):
+                        let resJSON = successResult
+                        let result = UserPayloadResponse(json: resJSON)
+                        completion(.success(result))
+                    case let .failure(error):
+                        completion(.failure(error))
+                    }
                 }
-            })
+            )
         }
     }
 }

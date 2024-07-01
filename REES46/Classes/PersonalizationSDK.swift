@@ -287,7 +287,17 @@ public func createPersonalizationSDK(
     autoSendPushToken: Bool = true,
     _ completion: ((SDKError?) -> Void)? = nil
 ) -> PersonalizationSDK {
-    let sdk = SimplePersonalizationSDK(shopId: shopId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, apiDomain: apiDomain, stream: stream, enableLogs: enableLogs, autoSendPushToken: autoSendPushToken, completion: completion)
+    let sdk = SimplePersonalizationSDK(
+        shopId: shopId,
+        userEmail: userEmail,
+        userPhone: userPhone,
+        userLoyaltyId: userLoyaltyId,
+        apiDomain: apiDomain,
+        stream: stream,
+        enableLogs: enableLogs,
+        autoSendPushToken: autoSendPushToken,
+        completion: completion
+    )
     
     sdk.resetSdkCache()
     
