@@ -85,6 +85,19 @@ public enum PushEventType: String {
 }
 
 public protocol PersonalizationSDK {
+    var shopId: String { get }
+    var deviceId: String { get }
+    var userSeance: String { get }
+    var segment: String { get }
+    var storiesCode: String? { get }
+    var sessionQueue: SessionQueue { get }
+    var urlSession: URLSession { get set }
+    
+    func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void)
+    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SDKError>) -> Void)
+    func configureURLSession(configuration: URLSessionConfiguration)
+    func generateString(array : [String]) -> String
+    
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
@@ -186,10 +199,6 @@ public extension PersonalizationSDK {
         manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, completion: completion)
     }
     
-    //    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String? = nil, limit: Int? = nil, page: Int? = nil, dateFrom: String? = nil, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
-    //        getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId:userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
-    //    }
-    
     func deleteUserCredentials() {
         deleteUserCredentials()
     }
@@ -207,7 +216,6 @@ public extension PersonalizationSDK {
         }
         for key in keys {
             if dict[key] != nil { //if let value = dict[key] {
-                //print("Clear local stories cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }
@@ -232,7 +240,6 @@ public extension PersonalizationSDK {
             }
         }
         UserDefaults.standard.synchronize()
-        //resetCartProductStates()
     }
     
     func resetCartProductStates() {
@@ -252,7 +259,6 @@ public extension PersonalizationSDK {
             }
         }
         UserDefaults.standard.synchronize()
-        //resetFavoritesProductStates()
     }
     
     func resetFavoritesProductStates() {

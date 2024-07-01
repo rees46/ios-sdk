@@ -2,12 +2,13 @@
 import Foundation
 
 class TrackEventServiceImpl: TrackEventService {
-    private let sdk: SimplePersonalizationSDK
+    
+    private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue
     
-    init(sdk: SimplePersonalizationSDK, sessionQueue: SessionQueue) {
+    init(sdk: PersonalizationSDK) {
         self.sdk = sdk
-        self.sessionQueue = sessionQueue
+        self.sessionQueue = sdk.sessionQueue
     }
     
     private struct Constants {
@@ -65,30 +66,34 @@ class TrackEventServiceImpl: TrackEventService {
     }
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        guard let sdk = sdk else {
+            completion(.failure(.custom(error: "track: SDK is not initialized")))
+            return
+        }
         
         sessionQueue.addOperation {
             var path = "push"
             
             var paramEvent = ""
             var params: [String: Any] = [
-                Constants.shopId: self.sdk.shopId,
-                Constants.did: self.sdk.deviceId,
-                Constants.seance: self.sdk.userSeance,
-                Constants.sid: self.sdk.userSeance,
-                Constants.segment: self.sdk.segment
+                Constants.shopId: sdk.shopId,
+                Constants.did: sdk.deviceId,
+                Constants.seance: sdk.userSeance,
+                Constants.sid: sdk.userSeance,
+                Constants.segment: sdk.segment
             ]
             switch event {
             case let .slideView(storyId, slideId):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = self.sdk.storiesCode
+                params[Constants.sourceCode] = sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.view
             case let .slideClick(storyId, slideId):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = self.sdk.storiesCode
+                params[Constants.sourceCode] = sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.click
@@ -116,11 +121,13 @@ class TrackEventServiceImpl: TrackEventService {
             case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
                 var tempItems: [[String: Any]] = []
                 for (_, item) in products.enumerated() {
-                    tempItems.append([
-                        Constants.id: item.id,
-                        Constants.amount: String(item.amount),
-                        Constants.price: item.price
-                    ])
+                    tempItems.append(
+                        [
+                            Constants.id: item.id,
+                            Constants.amount: String(item.amount),
+                            Constants.price: item.price
+                        ]
+                    )
                 }
                 params[Constants.items] = tempItems
                 params[Constants.orderId] = orderId
@@ -192,33 +199,39 @@ class TrackEventServiceImpl: TrackEventService {
                 params[Constants.source] = sourceParams
             }
             
-            self.sdk.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON[Constants.status] as? String ?? ""
-                    if status == Constants.success {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
+            sdk.postRequest(
+                path: path, params: params, completion: { result in
+                    switch result {
+                    case let .success(successResult):
+                        let resJSON = successResult
+                        let status = resJSON[Constants.status] as? String ?? ""
+                        if status == Constants.success {
+                            completion(.success(Void()))
+                        } else {
+                            completion(.failure(.responseError))
+                        }
+                    case let .failure(error):
+                        completion(.failure(error))
                     }
-                case let .failure(error):
-                    completion(.failure(error))
                 }
-            })
+            )
         }
     }
     
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        guard let sdk = sdk else {
+            completion(.failure(.custom(error: "trackEvent: SDK is not initialized")))
+            return
+        }
         
         sessionQueue.addOperation {
             
             var params: [String: Any] = [
-                Constants.shopId: self.sdk.shopId,
-                Constants.did: self.sdk.deviceId,
-                Constants.seance: self.sdk.userSeance,
-                Constants.sid: self.sdk.userSeance,
-                Constants.segment: self.sdk.segment,
+                Constants.shopId: sdk.shopId,
+                Constants.did: sdk.deviceId,
+                Constants.seance: sdk.userSeance,
+                Constants.sid: sdk.userSeance,
+                Constants.segment: sdk.segment,
                 Constants.event: event
             ]
             
@@ -250,7 +263,7 @@ class TrackEventServiceImpl: TrackEventService {
                 params[Constants.source] = sourceParams
             }
             
-            self.sdk.postRequest(path: Constants.trackCustomEventPath, params: params, completion: { result in
+            sdk.postRequest(path: Constants.trackCustomEventPath, params: params, completion: { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult

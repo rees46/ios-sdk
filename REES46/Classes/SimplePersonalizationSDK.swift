@@ -15,13 +15,6 @@ public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
     
-    let trackEventService: TrackEventService
-    let trackSourceService: TrackSourceService
-    let subscriptionService: SubscriptionService
-    
-    //    private let notificationService: NotificationService
-  
-    
     struct Constants {
         static let shopId: String = "shop_id"
         static let searchQuery: String = "search_query"
@@ -50,7 +43,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         static let noClarificationValue: String = "1"
     }
     
-    var storiesCode: String? = nil
+    var storiesCode: String?
+    
     var shopId: String
     var deviceId: String
     var userSeance: String
@@ -68,7 +62,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userLoyaltyId: String?
     
     var segment: String
-    
     var urlSession: URLSession
     
     var userInfo: InitResponse = InitResponse()
@@ -82,6 +75,26 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let initSemaphore = DispatchSemaphore(value: 0)
     private let serialSemaphore = DispatchSemaphore(value: 0)
     
+    lazy var trackEventService: TrackEventService = {
+        return TrackEventServiceImpl(sdk: self)
+    }()
+    
+    lazy var trackSourceService: TrackSourceService = {
+        return TrackSourceServiceImpl()
+    }()
+    
+    lazy var subscriptionService: SubscriptionService = {
+        return SubscriptionServiceImpl(sdk: self)
+    }()
+    
+    lazy var notificationService: NotificationHandlingService = {
+        return NotificationHandlerServiceImpl(sdk: self)
+    }()
+    
+    lazy var pushTokenService: PushTokenHandlingService = {
+        return PushTokenHandlerServiceImpl(sdk: self)
+    }()
+    
     init(
         shopId: String,
         userEmail: String? = nil,
@@ -93,9 +106,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         autoSendPushToken: Bool = true,
         completion: ((SDKError?) -> Void)? = nil
     ) {
-        self.trackEventService = TrackEventServiceImpl(sdk: self, sessionQueue: SessionQueue.manager)
-        self.trackSourceService = TrackSourceServiceImpl()
-        self.subscriptionService = SubscriptionServiceImpl(sdk: self)
+        
         
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
@@ -107,6 +118,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
+        self.storiesCode = nil
         
         // Generate seance
         userSeance = UUID().uuidString
@@ -138,16 +150,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure(let error):
                     if let completion = completion {
                         completion(error)
-                        
-                        let networkManager = NetworkStatus.nManager
-                        let connectionStatus = networkManager.connectionStatus
-                        let typeOfConnection = networkManager.connectionType
-                        
-                        if connectionStatus == .Online {
-                            completion(error)
-                        } else if connectionStatus == .Offline {
-                            completion(.custom(error: typeOfConnection?.description ?? "Network Error" ))
-                        }
                     }
                     self.initSemaphore.signal()
                     break
@@ -174,11 +176,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool = false, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        pushTokenService.setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
+        pushTokenService.setPushToken(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
     func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void) {
         notificationService.getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
+    }
+    
+    func configureURLSession(configuration: URLSessionConfiguration) {
+        self.urlSession = URLSession(configuration: configuration)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
