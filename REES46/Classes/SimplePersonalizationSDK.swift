@@ -14,7 +14,7 @@ import AppTrackingTransparency
 public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-
+    
     struct Constants {
         static let shopId: String = "shop_id"
         static let searchQuery: String = "search_query"
@@ -42,8 +42,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         static let defaultTimeout: Double = 1.0
         static let noClarificationValue: String = "1"
     }
-
-    private var storiesCode: String? = nil
+    
+    var storiesCode: String?
+    
     var shopId: String
     var deviceId: String
     var userSeance: String
@@ -61,12 +62,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userLoyaltyId: String?
     
     var segment: String
-
     var urlSession: URLSession
-
+    
     var userInfo: InitResponse = InitResponse()
-
-    private let sessionQueue = SessionQueue.manager
+    
+    let sessionQueue = SessionQueue.manager
     
     private var requestOperation: RequestOperation?
     
@@ -74,8 +74,40 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     private let initSemaphore = DispatchSemaphore(value: 0)
     private let serialSemaphore = DispatchSemaphore(value: 0)
-
-    init(shopId: String, userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, apiDomain: String, stream: String = "ios", enableLogs: Bool = false, autoSendPushToken: Bool = true, completion: ((SDKError?) -> Void)? = nil) {
+    
+    lazy var trackEventService: TrackEventService = {
+        return TrackEventServiceImpl(sdk: self)
+    }()
+    
+    lazy var trackSourceService: TrackSourceService = {
+        return TrackSourceServiceImpl()
+    }()
+    
+    lazy var subscriptionService: SubscriptionService = {
+        return SubscriptionServiceImpl(sdk: self)
+    }()
+    
+    lazy var notificationService: NotificationHandlingService = {
+        return NotificationHandlerServiceImpl(sdk: self)
+    }()
+    
+    lazy var pushTokenService: PushTokenNotificationService = {
+        return PushTokenHandlerServiceImpl(sdk: self)
+    }()
+    
+    init(
+        shopId: String,
+        userEmail: String? = nil,
+        userPhone: String? = nil,
+        userLoyaltyId: String? = nil,
+        apiDomain: String,
+        stream: String = "ios",
+        enableLogs: Bool = false,
+        autoSendPushToken: Bool = true,
+        completion: ((SDKError?) -> Void)? = nil
+    ) {
+        
+        
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
         
@@ -86,7 +118,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
-
+        self.storiesCode = nil
+        
         // Generate seance
         userSeance = UUID().uuidString
         
@@ -117,16 +150,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure(let error):
                     if let completion = completion {
                         completion(error)
-                        
-                        let networkManager = NetworkStatus.nManager
-                        let connectionStatus = networkManager.connectionStatus
-                        let typeOfConnection = networkManager.connectionType
-                        
-                        if connectionStatus == .Online {
-                            completion(error)
-                        } else if connectionStatus == .Offline {
-                            completion(.custom(error: typeOfConnection?.description ?? "Network Error" ))
-                        }
                     }
                     self.initSemaphore.signal()
                     break
@@ -135,11 +158,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.initSemaphore.wait()
         }
     }
-
+    
     func getDeviceId() -> String {
         return deviceId
     }
-
+    
     func getSession() -> String {
         return userSeance
     }
@@ -152,88 +175,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return shopId
     }
     
-    func setPushTokenNotification(
-        token: String,
-        isFirebaseNotification: Bool = false,
-        completion: @escaping (Result<Void, SDKError>) -> Void
-    ) {
-        sessionQueue.addOperation {
-            let path = "mobile_push_tokens"
-            var params = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "token": token
-            ]
-
-            if isFirebaseNotification {
-                params["platform"] = "ios_firebase"
-            } else {
-                params["platform"] = "ios"
-            }
-
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case .success:
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+    func setPushTokenNotification(token: String, isFirebaseNotification: Bool = false, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        pushTokenService.setPushToken(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
-    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "notifications"
-            var params = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment,
-                "type": type,
-            ]
-            
-            if let userPhone = phone {
-                params["phone"] = String(userPhone)
-            }
-            if let userEmail = email {
-                params["email"] = String(userEmail)
-            }
-            if let userExternalId = userExternalId {
-                params["external_id"] = String(userExternalId)
-            }
-            if let userLoyaltyId = userLoyaltyId {
-                params["loyalty_id"] = String(userLoyaltyId)
-            }
-            if let channel = channel {
-                params["channel"] = String(channel)
-            }
-            if let limit = limit {
-                params["limit"] = String(limit)
-            }
-            if let page = page {
-                params["page"] = String(page)
-            }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.getRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let result = UserPayloadResponse(json: resJSON)
-                    completion(.success(result))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void) {
+        notificationService.getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
+    }
+    
+    func configureURLSession(configuration: URLSessionConfiguration) {
+        self.urlSession = URLSession(configuration: configuration)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
@@ -296,7 +247,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
-
+        
         sessionQueue.addOperation {
             let path = "search"
             var params: [String: String] = [
@@ -308,7 +259,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 Constants.type: "full_search",
                 Constants.searchQuery: query,
             ]
-
+            
             if let limit = limit {
                 params[Constants.limit] = String(limit)
             }
@@ -389,7 +340,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
-
+    
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "profile/set"
@@ -419,19 +370,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let location = location {
                 paramsTemp["location"] = String(location)
             }
-
+            
             if let loyaltyCardLocation = loyaltyCardLocation {
                 paramsTemp["loyalty_card_location"] = String(loyaltyCardLocation)
             }
-
+            
             if let userLoyaltyId = userLoyaltyId {
                 paramsTemp["loyalty_id"] = String(userLoyaltyId)
             }
-
+            
             if let loyaltyStatus = loyaltyStatus {
                 paramsTemp["loyalty_status"] = String(loyaltyStatus)
             }
-
+            
             if let fbID = fbID {
                 paramsTemp["fb_id"] = String(fbID)
             }
@@ -516,213 +467,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
-
+    
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            var path = "push"
-            var paramEvent = ""
-            var params: [String: Any] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment
-            ]
-            switch event {
-            case let .slideView(storyId, slideId):
-                params["story_id"] = storyId
-                params["slide_id"] = slideId
-                params["code"] = self.storiesCode
-                path = "track/stories"
-                paramEvent = "view"
-            case let .slideClick(storyId, slideId):
-                params["story_id"] = storyId
-                params["slide_id"] = slideId
-                params["code"] = self.storiesCode
-                path = "track/stories"
-                paramEvent = "click"
-            case let .search(query):
-                params["search_query"] = query
-                paramEvent = "search"
-            case let .categoryView(id):
-                params["category_id"] = id
-                paramEvent = "category"
-            case let .productView(id):
-                params["items"] = [["id":id]]
-                paramEvent = "view"
-            case let .productAddedToCart(id, amount):
-                params["items"] = [["id":id, "amount":amount] as [String : Any]]
-                paramEvent = "cart"
-            case let .productAddedToFavorites(id):
-                params["items"] = [["id":id]]
-                paramEvent = "wish"
-            case let .productRemovedFromCart(id):
-                params["items"] = [["id":id]]
-                paramEvent = "remove_from_cart"
-            case let .productRemovedFromFavorites(id):
-                params["items"] = [["id":id]]
-                paramEvent = "remove_wish"
-            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in products.enumerated() {
-                    tempItems.append([
-                        "id": item.id,
-                        "amount": String(item.amount),
-                        "price": item.price
-                    ])
-                }
-                params["items"] = tempItems
-                params["order_id"] = orderId
-                params["order_price"] = "\(totalValue)"
-                if let deliveryAddress = deliveryAddress {
-                    params["delivery_address"] = deliveryAddress
-                }
-                if let deliveryType = deliveryType {
-                    params["delivery_type"] = deliveryType
-                }
-                if let promocode = promocode {
-                    params["promocode"] = promocode
-                }
-                if let paymentType = paymentType {
-                    params["payment_type"] = paymentType
-                }
-                if let taxFree = taxFree {
-                    params["tax_free"] = taxFree
-                }
-                paramEvent = "purchase"
-            case let .synchronizeCart(items):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
-                    tempItems.append([
-                        "id": item.productId,
-                        "amount": String(item.quantity)
-                    ])
-                }
-                params["items"] = tempItems
-                params["full_cart"] = "true"
-                paramEvent = "cart"
-            case let .synchronizeFavorites(items):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
-                    tempItems.append([
-                        "id": item.productId
-                    ])
-                }
-                params["items"] = tempItems
-                params["full_wish"] = "true"
-                paramEvent = "wish"
-            }
-            
-            params["event"] = paramEvent
-            
-            // Process recommendedBy parameter
-            if let recommendedBy = recommendedBy {
-                let recomendedParams = recommendedBy.getParams()
-                for item in recomendedParams {
-                    params[item.key] = item.value
-                }
-            }
-            
-            // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
-                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
-                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
-                let sourceParams: [String: Any] = [
-                    "from": savedType,
-                    "code": savedCode
-                ]
-                params["source"] = sourceParams
-            }
-            
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
     
-
-    // Track custom event
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "push/custom"
-            var params: [String: Any] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment,
-                "event": event
-            ]
-            
-            if let category = category {
-                params["category"] = category
-            }
-            if let label = label {
-                params["label"] = label
-            }
-            if let value = value {
-                params["value"] = String(value)
-            }
-            
-            // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: "timeStartSave")
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: "recomendedCode")
-                UserDefaults.standard.setValue(nil, forKey: "recomendedType")
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: "recomendedCode") ?? ""
-                let savedType = UserDefaults.standard.string(forKey: "recomendedType") ?? ""
-                let sourceParams: [String: Any] = [
-                    "from": savedType,
-                    "code": savedCode
-                ]
-                params["source"] = sourceParams
-            }
-            
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        trackEventService.trackEvent(event: event, category: category, label: label, value: value, completion: completion)
     }
     
     func trackSource(source: RecommendedByCase, code: String) {
-        UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "timeStartSave")
-        UserDefaults.standard.setValue(code, forKey: "recomendedCode")
-        UserDefaults.standard.setValue(source.rawValue, forKey: "recomendedType")
+        trackSourceService.trackSource(source: source, code: code)
     }
-
+    
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "recommend/\(blockId)"
@@ -735,7 +492,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "resize_image": "180",
                 "segment": self.segment
             ]
-
+            
             if let productId = currentProductId {
                 params["item_id"] = productId
             }
@@ -757,13 +514,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             } else {
                 params.removeValue(forKey: "with_locations")
             }
-
+            
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
             sessionConfig.waitsForConnectivity = true
             sessionConfig.shouldUseExtendedBackgroundIdleMode = true
             self.urlSession = URLSession(configuration: sessionConfig)
-
+            
             self.getRequest(path: path, params: params) { result in
                 switch result {
                 case let .success(successResult):
@@ -776,7 +533,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
-
+    
     func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
@@ -871,7 +628,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
     }
-
+    
     func getProductInfo(id: String, completion: @escaping (Result<ProductInfo, SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/get"
@@ -905,7 +662,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/cart"
-            var params: [String : String] = [
+            let params: [String : String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId
             ]
@@ -990,118 +747,70 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "subscriptions/subscribe_for_product_price"
-            var params: [String: Any] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment,
-                "item_id": id,
-                "price": currentPrice
-            ]
-            
-            // If has email
-            if let email = email {
-                params["email"] = email
-            }
-            
-            // If has phone
-            if let phone = phone {
-                params["phone"] = phone
-            }
-
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case .success(_):
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+    func subscribeForPriceDrop(
+        id: String,
+        currentPrice: Double,
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
+        subscriptionService.subscribeForPriceDrop(
+            id:id,
+            currentPrice: currentPrice,
+            email: email,
+            phone: phone,
+            completion: completion
+        )
     }
     
     func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        sessionQueue.addOperation {
-            let path = "subscriptions/subscribe_for_product_available"
-            
-            var params: [String: Any] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-                "segment": self.segment,
-                "item_id": id
-            ]
-            
-            if let fashionSize = fashionSize {
-                let tmpSizesArray = self.generateString(array: fashionSize)
-                params["properties"] = ["fashion_size": tmpSizesArray]
-            }
-            
-            if let email = email {
-                params["email"] = email
-            }
-            if let phone = phone {
-                params["phone"] = phone
-            }
-
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case .success(_):
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        subscriptionService.subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
     }
     
-    func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramId: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
-        
-        let path = "subscriptions/manage"
-        var params: [String: Any] = [
-            "shop_id": self.shopId,
-            "did": self.deviceId,
-            "seance": self.userSeance,
-            "sid": self.userSeance,
-            "segment": self.segment
-        ]
-        
-        if let email = email {
-            params["email"] = email
-        }
-        if let phone = phone {
-            params["phone"] = phone
-        }
-        
-        if let userExternalId          = userExternalId             { params["external_id"]                 = userExternalId }
-        if let userLoyaltyId           = userLoyaltyId              { params["loyalty_id"]                  = userLoyaltyId }
-        if let telegramId              = telegramId                 { params["telegram_id"]                 = telegramId }
-        if let emailBulk               = emailBulk                  { params["email_bulk"]                  = emailBulk }
-        if let emailChain              = emailChain                 { params["email_chain"]                 = emailChain }
-        if let emailTransactional      = emailTransactional         { params["email_transactional"]         = emailTransactional }
-        if let smsBulk                 = smsBulk                    { params["sms_bulk"]                    = smsBulk }
-        if let smsChain                = smsChain                   { params["sms_chain"]                   = smsChain }
-        if let smsTransactional        = smsTransactional           { params["sms_transactional"]           = smsTransactional }
-        if let webPushBulk             = webPushBulk                { params["web_push_bulk"]               = webPushBulk }
-        if let webPushChain            = webPushChain               { params["web_push_chain"]              = webPushChain }
-        if let webPushTransactional    = webPushTransactional       { params["web_push_transactional"]      = webPushTransactional }
-        if let mobilePushBulk          = mobilePushBulk             { params["mobile_push_bulk"]            = mobilePushBulk }
-        if let mobilePushChain         = mobilePushChain            { params["mobile_push_chain"]           = mobilePushChain }
-        if let mobilePushTransactional = mobilePushTransactional    { params["mobile_push_transactional"]   = mobilePushTransactional }
-        
-        self.postRequest(path: path, params: params, completion: { result in
-            switch result {
-            case .success(_):
-                completion(.success(Void()))
-            case let .failure(error):
-                completion(.failure(error))
-            }
-        })
+    func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        subscriptionService.unsubscribeForBackInStock(itemIds: itemIds, email: email, phone: phone, completion: completion)
+    }
+    
+    func manageSubscription(
+        email: String? = nil,
+        phone: String? = nil,
+        userExternalId: String? = nil,
+        userLoyaltyId: String? = nil,
+        telegramId: String? = nil,
+        emailBulk: Bool? = nil,
+        emailChain: Bool? = nil,
+        emailTransactional: Bool? = nil,
+        smsBulk: Bool? = nil,
+        smsChain: Bool? = nil,
+        smsTransactional: Bool? = nil,
+        webPushBulk: Bool? = nil,
+        webPushChain: Bool? = nil,
+        webPushTransactional: Bool? = nil,
+        mobilePushBulk: Bool? = nil,
+        mobilePushChain: Bool? = nil,
+        mobilePushTransactional: Bool? = nil,
+        completion: @escaping(Result<Void, SDKError>) -> Void
+    ) {
+        subscriptionService.manageSubscription(
+            email:email,
+            phone:phone,
+            userExternalId:userExternalId,
+            userLoyaltyId:userLoyaltyId,
+            telegramId:telegramId,
+            emailBulk:emailBulk,
+            emailChain:emailChain,
+            emailTransactional:emailTransactional,
+            smsBulk:smsBulk,
+            smsChain:smsChain,
+            smsTransactional:smsTransactional,
+            webPushBulk:webPushBulk,
+            webPushChain:webPushChain,
+            webPushTransactional:webPushTransactional,
+            mobilePushBulk:mobilePushBulk,
+            mobilePushChain:mobilePushChain,
+            mobilePushTransactional:mobilePushTransactional,
+            completion: completion
+        )
     }
     
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
@@ -1124,7 +833,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let phone = phone {
                 params["phone"] = phone
             }
-
+            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case .success(_):
@@ -1153,7 +862,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let phone = phone {
                 params["phone"] = phone
             }
-
+            
             self.postRequest(path: path, params: params, completion: { result in
                 switch result {
                 case .success(_):
@@ -1164,12 +873,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             })
         }
     }
-
+    
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
         let hours = secondsFromGMT/3600
-
+        
         var params: [String: String] = [
             "shop_id": shopId,
             "tz": String(hours)
@@ -1358,12 +1067,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     internal func configuration() -> SdkConfiguration.Type {
         return SdkConfiguration.self
     }
-
-    private func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
-
+    
+    func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+        
         let urlString = baseURL + path
         var url = URLComponents(string: urlString)
-
+        
         var queryItems = [URLQueryItem]()
         for item in params {
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
@@ -1383,7 +1092,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.failure(.decodeError))
             }
         }
-
+        
         if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
@@ -1428,8 +1137,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             completion(.failure(.invalidResponse))
         }
     }
-
-    private func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+    
+    func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
         var requestParams : [String: Any] = [
             "stream": stream
         ]
@@ -1454,7 +1163,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
                 return
             }
-
+            
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")
             
