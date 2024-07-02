@@ -18,7 +18,7 @@ public enum Event {
     case productRemovedFromCart (id: String)
     case search (query: String)
     case synchronizeCart (items: [CartItem])
-    case synchronizeFavorites(items: [CartItem])
+    case synchronizeFavorites(ids: [String])
     case slideView(storyId: String, slideId: String)
     case slideClick(storyId: String, slideId: String)
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
@@ -85,6 +85,19 @@ public enum PushEventType: String {
 }
 
 public protocol PersonalizationSDK {
+    var shopId: String { get }
+    var deviceId: String { get }
+    var userSeance: String { get }
+    var segment: String { get }
+    var storiesCode: String? { get }
+    var sessionQueue: SessionQueue { get }
+    var urlSession: URLSession { get set }
+    
+    func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void)
+    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SDKError>) -> Void)
+    func configureURLSession(configuration: URLSessionConfiguration)
+    func generateString(array : [String]) -> String
+    
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
@@ -105,30 +118,30 @@ public protocol PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: [String]?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func unsubscribeForBackInStock(itemIds: [String], email: String?, phone: String? , completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func getStories(code: String, completion: @escaping(Result<StoryContent, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping(Result<Void, SDKError>) -> Void)
-    //func getAllNotifications(type: String, phone: String?, email: String?, userExternalId: String?, userLoyaltyId: String?, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void)
     func configuration() -> SdkConfiguration.Type
     func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SDKError>) -> Void)
     func deleteUserCredentials()
 }
 
 public extension PersonalizationSDK {
-    func setPushTokenNotification(token: String, platform: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
-        setPushTokenNotification(token: token, platform: platform, completion: completion)
+    func setPushTokenNotification(token: String,isFirebaseNotification: Bool = false, completion: @escaping(Result<Void, SDKError>) -> Void) {
+        setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
     }
-
+    
     func setProfileData(userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, birthday: Date? = nil, age: Int? = nil, firstName: String? = nil, lastName: String? = nil, location: String? = nil, gender: Gender? = nil, fbID: String? = nil, vkID: String? = nil, telegramId: String? = nil, loyaltyCardLocation: String? = nil, loyaltyStatus: String? = nil, loyaltyBonuses: Int? = nil, loyaltyBonusesToNextLevel: Int? = nil, boughtSomething: Bool? = nil, userId: String? = nil, customProperties: [String: Any?]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, lastName: lastName, location: location, gender: gender, fbID: fbID, vkID: vkID, telegramId: telegramId, loyaltyCardLocation: loyaltyCardLocation, loyaltyStatus: loyaltyStatus, loyaltyBonuses: loyaltyBonuses, loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel, boughtSomething: boughtSomething, userId: userId, customProperties: customProperties, completion: completion)
     }
-
+    
     func recommend(blockId: String, currentProductId: String? = nil, currentCategoryId: String? = nil, locations: String? = nil, imageSize: String? = nil, timeOut: Double? = nil, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
         recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
     }
@@ -165,6 +178,10 @@ public extension PersonalizationSDK {
         subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
     }
     
+    func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        unsubscribeForBackInStock(itemIds: itemIds, email: email,phone:phone,completion: completion)
+    }
+    
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
         subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
     }
@@ -180,10 +197,6 @@ public extension PersonalizationSDK {
     func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramId: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, completion: @escaping(Result<Void, SDKError>) -> Void) {
         manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, completion: completion)
     }
-    
-    //    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String? = nil, limit: Int? = nil, page: Int? = nil, dateFrom: String? = nil, completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void) {
-    //        getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId:userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
-    //    }
     
     func deleteUserCredentials() {
         deleteUserCredentials()
@@ -202,7 +215,6 @@ public extension PersonalizationSDK {
         }
         for key in keys {
             if dict[key] != nil { //if let value = dict[key] {
-                //print("Clear local stories cache for \(key) = \(value)")
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }
@@ -227,7 +239,6 @@ public extension PersonalizationSDK {
             }
         }
         UserDefaults.standard.synchronize()
-        //resetCartProductStates()
     }
     
     func resetCartProductStates() {
@@ -247,7 +258,6 @@ public extension PersonalizationSDK {
             }
         }
         UserDefaults.standard.synchronize()
-        //resetFavoritesProductStates()
     }
     
     func resetFavoritesProductStates() {
@@ -282,7 +292,17 @@ public func createPersonalizationSDK(
     autoSendPushToken: Bool = true,
     _ completion: ((SDKError?) -> Void)? = nil
 ) -> PersonalizationSDK {
-    let sdk = SimplePersonalizationSDK(shopId: shopId, userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, apiDomain: apiDomain, stream: stream, enableLogs: enableLogs, autoSendPushToken: autoSendPushToken, completion: completion)
+    let sdk = SimplePersonalizationSDK(
+        shopId: shopId,
+        userEmail: userEmail,
+        userPhone: userPhone,
+        userLoyaltyId: userLoyaltyId,
+        apiDomain: apiDomain,
+        stream: stream,
+        enableLogs: enableLogs,
+        autoSendPushToken: autoSendPushToken,
+        completion: completion
+    )
     
     sdk.resetSdkCache()
     
