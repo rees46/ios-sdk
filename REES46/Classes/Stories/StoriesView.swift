@@ -244,49 +244,55 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
-        if let currentStory = stories?[indexPath.row] {
-            let storyVC = StoryViewController()
-            storyVC.sdkLinkDelegate = self
-            storyVC.sdk = sdk
-            storyVC.stories = stories ?? []
-            
-            let sId = "viewed.slide." + currentStory.id
-            
-            var allStoriesMainArray: [String] = []
-            for (index, _) in currentStory.slides.enumerated() {
-                allStoriesMainArray.append(currentStory.slides[(index)].id)
-            }
-            
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
-            let lastViewedSlideIndexValue = viewedSlidesStoriesCachedArray.last
-            
-            var currentDefaultIndex = 0
-            for name in allStoriesMainArray {
-                if name == lastViewedSlideIndexValue {
-                    //print("Story \(name) for index \(currentDefaultIndex)")
-                    break
-                }
-                currentDefaultIndex += 1
-            }
-            
-            if (currentDefaultIndex + 1 < allStoriesMainArray.count) {
-                storyVC.currentPosition = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
-                storyVC.startWithIndexPath = IndexPath(row: Int(currentDefaultIndex + 1), section: indexPath.row)
-                storyVC.modalPresentationStyle = .fullScreen
-                mainVC?.present(storyVC, animated: true)
-            } else if (currentDefaultIndex + 1 == allStoriesMainArray.count) {
-                storyVC.currentPosition = IndexPath(row: Int(0), section: indexPath.row)
-                storyVC.startWithIndexPath = IndexPath(row: Int(0), section: indexPath.row)
-                storyVC.modalPresentationStyle = .fullScreen
-                mainVC?.present(storyVC, animated: true)
-            } else {
-                storyVC.currentPosition = IndexPath(row: currentStory.startPosition, section: indexPath.row)
-                storyVC.startWithIndexPath = IndexPath(row: currentStory.startPosition, section: indexPath.row)
-                storyVC.modalPresentationStyle = .fullScreen
-                mainVC?.present(storyVC, animated: true)
-            }
+        showStoriesByUserClick(at: indexPath.row)
+    }
+    
+    public func showStories() {
+        guard let firstStory = stories?.first else {
+            return
         }
+        
+        guard let index = stories?.firstIndex(where: { $0.id == firstStory.id }) else {
+            return
+        }
+        
+        showStories(at: index, for: firstStory)
+    }
+    private func showStoriesByUserClick(at index: Int) {
+        guard let story = stories?[index] else {
+            return
+        }
+        
+        showStories(at: index, for: story)
+    }
+    
+    private func showStories(at index: Int, for story: Story) {
+        let storyVC = StoryViewController()
+        storyVC.sdkLinkDelegate = self
+        storyVC.sdk = sdk
+        storyVC.stories = stories ?? []
+        
+        let sId = "viewed.slide." + story.id
+        
+        var allSlidesIDs: [String] = []
+        for slide in story.slides {
+            allSlidesIDs.append(slide.id)
+        }
+        
+        let viewedSlidesCachedIDs: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
+        
+        if let lastViewedSlideID = viewedSlidesCachedIDs.last,
+           let defaultIndex = allSlidesIDs.firstIndex(of: lastViewedSlideID) {
+            let nextIndex = defaultIndex + 1
+            storyVC.currentPosition = IndexPath(row: nextIndex, section: index)
+            storyVC.startWithIndexPath = IndexPath(row: nextIndex, section: index)
+        } else {
+            storyVC.currentPosition = IndexPath(row: story.startPosition, section: index)
+            storyVC.startWithIndexPath = IndexPath(row: story.startPosition, section: index)
+        }
+        
+        storyVC.modalPresentationStyle = .fullScreen
+        mainVC?.present(storyVC, animated: true)
     }
 }
 

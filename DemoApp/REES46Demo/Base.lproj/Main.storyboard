@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="bdj-YT-ijg">
-    <device id="retina4_7" orientation="portrait" appearance="light"/>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="bdj-YT-ijg">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22685"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -22,7 +22,7 @@
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="MainViewController" customModule="REES46Demo" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" alwaysBounceVertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Jiq-jd-mAB">
@@ -30,7 +30,7 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vZc-Wl-hzF">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="2012"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="374" height="2012"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Stories" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VOn-RV-d4U">
@@ -40,7 +40,7 @@
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="yxV-vz-Ow2" customClass="StoriesView" customModule="REES46">
-                                                <rect key="frame" x="0.0" y="104" width="375" height="188"/>
+                                                <rect key="frame" x="-1" y="104" width="374" height="188"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                             </view>
@@ -81,18 +81,27 @@
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6xl-Za-SDC" customClass="DemoShopButton" customModule="REES46Demo" customModuleProvider="target">
-                                                <rect key="frame" x="96" y="1750" width="183" height="42"/>
+                                                <rect key="frame" x="96" y="1750" width="181" height="42"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                 <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <state key="normal" title="Button"/>
                                                 <buttonConfiguration key="configuration" style="plain" title="Update"/>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jc1-ab-aKj" customClass="DemoShopButton" customModule="REES46Demo" customModuleProvider="target">
-                                                <rect key="frame" x="96" y="1810" width="183" height="42"/>
+                                                <rect key="frame" x="96" y="1810" width="181" height="42"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                 <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <state key="normal" title="Button"/>
                                                 <buttonConfiguration key="configuration" style="plain" title="Reset Keychain Did"/>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="y5i-q4-Hwz" userLabel="Show Stories Button">
+                                                <rect key="frame" x="96" y="1691" width="198" height="41"/>
+                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                <color key="tintColor" systemColor="labelColor"/>
+                                                <state key="normal" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="filled" title="Show stories">
+                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
+                                                </buttonConfiguration>
                                             </button>
                                             <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yLL-YI-dB0">
                                                 <rect key="frame" x="16" y="88" width="36" height="36"/>
@@ -114,32 +123,32 @@
                                 </connections>
                             </scrollView>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hqi-UZ-mLX">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="106"/>
+                                <rect key="frame" x="0.0" y="0.0" width="393" height="135"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XUH-xy-HDF">
-                                        <rect key="frame" x="0.0" y="0.0" width="375" height="52"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="393" height="81"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="logoDemoStore" translatesAutoresizingMaskIntoConstraints="NO" id="fqt-Jb-b4I">
-                                                <rect key="frame" x="85" y="13" width="204" height="38"/>
+                                                <rect key="frame" x="89" y="42" width="214" height="38"/>
                                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             </imageView>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </view>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="rYZ-3T-EW7">
-                                        <rect key="frame" x="11" y="65" width="35" height="35"/>
+                                        <rect key="frame" x="12" y="92" width="35" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="iconMenu"/>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D31-uF-Kju">
-                                        <rect key="frame" x="289" y="65" width="35" height="35"/>
+                                        <rect key="frame" x="304" y="92" width="35" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="iconSearch"/>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="JFb-Hl-bOv">
-                                        <rect key="frame" x="325" y="62" width="39" height="39"/>
+                                        <rect key="frame" x="342" y="89" width="39" height="39"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="iconCart"/>
                                     </button>
@@ -159,13 +168,14 @@
                         <outlet property="resetDidButton" destination="jc1-ab-aKj" id="L8d-GW-iMu"/>
                         <outlet property="scrollView" destination="Jiq-jd-mAB" id="uSK-EG-y5G"/>
                         <outlet property="searchButton" destination="D31-uF-Kju" id="2TY-o1-Su7"/>
+                        <outlet property="showStoriesButton" destination="y5i-q4-Hwz" id="pbq-Gg-8Cy"/>
                         <outlet property="storiesCollectionView" destination="yxV-vz-Ow2" id="4Xl-gF-YIf"/>
                         <outlet property="updateDidButton" destination="6xl-Za-SDC" id="zoX-OX-eXe"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-60" y="21"/>
+            <point key="canvasLocation" x="-60.305343511450381" y="20.422535211267608"/>
         </scene>
         <!--Main-->
         <scene sceneID="SJy-5o-1bN">
@@ -174,7 +184,7 @@
                     <toolbarItems/>
                     <navigationItem key="navigationItem" id="LGa-Fm-7rT"/>
                     <navigationBar key="navigationBar" contentMode="scaleToFill" id="mEh-9v-wR3">
-                        <rect key="frame" x="0.0" y="20" width="375" height="44"/>
+                        <rect key="frame" x="0.0" y="59" width="393" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
                     </navigationBar>
                     <nil name="viewControllers"/>
@@ -195,7 +205,7 @@
                         <viewControllerLayoutGuide type="bottom" id="vg7-en-lFH"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="g3a-yz-z5Z">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <viewLayoutGuide key="safeArea" id="ZdP-0q-zS2"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -209,10 +219,10 @@
     </scenes>
     <designables>
         <designable name="6xl-Za-SDC">
-            <size key="intrinsicContentSize" width="80" height="34.5"/>
+            <size key="intrinsicContentSize" width="80" height="34.333333333333336"/>
         </designable>
         <designable name="jc1-ab-aKj">
-            <size key="intrinsicContentSize" width="170.5" height="34.5"/>
+            <size key="intrinsicContentSize" width="170.33333333333334" height="34.333333333333336"/>
         </designable>
     </designables>
     <resources>
@@ -221,8 +231,11 @@
         <image name="iconMenu" width="128" height="128"/>
         <image name="iconSearch" width="15" height="15"/>
         <image name="logoDemoStore" width="692" height="184"/>
+        <systemColor name="labelColor">
+            <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
         <systemColor name="linkColor">
-            <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
