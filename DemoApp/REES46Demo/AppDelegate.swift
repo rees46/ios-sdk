@@ -570,6 +570,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 //        }
 //
 //        print("===END===")
+        
+//        sdk.unsubscribeForBackInStock(
+//            itemIds: ["784"],
+//            email: "mail@example.com",
+//            phone: "+19999999999"
+//        ) { unsubscribeResponse in
+//            print("Unsubscribe response received")
+//            switch unsubscribeResponse {
+//            case .success():
+//                print("Successfully unsubscribed from back in stock notifications.")
+//                print("Response: \(unsubscribeResponse)")
+//            case let .failure(error):
+//                print("Unsubscribe failed with error: \(error)")
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.localizedDescription)
+//                }
+//            }
+//        }
 
         return true
     }
