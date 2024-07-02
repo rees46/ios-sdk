@@ -23,6 +23,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
+    @IBOutlet private weak var showStoriesButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -148,6 +149,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
+    @objc
+    private func showStories(){
+        storiesCollectionView.showStories()
+    }
+    
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
         scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2000)
@@ -157,6 +163,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
         resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
+        showStoriesButton.addTarget(self, action: #selector(showStories), for: .touchUpInside)
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {

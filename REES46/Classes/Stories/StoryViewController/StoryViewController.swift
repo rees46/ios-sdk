@@ -13,7 +13,7 @@ public protocol CarouselCollectionViewCellDelegate: AnyObject {
 public class NavigationStackController: UINavigationController {
     
     open weak var stackDelegate: UINavigationControllerDelegate?
-
+    
     public override init(rootViewController: UIViewController) {
         super.init(rootViewController: rootViewController)
     }
@@ -25,11 +25,11 @@ public class NavigationStackController: UINavigationController {
     public override func viewDidLoad() {
         super.viewDidLoad()
     }
-
+    
     func canBeMadeHeadViewController(viewController: UIViewController) -> Bool {
         return viewController.isKind(of: StoryViewController.self)
     }
-
+    
     func resetNavigationStackWithLatestViewControllerAsHead() {
         if viewControllers.count > 1 {
             viewControllers.removeFirst((viewControllers.count - 1))
@@ -54,12 +54,12 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         collectionView.isPrefetchingEnabled = false
         return collectionView
     }()
-
+    
     public var closeButton: UIButton = {
         let closeButton = UIButton()
         return closeButton
     }()
-
+    
     private var pageIndicator: UIStackView = {
         let view = UIStackView()
         view.axis = .horizontal
@@ -67,19 +67,19 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         view.spacing = 8
         return view
     }()
-
+    
     public var stories: [Story] = []
-
+    
     public var startWithIndexPath: IndexPath? = .init(item: 1, section: 0)
     public var currentPosition: IndexPath = IndexPath()
-
+    
     private var timer = Timer()
-
+    
     private var storyTime = 8
-
+    
     private var timeLeft: TimeInterval = 8
     private var endTime: Date?
-
+    
     private var currentProgressView: UIProgressView?
     private var currentDuration: Float = 0
     
@@ -94,7 +94,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     private let storiesSlideReloadIndicator = StoriesSlideReloadIndicator()
     
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         commonInit()
@@ -118,7 +118,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             continueTimer()
         }
     }
-
+    
     @objc
     func didEnterBackground() {
         let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
@@ -173,7 +173,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             }
         }
     }
-
+    
     private func commonInit() {
         view.addSubview(collectionView)
         view.addSubview(closeButton)
@@ -191,27 +191,27 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         storiesSlideReloadIndicator.rotationDuration = SdkConfiguration.stories.storiesSlideReloadIndicatorRotationDuration
         storiesSlideReloadIndicator.alpha = 0.0
         view.addSubview(storiesSlideReloadIndicator)
-
+        
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1, constant: 0).isActive = true
         NSLayoutConstraint(item: collectionView, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.equal, toItem: view, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1, constant: 0).isActive = true
-
+        
         pageIndicator.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint(item: pageIndicator, 
+        NSLayoutConstraint(item: pageIndicator,
                            attribute: NSLayoutConstraint.Attribute.left,
                            relatedBy: NSLayoutConstraint.Relation.equal,
                            toItem: view, attribute: NSLayoutConstraint.Attribute.left,
                            multiplier: 1,
                            constant: 11).isActive = true
-        NSLayoutConstraint(item: pageIndicator, 
+        NSLayoutConstraint(item: pageIndicator,
                            attribute: NSLayoutConstraint.Attribute.right,
                            relatedBy: NSLayoutConstraint.Relation.equal,
                            toItem: view, attribute: NSLayoutConstraint.Attribute.right,
                            multiplier: 1,
                            constant: -11).isActive = true
-        NSLayoutConstraint(item: pageIndicator, 
+        NSLayoutConstraint(item: pageIndicator,
                            attribute: NSLayoutConstraint.Attribute.height,
                            relatedBy: NSLayoutConstraint.Relation.equal,
                            toItem: nil,
@@ -219,15 +219,15 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                            multiplier: 1,
                            constant: 4).isActive = true
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
-            NSLayoutConstraint(item: pageIndicator, 
+            NSLayoutConstraint(item: pageIndicator,
                                attribute: NSLayoutConstraint.Attribute.top,
-                               relatedBy: NSLayoutConstraint.Relation.equal, 
+                               relatedBy: NSLayoutConstraint.Relation.equal,
                                toItem: view,
                                attribute: NSLayoutConstraint.Attribute.top,
                                multiplier: 1,
                                constant: 62).isActive = true }
         else {
-            NSLayoutConstraint(item: pageIndicator, 
+            NSLayoutConstraint(item: pageIndicator,
                                attribute: NSLayoutConstraint.Attribute.top,
                                relatedBy: NSLayoutConstraint.Relation.equal,
                                toItem: view,
@@ -256,7 +256,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             storiesSlideReloadIndicator.centerXAnchor.constraint(equalTo: collectionView.centerXAnchor).isActive = true
             storiesSlideReloadIndicator.centerYAnchor.constraint(equalTo: collectionView.centerYAnchor).isActive = true
         }
-
+        
         configureView()
         closeButton.addTarget(self, action: #selector(didTapCloseButton), for: .touchUpInside)
     }
@@ -299,7 +299,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         } else if currentPosition.section >= stories.count - 1 {
             self.dismiss(animated: true)
         } else if currentPosition.section < stories.count - 1 {
-
+            
             currentPosition.row = 0
             
             let storyId = stories[currentPosition.section + 1].id
@@ -387,7 +387,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastViewedSlideIndexValue {
-                        //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -399,8 +398,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                         currentPosition.row = currentDefaultIndex
                         collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
                     } else {
-                        //print(stories[currentPosition.section - 1].slides.count)
-                        //print(stories[currentPosition.section].slides.count)
                         if (currentDefaultIndex + 1 <= stories[currentPosition.section - 1].slides.count) {
                             currentPosition.section -= 1
                             currentPosition.row = currentDefaultIndex + 1
@@ -425,7 +422,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 scrollToFirstRow()
                 collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
             }
-
+            
             DispatchQueue.main.async {
                 self.updateSlides()
             }
@@ -446,7 +443,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
                 allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
             }
             
@@ -460,7 +456,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastViewedSlideIndexValue {
-                        //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -488,7 +483,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 scrollToFirstRow()
                 collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
             }
-
+            
             DispatchQueue.main.async {
                 self.updateSlides()
             }
@@ -511,7 +506,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section - 1].slides.enumerated() {
-                //print("Story has \(index + 1): \(stories[currentPosition.section - 1].slides[(index)].id)")
                 allStoriesMainArray.append(stories[currentPosition.section - 1].slides[(index)].id)
             }
             
@@ -525,7 +519,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 var currentDefaultIndex = 0
                 for name in allStoriesMainArray {
                     if name == lastViewedSlideIndexValue {
-                        //print("Story \(name) for index \(currentDefaultIndex)")
                         break
                     }
                     currentDefaultIndex += 1
@@ -563,7 +556,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             dismiss(animated: true)
         }
     }
-
+    
     private func configureView() {
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -585,27 +578,45 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     private func updateSlides() {
-        let storySlideMedia = stories[currentPosition.section].slides[currentPosition.row]
+        // Check if stories array is not empty and currentPosition indices are valid
+        guard !stories.isEmpty else {
+            print("Error: Stories array is empty")
+            return
+        }
+        
+        guard stories.indices.contains(currentPosition.section) else {
+            print("Error: Section index \(currentPosition.section) is out of range")
+            return
+        }
+        
+        let story = stories[currentPosition.section]
+        
+        guard story.slides.indices.contains(currentPosition.row) else {
+            print("Error: Row index \(currentPosition.row) is out of range for section \(currentPosition.section)")
+            return
+        }
+        
+        let storySlideMedia = story.slides[currentPosition.row]
         storyTime = storySlideMedia.duration
         
         if storySlideMedia.type == .video {
             let videoDurationInCache = SdkGlobalHelper.sharedInstance.retrieveVideoCachedParamsDictionary(parentSlideId: storySlideMedia.id)
             if let videoDurationSeconds = videoDurationInCache[storySlideMedia.id] {
                 storyTime = Int(videoDurationSeconds) ?? storySlideMedia.duration
-                //print("SDK Video duration is \(videoDurationSeconds)")
             } else {
-                //print("SDK Error can not detect video duration")
-                //let duration = AVURLAsset(url: storySlideMedia.videoURL!).duration.seconds
-                //let vTime = String(format:"%d", Int(duration.truncatingRemainder(dividingBy: 60)))
-                //print(vTime)
+                // Handle case where video duration cannot be retrieved
             }
         }
         
         timeLeft = TimeInterval(storyTime)
+        
+        // Clear existing arranged subviews
         for view in pageIndicator.arrangedSubviews {
             pageIndicator.removeArrangedSubview(view)
         }
-        let slides = stories[currentPosition.section].slides
+        
+        // Update page indicators
+        let slides = story.slides
         for (index, _) in slides.enumerated() {
             let progressView = UIProgressView()
             progressView.tintColor = .white
@@ -620,7 +631,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             pageIndicator.addArrangedSubview(progressView)
         }
     }
-
+    
     private func startProgress(progressView: UIProgressView) {
         endTime = Date().addingTimeInterval(timeLeft)
         let duration: Float = Float(timeLeft)
@@ -680,7 +691,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             }
         }
     }
-
+    
     @objc
     func updateTime() {
         if timeLeft > 0 {
@@ -708,7 +719,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 
                 var allStoriesMainArray: [String] = []
                 for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                    //print("Story has \(index + 1): \(stories[currentPosition.section + 1].slides[(index)].id)")
                     allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
                 }
                 
@@ -722,7 +732,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                     var currentDefaultIndex = 0
                     for name in allStoriesMainArray {
                         if name == lastViewedSlideIndexValue {
-                            //print("Story \(name) for index \(currentDefaultIndex)")
                             break
                         }
                         currentDefaultIndex += 1
@@ -748,7 +757,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                     currentPosition.row = 0
                     collectionView.scrollToItem(at: currentPosition, at: .left, animated: true)
                 }
-
+                
                 DispatchQueue.main.async {
                     self.updateSlides()
                 }
@@ -820,7 +829,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         collectionView.gestureRecognizers = []
         longPressedGesture.isEnabled = true
         longPressedGesture.minimumPressDuration = 0.20
-
+        
         longPressedGesture.allowableMovement = 50
         longPressedGesture.delaysTouchesBegan = true
         longPressedGesture.cancelsTouchesInView = true
@@ -898,8 +907,8 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         self.view.bringSubviewToFront(self.carouselProductsSlideCollectionView)
         
         UIView.animate(withDuration: 0.6, delay: 0.0,
-            usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
-            options: .allowAnimatedContent, animations: {
+                       usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
+                       options: .allowAnimatedContent, animations: {
             self.carouselProductsSlideCollectionView.center = self.view.center
         }) { (isFinished) in
             self.view.layoutIfNeeded()
@@ -931,10 +940,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     public func closeProductsCarousel() {
         UIView.animate(withDuration: 0.4, delay: 0.0,usingSpringWithDamping: 1.0, initialSpringVelocity: 1.0,
-            options: .allowAnimatedContent, animations: {
+                       options: .allowAnimatedContent, animations: {
             
             self.carouselProductsSlideCollectionView.center = CGPoint(x: self.view.center.x,
-            y: self.view.center.y + self.view.frame.size.height)
+                                                                      y: self.view.center.y + self.view.frame.size.height)
             
         }) { (isFinished) in
             self.carouselProductsSlideTintBlurView.removeFromSuperview()
@@ -1008,11 +1017,11 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         stories.count
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         stories[section].slides.count
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         
         storiesSlideReloadIndicator.startAnimating()
@@ -1025,12 +1034,12 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
         cell.cellDelegate = self
         return cell
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let screenSize = UIScreen.main.bounds.size
         return screenSize
     }
-
+    
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         if let visibleCell = collectionView.indexPathsForVisibleItems.first {
             currentPosition = visibleCell
@@ -1055,20 +1064,20 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
             }
         }
     }
-
+    
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
 //        timer.invalidate()
     }
-
+    
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let cell = collectionView.cellForItem(at: indexPath) as? StoryCollectionViewCell else {return}
         cell.stopPlayer()
     }
-
+    
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         trackViewSlide(index: indexPath)
         if let startWithIndexPath = startWithIndexPath {
@@ -1113,7 +1122,7 @@ extension NavigationStackController: UINavigationControllerDelegate {
             viewController.navigationItem.setHidesBackButton(false, animated: false)
         }
     }
-
+    
     public func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
         if canBeMadeHeadViewController(viewController: viewController) {
             resetNavigationStackWithLatestViewControllerAsHead()
