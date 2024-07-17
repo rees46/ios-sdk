@@ -2,9 +2,32 @@
 import Foundation
 
 protocol SubscriptionService {
-    func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: [String]?, completion: @escaping (Result<Void, SDKError>) -> Void)
-    func unsubscribeForBackInStock(itemIds: [String], email: String?, phone: String?, completion: @escaping (Result<Void, SDKError>) -> Void)
+    
+    func subscribeForPriceDrop(
+        id: String,
+        currentPrice: Double,
+        email: String?,
+        phone: String?,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    )
+    
+    func subscribeForBackInStock(
+        id: String,
+        email: String?,
+        phone: String?,
+        fashionSize: String?,
+        fashionColor: String?,
+        barcode: String?,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    )
+    
+    func unsubscribeForBackInStock(
+        itemIds: [String],
+        email: String?,
+        phone: String?,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    )
+    
     func manageSubscription(
         email: String?,
         phone: String?,

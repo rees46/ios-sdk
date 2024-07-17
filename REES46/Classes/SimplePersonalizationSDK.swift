@@ -112,7 +112,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.autoSendPushToken = autoSendPushToken
         
         global_EL = enableLogs
-        self.baseURL = "https://" + apiDomain + "/"
+        self.baseURL = "https://api.rees46.ru/"
         
         self.userEmail = userEmail
         self.userPhone = userPhone
@@ -763,8 +763,24 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
-    func subscribeForBackInStock(id: String, email: String? = nil, phone: String? = nil, fashionSize: [String]? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
-        subscriptionService.subscribeForBackInStock(id: id, email: email, phone: phone, fashionSize: fashionSize, completion: completion)
+    func subscribeForBackInStock(
+        id: String,
+        email: String? = nil,
+        phone: String? = nil,
+        fashionSize: String? = nil,
+        fashionColor: String? = nil,
+        barcode: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
+        subscriptionService.subscribeForBackInStock(
+            id: id,
+            email: email,
+            phone: phone,
+            fashionSize: fashionSize,
+            fashionColor: fashionColor,
+            barcode: barcode,
+            completion: completion
+        )
     }
     
     func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {

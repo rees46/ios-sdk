@@ -26,6 +26,8 @@ class SubscriptionServiceImpl: SubscriptionService {
         static let itemIds = "item_ids"
         static let properties = "properties"
         static let fashionSize = "fashion_size"
+        static let fashionColor = "fashion_color"
+        static let barcode = "barcode"
         static let email = "email"
         static let phone = "phone"
         static let price = "price"
@@ -95,7 +97,9 @@ class SubscriptionServiceImpl: SubscriptionService {
         id: String,
         email: String? = nil,
         phone: String? = nil,
-        fashionSize: [String]? = nil,
+        fashionSize: String? = nil,
+        fashionColor: String? = nil,
+        barcode: String? = nil,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
         guard let sdk = sdk else {
@@ -113,9 +117,20 @@ class SubscriptionServiceImpl: SubscriptionService {
                 Constants.itemId: id
             ]
             
+            let properties = NSMutableDictionary()
+            
             if let fashionSize = fashionSize {
-                let tmpSizesArray = sdk.generateString(array: fashionSize)
-                params[Constants.properties] = [Constants.fashionSize: tmpSizesArray]
+                properties[Constants.fashionSize] = fashionSize
+            }
+            if let fashionColor = fashionColor {
+                properties[Constants.fashionColor] = fashionColor
+            }
+            if let barcode = barcode {
+                properties[Constants.barcode] = barcode
+            }
+            
+            if properties.count > 0 {
+                params[Constants.properties] = properties
             }
             
             if let email = email {
