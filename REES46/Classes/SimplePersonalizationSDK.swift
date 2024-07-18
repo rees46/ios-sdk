@@ -112,7 +112,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.autoSendPushToken = autoSendPushToken
         
         global_EL = enableLogs
-        self.baseURL = "https://api.rees46.ru/"
+        self.baseURL = "https://" + apiDomain + "/"
         
         self.userEmail = userEmail
         self.userPhone = userPhone
