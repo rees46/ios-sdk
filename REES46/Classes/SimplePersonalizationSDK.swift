@@ -44,10 +44,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var stream: String
     
     var baseURL: String
+    let baseInitJsonFileName = ".json"
     let autoSendPushToken: Bool
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
-    let appBundleId = Bundle.main.bundleIdentifier
+    let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     
     var userEmail: String?
     var userPhone: String?
@@ -65,6 +66,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     let bodyMutableData = NSMutableData()
     
     private let initSemaphore = DispatchSemaphore(value: 0)
+    private let serialSemaphore = DispatchSemaphore(value: 0)
     
     lazy var trackEventService: TrackEventService = {
         return TrackEventServiceImpl(sdk: self)

@@ -20,6 +20,7 @@ class NotificationRegistrar {
               sdk.autoSendPushToken == true
         else {
             // If autoSendPushToken is false, do nothing
+            print("NotificationRegistrar: Auto-send push token is disabled.")
             return
         }
         
@@ -28,6 +29,8 @@ class NotificationRegistrar {
             let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
             guard timeSincePushTokenLastUpdate >= Constants.oneWeekInSeconds else {
                 // Token was sent within the last week; no need to send again
+                let nextPossibleSendDate = pushTokenLastUpdateDate.addingTimeInterval(Constants.oneWeekInSeconds)
+                print("NotificationRegistrar: Push token already sent recently. Next possible send date: \(nextPossibleSendDate)")
                 return
             }
         }
@@ -37,7 +40,10 @@ class NotificationRegistrar {
             guard let self = self else { return }
             switch tokenResponse {
             case .success():
-                UserDefaults.standard.setValue(Date(), forKey: Constants.mainPushTokenLastUploadDateKey)
+                let currentDate = Date()
+                UserDefaults.standard.setValue(currentDate, forKey: Constants.mainPushTokenLastUploadDateKey)
+                let nextPossibleSendDate = currentDate.addingTimeInterval(Constants.oneWeekInSeconds)
+                print("NotificationRegistrar: Push token successfully sent. Last upload date: \(currentDate). Next possible send date: \(nextPossibleSendDate)")
             case .failure(let error):
                 self.handleRegistrationError(error)
             }
