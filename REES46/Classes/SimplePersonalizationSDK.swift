@@ -179,15 +179,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
                     }
                 } else if let error = error {
-                    #if DEBUG
+#if DEBUG
                     print("Error requesting notification authorization: \(error.localizedDescription)")
-                    #endif
+#endif
                 }
             }
         } else {
-            #if DEBUG
+#if DEBUG
             print("Auto-send push token is disabled.")
-            #endif
+#endif
         }
     }
     
