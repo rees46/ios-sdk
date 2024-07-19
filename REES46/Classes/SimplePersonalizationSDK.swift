@@ -9,6 +9,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     struct Constants {
         static let shopId: String = "shop_id"
+        static let deviceIdKey = "device_id"
         static let searchQuery: String = "search_query"
         static let deviceId: String = "did"
         static let userSeance: String = "seance"
@@ -34,59 +35,57 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         static let defaultTimeout: Double = 1.0
         static let noClarificationValue: String = "1"
     }
-
+    
     var storiesCode: String?
-
+    
     var shopId: String
     var deviceId: String
     var userSeance: String
     var stream: String
-
+    
     var baseURL: String
-    let baseInitJsonFileName = ".json"
     let autoSendPushToken: Bool
-
+    
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle.main.bundleIdentifier
-
+    
     var userEmail: String?
     var userPhone: String?
     var userLoyaltyId: String?
-
+    
     var segment: String
     var urlSession: URLSession
-
+    
     var userInfo: InitResponse = InitResponse()
-
+    
     let sessionQueue = SessionQueue.manager
-
+    
     private var requestOperation: RequestOperation?
-
+    
     let bodyMutableData = NSMutableData()
-
+    
     private let initSemaphore = DispatchSemaphore(value: 0)
-    private let serialSemaphore = DispatchSemaphore(value: 0)
-
+    
     lazy var trackEventService: TrackEventService = {
         return TrackEventServiceImpl(sdk: self)
     }()
-
+    
     lazy var trackSourceService: TrackSourceService = {
         return TrackSourceServiceImpl()
     }()
-
+    
     lazy var subscriptionService: SubscriptionService = {
         return SubscriptionServiceImpl(sdk: self)
     }()
-
+    
     lazy var notificationService: NotificationHandlingService = {
         return NotificationHandlerServiceImpl(sdk: self)
     }()
-
+    
     lazy var pushTokenService: PushTokenNotificationService = {
         return PushTokenHandlerServiceImpl(sdk: self)
     }()
-
+    
     init(
         shopId: String,
         userEmail: String? = nil,
@@ -98,28 +97,27 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         autoSendPushToken: Bool = true,
         completion: ((SDKError?) -> Void)? = nil
     ) {
-
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
-
+        
         global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
-
+        
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
         self.storiesCode = nil
-
+        
         // Generate seance
         userSeance = UUID().uuidString
-
+        
         // Generate segment
         segment = ["A", "B"].randomElement() ?? "A"
-
+        
         // Trying to fetch user session (permanent user Id)
-        deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
-
+        deviceId = UserDefaults.standard.string(forKey: Constants.deviceIdKey) ?? ""
+        
         urlSession = URLSession.shared
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
@@ -132,6 +130,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         if let completion = completion {
                             completion(nil)
                         }
+                        // Automatically handle push token if autoSendPushToken is true
+                        if self.autoSendPushToken {
+                            self.handleAutoSendPushToken()
+                        }
                     } else {
                         if let completion = completion {
                             completion(.decodeError)
@@ -143,31 +145,30 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(error)
                     }
                     self.initSemaphore.signal()
-                    break
                 }
             }
             self.initSemaphore.wait()
         }
-
+        
         initializeNotificationRegistrar()
     }
-
+    
     func getDeviceId() -> String {
         return deviceId
     }
-
+    
     func getSession() -> String {
         return userSeance
     }
-
+    
     func getCurrentSegment() -> String {
         return segment
     }
-
+    
     func getShopId() -> String {
         return shopId
     }
-
+    
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool = false, completion: @escaping (Result<Void, SDKError>) -> Void) {
         pushTokenService.setPushToken(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
@@ -183,6 +184,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
         }
+    }
+    
+    private func handleAutoSendPushToken() {
+        let notificationRegistrar = NotificationRegistrar(sdk: self)
+        
+        guard let deviceToken = UserDefaults.standard.data(forKey: "device_token") else {
+            // No token to send
+            return
+        }
+        
+        notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
     }
     
     func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void) {
