@@ -16,25 +16,15 @@ class NotificationRegistrar {
     }
     
     func registerWithDeviceToken(deviceToken: Data) {
-        guard let sdk = sdk as? SimplePersonalizationSDK,
-              sdk.autoSendPushToken == true
-        else {
-            // If autoSendPushToken is false, do nothing
-            #if DEBUG
-            print("Auto-send push token is disabled.")
-            #endif
-            return
-        }
-        
         if let pushTokenLastUpdateDate = UserDefaults.standard.object(forKey: Constants.mainPushTokenLastUploadDateKey) as? Date {
             let currentDate = Date()
             let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
             guard timeSincePushTokenLastUpdate >= Constants.oneWeekInSeconds else {
                 // Token was sent within the last week; no need to send again
                 let nextPossibleSendDate = pushTokenLastUpdateDate.addingTimeInterval(Constants.oneWeekInSeconds)
-                #if DEBUG
+#if DEBUG
                 print("Push token already sent recently. Next possible send date: \(nextPossibleSendDate)")
-                #endif
+#endif
                 return
             }
         }
@@ -47,9 +37,9 @@ class NotificationRegistrar {
                 let currentDate = Date()
                 UserDefaults.standard.setValue(currentDate, forKey: Constants.mainPushTokenLastUploadDateKey)
                 let nextPossibleSendDate = currentDate.addingTimeInterval(Constants.oneWeekInSeconds)
-                #if DEBUG
+#if DEBUG
                 print("Push token successfully sent. Last upload date: \(currentDate). Next possible send date: \(nextPossibleSendDate)")
-                #endif
+#endif
             case .failure(let error):
                 self.handleRegistrationError(error)
             }
