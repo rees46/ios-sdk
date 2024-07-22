@@ -7,59 +7,54 @@ class SdkTests: XCTestCase {
     let shopId = "357382bf66ac0ce2f1722677c59511"
     let TAG = "Tests"
     
-    override func setUp() {
-        super.setUp()
+    func test_session_generated() {
+        let oldSession = sdk?.getSession()
         sdk = createPersonalizationSDK(shopId: shopId)
-    }
-    
-    override func tearDown() {
-        super.tearDown()
+        trackEventAndCheck(
+            eventId: "",
+            getValue: { self.sdk?.getSession() },
+            checkValue: { newSession in
+                oldSession == newSession
+            },
+            failureMessage: "session did not generate correctly"
+        )
     }
     
     func test_device_id_initialization() {
-        if let sdk = sdk {
-            sdk.track(event: .productView(id: "123")) { (response) in
-                let deviceId = sdk.getDeviceId()
-                if deviceId.isEmpty{
-                    XCTAssert(false, "Tests: deviceId bad")
-                } else {
-                    XCTAssert(true, "Tests: deviceId good")
-                }
-            }
-        }
+        trackEventAndCheck(
+            eventId: "123",
+            getValue: { self.sdk?.getDeviceId() },
+            checkValue: { deviceId in
+                !deviceId!.isEmpty
+            },
+            failureMessage: "deviceId is empty after initialization"
+        )
     }
     
     func test_device_id_rewrite() {
-        let oldDeviceId = sdk?.getDeviceId() // Get the old saved deviceId
-        sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
-        if let sdk = sdk {
-            sdk.track(event: .productView(id: "")) { (response) in
-                let deviceId = sdk.getDeviceId()
-                if oldDeviceId == deviceId {
-                    XCTAssert(true, "Tests: deviceId bad")
-                } else {
-                    XCTAssert(false, "Tests: deviceId good")
-                }
-            }
-        } else {
-            XCTAssert(false, "Tests: use this test when you have inited sdk")
-        }
+        let oldDeviceId = sdk?.getDeviceId()
+        sdk = createPersonalizationSDK(shopId: shopId)
+        trackEventAndCheck(
+            eventId: "",
+            getValue: { self.sdk?.getDeviceId() },
+            checkValue: { deviceId in
+                oldDeviceId == deviceId
+            },
+            failureMessage: "deviceId did not rewrite as expected"
+        )
     }
     
-    func test_session_generated() {
-        let oldSession = sdk?.getSession() // Get the old saved sessionId
-        sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
-        if let sdk = sdk {
-            sdk.track(event: .productView(id: "")) { (response) in
-                let session = sdk.getSession() // Check session
-                if oldSession != session{
-                    XCTAssert(false, "Tests:session bad")
-                } else {
-                    XCTAssert(true, "Tests:session good")
-                }
-            }
-        } else {
-            XCTAssert(false, "Tests:use this test when you have inited sdk")
+    func trackEventAndCheck<T>(
+        eventId: String,
+        getValue: @escaping () -> T?,
+        checkValue: @escaping (T?) -> Bool,
+        failureMessage: String
+    ) {
+        sdk?.track(event: .productView(id: eventId)) { (response) in
+            let value = getValue()
+            let result = checkValue(value)
+            print("\(self.TAG): Checking value \(String(describing: value)), result: \(result)")
+            XCTAssert(result, "\(self.TAG): \(failureMessage)")
         }
     }
 }

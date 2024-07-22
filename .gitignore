@@ -4,7 +4,7 @@
 .build
 Packages
 /*.xcodeproj
-Pods
-DemoApp/Pods
+Pods/*
+DemoApp/Pods/*
 DemoApp/Podfile.lock
 GoogleService-Info.plist
