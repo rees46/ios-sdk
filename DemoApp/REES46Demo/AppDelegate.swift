@@ -43,21 +43,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("======")
         
         print("0. Init SDK")
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-            didToken = self.sdk.getDeviceId()
-            globalSDK = self.sdk
-            NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
-        })
-        
+        sdk = createPersonalizationSDK(
+            shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
+                didToken = self.sdk.getDeviceId()
+                globalSDK = self.sdk
+                NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
+            }
+        )
+
         print("2. Register push")
         notificationService = NotificationService(sdk: sdk)
         notificationService?.pushActionDelegate = self
         print("======")
-        
+
         exampleUsageSdk()
         return true
     }
-        
+
     @available(iOS 13.0, *)
     func scene(
         _ scene: UIScene,
