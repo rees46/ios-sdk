@@ -97,7 +97,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.autoSendPushToken = autoSendPushToken
         
         global_EL = enableLogs
-        self.baseURL = "https://" + apiDomain + "/"
+        
+#if DEBUG
+        let basePath = ProcessInfo.processInfo.environment["BASE_PATH"] ?? ""
+#else
+        let basePath = apiDomain
+#endif
+        self.baseURL = "https://" + basePath + "/"
         
         self.userEmail = userEmail
         self.userPhone = userPhone
@@ -198,8 +204,30 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func getAllNotifications(type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void) {
-        notificationService.getAllNotifications(type: type, phone: phone, email: email, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, channel: channel, limit: limit, page: page, dateFrom: dateFrom, completion: completion)
+    func getAllNotifications(
+        type: String,
+        phone: String? = nil,
+        email: String? = nil,
+        userExternalId: String? = nil,
+        userLoyaltyId: String? = nil,
+        channel: String?,
+        limit: Int?,
+        page: Int?,
+        dateFrom: String?,
+        completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void
+    ) {
+        notificationService.getAllNotifications(
+            type: type,
+            phone: phone,
+            email: email,
+            userExternalId: userExternalId,
+            userLoyaltyId: userLoyaltyId,
+            channel: channel,
+            limit: limit,
+            page: page,
+            dateFrom: dateFrom,
+            completion: completion
+        )
     }
     
     func configureURLSession(configuration: URLSessionConfiguration) {

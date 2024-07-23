@@ -823,9 +823,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 
                 UserDefaults.standard.set(currentSlide.id, forKey: "LastViewedSlideMemorySetting")
                 
-                //#warning ("TODO Production")
-                //cellDelegate?.didTapUrlButton(url: promoCodeDeeplinkIos, slide: currentSlide)
-                
                 cellDelegate?.sendStructSelectedPromocodeSlide(promoCodeSlide: selectedPromoCodeElement!)
                 cellDelegate?.didTapOpenLinkExternalServiceMethod(url: promoCodeDeeplinkIos, slide: currentSlide)
                 return
