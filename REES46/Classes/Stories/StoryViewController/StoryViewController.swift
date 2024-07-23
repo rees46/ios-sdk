@@ -782,6 +782,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     public func openUrl(link: String) {
+#if DEBUG
+        print("Opening product in device browser")
+#endif
+        
         if let linkUrl = URL(string: link) {
             pauseTimer()
             
@@ -791,10 +795,12 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("WebKitClosedContinueTimerSetting"), object: nil)
             }
             
-            presentInternalSdkWebKit(webUrl: linkUrl, completion: nil)
+            UIApplication.shared.open(linkUrl, options: [:], completionHandler: nil)
             
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
             NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
+            
+            dismiss(animated: true)
         }
     }
     
