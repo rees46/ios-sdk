@@ -11,11 +11,11 @@ class SdkTests: XCTestCase {
         super.setUp()
         sdk = createPersonalizationSDK(shopId: shopId)
     }
-    
+
     override func tearDown() {
         super.tearDown()
     }
-    
+
     func test_device_id_initialization() {
         if let sdk = sdk {
             sdk.track(event: .productView(id: "123")) { (response) in
@@ -28,7 +28,7 @@ class SdkTests: XCTestCase {
             }
         }
     }
-    
+
     func test_device_id_rewrite() {
         let oldDeviceId = sdk?.getDeviceId() // Get the old saved deviceId
         sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)
@@ -45,7 +45,7 @@ class SdkTests: XCTestCase {
             XCTAssert(false, "Tests: use this test when you have inited sdk")
         }
     }
-    
+
     func test_session_generated() {
         let oldSession = sdk?.getSession() // Get the old saved sessionId
         sdk = createPersonalizationSDK(shopId: shopId) // We reinitialize SDK (as if we are reloading the app)

@@ -32,7 +32,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var notificationService: NotificationServiceProtocol?
     
     
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
         
         print("A. Init firebase sdk")
         FirebaseApp.configure()
@@ -40,12 +43,53 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("======")
         
         print("0. Init SDK")
-        sdk = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdk.getShopId())
-            didToken = self.sdk.getDeviceId()
-            globalSDK = self.sdk
-            NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
-        })
+        sdk = createPersonalizationSDK(
+            shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
+                didToken = self.sdk.getDeviceId()
+                globalSDK = self.sdk
+                NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
+            }
+        )
+
+        print("2. Register push")
+        notificationService = NotificationService(sdk: sdk)
+        notificationService?.pushActionDelegate = self
+        print("======")
+
+        exampleUsageSdk()
+        return true
+    }
+
+    @available(iOS 13.0, *)
+    func scene(
+        _ scene: UIScene,
+        openURLContexts URLContexts: Set<UIOpenURLContext>
+    ) {
+        if let url = URLContexts.first?.url{
+            print(url)
+        }
+    }
+    
+    func removeAllFilesFromTemporaryDirectory() {
+        let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let fileManager = FileManager.default
+        do {
+            let fileURLs = try fileManager.contentsOfDirectory(at: temporaryDirectoryURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            for fileURL in fileURLs {
+                try fileManager.removeItem(at: fileURL)
+            }
+        } catch {
+            print("Error when deleting files from temporary directory: \(error.localizedDescription)")
+        }
+    }
+    
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping () -> Void) {
+        }
+    
+    private func exampleUsageSdk(){
         
         //        print("1. Init additional SDK if needed")
         //        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
@@ -169,10 +213,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         //        sdk.configuration().stories.storiesBlockCharWrapping = false
         //        sdk.configuration().stories.storiesBlockCharCountWrap = 15
         
-        print("2. Register push")
-        notificationService = NotificationService(sdk: sdk)
-        notificationService?.pushActionDelegate = self
-        print("======")
         
         //        print("3. Testing tracking")
         //        sdk.trackSource(source: .chain, code: "123123")
@@ -591,64 +631,31 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         //                }
         //            }
         //        }
-
-//        sdk.subscribeForBackInStock(
-//            id: "757",
-//            email: "borislogintrub@gamil.com",
-//            phone: nil,
-//            fashionSize: nil,
-//            fashionColor: nil,
-//            barcode: nil
-//        ) { subscribeResponse in
-//            switch subscribeResponse {
-//            case .success():
-//                print("!!!!! Successfully subscribed from back in stock notifications.")
-//                print("!!!!! Response: \(subscribeResponse)")
-//            case let .failure(error):
-//                switch error {
-//                case let .custom(customError):
-//                    print("!!!!! Error:", customError)
-//                default:
-//                    print("!!!!! Error:", error.localizedDescription)
-//                }
-//            }
-//        }
         
-        return true
-    }
-    
-    func applicationWillTerminate(_ application: UIApplication) {
-        //removeAllFilesFromTemporaryDirectory()
-    }
-    
-    @available(iOS 13.0, *)
-    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-        if let url = URLContexts.first?.url{
-            print(url)
-        }
-    }
-    
-    func removeAllFilesFromTemporaryDirectory() {
-        let temporaryDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
-        let fileManager = FileManager.default
-        do {
-            let fileURLs = try fileManager.contentsOfDirectory(at: temporaryDirectoryURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-            for fileURL in fileURLs {
-                try fileManager.removeItem(at: fileURL)
-            }
-        } catch {
-            print("Error when deleting files from temporary directory: \(error.localizedDescription)")
-        }
-    }
-    
-    func application(_ application: UIApplication,
-                     handleEventsForBackgroundURLSession identifier: String,
-                     completionHandler: @escaping () -> Void) {
-        //backgroundCompletionHandler = completionHandler
+        //        sdk.subscribeForBackInStock(
+        //            id: "757",
+        //            email: "borislogintrub@gamil.com",
+        //            phone: nil,
+        //            fashionSize: nil,
+        //            fashionColor: nil,
+        //            barcode: nil
+        //        ) { subscribeResponse in
+        //            switch subscribeResponse {
+        //            case .success():
+        //                print("!!!!! Successfully subscribed from back in stock notifications.")
+        //                print("!!!!! Response: \(subscribeResponse)")
+        //            case let .failure(error):
+        //                switch error {
+        //                case let .custom(customError):
+        //                    print("!!!!! Error:", customError)
+        //                default:
+        //                    print("!!!!! Error:", error.localizedDescription)
+        //                }
+        //            }
+        //        }
     }
 }
 
-// Firebase notifications
 extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         // FIREBASE TOKEN FOR TEST
@@ -675,17 +682,25 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         Messaging.messaging().apnsToken = deviceToken
         // END TEST
         
-        //getDeliveredNotifications()
         notificationService?.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: deviceToken)
     }
     
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
         notificationService?.didReceiveRemoteNotifications(application, didReceiveRemoteNotification: userInfo) { backgroundResult, _ in
             completionHandler(backgroundResult)
         }
     }
     
-    func application(_ application: UIApplication, open url: URL, sourceApplication: String?, annotation: Any) -> Bool {
+    func application(
+        _ application: UIApplication,
+        open url: URL,
+        sourceApplication: String?,
+        annotation: Any
+    ) -> Bool {
         notificationService?.didReceiveDeepLink(url: url)
         return true
     }
