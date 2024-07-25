@@ -4,31 +4,31 @@ on:
   pull_request:
 
 jobs:
+  create-temp-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create temporary GoogleService-Info.plist
+        run: echo "$GOOGLE_SERVICES_STRING" | base64 --decode > REES46/GoogleService-Info.plist
+        env:
+          GOOGLE_SERVICES_STRING: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
+
   run:
+    needs: create-temp-file
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
 
-  create-temp-file:
+  cleanup:
     runs-on: ubuntu-latest
     needs: run
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create temporary GoogleService-Info.plist
-        run: echo "$GOOGLE_SERVICES_STRING" | base64 --decode > GoogleService-Info.plist
-        env:
-          GOOGLE_SERVICES_STRING: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
-
-  cleanup:
-    runs-on: ubuntu-latest
-    needs: create-temp-file
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Remove temporary GoogleService-Info.plist
-        run: rm -f GoogleService-Info.plist
+        run: rm -f REES46/GoogleService-Info.plist
