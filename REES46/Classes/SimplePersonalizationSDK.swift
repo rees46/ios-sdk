@@ -18,6 +18,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         static let segment: String = "segment"
         static let limit: String = "limit"
         static let offset: String = "offset"
+        static let searchPath: String = "search"
+        static let fullSearch: String = "full_search"
         static let categoryLimit: String = "category_limit"
         static let categories: String = "categories"
         static let extended: String = "extended"
@@ -296,14 +298,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
         
         sessionQueue.addOperation {
-            let path = "search"
+            let path = Constants.searchPath
             var params: [String: String] = [
                 Constants.shopId: self.shopId,
                 Constants.deviceId: self.deviceId,
                 Constants.userSeance: self.userSeance,
-                Constants.segment: Constants.type,
                 Constants.segment: self.segment,
-                Constants.type: "full_search",
+                Constants.type: Constants.fullSearch,
                 Constants.searchQuery: query,
             ]
             
