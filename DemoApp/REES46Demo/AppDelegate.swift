@@ -50,16 +50,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
             }
         )
-
+        
         print("2. Register push")
         notificationService = NotificationService(sdk: sdk)
         notificationService?.pushActionDelegate = self
         print("======")
-
+        
         exampleUsageSdk()
         return true
     }
-
+    
     @available(iOS 13.0, *)
     func scene(
         _ scene: UIScene,
@@ -90,6 +90,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     
     private func exampleUsageSdk(){
+        
+        sdk.search(
+            query: "Toy"
+        ) { result in
+            switch result {
+            case .success(let response):
+                print("Response:", response)
+            case .failure(let error):
+                print("Error:", error)
+            }
+        }
         
         //        print("1. Init additional SDK if needed")
         //        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
