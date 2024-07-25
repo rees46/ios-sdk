@@ -59,16 +59,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
     
-    func configureFirebase() {
-        let ciEnv = ProcessInfo.processInfo.environment["CI_ENV"] ?? "false"
+func configureFirebase() {
+    let ciEnv = ProcessInfo.processInfo.environment["ACTIONS_IS_RUNNING"] ?? "false"
 
-        if ciEnv == "true" {
-            // Do not initialize Firebase in github action
-            print("Skipping Firebase configuration in CI")
-        } else {
-            FirebaseApp.configure()
-        }
+    if ciEnv == "true" {
+        print("Skipping Firebase configuration in CI")
+    } else {
+        FirebaseApp.configure()
     }
+}
     
     @available(iOS 13.0, *)
     func scene(

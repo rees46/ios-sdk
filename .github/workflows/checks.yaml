@@ -3,12 +3,13 @@ name: Check PR
 on:
   pull_request:
 
+env:
+  ACTIONS_IS_RUNNING: true
+
 jobs:
   run:
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
-    with:
-      googleServicesFile: ./GoogleServices-Info.plist
-      ci-env: true
+    permissions: write-all
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
