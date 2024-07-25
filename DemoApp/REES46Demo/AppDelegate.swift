@@ -38,7 +38,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         
         print("A. Init firebase sdk")
-        FirebaseApp.configure()
         Messaging.messaging().delegate = self
         print("======")
         
@@ -58,6 +57,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         exampleUsageSdk()
         return true
+    }
+    
+    func configureFirebase() {
+        let ciEnv = ProcessInfo.processInfo.environment["CI_ENV"] ?? "false"
+
+        if ciEnv == "true" {
+            // Do not initialize Firebase in github action
+            print("Skipping Firebase configuration in CI")
+        } else {
+            FirebaseApp.configure()
+        }
     }
     
     @available(iOS 13.0, *)
