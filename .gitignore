@@ -7,4 +7,4 @@ Packages
 Pods/*
 DemoApp/Pods/*
 DemoApp/Podfile.lock
-#GoogleService-Info.plist
+
