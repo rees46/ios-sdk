@@ -24,9 +24,16 @@ var globalSDKNotificationNameAdditionalInit = Notification.Name("globalSDKAdditi
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+    
+    struct Constants {
+        static let actionsKey: String = "ACTIONS_IS_RUNNING"
+        static let actionsPositiveValue: String = "true"
+        static let actionsNegativeValue: String = "false"
+        static let shopId: String = "357382bf66ac0ce2f1722677c59511"
+    }
+    
     var window: UIWindow?
     
-    let gcmMessageIDKey = "gcm.message_id"
     var sdk: PersonalizationSDK!
     var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
@@ -37,37 +44,47 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
-        print("A. Init firebase sdk")
-        Messaging.messaging().delegate = self
-        print("======")
-        
-        print("0. Init SDK")
-        sdk = createPersonalizationSDK(
-            shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
-                didToken = self.sdk.getDeviceId()
-                globalSDK = self.sdk
-                NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
-            }
-        )
-        
-        print("2. Register push")
-        notificationService = NotificationService(sdk: sdk)
-        notificationService?.pushActionDelegate = self
-        print("======")
+        initializationMessaging()
+        sdkInitialization()
+        registerPushNotification()
         
         exampleUsageSdk()
         return true
     }
     
-func configureFirebase() {
-    let ciEnv = ProcessInfo.processInfo.environment["ACTIONS_IS_RUNNING"] ?? "false"
-
-    if ciEnv == "true" {
-        print("Skipping Firebase configuration in CI")
-    } else {
-        FirebaseApp.configure()
+    func sdkInitialization(){
+        print("0. Init SDK")
+        sdk = createPersonalizationSDK(
+            shopId: Constants.shopId,
+            enableLogs: true,
+            { error in
+                didToken = self.sdk.getDeviceId()
+                globalSDK = self.sdk
+                NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
+            }
+        )
     }
-}
+    
+    func initializationMessaging(){
+        print("A. Init firebase sdk")
+        Messaging.messaging().delegate = self
+    }
+    
+    func registerPushNotification(){
+        print("2. Register push")
+        notificationService = NotificationService(sdk: sdk)
+        notificationService?.pushActionDelegate = self
+    }
+    
+    func configureFirebase() {
+        let ciEnv = ProcessInfo.processInfo.environment[Constants.actionsKey] ?? Constants.actionsNegativeValue
+        
+        if ciEnv == Constants.actionsPositiveValue {
+            print("Skipping Firebase configuration in CI")
+        } else {
+            FirebaseApp.configure()
+        }
+    }
     
     @available(iOS 13.0, *)
     func scene(
@@ -99,17 +116,17 @@ func configureFirebase() {
         }
     
     private func exampleUsageSdk(){
-//        sdk.search(
-//            query: "носки"
-//        ) { result in
-//            print("2. Search result \(result)")
-//            switch result {
-//            case .success(let response):
-//                print("SEARCH Response:", response)
-//            case .failure(let error):
-//                print("Error:", error)
-//            }
-//        }
+        //        sdk.search(
+        //            query: "носки"
+        //        ) { result in
+        //            print("2. Search result \(result)")
+        //            switch result {
+        //            case .success(let response):
+        //                print("SEARCH Response:", response)
+        //            case .failure(let error):
+        //                print("Error:", error)
+        //            }
+        //        }
         //        print("1. Init additional SDK if needed")
         //        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
         //            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())

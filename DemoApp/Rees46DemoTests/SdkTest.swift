@@ -5,7 +5,7 @@ class SdkTests: XCTestCase {
     
     var sdk: PersonalizationSDK?
     let shopId = "357382bf66ac0ce2f1722677c59511"
-    let TAG = "Tests"
+    let TAG = "SdkTests"
     
     func trackEventAndCheck<T>(
         eventId: String,
@@ -13,8 +13,7 @@ class SdkTests: XCTestCase {
         checkValue: @escaping (T?) -> Bool,
         failureMessage: String
     ) {
-        sdk?.track(event: .productView(id: eventId)) { [weak self] response in
-            guard let self = self else { return }
+        sdk?.track(event: .productView(id: eventId)) { (response) in
             let value = getValue()
             let result = checkValue(value)
             print("\(self.TAG): Checking value \(String(describing: value)), result: \(result)")
@@ -26,12 +25,11 @@ class SdkTests: XCTestCase {
         sdk = createPersonalizationSDK(shopId: shopId)
         trackEventAndCheck(
             eventId: "123",
-            getValue: { [weak self] in self?.sdk?.getDeviceId() },
+            getValue: { self.sdk?.getDeviceId() },
             checkValue: { deviceId in
-                guard let deviceId = deviceId else { return false }
-                return !deviceId.isEmpty
+                !deviceId!.isEmpty
             },
-            failureMessage: "deviceId is empty after initialization"
+            failureMessage: "\(self.TAG): deviceId is empty after initialization"
         )
     }
     
@@ -41,12 +39,11 @@ class SdkTests: XCTestCase {
         sdk = createPersonalizationSDK(shopId: shopId)
         trackEventAndCheck(
             eventId: "",
-            getValue: { [weak self] in self?.sdk?.getDeviceId() },
+            getValue: { self.sdk?.getDeviceId() },
             checkValue: { deviceId in
-                guard let oldDeviceId = oldDeviceId, let deviceId = deviceId else { return false }
-                return oldDeviceId == deviceId
+                oldDeviceId == deviceId
             },
-            failureMessage: "deviceId did not rewrite as expected"
+            failureMessage: "\(self.TAG): deviceId did not rewrite as expected"
         )
     }
     
@@ -56,12 +53,11 @@ class SdkTests: XCTestCase {
         sdk = createPersonalizationSDK(shopId: shopId)
         trackEventAndCheck(
             eventId: "",
-            getValue: { [weak self] in self?.sdk?.getSession() },
+            getValue: { self.sdk?.getSession() },
             checkValue: { newSession in
-                guard let oldSession = oldSession, let newSession = newSession else { return false }
-                return oldSession == newSession
+                oldSession == newSession
             },
-            failureMessage: "session did not generate correctly"
+            failureMessage: "\(self.TAG): session did not generate correctly"
         )
     }
 }
