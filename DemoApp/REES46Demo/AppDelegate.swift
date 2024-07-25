@@ -90,18 +90,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     
     private func exampleUsageSdk(){
-        
 //        sdk.search(
-//            query: "Toy"
+//            query: "носки"
 //        ) { result in
+//            print("2. Search result \(result)")
 //            switch result {
 //            case .success(let response):
-//                print("Response:", response)
+//                print("SEARCH Response:", response)
 //            case .failure(let error):
 //                print("Error:", error)
 //            }
 //        }
-        
         //        print("1. Init additional SDK if needed")
         //        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
         //            //print("SDK Init status =", error?.description ?? SDKError.noError, "with shop_id", self.sdkAdditionalInit.getShopId())
