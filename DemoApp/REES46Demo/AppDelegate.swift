@@ -117,7 +117,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private func exampleUsageSdk(){
         //        sdk.search(
-        //            query: "носки"
+        //            query: "Toys"
         //        ) { result in
         //            print("2. Search result \(result)")
         //            switch result {
