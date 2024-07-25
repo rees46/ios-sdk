@@ -100,12 +100,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         global_EL = enableLogs
         
-#if DEBUG
-        let basePath = ProcessInfo.processInfo.environment["BASE_PATH"] ?? ""
-#else
-        let basePath = apiDomain
-#endif
-        self.baseURL = "https://" + basePath + "/"
+        self.baseURL = "https://" + apiDomain + "/"
         
         self.userEmail = userEmail
         self.userPhone = userPhone

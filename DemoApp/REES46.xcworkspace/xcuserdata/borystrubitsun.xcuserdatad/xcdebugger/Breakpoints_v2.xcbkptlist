@@ -3,4 +3,38 @@
    uuid = "46220B12-0AC6-44ED-AF73-61979C2A508C"
    type = "0"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "CC2CEB27-3543-49AE-9249-9B4566C6DD2C"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../REES46/Classes/SimplePersonalizationSDK.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "294"
+            endingLineNumber = "294"
+            landmarkName = "search(query:limit:offset:categoryLimit:categories:extended:sortBy:sortDir:locations:brands:filters:priceMin:priceMax:colors:fashionSizes:exclude:email:timeOut:disableClarification:completion:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "FD1037DD-3C71-4166-9EE9-1967A9715909"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../REES46/Classes/SimplePersonalizationSDK.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "374"
+            endingLineNumber = "374"
+            landmarkName = "search(query:limit:offset:categoryLimit:categories:extended:sortBy:sortDir:locations:brands:filters:priceMin:priceMax:colors:fashionSizes:exclude:email:timeOut:disableClarification:completion:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>
