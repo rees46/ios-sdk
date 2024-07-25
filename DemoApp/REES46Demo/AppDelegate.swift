@@ -91,16 +91,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     private func exampleUsageSdk(){
         
-        sdk.search(
-            query: "Toy"
-        ) { result in
-            switch result {
-            case .success(let response):
-                print("Response:", response)
-            case .failure(let error):
-                print("Error:", error)
-            }
-        }
+//        sdk.search(
+//            query: "Toy"
+//        ) { result in
+//            switch result {
+//            case .success(let response):
+//                print("Response:", response)
+//            case .failure(let error):
+//                print("Error:", error)
+//            }
+//        }
         
         //        print("1. Init additional SDK if needed")
         //        sdkAdditionalInit = createPersonalizationSDK(shopId: "357382bf66ac0ce2f1722677c59511", enableLogs: true, { error in
