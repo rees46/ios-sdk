@@ -4,27 +4,9 @@ on:
   pull_request:
 
 jobs:
-  decode:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Decode GoogleService-Info.plist
-        run: |
-          echo "${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}" | base64 --decode > GoogleService-Info.plist
-
-      - name: Upload decoded file
-        uses: actions/upload-artifact@v4
-        with:
-          name: google-services-file
-          path: GoogleService-Info.plist
-
   run:
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
-    needs: decode
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
