@@ -11,6 +11,7 @@ protocol SearchService{
       limit: Int?,
       offset: Int?,
       categoryLimit: Int?,
+      brandLimit: Int?,
       categories: String?,
       extended: String?,
       sortBy: String?,

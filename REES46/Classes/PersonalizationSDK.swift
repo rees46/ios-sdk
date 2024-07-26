@@ -114,7 +114,7 @@ public protocol PersonalizationSDK {
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping(Result<Void, SDKError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SDKError>) -> Void)
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: String?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SDKError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForBackInStock(
@@ -166,8 +166,52 @@ public extension PersonalizationSDK {
         getProductsFromCart(completion: completion)
     }
     
-    func search(query: String, limit: Int? = nil, offset: Int? = nil, categoryLimit: Int? = nil, categories: String? = nil, extended: String? = nil, sortBy: String? = nil, sortDir: String? = nil, locations: String? = nil, brands: String? = nil, filters: [String: Any]? = nil, priceMin: Double? = nil, priceMax: Double? = nil, colors: [String]? = nil, fashionSizes: [String]? = nil, exclude: String? = nil, email: String? = nil, timeOut: Double? = nil, disableClarification: Bool? = nil, completion: @escaping(Result<SearchResponse, SDKError>) -> Void) {
-        search(query: query, limit: limit, offset: offset, categoryLimit: categoryLimit, categories: categories, extended: extended, sortBy: sortBy, sortDir: sortDir, locations: locations, brands: brands, filters: filters, priceMin: priceMin, priceMax: priceMax, colors: colors, fashionSizes: fashionSizes, exclude: exclude, email: email, timeOut: timeOut, disableClarification: disableClarification, completion: completion)
+    func search(
+        query: String,
+        limit: Int? = nil,
+        offset: Int? = nil,
+        categoryLimit: Int? = nil,
+        brandLimit: Int? = nil,
+        categories: String? = nil,
+        extended: String? = nil,
+        sortBy: String? = nil,
+        sortDir: String? = nil,
+        locations: String? = nil,
+        brands: String? = nil,
+        filters: [String: Any]? = nil,
+        priceMin: Double? = nil,
+        priceMax: Double? = nil,
+        colors: [String]? = nil,
+        fashionSizes: [String]? = nil,
+        exclude: String? = nil,
+        email: String? = nil,
+        timeOut: Double? = nil,
+        disableClarification: Bool? = nil,
+        completion: @escaping(Result<SearchResponse, SDKError>) -> Void
+    ) {
+        search(
+            query:query,
+            limit:limit,
+            offset:offset,
+            categoryLimit:categoryLimit,
+            brandLimit:brandLimit,
+            categories:categories,
+            extended:extended,
+            sortBy:sortBy,
+            sortDir:sortDir,
+            locations:locations,
+            brands:brands,
+            filters:filters,
+            priceMin:priceMin,
+            priceMax:priceMax,
+            colors:colors,
+            fashionSizes:fashionSizes,
+            exclude:exclude,
+            email:email,
+            timeOut:timeOut,
+            disableClarification:disableClarification,
+            completion: completion
+        )
     }
     
     func track(event: Event, recommendedBy: RecomendedBy? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {

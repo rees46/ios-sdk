@@ -51,6 +51,7 @@ class SearchServiceImpl: SearchService {
         limit: Int?,
         offset: Int?,
         categoryLimit: Int?,
+        brandLimit: Int?,
         categories: String?,
         extended: String?,
         sortBy: String?,
@@ -90,8 +91,11 @@ class SearchServiceImpl: SearchService {
             if let offset = offset {
                 params["offset"] = String(offset)
             }
-            if let categoryLimit = categoryLimit{
+            if let categoryLimit = categoryLimit {
                 params["category_limit"] = String(categoryLimit)
+            }
+            if let brandLimit = brandLimit {
+                params["brand_limit"] = String(brandLimit)
             }
             if let categories = categories {
                 params["categories"] = categories
