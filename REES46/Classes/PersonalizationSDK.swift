@@ -310,7 +310,7 @@ public func createPersonalizationSDK(
     userEmail: String? = nil,
     userPhone: String? = nil,
     userLoyaltyId: String? = nil,
-    apiDomain: String = "api.rees46.com",
+    apiDomain: String = "",
     stream: String = "ios",
     enableLogs: Bool = false,
     autoSendPushToken: Bool = true,
