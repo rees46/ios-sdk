@@ -44,6 +44,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
+        configureFirebase()
         initializationMessaging()
         sdkInitialization()
         registerPushNotification()
@@ -116,6 +117,7 @@ extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         // FIREBASE TOKEN FOR TEST
         fcmGlobalToken = fcmToken ?? ""
+        print("Push Token Firebase:\(String(describing: fcmToken)) ")
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
     }
 }
@@ -129,7 +131,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         
         let token = tokenParts.joined()
         pushGlobalToken = token
-        print("Push Token:", pushGlobalToken)
+        print("Push Token APN:", pushGlobalToken)
         UserDefaults.standard.set(token, forKey: "pushGlobalToken")
         
         Messaging.messaging().apnsToken = deviceToken

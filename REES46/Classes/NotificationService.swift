@@ -109,7 +109,6 @@ public class NotificationService: NotificationServiceProtocol {
     
     private func pushProcessing(userInfo: [AnyHashable: Any]) {
         guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
-            //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
             guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
                 processingNotSDKPush(userInfo: userInfo)
                 return
@@ -167,73 +166,68 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func pushRetrieved(userInfo: [AnyHashable: Any]) {
-        guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo) else {
-            guard parseDictionary(key: "aps", userInfo: userInfo) != nil else {
-                //guard let basicPush = parseDictionary(key: "aps", userInfo: userInfo) else {
-                processingNotSDKPush(userInfo: userInfo)
-                return
-            }
-            if let type = userInfo["type"] as? String {
-                if let id = userInfo["id"] as? String {
-                    notificationReceived(type: type, code: id)
-                    return
-                }
-            }
-            guard let src = parseDictionary(key: "src", userInfo: userInfo) else {
-                processingNotSDKPush(userInfo: userInfo)
-                return
-            }
-            
-            if let type = src["type"] as? String {
-                if let id = src["id"] as? String {
-                    notificationReceived(type: type, code: id)
-                    return
-                }
-            }
-            return
-        }
-        
-        guard let eventType = eventJSON["type"] as? String else {
-            processingNotSDKPush(userInfo: userInfo)
-            return
-        }
-        var src: [String: Any] = [:]
-        if let srcFromUserInfo = parseDictionary(key: "src", userInfo: userInfo) {
-            src = srcFromUserInfo
-        } else {
-            if let srcID = userInfo["id"] as? String {
-                src["id"] = srcID
-            }
-        }
-        
-        guard let srcID = src["id"] as? String else {
+        guard let (type, code) = extractTypeAndCode(from: userInfo) else {
             processingNotSDKPush(userInfo: userInfo)
             return
         }
         
-        notificationReceived(type: eventType, code: srcID)
+        notificationReceived(type: type, code: code)
         
-        if eventType != PushEventType.carousel.rawValue {
-            guard var eventLink = eventJSON["uri"] as? String else {
-                processingNotSDKPush(userInfo: userInfo)
-                return
-            }
-            if eventLink.contains("https://") {
-                eventLink += "?recommended_by=\(eventType)&mail_code=\(srcID)"
-            }
-            processingEventType(eventType: eventType, eventLink: eventLink)
+        guard let eventJSON = parseDictionary(key: "event", userInfo: userInfo),
+              let eventType = eventJSON["type"] as? String else {
+            processingNotSDKPush(userInfo: userInfo)
+            return
+        }
+        
+        guard var eventLink = eventJSON["uri"] as? String else {
+            processingNotSDKPush(userInfo: userInfo)
+            return
+        }
+        
+        if eventLink.contains("https://") {
+            eventLink += "?recommended_by=\(eventType)&mail_code=\(code)"
+        }
+        
+        processingEventType(eventType: eventType, eventLink: eventLink)
+    }
+
+    private func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
+        if let eventJSON = parseDictionary(key: "event", userInfo: userInfo),
+           let eventType = eventJSON["type"] as? String,
+           let src = parseDictionary(key: "src", userInfo: userInfo) ?? (userInfo["id"].map { ["id": $0] } as? [String: Any]),
+           let srcID = src["id"] as? String {
+            return (eventType, srcID)
+        }
+        
+        if let type = userInfo["type"] as? String,
+           let id = userInfo["id"] as? String {
+            return (type, id)
+        }
+        
+        if let src = parseDictionary(key: "src", userInfo: userInfo),
+           let type = src["type"] as? String,
+           let id = src["id"] as? String {
+            return (type, id)
+        }
+        
+        return nil
+    }
+    
+    private func notificationDelivered(type: String, code: String) {
+        sdk.notificationDelivered(type: type, code: code) { error in
+            print("Error caught in notificationDelivered: \(error)")
         }
     }
     
     private func notificationClicked(type: String, code: String) {
-        sdk.notificationClicked(type: type, code: code) { _ in
-            
+        sdk.notificationClicked(type: type, code: code) { error in
+            print("Error caught in notificationReceived: \(error)")
         }
     }
     
     private func notificationReceived(type: String, code: String) {
-        sdk.notificationReceived(type: type, code: code) { _ in
-            
+        sdk.notificationReceived(type: type, code: code) { error in
+            print("Error caught in notificationReceived: \(error)")
         }
     }
     

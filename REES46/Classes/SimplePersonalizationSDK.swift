@@ -761,6 +761,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+        sessionQueue.addOperation {
+            let path = "track/delivered"
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId,
+                "code": code,
+                "type": type
+            ]
+            
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+            
+            self.postRequest(path: path, params: params, completion: { result in
+                switch result {
+                case .success:
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            })
+        }
+    }
+    
     // Send tracking event when user receive mobile push notification
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
         sessionQueue.addOperation {
