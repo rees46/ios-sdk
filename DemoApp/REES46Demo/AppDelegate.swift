@@ -44,7 +44,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
-        configureFirebase()
         initializationMessaging()
         sdkInitialization()
         registerPushNotification()
