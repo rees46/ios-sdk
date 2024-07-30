@@ -19,6 +19,21 @@ class SearchServiceImpl: SearchService {
         sdk?.configureURLSession(configuration: sessionConfig)
     }
     
+    private func getRequest(
+        path: String,
+        params: [String: String],
+        completion: @escaping (Result<[String: Any], SDKError>) -> Void
+    ) {
+        sdk?.getRequest(path: path, params: params, false) { result in
+            switch result {
+            case let .success(successResult):
+                completion(.success(successResult))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+        }
+    }
+    
     private func createParameters(
         forSearch query: String,
         limit: Int?,
@@ -118,14 +133,13 @@ class SearchServiceImpl: SearchService {
         }
         
         sessionQueue.addOperation {
-            
-            let params: [String : String] = [
+            let params: [String: String] = [
                 "did": sdk.deviceId,
                 "shop_id": sdk.shopId
             ]
             
             self.configureSession(timeOut: 1)
-            sdk.getRequest(path: "search/blank", params: params, false) { (result) in
+            self.getRequest(path: "search/blank", params: params) { (result: Result<[String: Any], SDKError>) in
                 switch result {
                 case let .success(successResult):
                     let resultResponse = SearchBlankResponse(json: successResult)
@@ -160,7 +174,6 @@ class SearchServiceImpl: SearchService {
         disableClarification: Bool?,
         completion: @escaping (Result<SearchResponse, SDKError>) -> Void
     ) {
-        
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "search: SDK is not initialized")))
             return
@@ -190,11 +203,10 @@ class SearchServiceImpl: SearchService {
             )
             
             self.configureSession(timeOut: timeOut)
-            
-            sdk.getRequest(path: "search", params: params, false) { result in
+            self.getRequest(path: "search", params: params) { (result: Result<[String: Any], SDKError>) in
                 switch result {
-                case let .success(successResult):
-                    let resultResponse = SearchResponse(json: successResult)
+                case let .success(json):
+                    let resultResponse = SearchResponse(json: json)
                     completion(.success(resultResponse))
                 case let .failure(error):
                     completion(.failure(error))
