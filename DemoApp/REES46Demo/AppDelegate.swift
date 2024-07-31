@@ -75,8 +75,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func configureFirebase() {
         let ciEnv = ProcessInfo.processInfo.environment[Constants.actionsKey] ?? Constants.actionsNegativeValue
-        print("ciEnv: \(ciEnv)")
-        print("actionsKey: \(Constants.actionsKey), actionsPositiveValue: \(Constants.actionsPositiveValue)")
 
         if ciEnv == Constants.actionsPositiveValue {
             print("Skipping Firebase configuration in CI")
