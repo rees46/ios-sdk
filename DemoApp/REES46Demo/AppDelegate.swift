@@ -38,7 +38,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
     
-    
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -68,6 +67,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func registerPushNotification(){
+        UNUserNotificationCenter.current().delegate = self
         notificationService = NotificationService(sdk: sdk)
         notificationService?.pushActionDelegate = self
     }
@@ -79,6 +79,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             print("Skipping Firebase configuration in CI")
         } else {
             FirebaseApp.configure()
+            print("Firebase configured successfully")
         }
     }
     
@@ -116,6 +117,7 @@ extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         // FIREBASE TOKEN FOR TEST
         fcmGlobalToken = fcmToken ?? ""
+        print("Push Token Firebase:\(String(describing: fcmToken)) ")
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
     }
 }
@@ -129,13 +131,21 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         
         let token = tokenParts.joined()
         pushGlobalToken = token
-        print("Push Token:", pushGlobalToken)
+        print("Push Token APN:", pushGlobalToken)
         UserDefaults.standard.set(token, forKey: "pushGlobalToken")
         
         Messaging.messaging().apnsToken = deviceToken
         // END TEST
         
         notificationService?.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: deviceToken)
+    }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.alert, .badge, .sound])
     }
     
     func application(
