@@ -11,7 +11,11 @@ public protocol NotificationServicePushDelegate: AnyObject {
 
 public protocol NotificationServiceProtocol {
     func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data)
-    func didReceiveRemoteNotifications(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void)
+    func didReceiveRemoteNotifications(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void
+    )
     func didReceiveRegistrationFCMToken(fcmToken: String?)
     func didReceiveDeepLink(url: URL)
     

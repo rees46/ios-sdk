@@ -38,13 +38,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var sdkAdditionalInit: PersonalizationSDK!
     var notificationService: NotificationServiceProtocol?
     
-    
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
-        configureFirebase()
         initializationMessaging()
         sdkInitialization()
         registerPushNotification()
@@ -69,13 +67,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func registerPushNotification(){
+        UNUserNotificationCenter.current().delegate = self
         notificationService = NotificationService(sdk: sdk)
         notificationService?.pushActionDelegate = self
     }
     
     func configureFirebase() {
         let ciEnv = ProcessInfo.processInfo.environment[Constants.actionsKey] ?? Constants.actionsNegativeValue
-
+        
         if ciEnv == Constants.actionsPositiveValue {
             print("Skipping Firebase configuration in CI")
         } else {
@@ -139,6 +138,14 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         // END TEST
         
         notificationService?.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: deviceToken)
+    }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.alert, .badge, .sound])
     }
     
     func application(
