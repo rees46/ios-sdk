@@ -5,7 +5,7 @@
 ![Release](https://img.shields.io/badge/release-blueviolet)
 [![License](https://img.shields.io/cocoapods/l/REES46.svg?style=flat)](https://cocoapods.org/pods/REES46)
 
-![REES46](https://rees46.com/static-images/cocoapods/r46_ios_sdk_cocoapods_cover.png)
+![REES46](Images/IosSdkLogo.png)
 
 ## Description
 
