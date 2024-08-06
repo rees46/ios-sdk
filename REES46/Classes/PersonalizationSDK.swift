@@ -129,6 +129,13 @@ public protocol PersonalizationSDK {
     )
     func unsubscribeForBackInStock(itemIds: [String], email: String?, phone: String? , completion: @escaping (Result<Void, SDKError>) -> Void)
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
+    func unsubscribeForPriceDrop(
+        itemIds: [String],
+        currentPrice: Double,
+        email: String?,
+        phone: String?,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    )
     func getStories(code: String, completion: @escaping(Result<StoryContent, SDKError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SDKError>) -> Void)
@@ -247,11 +254,32 @@ public extension PersonalizationSDK {
         )
     }
     
-    func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func unsubscribeForBackInStock(
+        itemIds: [String],
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
         unsubscribeForBackInStock(itemIds: itemIds, email: email,phone:phone,completion: completion)
     }
     
-    func subscribeForPriceDrop(id: String, currentPrice: Double, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func unsubscribeForPriceDrop(
+        itemIds: [String],
+        currentPrice: Double,
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ){
+        unsubscribeForPriceDrop(itemIds: itemIds,currentPrice: currentPrice, email: email,phone:phone,completion: completion)
+    }
+    
+    func subscribeForPriceDrop(
+        id: String,
+        currentPrice: Double,
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
         subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
     }
     

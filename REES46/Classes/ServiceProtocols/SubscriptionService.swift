@@ -28,6 +28,14 @@ protocol SubscriptionService {
         completion: @escaping (Result<Void, SDKError>) -> Void
     )
     
+    func unsubscribeForPriceDrop(
+        itemIds: [String],
+        currentPrice: Double,
+        email: String?,
+        phone: String?,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    )
+    
     func manageSubscription(
         email: String?,
         phone: String?,
