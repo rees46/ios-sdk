@@ -12,7 +12,7 @@ protocol SearchService{
       offset: Int?,
       categoryLimit: Int?,
       brandLimit: Int?,
-      categories: String?,
+      categories: [Int]?,
       extended: String?,
       sortBy: String?,
       sortDir: String?,
