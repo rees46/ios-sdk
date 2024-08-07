@@ -5,6 +5,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private var sessionQueue: SessionQueue
+    typealias RequesParams = [String: Any]
     
     init(sdk: PersonalizationSDK) {
         self.sdk = sdk
@@ -54,7 +55,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     
     private func handlePostRequest(
         path: String,
-        params: [String: Any],
+        params: RequesParams,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
         guard let sdk = sdk else {
@@ -74,7 +75,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         }
     }
     
-    private func prepareBasicParams() -> [String: Any]? {
+    private func prepareBasicParams() -> RequesParams? {
         guard let sdk = sdk else { return nil }
         
         return [
@@ -90,8 +91,8 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         itemIds: [String],
         email: String?,
         phone: String?,
-        additionalParams: [String: Any] = [:]
-    ) -> [String: Any]? {
+        additionalParams: RequesParams = [:]
+    ) -> RequesParams? {
         guard var params = prepareBasicParams() else { return nil }
         
         params[Constants.itemIds] = itemIds
@@ -156,7 +157,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         
         params[Constants.itemId] = id
         
-        var properties: [String: Any] = [:]
+        var properties: [String: String] = [:]
         
         if let fashionSize = fashionSize {
             properties[Constants.fashionSize] = fashionSize
@@ -211,7 +212,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         phone: String? = nil,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        var additionalParams: [String: Any] = [
+        var additionalParams: RequesParams = [
             Constants.price: currentPrice
         ]
         
