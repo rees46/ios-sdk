@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-class SearchServiceImpl: SearchService {
+class SearchServiceImpl: SearchServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private var sessionQueue: SessionQueue

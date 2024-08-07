@@ -29,7 +29,7 @@ public class NotificationService: NotificationServiceProtocol {
         static let urlScheme: String = "https://"
     }
     
-    public var pushActionDelegate: NotificationServicePushDelegate?
+    public var pushActionDelegate: NotificationActionsProtocol?
     
     public let sdk: PersonalizationSDK
     private let notificationRegistrar: NotificationRegistrar

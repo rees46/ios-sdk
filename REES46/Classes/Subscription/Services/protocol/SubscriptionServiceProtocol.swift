@@ -1,7 +1,7 @@
 
 import Foundation
 
-protocol SubscriptionService {
+protocol SubscriptionServiceProtocol {
     
     func subscribeForPriceDrop(
         id: String,
@@ -23,6 +23,14 @@ protocol SubscriptionService {
     
     func unsubscribeForBackInStock(
         itemIds: [String],
+        email: String?,
+        phone: String?,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    )
+    
+    func unsubscribeForPriceDrop(
+        itemIds: [String],
+        currentPrice: Double,
         email: String?,
         phone: String?,
         completion: @escaping (Result<Void, SDKError>) -> Void

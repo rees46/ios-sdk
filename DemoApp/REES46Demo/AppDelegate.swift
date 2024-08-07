@@ -176,7 +176,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 }
 
 
-extension AppDelegate: NotificationServicePushDelegate {
+extension AppDelegate: NotificationActionsProtocol {
     func openCustom(url: String) {
         print("Open custom url \(url)")
         openPushVC(title: "Custom push with url = \(url)")

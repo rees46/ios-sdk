@@ -64,27 +64,27 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let initSemaphore = DispatchSemaphore(value: 0)
     private let serialSemaphore = DispatchSemaphore(value: 0)
     
-    lazy var trackEventService: TrackEventService = {
+    lazy var trackEventService: TrackEventServiceProtocol = {
         return TrackEventServiceImpl(sdk: self)
     }()
     
-    lazy var trackSourceService: TrackSourceService = {
+    lazy var trackSourceService: TrackSourceServiceProtocol = {
         return TrackSourceServiceImpl()
     }()
     
-    lazy var subscriptionService: SubscriptionService = {
+    lazy var subscriptionService: SubscriptionServiceProtocol = {
         return SubscriptionServiceImpl(sdk: self)
     }()
     
-    lazy var notificationService: NotificationHandlingService = {
+    lazy var notificationService: NotificationHandlingServiceProtocol = {
         return NotificationHandlerServiceImpl(sdk: self)
     }()
     
-    lazy var pushTokenService: PushTokenNotificationService = {
+    lazy var pushTokenService: PushTokenNotificationServiceProtocol = {
         return PushTokenHandlerServiceImpl(sdk: self)
     }()
     
-    lazy var searchService: SearchService = {
+    lazy var searchService: SearchServiceProtocol = {
         return SearchServiceImpl(sdk: self)
     }()
     
@@ -733,8 +733,23 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
-    func unsubscribeForBackInStock(itemIds: [String], email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func unsubscribeForBackInStock(
+        itemIds: [String],
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
         subscriptionService.unsubscribeForBackInStock(itemIds: itemIds, email: email, phone: phone, completion: completion)
+    }
+    
+    func unsubscribeForPriceDrop(
+        itemIds: [String],
+        currentPrice: Double,
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
+        subscriptionService.unsubscribeForPriceDrop(itemIds: itemIds,currentPrice: currentPrice, email: email, phone: phone, completion: completion)
     }
     
     func manageSubscription(

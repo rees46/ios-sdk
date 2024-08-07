@@ -1,10 +1,11 @@
 import Foundation
 import UIKit
 
-class SubscriptionServiceImpl: SubscriptionService {
+class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private var sessionQueue: SessionQueue
+    typealias RequesParams = [String: Any]
     
     init(sdk: PersonalizationSDK) {
         self.sdk = sdk
@@ -13,8 +14,11 @@ class SubscriptionServiceImpl: SubscriptionService {
     
     private struct Constants {
         static let subscribeForProductPricePath = "subscriptions/subscribe_for_product_price"
+        static let unSubscribeForProductPricePath = "subscriptions/unsubscribe_from_product_price"
+        
         static let subscribePath = "subscriptions/subscribe_for_product_available"
         static let unsubscribePath = "subscriptions/unsubscribe_from_product_available"
+        
         static let manageSubscriptionPath = "subscriptions/manage"
         
         static let shopId = "shop_id"
@@ -49,6 +53,69 @@ class SubscriptionServiceImpl: SubscriptionService {
         static let mobilePushTransactional = "mobile_push_transactional"
     }
     
+    private func checkSdkInitialization(completion: @escaping (Result<Void, SDKError>) -> Void) -> PersonalizationSDK? {
+        guard let sdk = sdk else {
+            completion(.failure(.custom(error: "SDK is not initialized")))
+            return nil
+        }
+        return sdk
+    }
+    
+    private func handlePostRequest(
+        path: String,
+        params: RequesParams,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
+        guard let sdk = checkSdkInitialization(completion: completion) else { return }
+        
+        sdk.sessionQueue.addOperation {
+            sdk.postRequest(path: path, params: params) { result in
+                switch result {
+                case .success:
+                    completion(.success(Void()))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    private func prepareBasicParams() -> RequesParams? {
+        guard let sdk = sdk else { return nil }
+        
+        return [
+            Constants.shopId: sdk.shopId,
+            Constants.did: sdk.deviceId,
+            Constants.seance: sdk.userSeance,
+            Constants.sid: sdk.userSeance,
+            Constants.segment: sdk.segment
+        ]
+    }
+    
+    private func prepareUnsubscriptionParams(
+        itemIds: [String],
+        email: String?,
+        phone: String?,
+        additionalParams: RequesParams = [:]
+    ) -> RequesParams? {
+        guard var params = prepareBasicParams() else { return nil }
+        
+        params[Constants.itemIds] = itemIds
+        
+        if let email = email {
+            params[Constants.email] = email
+        }
+        if let phone = phone {
+            params[Constants.phone] = phone
+        }
+        
+        for (key, value) in additionalParams {
+            params[key] = value
+        }
+        
+        return params
+    }
+    
     func subscribeForPriceDrop(
         id: String,
         currentPrice: Double,
@@ -56,41 +123,27 @@ class SubscriptionServiceImpl: SubscriptionService {
         phone: String? = nil,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        guard let sdk = sdk else {
+        guard var params = prepareBasicParams() else {
             completion(.failure(.custom(error: "subscribeForPriceDrop: SDK is not initialized")))
             return
         }
         
-        sessionQueue.addOperation {
-            var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.seance:sdk.userSeance,
-                Constants.sid: sdk.userSeance,
-                Constants.segment: sdk.segment,
-                Constants.itemId: id,
-                Constants.price: currentPrice
-            ]
-            
-            if let email = email {
-                params[Constants.email] = email
-            }
-            
-            if let phone = phone {
-                params[Constants.phone] = phone
-            }
-            
-            sdk.postRequest(
-                path: Constants.subscribeForProductPricePath, params: params, completion: { result in
-                    switch result {
-                    case .success(_):
-                        completion(.success(Void()))
-                    case let .failure(error):
-                        completion(.failure(error))
-                    }
-                }
-            )
+        params[Constants.itemId] = id
+        params[Constants.price] = currentPrice
+        
+        if let email = email {
+            params[Constants.email] = email
         }
+        
+        if let phone = phone {
+            params[Constants.phone] = phone
+        }
+        
+        handlePostRequest(
+            path: Constants.subscribeForProductPricePath,
+            params: params,
+            completion: completion
+        )
     }
     
     func subscribeForBackInStock(
@@ -102,55 +155,41 @@ class SubscriptionServiceImpl: SubscriptionService {
         barcode: String? = nil,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        guard let sdk = sdk else {
+        guard var params = prepareBasicParams() else {
             completion(.failure(.custom(error: "subscribeForBackInStock: SDK is not initialized")))
             return
         }
         
-        sdk.sessionQueue.addOperation {
-            var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
-                Constants.segment: sdk.segment,
-                Constants.itemId: id
-            ]
-            
-            let properties = NSMutableDictionary()
-            
-            if let fashionSize = fashionSize {
-                properties[Constants.fashionSize] = fashionSize
-            }
-            if let fashionColor = fashionColor {
-                properties[Constants.fashionColor] = fashionColor
-            }
-            if let barcode = barcode {
-                properties[Constants.barcode] = barcode
-            }
-            
-            if properties.count > 0 {
-                params[Constants.properties] = properties
-            }
-            
-            if let email = email {
-                params[Constants.email] = email
-            }
-            if let phone = phone {
-                params[Constants.phone] = phone
-            }
-            
-            sdk.postRequest(
-                path: Constants.subscribePath, params: params, completion: { result in
-                    switch result {
-                    case .success(_):
-                        completion(.success(Void()))
-                    case let .failure(error):
-                        completion(.failure(error))
-                    }
-                }
-            )
+        params[Constants.itemId] = id
+        
+        var properties: [String: String] = [:]
+        
+        if let fashionSize = fashionSize {
+            properties[Constants.fashionSize] = fashionSize
         }
+        if let fashionColor = fashionColor {
+            properties[Constants.fashionColor] = fashionColor
+        }
+        if let barcode = barcode {
+            properties[Constants.barcode] = barcode
+        }
+        
+        if !properties.isEmpty {
+            params[Constants.properties] = properties
+        }
+        
+        if let email = email {
+            params[Constants.email] = email
+        }
+        if let phone = phone {
+            params[Constants.phone] = phone
+        }
+        
+        handlePostRequest(
+            path: Constants.subscribePath,
+            params: params,
+            completion: completion
+        )
     }
     
     func unsubscribeForBackInStock(
@@ -159,36 +198,50 @@ class SubscriptionServiceImpl: SubscriptionService {
         phone: String? = nil,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        guard let sdk = sdk else {
+        guard let params = prepareUnsubscriptionParams(itemIds: itemIds, email: email, phone: phone) else {
             completion(.failure(.custom(error: "unsubscribeForBackInStock: SDK is not initialized")))
             return
         }
         
-        sdk.sessionQueue.addOperation {
-            var params: [String: Any] = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.itemIds: itemIds
-            ]
-            
-            if let email = email {
-                params[Constants.email] = email
-            }
-            if let phone = phone {
-                params[Constants.phone] = phone
-            }
-            
-            sdk.postRequest(
-                path: Constants.unsubscribePath, params: params, completion: { result in
-                    switch result {
-                    case .success(_):
-                        completion(.success(Void()))
-                    case let .failure(error):
-                        completion(.failure(error))
-                    }
-                }
-            )
+        handlePostRequest(
+            path: Constants.unsubscribePath,
+            params: params,
+            completion: completion
+        )
+    }
+    
+    func unsubscribeForPriceDrop(
+        itemIds: [String],
+        currentPrice: Double,
+        email: String? = nil,
+        phone: String? = nil,
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) {
+        var additionalParams: RequesParams = [
+            Constants.price: currentPrice
+        ]
+        
+        if let sdk = sdk {
+            additionalParams[Constants.seance] = sdk.userSeance
+            additionalParams[Constants.sid] = sdk.userSeance
+            additionalParams[Constants.segment] = sdk.segment
         }
+        
+        guard let params = prepareUnsubscriptionParams(
+            itemIds: itemIds,
+            email: email,
+            phone: phone,
+            additionalParams: additionalParams
+        ) else {
+            completion(.failure(.custom(error: "unsubscribeForPriceDrop: SDK is not initialized")))
+            return
+        }
+        
+        handlePostRequest(
+            path: Constants.unSubscribeForProductPricePath,
+            params: params,
+            completion: completion
+        )
     }
     
     func manageSubscription(
@@ -211,17 +264,10 @@ class SubscriptionServiceImpl: SubscriptionService {
         mobilePushTransactional: Bool? = nil,
         completion: @escaping(Result<Void, SDKError>) -> Void
     ) {
-        guard let sdk = sdk else {
+        guard var params = prepareBasicParams() else {
             completion(.failure(.custom(error: "manageSubscription: SDK is not initialized")))
             return
         }
-        var params: [String: Any] = [
-            Constants.shopId: sdk.shopId,
-            Constants.did: sdk.deviceId,
-            Constants.seance: sdk.userSeance,
-            Constants.sid: sdk.userSeance,
-            Constants.segment: sdk.segment
-        ]
         
         if let email = email {
             params[Constants.email] = email
@@ -246,15 +292,10 @@ class SubscriptionServiceImpl: SubscriptionService {
         if let mobilePushChain         = mobilePushChain            { params[Constants.mobilePushChain]           = mobilePushChain }
         if let mobilePushTransactional = mobilePushTransactional    { params[Constants.mobilePushTransactional]   = mobilePushTransactional }
         
-        sdk.postRequest(
-            path: Constants.manageSubscriptionPath, params: params, completion: { result in
-                switch result {
-                case .success(_):
-                    completion(.success(Void()))
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            }
+        handlePostRequest(
+            path: Constants.manageSubscriptionPath,
+            params: params,
+            completion: completion
         )
     }
 }
