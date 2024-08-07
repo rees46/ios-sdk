@@ -53,15 +53,20 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         static let mobilePushTransactional = "mobile_push_transactional"
     }
     
+    private func checkSdkInitialization(completion: @escaping (Result<Void, SDKError>) -> Void) -> PersonalizationSDK? {
+        guard let sdk = sdk else {
+            completion(.failure(.custom(error: "SDK is not initialized")))
+            return nil
+        }
+        return sdk
+    }
+    
     private func handlePostRequest(
         path: String,
         params: RequesParams,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        guard let sdk = sdk else {
-            completion(.failure(.custom(error: "SDK is not initialized")))
-            return
-        }
+        guard let sdk = checkSdkInitialization(completion: completion) else { return }
         
         sdk.sessionQueue.addOperation {
             sdk.postRequest(path: path, params: params) { result in
