@@ -1,7 +1,7 @@
 
 import Foundation
 
-class TrackEventServiceImpl: TrackEventService {
+class TrackEventServiceImpl: TrackEventServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue
@@ -281,7 +281,7 @@ class TrackEventServiceImpl: TrackEventService {
     }
 }
 
-class TrackSourceServiceImpl: TrackSourceService {
+class TrackSourceServiceImpl: TrackSourceServiceProtocol {
     private struct Constants {
         static let recomendedCode = "recomendedCode"
         static let recomendedType = "recomendedType"

@@ -1,6 +1,6 @@
 import Foundation
 
-class NotificationHandlerServiceImpl: NotificationHandlingService {
+class NotificationHandlerServiceImpl: NotificationHandlingServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue

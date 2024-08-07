@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 
-class SubscriptionServiceImpl: SubscriptionService {
+class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private var sessionQueue: SessionQueue

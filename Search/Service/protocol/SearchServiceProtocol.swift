@@ -1,6 +1,6 @@
 import Foundation
 
-protocol SearchService{
+protocol SearchServiceProtocol{
     
     func searchBlank(
         completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void

@@ -1,7 +1,7 @@
 
 import Foundation
 
-protocol NotificationHandlingService {
+protocol NotificationHandlingServiceProtocol {
     
     func getAllNotifications(
         type: String,

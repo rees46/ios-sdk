@@ -1,7 +1,7 @@
 
 import Foundation
 
-protocol SubscriptionService {
+protocol SubscriptionServiceProtocol {
     
     func subscribeForPriceDrop(
         id: String,
