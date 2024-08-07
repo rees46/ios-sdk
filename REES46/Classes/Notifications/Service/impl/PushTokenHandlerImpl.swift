@@ -1,7 +1,7 @@
 
 import Foundation
 
-class PushTokenHandlerServiceImpl: PushTokenNotificationService {
+class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue

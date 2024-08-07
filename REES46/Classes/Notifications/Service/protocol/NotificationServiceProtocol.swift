@@ -2,13 +2,6 @@ import Foundation
 import UserNotifications
 import UIKit
 
-public protocol NotificationServicePushDelegate: AnyObject {
-    func openCategory(categoryId: String)
-    func openProduct(productId: String)
-    func openWeb(url: String)
-    func openCustom(url: String)
-}
-
 public protocol NotificationServiceProtocol {
     func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data)
     func didReceiveRemoteNotifications(
@@ -19,5 +12,5 @@ public protocol NotificationServiceProtocol {
     func didReceiveRegistrationFCMToken(fcmToken: String?)
     func didReceiveDeepLink(url: URL)
     
-    var pushActionDelegate: NotificationServicePushDelegate? { get set }
+    var pushActionDelegate: NotificationActionsProtocol? { get set }
 }

@@ -2,7 +2,7 @@
 import Foundation
 import UIKit
 
-class PushTokenNotificationServiceImpl: PushTokenNotificationService {
+class PushTokenNotificationServiceImpl: PushTokenNotificationServiceProtocol {
     
     private let sdk: SimplePersonalizationSDK
     private let sessionQueue: SessionQueue
