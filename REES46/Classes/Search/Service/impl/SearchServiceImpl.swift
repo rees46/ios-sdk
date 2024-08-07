@@ -40,7 +40,7 @@ class SearchServiceImpl: SearchServiceProtocol {
         offset: Int?,
         categoryLimit: Int?,
         brandLimit: Int?,
-        categories: String?,
+        categories: [Int]?,
         extended: String?,
         sortBy: String?,
         sortDir: String?,
@@ -79,7 +79,7 @@ class SearchServiceImpl: SearchServiceProtocol {
             params["brand_limit"] = String(brandLimit)
         }
         if let categories = categories {
-            params["categories"] = categories
+            params["categories"] = categories.map { String($0) }.joined(separator: ",")
         }
         if let extended = extended {
             params["extended"] = extended
@@ -157,7 +157,7 @@ class SearchServiceImpl: SearchServiceProtocol {
         offset: Int?,
         categoryLimit: Int?,
         brandLimit: Int?,
-        categories: String?,
+        categories: [Int]?,
         extended: String?,
         sortBy: String?,
         sortDir: String?,
