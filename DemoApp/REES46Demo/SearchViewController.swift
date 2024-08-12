@@ -24,6 +24,51 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     func startBlankSearch() {
+//        sdk?.search(
+//            query:"dress"
+//        ) { response in
+//            switch response {
+//            case let .success(response):
+//    
+//                self.suggestsCategories = response.suggests
+//                self.lastQueriesHistories = response.lastQueries
+//    
+//                var productRecommendationsArray = [String]()
+//                for item in response.products {
+//                    let product = item.name
+//                    productRecommendationsArray.append(product)
+//                }
+//    
+//                var productLastQueriesArray = [String]()
+//                for item in response.lastQueries {
+//                    let product = item.name
+//                    productLastQueriesArray.append(product)
+//                }
+//    
+//                var productPopularArray = [String]()
+//                for item in response.products {
+//                    let product = item.name
+//                    productPopularArray.append(product)
+//                }
+//                
+//                if productLastQueriesArray.count == 0 {
+//                    productLastQueriesArray = productPopularArray
+//                }
+//                
+//                let sdkSearchWidget = SearchWidget()
+//                sdkSearchWidget.setCategories(value: productRecommendationsArray)
+//                sdkSearchWidget.setSearchHistories(value: productLastQueriesArray)
+//                
+//            case let .failure(error):
+//                switch error {
+//                case let .custom(customError):
+//                    print("Error:", customError)
+//                default:
+//                    print("Error:", error.description)
+//                }
+//            }
+//            }
+ 
         sdk?.searchBlank { searchResponse in
             switch searchResponse {
             case let .success(response):

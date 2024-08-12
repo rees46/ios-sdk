@@ -11,10 +11,10 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
             guard let text = sdkSearchWidgetTextFieldText else {
                 return
             }
-
+            
             let objectification = Objectification(objects: database, type: .all)
             let result = objectification.objects(contain: text)
-
+            
             self.searchResultDatabase = result
             if text.isEmpty {
                 self.initData(database: database)
@@ -22,7 +22,7 @@ open class SearchWidgetListView: UITableView, UITableViewDelegate, UITableViewDa
             self.reloadData()
         }
     }
-
+    
     public override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
         self.initView()

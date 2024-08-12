@@ -92,7 +92,6 @@ open class SearchWidgetCategoriesButton: UIButton {
     }
     
     open func randomizeSearchColorScheme() -> UIColor {
-//        let colorArray = ["ff6699", "ff3366", "ff3333"]
         let colorArray = ["000000"]
         
         let randomNumber = arc4random_uniform(UInt32(colorArray.count))

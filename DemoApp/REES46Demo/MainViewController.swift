@@ -63,15 +63,15 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
             storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            loadRecommendationsWidget()
         }
     }
     
     @objc
     private func loadRecommendationsWidget() {
-        sleep(3)
-        if let globalSDKAdditionalInit = globalSDKAdditionalInit {
+        if let globalSDK = globalSDK {
             DispatchQueue.main.async {
-                self.recommendationsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "bc1f41f40bb4f92a705ec9d5ec2ada42")
+                self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "977cb67194a72fdc7b424f49d69a862d")
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
@@ -80,7 +80,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
                 
-                self.didLabel.text = "DID\n\n" + globalSDKAdditionalInit.getDeviceId() //Test delete if needed
+                self.didLabel.text = "DID\n\n" + globalSDK.getDeviceId() //Test delete if needed
             }
         }
     }
@@ -93,7 +93,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 self.scrollView.addSubview(self.newArrivalsCollectionView)
                 
                 // Recommendation Widget height and position settings
-                self.newArrivalsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
+                self.newArrivalsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
                 self.newArrivalsCollectionView.topAnchor.constraint(equalTo: self.recommendationsCollectionView.bottomAnchor, constant: 30).isActive = true //top
                 self.newArrivalsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.newArrivalsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
@@ -111,10 +111,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc
     private func didTapSearch() {
-//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-//        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-//        searchVC.sdk = globalSDKAdditionalInit
-//        self.present(searchVC, animated: true, completion: nil)
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
+        searchVC.sdk = globalSDK
+        self.present(searchVC, animated: true, completion: nil)
     }
     
     @objc

@@ -10,7 +10,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     
     public var cells = [Recommended]()
     
-    private static var rowsCount = 999
+    private static var rowsCount = 9
     
     public let recommendationsCollectionWidgetIndicator = StoriesSlideReloadIndicator()
     
@@ -55,7 +55,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     
     public func loadWidget(sdk: PersonalizationSDK, blockId: String) {
         self.sdk = sdk
-        sdk.recommend(blockId: blockId, timeOut: 0.5) { recommendationsWidgetResponse in
+        sdk.recommend(blockId: blockId,   currentProductId: "664",timeOut: 0.5) { recommendationsWidgetResponse in
             switch recommendationsWidgetResponse {
                 case let .success(response):
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
@@ -65,9 +65,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 case let .failure(error):
                     switch error {
                     case let .custom(customError):
-                        print("Error:", customError)
+                        print("RecommendationsWidgetView custom Error:", customError)
                     default:
-                        print("Error:", error.description)
+                        print("RecommendationsWidgetView default Error:", error.description)
                     }
                 }
         }
