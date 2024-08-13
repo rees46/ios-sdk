@@ -274,8 +274,20 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     private func handleRightTap() {
         needSaveStoryLocal = false
+        
+        guard currentPosition.section < stories.count else {
+            print("Section index out of range")
+            return
+        }
+        
         let storyId = stories[currentPosition.section].id
         let storyName = "viewed.slide." + storyId
+        
+        guard currentPosition.row < stories[currentPosition.section].slides.count else {
+            print("Row index out of range")
+            return
+        }
+        
         let slideId = stories[currentPosition.section].slides[currentPosition.row].id
         
         var viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
@@ -302,13 +314,24 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             
             currentPosition.row = 0
             
+            guard currentPosition.section + 1 < stories.count else {
+                print("Section index out of range")
+                return
+            }
+            
             let storyId = stories[currentPosition.section + 1].id
             let storyName = "viewed.slide." + storyId
+            
+            guard currentPosition.row < stories[currentPosition.section + 1].slides.count else {
+                print("Row index out of range")
+                return
+            }
+            
             let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
             for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
-                allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
+                allStoriesMainArray.append(stories[currentPosition.section + 1].slides[index].id)
             }
             
             let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []

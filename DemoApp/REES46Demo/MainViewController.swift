@@ -62,7 +62,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(
+                sdk: globalSDK,
+                mainVC: self,
+                code: "fcaa8d3168ab7d7346e4b4f1a1c92214"
+            )
         }
     }
     

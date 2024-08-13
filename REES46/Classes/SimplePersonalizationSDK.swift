@@ -88,6 +88,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SearchServiceImpl(sdk: self)
     }()
     
+    lazy var profileData: ProfileDataProtocol = {
+        return ProfileDataImpl(sdk: self)
+    }()
+    
     init(
         shopId: String,
         userEmail: String? = nil,
@@ -342,130 +346,28 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         customProperties: [String: Any?]?,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        sessionQueue.addOperation {
-            let path = "profile/set"
-            var paramsTemp: [String: Any?] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance,
-            ]
-            
-            if let userEmail = userEmail {
-                paramsTemp["email"] = String(userEmail)
-            }
-            
-            if let firstName = firstName {
-                paramsTemp["first_name"] = String(firstName)
-            }
-            
-            if let lastName = lastName {
-                paramsTemp["last_name"] = String(lastName)
-            }
-            
-            if let userPhone = userPhone {
-                paramsTemp["phone"] = String(userPhone)
-            }
-            
-            if let location = location {
-                paramsTemp["location"] = String(location)
-            }
-            
-            if let loyaltyCardLocation = loyaltyCardLocation {
-                paramsTemp["loyalty_card_location"] = String(loyaltyCardLocation)
-            }
-            
-            if let userLoyaltyId = userLoyaltyId {
-                paramsTemp["loyalty_id"] = String(userLoyaltyId)
-            }
-            
-            if let loyaltyStatus = loyaltyStatus {
-                paramsTemp["loyalty_status"] = String(loyaltyStatus)
-            }
-            
-            if let fbID = fbID {
-                paramsTemp["fb_id"] = String(fbID)
-            }
-            
-            if let vkID = vkID {
-                paramsTemp["vk_id"] = String(vkID)
-            }
-            
-            if let telegramId = telegramId {
-                paramsTemp["telegram_id"] = String(telegramId)
-            }
-            
-            if let userId = userId {
-                paramsTemp["id"] = String(userId)
-            }
-            
-            if gender == .male {
-                paramsTemp["gender"] = "m"
-            }
-            if gender == .female {
-                paramsTemp["gender"] = "f"
-            }
-            
-            if let birthday = birthday {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                let birthdayString = dateFormatter.string(from: birthday)
-                paramsTemp["birthday"] = birthdayString
-            }
-            
-            if let loyaltyBonuses = loyaltyBonuses {
-                paramsTemp["loyalty_bonuses"] = String(loyaltyBonuses)
-            }
-            
-            if let loyaltyBonusesToNextLevel = loyaltyBonusesToNextLevel {
-                paramsTemp["loyalty_bonuses_to_next_level"] = String(loyaltyBonusesToNextLevel)
-            }
-            
-            if let boughtSomething = boughtSomething {
-                paramsTemp["bought_something"] = boughtSomething == true ? "1" : "0"
-            }
-            
-            if let age = age {
-                paramsTemp["age"] = String(age)
-            }
-            
-            // Merge custom properties (custom properties overwrite initial values)
-            if let customProperties = customProperties {
-                paramsTemp.merge(customProperties) { (_, new) in new }
-            }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            var params: [String: Any] = [String: Any]()
-            for item in paramsTemp {
-                if item.value is Date {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "YYYY-MM-dd"
-                    guard let date = item.value as? Date else {continue}
-                    params[item.key] = formatter.string(from: date)
-                } else {
-                    params[item.key] = item.value
-                }
-            }
-            
-            self.postRequest(path: path, params: params, completion: { result in
-                switch result {
-                case let .success(successResult):
-                    let resJSON = successResult
-                    let status = resJSON["status"] as? String ?? ""
-                    if status == "success" {
-                        completion(.success(Void()))
-                    } else {
-                        completion(.failure(.responseError))
-                    }
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            })
-        }
+        profileData.setProfileData(
+            userEmail:userEmail,
+            userPhone:userPhone,
+            userLoyaltyId:userLoyaltyId,
+            birthday:birthday,
+            age:age,
+            firstName:firstName,
+            lastName:lastName,
+            location:location,
+            gender:gender,
+            fbID:fbID,
+            vkID:vkID,
+            telegramId:telegramId,
+            loyaltyCardLocation:loyaltyCardLocation,
+            loyaltyStatus:loyaltyStatus,
+            loyaltyBonuses:loyaltyBonuses,
+            loyaltyBonusesToNextLevel:loyaltyBonusesToNextLevel,
+            boughtSomething:boughtSomething,
+            userId:userId,
+            customProperties:customProperties,
+            completion:completion
+        )
     }
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
