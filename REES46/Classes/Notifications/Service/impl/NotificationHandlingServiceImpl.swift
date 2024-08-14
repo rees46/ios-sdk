@@ -28,17 +28,14 @@ class NotificationHandlerServiceImpl: NotificationHandlingServiceProtocol {
     }
     
     private func configureSession(timeOut: Double? = 1) {
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-        sessionConfig.waitsForConnectivity = true
-        sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-        sdk?.configureURLSession(configuration: sessionConfig)
+        let session = URLSession.configuredSession(timeOut: timeOut ?? 1)
+        sdk?.configureURLSession(configuration: session.configuration)
     }
     
     private func getRequest(
         path: String,
         params: [String: String],
-        completion: @escaping (Result<[String: Any], SDKError>) -> Void
+        completion: @escaping (Result<[String: Any], SdkError>) -> Void
     ) {
         sdk?.getRequest(path: path, params: params, false) { result in
             switch result {
@@ -53,7 +50,7 @@ class NotificationHandlerServiceImpl: NotificationHandlingServiceProtocol {
     private func postRequest(
         path: String,
         params: [String: String],
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         sdk?.postRequest(path: path, params: params) { result in
             switch result {
@@ -120,7 +117,7 @@ class NotificationHandlerServiceImpl: NotificationHandlingServiceProtocol {
         limit: Int? = nil,
         page: Int? = nil,
         dateFrom: String? = nil,
-        completion: @escaping(Result<UserPayloadResponse, SDKError>) -> Void
+        completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void
     ) {
         guard let sdk = sdk else { return }
         
@@ -156,7 +153,7 @@ class NotificationHandlerServiceImpl: NotificationHandlingServiceProtocol {
         path: String,
         type: String,
         code: String,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ){
         guard let sdk = sdk else { return }
         

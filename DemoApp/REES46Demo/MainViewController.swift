@@ -62,7 +62,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(
+                sdk: globalSDK,
+                mainVC: self,
+                code: AppEnvironments.storiesCode
+            )
         }
     }
     
@@ -71,7 +75,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         sleep(3)
         if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
-                self.recommendationsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "bc1f41f40bb4f92a705ec9d5ec2ada42")
+                self.recommendationsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
@@ -89,7 +93,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func loadNewArrivalsWidget() {
         if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
-                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "a043dbc2f852ffe18861a2cdfc364ef2")
+                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
                 self.scrollView.addSubview(self.newArrivalsCollectionView)
                 
                 // Recommendation Widget height and position settings
@@ -128,7 +132,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         globalSDK?.resetSdkCache()
         
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: AppEnvironments.storiesCode)
         }
     }
     

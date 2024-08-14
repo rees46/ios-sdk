@@ -8,7 +8,7 @@ protocol SubscriptionServiceProtocol {
         currentPrice: Double,
         email: String?,
         phone: String?,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     )
     
     func subscribeForBackInStock(
@@ -18,14 +18,14 @@ protocol SubscriptionServiceProtocol {
         fashionSize: String?,
         fashionColor: String?,
         barcode: String?,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     )
     
     func unsubscribeForBackInStock(
         itemIds: [String],
         email: String?,
         phone: String?,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     )
     
     func unsubscribeForPriceDrop(
@@ -33,7 +33,7 @@ protocol SubscriptionServiceProtocol {
         currentPrice: Double,
         email: String?,
         phone: String?,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     )
     
     func manageSubscription(
@@ -54,6 +54,6 @@ protocol SubscriptionServiceProtocol {
         mobilePushBulk: Bool?,
         mobilePushChain: Bool?,
         mobilePushTransactional: Bool?,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     )
 }

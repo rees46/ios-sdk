@@ -24,7 +24,7 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
     func setPushToken(
         token: String,
         isFirebaseNotification: Bool = false,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         
         guard let sdk = sdk else {

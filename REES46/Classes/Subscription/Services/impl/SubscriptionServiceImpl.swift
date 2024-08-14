@@ -53,20 +53,12 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         static let mobilePushTransactional = "mobile_push_transactional"
     }
     
-    private func checkSdkInitialization(completion: @escaping (Result<Void, SDKError>) -> Void) -> PersonalizationSDK? {
-        guard let sdk = sdk else {
-            completion(.failure(.custom(error: "SDK is not initialized")))
-            return nil
-        }
-        return sdk
-    }
-    
     private func handlePostRequest(
         path: String,
         params: RequesParams,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        guard let sdk = checkSdkInitialization(completion: completion) else { return }
+        guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sdk.sessionQueue.addOperation {
             sdk.postRequest(path: path, params: params) { result in
@@ -121,7 +113,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         currentPrice: Double,
         email: String? = nil,
         phone: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         guard var params = prepareBasicParams() else {
             completion(.failure(.custom(error: "subscribeForPriceDrop: SDK is not initialized")))
@@ -153,7 +145,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         fashionSize: String? = nil,
         fashionColor: String? = nil,
         barcode: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         guard var params = prepareBasicParams() else {
             completion(.failure(.custom(error: "subscribeForBackInStock: SDK is not initialized")))
@@ -196,7 +188,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         itemIds: [String],
         email: String? = nil,
         phone: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         guard let params = prepareUnsubscriptionParams(itemIds: itemIds, email: email, phone: phone) else {
             completion(.failure(.custom(error: "unsubscribeForBackInStock: SDK is not initialized")))
@@ -215,7 +207,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         currentPrice: Double,
         email: String? = nil,
         phone: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         var additionalParams: RequesParams = [
             Constants.price: currentPrice
@@ -262,7 +254,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         mobilePushBulk: Bool? = nil,
         mobilePushChain: Bool? = nil,
         mobilePushTransactional: Bool? = nil,
-        completion: @escaping(Result<Void, SDKError>) -> Void
+        completion: @escaping(Result<Void, SdkError>) -> Void
     ) {
         guard var params = prepareBasicParams() else {
             completion(.failure(.custom(error: "manageSubscription: SDK is not initialized")))
