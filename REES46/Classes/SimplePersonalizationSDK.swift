@@ -347,25 +347,27 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
         profileData.setProfileData(
-            userEmail:userEmail,
-            userPhone:userPhone,
-            userLoyaltyId:userLoyaltyId,
-            birthday:birthday,
-            age:age,
-            firstName:firstName,
-            lastName:lastName,
-            location:location,
-            gender:gender,
-            fbID:fbID,
-            vkID:vkID,
-            telegramId:telegramId,
-            loyaltyCardLocation:loyaltyCardLocation,
-            loyaltyStatus:loyaltyStatus,
-            loyaltyBonuses:loyaltyBonuses,
-            loyaltyBonusesToNextLevel:loyaltyBonusesToNextLevel,
-            boughtSomething:boughtSomething,
-            userId:userId,
-            customProperties:customProperties,
+            profileData:ProfileData(
+                userEmail:userEmail,
+                userPhone:userPhone,
+                userLoyaltyId:userLoyaltyId,
+                birthday:birthday,
+                age:age,
+                firstName:firstName,
+                lastName:lastName,
+                location:location,
+                gender:gender,
+                fbID:fbID,
+                vkID:vkID,
+                telegramId:telegramId,
+                loyaltyCardLocation:loyaltyCardLocation,
+                loyaltyStatus:loyaltyStatus,
+                loyaltyBonuses:loyaltyBonuses,
+                loyaltyBonusesToNextLevel:loyaltyBonusesToNextLevel,
+                boughtSomething:boughtSomething,
+                userId:userId,
+                customProperties:customProperties
+            ),
             completion:completion
         )
     }

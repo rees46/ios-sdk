@@ -2,40 +2,6 @@ import Foundation
 
 class ProfileDataImpl : ProfileDataProtocol{
     
-    private struct Constants{
-        static let path = "profile/set"
-        static let shopId = "shop_id"
-        static let did = "did"
-        static let seance = "seance"
-        static let sid = "sid"
-        static let segment = "segment"
-        
-        static let email = "email"
-        static let firstName = "first_name"
-        static let lastName = "last_name"
-        static let phone = "phone"
-        static let location = "location"
-        static let fbId = "fb_id"
-        static let vkId = "vk_id"
-        static let telegramId = "telegram_id"
-        static let id = "id"
-        static let gender = "gender"
-        static let maleGender = "m"
-        static let femaleGender = "f"
-        
-        static let loyaltyId = "loyalty_id"
-        static let loyaltyStatuse = "loyalty_status"
-        static let loyaltyBonuses = "loyalty_bonuses"
-        static let loyaltyToNextLevel = "loyalty_bonuses_to_next_level"
-        static let age = "age"
-        static let loyaltyCardLocation = "loyalty_card_location"
-        static let birthday = "birthday"
-        static let boughtSomething = "bought_something"
-        
-        static let calendarYearDateFormat = "yyyy-MM-dd"
-        static let weekYearDateFormat = "YYYY-MM-dd"
-    }
-    
     private var sdk: PersonalizationSDK?
     private var sessionQueue: SessionQueue
     typealias RequesParams = [String: Any]
@@ -80,83 +46,63 @@ class ProfileDataImpl : ProfileDataProtocol{
         return sdk
     }
     
-    private func createParams(
-        userEmail: String?,
-        userPhone: String?,
-        userLoyaltyId: String?,
-        birthday: Date?,
-        age: Int?,
-        firstName: String?,
-        lastName: String?,
-        location: String?,
-        gender: Gender?,
-        fbID: String?,
-        vkID: String?,
-        telegramId: String?,
-        loyaltyCardLocation: String?,
-        loyaltyStatus: String?,
-        loyaltyBonuses: Int?,
-        loyaltyBonusesToNextLevel: Int?,
-        boughtSomething: Bool?,
-        userId: String?
-    ) -> RequesParams {
-        
-        var paramsTemp: RequesParams = [
-            Constants.shopId: sdk?.shopId ?? "",
-            Constants.did: sdk?.deviceId ?? "",
-            Constants.seance: sdk?.userSeance ?? "",
-            Constants.sid: sdk?.userSeance ?? "",
+    private func createParams(from profileData: ProfileData) -> RequesParams {
+        var params: RequesParams = [
+            ProfileDataConstants.shopId: sdk?.shopId ?? "",
+            ProfileDataConstants.did: sdk?.deviceId ?? "",
+            ProfileDataConstants.seance: sdk?.userSeance ?? "",
+            ProfileDataConstants.sid: sdk?.userSeance ?? ""
         ]
         
-        if let userEmail = userEmail {paramsTemp[Constants.email] = String(userEmail)}
-        if let firstName = firstName {paramsTemp[Constants.firstName] = String(firstName)}
-        if let lastName = lastName {paramsTemp[Constants.lastName] = String(lastName)}
-        if let userPhone = userPhone {paramsTemp[Constants.phone] = String(userPhone)}
-        if let location = location {paramsTemp[Constants.location] = String(location)}
-        if let loyaltyCardLocation = loyaltyCardLocation {paramsTemp[Constants.loyaltyCardLocation] = String(loyaltyCardLocation)}
-        if let userLoyaltyId = userLoyaltyId {paramsTemp[Constants.loyaltyId] = String(userLoyaltyId)}
-        if let loyaltyStatus = loyaltyStatus {paramsTemp[Constants.loyaltyStatuse] = String(loyaltyStatus)}
-        if let fbID = fbID {paramsTemp[Constants.fbId] = String(fbID)}
-        if let vkID = vkID {paramsTemp[Constants.vkId] = String(vkID)}
-        if let telegramId = telegramId {paramsTemp[Constants.telegramId] = String(telegramId)}
-        if let userId = userId {paramsTemp[Constants.vkId] = String(userId)}
-        if gender == .male {paramsTemp[Constants.gender] = Constants.maleGender}
-        if gender == .female {paramsTemp[Constants.gender] = Constants.femaleGender}
+        addIfNotNil(params: &params, key: ProfileDataConstants.email, value: profileData.userEmail)
+        addIfNotNil(params: &params, key: ProfileDataConstants.firstName, value: profileData.firstName)
+        addIfNotNil(params: &params, key: ProfileDataConstants.lastName, value: profileData.lastName)
+        addIfNotNil(params: &params, key: ProfileDataConstants.phone, value: profileData.userPhone)
+        addIfNotNil(params: &params, key: ProfileDataConstants.location, value: profileData.location)
+        addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyCardLocation, value: profileData.loyaltyCardLocation)
+        addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyId, value: profileData.userLoyaltyId)
+        addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyStatus, value: profileData.loyaltyStatus)
+        addIfNotNil(params: &params, key: ProfileDataConstants.fbId, value: profileData.fbID)
+        addIfNotNil(params: &params, key: ProfileDataConstants.vkId, value: profileData.vkID)
+        addIfNotNil(params: &params, key: ProfileDataConstants.telegramId, value: profileData.telegramId)
+        addIfNotNil(params: &params, key: ProfileDataConstants.id, value: profileData.userId)
         
-        if let birthday = birthday {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = Constants.calendarYearDateFormat
-            let birthdayString = dateFormatter.string(from: birthday)
-            paramsTemp[Constants.birthday] = birthdayString
+        if let gender = profileData.gender {
+            params[ProfileDataConstants.gender] = (gender == .male) ? ProfileDataConstants.maleGender : ProfileDataConstants.femaleGender
         }
         
-        if let loyaltyBonuses = loyaltyBonuses {paramsTemp[Constants.loyaltyBonuses] = String(loyaltyBonuses)}
-        if let loyaltyBonusesToNextLevel = loyaltyBonusesToNextLevel {paramsTemp[Constants.loyaltyToNextLevel] = String(loyaltyBonusesToNextLevel)}
-        if let boughtSomething = boughtSomething {paramsTemp[Constants.boughtSomething] = boughtSomething == true ? "1" : "0"}
-        if let age = age {paramsTemp[Constants.age] = String(age)}
-        return paramsTemp
+        if let birthday = profileData.birthday {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = ProfileDataConstants.calendarYearDateFormat
+            params[ProfileDataConstants.birthday] = dateFormatter.string(from: birthday)
+        }
+        
+        addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyBonuses, value: profileData.loyaltyBonuses)
+        addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyToNextLevel, value: profileData.loyaltyBonusesToNextLevel)
+        
+        if let boughtSomething = profileData.boughtSomething {
+            params[ProfileDataConstants.boughtSomething] = boughtSomething ? "1" : "0"
+        }
+        
+        addIfNotNil(params: &params, key: ProfileDataConstants.age, value: profileData.age)
+        
+        if let customProperties = profileData.customProperties {
+            params.merge(customProperties as RequesParams) {
+                (_, new) in new
+            }
+        }
+        
+        return params
+    }
+    
+    private func addIfNotNil<T>(params: inout RequesParams, key: String, value: T?) {
+        if let value = value {
+            params[key] = value
+        }
     }
     
     func setProfileData(
-        userEmail: String?,
-        userPhone: String?,
-        userLoyaltyId: String?,
-        birthday: Date?,
-        age: Int?,
-        firstName: String?,
-        lastName: String?,
-        location: String?,
-        gender: Gender?,
-        fbID: String?,
-        vkID: String?,
-        telegramId: String?,
-        loyaltyCardLocation: String?,
-        loyaltyStatus: String?,
-        loyaltyBonuses: Int?,
-        loyaltyBonusesToNextLevel: Int?,
-        boughtSomething: Bool?,
-        userId: String?,
-        customProperties: [String: Any?]?,
+        profileData: ProfileData,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
         guard let sdk = sdk else {
@@ -165,28 +111,9 @@ class ProfileDataImpl : ProfileDataProtocol{
         }
         
         sessionQueue.addOperation {
-            var paramsTemp = self.createParams(
-                userEmail: userEmail,
-                userPhone: userPhone,
-                userLoyaltyId: userLoyaltyId,
-                birthday: birthday,
-                age: age,
-                firstName: firstName,
-                lastName: lastName,
-                location: location,
-                gender: gender,
-                fbID: fbID,
-                vkID: vkID,
-                telegramId: telegramId,
-                loyaltyCardLocation: loyaltyCardLocation,
-                loyaltyStatus: loyaltyStatus,
-                loyaltyBonuses: loyaltyBonuses,
-                loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel,
-                boughtSomething: boughtSomething,
-                userId: userId
-            )
+            var paramsTemp = self.createParams(from: profileData)
             
-            if let customProperties = customProperties {
+            if let customProperties = profileData.customProperties {
                 paramsTemp.merge(customProperties as RequesParams) { (_, new) in new }
             }
             
@@ -194,7 +121,7 @@ class ProfileDataImpl : ProfileDataProtocol{
             for item in paramsTemp {
                 if let date = item.value as? Date {
                     let formatter = DateFormatter()
-                    formatter.dateFormat = Constants.weekYearDateFormat
+                    formatter.dateFormat = ProfileDataConstants.weekYearDateFormat
                     params[item.key] = formatter.string(from: date)
                 } else if let array = item.value as? [Any] {
                     params[item.key] = array
@@ -206,7 +133,7 @@ class ProfileDataImpl : ProfileDataProtocol{
             }
             
             self.configureSession()
-            self.handlePostRequest(path: Constants.path, params: params, completion: completion)
+            self.handlePostRequest(path: ProfileDataConstants.path, params: params, completion: completion)
         }
     }
 }

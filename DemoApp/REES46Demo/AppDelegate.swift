@@ -53,7 +53,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func sdkInitialization(){
         sdk = createPersonalizationSDK(
             shopId: Constants.shopId,
-            apiDomain: ProcessInfo.processInfo.environment["BASE_PATH"] ?? "api.rees46.ru",
             enableLogs: true,
             { error in
                 didToken = self.sdk.getDeviceId()
