@@ -57,7 +57,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }()
     
     lazy var profileData: ProfileDataProtocol = {
-        return ProfileDataImpl(sdk: self)
+        return ProfileDataImpl(sdk: self, configProvider: self)
     }()
     
     init(
@@ -1108,45 +1108,4 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         jsonDecoder.dateDecodingStrategy = .formatted(dateFormatter)
         return jsonDecoder
     }()
-}
-
-extension Data {
-    mutating func append(_ string: String) {
-        if let data = string.data(using: .utf8) {
-            append(data)
-        }
-    }
-}
-
-
-extension URLSession {
-    func dataTask(with url: URL, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-        return dataTask(with: url) { data, response, error in
-            if let error = error {
-                result(.failure(error))
-                return
-            }
-            guard let response = response, let data = data else {
-                let error = NSError(domain: "error", code: 0, userInfo: nil)
-                result(.failure(error))
-                return
-            }
-            result(.success((response, data)))
-        }
-    }
-    
-    func postTask(with request: URLRequest, result: @escaping (Result<(URLResponse, Data), Error>) -> Void) -> URLSessionDataTask {
-        return dataTask(with: request) { data, response, error in
-            if let error = error {
-                result(.failure(error))
-                return
-            }
-            guard let response = response, let data = data else {
-                let error = NSError(domain: "error", code: 0, userInfo: nil)
-                result(.failure(error))
-                return
-            }
-            result(.success((response, data)))
-        }
-    }
 }

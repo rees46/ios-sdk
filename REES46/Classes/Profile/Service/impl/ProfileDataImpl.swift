@@ -1,14 +1,17 @@
 import Foundation
 
-class ProfileDataImpl : ProfileDataProtocol{
+class ProfileDataImpl: ProfileDataProtocol {
     
     private var sdk: PersonalizationSDK?
     private var sessionQueue: SessionQueue
+    private let configProvider: SDKConfigProvider
+    
     typealias RequesParams = [String: Any]
     
-    init(sdk: PersonalizationSDK) {
+    init(sdk: PersonalizationSDK, configProvider: SDKConfigProvider) {
         self.sdk = sdk
         self.sessionQueue = sdk.sessionQueue
+        self.configProvider = configProvider
     }
     
     private func configureSession(timeOut: Double? = 1) {
@@ -49,11 +52,12 @@ class ProfileDataImpl : ProfileDataProtocol{
     }
     
     private func createParams(from profileData: ProfileData) -> RequesParams {
+        
         var params: RequesParams = [
-            SdkConstants.shopId: sdk?.shopId ?? "",
-            SdkConstants.did: sdk?.deviceId ?? "",
-            SdkConstants.seance: sdk?.userSeance ?? "",
-            SdkConstants.sid: sdk?.userSeance ?? ""
+            SdkConstants.shopId: configProvider.getConfigShopId,
+            SdkConstants.did: configProvider.getConfigDeviceId,
+            SdkConstants.seance: configProvider.getConfigUserSeance,
+            SdkConstants.sid: configProvider.getConfigUserSeance
         ]
         
         addIfNotNil(params: &params, key: ProfileDataConstants.email, value: profileData.userEmail)
