@@ -22,7 +22,7 @@ class ProfileDataImpl: ProfileDataProtocol {
     private func handlePostRequest(
         path: String,
         params: RequestParams,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
@@ -134,7 +134,7 @@ class ProfileDataImpl: ProfileDataProtocol {
     
     func setProfileData(
         profileData: ProfileData,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         

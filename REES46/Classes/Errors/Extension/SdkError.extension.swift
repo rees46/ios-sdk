@@ -1,17 +1,6 @@
 import Foundation
-import UIKit
 
-public enum SDKError: Error, CustomStringConvertible {
-    case noError
-    case incorrectAPIKey
-    case initializationFailed
-    case responseError
-    case invalidResponse
-    case decodeError
-    case networkOfflineError
-    case airplaneModeError
-    case custom(error: String)
-    
+extension SdkError: SdkErrorDescription {
     public var description: String {
         switch self {
         case .noError:
@@ -30,8 +19,8 @@ public enum SDKError: Error, CustomStringConvertible {
             return "Network Offline"
         case .airplaneModeError:
             return "Airplane Mode Error"
-        case .custom(error: let error):
-            return "Custom Error \(error)"
+        case .custom(let error):
+            return "Custom Error: \(error)"
         }
     }
 }

@@ -93,7 +93,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func loadNewArrivalsWidget() {
         if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
-                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: self.blockId)
+                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
                 self.scrollView.addSubview(self.newArrivalsCollectionView)
                 
                 // Recommendation Widget height and position settings

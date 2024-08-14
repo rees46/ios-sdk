@@ -3,7 +3,7 @@ import Foundation
 protocol SearchServiceProtocol{
     
     func searchBlank(
-        completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void
+        completion: @escaping (Result<SearchBlankResponse, SdkError>) -> Void
     )
     
     func search(
@@ -27,7 +27,7 @@ protocol SearchServiceProtocol{
       email: String?,
       timeOut: Double?,
       disableClarification: Bool?,
-      completion: @escaping (Result<SearchResponse, SDKError>) -> Void
+      completion: @escaping (Result<SearchResponse, SdkError>) -> Void
     )
     
 }

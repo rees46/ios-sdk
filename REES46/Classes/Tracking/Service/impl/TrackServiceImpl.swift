@@ -65,7 +65,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let purchase = "purchase"
     }
     
-    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "track: SDK is not initialized")))
             return
@@ -218,7 +218,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
     }
     
-    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "trackEvent: SDK is not initialized")))
             return

@@ -69,7 +69,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         stream: String = "ios",
         enableLogs: Bool = false,
         autoSendPushToken: Bool = true,
-        completion: ((SDKError?) -> Void)? = nil
+        completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
@@ -138,7 +138,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return shopId
     }
     
-    func setPushTokenNotification(token: String, isFirebaseNotification: Bool = false, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setPushTokenNotification(token: String, isFirebaseNotification: Bool = false, completion: @escaping (Result<Void, SdkError>) -> Void) {
         pushTokenService.setPushToken(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
     
@@ -187,7 +187,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         limit: Int?,
         page: Int?,
         dateFrom: String?,
-        completion: @escaping (Result<UserPayloadResponse, SDKError>) -> Void
+        completion: @escaping (Result<UserPayloadResponse, SdkError>) -> Void
     ) {
         notificationService.getAllNotifications(
             type: type,
@@ -207,7 +207,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.urlSession = URLSession(configuration: configuration)
     }
     
-    func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "nps/create"
             let params: [String : String] = [
@@ -240,7 +240,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func searchBlank(completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void) {
+    func searchBlank(completion: @escaping (Result<SearchBlankResponse, SdkError>) -> Void) {
         searchService.searchBlank(completion: completion)
     }
     
@@ -265,7 +265,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         email: String?,
         timeOut: Double?,
         disableClarification: Bool?,
-        completion: @escaping (Result<SearchResponse, SDKError>) -> Void
+        completion: @escaping (Result<SearchResponse, SdkError>) -> Void
     ) {
         searchService.search(
             query:query,
@@ -312,7 +312,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         boughtSomething: Bool?,
         userId: String?,
         customProperties: [String: Any?]?,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         profileData.setProfileData(
             profileData:ProfileData(
@@ -340,11 +340,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
-    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
     
-    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         trackEventService.trackEvent(event: event, category: category, label: label, value: value, completion: completion)
     }
     
@@ -352,7 +352,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         trackSourceService.trackSource(source: source, code: code)
     }
     
-    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SDKError>) -> Void) {
+    func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "recommend/\(blockId)"
             var params = [
@@ -406,7 +406,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SDKError>) -> Void) {
+    func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
             var params = [
@@ -445,7 +445,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping (Result<ProductsListResponse, SDKError>) -> Void) {
+    func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping (Result<ProductsListResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products"
             var params: [String: String] = [
@@ -501,7 +501,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func getProductInfo(id: String, completion: @escaping (Result<ProductInfo, SDKError>) -> Void) {
+    func getProductInfo(id: String, completion: @escaping (Result<ProductInfo, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/get"
             let params: [String : String] = [
@@ -531,7 +531,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func getProductsFromCart(completion: @escaping (Result<[CartItem], SDKError>) -> Void) {
+    func getProductsFromCart(completion: @escaping (Result<[CartItem], SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "products/cart"
             let params: [String : String] = [
@@ -563,7 +563,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/clicked",
             type: type,
@@ -572,7 +572,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
-    func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/delivered",
             type: type,
@@ -581,7 +581,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
-    func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/received",
             type: type,
@@ -595,7 +595,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         currentPrice: Double,
         email: String? = nil,
         phone: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         subscriptionService.subscribeForPriceDrop(
             id:id,
@@ -613,7 +613,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         fashionSize: String? = nil,
         fashionColor: String? = nil,
         barcode: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         subscriptionService.subscribeForBackInStock(
             id: id,
@@ -630,7 +630,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         itemIds: [String],
         email: String? = nil,
         phone: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         subscriptionService.unsubscribeForBackInStock(itemIds: itemIds, email: email, phone: phone, completion: completion)
     }
@@ -640,7 +640,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         currentPrice: Double,
         email: String? = nil,
         phone: String? = nil,
-        completion: @escaping (Result<Void, SDKError>) -> Void
+        completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         subscriptionService.unsubscribeForPriceDrop(itemIds: itemIds,currentPrice: currentPrice, email: email, phone: phone, completion: completion)
     }
@@ -663,7 +663,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         mobilePushBulk: Bool? = nil,
         mobilePushChain: Bool? = nil,
         mobilePushTransactional: Bool? = nil,
-        completion: @escaping(Result<Void, SDKError>) -> Void
+        completion: @escaping(Result<Void, SdkError>) -> Void
     ) {
         subscriptionService.manageSubscription(
             email:email,
@@ -687,7 +687,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
-    func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "segments/add"
             var params: [String: Any] = [
@@ -719,7 +719,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "segments/remove"
             var params: [String: Any] = [
@@ -748,7 +748,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    private func sendInitRequest(completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
+    private func sendInitRequest(completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
         let hours = secondsFromGMT/3600
@@ -831,7 +831,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.serialSemaphore.wait()
     }
     
-    public func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SDKError>) -> Void) {
+    public func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
         let hours = secondsFromGMT/3600
@@ -879,7 +879,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         UserDefaults.standard.set(nil, forKey: "seance_id")
     }
     
-    func getStories(code: String, completion: @escaping (Result<StoryContent, SDKError>) -> Void) {
+    func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
         sessionQueue.addOperation {
             self.storiesCode = code
             let path = "stories/\(code)"
@@ -942,7 +942,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SdkConfiguration.self
     }
     
-    func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+    func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         let urlString = baseURL + path
 #if DEBUG
         print("LOG: getRequest to: \(urlString)")
@@ -1015,7 +1015,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SDKError>) -> Void) {
+    func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
 #if DEBUG
         print("LOG: postRequest to: \(self.baseURL + path)")
 #endif

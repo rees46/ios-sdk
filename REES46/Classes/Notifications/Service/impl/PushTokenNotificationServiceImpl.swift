@@ -12,7 +12,7 @@ class PushTokenNotificationServiceImpl: PushTokenNotificationServiceProtocol {
         self.sessionQueue = sessionQueue
     }
 
-    func setPushToken(token: String, isFirebaseNotification: Bool, completion: @escaping (Result<Void, SDKError>) -> Void) {
+    func setPushToken(token: String, isFirebaseNotification: Bool, completion: @escaping (Result<Void, SdkError>) -> Void) {
         sessionQueue.addOperation {
             var params = [
                 "shop_id": self.sdk.shopId,
