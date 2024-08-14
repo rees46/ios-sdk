@@ -38,7 +38,9 @@ class ProfileDataImpl : ProfileDataProtocol{
         }
     }
     
-    private func checkSdkInitialization(completion: @escaping (Result<Void, SDKError>) -> Void) -> PersonalizationSDK? {
+    private func checkSdkInitialization(
+        completion: @escaping (Result<Void, SDKError>) -> Void
+    ) -> PersonalizationSDK? {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "SDK is not initialized")))
             return nil
@@ -48,10 +50,10 @@ class ProfileDataImpl : ProfileDataProtocol{
     
     private func createParams(from profileData: ProfileData) -> RequesParams {
         var params: RequesParams = [
-            ProfileDataConstants.shopId: sdk?.shopId ?? "",
-            ProfileDataConstants.did: sdk?.deviceId ?? "",
-            ProfileDataConstants.seance: sdk?.userSeance ?? "",
-            ProfileDataConstants.sid: sdk?.userSeance ?? ""
+            SdkConstants.shopId: sdk?.shopId ?? "",
+            SdkConstants.did: sdk?.deviceId ?? "",
+            SdkConstants.seance: sdk?.userSeance ?? "",
+            SdkConstants.sid: sdk?.userSeance ?? ""
         ]
         
         addIfNotNil(params: &params, key: ProfileDataConstants.email, value: profileData.userEmail)

@@ -7,38 +7,6 @@ public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
     
-    struct Constants {
-        static let shopId: String = "shop_id"
-        static let deviceIdKey = "device_id"
-        static let deviceToken = "device_token"
-        static let searchQuery: String = "search_query"
-        static let deviceId: String = "did"
-        static let userSeance: String = "seance"
-        static let type: String = "type"
-        static let segment: String = "segment"
-        static let limit: String = "limit"
-        static let offset: String = "offset"
-        static let searchPath: String = "search"
-        static let fullSearch: String = "full_search"
-        static let categoryLimit: String = "category_limit"
-        static let categories: String = "categories"
-        static let extended: String = "extended"
-        static let sortBy: String = "sort_by"
-        static let sortDir: String = "sort_dir"
-        static let locations: String = "locations"
-        static let brands: String = "brands"
-        static let filters: String = "filters"
-        static let priceMin: String = "price_min"
-        static let priceMax: String = "price_max"
-        static let colors: String = "colors"
-        static let fashionSizes: String = "fashion_sizes"
-        static let exclude: String = "exclude"
-        static let email: String = "email"
-        static let disableClarification: String = "no_clarification"
-        static let defaultTimeout: Double = 1.0
-        static let noClarificationValue: String = "1"
-    }
-    
     var storiesCode: String?
     var shopId: String
     var deviceId: String
@@ -123,7 +91,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         segment = ["A", "B"].randomElement() ?? "A"
         
         // Trying to fetch user session (permanent user Id)
-        deviceId = UserDefaults.standard.string(forKey: Constants.deviceIdKey) ?? ""
+        deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
         
         urlSession = URLSession.shared
         sessionQueue.addOperation {
@@ -185,7 +153,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     }
                     
                     // Attempt to send the push token if available
-                    if let deviceToken = UserDefaults.standard.data(forKey: Constants.deviceToken) {
+                    if let deviceToken = UserDefaults.standard.data(forKey: SdkConstants.deviceToken) {
                         let notificationRegistrar = NotificationRegistrar(sdk: self)
                         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
                     }
@@ -203,7 +171,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     private func handleAutoSendPushToken() {
-        if let deviceToken = UserDefaults.standard.data(forKey: Constants.deviceToken) {
+        if let deviceToken = UserDefaults.standard.data(forKey: SdkConstants.deviceToken) {
             let notificationRegistrar = NotificationRegistrar(sdk: self)
             notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
         }
