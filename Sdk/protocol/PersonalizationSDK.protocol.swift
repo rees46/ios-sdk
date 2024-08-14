@@ -236,7 +236,7 @@ public extension PersonalizationSDK {
             return false
         }
         for key in keys {
-            if dict[key] != nil { //if let value = dict[key] {
+            if dict[key] != nil { 
                 UserDefaults.standard.removeObject(forKey: key)
             }
         }

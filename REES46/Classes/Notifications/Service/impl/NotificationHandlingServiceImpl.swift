@@ -28,11 +28,8 @@ class NotificationHandlerServiceImpl: NotificationHandlingServiceProtocol {
     }
     
     private func configureSession(timeOut: Double? = 1) {
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-        sessionConfig.waitsForConnectivity = true
-        sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-        sdk?.configureURLSession(configuration: sessionConfig)
+        let session = URLSession.configuredSession(timeOut: timeOut ?? 1)
+        sdk?.configureURLSession(configuration: session.configuration)
     }
     
     private func getRequest(

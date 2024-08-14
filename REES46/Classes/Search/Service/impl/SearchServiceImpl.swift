@@ -11,12 +11,9 @@ class SearchServiceImpl: SearchServiceProtocol {
         self.sessionQueue = sdk.sessionQueue
     }
     
-    private func configureSession(timeOut: Double?) {
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-        sessionConfig.waitsForConnectivity = true
-        sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-        sdk?.configureURLSession(configuration: sessionConfig)
+    private func configureSession(timeOut: Double? = 1) {
+        let session = URLSession.configuredSession(timeOut: timeOut ?? 1)
+        sdk?.configureURLSession(configuration: session.configuration)
     }
     
     private func getRequest(
