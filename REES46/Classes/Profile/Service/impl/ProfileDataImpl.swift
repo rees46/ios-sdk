@@ -6,7 +6,7 @@ class ProfileDataImpl: ProfileDataProtocol {
     private var sessionQueue: SessionQueue
     private let configProvider: SDKConfigProvider
     
-    typealias RequesParams = [String: Any]
+    typealias RequestParams = [String: Any]
     
     init(sdk: PersonalizationSDK, configProvider: SDKConfigProvider) {
         self.sdk = sdk
@@ -31,7 +31,7 @@ class ProfileDataImpl: ProfileDataProtocol {
     
     private func handlePostRequest(
         path: String,
-        params: RequesParams,
+        params: RequestParams,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
         guard let sdk = checkSDKInitialization(completion: completion) else { return }
@@ -48,7 +48,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         }
     }
     
-    private func getConfigParams() -> RequesParams {
+    private func getConfigParams() -> RequestParams {
         return [
             SdkConstants.shopId: configProvider.getConfigShopId,
             SdkConstants.did: configProvider.getConfigDeviceId,
@@ -57,8 +57,8 @@ class ProfileDataImpl: ProfileDataProtocol {
         ]
     }
     
-    private func setProfileParams(from profileData: ProfileData) -> RequesParams {
-        var params: RequesParams = [:]
+    private func setProfileParams(from profileData: ProfileData) -> RequestParams {
+        var params: RequestParams = [:]
         
         addIfNotNil(params: &params, key: ProfileDataConstants.email, value: profileData.userEmail)
         addIfNotNil(params: &params, key: ProfileDataConstants.firstName, value: profileData.firstName)
@@ -76,12 +76,12 @@ class ProfileDataImpl: ProfileDataProtocol {
         return params
     }
     
-    private func setGenderParam(from profileData: ProfileData) -> RequesParams {
+    private func setGenderParam(from profileData: ProfileData) -> RequestParams {
         guard let gender = profileData.gender else { return [:] }
         return [ProfileDataConstants.gender: (gender == .male) ? ProfileDataConstants.maleGender : ProfileDataConstants.femaleGender]
     }
 
-    private func setBirthdayParam(from profileData: ProfileData) -> RequesParams {
+    private func setBirthdayParam(from profileData: ProfileData) -> RequestParams {
         guard let birthday = profileData.birthday else { return [:] }
         
         let dateFormatter = DateFormatter()
@@ -89,8 +89,8 @@ class ProfileDataImpl: ProfileDataProtocol {
         return [ProfileDataConstants.birthday: dateFormatter.string(from: birthday)]
     }
 
-    private func setLoyaltyParams(from profileData: ProfileData) -> RequesParams {
-        var params: RequesParams = [:]
+    private func setLoyaltyParams(from profileData: ProfileData) -> RequestParams {
+        var params: RequestParams = [:]
         
         addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyBonuses, value: profileData.loyaltyBonuses)
         addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyToNextLevel, value: profileData.loyaltyBonusesToNextLevel)
@@ -98,8 +98,8 @@ class ProfileDataImpl: ProfileDataProtocol {
         return params
     }
     
-    private func processProfileParams(_ paramsTemp: RequesParams) -> RequesParams {
-        var params: RequesParams = RequesParams()
+    private func processProfileParams(_ paramsTemp: RequestParams) -> RequestParams {
+        var params: RequestParams = RequestParams()
         
         for (key, value) in paramsTemp {
             if let date = value as? Date {
@@ -108,7 +108,7 @@ class ProfileDataImpl: ProfileDataProtocol {
                 params[key] = formatter.string(from: date)
             } else if let array = value as? [Any] {
                 params[key] = array
-            } else if let jsonObject = value as? RequesParams {
+            } else if let jsonObject = value as? RequestParams {
                 params[key] = jsonObject
             } else {
                 params[key] = value
@@ -118,17 +118,17 @@ class ProfileDataImpl: ProfileDataProtocol {
         return params
     }
 
-    private func setPurchaseParams(from profileData: ProfileData) -> RequesParams {
+    private func setPurchaseParams(from profileData: ProfileData) -> RequestParams {
         guard let boughtSomething = profileData.boughtSomething else { return [:] }
         return [ProfileDataConstants.boughtSomething: boughtSomething ? "1" : "0"]
     }
 
-    private func setCustomProperties(from profileData: ProfileData) -> RequesParams {
-        return profileData.customProperties as? RequesParams ?? [:]
+    private func setCustomProperties(from profileData: ProfileData) -> RequestParams {
+        return profileData.customProperties as? RequestParams ?? [:]
     }
     
-    private func createParams(from profileData: ProfileData) -> RequesParams {
-        var params: RequesParams = getConfigParams()
+    private func createParams(from profileData: ProfileData) -> RequestParams {
+        var params: RequestParams = getConfigParams()
         
         params.merge(setProfileParams(from: profileData)) { (_, new) in new }
         params.merge(setGenderParam(from: profileData)) { (_, new) in new }
@@ -152,7 +152,7 @@ class ProfileDataImpl: ProfileDataProtocol {
             var paramsTemp = self.createParams(from: profileData)
             
             if let customProperties = profileData.customProperties {
-                paramsTemp.merge(customProperties as RequesParams) { (_, new) in new }
+                paramsTemp.merge(customProperties as RequestParams) { (_, new) in new }
             }
             
             let params = self.processProfileParams(paramsTemp)
@@ -162,7 +162,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         }
     }
     
-    private func addIfNotNil<T>(params: inout RequesParams, key: String, value: T?) {
+    private func addIfNotNil<T>(params: inout RequestParams, key: String, value: T?) {
         if let value = value {
             params[key] = value
         }
