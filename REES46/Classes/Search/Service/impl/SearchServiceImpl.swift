@@ -124,10 +124,7 @@ class SearchServiceImpl: SearchServiceProtocol {
     }
     
     func searchBlank(completion: @escaping (Result<SearchBlankResponse, SDKError>) -> Void) {
-        guard let sdk = sdk else {
-            completion(.failure(.custom(error: "search: SDK is not initialized")))
-            return
-        }
+        guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sessionQueue.addOperation {
             let params: [String: String] = [
@@ -171,10 +168,7 @@ class SearchServiceImpl: SearchServiceProtocol {
         disableClarification: Bool?,
         completion: @escaping (Result<SearchResponse, SDKError>) -> Void
     ) {
-        guard let sdk = sdk else {
-            completion(.failure(.custom(error: "search: SDK is not initialized")))
-            return
-        }
+        guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sessionQueue.addOperation {
             let params = self.createParameters(

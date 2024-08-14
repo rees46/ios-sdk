@@ -132,7 +132,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         globalSDK?.resetSdkCache()
         
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: storiesCode)
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: AppEnvironments.storiesCode)
         }
     }
     

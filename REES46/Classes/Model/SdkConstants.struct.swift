@@ -28,6 +28,7 @@ struct SdkConstants {
     static let segment: String = "segment"
     static let shopId = "shop_id"
     static let sid = "sid"
+    static let did = "did"
     static let sortBy: String = "sort_by"
     static let sortDir: String = "sort_dir"
     static let type: String = "type"

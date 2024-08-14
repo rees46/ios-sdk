@@ -19,22 +19,12 @@ class ProfileDataImpl: ProfileDataProtocol {
         sdk?.configureURLSession(configuration: session.configuration)
     }
     
-    private func checkSDKInitialization(
-        completion: @escaping (Result<Void, SDKError>) -> Void
-    ) -> PersonalizationSDK? {
-        guard let sdk = sdk else {
-            completion(.failure(.custom(error: "SDK is not initialized")))
-            return nil
-        }
-        return sdk
-    }
-    
     private func handlePostRequest(
         path: String,
         params: RequestParams,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        guard let sdk = checkSDKInitialization(completion: completion) else { return }
+        guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sdk.sessionQueue.addOperation {
             sdk.postRequest(path: path, params: params) { result in
@@ -80,7 +70,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         guard let gender = profileData.gender else { return [:] }
         return [ProfileDataConstants.gender: (gender == .male) ? ProfileDataConstants.maleGender : ProfileDataConstants.femaleGender]
     }
-
+    
     private func setBirthdayParam(from profileData: ProfileData) -> RequestParams {
         guard let birthday = profileData.birthday else { return [:] }
         
@@ -88,7 +78,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         dateFormatter.dateFormat = ProfileDataConstants.calendarYearDateFormat
         return [ProfileDataConstants.birthday: dateFormatter.string(from: birthday)]
     }
-
+    
     private func setLoyaltyParams(from profileData: ProfileData) -> RequestParams {
         var params: RequestParams = [:]
         
@@ -117,12 +107,12 @@ class ProfileDataImpl: ProfileDataProtocol {
         
         return params
     }
-
+    
     private func setPurchaseParams(from profileData: ProfileData) -> RequestParams {
         guard let boughtSomething = profileData.boughtSomething else { return [:] }
         return [ProfileDataConstants.boughtSomething: boughtSomething ? "1" : "0"]
     }
-
+    
     private func setCustomProperties(from profileData: ProfileData) -> RequestParams {
         return profileData.customProperties as? RequestParams ?? [:]
     }
@@ -146,7 +136,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         profileData: ProfileData,
         completion: @escaping (Result<Void, SDKError>) -> Void
     ) {
-        guard checkSDKInitialization(completion: completion) != nil else { return }
+        guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sessionQueue.addOperation {
             var paramsTemp = self.createParams(from: profileData)
