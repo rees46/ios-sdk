@@ -115,10 +115,13 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc
     private func didTapSearch() {
-//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-//        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-//        searchVC.sdk = globalSDKAdditionalInit
-//        self.present(searchVC, animated: true, completion: nil)
+        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        if let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as? SearchViewController {
+            searchVC.sdk = globalSDK
+            self.present(searchVC, animated: true, completion: nil)
+        } else {
+            print("Unable to instantiate SearchViewController")
+        }
     }
     
     @objc
@@ -161,7 +164,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
         scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2000)
-
+        
         menuButton.addTarget(self, action: #selector(didTapMenu), for: .touchUpInside)
         searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
@@ -255,13 +258,13 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         super.layoutSubviews()
         updateButtonCornerRadius()
     }
-
+    
     @IBInspectable var rounded: Bool = false {
         didSet {
             updateButtonCornerRadius()
         }
     }
-
+    
     func updateButtonCornerRadius() {
         layer.backgroundColor = UIColor.black.cgColor
         layer.masksToBounds = true

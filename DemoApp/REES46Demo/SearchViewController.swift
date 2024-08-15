@@ -7,6 +7,8 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
     private var lastQueriesHistories: [Query]?
     
+    private var searchWorkItem: DispatchWorkItem?
+    
     public var sdk: PersonalizationSDK?
     
     override func viewDidLoad() {
@@ -21,58 +23,14 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
         self.navigationController?.setNavigationBarHidden(true, animated: false)
         
         self.setSearchWidgetCategoriesButtonType(type: .blacked)
+        
     }
     
     func startBlankSearch() {
-//        sdk?.search(
-//            query:"dress"
-//        ) { response in
-//            switch response {
-//            case let .success(response):
-//    
-//                self.suggestsCategories = response.suggests
-//                self.lastQueriesHistories = response.lastQueries
-//    
-//                var productRecommendationsArray = [String]()
-//                for item in response.products {
-//                    let product = item.name
-//                    productRecommendationsArray.append(product)
-//                }
-//    
-//                var productLastQueriesArray = [String]()
-//                for item in response.lastQueries {
-//                    let product = item.name
-//                    productLastQueriesArray.append(product)
-//                }
-//    
-//                var productPopularArray = [String]()
-//                for item in response.products {
-//                    let product = item.name
-//                    productPopularArray.append(product)
-//                }
-//                
-//                if productLastQueriesArray.count == 0 {
-//                    productLastQueriesArray = productPopularArray
-//                }
-//                
-//                let sdkSearchWidget = SearchWidget()
-//                sdkSearchWidget.setCategories(value: productRecommendationsArray)
-//                sdkSearchWidget.setSearchHistories(value: productLastQueriesArray)
-//                
-//            case let .failure(error):
-//                switch error {
-//                case let .custom(customError):
-//                    print("Error:", customError)
-//                default:
-//                    print("Error:", error.description)
-//                }
-//            }
-//            }
- 
         sdk?.searchBlank { searchResponse in
             switch searchResponse {
             case let .success(response):
-                
+                print("Query is empty or nil \(response)")
                 self.suggestsCategories = response.suggests
                 self.lastQueriesHistories = response.lastQueries
                 
@@ -116,7 +74,7 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     func sdkSearchWidgetListViewDidScroll() {
         self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField.endEditing(true)
     }
-
+    
     func sdkSearchWidgetHistoryButtonClicked(productText: String) {
         self.pushDetailViewController(productText: productText)
     }
@@ -151,15 +109,45 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     func pushDetailViewController(productText: String) {
-//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-//        let detailViewController = storyboard.instantiateViewController(withIdentifier: "detailVC") as! DetailViewController
-//        vc.clickedProduct = productText
-//        self.present(detailViewController, animated: true, completion: nil)
+        //        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+        //        let detailViewController = storyboard.instantiateViewController(withIdentifier: "detailVC") as! DetailViewController
+        //        vc.clickedProduct = productText
+        //        self.present(detailViewController, animated: true, completion: nil)
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
+    
+    override func sdkSearchWidgetTextFieldTextChanged(_ textField: UITextField) {
+        super.sdkSearchWidgetTextFieldTextChanged(textField)
+        
+        guard let query = textField.text, !query.isEmpty else {
+            print("Query is empty or nil")
+            return
+        }
+        
+        DispatchQueue.main.async {
+            
+            self.sdk?.search(query: query) { response in
+                switch response {
+                case let .success(response):
+                    self.updateSuggestions(response)
+                case let .failure(error):
+                    self.handleSearchError(error)
+                }
+            }
+        }
+    }
+    
+    private func updateSuggestions(_ response: SearchResponse) {
+        print("RESPONSE:", response)
+    }
+    
+    private func handleSearchError(_ error: Error) {
+        print("Error occurred during search:", error)
+    }
+    
 }
 
 class SearchWidgetDropDownMenu: MainSearchModel {
