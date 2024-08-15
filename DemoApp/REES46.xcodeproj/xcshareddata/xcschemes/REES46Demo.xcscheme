@@ -91,7 +91,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "BLOCK_ID"
-            value = "bc1f41f40bb4f92a705ec9d5ec2ada42"
+            value = "977cb67194a72fdc7b424f49d69a862d"
             isEnabled = "YES">
          </EnvironmentVariable>
          <EnvironmentVariable
@@ -102,6 +102,11 @@
          <EnvironmentVariable
             key = "STORIES_CODE"
             value = "fcaa8d3168ab7d7346e4b4f1a1c92214"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "RECOMMENDATION_ID"
+            value = "655"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

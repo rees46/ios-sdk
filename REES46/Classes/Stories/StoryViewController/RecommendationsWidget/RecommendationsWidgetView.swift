@@ -38,7 +38,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
         
-//        setupRecommendationsActivityIndicator()
+        //        setupRecommendationsActivityIndicator()
     }
     
     func setupRecommendationsActivityIndicator() {
@@ -53,23 +53,27 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         self.recommendationsIndicatorView.startAnimating()
     }
     
-    public func loadWidget(sdk: PersonalizationSDK, blockId: String) {
+    public func loadWidget(
+        sdk: PersonalizationSDK,
+        blockId: String,
+        recommendationId: String
+    ) {
         self.sdk = sdk
-        sdk.recommend(blockId: blockId,   currentProductId: "664",timeOut: 0.5) { recommendationsWidgetResponse in
+        sdk.recommend(blockId: blockId,   currentProductId: recommendationId,timeOut: 0.5) { recommendationsWidgetResponse in
             switch recommendationsWidgetResponse {
-                case let .success(response):
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
-                        self.setWidget(cells: response.recommended)
-                        self.reloadData()
-                    }
-                case let .failure(error):
-                    switch error {
-                    case let .custom(customError):
-                        print("RecommendationsWidgetView custom Error:", customError)
-                    default:
-                        print("RecommendationsWidgetView default Error:", error.description)
-                    }
+            case let .success(response):
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                    self.setWidget(cells: response.recommended)
+                    self.reloadData()
                 }
+            case let .failure(error):
+                switch error {
+                case let .custom(customError):
+                    print("RecommendationsWidgetView custom Error:", customError)
+                default:
+                    print("RecommendationsWidgetView default Error:", error.description)
+                }
+            }
         }
     }
     
@@ -123,7 +127,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         let priceNotFormatted = cells[indexPath.row].priceFullFormatted
         let replaceCurrencyPriceWithPromocode = priceNotFormatted?.replacingOccurrences(of: currentCurrency, with: "") ?? cells[indexPath.row].priceFormatted
         let updatedPrice = replaceCurrencyPriceWithPromocode! + currentCurrency
-
+        
         cell.recommendationsPriceLabel.text = updatedPrice
         
         if SdkConfiguration.isDarkMode {

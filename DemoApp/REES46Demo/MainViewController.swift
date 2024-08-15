@@ -36,6 +36,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         addSdkObservers()
         setupSdkDemoAppViews()
         setupSdkActivityIndicator()
+        loadRecommendationsWidget()
+        loadNewArrivalsWidget()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -44,14 +46,23 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     func addSdkObservers() {
-        NotificationCenter.default.addObserver(self, selector: #selector(loadStoriesViewBlock),
-                                               name: globalSDKNotificationNameMainInit, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(loadStoriesViewBlock),
+            name: globalSDKNotificationNameMainInit, object: nil
+        )
         
-        NotificationCenter.default.addObserver(self, selector: #selector(loadRecommendationsWidget),
-                                               name: globalSDKNotificationNameAdditionalInit, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(loadRecommendationsWidget),
+            name: globalSDKNotificationNameAdditionalInit, object: nil
+        )
         
-        NotificationCenter.default.addObserver(self, selector: #selector(loadNewArrivalsWidget),
-                                               name: globalSDKNotificationNameAdditionalInit, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(loadNewArrivalsWidget),
+            name: globalSDKNotificationNameAdditionalInit, object: nil
+        )
     }
     
     deinit {
@@ -73,9 +84,13 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func loadRecommendationsWidget() {
         sleep(3)
-        if let globalSDKAdditionalInit = globalSDKAdditionalInit {
+        if let globalSDKAdditionalInit = globalSDK {
             DispatchQueue.main.async {
-                self.recommendationsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
+                self.recommendationsCollectionView.loadWidget(
+                    sdk: globalSDKAdditionalInit,
+                    blockId: AppEnvironments.blockId,
+                    recommendationId: AppEnvironments.recommendationId
+                )
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
@@ -91,9 +106,13 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc
     private func loadNewArrivalsWidget() {
-        if let globalSDKAdditionalInit = globalSDKAdditionalInit {
+        if let globalSDKAdditionalInit = globalSDK {
             DispatchQueue.main.async {
-                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
+                self.newArrivalsCollectionView.loadWidget(
+                    sdk: globalSDKAdditionalInit,
+                    blockId: AppEnvironments.blockId,
+                    recommendationId: AppEnvironments.recommendationId
+                )
                 self.scrollView.addSubview(self.newArrivalsCollectionView)
                 
                 // Recommendation Widget height and position settings
