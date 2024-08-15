@@ -1,11 +1,5 @@
 import UIKit
 
-public protocol RecommendationsWidgetCommunicationProtocol: AnyObject {
-    func addToCartProductData(product: Recommended)
-    func addToFavoritesProductData(product: Recommended)
-    func didTapOnProduct(product: Recommended)
-}
-
 open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, RecommendationsWidgetViewCellDelegate {
     
     public var cells = [Recommended]()
@@ -38,19 +32,6 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
         
-        //        setupRecommendationsActivityIndicator()
-    }
-    
-    func setupRecommendationsActivityIndicator() {
-        self.recommendationsIndicatorView = SdkActivityIndicator(frame: CGRect(x: 0, y: 0, width: 76, height: 76))
-        self.recommendationsIndicatorView.lineWidth = 3
-        self.recommendationsIndicatorView.indicatorColor = UIColor.green
-        self.addSubview(self.recommendationsIndicatorView)
-        
-        self.recommendationsIndicatorView.center = center
-        self.recommendationsIndicatorView.hideIndicatorWhenStopped = true
-        
-        self.recommendationsIndicatorView.startAnimating()
     }
     
     public func loadWidget(
@@ -212,21 +193,6 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             }
             
             configureCartButton(cell: cell, itemIdExistInCart: !viewedCartSlideIdExists)
-            
-            print("\nUser did tap Add/Remove 'Cart' from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForCartFromWidget.id)")
-            print("Product name: \(selectedProductForCartFromWidget.name)")
-            print("Product brand: \(selectedProductForCartFromWidget.brand)")
-            print("Product model: \(selectedProductForCartFromWidget.model)")
-            print("Product imageUrl: \(selectedProductForCartFromWidget.imageUrl)")
-            print("Product resizedImageUrl: \(selectedProductForCartFromWidget.resizedImageUrl)")
-            print("Product url: \(selectedProductForCartFromWidget.url)")
-            print("Product deeplinkIos: \(selectedProductForCartFromWidget.deeplinkIos)")
-            print("Product price: \(selectedProductForCartFromWidget.price)")
-            print("Product priceFormatted: \(String(describing: selectedProductForCartFromWidget.priceFormatted))")
-            print("Product priceFull: \(selectedProductForCartFromWidget.priceFull)")
-            print("Product priceFullFormatted: \(String(describing: selectedProductForCartFromWidget.priceFullFormatted))")
-            print("Product currency: \(selectedProductForCartFromWidget.currency)\n")
-            
             if SdkConfiguration.recommendations.widgetCartButtonNeedOpenWebUrl {
                 openWidgetUrl(link: selectedProductForCartFromWidget.url)
             }
@@ -290,20 +256,6 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 }
                 cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
             }
-            
-            print("\nUser did tap Add/Remove 'Favorites' from Recommendations widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedProductForFavoritesFromWidget.id)")
-            print("Favorite product name: \(selectedProductForFavoritesFromWidget.name)")
-            print("Favorite product brand: \(selectedProductForFavoritesFromWidget.brand)")
-            print("Favorite product model: \(selectedProductForFavoritesFromWidget.model)")
-            print("Favorite product imageUrl: \(selectedProductForFavoritesFromWidget.imageUrl)")
-            print("Favorite product resizedImageUrl: \(selectedProductForFavoritesFromWidget.resizedImageUrl)")
-            print("Favorite product url: \(selectedProductForFavoritesFromWidget.url)")
-            print("Favorite product deeplinkIos: \(selectedProductForFavoritesFromWidget.deeplinkIos)")
-            print("Favorite product price: \(selectedProductForFavoritesFromWidget.price)")
-            print("Favorite product priceFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFormatted))")
-            print("Favorite product priceFull: \(selectedProductForFavoritesFromWidget.priceFull)")
-            print("Favorite product priceFullFormatted: \(String(describing: selectedProductForFavoritesFromWidget.priceFullFormatted))")
-            print("Favorite product currency: \(selectedProductForFavoritesFromWidget.currency)\n")
             
             recommendationsDelegate?.addToFavoritesProductData(product: selectedProductForFavoritesFromWidget)
         }
@@ -499,10 +451,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedRecommendationProductFroCell = cells[indexPath.row]
         recommendationsDelegate?.didTapOnProduct(product: selectedRecommendationProductFroCell)
-        
         openWidgetUrl(link: selectedRecommendationProductFroCell.url)
-        
-        print("\nUser did tap cell from Recommendations Widget\nUse 'recommendationsDelegate' for interactions\nProduct id: \(selectedRecommendationProductFroCell.id)\n")
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

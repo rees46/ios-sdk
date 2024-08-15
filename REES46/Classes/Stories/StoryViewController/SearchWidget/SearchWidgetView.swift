@@ -61,7 +61,11 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
     }
     
     open func loadSearchData() {
-        //self.delegate?.loadSearchData()
+//        self.delegate?.loadSearchData()
+    }
+    
+    open func updateSearchResults(_ results: [SearchResult]) {
+        self.delegate?.updateSearchResults(results)
     }
     
     open func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

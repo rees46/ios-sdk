@@ -73,7 +73,6 @@ open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
     }
     @objc
     open func sdkSearchWidgetTextFieldTextChanged(_ textField: UITextField) {
-        print("Text changed: \(textField.text ?? "")") 
         self.sdkSearchWidgetView.sdkSearchWidgetListView.sdkSearchWidgetTextFieldText = textField.text
     }
     

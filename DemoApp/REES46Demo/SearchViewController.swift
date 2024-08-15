@@ -91,6 +91,12 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
         print(object)
     }
     
+    func updateSearchResults(_ results: [SearchResult]) {
+        if let mainView = self.sdkSearchWidgetView.sdkSearchWidgetMainView {
+                 mainView.updateSearchResults(results)
+             }
+    }
+    
     func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = self.sdkSearchWidgetView.sdkSearchWidgetListView.dequeueReusableCell(withIdentifier: SearchWidgetListViewCell.ID) as! SearchWidgetListViewCell
         if let sModel = self.sdkSearchWidgetView.sdkSearchWidgetListView.searchResultDatabase[indexPath.row] as? MainSearchModel {
@@ -109,10 +115,6 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     func pushDetailViewController(productText: String) {
-        //        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        //        let detailViewController = storyboard.instantiateViewController(withIdentifier: "detailVC") as! DetailViewController
-        //        vc.clickedProduct = productText
-        //        self.present(detailViewController, animated: true, completion: nil)
     }
     
     override func didReceiveMemoryWarning() {
@@ -121,18 +123,20 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
     override func sdkSearchWidgetTextFieldTextChanged(_ textField: UITextField) {
         super.sdkSearchWidgetTextFieldTextChanged(textField)
-        
+
         guard let query = textField.text, !query.isEmpty else {
-            print("Query is empty or nil")
             return
         }
-        
+
         DispatchQueue.main.async {
-            
             self.sdk?.search(query: query) { response in
                 switch response {
                 case let .success(response):
-                    self.updateSuggestions(response)
+                    let searchResults = response.products.map {
+                        SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
+                    }
+                    self.delegate?.updateSearchResults(searchResults)
+
                 case let .failure(error):
                     self.handleSearchError(error)
                 }

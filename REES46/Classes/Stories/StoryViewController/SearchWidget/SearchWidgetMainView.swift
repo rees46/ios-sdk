@@ -1,6 +1,6 @@
 import UIKit
 
-open class SearchWidgetMainView: UIView {
+open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     
     let width = UIScreen.main.bounds.width
     let height = UIScreen.main.bounds.height
@@ -20,6 +20,12 @@ open class SearchWidgetMainView: UIView {
     
     open var sdkSearchWidget = SearchWidget()
     
+    private let searchResultsView: SearchResultsView = {
+        let view = SearchResultsView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     public override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -33,6 +39,7 @@ open class SearchWidgetMainView: UIView {
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
+    
     
     open func setSearchWidgetCategoriesButtonType(type: SearchWidgetCategoriesButtonType) {
         for searchWidgetCategoriesButton in self.sdkSearchWidgetCategoriesButtons {
@@ -59,8 +66,6 @@ open class SearchWidgetMainView: UIView {
     
     @objc
     open func clearHistoryButtonClicked() {
-        //sdkSearchWidget.setSearchHistories(value: [String]())
-        //self.redrawSearchRecentlyTableView()
     }
     
     @objc
@@ -116,6 +121,16 @@ open class SearchWidgetMainView: UIView {
         self.searchRecentlyLabel.textColor = UIColor.darkGray.withAlphaComponent(0.8)
         self.addSubview(self.searchRecentlyLabel)
         
+        addSubview(searchResultsView)
+        searchResultsView.delegate = self
+        
+        NSLayoutConstraint.activate([
+            searchResultsView.topAnchor.constraint(equalTo: searchRecentlyLabel.bottomAnchor, constant: 10),
+            searchResultsView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: margin),
+            searchResultsView.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -margin),
+            searchResultsView.heightAnchor.constraint(equalToConstant: 200)
+        ])
+        
         redrawSearchRecentlyTableView()
     }
     
@@ -125,68 +140,82 @@ open class SearchWidgetMainView: UIView {
         }
         sdkSearchWidgetHistoryViews.removeAll()
         sdkSearchWidgetHistoryButtons.removeAll()
-
+        
         if self.clearHistoryButton != nil {
             self.clearHistoryButton.removeFromSuperview()
         }
-
+        
         let histories = sdkSearchWidget.getSearchHistories() ?? [String]()
         let recently = sdkSearchWidget.getSearchHistories() ?? [String]()
-
+        
         guard let searchHistoryLabel = searchHistoryLabel else {
             print("searchHistoryLabel is nil")
             return
         }
-
+        
         let searchHistoryLabelOriginY: CGFloat = searchHistoryLabel.frame.origin.y + searchHistoryLabel.frame.height
-
+        
         for i in 0..<histories.count {
             let view = SearchWidgetHistoryView(frame: CGRect(x: margin, y: searchHistoryLabelOriginY + CGFloat(i * 30), width: width - (margin * 2), height: 20))
             view.sdkSearchWidgetHistoryButton.addTarget(self, action: #selector(sdkSearchWidgetHistoryButtonClicked(_:)), for: .touchUpInside)
             view.deleteButton.addTarget(self, action: #selector(closeButtonClicked(_:)), for: .touchUpInside)
-
+            
             view.sdkSearchWidgetHistoryButton.textLabel.text = histories[i]
             view.sdkSearchWidgetHistoryButton.tag = i
             view.deleteButton.tag = i
-
+            
             sdkSearchWidgetHistoryViews.append(view)
             sdkSearchWidgetHistoryButtons.append(view.sdkSearchWidgetHistoryButton)
             self.addSubview(view)
         }
-
+        
         let searchRecentlyLabelOriginY: CGFloat = searchHistoryLabel.frame.origin.y + searchHistoryLabel.frame.height
-
+        
         for i in 0..<recently.count {
             let view = SearchWidgetHistoryView(frame: CGRect(x: margin, y: searchRecentlyLabelOriginY + CGFloat(i * 30), width: width - (margin * 2), height: 20))
             view.sdkSearchWidgetHistoryButton.addTarget(self, action: #selector(sdkSearchWidgetHistoryButtonClicked(_:)), for: .touchUpInside)
             view.deleteButton.addTarget(self, action: #selector(closeButtonClicked(_:)), for: .touchUpInside)
-
+            
             view.sdkSearchWidgetHistoryButton.textLabel.text = recently[i]
             view.sdkSearchWidgetHistoryButton.tag = i
             view.deleteButton.tag = i
-
+            
             sdkSearchWidgetHistoryViews.append(view)
             sdkSearchWidgetHistoryButtons.append(view.sdkSearchWidgetHistoryButton)
             self.addSubview(view)
         }
-
+        
         let lastHistoryView = self.sdkSearchWidgetHistoryViews.last ?? SearchWidgetHistoryView()
-
+        
         self.clearHistoryButton = UIButton(frame: CGRect(x: margin, y: lastHistoryView.frame.origin.y + lastHistoryView.frame.height + 20, width: width - (margin * 2), height: 42))
         self.clearHistoryButton.setTitle("View all", for: .normal)
-//        self.clearHistoryButton.setTitle("CLEAR SEARCH HISTORY", for: .normal)
         self.clearHistoryButton.titleLabel?.font = UIFont.systemFont(ofSize: 14)
         self.clearHistoryButton.setTitleColor(UIColor.sdkDefaultBlackColor, for: .normal)
         self.clearHistoryButton.setTitleColor(UIColor.lightGray, for: .highlighted)
-
+        
         self.clearHistoryButton.layer.cornerRadius = 6
         self.clearHistoryButton.layer.borderWidth = 1.4
         self.clearHistoryButton.layer.masksToBounds = true
         self.clearHistoryButton.layer.borderColor = UIColor.sdkDefaultBlackColor.cgColor
-
+        
         self.clearHistoryButton.addTarget(self, action: #selector(clearHistoryButtonClicked), for: .touchUpInside)
         self.addSubview(clearHistoryButton)
-
+        
         self.delegate?.sdkSearchWidgetMainViewHistoryChanged()
+        if let lastHistoryView = self.sdkSearchWidgetHistoryViews.last {
+            clearHistoryButton.frame.origin.y = lastHistoryView.frame.origin.y + lastHistoryView.frame.height + 240
+        } else {
+            clearHistoryButton.frame.origin.y = searchRecentlyLabel.frame.origin.y + searchRecentlyLabel.frame.height + 240
+        }
+    }
+    
+    
+    open func updateSearchResults(_ results: [SearchResult]) {
+        searchResultsView.updateResults(results)
+        searchResultsView.isHidden = results.isEmpty
+    }
+    
+    open func didSelectResult(_ result: SearchResult) {
+        print("Выбран результат didSelectResult: \(result.name)")
     }
 }
