@@ -62,16 +62,20 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func loadStoriesViewBlock() {
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
-            loadRecommendationsWidget()
+            storiesCollectionView.configure(
+                sdk: globalSDK,
+                mainVC: self,
+                code: AppEnvironments.storiesCode
+            )
         }
     }
     
     @objc
     private func loadRecommendationsWidget() {
-        if let globalSDK = globalSDK {
+        sleep(3)
+        if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
-                self.recommendationsCollectionView.loadWidget(sdk: globalSDK, blockId: "977cb67194a72fdc7b424f49d69a862d")
+                self.recommendationsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
@@ -80,7 +84,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
                 
-                self.didLabel.text = "DID\n\n" + globalSDK.getDeviceId() //Test delete if needed
+                self.didLabel.text = "DID\n\n" + globalSDKAdditionalInit.getDeviceId() //Test delete if needed
             }
         }
     }
@@ -89,11 +93,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func loadNewArrivalsWidget() {
         if let globalSDKAdditionalInit = globalSDKAdditionalInit {
             DispatchQueue.main.async {
-                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: "a043dbc2f852ffe18861a2cdfc364ef2")
+                self.newArrivalsCollectionView.loadWidget(sdk: globalSDKAdditionalInit, blockId: AppEnvironments.blockId)
                 self.scrollView.addSubview(self.newArrivalsCollectionView)
                 
                 // Recommendation Widget height and position settings
-                self.newArrivalsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
+                self.newArrivalsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
                 self.newArrivalsCollectionView.topAnchor.constraint(equalTo: self.recommendationsCollectionView.bottomAnchor, constant: 30).isActive = true //top
                 self.newArrivalsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.newArrivalsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
@@ -111,10 +115,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc
     private func didTapSearch() {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
-        searchVC.sdk = globalSDK
-        self.present(searchVC, animated: true, completion: nil)
+//        let storyboard = UIStoryboard(name: "Main", bundle: nil)
+//        let searchVC = storyboard.instantiateViewController(withIdentifier: "searchVC") as! SearchViewController
+//        searchVC.sdk = globalSDKAdditionalInit
+//        self.present(searchVC, animated: true, completion: nil)
     }
     
     @objc
@@ -128,7 +132,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         globalSDK?.resetSdkCache()
         
         if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: "fcaa8d3168ab7d7346e4b4f1a1c92214")
+            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: AppEnvironments.storiesCode)
         }
     }
     

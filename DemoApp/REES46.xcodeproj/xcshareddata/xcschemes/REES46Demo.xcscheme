@@ -89,6 +89,21 @@
             value = "api.rees46.ru"
             isEnabled = "YES">
          </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "BLOCK_ID"
+            value = "bc1f41f40bb4f92a705ec9d5ec2ada42"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SHOP_ID"
+            value = "357382bf66ac0ce2f1722677c59511"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "STORIES_CODE"
+            value = "fcaa8d3168ab7d7346e4b4f1a1c92214"
+            isEnabled = "YES">
+         </EnvironmentVariable>
       </EnvironmentVariables>
       <AdditionalOptions>
          <AdditionalOption

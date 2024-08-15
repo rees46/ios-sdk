@@ -29,7 +29,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         static let actionsKey: String = "ACTIONS_IS_RUNNING"
         static let actionsPositiveValue: String = "true"
         static let actionsNegativeValue: String = "false"
-        static let shopId: String = "357382bf66ac0ce2f1722677c59511"
     }
     
     var window: UIWindow?
@@ -52,7 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func sdkInitialization(){
         sdk = createPersonalizationSDK(
-            shopId: Constants.shopId,
+            shopId: AppEnvironments.shopId,
             enableLogs: true,
             { error in
                 didToken = self.sdk.getDeviceId()
