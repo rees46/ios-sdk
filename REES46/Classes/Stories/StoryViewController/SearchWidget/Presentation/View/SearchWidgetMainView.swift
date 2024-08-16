@@ -254,6 +254,17 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         DispatchQueue.main.async {
             self.searchResultsView.updateResults(results)
             self.searchResultsView.isHidden = results.isEmpty
+            self.updateShowAllButton(withCount: results.isEmpty ? nil : results.count)
+        }
+    }
+    
+    open func updateShowAllButton(withCount count: Int?) {
+        DispatchQueue.main.async {
+            if let count = count, count > 0 {
+                self.showAllButton?.setTitle("View all (\(count))", for: .normal)
+            } else {
+                self.showAllButton?.setTitle("View all", for: .normal)
+            }
         }
     }
     
