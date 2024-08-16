@@ -204,7 +204,7 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
             searchResultsView.topAnchor.constraint(equalTo: self.topAnchor, constant: contentHeight + 10),
             searchResultsView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: margin),
             searchResultsView.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -margin),
-            searchResultsView.heightAnchor.constraint(equalToConstant: 320)
+            searchResultsView.heightAnchor.constraint(equalToConstant: 380)
         ])
     }
     
@@ -252,7 +252,6 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     
     open func updateSearchResults(_ results: [SearchResult]) {
         DispatchQueue.main.async {
-            print("SEARCH RESULT: \(results)")
             self.searchResultsView.updateResults(results)
             self.searchResultsView.isHidden = results.isEmpty
         }

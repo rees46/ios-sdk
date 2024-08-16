@@ -3,64 +3,69 @@ import REES46
 
 class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
+    private let activityIndicator: UIActivityIndicatorView
     private var searchWorkItem: DispatchWorkItem?
     private var suggestsCategories: [Suggest]?
     private var lastQueriesHistories: [Query]?
     public var sdk: PersonalizationSDK?
     
-    private let debounceInterval: TimeInterval = 2.0
+    private let debounceInterval: TimeInterval = 1.0
     private var searchDebounceTimer: Timer?
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        if #available(iOS 13.0, *) {
+            activityIndicator = UIActivityIndicatorView(style: .medium)
+        } else {
+            activityIndicator = UIActivityIndicatorView(style: .gray)
+        }
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+    }
+    
+    required init?(coder: NSCoder) {
+        if #available(iOS 13.0, *) {
+            activityIndicator = UIActivityIndicatorView(style: .medium)
+        } else {
+            activityIndicator = UIActivityIndicatorView(style: .gray)
+        }
+        super.init(coder: coder)
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         self.startBlankSearch()
         self.sdkSearchWidgetInit()
         self.delegate = self
         self.navigationController?.setNavigationBarHidden(true, animated: false)
         self.setSearchWidgetCategoriesButtonType(type: .blacked)
+        
+        activityIndicator.hidesWhenStopped = true
+        activityIndicator.center = view.center
+        view.addSubview(activityIndicator)
     }
     
     func startBlankSearch() {
         sdk?.searchBlank { searchResponse in
             switch searchResponse {
             case let .success(response):
-                print("Query is empty or nil \(response)")
                 self.suggestsCategories = response.suggests
                 self.lastQueriesHistories = response.lastQueries
-                
-                var productRecommendationsArray = [String]()
-                for item in response.suggests {
-                    let product = item.name
-                    productRecommendationsArray.append(product)
+                let searchResults = response.products.map {
+                    SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
                 }
-                
-                var productLastQueriesArray = [String]()
-                for item in response.lastQueries {
-                    let product = item.name
-                    productLastQueriesArray.append(product)
-                }
-                
-                var productPopularArray = [String]()
-                for item in response.products {
-                    let product = item.name
-                    productPopularArray.append(product)
-                }
-                
-                if productLastQueriesArray.count == 0 {
-                    productLastQueriesArray = productPopularArray
-                }
-                
-                let sdkSearchWidget = SearchWidget()
-                sdkSearchWidget.setCategories(value: productRecommendationsArray)
-                sdkSearchWidget.setSearchHistories(value: productLastQueriesArray)
-                
+                self.delegate?.updateSearchResults(searchResults)
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                print("Error:", error)
+            }
+        }
+    }
+    
+    private func showProgress(isShow: Bool){
+        DispatchQueue.main.async {
+            if isShow{
+                self.activityIndicator.startAnimating()
+            }else{
+                self.activityIndicator.stopAnimating()
             }
         }
     }
@@ -83,12 +88,6 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
     func sdkSearchWidgetListViewClicked(object: Any) {
         print(object)
-    }
-    
-    func updateSearchResults(_ results: [SearchResult]) {
-        if let mainView = self.sdkSearchWidgetView.sdkSearchWidgetMainView {
-            mainView.updateSearchResults(results)
-        }
     }
     
     func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -119,6 +118,7 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
         super.sdkSearchWidgetTextFieldTextChanged(textField)
         
         guard let query = textField.text, !query.isEmpty else {
+            showProgress(isShow: false)
             return
         }
         
@@ -129,17 +129,27 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     private func performSearch(query: String) {
-        self.sdk?.search(query: query) { response in
+        showProgress(isShow: true)
+        
+        self.sdk?.search(query: query) { [weak self] response in
+            self?.showProgress(isShow: false)
+            
             switch response {
             case let .success(response):
                 let searchResults = response.products.map {
                     SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
                 }
-                self.delegate?.updateSearchResults(searchResults)
+                self?.delegate?.updateSearchResults(searchResults)
                 
             case let .failure(error):
                 print("Error occurred during search:", error)
             }
+        }
+    }
+    
+    func updateSearchResults(_ results: [SearchResult]) {
+        if let mainView = self.sdkSearchWidgetView.sdkSearchWidgetMainView {
+            mainView.updateSearchResults(results)
         }
     }
 }
