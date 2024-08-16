@@ -1,24 +1,24 @@
 import UIKit
 
 class SearchResultsView: UIView {
-    private var results: [SearchResult] = []
+    public var results: [SearchResult] = []
     weak var delegate: SearchResultsViewDelegate?
-
+    
     private let tableView: UITableView = {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupTableView()
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     private func setupTableView() {
         addSubview(tableView)
         tableView.delegate = self
@@ -31,34 +31,16 @@ class SearchResultsView: UIView {
             tableView.bottomAnchor.constraint(equalTo: self.bottomAnchor),
         ])
         
-        tableView.register(CustomTableViewCell.self, forCellReuseIdentifier: "CustomCell")
+        tableView.register(SearchResultTableViewCell.self, forCellReuseIdentifier: "CustomCell")
     }
-
+    
     func updateResults(_ results: [SearchResult]) {
         self.results = results
         tableView.reloadData()
     }
 }
 
-extension SearchResultsView: UITableViewDelegate, UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return results.count
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CustomCell", for: indexPath) as! CustomTableViewCell
-        let result = results[indexPath.row]
-        cell.configure(with: result)
-        return cell
-    }
-
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let selectedResult = results[indexPath.row]
-        delegate?.didSelectResult(selectedResult)
-    }
-}
-
-class CustomTableViewCell: UITableViewCell {
+class SearchResultTableViewCell: UITableViewCell {
     
     private let firstLabel: UILabel = {
         let label = UILabel()
