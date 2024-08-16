@@ -74,7 +74,6 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     }
     
     open func initView(constructorCategories: [String]) {
-        setupMockResults()
         setupRecommendSearchCategoryLabel()
         setupCategoryButtons(with: constructorCategories)
         setupSearchHistoryLabel()
@@ -100,13 +99,6 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
             )
         )
         self.delegate?.sdkSearchWidgetMainViewHistoryChanged()
-    }
-    
-    private func setupMockResults() {
-        // TODO remove
-        let mockResults = createMockResults()
-        updateSearchResults(mockResults)
-        // TODO remove
     }
     
     private func setupRecommendSearchCategoryLabel() {
@@ -212,7 +204,7 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
             searchResultsView.topAnchor.constraint(equalTo: self.topAnchor, constant: contentHeight + 10),
             searchResultsView.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: margin),
             searchResultsView.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -margin),
-            searchResultsView.heightAnchor.constraint(equalToConstant: 200)
+            searchResultsView.heightAnchor.constraint(equalToConstant: 320)
         ])
     }
     
@@ -258,40 +250,15 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         scrollView.frame = CGRect(x: 0, y: 0, width: width, height: self.bounds.height - (showAllButton?.frame.height ?? 0) - 20)
     }
     
-    private func createMockResults() -> [SearchResult] {
-        return [
-            SearchResult(image: "image1.png", name: "Mock Product 1", price: 10.0),
-            SearchResult(image: "image2.png", name: "Mock Product 2", price: 15.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image3.png", name: "Mock Product 3", price: 20.0),
-            SearchResult(image: "image4.png", name: "Mock Product 4", price: 25.0)
-        ]
-    }
     open func updateSearchResults(_ results: [SearchResult]) {
-        print("SEARCH RESULT: \(results)")
-        searchResultsView.updateResults(createMockResults())
-        searchResultsView.isHidden = results.isEmpty
+        DispatchQueue.main.async {
+            print("SEARCH RESULT: \(results)")
+            self.searchResultsView.updateResults(results)
+            self.searchResultsView.isHidden = results.isEmpty
+        }
     }
     
     open func didSelectResult(_ result: SearchResult) {
-        print("Выбран результат didSelectResult: \(result.name)")
+        print("didSelectResult: \(result.name)")
     }
 }

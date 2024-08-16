@@ -3,27 +3,21 @@ import REES46
 
 class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
-    private var suggestsCategories: [Suggest]?
-    
-    private var lastQueriesHistories: [Query]?
-    
     private var searchWorkItem: DispatchWorkItem?
-    
+    private var suggestsCategories: [Suggest]?
+    private var lastQueriesHistories: [Query]?
     public var sdk: PersonalizationSDK?
+    
+    private let debounceInterval: TimeInterval = 2.0
+    private var searchDebounceTimer: Timer?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         self.startBlankSearch()
-        
         self.sdkSearchWidgetInit()
-        
         self.delegate = self
-        
         self.navigationController?.setNavigationBarHidden(true, animated: false)
-        
         self.setSearchWidgetCategoriesButtonType(type: .blacked)
-        
     }
     
     func startBlankSearch() {
@@ -93,8 +87,8 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
     func updateSearchResults(_ results: [SearchResult]) {
         if let mainView = self.sdkSearchWidgetView.sdkSearchWidgetMainView {
-                 mainView.updateSearchResults(results)
-             }
+            mainView.updateSearchResults(results)
+        }
     }
     
     func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -123,35 +117,31 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     
     override func sdkSearchWidgetTextFieldTextChanged(_ textField: UITextField) {
         super.sdkSearchWidgetTextFieldTextChanged(textField)
-
+        
         guard let query = textField.text, !query.isEmpty else {
             return
         }
-
-        DispatchQueue.main.async {
-            self.sdk?.search(query: query) { response in
-                switch response {
-                case let .success(response):
-                    let searchResults = response.products.map {
-                        SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
-                    }
-                    self.delegate?.updateSearchResults(searchResults)
-
-                case let .failure(error):
-                    self.handleSearchError(error)
-                }
-            }
+        
+        searchDebounceTimer?.invalidate()
+        searchDebounceTimer = Timer.scheduledTimer(withTimeInterval: debounceInterval, repeats: false) { [weak self] _ in
+            self?.performSearch(query: query)
         }
     }
     
-    private func updateSuggestions(_ response: SearchResponse) {
-        print("RESPONSE:", response)
+    private func performSearch(query: String) {
+        self.sdk?.search(query: query) { response in
+            switch response {
+            case let .success(response):
+                let searchResults = response.products.map {
+                    SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
+                }
+                self.delegate?.updateSearchResults(searchResults)
+                
+            case let .failure(error):
+                print("Error occurred during search:", error)
+            }
+        }
     }
-    
-    private func handleSearchError(_ error: Error) {
-        print("Error occurred during search:", error)
-    }
-    
 }
 
 class SearchWidgetDropDownMenu: MainSearchModel {
