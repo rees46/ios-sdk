@@ -20,7 +20,7 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
         self.sdkSearchWidgetListView.sdkSearchWidgetListViewDelegate = self
         self.sdkSearchWidgetListView.isHidden = true
         
-        if let clearHistoryButton = self.sdkSearchWidgetMainView.clearHistoryButton {
+        if let clearHistoryButton = self.sdkSearchWidgetMainView.showAllButton {
         self.sdkSearchWidgetScrollView.contentSize = CGSize(width: self.frame.width, height: clearHistoryButton.frame.origin.y + clearHistoryButton.frame.height + 20)
         } else {
             self.sdkSearchWidgetScrollView.contentSize = CGSize(width: self.frame.width, height: self.frame.height)
@@ -31,7 +31,7 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
     }
     
     open func sdkSearchWidgetMainViewHistoryChanged() {
-        let size = CGSize(width: self.frame.width, height: self.sdkSearchWidgetMainView.clearHistoryButton.frame.origin.y + self.sdkSearchWidgetMainView.clearHistoryButton.frame.height + 20)
+        let size = CGSize(width: self.frame.width, height: self.sdkSearchWidgetMainView.showAllButton.frame.origin.y + self.sdkSearchWidgetMainView.showAllButton.frame.height + 20)
         self.sdkSearchWidgetScrollView.contentSize = size
         self.sdkSearchWidgetMainView.frame = CGRect(origin: CGPoint(x: 0, y: 0), size: size)
     }

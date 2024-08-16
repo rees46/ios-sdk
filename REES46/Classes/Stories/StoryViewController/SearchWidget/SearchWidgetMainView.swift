@@ -2,24 +2,22 @@ import UIKit
 
 open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     
-    let width = UIScreen.main.bounds.width
-    let height = UIScreen.main.bounds.height
-    
-    open var recommendSearchCategoryLabel: UILabel!
-    open var sdkSearchWidgetCategoriesButtons = [SearchWidgetCategoriesButton]()
-    
-    open var searchHistoryLabel: UILabel!
-    open var searchRecentlyLabel: UILabel!
-    
-    open var sdkSearchWidgetHistoryViews = [SearchWidgetHistoryView]()
-    open var sdkSearchWidgetHistoryButtons = [SearchWidgetHistoryButton]()
-    open var clearHistoryButton: UIButton!
-    
-    var margin: CGFloat = 16
     open var delegate: SearchWidgetMainViewDelegate?
-    
+
+    open var sdkSearchWidgetCategoriesButtons = [SearchWidgetCategoriesButton]()
+    open var sdkSearchWidgetHistoryButtons = [SearchWidgetHistoryButton]()
+    open var sdkSearchWidgetHistoryViews = [SearchWidgetHistoryView]()
     open var sdkSearchWidget = SearchWidget()
-    
+    open var recommendSearchCategoryLabel: UILabel!
+    open var searchRecentlyLabel: UILabel!
+    open var searchHistoryLabel: UILabel!
+    open var showAllButton: UIButton!
+
+    let height = UIScreen.main.bounds.height
+    let width = UIScreen.main.bounds.width
+
+    var margin: CGFloat = 16
+
     private let searchResultsView: SearchResultsView = {
         let view = SearchResultsView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -65,7 +63,8 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     }
     
     @objc
-    open func clearHistoryButtonClicked() {
+    open func showAllButtonClicked() {
+        //TODO handle click
     }
     
     @objc
@@ -76,22 +75,14 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     
     open func initView(constructorCategories: [String]) {
         setupMockResults()
-        
         setupRecommendSearchCategoryLabel()
-        
         setupCategoryButtons(with: constructorCategories)
-        
         setupSearchHistoryLabel()
-        
         redrawSearchRecentlyTableView()
     }
     
     open func redrawSearchRecentlyTableView() {
         clearOldViews()
-        
-        let histories = fetchSearchHistories()
-        
-        let limitedHistories = limitItems(histories)
         
         guard let searchHistoryLabel = searchHistoryLabel else {
             print("searchHistoryLabel is nil")
@@ -99,14 +90,15 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         }
         
         let scrollView = createScrollView()
-        
-        let contentHeight = addSearchHistories(to: scrollView, histories: limitedHistories, under: searchHistoryLabel)
-        
         configureViewAllButton()
         updateScrollView(scrollView)
-        
-        setupSearchResultsView(below: contentHeight)
-        
+        setupSearchResultsView(
+            below: addSearchHistories(
+                to: scrollView,
+                histories: limitItems(fetchSearchHistories()),
+                under: searchHistoryLabel
+            )
+        )
         self.delegate?.sdkSearchWidgetMainViewHistoryChanged()
     }
     
@@ -174,7 +166,7 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         sdkSearchWidgetHistoryViews.removeAll()
         sdkSearchWidgetHistoryButtons.removeAll()
         
-        clearHistoryButton?.removeFromSuperview()
+        showAllButton?.removeFromSuperview()
     }
     
     private func fetchSearchHistories() -> [String] {
@@ -237,26 +229,33 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     }
     
     private func configureViewAllButton() {
-        let width = self.bounds.width
+        showAllButton = UIButton()
+        showAllButton?.setTitle("View all", for: .normal)
+        showAllButton?.titleLabel?.font = UIFont.systemFont(ofSize: 14)
+        showAllButton?.setTitleColor(UIColor.sdkDefaultBlackColor, for: .normal)
+        showAllButton?.setTitleColor(UIColor.lightGray, for: .highlighted)
         
-        clearHistoryButton = UIButton(frame: CGRect(x: margin, y: self.bounds.height - 62, width: width - (margin * 2), height: 42))
-        clearHistoryButton?.setTitle("View all", for: .normal)
-        clearHistoryButton?.titleLabel?.font = UIFont.systemFont(ofSize: 14)
-        clearHistoryButton?.setTitleColor(UIColor.sdkDefaultBlackColor, for: .normal)
-        clearHistoryButton?.setTitleColor(UIColor.lightGray, for: .highlighted)
+        showAllButton?.layer.cornerRadius = 6
+        showAllButton?.layer.borderWidth = 1.4
+        showAllButton?.layer.masksToBounds = true
+        showAllButton?.layer.borderColor = UIColor.sdkDefaultBlackColor.cgColor
         
-        clearHistoryButton?.layer.cornerRadius = 6
-        clearHistoryButton?.layer.borderWidth = 1.4
-        clearHistoryButton?.layer.masksToBounds = true
-        clearHistoryButton?.layer.borderColor = UIColor.sdkDefaultBlackColor.cgColor
+        showAllButton?.addTarget(self, action: #selector(showAllButtonClicked), for: .touchUpInside)
+        showAllButton?.translatesAutoresizingMaskIntoConstraints = false
         
-        clearHistoryButton?.addTarget(self, action: #selector(clearHistoryButtonClicked), for: .touchUpInside)
-        self.addSubview(clearHistoryButton!)
+        self.addSubview(showAllButton!)
+        
+        NSLayoutConstraint.activate([
+            showAllButton!.bottomAnchor.constraint(equalTo: self.safeAreaLayoutGuide.bottomAnchor, constant: -70),
+            showAllButton!.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: margin),
+            showAllButton!.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -margin),
+            showAllButton!.heightAnchor.constraint(equalToConstant: 42)
+        ])
     }
     
     private func updateScrollView(_ scrollView: UIScrollView) {
         let width = self.bounds.width
-        scrollView.frame = CGRect(x: 0, y: 0, width: width, height: self.bounds.height - (clearHistoryButton?.frame.height ?? 0) - 20)
+        scrollView.frame = CGRect(x: 0, y: 0, width: width, height: self.bounds.height - (showAllButton?.frame.height ?? 0) - 20)
     }
     
     private func createMockResults() -> [SearchResult] {
@@ -287,6 +286,7 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         ]
     }
     open func updateSearchResults(_ results: [SearchResult]) {
+        print("SEARCH RESULT: \(results)")
         searchResultsView.updateResults(createMockResults())
         searchResultsView.isHidden = results.isEmpty
     }
