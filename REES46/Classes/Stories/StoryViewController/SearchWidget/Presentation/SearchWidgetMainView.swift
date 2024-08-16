@@ -3,7 +3,7 @@ import UIKit
 open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     
     open var delegate: SearchWidgetMainViewDelegate?
-
+    
     open var sdkSearchWidgetCategoriesButtons = [SearchWidgetCategoriesButton]()
     open var sdkSearchWidgetHistoryButtons = [SearchWidgetHistoryButton]()
     open var sdkSearchWidgetHistoryViews = [SearchWidgetHistoryView]()
@@ -12,12 +12,12 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     open var searchRecentlyLabel: UILabel!
     open var searchHistoryLabel: UILabel!
     open var showAllButton: UIButton!
-
+    
     let height = UIScreen.main.bounds.height
     let width = UIScreen.main.bounds.width
-
+    
     var margin: CGFloat = 16
-
+    
     private let searchResultsView: SearchResultsView = {
         let view = SearchResultsView()
         view.translatesAutoresizingMaskIntoConstraints = false
