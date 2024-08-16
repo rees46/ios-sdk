@@ -79,7 +79,8 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     func searchWidgetCategoriesButtonClicked(productText: String) {
-        self.pushDetailViewController(productText: productText)
+        print("CLICK Controller \(productText)")
+        performSearch(query: productText)
     }
     
     func sdkSearchWidgetListViewClicked(productKey: String) {

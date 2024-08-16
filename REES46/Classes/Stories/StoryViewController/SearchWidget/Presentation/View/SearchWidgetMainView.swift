@@ -126,7 +126,14 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
                 }
             }
             
-            let button = createCategoryButton(title: categories[i], at: i, width: size.width + 20, height: size.height + 17, xPosition: formerWidth, yPosition: formerHeight)
+            let button = createCategoryButton(
+                title: categories[i],
+                at: i,
+                width: size.width + 20,
+                height: size.height + 17,
+                xPosition: formerWidth,
+                yPosition: formerHeight
+            )
             sdkSearchWidgetCategoriesButtons.append(button)
             self.addSubview(button)
         }
@@ -134,11 +141,23 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
     
     private func createCategoryButton(title: String, at index: Int, width: CGFloat, height: CGFloat, xPosition: CGFloat, yPosition: CGFloat) -> SearchWidgetCategoriesButton {
         let button = SearchWidgetCategoriesButton(frame: CGRect(x: xPosition, y: yPosition, width: width, height: height))
-        button.addTarget(self, action: #selector(searchWidgetCategoriesButtonClicked(_:)), for: .touchUpInside)
+        
+        button.addTarget(
+            self,
+            action: #selector(categoryButtonClicked(_:)),
+            for: .touchUpInside
+        )
         button.setTitle(title, for: .normal)
         button.tag = index
         
         return button
+    }
+    
+    @objc private func categoryButtonClicked(_ sender: UIButton) {
+        guard let category = sender.titleLabel?.text else {
+            return
+        }
+        delegate?.searchWidgetCategoriesButtonClicked(productText: category)
     }
     
     private func setupSearchHistoryLabel() {

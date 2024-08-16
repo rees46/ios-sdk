@@ -51,7 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func sdkInitialization(){
         sdk = createPersonalizationSDK(
             shopId: AppEnvironments.shopId,
-            apiDomain: AppEnvironments.apiDomain,
+//            apiDomain: AppEnvironments.apiDomain,
             enableLogs: true,
             { error in
                 didToken = self.sdk.getDeviceId()
