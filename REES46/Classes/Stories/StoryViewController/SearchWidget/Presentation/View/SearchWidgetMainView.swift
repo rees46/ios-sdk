@@ -12,6 +12,7 @@ open class SearchWidgetMainView: UIView {
     open var searchRecentlyLabel: UILabel!
     open var searchHistoryLabel: UILabel!
     open var showAllButton: UIButton!
+    private var searchResults: [SearchResult] = []
     
     let height = UIScreen.main.bounds.height
     let width = UIScreen.main.bounds.width
@@ -64,7 +65,13 @@ open class SearchWidgetMainView: UIView {
     
     @objc
     open func showAllButtonClicked() {
-        //TODO handle click
+        let allResultsVC = AllSearchResultsViewController()
+        
+        allResultsVC.searchResults = self.searchResults
+
+        if let viewController = self.viewController {
+            viewController.present(allResultsVC, animated: true, completion: nil)
+        }
     }
     
     @objc
@@ -277,6 +284,7 @@ open class SearchWidgetMainView: UIView {
     
     open func updateSearchResults(_ results: [SearchResult]) {
         DispatchQueue.main.async {
+            self.searchResults = results
             self.searchResultsView.updateResults(results)
             self.searchResultsView.isHidden = results.isEmpty
             self.updateShowAllButton(withCount: results.isEmpty ? nil : results.count)
