@@ -66,9 +66,8 @@ open class SearchWidgetMainView: UIView {
     @objc
     open func showAllButtonClicked() {
         let allResultsVC = AllSearchResultsViewController()
-        
         allResultsVC.searchResults = self.searchResults
-
+        
         if let viewController = self.viewController {
             viewController.present(allResultsVC, animated: true, completion: nil)
         }
