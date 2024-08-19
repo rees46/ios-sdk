@@ -1,5 +1,6 @@
 import UIKit
 
+
 open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
     open var delegate: SearchWidgetDelegate? {
         didSet {
@@ -43,8 +44,6 @@ open class SearchWidgetViewController: UIViewController, UITextFieldDelegate {
         self.sdkSearchWidgetView = SearchWidgetView(frame: CGRect(x: 0, y: 70, width: width, height: height - 70))
         self.view.addSubview(self.sdkSearchWidgetView)
         
-        //self.delegate?.loadSearchData()
-        //self.sdkSearchWidgetView.loadSearchData()
     }
     
     open func setSearchWidgetCategoriesButtonType(type: SearchWidgetCategoriesButtonType) {

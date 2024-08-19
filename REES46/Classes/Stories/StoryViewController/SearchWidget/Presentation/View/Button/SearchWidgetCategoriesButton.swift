@@ -1,11 +1,5 @@
 import UIKit
 
-public enum SearchWidgetCategoriesButtonType {
-    case bordered
-    case blacked
-    case colored
-}
-
 open class SearchWidgetCategoriesButton: UIButton {
     open var type: SearchWidgetCategoriesButtonType? {
         didSet {
@@ -65,6 +59,7 @@ open class SearchWidgetCategoriesButton: UIButton {
         self.setTitleColor(UIColor.darkGray, for: .normal)
         self.setTitleColor(UIColor.lightGray, for: .highlighted)
         self.layer.cornerRadius = self.frame.height * 0.15
+        self.isEnabled = true
     }
     
     open func setType(type: SearchWidgetCategoriesButtonType) {

@@ -1,6 +1,6 @@
 import UIKit
 
-open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
+open class SearchWidgetMainView: UIView {
     
     open var delegate: SearchWidgetMainViewDelegate?
     
@@ -84,7 +84,6 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         clearOldViews()
         
         guard let searchHistoryLabel = searchHistoryLabel else {
-            print("searchHistoryLabel is nil")
             return
         }
         
@@ -139,7 +138,14 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
         }
     }
     
-    private func createCategoryButton(title: String, at index: Int, width: CGFloat, height: CGFloat, xPosition: CGFloat, yPosition: CGFloat) -> SearchWidgetCategoriesButton {
+    private func createCategoryButton(
+        title: String,
+        at index: Int,
+        width: CGFloat,
+        height: CGFloat,
+        xPosition: CGFloat,
+        yPosition: CGFloat
+    ) -> SearchWidgetCategoriesButton {
         let button = SearchWidgetCategoriesButton(frame: CGRect(x: xPosition, y: yPosition, width: width, height: height))
         
         button.addTarget(
@@ -285,9 +291,5 @@ open class SearchWidgetMainView: UIView, SearchResultsViewDelegate {
                 self.showAllButton?.setTitle("View all", for: .normal)
             }
         }
-    }
-    
-    open func didSelectResult(_ result: SearchResult) {
-        print("didSelectResult: \(result.name)")
     }
 }

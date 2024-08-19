@@ -1,11 +1,5 @@
 import Foundation
 
-public enum SearchWidgetObjectificationType {
-    case properties
-    case values
-    case all
-}
-
 public class Objectification {
     private var objects = [Any]()
     private var stringObjects = [[String]]()

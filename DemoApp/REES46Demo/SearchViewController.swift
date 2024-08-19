@@ -75,11 +75,11 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     func sdkSearchWidgetHistoryButtonClicked(productText: String) {
-        self.pushDetailViewController(productText: productText)
-    }
+         self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField.text = productText
+         self.sdkSearchWidgetTextFieldTextChanged(self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField)
+     }
     
     func searchWidgetCategoriesButtonClicked(productText: String) {
-        print("CLICK Controller \(productText)")
         performSearch(query: productText)
     }
     

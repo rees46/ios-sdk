@@ -2,7 +2,6 @@ import UIKit
 
 class SearchResultsView: UIView {
     var results: [SearchResult] = []
-    weak var delegate: SearchResultsViewDelegate?
     
     private let tableView: UITableView = {
         let tableView = UITableView()
