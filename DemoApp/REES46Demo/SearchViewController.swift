@@ -52,10 +52,12 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                 self.lastQueriesHistories = response.lastQueries
                 let searchResults = response.products.map {
                     SearchResult(
+                        id: $0.id,
                         image: $0.imageUrl,
                         name: $0.name,
                         price: $0.price,
-                        currency: $0.currency
+                        currency: $0.currency,
+                        rating: $0.salesRate
                     )
                 }
                 self.delegate?.updateSearchResults(searchResults)
@@ -144,10 +146,12 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
             case let .success(response):
                 let searchResults = response.products.map {
                     SearchResult(
+                        id: $0.id,
                         image: $0.imageUrl,
                         name: $0.name,
                         price: $0.price,
-                        currency: $0.currency
+                        currency: $0.currency,
+                        rating: $0.salesRate
                     )
                 }
                 self?.delegate?.updateSearchResults(searchResults)

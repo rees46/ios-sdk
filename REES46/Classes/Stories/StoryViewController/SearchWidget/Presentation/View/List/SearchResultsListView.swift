@@ -1,6 +1,9 @@
 import UIKit
 
+
 class SearchResultsListView: UIView {
+    
+    public var sdk: PersonalizationSDK?
     
     private let resultCountLabel: UILabel = {
         let label = UILabel()
@@ -17,7 +20,7 @@ class SearchResultsListView: UIView {
         layout.minimumInteritemSpacing = 8
         layout.minimumLineSpacing = 8
         let itemWidth = (UIScreen.main.bounds.width - 16) / 2
-        layout.itemSize = CGSize(width: itemWidth, height: 350)
+        layout.itemSize = CGSize(width: itemWidth, height: 380)
         
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -50,6 +53,7 @@ class SearchResultsListView: UIView {
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            
         ])
     }
     

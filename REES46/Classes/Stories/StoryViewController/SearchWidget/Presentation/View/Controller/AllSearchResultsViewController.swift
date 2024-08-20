@@ -1,7 +1,9 @@
 import UIKit
 
 class AllSearchResultsViewController: UIViewController {
-
+    
+    public var sdk: PersonalizationSDK?
+    
     var searchResults: [SearchResult]? {
         didSet {
             if let count = searchResults?.count {
@@ -17,7 +19,7 @@ class AllSearchResultsViewController: UIViewController {
         return view
     }()
     
-    private let resultsListView: SearchResultsListView = {
+ let resultsListView: SearchResultsListView = {
         let view = SearchResultsListView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -56,7 +58,6 @@ class AllSearchResultsViewController: UIViewController {
         }
 
         headerView.onFilterButtonTapped = { [weak self] in
-            // Открыть экран фильтров
             print("Filter button tapped")
         }
 

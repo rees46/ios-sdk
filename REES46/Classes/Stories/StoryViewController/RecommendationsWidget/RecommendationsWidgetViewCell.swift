@@ -188,7 +188,7 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
             recommendationsRatingStarsNoReviewsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             
             // Rating Label
-            recommendationsRatingLabel.topAnchor.constraint(equalTo: recommendationsRatingStarsNoReviewsLabel.bottomAnchor, constant: 8),
+            recommendationsRatingLabel.topAnchor.constraint(equalTo: recommendationsRatingStarsNoReviewsLabel.bottomAnchor, constant: 0),
             recommendationsRatingLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             
             // Old Price
@@ -200,7 +200,7 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
             recommendationsPriceLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             
             // Cart Button
-            recommendationsCartButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 10),
+            recommendationsCartButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 4),
             recommendationsCartButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsCartButton.trailingAnchor.constraint(equalTo: recommendationsFavoritesButton.leadingAnchor, constant: -8),
             recommendationsCartButton.heightAnchor.constraint(equalToConstant: 44),
