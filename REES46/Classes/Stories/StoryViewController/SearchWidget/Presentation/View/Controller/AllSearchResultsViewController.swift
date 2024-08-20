@@ -6,6 +6,7 @@ class AllSearchResultsViewController: UIViewController {
         didSet {
             if let count = searchResults?.count {
                 resultsListView.setResultCount(count)
+                resultsListView.collectionView.reloadData()
             }
         }
     }
@@ -26,6 +27,7 @@ class AllSearchResultsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupActions()
+        setupCollectionView()
     }
 
     private func setupUI() {
@@ -45,9 +47,6 @@ class AllSearchResultsViewController: UIViewController {
             resultsListView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             resultsListView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-
-        resultsListView.tableView.dataSource = self
-        resultsListView.tableView.delegate = self
     }
 
     private func setupActions() {
@@ -65,6 +64,11 @@ class AllSearchResultsViewController: UIViewController {
             print("Close button tapped")
             self?.dismiss(animated: true, completion: nil)
         }
+    }
+
+    private func setupCollectionView() {
+        resultsListView.collectionView.dataSource = self
+        resultsListView.collectionView.delegate = self
     }
 
     override func viewWillLayoutSubviews() {

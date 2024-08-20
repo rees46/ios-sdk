@@ -94,7 +94,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
-                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 460).isActive = true //height
+//                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
                 self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 10).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right

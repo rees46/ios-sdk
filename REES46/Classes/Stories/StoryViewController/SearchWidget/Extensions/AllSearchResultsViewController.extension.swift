@@ -1,13 +1,24 @@
-import Foundation
+import UIKit
 
-extension AllSearchResultsViewController: UITableViewDataSource, UITableViewDelegate {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+extension AllSearchResultsViewController: UICollectionViewDataSource, UICollectionViewDelegate {
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return searchResults?.count ?? 0
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ResultCell", for: indexPath)
-        cell.textLabel?.text = searchResults?[indexPath.row].name
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecommendationsWidgetViewCell.reuseRecommCellId, for: indexPath) as! RecommendationsWidgetViewCell
+        
+        if let result = searchResults?[indexPath.item] {
+            cell.recommendationsProductNameLabel.text = result.name
+            cell.recommendationsPriceLabel.text = "\(result.price)"
+            cell.recommendationsImageView.loadImage(from: result.image)
+        }
+        
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        // Customize view here
     }
 }

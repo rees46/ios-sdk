@@ -12,12 +12,20 @@ class SearchResultsListView: UIView {
         return label
     }()
     
-    let tableView: UITableView = {
-        let tableView = UITableView()
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ResultCell")
-        return tableView
+    let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.minimumInteritemSpacing = 8
+        layout.minimumLineSpacing = 8
+        let itemWidth = (UIScreen.main.bounds.width - 16) / 2
+        layout.itemSize = CGSize(width: itemWidth, height: 350)
+        
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.backgroundColor = .white
+        collectionView.register(RecommendationsWidgetViewCell.self, forCellWithReuseIdentifier: RecommendationsWidgetViewCell.reuseRecommCellId)
+        return collectionView
     }()
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -31,17 +39,17 @@ class SearchResultsListView: UIView {
     
     private func setupUI() {
         addSubview(resultCountLabel)
-        addSubview(tableView)
+        addSubview(collectionView)
         
         NSLayoutConstraint.activate([
             resultCountLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
             resultCountLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             resultCountLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             
-            tableView.topAnchor.constraint(equalTo: resultCountLabel.bottomAnchor, constant: 16),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            collectionView.topAnchor.constraint(equalTo: resultCountLabel.bottomAnchor, constant: 16),
+            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
     
