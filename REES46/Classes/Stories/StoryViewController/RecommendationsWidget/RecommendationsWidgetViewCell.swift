@@ -148,10 +148,10 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
         contentView.addSubview(recommendationsFavoritesButton)
         
         backgroundColor = .white
-
+        
         setupConstraints()
     }
-
+    
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             // Image View
@@ -159,52 +159,52 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
             recommendationsImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             recommendationsImageView.heightAnchor.constraint(equalToConstant: 140),
-
+            
             // Discount Label
             recommendationsDiscountLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
             recommendationsDiscountLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsDiscountLabel.widthAnchor.constraint(equalToConstant: 55),
             recommendationsDiscountLabel.heightAnchor.constraint(equalToConstant: 20),
-
+            
             // Credit Label
             recommendationsCreditLabel.topAnchor.constraint(equalTo: recommendationsDiscountLabel.bottomAnchor, constant: 7),
             recommendationsCreditLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsCreditLabel.widthAnchor.constraint(equalToConstant: 55),
             recommendationsCreditLabel.heightAnchor.constraint(equalToConstant: 20),
-
+            
             // Product Name
             recommendationsProductNameLabel.topAnchor.constraint(equalTo: recommendationsImageView.bottomAnchor, constant: 10),
             recommendationsProductNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsProductNameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
+            
             // Rating Stars
             recommendationsRatingStars.topAnchor.constraint(equalTo: recommendationsProductNameLabel.bottomAnchor, constant: 10),
             recommendationsRatingStars.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsRatingStars.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
+            
             // Rating Stars No Reviews
             recommendationsRatingStarsNoReviewsLabel.topAnchor.constraint(equalTo: recommendationsRatingStars.bottomAnchor, constant: 4),
             recommendationsRatingStarsNoReviewsLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsRatingStarsNoReviewsLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-
+            
             // Rating Label
             recommendationsRatingLabel.topAnchor.constraint(equalTo: recommendationsRatingStarsNoReviewsLabel.bottomAnchor, constant: 8),
             recommendationsRatingLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-
+            
             // Old Price
             recommendationsOldPrice.topAnchor.constraint(equalTo: recommendationsRatingLabel.bottomAnchor, constant: 8),
             recommendationsOldPrice.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-
+            
             // Price
             recommendationsPriceLabel.topAnchor.constraint(equalTo: recommendationsOldPrice.bottomAnchor, constant: 4),
             recommendationsPriceLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-
+            
             // Cart Button
             recommendationsCartButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 10),
             recommendationsCartButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             recommendationsCartButton.trailingAnchor.constraint(equalTo: recommendationsFavoritesButton.leadingAnchor, constant: -8),
             recommendationsCartButton.heightAnchor.constraint(equalToConstant: 44),
-
+            
             // Favorites Button
             recommendationsFavoritesButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 10),
             recommendationsFavoritesButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
@@ -216,45 +216,45 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
             recommendationsFavoritesButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
         ])
     }
-
+    
     public override func layoutSubviews() {
         super.layoutSubviews()
         
         let backgroundColor = SdkConfiguration.isDarkMode
-            ? SdkConfiguration.recommendations.widgetCellBackgroundColorDarkMode.hexToRGB()
-            : SdkConfiguration.recommendations.widgetCellBackgroundColor.hexToRGB()
+        ? SdkConfiguration.recommendations.widgetCellBackgroundColorDarkMode.hexToRGB()
+        : SdkConfiguration.recommendations.widgetCellBackgroundColor.hexToRGB()
         
         layer.backgroundColor = UIColor(red: backgroundColor.red, green: backgroundColor.green, blue: backgroundColor.blue, alpha: 1).cgColor
         layer.borderWidth = SdkConfiguration.recommendations.widgetBorderWidth
         
         let borderColor = SdkConfiguration.isDarkMode
-            ? SdkConfiguration.recommendations.widgetBorderColorDarkMode.hexToRGB()
-            : SdkConfiguration.recommendations.widgetBorderColor.hexToRGB()
+        ? SdkConfiguration.recommendations.widgetBorderColorDarkMode.hexToRGB()
+        : SdkConfiguration.recommendations.widgetBorderColor.hexToRGB()
         
         layer.borderColor = UIColor(red: borderColor.red, green: borderColor.green, blue: borderColor.blue, alpha: 1).withAlphaComponent(SdkConfiguration.recommendations.widgetBorderTransparent).cgColor
         layer.cornerRadius = SdkConfiguration.recommendations.widgetCornerRadius
     }
-
+    
     func saveWidgetStarRating() {
         recommendationsRatingStars.didFinishTouchingRecommendationsStars = { stRating in
             UserDefaults.standard.set(stRating, forKey: self.keyCellTagStarsDefaults)
         }
     }
-        
+    
     func loadWidgetStarRating() {
         guard let rLoadedStarValue = UserDefaults.standard.object(forKey: keyCellTagStarsDefaults) as? Double else {return}
         recommendationsRatingStars.rating = rLoadedStarValue
     }
-
+    
     override public func prepareForReuse() {
         recommendationsRatingStars.prepareForReuse()
     }
-
+    
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     func update(_ rating: Double) {
         recommendationsRatingStars.rating = rating
     }
-    }
+}

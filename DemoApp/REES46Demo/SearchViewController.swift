@@ -51,7 +51,12 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                 self.suggestsCategories = response.suggests
                 self.lastQueriesHistories = response.lastQueries
                 let searchResults = response.products.map {
-                    SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
+                    SearchResult(
+                        image: $0.imageUrl,
+                        name: $0.name,
+                        price: $0.price,
+                        currency: $0.currency
+                    )
                 }
                 self.delegate?.updateSearchResults(searchResults)
             case let .failure(error):
@@ -138,7 +143,12 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
             switch response {
             case let .success(response):
                 let searchResults = response.products.map {
-                    SearchResult(image: $0.imageUrl, name: $0.name, price: $0.price)
+                    SearchResult(
+                        image: $0.imageUrl,
+                        name: $0.name,
+                        price: $0.price,
+                        currency: $0.currency
+                    )
                 }
                 self?.delegate?.updateSearchResults(searchResults)
                 
