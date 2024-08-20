@@ -1,67 +1,72 @@
 import UIKit
 
 class AllSearchResultsViewController: UIViewController {
-    
-    var searchResults: [SearchResult]?
-    
+
+    var searchResults: [SearchResult]? {
+        didSet {
+            if let count = searchResults?.count {
+                resultsListView.setResultCount(count)
+            }
+        }
+    }
+
     private let headerView: SearchResultHeaderView = {
         let view = SearchResultHeaderView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
     
-    private let tableView: UITableView = {
-        let tableView = UITableView()
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ResultCell")
-        return tableView
+    private let resultsListView: SearchResultsListView = {
+        let view = SearchResultsListView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupActions()
     }
-    
+
     private func setupUI() {
         view.backgroundColor = .white
-        
+
         view.addSubview(headerView)
-        view.addSubview(tableView)
-        
+        view.addSubview(resultsListView)
+
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 160),
-            
-            tableView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
-            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
+            resultsListView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            resultsListView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            resultsListView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            resultsListView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
-        
-        tableView.dataSource = self
-        tableView.delegate = self
+
+        resultsListView.tableView.dataSource = self
+        resultsListView.tableView.delegate = self
     }
-    
+
     private func setupActions() {
         headerView.onBackButtonTapped = { [weak self] in
-            print("onBackButtonTapped tapped")
+            print("Back button tapped")
             self?.dismiss(animated: true, completion: nil)
         }
-        
+
         headerView.onFilterButtonTapped = { [weak self] in
-            // TODO: Показать экран фильтров
-            print("onFilterButtonTapped tapped")
+            // Открыть экран фильтров
+            print("Filter button tapped")
         }
-        
+
         headerView.onCloseButtonTapped = { [weak self] in
-            print("onCloseButtonTapped tapped")
+            print("Close button tapped")
             self?.dismiss(animated: true, completion: nil)
         }
     }
-    
+
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
         view.frame = UIScreen.main.bounds
