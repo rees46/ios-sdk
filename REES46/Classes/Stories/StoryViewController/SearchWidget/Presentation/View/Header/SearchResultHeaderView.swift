@@ -60,9 +60,21 @@ class SearchResultHeaderView: UIView {
         addSubview(filterButton)
         addSubview(closeButton)
         
-        backButton.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
-        filterButton.addTarget(self, action: #selector(filterButtonTapped), for: .touchUpInside)
-        closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+        backButton.addTarget(
+            self,
+            action: #selector(backButtonTapped),
+            for: .touchUpInside
+        )
+        filterButton.addTarget(
+            self,
+            action: #selector(filterButtonTapped),
+            for: .touchUpInside
+        )
+        closeButton.addTarget(
+            self,
+            action: #selector(closeButtonTapped),
+            for: .touchUpInside
+        )
         
         setupConstraints()
     }
@@ -73,29 +85,46 @@ class SearchResultHeaderView: UIView {
         filterButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         
-        backButton.imageEdgeInsets = UIEdgeInsets(top: iconSize, left: iconSize, bottom: iconSize, right: iconSize)
-        filterButton.imageEdgeInsets = UIEdgeInsets(top: iconSize, left: iconSize, bottom: iconSize, right: iconSize)
-        closeButton.imageEdgeInsets = UIEdgeInsets(top: iconSize, left: iconSize, bottom: iconSize, right: iconSize)
+        backButton.imageEdgeInsets = UIEdgeInsets(
+            top: iconSize,
+            left: iconSize,
+            bottom: iconSize,
+            right: iconSize
+        )
+        filterButton.imageEdgeInsets = UIEdgeInsets(
+            top: iconSize,
+            left: iconSize,
+            bottom: iconSize,
+            right: iconSize
+        )
+        closeButton.imageEdgeInsets = UIEdgeInsets(
+            top: iconSize,
+            left: iconSize,
+            bottom: iconSize,
+            right: iconSize
+        )
         
-        NSLayoutConstraint.activate([
-            backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            backButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            backButton.widthAnchor.constraint(equalToConstant: iconSize),
-            backButton.heightAnchor.constraint(equalToConstant: iconSize),
-            
-            titleLabel.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 16),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            
-            filterButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -16),
-            filterButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            filterButton.widthAnchor.constraint(equalToConstant: iconSize),
-            filterButton.heightAnchor.constraint(equalToConstant: iconSize),
-            
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-            closeButton.widthAnchor.constraint(equalToConstant: iconSize),
-            closeButton.heightAnchor.constraint(equalToConstant: iconSize),
-        ])
+        NSLayoutConstraint.activate(
+            [
+                backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+                backButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+                backButton.widthAnchor.constraint(equalToConstant: iconSize),
+                backButton.heightAnchor.constraint(equalToConstant: iconSize),
+                
+                titleLabel.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 16),
+                titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+                
+                filterButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -16),
+                filterButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+                filterButton.widthAnchor.constraint(equalToConstant: iconSize),
+                filterButton.heightAnchor.constraint(equalToConstant: iconSize),
+                
+                closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+                closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+                closeButton.widthAnchor.constraint(equalToConstant: iconSize),
+                closeButton.heightAnchor.constraint(equalToConstant: iconSize),
+            ]
+        )
     }
     
     @objc private func backButtonTapped() {
