@@ -1,7 +1,7 @@
 import UIKit
 
 extension AllSearchResultsViewController: UICollectionViewDataSource, UICollectionViewDelegate, RecommendationsWidgetViewCellDelegate {
-
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return searchResults?.count ?? 0
     }
@@ -11,14 +11,30 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         
         guard let result = searchResults?[indexPath.item] else { return cell }
         
+        configureCell(cell, with: result)
+        
+        return cell
+    }
+    
+    private func configureCell(_ cell: RecommendationsWidgetViewCell, with result: SearchResult) {
         cell.recommendationsProductNameLabel.text = result.name
         cell.recommendationsPriceLabel.text = formatPrice(result.price, currencySymbol: result.currency)
         cell.recommendationsImageView.loadImage(from: result.image)
         cell.recommendationsDiscountLabel.text = "Cashback 20%"
         cell.recommendationsCreditLabel.text = "0-0-12"
         
-        let ratingForStars = result.rating
-        if ratingForStars == 0 {
+        configureRating(for: cell, with: result.rating)
+        
+        cell.widgetCellDelegate = self
+        cell.recommendationsCartButton.isHidden = false
+        cell.recommendationsFavoritesButton.isHidden = false
+        
+        configureCartButton(cell: cell, productId: result.id)
+        configureFavoritesButton(cell: cell, productId: result.id)
+    }
+    
+    private func configureRating(for cell: RecommendationsWidgetViewCell, with rating: Int) {
+        if rating == 0 {
             cell.recommendationsRatingStars.isHidden = true
             cell.recommendationsRatingStarsNoReviewsLabel.isHidden = false
             cell.recommendationsRatingStarsNoReviewsLabel.text = SdkConfiguration.recommendations.widgetNoReviewsDefaultText
@@ -26,16 +42,6 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
             cell.recommendationsRatingStars.isHidden = false
             cell.recommendationsRatingStarsNoReviewsLabel.isHidden = true
         }
-        
-        cell.widgetCellDelegate = self
-        cell.recommendationsCartButton.isHidden = false
-        cell.recommendationsFavoritesButton.isHidden = false
-        
-        let productId = result.id
-        configureCartButton(cell: cell, productId: productId)
-        configureFavoritesButton(cell: cell, productId: productId)
-        
-        return cell
     }
     
     private func formatPrice(_ price: Double, currencySymbol: String) -> String {
@@ -64,15 +70,26 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         var cartItems = UserDefaults.standard.stringArray(forKey: cartKey) ?? []
         
         if cartItems.contains(productId) {
-            cartItems.removeAll { $0 == productId }
-            UserDefaults.standard.setValue(cartItems, forKey: cartKey)
-            cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetAddToCartButtonText, for: .normal)
+            removeProductFromCart(cartItems, productId: productId, cartKey: cartKey, cell: cell)
         } else {
-            cartItems.append(productId)
-            UserDefaults.standard.setValue(cartItems, forKey: cartKey)
-            cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetRemoveFromCartButtonText, for: .normal)
+            addProductToCart(cartItems, productId: productId, cartKey: cartKey, cell: cell)
         }
-        configureCartButtonAppearance(cell: cell, isInCart: cartItems.contains(productId))
+    }
+    
+    private func removeProductFromCart(_ cartItems: [String], productId: String, cartKey: String, cell: RecommendationsWidgetViewCell) {
+        var updatedCartItems = cartItems
+        updatedCartItems.removeAll { $0 == productId }
+        UserDefaults.standard.setValue(updatedCartItems, forKey: cartKey)
+        cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetAddToCartButtonText, for: .normal)
+        configureCartButtonAppearance(cell: cell, isInCart: false)
+    }
+    
+    private func addProductToCart(_ cartItems: [String], productId: String, cartKey: String, cell: RecommendationsWidgetViewCell) {
+        var updatedCartItems = cartItems
+        updatedCartItems.append(productId)
+        UserDefaults.standard.setValue(updatedCartItems, forKey: cartKey)
+        cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetRemoveFromCartButtonText, for: .normal)
+        configureCartButtonAppearance(cell: cell, isInCart: true)
     }
     
     private func toggleFavoritesItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
@@ -80,14 +97,24 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         var favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
         
         if favoritesItems.contains(productId) {
-            favoritesItems.removeAll { $0 == productId }
-            UserDefaults.standard.setValue(favoritesItems, forKey: favoritesKey)
-            cell.recommendationsFavoritesButton.setImage(UIImage(named: "iconLikeHeart"), for: .normal)
+            removeProductFromFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
         } else {
-            favoritesItems.append(productId)
-            UserDefaults.standard.setValue(favoritesItems, forKey: favoritesKey)
-            cell.recommendationsFavoritesButton.setImage(UIImage(named: "iconLikeHeartFill"), for: .normal)
+            addProductToFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
         }
+    }
+    
+    private func removeProductFromFavorites(_ favoritesItems: [String], productId: String, favoritesKey: String, cell: RecommendationsWidgetViewCell) {
+        var updatedFavoritesItems = favoritesItems
+        updatedFavoritesItems.removeAll { $0 == productId }
+        UserDefaults.standard.setValue(updatedFavoritesItems, forKey: favoritesKey)
+        cell.recommendationsFavoritesButton.setImage(UIImage(named: "iconLikeHeartDark"), for: .normal)
+    }
+    
+    private func addProductToFavorites(_ favoritesItems: [String], productId: String, favoritesKey: String, cell: RecommendationsWidgetViewCell) {
+        var updatedFavoritesItems = favoritesItems
+        updatedFavoritesItems.append(productId)
+        UserDefaults.standard.setValue(updatedFavoritesItems, forKey: favoritesKey)
+        cell.recommendationsFavoritesButton.setImage(UIImage(named: "iconLikeHeartFillDark"), for: .normal)
     }
     
     private func configureCartButton(cell: RecommendationsWidgetViewCell, productId: String) {
@@ -100,7 +127,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         
         configureCartButtonAppearance(cell: cell, isInCart: isInCart)
     }
-
+    
     private func configureCartButtonAppearance(cell: RecommendationsWidgetViewCell, isInCart: Bool) {
         let textColor: UIColor
         let backgroundColor: UIColor
@@ -118,65 +145,39 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         cell.recommendationsCartButton.backgroundColor = backgroundColor
         
         let fontSize = SdkConfiguration.recommendations.widgetAddToCartButtonFontSize ?? 17.0
-        if let fontName = SdkConfiguration.recommendations.widgetFontName {
-            font = UIFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize, weight: .semibold)
-        } else {
-            font = .systemFont(ofSize: fontSize, weight: .semibold)
-        }
+        font = UIFont(name: SdkConfiguration.recommendations.widgetFontName ?? "Helvetica", size: fontSize) ?? .systemFont(ofSize: fontSize, weight: .semibold)
         cell.recommendationsCartButton.titleLabel?.font = font
     }
     
     private func configureFavoritesButton(cell: RecommendationsWidgetViewCell, productId: String) {
         let favoritesKey = "favorites.product.\(productId)"
         var favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
-
+        
         let isProductFavorited = favoritesItems.contains(productId)
         
         var frameworkBundle = Bundle(for: type(of: self))
-    #if SWIFT_PACKAGE
+#if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
-    #endif
+#endif
         
         if isProductFavorited {
-            if let index = favoritesItems.firstIndex(of: productId) {
-                favoritesItems.remove(at: index)
-            }
-            UserDefaults.standard.setValue(favoritesItems, forKey: favoritesKey)
-            
-            sdkRemoveFromFavorites(productId: productId)
-            
-            var heartClearIcon = UIImage(named: "iconLikeHeartDark", in: frameworkBundle, compatibleWith: nil)
-            if SdkConfiguration.isDarkMode {
-                heartClearIcon = UIImage(named: "iconLikeHeartLight", in: frameworkBundle, compatibleWith: nil)
-            }
-            let heartClearImageRender = heartClearIcon?.withRenderingMode(.alwaysTemplate)
-            cell.recommendationsFavoritesButton.setImage(heartClearImageRender, for: .normal)
-            
-            var customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColor.hexToRGB()
-            if SdkConfiguration.isDarkMode {
-                customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB()
-            }
-            cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
-            
+            removeProductFromFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
+            configureFavoritesButtonAppearance(cell: cell, isFavorited: true, frameworkBundle: frameworkBundle)
         } else {
-            favoritesItems.append(productId)
-            UserDefaults.standard.setValue(favoritesItems, forKey: favoritesKey)
-            
-            sdkAddToFavorites(productId: productId)
-            
-            var heartFillIcon = UIImage(named: "iconLikeHeartFillDark", in: frameworkBundle, compatibleWith: nil)
-            if SdkConfiguration.isDarkMode {
-                heartFillIcon = UIImage(named: "iconLikeHeartFillLight", in: frameworkBundle, compatibleWith: nil)
-            }
-            let heartFillImageRender = heartFillIcon?.withRenderingMode(.alwaysTemplate)
-            cell.recommendationsFavoritesButton.setImage(heartFillImageRender, for: .normal)
-            
-            var customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColor.hexToRGB()
-            if SdkConfiguration.isDarkMode {
-                customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB()
-            }
-            cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
+            addProductToFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
+            configureFavoritesButtonAppearance(cell: cell, isFavorited: false, frameworkBundle: frameworkBundle)
         }
+    }
+    private func configureFavoritesButtonAppearance(cell: RecommendationsWidgetViewCell, isFavorited: Bool, frameworkBundle: Bundle) {
+        let iconName = isFavorited ? "iconLikeHeartFillDark" : "iconLikeHeartDark"
+        let iconNameDarkMode = isFavorited ? "iconLikeHeartFillLight" : "iconLikeHeartLight"
+        
+        let iconNameToUse = SdkConfiguration.isDarkMode ? iconNameDarkMode : iconName
+        let heartIcon = UIImage(named: iconNameToUse, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        cell.recommendationsFavoritesButton.setImage(heartIcon, for: .normal)
+        
+        let customHeartTintColor = SdkConfiguration.isDarkMode ? SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB() : SdkConfiguration.recommendations.widgetFavoritesIconColor.hexToRGB()
+        cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
     }
     
     public func sdkAddToFavorites(productId: String) {
@@ -185,12 +186,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
             case .success(_):
                 print("Product id \(productId) added to 'Favorites' success")
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                print("Error:", error)
             }
         }
     }
@@ -201,12 +197,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
             case .success(_):
                 print("Product id \(productId) removed from 'Favorites' success")
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                print("Error:", error)
             }
         }
     }
