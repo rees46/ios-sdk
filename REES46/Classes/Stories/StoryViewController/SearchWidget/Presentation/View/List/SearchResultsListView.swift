@@ -19,7 +19,7 @@ class SearchResultsListView: UIView {
         let layout = UICollectionViewFlowLayout()
         layout.minimumInteritemSpacing = 8
         layout.minimumLineSpacing = 8
-        let itemWidth = (UIScreen.main.bounds.width - 16) / 2
+        let itemWidth = (UIScreen.main.bounds.width - 8) / 2
         layout.itemSize = CGSize(width: itemWidth, height: 380)
         
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)

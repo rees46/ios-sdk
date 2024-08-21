@@ -200,10 +200,10 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
             recommendationsPriceLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             
             // Cart Button
-            recommendationsCartButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 4),
+            recommendationsCartButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 10),
             recommendationsCartButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            recommendationsCartButton.trailingAnchor.constraint(equalTo: recommendationsFavoritesButton.leadingAnchor, constant: -8),
             recommendationsCartButton.heightAnchor.constraint(equalToConstant: 44),
+            recommendationsCartButton.widthAnchor.constraint(equalToConstant: 120),
             
             // Favorites Button
             recommendationsFavoritesButton.topAnchor.constraint(equalTo: recommendationsPriceLabel.bottomAnchor, constant: 10),
