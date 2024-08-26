@@ -44,7 +44,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SubscriptionServiceImpl(sdk: self)
     }()
     
-    lazy var notificationService: NotificationHandlingServiceProtocol = {
+    lazy var notificationService: NotificationHandlerServiceProtocol = {
         return NotificationHandlerServiceImpl(sdk: self)
     }()
     
