@@ -54,25 +54,40 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     }
     
     func didTapWidgetAddToCartButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
+        print("Click 01")
         guard let indexPath = resultsListView.collectionView.indexPath(for: cell) else { return }
         let productId = searchResults?[indexPath.item].id ?? ""
         toggleCartItem(for: productId, in: cell)
     }
     
     func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
+        print("Click 02")
         guard let indexPath = resultsListView.collectionView.indexPath(for: cell) else { return }
         let productId = searchResults?[indexPath.item].id ?? ""
         toggleFavoritesItem(for: productId, in: cell)
     }
     
     private func toggleCartItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
+        print("Click 1")
         let cartKey = "cart.product.\(productId)"
-        var cartItems = UserDefaults.standard.stringArray(forKey: cartKey) ?? []
+        let cartItems = UserDefaults.standard.stringArray(forKey: cartKey) ?? []
         
         if cartItems.contains(productId) {
             removeProductFromCart(cartItems, productId: productId, cartKey: cartKey, cell: cell)
         } else {
             addProductToCart(cartItems, productId: productId, cartKey: cartKey, cell: cell)
+        }
+    }
+
+    private func toggleFavoritesItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
+        print("Click 2")
+        let favoritesKey = "favorites.product.\(productId)"
+        let favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
+        
+        if favoritesItems.contains(productId) {
+            removeProductFromFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
+        } else {
+            addProductToFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
         }
     }
     
@@ -90,17 +105,6 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         UserDefaults.standard.setValue(updatedCartItems, forKey: cartKey)
         cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetRemoveFromCartButtonText, for: .normal)
         configureCartButtonAppearance(cell: cell, isInCart: true)
-    }
-    
-    private func toggleFavoritesItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
-        let favoritesKey = "favorites.product.\(productId)"
-        var favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
-        
-        if favoritesItems.contains(productId) {
-            removeProductFromFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
-        } else {
-            addProductToFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
-        }
     }
     
     private func removeProductFromFavorites(_ favoritesItems: [String], productId: String, favoritesKey: String, cell: RecommendationsWidgetViewCell) {
@@ -151,33 +155,54 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     
     private func configureFavoritesButton(cell: RecommendationsWidgetViewCell, productId: String) {
         let favoritesKey = "favorites.product.\(productId)"
-        var favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
+        let favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
         
         let isProductFavorited = favoritesItems.contains(productId)
         
         var frameworkBundle = Bundle(for: type(of: self))
+        #if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+        #endif
+        
+        configureFavoritesButtonAppearance(cell: cell, isFavorited: isProductFavorited, frameworkBundle: frameworkBundle)
+    }
+
+    private func configureFavoritesButtonAppearance(cell: RecommendationsWidgetViewCell, isFavorited: Bool, frameworkBundle: Bundle) {
+        var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
 #endif
-        
-        if isProductFavorited {
-            removeProductFromFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
-            configureFavoritesButtonAppearance(cell: cell, isFavorited: true, frameworkBundle: frameworkBundle)
+        if !isFavorited {
+            var heartClearIcon = UIImage(named: "iconLikeHeartDark", in: frameworkBundle, compatibleWith: nil)
+            if SdkConfiguration.isDarkMode {
+                heartClearIcon = UIImage(named: "iconLikeHeartLight", in: frameworkBundle, compatibleWith: nil)
+            }
+            let heartClearImageRender = heartClearIcon?.withRenderingMode(.alwaysTemplate)
+            let heartClearImageView = UIImageView(image: heartClearImageRender)
+            
+            cell.recommendationsFavoritesButton.setImage(heartClearImageView.image, for: .normal)
+            
+            var customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColor.hexToRGB()
+            if SdkConfiguration.isDarkMode {
+                customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB()
+            }
+            cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
         } else {
-            addProductToFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
-            configureFavoritesButtonAppearance(cell: cell, isFavorited: false, frameworkBundle: frameworkBundle)
+            var heartFillIcon = UIImage(named: "iconLikeHeartFillDark", in: frameworkBundle, compatibleWith: nil)
+            if SdkConfiguration.isDarkMode {
+                heartFillIcon = UIImage(named: "iconLikeHeartFillLight", in: frameworkBundle, compatibleWith: nil)
+            }
+            let heartFillImageRender = heartFillIcon?.withRenderingMode(.alwaysTemplate)
+            let heartFillImageView = UIImageView(image: heartFillImageRender)
+            
+            cell.recommendationsFavoritesButton.setImage(heartFillImageView.image, for: .normal)
+            
+            var customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColor.hexToRGB()
+            if SdkConfiguration.isDarkMode {
+                customHeartTintColor = SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB()
+            }
+            cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
         }
-    }
-    private func configureFavoritesButtonAppearance(cell: RecommendationsWidgetViewCell, isFavorited: Bool, frameworkBundle: Bundle) {
-        let iconName = isFavorited ? "iconLikeHeartFillDark" : "iconLikeHeartDark"
-        let iconNameDarkMode = isFavorited ? "iconLikeHeartFillLight" : "iconLikeHeartLight"
-        
-        let iconNameToUse = SdkConfiguration.isDarkMode ? iconNameDarkMode : iconName
-        let heartIcon = UIImage(named: iconNameToUse, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
-        cell.recommendationsFavoritesButton.setImage(heartIcon, for: .normal)
-        
-        let customHeartTintColor = SdkConfiguration.isDarkMode ? SdkConfiguration.recommendations.widgetFavoritesIconColorDarkMode.hexToRGB() : SdkConfiguration.recommendations.widgetFavoritesIconColor.hexToRGB()
-        cell.recommendationsFavoritesButton.tintColor = UIColor(red: customHeartTintColor.red, green: customHeartTintColor.green, blue: customHeartTintColor.blue, alpha: 1)
     }
     
     public func sdkAddToFavorites(productId: String) {

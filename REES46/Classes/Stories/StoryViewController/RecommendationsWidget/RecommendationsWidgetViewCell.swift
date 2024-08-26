@@ -106,18 +106,27 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
     }()
     
     let recommendationsCartButton: UIButton = {
-        let button = UIButton()
-        button.layer.cornerRadius = 6
-        button.layer.masksToBounds = true
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+        let rAddToCartButton = UIButton()
+        rAddToCartButton.translatesAutoresizingMaskIntoConstraints = false
+        rAddToCartButton.layer.cornerRadius = 6
+        rAddToCartButton.layer.masksToBounds = true
+        return rAddToCartButton
     }()
     
     let recommendationsFavoritesButton: UIButton = {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+        let rAddToFavoritesButton = UIButton()
+        rAddToFavoritesButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        if SdkConfiguration.isDarkMode {
+            rAddToFavoritesButton.tintColor = .black
+            rAddToFavoritesButton.setTitleColor(.black, for: .normal)
+        } else {
+            rAddToFavoritesButton.tintColor = .white
+            rAddToFavoritesButton.setTitleColor(.white, for: .normal)
+        }
+        return rAddToFavoritesButton
     }()
+    
     
     @objc
     public func didAddToCartTapButton(_ sender: AnyObject) {
@@ -133,6 +142,9 @@ public class RecommendationsWidgetViewCell: UICollectionViewCell {
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
+        recommendationsCartButton.addTarget(self, action: #selector(didAddToCartTapButton(_:)), for: .touchUpInside)
+        
+        recommendationsFavoritesButton.addTarget(self, action: #selector(didAddToFavoritesTapButton(_:)), for: .touchUpInside)
         
         contentView.addSubview(recommendationsImageView)
         contentView.addSubview(recommendationsDiscountLabel)
