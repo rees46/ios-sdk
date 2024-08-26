@@ -45,7 +45,6 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
     }
     
     open func searchWidgetCategoriesButtonClicked(productText: String) {
-        print("CLICK view \(productText)")
         self.delegate?.searchWidgetCategoriesButtonClicked(productText: productText)
     }
     

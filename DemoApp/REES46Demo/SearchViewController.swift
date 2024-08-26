@@ -151,7 +151,8 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                         name: $0.name,
                         price: $0.price,
                         currency: $0.currency,
-                        rating: $0.salesRate
+                        rating: $0.salesRate,
+                        filters: response.filters
                     )
                 }
                 self?.delegate?.updateSearchResults(searchResults)
