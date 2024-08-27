@@ -14,8 +14,8 @@ class SearchFilterViewController: UIViewController {
         }
     }
     
-    private let headerView: SearchResultHeaderView = {
-        let view = SearchResultHeaderView()
+    private let headerView: SearchFilterHeaderView = {
+        let view = SearchFilterHeaderView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -24,10 +24,17 @@ class SearchFilterViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
     }
-    
     private func setupUI() {
         view.backgroundColor = .white
+        
         view.addSubview(headerView)
+        
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 160)
+        ])
     }
     
     private func printFilters() {
