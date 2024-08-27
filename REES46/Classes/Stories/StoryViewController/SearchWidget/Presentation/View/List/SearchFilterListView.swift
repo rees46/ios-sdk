@@ -2,13 +2,13 @@ import UIKit
 
 class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource {
 
-    private let dropdownHeight: CGFloat = 34
+    private let dropdownHeight: CGFloat = 44
     private let horizontalSpacing: CGFloat = 12
     private let verticalSpacing: CGFloat = 16
     private let containerWidth: CGFloat = 120
     private let sizes = Array(1...50)
     
-    private var minToValue: Int = 1 // Добавлено для отслеживания минимального значения
+    private var minToValue: Int = 1
 
     private lazy var fromLabel: UILabel = {
         let label = UILabel()
@@ -29,27 +29,13 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
     }()
 
     private lazy var fromDropdownContainer: UIButton = {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = .white
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.gray.cgColor
-        button.layer.cornerRadius = 4
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle("1", for: .normal)
-        button.setTitleColor(.black, for: .normal)
+        let button = createDropdownButton(title: "1")
         button.addTarget(self, action: #selector(fromDropdownContainerTapped), for: .touchUpInside)
         return button
     }()
 
     private lazy var toDropdownContainer: UIButton = {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = .white
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.gray.cgColor
-        button.layer.cornerRadius = 4
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle("50", for: .normal)
-        button.setTitleColor(.black, for: .normal)
+        let button = createDropdownButton(title: "50")
         button.addTarget(self, action: #selector(toDropdownContainerTapped), for: .touchUpInside)
         return button
     }()
@@ -96,13 +82,11 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
 
     private func setupConstraints(filterContainer: UIStackView) {
         NSLayoutConstraint.activate([
-            // Filter Container
             filterContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             filterContainer.topAnchor.constraint(equalTo: topAnchor, constant: verticalSpacing),
             filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + 16), // Added padding
+            filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + 16),
 
-            // Установка ширины для кнопок
             fromDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
             toDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
         ])
@@ -118,30 +102,59 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
             pickerView.leadingAnchor.constraint(equalTo: pickerViewBackgroundView.leadingAnchor),
             pickerView.trailingAnchor.constraint(equalTo: pickerViewBackgroundView.trailingAnchor),
             pickerView.bottomAnchor.constraint(equalTo: pickerViewBackgroundView.bottomAnchor),
-            pickerView.heightAnchor.constraint(equalToConstant: 300) // Высота для UIPickerView
+            pickerView.heightAnchor.constraint(equalToConstant: 300)
         ])
     }
 
+    private func createDropdownButton(title: String) -> UIButton {
+        let button = UIButton(type: .custom)
+        button.backgroundColor = .white
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.gray.cgColor
+        button.layer.cornerRadius = 4
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(.black, for: .normal)
+        button.contentHorizontalAlignment = .left
+        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 0)
+        
+        let arrow = UIImageView(image: UIImage(named: "IconClosed"))
+        arrow.tintColor = .black
+        arrow.translatesAutoresizingMaskIntoConstraints = false
+        button.addSubview(arrow)
+        
+        NSLayoutConstraint.activate([
+            arrow.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -10),
+            arrow.centerYAnchor.constraint(equalTo: button.centerYAnchor)
+        ])
+        
+        return button
+    }
+
     @objc private func fromDropdownContainerTapped() {
-        showPickerView(for: fromDropdownContainer)
+        togglePickerView(for: fromDropdownContainer)
     }
 
     @objc private func toDropdownContainerTapped() {
-        // Устанавливаем минимальное значение для второго дропдауна на основе выбранного значения первого
         if let fromValue = Int(fromDropdownContainer.title(for: .normal) ?? "1") {
             minToValue = fromValue
         }
-        showPickerView(for: toDropdownContainer)
+        togglePickerView(for: toDropdownContainer)
     }
 
-    private func showPickerView(for button: UIButton) {
-        activeButton = button
-        pickerView.reloadAllComponents()
-        pickerViewBackgroundView.isHidden = false
+    private func togglePickerView(for button: UIButton) {
+        if activeButton == button && !pickerViewBackgroundView.isHidden {
+            hidePickerView()
+        } else {
+            activeButton = button
+            pickerView.reloadAllComponents()
+            pickerViewBackgroundView.isHidden = false
+        }
     }
 
     private func hidePickerView() {
         pickerViewBackgroundView.isHidden = true
+        activeButton = nil
     }
 
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
