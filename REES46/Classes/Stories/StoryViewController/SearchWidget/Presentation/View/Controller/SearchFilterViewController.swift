@@ -20,21 +20,41 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
+    let filterListView: SearchFilterListView = {
+        let view = SearchFilterListView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupActions()
     }
+    
     private func setupUI() {
         view.backgroundColor = .white
         
         view.addSubview(headerView)
+        view.addSubview(filterListView)
         
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            headerView.heightAnchor.constraint(equalToConstant: 160)
+            headerView.heightAnchor.constraint(equalToConstant: 160),
+            
+            filterListView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            filterListView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            filterListView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            filterListView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+    }
+    
+    private func setupActions() {
+        headerView.onCloseButtonTapped = { [weak self] in
+            self?.dismiss(animated: true, completion: nil)
+        }
     }
     
     private func printFilters() {
@@ -50,7 +70,7 @@ class SearchFilterViewController: UIViewController {
                     print("  \(filterName): \(filter)")
                 }
             } else {
-                print("No filters for product \(result.name).")
+                print("No filters for product \(result).")
             }
         }
     }

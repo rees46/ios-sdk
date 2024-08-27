@@ -13,6 +13,14 @@ class SearchFilterHeaderView: UIView {
         return label
     }()
     
+    private let subTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Size"
+        label.font = UIFont.systemFont(ofSize: 18, weight: .regular)
+        label.textColor = UIColor.black
+        return label
+    }()
+    
     private let closeButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(named: "IconClose"), for: .normal)
@@ -38,6 +46,7 @@ class SearchFilterHeaderView: UIView {
         closeButton.tintColor = colorTint
         
         addSubview(titleLabel)
+        addSubview(subTitleLabel)
         addSubview(closeButton)
         
         closeButton.addTarget(
@@ -51,6 +60,7 @@ class SearchFilterHeaderView: UIView {
     
     private func setupConstraints() {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        subTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         closeButton.imageEdgeInsets = UIEdgeInsets(
             top: iconSize,
@@ -59,17 +69,23 @@ class SearchFilterHeaderView: UIView {
             right: iconSize
         )
         
-        NSLayoutConstraint.activate(
-            [
-                titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-                
-                closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-                closeButton.widthAnchor.constraint(equalToConstant: iconSize),
-                closeButton.heightAnchor.constraint(equalToConstant: iconSize),
-            ]
-        )
+        NSLayoutConstraint.activate([
+            // Title Label
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            
+            // Close Button
+            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: iconSize),
+            closeButton.heightAnchor.constraint(equalToConstant: iconSize),
+            
+            // SubTitle Label
+            subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            subTitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
+            subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
+        ])
     }
     
     @objc private func closeButtonTapped() {
