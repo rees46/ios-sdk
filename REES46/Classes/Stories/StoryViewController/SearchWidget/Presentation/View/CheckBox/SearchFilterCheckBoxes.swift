@@ -4,7 +4,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     private let colorLabel: UILabel = {
         let label = UILabel()
-        label.text = "Color"
         label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = UIColor.black
         return label
@@ -54,15 +53,18 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.register(CheckBoxCollectionViewCell.self, forCellWithReuseIdentifier: CheckBoxCollectionViewCell.identifier)
-        
-        // Добавляем фиктивные цвета
-        colors = ["Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
-        
-        // Устанавливаем начальное количество отображаемых элементов
         collectionView.reloadData()
         
-        // Добавляем обработчик для кнопки "Select all"
         selectAllButton.addTarget(self, action: #selector(selectAllButtonTapped), for: .touchUpInside)
+    }
+    
+    func updateColors(with colors: [String]) {
+        self.colors = colors
+        collectionView.reloadData()
+    }
+    
+    func setHeaderTitle(_ title: String) {
+        colorLabel.text = title
     }
     
     private func setupColorLabelConstraints() {
@@ -93,8 +95,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         ])
     }
     
-    // MARK: - UICollectionViewDataSource
-    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return isExpanded ? colors.count : min(colors.count, defaultItemCount)
     }
@@ -110,8 +110,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         let width = collectionView.bounds.width - 32
         return CGSize(width: width, height: 24)
     }
-    
-    // MARK: - Button Action
     
     @objc private func selectAllButtonTapped() {
         isExpanded.toggle()

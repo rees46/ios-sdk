@@ -1,9 +1,9 @@
 import UIKit
 
 class SearchFilterViewController: UIViewController {
-
+    
     public var sdk: PersonalizationSDK?
-
+    
     var searchResults: [SearchResult]? {
         didSet {
             if let count = searchResults?.count {
@@ -46,7 +46,7 @@ class SearchFilterViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-//        setupColorCheckBoxes()
+        setupColorCheckBoxes()
         setupActions()
     }
     
@@ -90,7 +90,6 @@ class SearchFilterViewController: UIViewController {
             colorCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             colorCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             colorCheckBoxesView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            colorCheckBoxesView.heightAnchor.constraint(equalToConstant: 260),
         ])
         
         // Ensure contentView has a sufficient height
@@ -102,10 +101,11 @@ class SearchFilterViewController: UIViewController {
         }
     }
     
-//    private func setupColorCheckBoxes() {
-//        let colors = ["Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
-//        colorCheckBoxesView.updateColors(with: colors)
-//    }
+    private func setupColorCheckBoxes() {
+        let colors = ["Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
+        colorCheckBoxesView.updateColors(with: colors)
+        colorCheckBoxesView.setHeaderTitle("Color")
+    }
     
     private func printFilters() {
         guard let searchResults = searchResults else {
