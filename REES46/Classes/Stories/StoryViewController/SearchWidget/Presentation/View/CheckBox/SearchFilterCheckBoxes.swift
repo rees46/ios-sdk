@@ -15,11 +15,22 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         layout.scrollDirection = .vertical
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.backgroundColor = .clear // Цвет фона для отладки
+        collectionView.backgroundColor = .clear
         return collectionView
     }()
     
+    private let selectAllButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Select all", for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+        button.setTitleColor(.black, for: .normal)
+        button.contentHorizontalAlignment = .left
+        return button
+    }()
+    
     private var colors: [String] = []
+    private var isExpanded: Bool = false
+    private let defaultItemCount = 5
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -31,12 +42,14 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         setupView()
     }
     
-    private func setupView(){
+    private func setupView() {
         addSubview(colorLabel)
         addSubview(collectionView)
+        addSubview(selectAllButton)
         
         setupColorLabelConstraints()
         setupCollectionViewConstraints()
+        setupSelectAllButtonConstraints()
         
         collectionView.dataSource = self
         collectionView.delegate = self
@@ -44,7 +57,12 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         
         // Добавляем фиктивные цвета
         colors = ["Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
+        
+        // Устанавливаем начальное количество отображаемых элементов
         collectionView.reloadData()
+        
+        // Добавляем обработчик для кнопки "Select all"
+        selectAllButton.addTarget(self, action: #selector(selectAllButtonTapped), for: .touchUpInside)
     }
     
     private func setupColorLabelConstraints() {
@@ -61,14 +79,24 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 16),
-            collectionView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16)
+            collectionView.bottomAnchor.constraint(equalTo: selectAllButton.topAnchor, constant: -8)
+        ])
+    }
+    
+    private func setupSelectAllButtonConstraints() {
+        selectAllButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            selectAllButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            selectAllButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            selectAllButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
+            selectAllButton.heightAnchor.constraint(equalToConstant: 44)
         ])
     }
     
     // MARK: - UICollectionViewDataSource
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return colors.count
+        return isExpanded ? colors.count : min(colors.count, defaultItemCount)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -81,5 +109,15 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let width = collectionView.bounds.width - 32
         return CGSize(width: width, height: 24)
+    }
+    
+    // MARK: - Button Action
+    
+    @objc private func selectAllButtonTapped() {
+        isExpanded.toggle()
+        collectionView.reloadData()
+        
+        let buttonTitle = isExpanded ? "Collapse" : "Show more"
+        selectAllButton.setTitle(buttonTitle, for: .normal)
     }
 }
