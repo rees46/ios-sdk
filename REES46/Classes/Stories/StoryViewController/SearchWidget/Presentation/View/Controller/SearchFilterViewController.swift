@@ -45,8 +45,9 @@ class SearchFilterViewController: UIViewController {
         view.addSubview(filterPickerSizeView)
         view.addSubview(colorCheckBoxesView)
         
+        
         NSLayoutConstraint.activate([
-            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 160),
@@ -54,14 +55,14 @@ class SearchFilterViewController: UIViewController {
             filterPickerSizeView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             filterPickerSizeView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             filterPickerSizeView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            filterPickerSizeView.bottomAnchor.constraint(equalTo: colorCheckBoxesView.topAnchor),
+            filterPickerSizeView.heightAnchor.constraint(equalToConstant: 60),
             
             colorCheckBoxesView.topAnchor.constraint(equalTo: filterPickerSizeView.bottomAnchor),
-            colorCheckBoxesView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            colorCheckBoxesView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            colorCheckBoxesView.heightAnchor.constraint(equalToConstant: 500), // Фиксированная высота
-            colorCheckBoxesView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
+                colorCheckBoxesView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                colorCheckBoxesView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            colorCheckBoxesView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+                 
+            ])
     }
     
     private func setupActions() {
