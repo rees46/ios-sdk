@@ -25,6 +25,12 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
+    private let filterPriceSizeView: SearchFilterPickerView = {
+        let view = SearchFilterPickerView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let filterPickerPriceView: SearchFilterPickerView = {
         let view = SearchFilterPickerView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -60,6 +66,7 @@ class SearchFilterViewController: UIViewController {
         setupUI()
         setupColorCheckBoxes()
         setupTypeCheckBoxes()
+        setupPriceBlock()
         setupActions()
     }
     
@@ -73,6 +80,7 @@ class SearchFilterViewController: UIViewController {
            contentView.addSubview(filterPickerSizeView)
            contentView.addSubview(colorCheckBoxesView)
            contentView.addSubview(typeCheckBoxesView)
+           contentView.addSubview(filterPriceSizeView)
            
            NSLayoutConstraint.activate([
                // ScrollView Constraints
@@ -109,6 +117,12 @@ class SearchFilterViewController: UIViewController {
                typeCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
                typeCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
                typeCheckBoxesView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+               
+               // FilterPickerSizeView Constraints
+               filterPriceSizeView.topAnchor.constraint(equalTo: typeCheckBoxesView.bottomAnchor),
+               filterPriceSizeView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+               filterPriceSizeView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+               filterPriceSizeView.heightAnchor.constraint(equalToConstant: 60),
            ])
        }
     
@@ -128,6 +142,10 @@ class SearchFilterViewController: UIViewController {
         let colors = ["All", "Shoes", "Boots", "Sneakers", "Sandals"]
         typeCheckBoxesView.updateColors(with: colors)
         typeCheckBoxesView.setHeaderTitle("Type")
+    }
+    
+    private func setupPriceBlock(){
+        filterPriceSizeView.labelText = "Price"
     }
     
     private func printFilters() {

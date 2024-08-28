@@ -10,11 +10,19 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private var minToValue: Int = 1
     
-    public var fromLabelText: String? {
+    public var labelText: String? {
         didSet {
-            fromLabel.text = fromLabelText
+            subTitleLabel.text = labelText
         }
     }
+    
+    private let subTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Size"
+        label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
+        label.textColor = UIColor.black
+        return label
+    }()
     
     private lazy var fromLabel: UILabel = {
         let label = UILabel()
@@ -68,9 +76,12 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         pickerView.backgroundColor = .white
         
         addSubview(pickerViewBackgroundView)
+        addSubview(subTitleLabel)
+        
         pickerViewBackgroundView.isHidden = true
         pickerViewBackgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
         pickerViewBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+        subTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         
         pickerViewBackgroundView.addSubview(pickerView)
         
@@ -87,9 +98,15 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private func setupConstraints(filterContainer: UIStackView) {
         filterContainer.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
+            // SubTitle Label
+            subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            subTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: -24),
+            subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            
             filterContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             filterContainer.topAnchor.constraint(equalTo: topAnchor, constant: verticalSpacing),
-            filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
             filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + 16),
             
             

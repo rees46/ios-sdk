@@ -15,7 +15,7 @@ class SearchFilterHeaderView: UIView {
     
     private let subTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Size"
+        label.text = ""
         label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = UIColor.black
         return label
@@ -81,10 +81,10 @@ class SearchFilterHeaderView: UIView {
             closeButton.heightAnchor.constraint(equalToConstant: iconSize),
             
             // SubTitle Label
-            subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
             subTitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
-            subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -0),
+            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -0),
         ])
     }
     
