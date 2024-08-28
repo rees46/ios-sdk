@@ -20,7 +20,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     private let selectAllButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Select all", for: .normal)
+        button.setTitle("Show more", for: .normal)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         button.setTitleColor(.black, for: .normal)
         button.contentHorizontalAlignment = .left
@@ -30,7 +30,8 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     private var colors: [String] = []
     private var isExpanded: Bool = false
     private let defaultItemCount = 5
-    
+    private var collectionViewHeightConstraint: NSLayoutConstraint?
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -53,7 +54,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.register(CheckBoxCollectionViewCell.self, forCellWithReuseIdentifier: CheckBoxCollectionViewCell.identifier)
-        collectionView.reloadData()
         
         selectAllButton.addTarget(self, action: #selector(selectAllButtonTapped), for: .touchUpInside)
     }
@@ -61,6 +61,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     func updateColors(with colors: [String]) {
         self.colors = colors
         collectionView.reloadData()
+        updateCollectionViewHeight()
     }
     
     func setHeaderTitle(_ title: String) {
@@ -77,10 +78,13 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     private func setupCollectionViewConstraints() {
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionViewHeightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 0)
         NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
+            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 16),
+            collectionViewHeightConstraint!,
             collectionView.bottomAnchor.constraint(equalTo: selectAllButton.topAnchor, constant: -8)
         ])
     }
@@ -93,6 +97,16 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             selectAllButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
             selectAllButton.heightAnchor.constraint(equalToConstant: 44)
         ])
+    }
+    
+    private func updateCollectionViewHeight() {
+        let itemCount = isExpanded ? colors.count : min(colors.count, defaultItemCount)
+        let itemHeight: CGFloat = 24
+        let spacing: CGFloat = 8
+        let totalHeight = (itemHeight + spacing) * CGFloat(itemCount)
+        
+        collectionViewHeightConstraint?.constant = totalHeight
+        layoutIfNeeded()
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -114,6 +128,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     @objc private func selectAllButtonTapped() {
         isExpanded.toggle()
         collectionView.reloadData()
+        updateCollectionViewHeight()
         
         let buttonTitle = isExpanded ? "Collapse" : "Show more"
         selectAllButton.setTitle(buttonTitle, for: .normal)

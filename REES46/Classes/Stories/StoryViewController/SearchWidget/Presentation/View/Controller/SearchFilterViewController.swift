@@ -25,7 +25,19 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
+    private let filterPickerPriceView: SearchFilterPickerView = {
+        let view = SearchFilterPickerView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let colorCheckBoxesView: SearchFilterCheckBoxView = {
+        let view = SearchFilterCheckBoxView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let typeCheckBoxesView: SearchFilterCheckBoxView = {
         let view = SearchFilterCheckBoxView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -47,53 +59,58 @@ class SearchFilterViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupColorCheckBoxes()
+        setupTypeCheckBoxes()
         setupActions()
     }
     
     private func setupUI() {
-        view.backgroundColor = .white
-        
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        
-        contentView.addSubview(headerView)
-        contentView.addSubview(filterPickerSizeView)
-        contentView.addSubview(colorCheckBoxesView)
-        
-        NSLayoutConstraint.activate([
-            // ScrollView Constraints
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            
-            // ContentView Constraints
-            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
-            
-            // HeaderView Constraints
-            headerView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            
-            // FilterPickerSizeView Constraints
-            filterPickerSizeView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
-            filterPickerSizeView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            filterPickerSizeView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            filterPickerSizeView.heightAnchor.constraint(equalToConstant: 60),
-            
-            // ColorCheckBoxesView Constraints
-            colorCheckBoxesView.topAnchor.constraint(equalTo: filterPickerSizeView.bottomAnchor),
-            colorCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            colorCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            colorCheckBoxesView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-        ])
-        
-        // Ensure contentView has a sufficient height
-    }
+           view.backgroundColor = .white
+           
+           view.addSubview(scrollView)
+           scrollView.addSubview(contentView)
+           
+           contentView.addSubview(headerView)
+           contentView.addSubview(filterPickerSizeView)
+           contentView.addSubview(colorCheckBoxesView)
+           contentView.addSubview(typeCheckBoxesView)
+           
+           NSLayoutConstraint.activate([
+               // ScrollView Constraints
+               scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+               scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+               scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+               scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+               
+               // ContentView Constraints
+               contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+               contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+               contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+               contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+               contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor),
+               
+               // HeaderView Constraints
+               headerView.topAnchor.constraint(equalTo: contentView.topAnchor),
+               headerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+               headerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+               
+               // FilterPickerSizeView Constraints
+               filterPickerSizeView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+               filterPickerSizeView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+               filterPickerSizeView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+               filterPickerSizeView.heightAnchor.constraint(equalToConstant: 60),
+               
+               // ColorCheckBoxesView Constraints
+               colorCheckBoxesView.topAnchor.constraint(equalTo: filterPickerSizeView.bottomAnchor),
+               colorCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+               colorCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+               
+               // TypeCheckBoxesView Constraints
+               typeCheckBoxesView.topAnchor.constraint(equalTo: colorCheckBoxesView.bottomAnchor),
+               typeCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+               typeCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+               typeCheckBoxesView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+           ])
+       }
     
     private func setupActions() {
         headerView.onCloseButtonTapped = { [weak self] in
@@ -102,9 +119,15 @@ class SearchFilterViewController: UIViewController {
     }
     
     private func setupColorCheckBoxes() {
-        let colors = ["Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
+        let colors = ["All","Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
         colorCheckBoxesView.updateColors(with: colors)
         colorCheckBoxesView.setHeaderTitle("Color")
+    }
+    
+    private func setupTypeCheckBoxes() {
+        let colors = ["All", "Shoes", "Boots", "Sneakers", "Sandals"]
+        typeCheckBoxesView.updateColors(with: colors)
+        typeCheckBoxesView.setHeaderTitle("Type")
     }
     
     private func printFilters() {
