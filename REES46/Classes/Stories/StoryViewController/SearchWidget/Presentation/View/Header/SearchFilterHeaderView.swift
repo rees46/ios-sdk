@@ -82,9 +82,9 @@ class SearchFilterHeaderView: UIView {
             
             // SubTitle Label
             subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            subTitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 24),
+            subTitleLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
             subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
+            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
         ])
     }
     

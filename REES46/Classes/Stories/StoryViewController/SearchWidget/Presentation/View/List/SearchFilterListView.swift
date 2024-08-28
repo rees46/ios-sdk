@@ -2,7 +2,7 @@ import UIKit
 
 class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource {
 
-    private let dropdownHeight: CGFloat = 44
+    private let dropdownHeight: CGFloat = 34
     private let horizontalSpacing: CGFloat = 12
     private let verticalSpacing: CGFloat = 16
     private let containerWidth: CGFloat = 120
@@ -86,6 +86,7 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
             filterContainer.topAnchor.constraint(equalTo: topAnchor, constant: verticalSpacing),
             filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + 16),
+            
 
             fromDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
             toDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
