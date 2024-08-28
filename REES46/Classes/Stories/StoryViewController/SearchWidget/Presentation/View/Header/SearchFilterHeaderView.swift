@@ -16,7 +16,7 @@ class SearchFilterHeaderView: UIView {
     private let subTitleLabel: UILabel = {
         let label = UILabel()
         label.text = "Size"
-        label.font = UIFont.systemFont(ofSize: 18, weight: .regular)
+        label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = UIColor.black
         return label
     }()

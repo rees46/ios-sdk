@@ -27,6 +27,14 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
+    
+    private let colorLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Color"
+        label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
+        label.textColor = UIColor.black
+        return label
+    }()
 
     private lazy var fromDropdownContainer: UIButton = {
         let button = createDropdownButton(title: "1")
@@ -67,20 +75,21 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
         pickerViewBackgroundView.translatesAutoresizingMaskIntoConstraints = false
 
         pickerViewBackgroundView.addSubview(pickerView)
-        pickerView.translatesAutoresizingMaskIntoConstraints = false
 
         let filterContainer = UIStackView(arrangedSubviews: [fromLabel, fromDropdownContainer, toLabel, toDropdownContainer])
         filterContainer.axis = .horizontal
         filterContainer.spacing = horizontalSpacing
-        filterContainer.translatesAutoresizingMaskIntoConstraints = false
 
         addSubview(filterContainer)
-
+        addSubview(colorLabel)
+        
         setupConstraints(filterContainer: filterContainer)
         setupPickerViewConstraints()
+        setupColorLabelConstraints(filterContainer: filterContainer)
     }
 
     private func setupConstraints(filterContainer: UIStackView) {
+        filterContainer.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             filterContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             filterContainer.topAnchor.constraint(equalTo: topAnchor, constant: verticalSpacing),
@@ -92,20 +101,30 @@ class SearchFilterListView: UIView, UIPickerViewDelegate, UIPickerViewDataSource
             toDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
         ])
     }
-
+    
     private func setupPickerViewConstraints() {
-        NSLayoutConstraint.activate([
-            pickerViewBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            pickerViewBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            pickerViewBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            pickerViewBackgroundView.topAnchor.constraint(equalTo: topAnchor),
+        pickerView.translatesAutoresizingMaskIntoConstraints = false
+         NSLayoutConstraint.activate([
+             pickerViewBackgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
+             pickerViewBackgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
+             pickerViewBackgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
+             pickerViewBackgroundView.topAnchor.constraint(equalTo: topAnchor),
 
-            pickerView.leadingAnchor.constraint(equalTo: pickerViewBackgroundView.leadingAnchor),
-            pickerView.trailingAnchor.constraint(equalTo: pickerViewBackgroundView.trailingAnchor),
-            pickerView.bottomAnchor.constraint(equalTo: pickerViewBackgroundView.bottomAnchor),
-            pickerView.heightAnchor.constraint(equalToConstant: 300)
-        ])
-    }
+             pickerView.leadingAnchor.constraint(equalTo: pickerViewBackgroundView.leadingAnchor),
+             pickerView.trailingAnchor.constraint(equalTo: pickerViewBackgroundView.trailingAnchor),
+             pickerView.bottomAnchor.constraint(equalTo: pickerViewBackgroundView.bottomAnchor),
+             pickerView.heightAnchor.constraint(equalToConstant: 300)
+         ])
+     }
+     
+     private func setupColorLabelConstraints(filterContainer: UIStackView) {
+         colorLabel.translatesAutoresizingMaskIntoConstraints = false
+         NSLayoutConstraint.activate([
+             colorLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+             colorLabel.topAnchor.constraint(equalTo: filterContainer.bottomAnchor, constant: verticalSpacing),
+             colorLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+         ])
+     }
 
     private func createDropdownButton(title: String) -> UIButton {
         let button = UIButton(type: .custom)
