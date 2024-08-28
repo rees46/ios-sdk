@@ -20,8 +20,8 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
-    let filterListView: SearchFilterListView = {
-        let view = SearchFilterListView()
+    let filterListView: SearchFilterPickerView = {
+        let view = SearchFilterPickerView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
