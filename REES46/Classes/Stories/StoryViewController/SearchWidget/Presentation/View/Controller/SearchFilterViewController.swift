@@ -20,8 +20,14 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
-    let filterListView: SearchFilterPickerView = {
+    let filterPickerSizeView: SearchFilterPickerView = {
         let view = SearchFilterPickerView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    let colorCheckBoxesView: SearchFilterCheckBoxView = {
+        let view = SearchFilterCheckBoxView()
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -36,7 +42,8 @@ class SearchFilterViewController: UIViewController {
         view.backgroundColor = .white
         
         view.addSubview(headerView)
-        view.addSubview(filterListView)
+        view.addSubview(filterPickerSizeView)
+        view.addSubview(colorCheckBoxesView)
         
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -44,10 +51,16 @@ class SearchFilterViewController: UIViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 160),
             
-            filterListView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
-            filterListView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            filterListView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            filterListView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            filterPickerSizeView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            filterPickerSizeView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            filterPickerSizeView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            filterPickerSizeView.bottomAnchor.constraint(equalTo: colorCheckBoxesView.topAnchor),
+            
+            colorCheckBoxesView.topAnchor.constraint(equalTo: filterPickerSizeView.bottomAnchor),
+            colorCheckBoxesView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            colorCheckBoxesView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            colorCheckBoxesView.heightAnchor.constraint(equalToConstant: 500), // Фиксированная высота
+            colorCheckBoxesView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
     

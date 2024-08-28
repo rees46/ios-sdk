@@ -30,7 +30,7 @@ class SearchFilterCheckBoxView: UIView{
         NSLayoutConstraint.activate(
             [
                 colorLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                colorLabel.topAnchor.constraint(equalTo: bottomAnchor, constant: 16),
+                colorLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
                 colorLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             ]
         )

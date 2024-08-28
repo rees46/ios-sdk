@@ -150,12 +150,17 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     }
     
     private func togglePickerView(for button: UIButton) {
-        if activeButton == button && !pickerViewBackgroundView.isHidden {
-            hidePickerView()
-        } else {
-            activeButton = button
-            pickerView.reloadAllComponents()
-            pickerViewBackgroundView.isHidden = false
+        let pickerVC = PickerViewController()
+        
+        pickerVC.modalPresentationStyle = .overCurrentContext
+        pickerVC.modalTransitionStyle = .crossDissolve
+        
+        pickerVC.didSelectValue = { [weak self] selectedValue in
+            self?.updateDropdownButton(button, with: "\(selectedValue)")
+        }
+        
+        if let viewController = self.parentViewController {
+            viewController.present(pickerVC, animated: true, completion: nil)
         }
     }
     
