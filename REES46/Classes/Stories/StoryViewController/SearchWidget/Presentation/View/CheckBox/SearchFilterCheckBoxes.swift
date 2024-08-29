@@ -81,7 +81,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionViewHeightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 0)
         NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 16),
             collectionViewHeightConstraint!,
@@ -105,7 +105,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         let spacing: CGFloat = 8
         let totalHeight = (itemHeight + spacing) * CGFloat(itemCount)
         
-        collectionViewHeightConstraint?.constant = totalHeight
+        collectionViewHeightConstraint?.constant = totalHeight + 20
         layoutIfNeeded()
     }
     

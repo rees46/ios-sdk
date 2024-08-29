@@ -100,15 +100,16 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         NSLayoutConstraint.activate([
             // SubTitle Label
             subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            subTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: -24),
+            subTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 24),
             subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subTitleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            subTitleLabel.bottomAnchor.constraint(equalTo: filterContainer.topAnchor, constant: -16),
             
+            // Filter Container
             filterContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            filterContainer.topAnchor.constraint(equalTo: topAnchor, constant: verticalSpacing),
             filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
-            filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + 16),
-            
+            filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + verticalSpacing),
+            filterContainer.topAnchor.constraint(equalTo: subTitleLabel.bottomAnchor, constant: 16),
+            filterContainer.bottomAnchor.constraint(equalTo: filterContainer.topAnchor, constant: -16),
             
             fromDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
             toDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
