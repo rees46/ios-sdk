@@ -147,13 +147,13 @@ class SearchFilterViewController: UIViewController {
     
     private func setupColorCheckBoxes() {
         let colors = ["All","Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
-        colorCheckBoxesView.updateColors(with: colors)
+        colorCheckBoxesView.updateData(with: colors)
         colorCheckBoxesView.setHeaderTitle("Color")
     }
     
     private func setupTypeCheckBoxes() {
         let colors = ["All", "Shoes", "Boots", "Sneakers", "Sandals"]
-        typeCheckBoxesView.updateColors(with: colors)
+        typeCheckBoxesView.updateData(with: colors)
         typeCheckBoxesView.setHeaderTitle("Type")
     }
     
