@@ -20,17 +20,40 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     private let selectAllButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Show more", for: .normal)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         button.setTitleColor(.black, for: .normal)
         button.contentHorizontalAlignment = .left
+        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
+    
+    private let arrowImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.tintColor = .black
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
+    }()
+
+    private func updateArrowImageView() {
+        var frameworkBundle = Bundle(for: type(of: self))
+        let arrowImageName = isExpanded ? "angleUpBlack" : "angleDownBlack"
+        let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        arrowImageView.image = arrowImage
+    }
     
     private var colors: [String] = []
     private var isExpanded: Bool = false
     private let defaultItemCount = 5
     private var collectionViewHeightConstraint: NSLayoutConstraint?
+    
+    private let showMoreContainer: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = 8
+        stackView.alignment = .center
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        return stackView
+    }()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -45,11 +68,15 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     private func setupView() {
         addSubview(colorLabel)
         addSubview(collectionView)
-        addSubview(selectAllButton)
+        addSubview(showMoreContainer)
+        
+        showMoreContainer.addArrangedSubview(selectAllButton)
+        showMoreContainer.addArrangedSubview(arrowImageView)
         
         setupLabelConstraints()
         setupCollectionViewConstraints()
-        setupShowMoreButtonConstraints()
+        setupShowMoreContainerConstraints()
+        updateArrowImageView()
         
         collectionView.dataSource = self
         collectionView.delegate = self
@@ -57,7 +84,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         
         selectAllButton.addTarget(self, action: #selector(showMoreButtonTapped), for: .touchUpInside)
     }
-    
     
     func updateData(with colors: [String]) {
         self.colors = colors
@@ -94,17 +120,28 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 16),
             collectionViewHeightConstraint!,
-            collectionView.bottomAnchor.constraint(equalTo: selectAllButton.topAnchor, constant: -8)
+            collectionView.bottomAnchor.constraint(equalTo: showMoreContainer.topAnchor, constant: -8)
         ])
     }
     
-    private func setupShowMoreButtonConstraints() {
-        selectAllButton.translatesAutoresizingMaskIntoConstraints = false
+    private func setupShowMoreContainerConstraints() {
         NSLayoutConstraint.activate([
-            selectAllButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            selectAllButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            selectAllButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
-            selectAllButton.heightAnchor.constraint(equalToConstant: 44)
+            showMoreContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            showMoreContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            showMoreContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
+            showMoreContainer.heightAnchor.constraint(equalToConstant: 44),
+            showMoreContainer.widthAnchor.constraint(equalToConstant: 150)
+        ])
+        
+        NSLayoutConstraint.activate([
+            arrowImageView.widthAnchor.constraint(equalToConstant: 16),
+            arrowImageView.heightAnchor.constraint(equalToConstant: 16)
+        ])
+        
+        NSLayoutConstraint.activate([
+            selectAllButton.leadingAnchor.constraint(equalTo: showMoreContainer.leadingAnchor),
+            selectAllButton.trailingAnchor.constraint(equalTo: arrowImageView.leadingAnchor, constant: -8),
+            arrowImageView.trailingAnchor.constraint(equalTo: showMoreContainer.trailingAnchor)
         ])
     }
     
@@ -139,7 +176,21 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         collectionView.reloadData()
         updateCollectionViewHeight()
         
-        let buttonTitle = isExpanded ? "Collapse" : "Show more (\(colors.count - defaultItemCount))"
+        let buttonTitle: String
+        let arrowImageName: String
+        
+        if isExpanded {
+            buttonTitle = "Collapse"
+            arrowImageName = "angleUpBlack"
+        } else {
+            buttonTitle = "Show more (\(colors.count - defaultItemCount))"
+            arrowImageName = "angleDownBlack"
+        }
+        
+        var frameworkBundle = Bundle(for: type(of: self))
+        let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        
         selectAllButton.setTitle(buttonTitle, for: .normal)
+        arrowImageView.image = arrowImage
     }
 }

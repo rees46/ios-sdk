@@ -14,10 +14,10 @@ class SearchFilterViewController: UIViewController {
     }
     
     private let spacerView: UIView = {
-          let view = UIView()
-          view.translatesAutoresizingMaskIntoConstraints = false
-          return view
-      }()
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
     
     private let headerView: SearchFilterHeaderView = {
         let view = SearchFilterHeaderView()
@@ -81,7 +81,7 @@ class SearchFilterViewController: UIViewController {
         contentView.addSubview(colorCheckBoxesView)
         contentView.addSubview(typeCheckBoxesView)
         contentView.addSubview(filterPickerPriceView)
-        contentView.addSubview(spacerView)  // Добавляем spacerView
+        contentView.addSubview(spacerView)
         
         NSLayoutConstraint.activate([
             // ScrollView Constraints
@@ -151,8 +151,9 @@ class SearchFilterViewController: UIViewController {
         typeCheckBoxesView.setHeaderTitle("Type")
     }
     
-    private func setupPriceBlock(){
-        filterPickerPriceView.labelText = "Price"
+    private func setupPriceBlock() {
+        let currency = searchResults?.first?.currency ?? ""
+        filterPickerPriceView.labelText = "Price(\(currency))"
     }
     
     private func printFilters() {
