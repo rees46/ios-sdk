@@ -33,18 +33,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
-
-    private func updateArrowImageView() {
-        var frameworkBundle = Bundle(for: type(of: self))
-        let arrowImageName = isExpanded ? "angleUpBlack" : "angleDownBlack"
-        let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
-        arrowImageView.image = arrowImage
-    }
-    
-    private var colors: [String] = []
-    private var isExpanded: Bool = false
-    private let defaultItemCount = 5
-    private var collectionViewHeightConstraint: NSLayoutConstraint?
     
     private let showMoreContainer: UIStackView = {
         let stackView = UIStackView()
@@ -54,6 +42,12 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
     }()
+    
+    private var colors: [String] = []
+    private var isExpanded: Bool = false
+    private var selectedColors: Set<String> = []
+    private let defaultItemCount = 5
+    private var collectionViewHeightConstraint: NSLayoutConstraint?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -76,13 +70,14 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         setupLabelConstraints()
         setupCollectionViewConstraints()
         setupShowMoreContainerConstraints()
-        updateArrowImageView()
         
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.register(CheckBoxCollectionViewCell.self, forCellWithReuseIdentifier: CheckBoxCollectionViewCell.identifier)
         
         selectAllButton.addTarget(self, action: #selector(showMoreButtonTapped), for: .touchUpInside)
+        
+        updateArrowImageView()
     }
     
     func updateData(with colors: [String]) {
@@ -116,7 +111,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionViewHeightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 0)
         NSLayoutConstraint.activate([
-            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 0),
+            collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 16),
             collectionViewHeightConstraint!,
@@ -145,6 +140,13 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         ])
     }
     
+    private func updateArrowImageView() {
+        let arrowImageName = isExpanded ? "angleUpBlack" : "angleDownBlack"
+        let frameworkBundle = Bundle(for: type(of: self))
+        let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
+        arrowImageView.image = arrowImage
+    }
+    
     private func updateCollectionViewHeight() {
         let itemCount = isExpanded ? colors.count : min(colors.count, defaultItemCount)
         let itemHeight: CGFloat = 24
@@ -155,14 +157,33 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         layoutIfNeeded()
     }
     
+    @objc private func showMoreButtonTapped() {
+        isExpanded.toggle()
+        collectionView.reloadData()
+        updateCollectionViewHeight()
+        updateArrowImageView()
+        
+        let buttonTitle: String
+        if isExpanded {
+            buttonTitle = "Collapse"
+        } else {
+            buttonTitle = "Show more (\(colors.count - defaultItemCount))"
+        }
+        
+        selectAllButton.setTitle(buttonTitle, for: .normal)
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return isExpanded ? colors.count : min(colors.count, defaultItemCount)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CheckBoxCollectionViewCell.identifier, for: indexPath) as! CheckBoxCollectionViewCell
-        let list = colors[indexPath.item]
-        cell.configure(with: list)
+        let color = colors[indexPath.item]
+        cell.configure(with: color)
+        
+        cell.isChecked = selectedColors.contains(color)
+        
         return cell
     }
     
@@ -171,26 +192,13 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         return CGSize(width: width, height: 24)
     }
     
-    @objc private func showMoreButtonTapped() {
-        isExpanded.toggle()
-        collectionView.reloadData()
-        updateCollectionViewHeight()
-        
-        let buttonTitle: String
-        let arrowImageName: String
-        
-        if isExpanded {
-            buttonTitle = "Collapse"
-            arrowImageName = "angleUpBlack"
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let color = colors[indexPath.item]
+        if selectedColors.contains(color) {
+            selectedColors.remove(color)
         } else {
-            buttonTitle = "Show more (\(colors.count - defaultItemCount))"
-            arrowImageName = "angleDownBlack"
+            selectedColors.insert(color)
         }
-        
-        var frameworkBundle = Bundle(for: type(of: self))
-        let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
-        
-        selectAllButton.setTitle(buttonTitle, for: .normal)
-        arrowImageView.image = arrowImage
+        collectionView.reloadItems(at: [indexPath])
     }
 }

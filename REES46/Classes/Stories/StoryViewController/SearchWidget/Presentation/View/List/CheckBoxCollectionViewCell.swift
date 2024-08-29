@@ -1,5 +1,3 @@
-import UIKit
-
 class CheckBoxCollectionViewCell: UICollectionViewCell {
     static let identifier = "CheckBoxCollectionViewCell"
     
@@ -26,7 +24,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
         return label
     }()
     
-    private var isChecked: Bool = false {
+    var isChecked: Bool = false {
         didSet {
             updateCheckBoxAppearance()
         }
@@ -77,6 +75,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
     
     @objc private func toggleCheckBox() {
         isChecked.toggle()
+        // Передайте обновленное состояние чекбокса обратно в контроллер, если нужно
     }
     
     private func updateCheckBoxAppearance() {
