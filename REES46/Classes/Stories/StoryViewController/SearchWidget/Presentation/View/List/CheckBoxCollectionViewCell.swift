@@ -11,6 +11,14 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
         return view
     }()
     
+    private let checkmarkImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: "SelectedCheckBox")
+        imageView.tintColor = .systemBlue
+        imageView.isHidden = true
+        return imageView
+    }()
+    
     private let label: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 16)
@@ -28,6 +36,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
         super.init(frame: frame)
         contentView.addSubview(checkBoxContainer)
         contentView.addSubview(label)
+        checkBoxContainer.addSubview(checkmarkImageView)
         
         setupConstraints()
         addTapGesture()
@@ -41,6 +50,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
     
     private func setupConstraints() {
         checkBoxContainer.translatesAutoresizingMaskIntoConstraints = false
+        checkmarkImageView.translatesAutoresizingMaskIntoConstraints = false
         label.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
@@ -48,6 +58,11 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
             checkBoxContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             checkBoxContainer.widthAnchor.constraint(equalToConstant: 24),
             checkBoxContainer.heightAnchor.constraint(equalToConstant: 24),
+            
+            checkmarkImageView.centerXAnchor.constraint(equalTo: checkBoxContainer.centerXAnchor),
+            checkmarkImageView.centerYAnchor.constraint(equalTo: checkBoxContainer.centerYAnchor),
+            checkmarkImageView.widthAnchor.constraint(equalToConstant: 16),
+            checkmarkImageView.heightAnchor.constraint(equalToConstant: 16),
             
             label.leadingAnchor.constraint(equalTo: checkBoxContainer.trailingAnchor, constant: 8),
             label.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -65,7 +80,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
     }
     
     private func updateCheckBoxAppearance() {
-        checkBoxContainer.backgroundColor = isChecked ? UIColor.systemBlue : UIColor.clear
+        checkmarkImageView.isHidden = !isChecked
         checkBoxContainer.layer.borderColor = isChecked ? UIColor.systemBlue.cgColor : UIColor.lightGray.cgColor
     }
     

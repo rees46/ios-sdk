@@ -67,7 +67,6 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         super.init(coder: coder)
         setupView()
     }
-    
     private func setupView() {
         backgroundColor = .white
         
@@ -88,6 +87,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         let filterContainer = UIStackView(arrangedSubviews: [fromLabel, fromDropdownContainer, toLabel, toDropdownContainer])
         filterContainer.axis = .horizontal
         filterContainer.spacing = horizontalSpacing
+        filterContainer.distribution = .equalSpacing
         
         addSubview(filterContainer)
         
@@ -102,20 +102,17 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
             subTitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             subTitleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 24),
             subTitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            subTitleLabel.bottomAnchor.constraint(equalTo: filterContainer.topAnchor, constant: -16),
             
             // Filter Container
             filterContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24),
-            filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight + verticalSpacing),
+            filterContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             filterContainer.topAnchor.constraint(equalTo: subTitleLabel.bottomAnchor, constant: 16),
-            filterContainer.bottomAnchor.constraint(equalTo: filterContainer.topAnchor, constant: -16),
+            filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight),
             
             fromDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
             toDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
         ])
     }
-    
     private func setupPickerViewConstraints() {
         pickerView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
