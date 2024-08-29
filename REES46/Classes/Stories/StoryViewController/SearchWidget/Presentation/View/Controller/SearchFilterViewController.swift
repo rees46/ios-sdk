@@ -31,12 +31,6 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
-    private let filterPriceSizeView: SearchFilterPickerView = {
-        let view = SearchFilterPickerView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    
     private let filterPickerPriceView: SearchFilterPickerView = {
         let view = SearchFilterPickerView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -86,7 +80,7 @@ class SearchFilterViewController: UIViewController {
         contentView.addSubview(filterPickerSizeView)
         contentView.addSubview(colorCheckBoxesView)
         contentView.addSubview(typeCheckBoxesView)
-        contentView.addSubview(filterPriceSizeView)
+        contentView.addSubview(filterPickerPriceView)
         contentView.addSubview(spacerView)  // Добавляем spacerView
         
         NSLayoutConstraint.activate([
@@ -125,13 +119,13 @@ class SearchFilterViewController: UIViewController {
             typeCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             
             // FilterPickerPriceView Constraints
-            filterPriceSizeView.topAnchor.constraint(equalTo: typeCheckBoxesView.bottomAnchor),
-            filterPriceSizeView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            filterPriceSizeView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            filterPriceSizeView.heightAnchor.constraint(equalToConstant: 60),
+            filterPickerPriceView.topAnchor.constraint(equalTo: typeCheckBoxesView.bottomAnchor, constant: -50),
+            filterPickerPriceView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            filterPickerPriceView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            filterPickerPriceView.heightAnchor.constraint(equalToConstant: 100),
             
             // SpacerView Constraints
-            spacerView.topAnchor.constraint(equalTo: filterPriceSizeView.bottomAnchor),
+            spacerView.topAnchor.constraint(equalTo: filterPickerPriceView.bottomAnchor),
             spacerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             spacerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             spacerView.heightAnchor.constraint(equalToConstant: 100),
@@ -158,7 +152,7 @@ class SearchFilterViewController: UIViewController {
     }
     
     private func setupPriceBlock(){
-        filterPriceSizeView.labelText = "Price"
+        filterPickerPriceView.labelText = "Price"
     }
     
     private func printFilters() {
