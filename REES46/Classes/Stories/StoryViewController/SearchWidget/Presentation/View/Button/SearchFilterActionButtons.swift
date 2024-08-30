@@ -71,7 +71,7 @@ class SearchFilterActionButtons: UIView {
             showButton.topAnchor.constraint(equalTo: topAnchor),
             showButton.bottomAnchor.constraint(equalTo: bottomAnchor),
             showButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            showButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.6, constant: -28)
+            showButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7, constant: -38)
         ])
     }
     
