@@ -14,7 +14,7 @@ class SearchResultHeaderView: UIView {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Search result"
+        label.text = Bundle.getLocalizedString(forKey: "search_result_key")
         label.font = UIFont.systemFont(ofSize: 24, weight: .regular)
         label.textColor = UIColor.black
         return label

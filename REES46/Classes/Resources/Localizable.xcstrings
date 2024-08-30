@@ -137,6 +137,23 @@
         }
       }
     },
+    "founded_products_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "founded %@ products"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "найдено %@ продуктов"
+          }
+        }
+      }
+    },
     "from_key" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -507,6 +524,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Фильтр"
+          }
+        }
+      }
+    },
+    "search_result_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search result"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Результаты поиска"
           }
         }
       }

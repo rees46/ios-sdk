@@ -58,6 +58,6 @@ class SearchResultsListView: UIView {
     }
     
     func setResultCount(_ count: Int) {
-        resultCountLabel.text = "found \(count) products"
+        resultCountLabel.text = String(format: Bundle.getLocalizedString(forKey: "founded_products_key", comment: ""), count)
     }
 }
