@@ -26,7 +26,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private let subTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Size"
+        label.text = Bundle.getLocalizedString(forKey:"size_key")
         label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = UIColor.black
         return label
@@ -34,7 +34,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private lazy var fromLabel: UILabel = {
         let label = UILabel()
-        label.text = "From"
+        label.text = Bundle.getLocalizedString(forKey:"from_key")
         label.font = UIFont.systemFont(ofSize: 16, weight: .regular)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -43,7 +43,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private lazy var toLabel: UILabel = {
         let label = UILabel()
-        label.text = "to"
+        label.text = Bundle.getLocalizedString(forKey:"to_key")
         label.font = UIFont.systemFont(ofSize: 16, weight: .regular)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -67,19 +67,19 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private let pickerViewBackgroundView = UIView()
     
     override init(frame: CGRect) {
-         self.listLimit = []
+        self.listLimit = []
         self.sizes = []
-         super.init(frame: frame)
-         setupView()
-     }
-     
-     required init?(coder: NSCoder) {
-         self.listLimit = []
+        super.init(frame: frame)
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        self.listLimit = []
         self.sizes = []
-         super.init(coder: coder)
-         setupView()
-         updateDropdownTitles()
-     }
+        super.init(coder: coder)
+        setupView()
+        updateDropdownTitles()
+    }
     
     private func updateDropdownTitles() {
         let minValue = sizes.first ?? 0

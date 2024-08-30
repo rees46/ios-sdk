@@ -87,7 +87,10 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         
         if colors.count > defaultItemCount {
             let hiddenCount = colors.count - defaultItemCount
-            selectAllButton.setTitle("Show more (\(hiddenCount))", for: .normal)
+            selectAllButton.setTitle(
+                String(format: Bundle.getLocalizedString(forKey: "show_more_key", comment: ""), hiddenCount),
+                for: .normal
+            )
             selectAllButton.isHidden = false
         } else {
             selectAllButton.isHidden = true
@@ -165,9 +168,9 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         
         let buttonTitle: String
         if isExpanded {
-            buttonTitle = "Collapse"
+            buttonTitle = Bundle.getLocalizedString(forKey: "collaps_key")
         } else {
-            buttonTitle = "Show more (\(colors.count - defaultItemCount))"
+            buttonTitle = String(format: Bundle.getLocalizedString(forKey: "show_more_key", comment: ""), colors.count - defaultItemCount)
         }
         
         selectAllButton.setTitle(buttonTitle, for: .normal)

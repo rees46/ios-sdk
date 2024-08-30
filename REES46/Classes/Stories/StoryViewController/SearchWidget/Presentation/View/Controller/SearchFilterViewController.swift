@@ -201,10 +201,10 @@ class SearchFilterViewController: UIViewController {
     private func setupTypeCheckBoxes() {
         let colors = [
             Bundle.getLocalizedString(forKey: "all"),
-            "Shoes",
-            "Boots",
-            "Sneakers",
-            "Sandals"
+            Bundle.getLocalizedString(forKey: "shoes_key"),
+            Bundle.getLocalizedString(forKey: "boots_key"),
+            Bundle.getLocalizedString(forKey: "sneakers_key"),
+            Bundle.getLocalizedString(forKey: "sandals_key"),
         ]
         typeCheckBoxesView.updateData(with: colors)
         
@@ -216,10 +216,10 @@ class SearchFilterViewController: UIViewController {
     private func setupMaterialCheckBoxes() {
         let materials = [
             Bundle.getLocalizedString(forKey: "all"),
-            "Shoes",
-            "Boots",
-            "Sneakers",
-            "Sandals"
+            Bundle.getLocalizedString(forKey: "leather_key"),
+            Bundle.getLocalizedString(forKey: "rubber_key"),
+            Bundle.getLocalizedString(forKey: "cotton_key"),
+            Bundle.getLocalizedString(forKey: "polyrethane_key"),
         ]
         materialCheckBoxesView.updateData(with: materials)
         
@@ -247,7 +247,7 @@ class SearchFilterViewController: UIViewController {
     
     private func setupPriceBlock() {
         let currency = searchResults?.first?.currency ?? ""
-        filterPickerPriceView.labelText = "Price(\(currency))"
+        let localizedPriceLabelText = String(format: Bundle.getLocalizedString(forKey: "price_key", comment: ""), currency)
+         filterPickerPriceView.labelText = localizedPriceLabelText
     }
-
 }

@@ -52,6 +52,23 @@
         }
       }
     },
+    "boots_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boots"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ботинки"
+          }
+        }
+      }
+    },
     "brown_color_key" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -69,6 +86,23 @@
         }
       }
     },
+    "collaps_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сollaps"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Закрыть"
+          }
+        }
+      }
+    },
     "color_title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -82,6 +116,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Цвет"
+          }
+        }
+      }
+    },
+    "cotton_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cotton"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хлопок"
           }
         }
       }
@@ -154,6 +205,23 @@
         }
       }
     },
+    "leather_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leather"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кожа"
+          }
+        }
+      }
+    },
     "Loading..." : {
       "comment" : "Loading...",
       "localizations" : {
@@ -222,6 +290,40 @@
         }
       }
     },
+    "polyrethane_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polyrethane"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полиуретан"
+          }
+        }
+      }
+    },
+    "price_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Price(%@)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цена"
+          }
+        }
+      }
+    },
     "purple_color_key" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -268,7 +370,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1+ звезд"
+            "value" : "1+ звезда"
           }
         }
       }
@@ -285,7 +387,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2+ звезд"
+            "value" : "2+ звезды"
           }
         }
       }
@@ -302,7 +404,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3+ звезд"
+            "value" : "3+ звезды"
           }
         }
       }
@@ -319,7 +421,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "4+ звезд"
+            "value" : "4+ звезды"
           }
         }
       }
@@ -358,6 +460,40 @@
         }
       }
     },
+    "rubber_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rubber"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Резина"
+          }
+        }
+      }
+    },
+    "sandals_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sandals"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сандали"
+          }
+        }
+      }
+    },
     "search_filter_title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -375,7 +511,41 @@
         }
       }
     },
-    "size_title" : {
+    "shoes_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shoes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обувь"
+          }
+        }
+      }
+    },
+    "show_more_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show more(%@)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать ещё"
+          }
+        }
+      }
+    },
+    "size_key" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -388,6 +558,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Размер"
+          }
+        }
+      }
+    },
+    "sneakers_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sneakers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кроссовки"
           }
         }
       }

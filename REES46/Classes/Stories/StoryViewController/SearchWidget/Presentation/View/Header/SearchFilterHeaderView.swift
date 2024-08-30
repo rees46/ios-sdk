@@ -7,7 +7,7 @@ class SearchFilterHeaderView: UIView {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Filters"
+        label.text = Bundle.getLocalizedString(forKey:"search_filter_title")
         label.font = UIFont.systemFont(ofSize: 24, weight: .regular)
         label.textColor = UIColor.black
         return label
