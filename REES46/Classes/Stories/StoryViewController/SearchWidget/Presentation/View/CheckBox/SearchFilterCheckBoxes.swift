@@ -87,10 +87,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         
         if colors.count > defaultItemCount {
             let hiddenCount = colors.count - defaultItemCount
-            selectAllButton.setTitle(
-                String(format: Bundle.getLocalizedString(forKey: "show_more_key", comment: ""), hiddenCount),
-                for: .normal
-            )
+            selectAllButton.setTitle("\(Bundle.getLocalizedString(forKey: "show_more_key")) (\(hiddenCount))", for: .normal)
             selectAllButton.isHidden = false
         } else {
             selectAllButton.isHidden = true

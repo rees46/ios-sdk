@@ -143,13 +143,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "founded %@ products"
+            "value" : "founded (%@)products"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "найдено %@ продуктов"
+            "value" : "найдено (%@ )продуктов"
           }
         }
       }
@@ -336,7 +336,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Цена"
+            "value" : "Цена(%@)"
           }
         }
       }
@@ -568,12 +568,12 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show more(%@)"
+            "value" : "Show more"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Показать ещё"
           }
         }
