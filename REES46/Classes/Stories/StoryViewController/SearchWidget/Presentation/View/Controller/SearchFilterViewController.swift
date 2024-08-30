@@ -8,7 +8,6 @@ class SearchFilterViewController: UIViewController {
         didSet {
             if let count = searchResults?.count {
                 print("Count \(count)")
-                printFilters()
             }
         }
     }
@@ -177,30 +176,31 @@ class SearchFilterViewController: UIViewController {
     }
     
     private func setupColorCheckBoxes() {
-        let frameworkBundle = Bundle(for: type(of: self))
         let colors = [
-            frameworkBundle.getLocalizedString(forKey: "all"),
-            "Black",
-            "White",
-            "Red",
-            "Blue",
-            "Yellow",
-            "Green",
-            "Purple",
-            "Orange",
-            "Pink",
-            "Brown"
+            Bundle.getLocalizedString(forKey: "all"),
+            Bundle.getLocalizedString(forKey: "black_color_key"),
+            Bundle.getLocalizedString(forKey: "white_color_key"),
+            Bundle.getLocalizedString(forKey: "gray_color_key"),
+            Bundle.getLocalizedString(forKey: "red_color_key"),
+            Bundle.getLocalizedString(forKey: "blue_color_key"),
+            Bundle.getLocalizedString(forKey: "orange_color_key"),
+            Bundle.getLocalizedString(forKey: "purple_color_key"),
+            Bundle.getLocalizedString(forKey: "green_color_key"),
+            Bundle.getLocalizedString(forKey: "brown_color_key"),
+            Bundle.getLocalizedString(forKey: "yellow_color_key"),
+            Bundle.getLocalizedString(forKey: "orange_color_key"),
+            Bundle.getLocalizedString(forKey: "pink_color_key"),
         ]
         colorCheckBoxesView.updateData(with: colors)
         
-        let headerTitle = frameworkBundle.getLocalizedString(forKey: "color_title")
-        colorCheckBoxesView.setHeaderTitle(headerTitle)
+        colorCheckBoxesView.setHeaderTitle(
+            Bundle.getLocalizedString(forKey: "color_title")
+        )
     }
     
     private func setupTypeCheckBoxes() {
-        let frameworkBundle = Bundle(for: type(of: self))
         let colors = [
-            frameworkBundle.getLocalizedString(forKey: "all"),
+            Bundle.getLocalizedString(forKey: "all"),
             "Shoes",
             "Boots",
             "Sneakers",
@@ -208,14 +208,14 @@ class SearchFilterViewController: UIViewController {
         ]
         typeCheckBoxesView.updateData(with: colors)
         
-        let headerTitle = frameworkBundle.getLocalizedString(forKey: "type_title")
-        typeCheckBoxesView.setHeaderTitle(headerTitle)
+        typeCheckBoxesView.setHeaderTitle(
+            Bundle.getLocalizedString(forKey: "type_title")
+        )
     }
     
     private func setupMaterialCheckBoxes() {
-        let frameworkBundle = Bundle(for: type(of: self))
         let materials = [
-            frameworkBundle.getLocalizedString(forKey: "all"),
+            Bundle.getLocalizedString(forKey: "all"),
             "Shoes",
             "Boots",
             "Sneakers",
@@ -223,48 +223,31 @@ class SearchFilterViewController: UIViewController {
         ]
         materialCheckBoxesView.updateData(with: materials)
         
-        let headerTitle = frameworkBundle.getLocalizedString(forKey: "material_title")
-        materialCheckBoxesView.setHeaderTitle(headerTitle)
+        materialCheckBoxesView.setHeaderTitle(
+            Bundle.getLocalizedString(forKey: "material_title")
+        )
     }
     
     private func setupRatingTypeCheckBoxes() {
-        let frameworkBundle = Bundle(for: type(of: self))
-        
         let ratings = [
-            frameworkBundle.getLocalizedString(forKey: "all"),
-            frameworkBundle.getLocalizedString(forKey: "rating-5-star"),
-            frameworkBundle.getLocalizedString(forKey: "rating-4-star"),
-            frameworkBundle.getLocalizedString(forKey: "rating-3-star"),
-            frameworkBundle.getLocalizedString(forKey: "rating-2-star"),
-            frameworkBundle.getLocalizedString(forKey: "rating-1-star")
+            Bundle.getLocalizedString(forKey: "all"),
+            Bundle.getLocalizedString(forKey: "rating-5-star"),
+            Bundle.getLocalizedString(forKey: "rating-4-star"),
+            Bundle.getLocalizedString(forKey: "rating-3-star"),
+            Bundle.getLocalizedString(forKey: "rating-2-star"),
+            Bundle.getLocalizedString(forKey: "rating-1-star")
         ]
         
         ratingCheckBoxesView.updateData(with: ratings)
         
-        let headerTitle = frameworkBundle.getLocalizedString(forKey: "rating_title")
-        ratingCheckBoxesView.setHeaderTitle(headerTitle)
+        ratingCheckBoxesView.setHeaderTitle(
+            Bundle.getLocalizedString(forKey: "rating_title")
+        )
     }
     
     private func setupPriceBlock() {
         let currency = searchResults?.first?.currency ?? ""
         filterPickerPriceView.labelText = "Price(\(currency))"
     }
-    
-    private func printFilters() {
-        guard let searchResults = searchResults else {
-            print("No search results available.")
-            return
-        }
-        
-        for result in searchResults {
-            if let filters = result.filters {
-                print("Filters for product \(result.name):")
-                for (filterName, filter) in filters {
-                    print("  \(filterName): \(filter)")
-                }
-            } else {
-                print("No filters for product \(result).")
-            }
-        }
-    }
+
 }

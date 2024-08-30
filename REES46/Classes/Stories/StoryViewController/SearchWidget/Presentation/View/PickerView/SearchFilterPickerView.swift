@@ -6,7 +6,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private let horizontalSpacing: CGFloat = 12
     private let verticalSpacing: CGFloat = 16
     private let containerWidth: CGFloat = 120
-    private var sizes:[Int]
+    private var sizes: [Int] = []
     
     private var minToValue: Int = 1
     
@@ -20,6 +20,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         didSet{
             sizes = listLimit
             pickerView.reloadAllComponents()
+            updateDropdownTitles()
         }
     }
     
@@ -50,13 +51,13 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     }()
     
     private lazy var fromDropdownContainer: UIButton = {
-        let button = createDropdownButton(title: "1")
+        let button = createDropdownButton(title: "")
         button.addTarget(self, action: #selector(fromDropdownContainerTapped), for: .touchUpInside)
         return button
     }()
     
     private lazy var toDropdownContainer: UIButton = {
-        let button = createDropdownButton(title: "50")
+        let button = createDropdownButton(title: "")
         button.addTarget(self, action: #selector(toDropdownContainerTapped), for: .touchUpInside)
         return button
     }()
@@ -66,18 +67,27 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private let pickerViewBackgroundView = UIView()
     
     override init(frame: CGRect) {
-         self.listLimit = Array(1...50)
-         self.sizes = listLimit
+         self.listLimit = []
+        self.sizes = []
          super.init(frame: frame)
          setupView()
      }
      
      required init?(coder: NSCoder) {
-         self.listLimit = Array(1...50)
-         self.sizes = listLimit
+         self.listLimit = []
+        self.sizes = []
          super.init(coder: coder)
          setupView()
+         updateDropdownTitles()
      }
+    
+    private func updateDropdownTitles() {
+        let minValue = sizes.first ?? 0
+        let maxValue = sizes.last ?? 0
+        
+        fromDropdownContainer.setTitle("\(minValue)", for: .normal)
+        toDropdownContainer.setTitle("\(maxValue)", for: .normal)
+    }
     
     private func setupView() {
         backgroundColor = .white
