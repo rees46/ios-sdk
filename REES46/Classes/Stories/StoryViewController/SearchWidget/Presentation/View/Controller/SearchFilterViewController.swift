@@ -49,6 +49,18 @@ class SearchFilterViewController: UIViewController {
         return view
     }()
     
+    private let materialCheckBoxesView: SearchFilterCheckBoxView = {
+        let view = SearchFilterCheckBoxView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private let ratingCheckBoxesView: SearchFilterCheckBoxView = {
+        let view = SearchFilterCheckBoxView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -64,8 +76,13 @@ class SearchFilterViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setSizeList()
+        setPriceList()
         setupColorCheckBoxes()
         setupTypeCheckBoxes()
+        setupMaterialCheckBoxes()
+        setupRatingTypeCheckBoxes()
+        
         setupPriceBlock()
         setupActions()
     }
@@ -81,6 +98,8 @@ class SearchFilterViewController: UIViewController {
         contentView.addSubview(colorCheckBoxesView)
         contentView.addSubview(typeCheckBoxesView)
         contentView.addSubview(filterPickerPriceView)
+        contentView.addSubview(materialCheckBoxesView)
+        contentView.addSubview(ratingCheckBoxesView)
         contentView.addSubview(spacerView)
         
         NSLayoutConstraint.activate([
@@ -124,8 +143,18 @@ class SearchFilterViewController: UIViewController {
             filterPickerPriceView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             filterPickerPriceView.heightAnchor.constraint(equalToConstant: 100),
             
+            // MaterialCheckBoxesView Constraints
+            materialCheckBoxesView.topAnchor.constraint(equalTo: filterPickerPriceView.bottomAnchor),
+            materialCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            materialCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            
+            // RatingCheckBoxesView Constraints
+            ratingCheckBoxesView.topAnchor.constraint(equalTo: materialCheckBoxesView.bottomAnchor, constant: -50),
+            ratingCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            ratingCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            
             // SpacerView Constraints
-            spacerView.topAnchor.constraint(equalTo: filterPickerPriceView.bottomAnchor),
+            spacerView.topAnchor.constraint(equalTo: ratingCheckBoxesView.bottomAnchor),
             spacerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             spacerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             spacerView.heightAnchor.constraint(equalToConstant: 100),
@@ -139,16 +168,81 @@ class SearchFilterViewController: UIViewController {
         }
     }
     
+    private func setSizeList(){
+        filterPickerSizeView.listLimit = Array(1...50)
+    }
+    
+    private func setPriceList(){
+        filterPickerPriceView.listLimit = Array(1...1000000)
+    }
+    
     private func setupColorCheckBoxes() {
-        let colors = ["All","Black", "White", "Red", "Blue", "Yellow", "Green", "Purple", "Orange", "Pink", "Brown"]
+        let frameworkBundle = Bundle(for: type(of: self))
+        let colors = [
+            frameworkBundle.getLocalizedString(forKey: "all"),
+            "Black",
+            "White",
+            "Red",
+            "Blue",
+            "Yellow",
+            "Green",
+            "Purple",
+            "Orange",
+            "Pink",
+            "Brown"
+        ]
         colorCheckBoxesView.updateData(with: colors)
-        colorCheckBoxesView.setHeaderTitle("Color")
+        
+        let headerTitle = frameworkBundle.getLocalizedString(forKey: "color_title")
+        colorCheckBoxesView.setHeaderTitle(headerTitle)
     }
     
     private func setupTypeCheckBoxes() {
-        let colors = ["All", "Shoes", "Boots", "Sneakers", "Sandals"]
+        let frameworkBundle = Bundle(for: type(of: self))
+        let colors = [
+            frameworkBundle.getLocalizedString(forKey: "all"),
+            "Shoes",
+            "Boots",
+            "Sneakers",
+            "Sandals"
+        ]
         typeCheckBoxesView.updateData(with: colors)
-        typeCheckBoxesView.setHeaderTitle("Type")
+        
+        let headerTitle = frameworkBundle.getLocalizedString(forKey: "type_title")
+        typeCheckBoxesView.setHeaderTitle(headerTitle)
+    }
+    
+    private func setupMaterialCheckBoxes() {
+        let frameworkBundle = Bundle(for: type(of: self))
+        let materials = [
+            frameworkBundle.getLocalizedString(forKey: "all"),
+            "Shoes",
+            "Boots",
+            "Sneakers",
+            "Sandals"
+        ]
+        materialCheckBoxesView.updateData(with: materials)
+        
+        let headerTitle = frameworkBundle.getLocalizedString(forKey: "material_title")
+        materialCheckBoxesView.setHeaderTitle(headerTitle)
+    }
+    
+    private func setupRatingTypeCheckBoxes() {
+        let frameworkBundle = Bundle(for: type(of: self))
+        
+        let ratings = [
+            frameworkBundle.getLocalizedString(forKey: "all"),
+            frameworkBundle.getLocalizedString(forKey: "rating-5-star"),
+            frameworkBundle.getLocalizedString(forKey: "rating-4-star"),
+            frameworkBundle.getLocalizedString(forKey: "rating-3-star"),
+            frameworkBundle.getLocalizedString(forKey: "rating-2-star"),
+            frameworkBundle.getLocalizedString(forKey: "rating-1-star")
+        ]
+        
+        ratingCheckBoxesView.updateData(with: ratings)
+        
+        let headerTitle = frameworkBundle.getLocalizedString(forKey: "rating_title")
+        ratingCheckBoxesView.setHeaderTitle(headerTitle)
     }
     
     private func setupPriceBlock() {

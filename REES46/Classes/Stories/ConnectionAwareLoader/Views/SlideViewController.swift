@@ -18,6 +18,7 @@ public class SlideViewController: UIViewController, SlideView {
         static let reloadIconName = "iconReload"
         static let messageKey = "error_message_failed_to_load"
         static let errorMessageComment = "Error message for failed data loading"
+        static let titleKey = "all"
     }
     
     init(imageLoader: ImageLoadingProtocol) {

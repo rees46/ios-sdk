@@ -6,13 +6,20 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private let horizontalSpacing: CGFloat = 12
     private let verticalSpacing: CGFloat = 16
     private let containerWidth: CGFloat = 120
-    private let sizes = Array(1...50)
+    private var sizes:[Int]
     
     private var minToValue: Int = 1
     
     public var labelText: String? {
         didSet {
             subTitleLabel.text = labelText
+        }
+    }
+    
+    public var listLimit:[Int]{
+        didSet{
+            sizes = listLimit
+            pickerView.reloadAllComponents()
         }
     }
     
@@ -59,14 +66,19 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private let pickerViewBackgroundView = UIView()
     
     override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
+         self.listLimit = Array(1...50)
+         self.sizes = listLimit
+         super.init(frame: frame)
+         setupView()
+     }
+     
+     required init?(coder: NSCoder) {
+         self.listLimit = Array(1...50)
+         self.sizes = listLimit
+         super.init(coder: coder)
+         setupView()
+     }
     
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupView()
-    }
     private func setupView() {
         backgroundColor = .white
         

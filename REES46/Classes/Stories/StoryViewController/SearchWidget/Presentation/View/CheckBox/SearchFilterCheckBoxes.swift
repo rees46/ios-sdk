@@ -125,7 +125,6 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             showMoreContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             showMoreContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
             showMoreContainer.heightAnchor.constraint(equalToConstant: 44),
-            showMoreContainer.widthAnchor.constraint(equalToConstant: 150)
         ])
         
         NSLayoutConstraint.activate([
@@ -145,6 +144,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         let frameworkBundle = Bundle(for: type(of: self))
         let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         arrowImageView.image = arrowImage
+        arrowImageView.tintColor = .clear
     }
     
     private func updateCollectionViewHeight() {
