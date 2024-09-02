@@ -101,19 +101,18 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     private func setupLabelConstraints() {
         colorLabel.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            colorLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            colorLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
-            colorLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            colorLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            colorLabel.topAnchor.constraint(equalTo: topAnchor),
+            colorLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
     }
     
     private func setupCollectionViewConstraints() {
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionViewHeightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 0)
         NSLayoutConstraint.activate([
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 16),
+            collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 0),
             collectionViewHeightConstraint!,
             collectionView.bottomAnchor.constraint(equalTo: showMoreContainer.topAnchor, constant: -8)
         ])
@@ -121,8 +120,8 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     private func setupShowMoreContainerConstraints() {
         NSLayoutConstraint.activate([
-            showMoreContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            showMoreContainer.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            showMoreContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
+            showMoreContainer.trailingAnchor.constraint(equalTo: trailingAnchor),
             showMoreContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
             showMoreContainer.heightAnchor.constraint(equalToConstant: 44),
         ])
@@ -188,7 +187,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = collectionView.bounds.width - 32
+        let width = collectionView.bounds.width
         return CGSize(width: width, height: 24)
     }
     

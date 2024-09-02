@@ -11,7 +11,10 @@ class SearchFilterActionButtons: UIView {
     
     private let resetButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Reset", for: .normal)
+        button.setTitle(
+            Bundle.getLocalizedString(forKey: "button_reset_title"),
+            for: .normal
+        )
         button.setTitleColor(.black, for: .normal)
         button.backgroundColor = .white
         button.layer.cornerRadius = 16
@@ -24,7 +27,10 @@ class SearchFilterActionButtons: UIView {
     
     private let showButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("Show", for: .normal)
+        button.setTitle(
+            String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), "count"), //TODO add result count
+            for: .normal
+        )
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .black
         button.layer.cornerRadius = 16

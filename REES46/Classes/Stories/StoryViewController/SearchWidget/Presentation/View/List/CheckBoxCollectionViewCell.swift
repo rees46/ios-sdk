@@ -75,7 +75,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
     
     @objc private func toggleCheckBox() {
         isChecked.toggle()
-        // Передайте обновленное состояние чекбокса обратно в контроллер, если нужно
+        // TODO Передать обновленное состояние чекбокса обратно в контроллер
     }
     
     private func updateCheckBoxAppearance() {

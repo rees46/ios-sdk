@@ -143,7 +143,14 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
             self?.showProgress(isShow: false)
             
             switch response {
+                
             case let .success(response):
+                // Логирование фильтров, полученных в ответе
+                          if let filters = response.filters {
+                              print("Received Filters: \(filters)")
+                          } else {
+                              print("No filters received")
+                          }
                 let searchResults = response.products.map {
                     SearchResult(
                         id: $0.id,
