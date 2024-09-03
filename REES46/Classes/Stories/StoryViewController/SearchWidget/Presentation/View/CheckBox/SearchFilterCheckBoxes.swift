@@ -36,7 +36,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     private let showMoreContainer: UIStackView = {
         let stackView = UIStackView()
-        stackView.axis = .horizontal
+        stackView.axis = .vertical
         stackView.spacing = 8
         stackView.alignment = .center
         stackView.translatesAutoresizingMaskIntoConstraints = false
@@ -84,6 +84,9 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         self.colors = colors
         collectionView.reloadData()
         updateCollectionViewHeight()
+        
+        collectionView.collectionViewLayout.invalidateLayout()
+        collectionView.setNeedsLayout()
         
         if colors.count > defaultItemCount {
             let hiddenCount = colors.count - defaultItemCount
@@ -153,6 +156,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         let totalHeight = (itemHeight + spacing) * CGFloat(itemCount)
         
         collectionViewHeightConstraint?.constant = totalHeight + 20
+        collectionView.layoutIfNeeded()
         layoutIfNeeded()
     }
     

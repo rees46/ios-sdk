@@ -101,7 +101,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         let defaultTopSpacing: CGFloat = 16
         let defaultSpacing: CGFloat = 16
 
-        // Добавляем сначала размер
         if let sizePickerView = setupSizePickerView() {
             contentView.addSubview(sizePickerView)
             NSLayoutConstraint.activate([
@@ -113,7 +112,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
             previousView = sizePickerView
         }
         
-        // Затем добавляем чекбоксы фильтров
         for (filterTitle, filter) in filters {
             print("Received Filter: \(filterTitle), Values: \(filter.values)")
             let checkBoxView = createCheckBoxView(withTitle: filterTitle, values: filter.values.map { $0.key })
@@ -133,7 +131,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
             previousView = checkBoxView
         }
         
-        // Добавляем цену
         if let pricePickerView = setupPricePickerView() {
             contentView.addSubview(pricePickerView)
             NSLayoutConstraint.activate([
@@ -145,14 +142,12 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
             previousView = pricePickerView
         }
         
-        // В конце добавляем рейтинг
         if let ratingCheckBoxesView = setupRatingTypeCheckBoxes() {
             contentView.addSubview(ratingCheckBoxesView)
             
             NSLayoutConstraint.activate([
-                ratingCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                ratingCheckBoxesView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
                 ratingCheckBoxesView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                ratingCheckBoxesView.heightAnchor.constraint(equalToConstant: 100),
                 ratingCheckBoxesView.topAnchor.constraint(equalTo: previousView?.bottomAnchor ?? contentView.topAnchor, constant: defaultSpacing),
                 ratingCheckBoxesView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
             ])
