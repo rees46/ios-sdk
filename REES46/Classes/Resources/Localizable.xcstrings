@@ -256,6 +256,9 @@
         }
       }
     },
+    "Key 1" : {
+      "extractionState" : "manual"
+    },
     "leather_key" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -677,6 +680,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Тип"
+          }
+        }
+      }
+    },
+    "view_all_button_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View all (%@)"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Показать все (%@)"
           }
         }
       }

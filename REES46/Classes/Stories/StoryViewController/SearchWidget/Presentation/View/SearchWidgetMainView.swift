@@ -258,23 +258,25 @@ open class SearchWidgetMainView: UIView {
         showAllButton?.titleLabel?.font = UIFont.systemFont(ofSize: 14)
         showAllButton?.setTitleColor(UIColor.sdkDefaultBlackColor, for: .normal)
         showAllButton?.setTitleColor(UIColor.lightGray, for: .highlighted)
-        
+
         showAllButton?.layer.cornerRadius = 6
         showAllButton?.layer.borderWidth = 1.4
         showAllButton?.layer.masksToBounds = true
         showAllButton?.layer.borderColor = UIColor.sdkDefaultBlackColor.cgColor
-        
+
         showAllButton?.addTarget(self, action: #selector(showAllButtonClicked), for: .touchUpInside)
         showAllButton?.translatesAutoresizingMaskIntoConstraints = false
-        
+
         self.addSubview(showAllButton!)
-        
+
         NSLayoutConstraint.activate([
             showAllButton!.bottomAnchor.constraint(equalTo: self.safeAreaLayoutGuide.bottomAnchor, constant: -70),
             showAllButton!.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: margin),
             showAllButton!.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -margin),
             showAllButton!.heightAnchor.constraint(equalToConstant: 42)
         ])
+        
+        showAllButton.isHidden = true
     }
     
     private func updateScrollView(_ scrollView: UIScrollView) {
@@ -288,15 +290,18 @@ open class SearchWidgetMainView: UIView {
             self.searchResultsView.updateResults(results)
             self.searchResultsView.isHidden = results.isEmpty
             self.updateShowAllButton(withCount: results.isEmpty ? nil : results.count)
+            
+            self.showAllButton.isHidden = results.isEmpty
         }
     }
     
     open func updateShowAllButton(withCount count: Int?) {
         DispatchQueue.main.async {
             if let count = count, count > 0 {
-                self.showAllButton?.setTitle("View all (\(count))", for: .normal)
-            } else {
-                self.showAllButton?.setTitle("View all", for: .normal)
+                self.showAllButton?.setTitle(
+                    String(format: Bundle.getLocalizedString(forKey: "view_all_button_title", comment: ""), "\(count)"),
+                    for: .normal
+                )
             }
         }
     }
