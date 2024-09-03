@@ -104,27 +104,33 @@ class SearchResultHeaderView: UIView {
             right: iconSize
         )
         
-        NSLayoutConstraint.activate(
-            [
-                backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-                backButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-                backButton.widthAnchor.constraint(equalToConstant: iconSize),
-                backButton.heightAnchor.constraint(equalToConstant: iconSize),
-                
-                titleLabel.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 16),
-                titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-                
-                filterButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -16),
-                filterButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-                filterButton.widthAnchor.constraint(equalToConstant: iconSize),
-                filterButton.heightAnchor.constraint(equalToConstant: iconSize),
-                
-                closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-                closeButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-                closeButton.widthAnchor.constraint(equalToConstant: iconSize),
-                closeButton.heightAnchor.constraint(equalToConstant: iconSize),
-            ]
-        )
+        NSLayoutConstraint.activate([
+            // Back Button
+            backButton.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            backButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: iconSize),
+            backButton.heightAnchor.constraint(equalToConstant: iconSize),
+            
+            // Title Label
+            titleLabel.leadingAnchor.constraint(equalTo: backButton.trailingAnchor, constant: 16),
+            titleLabel.topAnchor.constraint(equalTo: topAnchor, constant: 16),
+            
+            // Filter Button
+            filterButton.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -16),
+            filterButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            filterButton.widthAnchor.constraint(equalToConstant: iconSize),
+            filterButton.heightAnchor.constraint(equalToConstant: iconSize),
+            
+            // Close Button
+            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            closeButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: iconSize),
+            closeButton.heightAnchor.constraint(equalToConstant: iconSize),
+            
+            // Bottom Constraint for Title Label
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: filterButton.leadingAnchor, constant: -16),
+            titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16)
+        ])
     }
     
     @objc private func backButtonTapped() {

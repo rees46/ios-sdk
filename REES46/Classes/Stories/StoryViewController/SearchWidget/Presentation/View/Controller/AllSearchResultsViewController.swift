@@ -44,7 +44,7 @@ class AllSearchResultsViewController: UIViewController {
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: 160),
             
-            resultsListView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
+            resultsListView.topAnchor.constraint(equalTo: headerView.bottomAnchor,constant: -50),
             resultsListView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             resultsListView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             resultsListView.bottomAnchor.constraint(equalTo: view.bottomAnchor)

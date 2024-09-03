@@ -1,10 +1,5 @@
 import UIKit
 
-protocol SearchFilterActionButtonsDelegate: AnyObject {
-    func didTapResetButton()
-    func didTapShowButton()
-}
-
 class SearchFilterActionButtons: UIView {
     
     weak var delegate: SearchFilterActionButtonsDelegate?

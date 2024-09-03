@@ -1,6 +1,6 @@
 import UIKit
 
-class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDelegate {
+class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDelegate{
     
     public var sdk: PersonalizationSDK?
     public var searchResults: [SearchResult]? {
@@ -100,7 +100,7 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         var previousView: UIView? = nil
         let defaultTopSpacing: CGFloat = 16
         let defaultSpacing: CGFloat = 16
-
+        
         if let sizePickerView = setupSizePickerView() {
             contentView.addSubview(sizePickerView)
             NSLayoutConstraint.activate([
@@ -113,7 +113,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         }
         
         for (filterTitle, filter) in filters {
-            print("Received Filter: \(filterTitle), Values: \(filter.values)")
             let checkBoxView = createCheckBoxView(withTitle: filterTitle, values: filter.values.map { $0.key })
             contentView.addSubview(checkBoxView)
             
@@ -161,7 +160,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         checkBoxView.translatesAutoresizingMaskIntoConstraints = false
         checkBoxView.setHeaderTitle(title)
         checkBoxView.updateData(with: values)
-        print("Created CheckBoxView for \(title) with values: \(values)")
         return checkBoxView
     }
     
@@ -194,12 +192,15 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         ratingCheckBoxesView.setHeaderTitle(Bundle.getLocalizedString(forKey: "rating_title"))
         ratingCheckBoxesView.updateData(with: ratings)
         
-        print("Created Rating CheckBoxes View with values: \(ratings)")
         return ratingCheckBoxesView
     }
     
     private func setupActions() {
         actionButtons.delegate = self
+        headerView.onCloseButtonTapped = { [weak self] in
+            print("Close button tapped")
+            self?.dismiss(animated: true, completion: nil)
+        }
     }
     
     func didTapResetButton() {

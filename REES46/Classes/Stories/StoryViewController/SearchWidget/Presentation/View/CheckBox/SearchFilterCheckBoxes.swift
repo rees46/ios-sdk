@@ -9,6 +9,12 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         return label
     }()
     
+    private let spacerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
@@ -50,24 +56,26 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     private var collectionViewHeightConstraint: NSLayoutConstraint?
     
     override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
-    
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupView()
-    }
-    
-    private func setupView() {
-        addSubview(colorLabel)
-        addSubview(collectionView)
-        addSubview(showMoreContainer)
+         super.init(frame: frame)
+         setupView()
+     }
+     
+     required init?(coder: NSCoder) {
+         super.init(coder: coder)
+         setupView()
+     }
+     
+     private func setupView() {
+         addSubview(colorLabel)
+         addSubview(spacerView)
+         addSubview(collectionView)
+         addSubview(showMoreContainer)
         
         showMoreContainer.addArrangedSubview(selectAllButton)
         showMoreContainer.addArrangedSubview(arrowImageView)
         
         setupLabelConstraints()
+         setupSpacerViewConstraints()
         setupCollectionViewConstraints()
         setupShowMoreContainerConstraints()
         
@@ -78,6 +86,15 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         selectAllButton.addTarget(self, action: #selector(showMoreButtonTapped), for: .touchUpInside)
         
         updateArrowImageView()
+    }
+    
+    private func setupSpacerViewConstraints() {
+        NSLayoutConstraint.activate([
+            spacerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            spacerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            spacerView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor),
+            spacerView.heightAnchor.constraint(equalToConstant: 16)
+        ])
     }
     
     func updateData(with colors: [String]) {
@@ -115,7 +132,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         NSLayoutConstraint.activate([
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            collectionView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor, constant: 0),
+            collectionView.topAnchor.constraint(equalTo: spacerView.bottomAnchor),
             collectionViewHeightConstraint!,
             collectionView.bottomAnchor.constraint(equalTo: showMoreContainer.topAnchor, constant: -8)
         ])
@@ -125,15 +142,10 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         NSLayoutConstraint.activate([
             showMoreContainer.leadingAnchor.constraint(equalTo: leadingAnchor),
             showMoreContainer.trailingAnchor.constraint(equalTo: trailingAnchor),
-            showMoreContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -16),
-            showMoreContainer.heightAnchor.constraint(equalToConstant: 44),
+            showMoreContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0),
+            showMoreContainer.heightAnchor.constraint(equalToConstant: 20),
         ])
-        
-        NSLayoutConstraint.activate([
-            arrowImageView.widthAnchor.constraint(equalToConstant: 16),
-            arrowImageView.heightAnchor.constraint(equalToConstant: 16)
-        ])
-        
+
         NSLayoutConstraint.activate([
             selectAllButton.leadingAnchor.constraint(equalTo: showMoreContainer.leadingAnchor),
             selectAllButton.trailingAnchor.constraint(equalTo: arrowImageView.leadingAnchor, constant: -8),
