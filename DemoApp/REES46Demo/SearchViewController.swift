@@ -82,9 +82,9 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     }
     
     func sdkSearchWidgetHistoryButtonClicked(productText: String) {
-         self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField.text = productText
-         self.sdkSearchWidgetTextFieldTextChanged(self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField)
-     }
+        self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField.text = productText
+        self.sdkSearchWidgetTextFieldTextChanged(self.sdkSearchWidgetTextFieldView.sdkSearchWidgetTextField)
+    }
     
     func searchWidgetCategoriesButtonClicked(productText: String) {
         performSearch(query: productText)
@@ -110,7 +110,9 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
     func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let sModel = self.sdkSearchWidgetView.sdkSearchWidgetListView.searchResultDatabase[indexPath.row] as? MainSearchModel, let kValue = sModel.key {
             self.sdkSearchWidgetView.sdkSearchWidgetListView.sdkSearchWidgetListViewDelegate?.sdkSearchWidgetListViewClicked(productKey: kValue)
-            self.sdkSearchWidgetView.sdkSearchWidgetListView.sdkSearchWidgetListViewDelegate?.sdkSearchWidgetListViewClicked(object: self.sdkSearchWidgetView.sdkSearchWidgetListView.database[indexPath.row])
+            self.sdkSearchWidgetView.sdkSearchWidgetListView.sdkSearchWidgetListViewDelegate?.sdkSearchWidgetListViewClicked(
+                object: self.sdkSearchWidgetView.sdkSearchWidgetListView.database[indexPath.row]
+            )
             self.sdkSearchWidgetView.sdkSearchWidgetListView.sdkSearchWidget.appendSearchHistories(value: kValue)
         }
     }
@@ -145,12 +147,11 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
             switch response {
                 
             case let .success(response):
-                // Логирование фильтров, полученных в ответе
-                          if let filters = response.filters {
-                              print("Received Filters: \(filters)")
-                          } else {
-                              print("No filters received")
-                          }
+                if let filters = response.filters {
+                    print("Received Filters: \(filters)")
+                } else {
+                    print("No filters received")
+                }
                 let searchResults = response.products.map {
                     SearchResult(
                         id: $0.id,

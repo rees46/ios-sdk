@@ -2,6 +2,8 @@ import UIKit
 
 class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
+    weak var delegate: SearchFilterCheckBoxViewDelegate?
+    
     private let colorLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
@@ -215,5 +217,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             selectedColors.insert(color)
         }
         collectionView.reloadItems(at: [indexPath])
+        
+        delegate?.searchFilterCheckBoxView(self, didUpdateSelectedColors: selectedColors)
     }
 }

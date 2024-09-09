@@ -2,6 +2,8 @@ import UIKit
 
 class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSource {
     
+    weak var delegate: SearchFilterPickerViewDelegate?
+    
     private let dropdownHeight: CGFloat = 34
     private let horizontalSpacing: CGFloat = 12
     private let verticalSpacing: CGFloat = 16
@@ -9,6 +11,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     private var sizes: [Int] = []
     
     private var minToValue: Int = 1
+    private var maxToValue: Int = 1
     
     public var labelText: String? {
         didSet {
@@ -87,8 +90,8 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         let minValue = sizes.first ?? 0
         let maxValue = sizes.last ?? 0
         
-        fromTextField.text = "\(minValue)"
-        toTextField.text = "\(maxValue)"
+        fromTextField.text = "\(minToValue)"
+        toTextField.text = "\(maxToValue)"
     }
     
     private func setupView() {
@@ -164,26 +167,40 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     @objc private func fromTextFieldEditingChanged(_ textField: UITextField) {
         if let text = textField.text, let value = Int(text) {
             minToValue = value
+            if minToValue > maxToValue {
+                maxToValue = minToValue
+                toTextField.text = "\(maxToValue)"
+            }
             updateDropdownButton(fromTextField, with: text)
         }
+        delegate?.searchFilterPickerView(self, didUpdateFromValue: minToValue, toValue: maxToValue)
     }
     
     @objc private func toTextFieldEditingChanged(_ textField: UITextField) {
-        if let text = textField.text {
+        if let text = textField.text, let value = Int(text) {
+            maxToValue = value
+            if maxToValue < minToValue {
+                minToValue = maxToValue
+                fromTextField.text = "\(minToValue)"
+            }
             updateDropdownButton(toTextField, with: text)
         }
+        delegate?.searchFilterPickerView(self, didUpdateFromValue: minToValue, toValue: maxToValue)
     }
     
     private func updateDropdownButton(_ textField: UITextField?, with text: String) {
         textField?.text = text
         if textField == fromTextField {
             minToValue = Int(text) ?? 1
+        } else {
+            maxToValue = Int(text) ?? 1
         }
     }
     
     private func togglePickerView(for textField: UITextField) {
-        let pickerVC = PickerViewController()
+        activeTextField = textField
         
+        let pickerVC = PickerViewController()
         pickerVC.modalPresentationStyle = .overCurrentContext
         pickerVC.modalTransitionStyle = .crossDissolve
         
