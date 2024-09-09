@@ -61,6 +61,7 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         view.addSubview(headerView)
         view.addSubview(scrollView)
         view.addSubview(actionButtons)
+        
         scrollView.addSubview(contentView)
         
         NSLayoutConstraint.activate([
@@ -165,7 +166,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
     
     private func setupSizePickerView() -> SearchFilterPickerView? {
         filterPickerSizeView.labelText = Bundle.getLocalizedString(forKey: "size_key", comment: "")
-        filterPickerSizeView.listLimit = Array(1...50)
         return filterPickerSizeView
     }
     
@@ -173,7 +173,6 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         let currency = searchResults?.first?.currency ?? ""
         let localizedPriceLabelText = String(format: Bundle.getLocalizedString(forKey: "price_key", comment: ""), currency)
         filterPickerPriceView.labelText = localizedPriceLabelText
-        filterPickerPriceView.listLimit = Array(1...1000000)
         return filterPickerPriceView
     }
     

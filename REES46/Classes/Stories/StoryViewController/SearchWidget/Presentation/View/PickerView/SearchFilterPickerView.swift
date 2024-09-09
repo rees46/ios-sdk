@@ -16,8 +16,8 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         }
     }
     
-    public var listLimit:[Int]{
-        didSet{
+    public var listLimit: [Int] {
+        didSet {
             sizes = listLimit
             pickerView.reloadAllComponents()
             updateDropdownTitles()
@@ -26,7 +26,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private let subTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = Bundle.getLocalizedString(forKey:"size_key")
+        label.text = Bundle.getLocalizedString(forKey: "size_key")
         label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = UIColor.black
         return label
@@ -34,7 +34,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private lazy var fromLabel: UILabel = {
         let label = UILabel()
-        label.text = Bundle.getLocalizedString(forKey:"from_key")
+        label.text = Bundle.getLocalizedString(forKey: "from_key")
         label.font = UIFont.systemFont(ofSize: 16, weight: .regular)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -43,26 +43,28 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private lazy var toLabel: UILabel = {
         let label = UILabel()
-        label.text = Bundle.getLocalizedString(forKey:"to_key")
+        label.text = Bundle.getLocalizedString(forKey: "to_key")
         label.font = UIFont.systemFont(ofSize: 16, weight: .regular)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private lazy var fromDropdownContainer: UIButton = {
-        let button = createDropdownButton(title: "")
-        button.addTarget(self, action: #selector(fromDropdownContainerTapped), for: .touchUpInside)
-        return button
+    private lazy var fromTextField: UITextField = {
+        let textField = createTextField()
+        textField.placeholder = "From"
+        textField.addTarget(self, action: #selector(fromTextFieldEditingChanged), for: .editingChanged)
+        return textField
     }()
     
-    private lazy var toDropdownContainer: UIButton = {
-        let button = createDropdownButton(title: "")
-        button.addTarget(self, action: #selector(toDropdownContainerTapped), for: .touchUpInside)
-        return button
+    private lazy var toTextField: UITextField = {
+        let textField = createTextField()
+        textField.placeholder = "To"
+        textField.addTarget(self, action: #selector(toTextFieldEditingChanged), for: .editingChanged)
+        return textField
     }()
     
-    private var activeButton: UIButton?
+    private var activeTextField: UITextField?
     private let pickerView = UIPickerView()
     private let pickerViewBackgroundView = UIView()
     
@@ -85,8 +87,8 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         let minValue = sizes.first ?? 0
         let maxValue = sizes.last ?? 0
         
-        fromDropdownContainer.setTitle("\(minValue)", for: .normal)
-        toDropdownContainer.setTitle("\(maxValue)", for: .normal)
+        fromTextField.text = "\(minValue)"
+        toTextField.text = "\(maxValue)"
     }
     
     private func setupView() {
@@ -106,7 +108,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         
         pickerViewBackgroundView.addSubview(pickerView)
         
-        let filterContainer = UIStackView(arrangedSubviews: [fromLabel, fromDropdownContainer, toLabel, toDropdownContainer])
+        let filterContainer = UIStackView(arrangedSubviews: [fromLabel, fromTextField, toLabel, toTextField])
         filterContainer.axis = .horizontal
         filterContainer.spacing = horizontalSpacing
         filterContainer.distribution = .equalSpacing
@@ -131,10 +133,11 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
             filterContainer.topAnchor.constraint(equalTo: subTitleLabel.bottomAnchor, constant: 16),
             filterContainer.heightAnchor.constraint(equalToConstant: dropdownHeight),
             
-            fromDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
-            toDropdownContainer.widthAnchor.constraint(equalToConstant: containerWidth),
+            fromTextField.widthAnchor.constraint(equalToConstant: containerWidth),
+            toTextField.widthAnchor.constraint(equalToConstant: containerWidth),
         ])
     }
+    
     private func setupPickerViewConstraints() {
         pickerView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -150,50 +153,42 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         ])
     }
     
-    private func createDropdownButton(title: String) -> UIButton {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = .white
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.gray.cgColor
-        button.layer.cornerRadius = 4
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(title, for: .normal)
-        button.setTitleColor(.black, for: .normal)
-        button.contentHorizontalAlignment = .left
-        button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 0)
-        
-        let arrow = UIImageView(image: UIImage(named: "IconClosed"))
-        arrow.tintColor = .black
-        arrow.translatesAutoresizingMaskIntoConstraints = false
-        button.addSubview(arrow)
-        
-        NSLayoutConstraint.activate([
-            arrow.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -10),
-            arrow.centerYAnchor.constraint(equalTo: button.centerYAnchor)
-        ])
-        
-        return button
+    private func createTextField() -> UITextField {
+        let textField = UITextField()
+        textField.borderStyle = .roundedRect
+        textField.keyboardType = .numberPad
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        return textField
     }
     
-    @objc private func fromDropdownContainerTapped() {
-        togglePickerView(for: fromDropdownContainer)
-    }
-    
-    @objc private func toDropdownContainerTapped() {
-        if let fromValue = Int(fromDropdownContainer.title(for: .normal) ?? "1") {
-            minToValue = fromValue
+    @objc private func fromTextFieldEditingChanged(_ textField: UITextField) {
+        if let text = textField.text, let value = Int(text) {
+            minToValue = value
+            updateDropdownButton(fromTextField, with: text)
         }
-        togglePickerView(for: toDropdownContainer)
     }
     
-    private func togglePickerView(for button: UIButton) {
+    @objc private func toTextFieldEditingChanged(_ textField: UITextField) {
+        if let text = textField.text {
+            updateDropdownButton(toTextField, with: text)
+        }
+    }
+    
+    private func updateDropdownButton(_ textField: UITextField?, with text: String) {
+        textField?.text = text
+        if textField == fromTextField {
+            minToValue = Int(text) ?? 1
+        }
+    }
+    
+    private func togglePickerView(for textField: UITextField) {
         let pickerVC = PickerViewController()
         
         pickerVC.modalPresentationStyle = .overCurrentContext
         pickerVC.modalTransitionStyle = .crossDissolve
         
         pickerVC.didSelectValue = { [weak self] selectedValue in
-            self?.updateDropdownButton(button, with: "\(selectedValue)")
+            self?.updateDropdownButton(textField, with: "\(selectedValue)")
         }
         
         if let viewController = self.parentViewController {
@@ -203,7 +198,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     private func hidePickerView() {
         pickerViewBackgroundView.isHidden = true
-        activeButton = nil
+        activeTextField = nil
     }
     
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
@@ -211,7 +206,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     }
     
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        if activeButton == toDropdownContainer {
+        if activeTextField == toTextField {
             return sizes.filter { $0 >= minToValue }.count
         }
         return sizes.count
@@ -219,7 +214,7 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     func pickerView(_ pickerView: UIPickerView, viewForRow row: Int, forComponent component: Int, reusing view: UIView?) -> UIView {
         let label = UILabel()
-        if activeButton == toDropdownContainer {
+        if activeTextField == toTextField {
             label.text = "\(sizes.filter { $0 >= minToValue }[row])"
         } else {
             label.text = "\(sizes[row])"
@@ -230,20 +225,12 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
     
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
         var selectedValue = ""
-        if activeButton == toDropdownContainer {
+        if activeTextField == toTextField {
             selectedValue = "\(sizes.filter { $0 >= minToValue }[row])"
         } else {
             selectedValue = "\(sizes[row])"
         }
-        updateDropdownButton(activeButton, with: selectedValue)
+        updateDropdownButton(activeTextField, with: selectedValue)
         hidePickerView()
-    }
-    
-    private func updateDropdownButton(_ button: UIButton?, with title: String) {
-        button?.setTitle(title, for: .normal)
-        if button == fromDropdownContainer {
-            minToValue = Int(title) ?? 1
-            toDropdownContainer.setTitle("\(minToValue)", for: .normal)
-        }
     }
 }
