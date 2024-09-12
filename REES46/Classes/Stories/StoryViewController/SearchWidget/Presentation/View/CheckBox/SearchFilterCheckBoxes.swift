@@ -1,5 +1,6 @@
 import UIKit
 
+
 class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     
     weak var delegate: SearchFilterCheckBoxViewDelegate?
@@ -57,27 +58,33 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     private let defaultItemCount = 5
     private var collectionViewHeightConstraint: NSLayoutConstraint?
     
+    var headerTitle: String? {
+        didSet {
+            colorLabel.text = headerTitle
+        }
+    }
+    
     override init(frame: CGRect) {
-         super.init(frame: frame)
-         setupView()
-     }
-     
-     required init?(coder: NSCoder) {
-         super.init(coder: coder)
-         setupView()
-     }
-     
-     private func setupView() {
-         addSubview(colorLabel)
-         addSubview(spacerView)
-         addSubview(collectionView)
-         addSubview(showMoreContainer)
+        super.init(frame: frame)
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupView()
+    }
+    
+    private func setupView() {
+        addSubview(colorLabel)
+        addSubview(spacerView)
+        addSubview(collectionView)
+        addSubview(showMoreContainer)
         
         showMoreContainer.addArrangedSubview(selectAllButton)
         showMoreContainer.addArrangedSubview(arrowImageView)
         
         setupLabelConstraints()
-         setupSpacerViewConstraints()
+        setupSpacerViewConstraints()
         setupCollectionViewConstraints()
         setupShowMoreContainerConstraints()
         
@@ -117,7 +124,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     func setHeaderTitle(_ title: String) {
-        colorLabel.text = title
+        headerTitle = title
     }
     
     private func setupLabelConstraints() {
@@ -218,6 +225,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         }
         collectionView.reloadItems(at: [indexPath])
         
+        print("SELECTED CHECK BOX \(selectedColors)")
         delegate?.searchFilterCheckBoxView(self, didUpdateSelectedColors: selectedColors)
     }
 }

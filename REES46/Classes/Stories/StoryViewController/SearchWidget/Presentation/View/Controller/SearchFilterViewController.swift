@@ -1,8 +1,14 @@
 import UIKit
 
-class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDelegate{
+class SearchFilterViewController:
+    UIViewController,
+    SearchFilterActionButtonsDelegate,
+    CheckBoxCollectionViewCellDelegate,
+    SearchFilterPickerViewDelegate
+{
     
     public var sdk: PersonalizationSDK?
+    
     public var searchResults: [SearchResult]? {
         didSet {
             if let count = searchResults?.count {
@@ -11,6 +17,9 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
             }
         }
     }
+    
+    private var selectedTypes: Set<String> = []
+    private var selectedFilters: [String: Any] = [:]
     
     private let headerView: SearchFilterHeaderView = {
         let view = SearchFilterHeaderView()
@@ -53,6 +62,8 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
         setupUI()
         setupActions()
         actionButtons.delegate = self
+        filterPickerSizeView.delegate = self
+        filterPickerPriceView.delegate = self
     }
     
     private func setupUI() {
@@ -204,9 +215,45 @@ class SearchFilterViewController: UIViewController, SearchFilterActionButtonsDel
     
     func didTapResetButton() {
         print("Reset button tapped")
+        selectedFilters.removeAll()
+        // Notify delegate or update UI to reflect reset
     }
     
     func didTapShowButton() {
         print("Show button tapped")
+        performSearch(with: selectedFilters)
+    }
+    
+    func searchFilterPickerView(_ pickerView: SearchFilterPickerView, didUpdateFromValue fromValue: Int, toValue: Int) {
+        let key = pickerView == filterPickerSizeView ? "size" : "price"
+        selectedFilters[key] = ["from": fromValue, "to": toValue]
+    }
+    
+    func checkBoxCell(_ cell: CheckBoxCollectionViewCell, didChangeState isChecked: Bool, for type: String) {
+        print("FILTERS \(type)")
+         if isChecked {
+             selectedTypes.insert(type)
+         } else {
+             selectedTypes.remove(type)
+         }
+         
+         selectedFilters["type"] = Array(selectedTypes)
+         
+         performSearch(with: selectedFilters)
+     }
+    
+    private func performSearch(with filters: [String: Any]) {
+        print("FILTERS \(filters)")
+//        guard let query = searchResults?.first?.name else { return } // Assuming a query is needed
+       sdk?.search(query: "toys", filters: filters) { response in
+            switch response {
+            case .success(let searchResponse):
+                // Handle success
+                print("Search results: \(searchResponse)")
+            case .failure(let error):
+                // Handle error
+                print("Search error: \(error)")
+            }
+        }
     }
 }

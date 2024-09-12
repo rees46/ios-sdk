@@ -1,6 +1,14 @@
+import UIKit
+
+protocol CheckBoxCollectionViewCellDelegate: AnyObject {
+    func checkBoxCell(_ cell: CheckBoxCollectionViewCell, didChangeState isChecked: Bool, for color: String)
+}
+
 class CheckBoxCollectionViewCell: UICollectionViewCell {
     static let identifier = "CheckBoxCollectionViewCell"
     
+    weak var delegate: CheckBoxCollectionViewCellDelegate?
+
     private let checkBoxContainer: UIView = {
         let view = UIView()
         view.layer.borderWidth = 2.0
@@ -29,6 +37,8 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
             updateCheckBoxAppearance()
         }
     }
+    
+    var type: String?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -75,7 +85,11 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
     
     @objc private func toggleCheckBox() {
         isChecked.toggle()
-        // TODO Передать обновленное состояние чекбокса обратно в контроллер
+        updateCheckBoxAppearance()
+        
+        if let type = type {
+            delegate?.checkBoxCell(self, didChangeState: isChecked, for: type)
+        }
     }
     
     private func updateCheckBoxAppearance() {
@@ -83,7 +97,8 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
         checkBoxContainer.layer.borderColor = isChecked ? UIColor.systemBlue.cgColor : UIColor.lightGray.cgColor
     }
     
-    func configure(with text: String) {
-        label.text = text
+    func configure(with type: String) {
+        label.text = type
+        self.type = type
     }
 }
