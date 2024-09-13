@@ -52,6 +52,7 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                 self.lastQueriesHistories = response.lastQueries
                 let searchResults = response.products.map {
                     SearchResult(
+                        query:nil,
                         id: $0.id,
                         image: $0.imageUrl,
                         name: $0.name,
@@ -154,6 +155,7 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                 }
                 let searchResults = response.products.map {
                     SearchResult(
+                        query:query,
                         id: $0.id,
                         image: $0.imageUrl,
                         name: $0.name,

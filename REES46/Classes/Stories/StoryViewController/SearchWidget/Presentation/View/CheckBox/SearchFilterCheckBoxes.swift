@@ -5,7 +5,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     weak var delegate: SearchFilterCheckBoxViewDelegate?
     
-    private let colorLabel: UILabel = {
+    private let label: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 18, weight: .bold)
         label.textColor = UIColor.black
@@ -60,7 +60,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     var headerTitle: String? {
         didSet {
-            colorLabel.text = headerTitle
+            label.text = headerTitle
         }
     }
     
@@ -75,7 +75,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     private func setupView() {
-        addSubview(colorLabel)
+        addSubview(label)
         addSubview(spacerView)
         addSubview(collectionView)
         addSubview(showMoreContainer)
@@ -101,7 +101,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         NSLayoutConstraint.activate([
             spacerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             spacerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            spacerView.topAnchor.constraint(equalTo: colorLabel.bottomAnchor),
+            spacerView.topAnchor.constraint(equalTo: label.bottomAnchor),
             spacerView.heightAnchor.constraint(equalToConstant: 16)
         ])
     }
@@ -128,11 +128,11 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     private func setupLabelConstraints() {
-        colorLabel.translatesAutoresizingMaskIntoConstraints = false
+        label.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            colorLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
-            colorLabel.topAnchor.constraint(equalTo: topAnchor),
-            colorLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor),
+            label.topAnchor.constraint(equalTo: topAnchor),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
     }
     

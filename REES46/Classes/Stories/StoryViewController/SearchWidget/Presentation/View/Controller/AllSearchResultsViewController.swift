@@ -3,6 +3,7 @@ import UIKit
 class AllSearchResultsViewController: UIViewController {
     
     public var sdk: PersonalizationSDK?
+    public var searchQuery: String?
     
     var searchResults: [SearchResult]? {
         didSet {

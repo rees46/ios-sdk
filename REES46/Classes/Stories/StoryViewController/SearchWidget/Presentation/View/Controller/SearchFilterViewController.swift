@@ -208,19 +208,16 @@ class SearchFilterViewController:
     private func setupActions() {
         actionButtons.delegate = self
         headerView.onCloseButtonTapped = { [weak self] in
-            print("Close button tapped")
             self?.dismiss(animated: true, completion: nil)
         }
     }
     
     func didTapResetButton() {
-        print("Reset button tapped")
         selectedFilters.removeAll()
         // Notify delegate or update UI to reflect reset
     }
     
     func didTapShowButton() {
-        print("Show button tapped")
         performSearch(with: selectedFilters)
     }
     
@@ -230,22 +227,22 @@ class SearchFilterViewController:
     }
     
     func checkBoxCell(_ cell: CheckBoxCollectionViewCell, didChangeState isChecked: Bool, for type: String) {
-        print("FILTERS \(type)")
-         if isChecked {
-             selectedTypes.insert(type)
-         } else {
-             selectedTypes.remove(type)
-         }
-         
-         selectedFilters["type"] = Array(selectedTypes)
-         
-         performSearch(with: selectedFilters)
-     }
+        print("FILTERS checkBoxCell \(type)")
+        if isChecked {
+            selectedTypes.insert(type)
+        } else {
+            selectedTypes.remove(type)
+        }
+        
+        selectedFilters["type"] = Array(selectedTypes)
+        
+        performSearch(with: selectedFilters)
+    }
     
     private func performSearch(with filters: [String: Any]) {
-        print("FILTERS \(filters)")
-//        guard let query = searchResults?.first?.name else { return } // Assuming a query is needed
-       sdk?.search(query: "toys", filters: filters) { response in
+        guard let query = searchResults?.first?.query else { return }
+        print("FILTERS performSearch \(filters) \(query)")
+        sdk?.search(query: query, filters: filters) { response in
             switch response {
             case .success(let searchResponse):
                 // Handle success

@@ -1,6 +1,7 @@
 import UIKit
 
 public struct SearchResult {
+    let query: String?
     let id: String
     let image: String
     let name: String
@@ -10,6 +11,7 @@ public struct SearchResult {
     public var filters: [String: Filter]?
     
     public init(
+        query: String?,
         id: String,
         image: String,
         name: String,
@@ -18,6 +20,7 @@ public struct SearchResult {
         rating: Int,
         filters: [String: Filter]? = nil
     ) {
+        self.query = query
         self.id = id
         self.image = image
         self.name = name
