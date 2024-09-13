@@ -69,6 +69,7 @@ class AllSearchResultsViewController: UIViewController {
     private func openFilterScreen() {
         let filterVC = SearchFilterViewController()
         filterVC.searchResults = self.searchResults
+        filterVC.sdk = self.sdk
         filterVC.modalPresentationStyle = .fullScreen
         self.present(filterVC, animated: true, completion: nil)
     }

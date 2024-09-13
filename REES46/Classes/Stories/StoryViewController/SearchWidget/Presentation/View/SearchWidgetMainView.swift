@@ -8,6 +8,7 @@ open class SearchWidgetMainView: UIView {
     open var sdkSearchWidgetHistoryButtons = [SearchWidgetHistoryButton]()
     open var sdkSearchWidgetHistoryViews = [SearchWidgetHistoryView]()
     open var sdkSearchWidget = SearchWidget()
+    open var sdk:PersonalizationSDK?
     open var recommendSearchCategoryLabel: UILabel!
     open var searchRecentlyLabel: UILabel!
     open var searchHistoryLabel: UILabel!
@@ -67,8 +68,8 @@ open class SearchWidgetMainView: UIView {
     open func showAllButtonClicked() {
         let allResultsVC = AllSearchResultsViewController()
         allResultsVC.searchResults = self.searchResults
+        allResultsVC.sdk = self.sdk
         allResultsVC.modalPresentationStyle = .fullScreen
-
         if let viewController = self.viewController {
             viewController.present(allResultsVC, animated: true, completion: nil)
         }
@@ -284,7 +285,11 @@ open class SearchWidgetMainView: UIView {
         scrollView.frame = CGRect(x: 0, y: 0, width: width, height: self.bounds.height - (showAllButton?.frame.height ?? 0) - 20)
     }
     
-    open func updateSearchResults(_ results: [SearchResult]) {
+    open func updateSearchResults(
+        _ results: [SearchResult],
+        sdk:PersonalizationSDK?
+    ) {
+        self.sdk = sdk
         DispatchQueue.main.async {
             self.searchResults = results
             self.searchResultsView.updateResults(results)

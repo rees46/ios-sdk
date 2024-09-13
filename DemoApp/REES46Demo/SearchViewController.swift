@@ -61,7 +61,7 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                         rating: $0.salesRate
                     )
                 }
-                self.delegate?.updateSearchResults(searchResults)
+                self.delegate?.updateSearchResults(searchResults,sdk: self.sdk)
             case let .failure(error):
                 print("Error:", error)
             }
@@ -165,7 +165,10 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
                         filters: response.filters
                     )
                 }
-                self?.delegate?.updateSearchResults(searchResults)
+                self?.delegate?.updateSearchResults(
+                    searchResults,
+                    sdk:self?.sdk
+                )
                 
             case let .failure(error):
                 print("Error occurred during search:", error)
@@ -173,9 +176,15 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
         }
     }
     
-    func updateSearchResults(_ results: [SearchResult]) {
+    func updateSearchResults(
+        _ results: [SearchResult],
+        sdk:PersonalizationSDK?
+    ) {
         if let mainView = self.sdkSearchWidgetView.sdkSearchWidgetMainView {
-            mainView.updateSearchResults(results)
+            mainView.updateSearchResults(
+                results,
+                sdk:self.sdk
+            )
         }
     }
 }

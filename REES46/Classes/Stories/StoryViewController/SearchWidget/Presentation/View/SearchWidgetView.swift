@@ -21,7 +21,7 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
         self.sdkSearchWidgetListView.isHidden = true
         
         if let clearHistoryButton = self.sdkSearchWidgetMainView.showAllButton {
-        self.sdkSearchWidgetScrollView.contentSize = CGSize(width: self.frame.width, height: clearHistoryButton.frame.origin.y + clearHistoryButton.frame.height + 20)
+            self.sdkSearchWidgetScrollView.contentSize = CGSize(width: self.frame.width, height: clearHistoryButton.frame.origin.y + clearHistoryButton.frame.height + 20)
         } else {
             self.sdkSearchWidgetScrollView.contentSize = CGSize(width: self.frame.width, height: self.frame.height)
         }
@@ -61,11 +61,14 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
     }
     
     open func loadSearchData() {
-//        self.delegate?.loadSearchData()
+        //        self.delegate?.loadSearchData()
     }
     
-    open func updateSearchResults(_ results: [SearchResult]) {
-        self.delegate?.updateSearchResults(results)
+    open func updateSearchResults(
+        _ results: [SearchResult],
+        sdk:PersonalizationSDK?
+    ) {
+        self.delegate?.updateSearchResults(results,sdk:sdk)
     }
     
     open func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -74,7 +77,7 @@ open class SearchWidgetView: UIView, SearchWidgetMainViewDelegate, SearchWidgetL
         }
         return cell
     }
-
+    
     open func sdkSearchWidgetListView(_ sdkSearchWidgetListView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.delegate?.sdkSearchWidgetListView(sdkSearchWidgetListView, didSelectRowAt: indexPath)
     }

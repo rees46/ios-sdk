@@ -6,7 +6,10 @@ public protocol SearchWidgetMainViewDelegate {
     func searchWidgetCategoriesButtonClicked(productText: String)
     func sdkSearchWidgetHistoryButtonClicked(productText: String)
     func sdkSearchWidgetMainViewHistoryChanged()
-    func updateSearchResults(_ results: [SearchResult])
+    func updateSearchResults(
+        _ results: [SearchResult],
+        sdk:PersonalizationSDK?
+    )
 }
 
 public protocol SearchWidgetListViewDelegate {

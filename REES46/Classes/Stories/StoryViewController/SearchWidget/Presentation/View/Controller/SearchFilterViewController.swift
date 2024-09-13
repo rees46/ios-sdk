@@ -214,7 +214,6 @@ class SearchFilterViewController:
     
     func didTapResetButton() {
         selectedFilters.removeAll()
-        // Notify delegate or update UI to reflect reset
     }
     
     func didTapShowButton() {
@@ -240,15 +239,17 @@ class SearchFilterViewController:
     }
     
     private func performSearch(with filters: [String: Any]) {
-        guard let query = searchResults?.first?.query else { return }
+        guard let query = searchResults?.first?.query else {
+            print("Query is nil or empty")
+            return
+        }
         print("FILTERS performSearch \(filters) \(query)")
+        
         sdk?.search(query: query, filters: filters) { response in
             switch response {
             case .success(let searchResponse):
-                // Handle success
                 print("Search results: \(searchResponse)")
             case .failure(let error):
-                // Handle error
                 print("Search error: \(error)")
             }
         }
