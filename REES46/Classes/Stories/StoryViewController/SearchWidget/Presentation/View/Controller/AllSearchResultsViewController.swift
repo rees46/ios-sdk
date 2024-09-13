@@ -4,6 +4,7 @@ class AllSearchResultsViewController: UIViewController {
     
     public var sdk: PersonalizationSDK?
     public var searchQuery: String?
+    public var isHideFilterButton: Bool?
     
     var searchResults: [SearchResult]? {
         didSet {
@@ -38,6 +39,7 @@ class AllSearchResultsViewController: UIViewController {
         
         view.addSubview(headerView)
         view.addSubview(resultsListView)
+        headerView.filterButton.isHidden = self.isHideFilterButton ?? false
         
         NSLayoutConstraint.activate([
             headerView.topAnchor.constraint(equalTo: view.topAnchor),

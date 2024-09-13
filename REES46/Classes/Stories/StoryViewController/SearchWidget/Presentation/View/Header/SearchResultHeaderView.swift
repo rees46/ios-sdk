@@ -20,7 +20,7 @@ class SearchResultHeaderView: UIView {
         return label
     }()
     
-    private let filterButton: UIButton = {
+    public let filterButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(named: "IconFilter"), for: .normal)
         button.imageView?.contentMode = .scaleAspectFit

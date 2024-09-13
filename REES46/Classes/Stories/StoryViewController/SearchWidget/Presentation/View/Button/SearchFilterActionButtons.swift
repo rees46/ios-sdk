@@ -3,6 +3,14 @@ import UIKit
 class SearchFilterActionButtons: UIView {
     
     weak var delegate: SearchFilterActionButtonsDelegate?
+    public var sdk: PersonalizationSDK?
+    public var searchResults: [SearchResult]? {
+        didSet {
+            if let count = searchResults?.count {
+                print("Count \(count)")
+            }
+        }
+    }
     
     private let resetButton: UIButton = {
         let button = UIButton(type: .system)
@@ -23,7 +31,7 @@ class SearchFilterActionButtons: UIView {
     private let showButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(
-            String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), ""), // Default to 0
+            String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), ""),
             for: .normal
         )
         button.setTitleColor(.white, for: .normal)
@@ -76,7 +84,13 @@ class SearchFilterActionButtons: UIView {
         ])
     }
     
-    func updateShowButtonTitle(with count: Int) {
+    func updateShowButtonTitle(
+        sdk: PersonalizationSDK?,
+        searchResult: [SearchResult]
+    ) {
+        self.sdk = sdk
+        self.searchResults = searchResult
+        let count = searchResult.count
         self.showButton.setTitle(
             String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), "\(count)"),
             for: .normal
@@ -88,6 +102,18 @@ class SearchFilterActionButtons: UIView {
     }
     
     @objc private func showButtonTapped() {
-        delegate?.didTapShowButton()
+        showAllButtonClicked()
+    }
+    
+    @objc
+    open func showAllButtonClicked() {
+        let allResultsVC = AllSearchResultsViewController()
+        allResultsVC.searchResults = self.searchResults
+        allResultsVC.sdk = self.sdk
+        allResultsVC.isHideFilterButton = true
+        allResultsVC.modalPresentationStyle = .fullScreen
+        if let viewController = self.viewController {
+            viewController.present(allResultsVC, animated: true, completion: nil)
+        }
     }
 }

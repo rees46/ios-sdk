@@ -215,10 +215,11 @@ class SearchFilterViewController:
     
     func didTapResetButton() {
         selectedFilters.removeAll()
+        
     }
     
     func didTapShowButton() {
-        performSearch(with: selectedFilters)
+        dismiss(animated: false)
     }
     
     func searchFilterPickerView(_ pickerView: SearchFilterPickerView, didUpdateFromValue fromValue: Int, toValue: Int) {
@@ -234,11 +235,23 @@ class SearchFilterViewController:
         
         sdk?.search(query: query, filters: filters) { [weak self] response in
             switch response {
-            case .success(let searchResponse):
-                print("Search results: \(searchResponse)")
-                let resultCount = searchResponse.products.count
+            case .success(let response):
+                print("Search results: \(response)")
+                let resultCount = response.products.count
                 DispatchQueue.main.async {
-                    self?.updateActionButtons(with: resultCount)
+                    let searchResults = response.products.map {
+                        SearchResult(
+                            query:query,
+                            id: $0.id,
+                            image: $0.imageUrl,
+                            name: $0.name,
+                            price: $0.price,
+                            currency: $0.currency,
+                            rating: $0.salesRate,
+                            filters: response.filters
+                        )
+                    }
+                    self?.updateActionButtons(searchResult: searchResults)
                 }
             case .failure(let error):
                 print("Search error: \(error)")
@@ -246,8 +259,12 @@ class SearchFilterViewController:
         }
     }
     
-    private func updateActionButtons(with count: Int) {
-        actionButtons.updateShowButtonTitle(with: count)
-        // Here you could add additional logic to show/hide buttons based on your requirements
+    private func updateActionButtons(
+        searchResult: [SearchResult]
+    ) {
+        actionButtons.updateShowButtonTitle(
+            sdk: self.sdk,
+            searchResult: searchResult
+        )
     }
 }
