@@ -50,11 +50,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func sdkInitialization(){
         sdk = createPersonalizationSDK(
-            shopId: "417dfce51c4cc3cc2fe3da5480db10",
-            apiDomain: "api.r46.kari.com",
+            shopId: AppEnvironments.shopId,
+            apiDomain: AppEnvironments.apiDomain,
             enableLogs: true,
             { error in
-                didToken = "Q5iON28qrP&sid=0D1QR6ekKH"
                 globalSDK = self.sdk
                 NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
             }
