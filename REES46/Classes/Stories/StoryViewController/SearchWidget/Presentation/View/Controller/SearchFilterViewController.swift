@@ -1,23 +1,10 @@
 import UIKit
 
-extension SearchFilterViewController: SearchFilterCheckBoxViewDelegate {
-    func searchFilterCheckBoxView(
-        _ view: SearchFilterCheckBoxView,
-        didUpdateSelectedTypes selectedTypes: Set<String>,
-        header:String
-    ) {
-        print("Selected colors: \(selectedTypes)")
-        selectedFilters[header] = Array(selectedTypes)
-        performSearch(with: selectedFilters)
-    }
-}
-
 class SearchFilterViewController:
     UIViewController,
     SearchFilterActionButtonsDelegate,
     SearchFilterPickerViewDelegate
 {
-    
     public var sdk: PersonalizationSDK?
     
     public var searchResults: [SearchResult]? {
@@ -29,8 +16,8 @@ class SearchFilterViewController:
         }
     }
     
-    private var selectedTypes: Set<String> = []
-    private var selectedFilters: [String: Any] = [:]
+ var selectedTypes: Set<String> = []
+ var selectedFilters: [String: Any] = [:]
     
     private let headerView: SearchFilterHeaderView = {
         let view = SearchFilterHeaderView()
@@ -67,7 +54,6 @@ class SearchFilterViewController:
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
-
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -184,9 +170,9 @@ class SearchFilterViewController:
         checkBoxView.translatesAutoresizingMaskIntoConstraints = false
         checkBoxView.setHeaderTitle(title)
         checkBoxView.updateData(with: values)
-
+        
         checkBoxView.delegate = self
-
+        
         return checkBoxView
     }
     
@@ -240,20 +226,28 @@ class SearchFilterViewController:
         selectedFilters[key] = ["from": fromValue, "to": toValue]
     }
     
-    private func performSearch(with filters: [String: Any]) {
+     func performSearch(with filters: [String: Any]) {
         guard let query = searchResults?.first?.query else {
             print("Query is nil or empty")
             return
         }
-        print("FILTERS performSearch \(filters) \(query)")
         
-        sdk?.search(query: query, filters: filters) { response in
+        sdk?.search(query: query, filters: filters) { [weak self] response in
             switch response {
             case .success(let searchResponse):
                 print("Search results: \(searchResponse)")
+                let resultCount = searchResponse.products.count
+                DispatchQueue.main.async {
+                    self?.updateActionButtons(with: resultCount)
+                }
             case .failure(let error):
                 print("Search error: \(error)")
             }
         }
+    }
+    
+    private func updateActionButtons(with count: Int) {
+        actionButtons.updateShowButtonTitle(with: count)
+        // Here you could add additional logic to show/hide buttons based on your requirements
     }
 }

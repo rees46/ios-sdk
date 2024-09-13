@@ -23,7 +23,7 @@ class SearchFilterActionButtons: UIView {
     private let showButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(
-            String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), "count"), //TODO add result count
+            String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), ""), // Default to 0
             for: .normal
         )
         button.setTitleColor(.white, for: .normal)
@@ -74,6 +74,13 @@ class SearchFilterActionButtons: UIView {
             showButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             showButton.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.7, constant: -38)
         ])
+    }
+    
+    func updateShowButtonTitle(with count: Int) {
+        self.showButton.setTitle(
+            String(format: Bundle.getLocalizedString(forKey: "button_show_title", comment: ""), "\(count)"),
+            for: .normal
+        )
     }
     
     @objc private func resetButtonTapped() {

@@ -109,13 +109,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show (%@)"
+            "value" : "Show %@"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Показать (%@)"
+            "value" : "Показать %@"
           }
         }
       }

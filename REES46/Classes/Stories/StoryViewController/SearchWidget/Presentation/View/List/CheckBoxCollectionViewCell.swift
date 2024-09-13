@@ -1,14 +1,12 @@
 import UIKit
 
-protocol CheckBoxDelegate: AnyObject {
-    func checkBoxCell(didChangeState isChecked: Bool, for color: String)
-}
+
 class CheckBoxCollectionViewCell: UICollectionViewCell {
     static let identifier = "CheckBoxCollectionViewCell"
     
     weak var delegate: CheckBoxDelegate?
-
-
+    
+    
     private let checkBoxContainer: UIView = {
         let view = UIView()
         view.layer.borderWidth = 2.0
