@@ -148,11 +148,6 @@ class SearchViewController: SearchWidgetViewController, SearchWidgetDelegate {
             switch response {
                 
             case let .success(response):
-                if let filters = response.filters {
-                    print("Received Filters: \(filters)")
-                } else {
-                    print("No filters received")
-                }
                 let searchResults = response.products.map {
                     SearchResult(
                         query:query,

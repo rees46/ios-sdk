@@ -1,8 +1,7 @@
-import Foundation
-
 protocol SearchFilterCheckBoxViewDelegate: AnyObject {
     func searchFilterCheckBoxView(
-        _ checkBoxView: SearchFilterCheckBoxView,
-        didUpdateSelectedColors selectedColors: Set<String>
+        _ view: SearchFilterCheckBoxView,
+        didUpdateSelectedTypes types: Set<String>,
+        header:String
     )
 }

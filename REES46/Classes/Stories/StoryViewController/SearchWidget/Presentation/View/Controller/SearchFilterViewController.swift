@@ -1,9 +1,20 @@
 import UIKit
 
+extension SearchFilterViewController: SearchFilterCheckBoxViewDelegate {
+    func searchFilterCheckBoxView(
+        _ view: SearchFilterCheckBoxView,
+        didUpdateSelectedTypes selectedTypes: Set<String>,
+        header:String
+    ) {
+        print("Selected colors: \(selectedTypes)")
+        selectedFilters[header] = Array(selectedTypes)
+        performSearch(with: selectedFilters)
+    }
+}
+
 class SearchFilterViewController:
     UIViewController,
     SearchFilterActionButtonsDelegate,
-    CheckBoxCollectionViewCellDelegate,
     SearchFilterPickerViewDelegate
 {
     
@@ -33,18 +44,6 @@ class SearchFilterViewController:
         return view
     }()
     
-    private let scrollView: UIScrollView = {
-        let scrollView = UIScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        return scrollView
-    }()
-    
-    private let contentView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }()
-    
     private let filterPickerSizeView: SearchFilterPickerView = {
         let view = SearchFilterPickerView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -56,6 +55,19 @@ class SearchFilterViewController:
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
+    
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        return scrollView
+    }()
+    
+    private let contentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -172,6 +184,9 @@ class SearchFilterViewController:
         checkBoxView.translatesAutoresizingMaskIntoConstraints = false
         checkBoxView.setHeaderTitle(title)
         checkBoxView.updateData(with: values)
+
+        checkBoxView.delegate = self
+
         return checkBoxView
     }
     
@@ -223,19 +238,6 @@ class SearchFilterViewController:
     func searchFilterPickerView(_ pickerView: SearchFilterPickerView, didUpdateFromValue fromValue: Int, toValue: Int) {
         let key = pickerView == filterPickerSizeView ? "size" : "price"
         selectedFilters[key] = ["from": fromValue, "to": toValue]
-    }
-    
-    func checkBoxCell(_ cell: CheckBoxCollectionViewCell, didChangeState isChecked: Bool, for type: String) {
-        print("FILTERS checkBoxCell \(type)")
-        if isChecked {
-            selectedTypes.insert(type)
-        } else {
-            selectedTypes.remove(type)
-        }
-        
-        selectedFilters["type"] = Array(selectedTypes)
-        
-        performSearch(with: selectedFilters)
     }
     
     private func performSearch(with filters: [String: Any]) {

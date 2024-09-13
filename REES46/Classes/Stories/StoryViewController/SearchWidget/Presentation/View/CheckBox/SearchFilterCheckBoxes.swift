@@ -1,7 +1,6 @@
 import UIKit
 
-
-class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, CheckBoxDelegate {
     
     weak var delegate: SearchFilterCheckBoxViewDelegate?
     
@@ -52,9 +51,9 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         return stackView
     }()
     
-    private var colors: [String] = []
+    private var types: [String] = []
     private var isExpanded: Bool = false
-    private var selectedColors: Set<String> = []
+    private var selectedTypes: Set<String> = []
     private let defaultItemCount = 5
     private var collectionViewHeightConstraint: NSLayoutConstraint?
     
@@ -107,7 +106,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     func updateData(with colors: [String]) {
-        self.colors = colors
+        self.types = colors
         collectionView.reloadData()
         updateCollectionViewHeight()
         
@@ -154,7 +153,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             showMoreContainer.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0),
             showMoreContainer.heightAnchor.constraint(equalToConstant: 20),
         ])
-
+        
         NSLayoutConstraint.activate([
             selectAllButton.leadingAnchor.constraint(equalTo: showMoreContainer.leadingAnchor),
             selectAllButton.trailingAnchor.constraint(equalTo: arrowImageView.leadingAnchor, constant: -8),
@@ -171,7 +170,7 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     private func updateCollectionViewHeight() {
-        let itemCount = isExpanded ? colors.count : min(colors.count, defaultItemCount)
+        let itemCount = isExpanded ? types.count : min(types.count, defaultItemCount)
         let itemHeight: CGFloat = 24
         let spacing: CGFloat = 8
         let totalHeight = (itemHeight + spacing) * CGFloat(itemCount)
@@ -191,22 +190,22 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
         if isExpanded {
             buttonTitle = Bundle.getLocalizedString(forKey: "collaps_key")
         } else {
-            buttonTitle = String(format: Bundle.getLocalizedString(forKey: "show_more_key", comment: ""), colors.count - defaultItemCount)
+            buttonTitle = String(format: Bundle.getLocalizedString(forKey: "show_more_key", comment: ""), types.count - defaultItemCount)
         }
         
         selectAllButton.setTitle(buttonTitle, for: .normal)
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return isExpanded ? colors.count : min(colors.count, defaultItemCount)
+        return isExpanded ? types.count : min(types.count, defaultItemCount)
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CheckBoxCollectionViewCell.identifier, for: indexPath) as! CheckBoxCollectionViewCell
-        let color = colors[indexPath.item]
+        let color = types[indexPath.item]
         cell.configure(with: color)
-        
-        cell.isChecked = selectedColors.contains(color)
+        cell.delegate = self // Устанавливаем делегата
+        cell.isChecked = selectedTypes.contains(color)
         
         return cell
     }
@@ -217,15 +216,34 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let color = colors[indexPath.item]
-        if selectedColors.contains(color) {
-            selectedColors.remove(color)
+        let type = types[indexPath.item]
+        if selectedTypes.contains(type) {
+            selectedTypes.remove(type)
         } else {
-            selectedColors.insert(color)
+            selectedTypes.insert(type)
         }
         collectionView.reloadItems(at: [indexPath])
         
-        print("SELECTED CHECK BOX \(selectedColors)")
-        delegate?.searchFilterCheckBoxView(self, didUpdateSelectedColors: selectedColors)
+        let cell = collectionView.cellForItem(at: indexPath) as? CheckBoxCollectionViewCell
+        cell?.isChecked = selectedTypes.contains(type)
+        
+        delegate?.searchFilterCheckBoxView(
+            self,
+            didUpdateSelectedTypes: selectedTypes,
+            header: headerTitle ?? ""
+        )
+    }
+    
+    func checkBoxCell(didChangeState isChecked: Bool, for type: String) {
+        if isChecked {
+            selectedTypes.insert(type)
+        } else {
+            selectedTypes.remove(type)
+        }
+        delegate?.searchFilterCheckBoxView(
+            self,
+            didUpdateSelectedTypes: selectedTypes,
+            header: headerTitle ?? ""
+        )
     }
 }

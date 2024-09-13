@@ -1,13 +1,13 @@
 import UIKit
 
-protocol CheckBoxCollectionViewCellDelegate: AnyObject {
-    func checkBoxCell(_ cell: CheckBoxCollectionViewCell, didChangeState isChecked: Bool, for color: String)
+protocol CheckBoxDelegate: AnyObject {
+    func checkBoxCell(didChangeState isChecked: Bool, for color: String)
 }
-
 class CheckBoxCollectionViewCell: UICollectionViewCell {
     static let identifier = "CheckBoxCollectionViewCell"
     
-    weak var delegate: CheckBoxCollectionViewCellDelegate?
+    weak var delegate: CheckBoxDelegate?
+
 
     private let checkBoxContainer: UIView = {
         let view = UIView()
@@ -88,7 +88,7 @@ class CheckBoxCollectionViewCell: UICollectionViewCell {
         updateCheckBoxAppearance()
         
         if let type = type {
-            delegate?.checkBoxCell(self, didChangeState: isChecked, for: type)
+            delegate?.checkBoxCell(didChangeState: isChecked, for: type)
         }
     }
     
