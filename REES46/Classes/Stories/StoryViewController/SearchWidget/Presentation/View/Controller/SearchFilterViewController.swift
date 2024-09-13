@@ -16,8 +16,8 @@ class SearchFilterViewController:
         }
     }
     
- var selectedTypes: Set<String> = []
- var selectedFilters: [String: Any] = [:]
+    var selectedTypes: Set<String> = []
+    var selectedFilters: [String: Any] = [:]
     
     private let headerView: SearchFilterHeaderView = {
         let view = SearchFilterHeaderView()
@@ -216,6 +216,27 @@ class SearchFilterViewController:
     func didTapResetButton() {
         selectedFilters.removeAll()
         
+        resetPickerViews()
+        resetCheckBoxViews()
+        refreshFilterViews()
+    }
+
+    private func resetPickerViews() {
+        filterPickerSizeView.reset()
+        filterPickerPriceView.reset()
+    }
+
+    private func resetCheckBoxViews() {
+        for subview in contentView.subviews {
+            if let checkBoxView = subview as? SearchFilterCheckBoxView {
+                checkBoxView.reset()
+            }
+        }
+    }
+
+    private func refreshFilterViews() {
+        contentView.setNeedsLayout()
+        contentView.layoutIfNeeded()
     }
     
     func didTapShowButton() {
@@ -223,21 +244,26 @@ class SearchFilterViewController:
     }
     
     func searchFilterPickerView(_ pickerView: SearchFilterPickerView, didUpdateFromValue fromValue: Int, toValue: Int) {
-        let key = pickerView == filterPickerSizeView ? "size" : "price"
-        selectedFilters[key] = ["from": fromValue, "to": toValue]
+        let key = pickerView == filterPickerSizeView ? "fashion_sizes" : "price_range"
+        
+        selectedFilters[key] = ["min": fromValue, "max": toValue]
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            guard let self = self else { return }
+            self.performSearch(with: self.selectedFilters)
+        }
     }
     
-     func performSearch(with filters: [String: Any]) {
+    func performSearch(with filters: [String: Any]) {
         guard let query = searchResults?.first?.query else {
-            print("Query is nil or empty")
+            print("Query is nil or empty \(filters)")
             return
         }
-        
+        print("Query is nil or empty \(filters)")
         sdk?.search(query: query, filters: filters) { [weak self] response in
             switch response {
             case .success(let response):
                 print("Search results: \(response)")
-                let resultCount = response.products.count
                 DispatchQueue.main.async {
                     let searchResults = response.products.map {
                         SearchResult(

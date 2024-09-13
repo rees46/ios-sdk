@@ -250,4 +250,15 @@ class SearchFilterPickerView: UIView, UIPickerViewDelegate, UIPickerViewDataSour
         updateDropdownButton(activeTextField, with: selectedValue)
         hidePickerView()
     }
+    
+    public func reset() {
+          maxToValue = sizes.last ?? 0
+          
+          fromTextField.text = "\(minToValue)"
+          toTextField.text = "\(maxToValue)"
+          
+          delegate?.searchFilterPickerView(self, didUpdateFromValue: minToValue, toValue: maxToValue)
+          
+          updateDropdownTitles()
+      }
 }

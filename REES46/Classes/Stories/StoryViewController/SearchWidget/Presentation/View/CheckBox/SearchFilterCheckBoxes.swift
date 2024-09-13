@@ -246,4 +246,16 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
             header: headerTitle ?? ""
         )
     }
+    
+    public func reset() {
+         selectedTypes.removeAll()
+         
+         collectionView.reloadData()
+         
+         delegate?.searchFilterCheckBoxView(
+             self,
+             didUpdateSelectedTypes: selectedTypes,
+             header: headerTitle ?? ""
+         )
+     }
 }
