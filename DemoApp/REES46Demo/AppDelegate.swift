@@ -19,7 +19,6 @@ var didToken: String = ""
 var globalSDK: PersonalizationSDK?
 var globalSDKNotificationNameMainInit = Notification.Name("globalSDK")
 
-var globalSDKAdditionalInit: PersonalizationSDK?
 var globalSDKNotificationNameAdditionalInit = Notification.Name("globalSDKAdditionalInit")
 
 @UIApplicationMain
@@ -52,9 +51,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func sdkInitialization(){
         sdk = createPersonalizationSDK(
             shopId: AppEnvironments.shopId,
+            apiDomain: AppEnvironments.apiDomain,
             enableLogs: true,
             { error in
-                didToken = self.sdk.getDeviceId()
                 globalSDK = self.sdk
                 NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
             }

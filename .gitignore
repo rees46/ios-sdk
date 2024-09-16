@@ -2,6 +2,7 @@
 .idea
 .swiftpm
 .build
+build/ios
 Packages
 /*.xcodeproj
 Pods/*
