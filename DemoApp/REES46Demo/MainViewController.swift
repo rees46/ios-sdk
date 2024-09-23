@@ -31,7 +31,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
     public var newArrivalsCollectionView = RecommendationsWidgetView()
-    private var notificationController: InAppNotificationProtocol?
+    private var notificationWidget: NotificationWidget?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,8 +44,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     func setupInAppNotifcation(){
-        notificationController = InAppNotificationViewController()
-        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
+        notificationWidget = NotificationWidget(parentViewController: self)
+//        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -136,7 +136,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     @objc private func didTapShowAlert() {
-        notificationController?.showAlert(
+        notificationWidget?.showAlert(
             title: "Уведомление",
             message: "Это кастомный алерт диалог.",
             buttonText: "ОК",
@@ -208,7 +208,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
         resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
-        showStoriesButton.addTarget(self, action: #selector(showStories), for: .touchUpInside)
+        showStoriesButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
