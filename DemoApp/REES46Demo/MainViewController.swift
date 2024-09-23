@@ -24,12 +24,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
     @IBOutlet private weak var showStoriesButton: UIButton!
+    @IBOutlet private weak var showAlertButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
     @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
     public var newArrivalsCollectionView = RecommendationsWidgetView()
+    private var notificationController: InAppNotificationProtocol?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,6 +40,12 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupSdkActivityIndicator()
         loadRecommendationsWidget()
         loadNewArrivalsWidget()
+        setupInAppNotifcation()
+    }
+    
+    func setupInAppNotifcation(){
+        notificationController = InAppNotificationViewController()
+        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -94,7 +102,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
-//                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
+                //                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
                 self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 10).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
@@ -125,6 +133,17 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 // For test delete if needed
             }
         }
+    }
+    
+    @objc private func didTapShowAlert() {
+        notificationController?.showAlert(
+            title: "Уведомление",
+            message: "Это кастомный алерт диалог.",
+            buttonText: "ОК",
+            buttonAction: {
+                print("Кнопка ОК была нажата.")
+            }
+        )
     }
     
     @objc

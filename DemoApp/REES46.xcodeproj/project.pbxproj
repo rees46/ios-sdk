@@ -13,6 +13,8 @@
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
+		750433052CA1ADD40065005C /* InAppNotificationProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750433042CA1ADD40065005C /* InAppNotificationProtocol.swift */; };
+		7504330A2CA1AE4A0065005C /* InAppNotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750433092CA1AE4A0065005C /* InAppNotificationViewController.swift */; };
 		7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */; };
 		758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */; };
 		75A4D60C2C5B8EAA00929368 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */; };
@@ -92,6 +94,8 @@
 		607FACE51AFB9204008FA782 /* REES46Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		750433042CA1ADD40065005C /* InAppNotificationProtocol.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InAppNotificationProtocol.swift; sourceTree = "<group>"; };
+		750433092CA1AE4A0065005C /* InAppNotificationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InAppNotificationViewController.swift; sourceTree = "<group>"; };
 		7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SDKConfigProviderTests.swift; sourceTree = "<group>"; };
 		758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnvironments.struct.swift; sourceTree = "<group>"; };
 		75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -217,7 +221,9 @@
 			children = (
 				758714A72C6CF1EB008E5E4E /* Utils */,
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
+				750433042CA1ADD40065005C /* InAppNotificationProtocol.swift */,
 				607FACD71AFB9204008FA782 /* MainViewController.swift */,
+				750433092CA1AE4A0065005C /* InAppNotificationViewController.swift */,
 				E9CF44402B30809C000F53F1 /* SearchViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -602,6 +608,8 @@
 				607FACD81AFB9204008FA782 /* MainViewController.swift in Sources */,
 				9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */,
 				E9CF44412B30809C000F53F1 /* SearchViewController.swift in Sources */,
+				750433052CA1ADD40065005C /* InAppNotificationProtocol.swift in Sources */,
+				7504330A2CA1AE4A0065005C /* InAppNotificationViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 				758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */,
 			);
