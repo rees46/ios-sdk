@@ -45,7 +45,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     func setupInAppNotifcation(){
         notificationWidget = NotificationWidget(parentViewController: self)
-//        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
+        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -208,7 +208,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
         resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
-        showStoriesButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
+        showStoriesButton.addTarget(self, action: #selector(showStories), for: .touchUpInside)
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
