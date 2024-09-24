@@ -1,23 +1,14 @@
 import UIKit
 
-public protocol InAppNotificationProtocol {
-    func showAlert(
-        title: String,
-        message: String,
-        buttonText: String,
-        buttonAction: @escaping () -> Void
-    )
-}
-
-class NotificationWidget: InAppNotificationProtocol {
+public class NotificationWidget: InAppNotificationProtocol {
     
     private var parentViewController: UIViewController
 
-    init(parentViewController: UIViewController) {
+    public init(parentViewController: UIViewController) {
         self.parentViewController = parentViewController
     }
     
-    func showAlert(
+    public func showAlert(
         title: String,
         message: String,
         buttonText: String,
