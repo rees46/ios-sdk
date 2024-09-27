@@ -27,4 +27,12 @@ public protocol InAppNotificationProtocol {
         buttonAcceptAction: @escaping () -> Void,
         buttonDeclineAction: @escaping () -> Void
     )
+    
+    func showSnackbar(
+        message: String,
+        buttonAcceptText: String,
+        buttonDeclineText: String,
+        buttonAcceptAction: @escaping () -> Void,
+        buttonDeclineAction: @escaping () -> Void
+    )
 }

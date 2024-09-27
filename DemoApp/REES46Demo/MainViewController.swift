@@ -136,19 +136,30 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     @objc private func didTapShowAlert() {
-        notificationWidget?.showFullScreenAlert(
-            title: "Title",
-            message: "This is a full-screen alert with an image background.",
-            imageURL: URL(string: "https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg")!,
+        notificationWidget?.showSnackbar(
+            message: "This's snack bar",
             buttonAcceptText: "Accept",
             buttonDeclineText: "Decline",
             buttonAcceptAction: {
-                print("Accepted")
+                
             },
             buttonDeclineAction: {
-                print("Declined")
+                
             }
         )
+//        notificationWidget?.showFullScreenAlert(
+//            title: "Title",
+//            message: "This is a full-screen alert with an image background.",
+//            imageURL: URL(string: "https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg")!,
+//            buttonAcceptText: "Accept",
+//            buttonDeclineText: "Decline",
+//            buttonAcceptAction: {
+//                print("Accepted")
+//            },
+//            buttonDeclineAction: {
+//                print("Declined")
+//            }
+//        )
 //        notificationWidget?.showBottomSheet(
 //            title: "Уведомление",
 //            message: "Это кастомный алерт диалог.",
