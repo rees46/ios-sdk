@@ -136,14 +136,26 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     @objc private func didTapShowAlert() {
-        notificationWidget?.showAlert(
+        notificationWidget?.showBottomSheet(
             title: "Уведомление",
             message: "Это кастомный алерт диалог.",
-            buttonText: "ОК",
-            buttonAction: {
-                print("Кнопка ОК была нажата.")
+            buttonAcceptText:"OK",
+            buttonDeclineText:"CANCEL",
+            buttonAcceptAction:{
+                
+            },
+            buttonDeclineAction:{
+                
             }
         )
+//        notificationWidget?.showAlert(
+//            title: "Уведомление",
+//            message: "Это кастомный алерт диалог.",
+//            buttonText: "ОК",
+//            buttonAction: {
+//                print("Кнопка ОК была нажата.")
+//            }
+//        )
     }
     
     @objc
