@@ -98,31 +98,31 @@ public class NotificationWidget: InAppNotificationProtocol {
         messageLabel.numberOfLines = 0
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         snackbar.addSubview(messageLabel)
-
+        
         let acceptButton = UIButton(type: .system)
         acceptButton.setTitle(buttonAcceptText, for: .normal)
         acceptButton.setTitleColor(.green, for: .normal)
         acceptButton.translatesAutoresizingMaskIntoConstraints = false
         acceptButton.addTarget(self, action: #selector(acceptButtonTapped), for: .touchUpInside)
         snackbar.addSubview(acceptButton)
-
+        
         let declineButton = UIButton(type: .system)
         declineButton.setTitle(buttonDeclineText, for: .normal)
         declineButton.setTitleColor(.red, for: .normal)
         declineButton.translatesAutoresizingMaskIntoConstraints = false
         declineButton.addTarget(self, action: #selector(declineButtonTapped), for: .touchUpInside)
         snackbar.addSubview(declineButton)
-
+        
         parentViewController.view.addSubview(snackbar)
-
+        
         NSLayoutConstraint.activate([
             messageLabel.leadingAnchor.constraint(equalTo: snackbar.leadingAnchor, constant: AppDimensions.Padding.medium),
             messageLabel.centerYAnchor.constraint(equalTo: snackbar.centerYAnchor),
-
+            
             declineButton.trailingAnchor.constraint(equalTo: snackbar.trailingAnchor, constant: -AppDimensions.Padding.medium),
             declineButton.centerYAnchor.constraint(equalTo: snackbar.centerYAnchor),
             declineButton.leadingAnchor.constraint(equalTo: acceptButton.trailingAnchor, constant: AppDimensions.Padding.small),
-
+            
             acceptButton.trailingAnchor.constraint(equalTo: declineButton.leadingAnchor, constant: -AppDimensions.Padding.small),
             acceptButton.centerYAnchor.constraint(equalTo: snackbar.centerYAnchor),
             
@@ -131,26 +131,26 @@ public class NotificationWidget: InAppNotificationProtocol {
             snackbar.bottomAnchor.constraint(equalTo: parentViewController.view.bottomAnchor, constant: -AppDimensions.Padding.large),
             snackbar.heightAnchor.constraint(equalToConstant: AppDimensions.Height.snackbar)
         ])
-
-        snackbar.transform = CGAffineTransform(translationX: 0, y: 100)
-        UIView.animate(withDuration: 0.3) {
+        
+        snackbar.transform = CGAffineTransform(translationX: 0, y: AppDimensions.Animation.snackbarTranslationY)
+        UIView.animate(withDuration: AppDimensions.Animation.duration) {
             snackbar.transform = .identity
         }
     }
-
+    
     @objc private func acceptButtonTapped() {
         guard let snackbar = snackbar else { return }
         dismissSnackbar(snackbar)
     }
-
+    
     @objc private func declineButtonTapped() {
         guard let snackbar = snackbar else { return }
         dismissSnackbar(snackbar)
     }
-
+    
     private func dismissSnackbar(_ snackbar: UIView) {
-        UIView.animate(withDuration: 0.3, animations: {
-            snackbar.transform = CGAffineTransform(translationX: 0, y: 100)
+        UIView.animate(withDuration: AppDimensions.Animation.duration, animations: {
+            snackbar.transform = CGAffineTransform(translationX: 0, y: AppDimensions.Animation.snackbarTranslationY)
         }) { _ in
             snackbar.removeFromSuperview()
             self.snackbar = nil
