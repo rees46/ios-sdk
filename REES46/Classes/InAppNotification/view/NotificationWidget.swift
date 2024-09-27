@@ -54,4 +54,26 @@ public class NotificationWidget: InAppNotificationProtocol {
 
         parentViewController.present(bottomSheet, animated: true, completion: nil)
     }
+    
+    public func showFullScreenAlert(
+        title: String,
+        message: String,
+        imageURL: URL,
+        buttonAcceptText: String,
+        buttonDeclineText: String,
+        buttonAcceptAction: @escaping () -> Void,
+        buttonDeclineAction: @escaping () -> Void
+    ) {
+        let fullScreenAlert = FullScreenAlertViewController(
+            title: title,
+            message: message,
+            imageURL: imageURL,
+            acceptButtonText: buttonAcceptText,
+            declineButtonText: buttonDeclineText,
+            acceptAction: buttonAcceptAction,
+            declineAction: buttonDeclineAction
+        )
+
+        parentViewController.present(fullScreenAlert, animated: true, completion: nil)
+    }
 }

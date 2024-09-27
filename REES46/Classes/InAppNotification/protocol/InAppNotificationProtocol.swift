@@ -17,4 +17,14 @@ public protocol InAppNotificationProtocol {
         buttonAcceptAction: @escaping () -> Void,
         buttonDeclineAction: @escaping () -> Void
     )
+    
+    func showFullScreenAlert(
+        title: String,
+        message: String,
+        imageURL: URL,
+        buttonAcceptText: String,
+        buttonDeclineText: String,
+        buttonAcceptAction: @escaping () -> Void,
+        buttonDeclineAction: @escaping () -> Void
+    )
 }
