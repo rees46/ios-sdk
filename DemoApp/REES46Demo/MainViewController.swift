@@ -48,6 +48,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     func setupInAppNotifcation(){
         notificationWidget = NotificationWidget(parentViewController: self)
+        
         showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
         showBottomSheetButton.addTarget(self, action: #selector(didTapShowBottomSheet), for: .touchUpInside)
         showFullScreenDialogButton.addTarget(self, action: #selector(didTapShowFullScreenDialog), for: .touchUpInside)
@@ -143,54 +144,56 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc private func didTapShowBottomSheet() {
         notificationWidget?.showBottomSheet(
-            title: "Уведомление",
-            message: "Это кастомный алерт диалог.",
-            buttonAcceptText:"OK",
-            buttonDeclineText:"CANCEL",
+            title: NSLocalizedString("alert_dialog_title", comment:  ""),
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
             buttonAcceptAction:{
-                
+                //TODO Handle click if needed
             },
             buttonDeclineAction:{
-                
+                //TODO Handle click if needed
             }
         )
     }
     @objc private func didTapShowFullScreenDialog() {
         notificationWidget?.showFullScreenAlert(
-            title: "Title",
-            message: "This is a full-screen alert with an image background.",
-            imageURL: URL(string: "https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg")!,
-            buttonAcceptText: "Accept",
-            buttonDeclineText: "Decline",
+            title: NSLocalizedString("alert_dialog_title", comment:  ""),
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            imageURL: URL(
+                string:"https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg"
+            )!,
+            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
             buttonAcceptAction: {
-                print("Accepted")
+                //TODO Handle click if needed
             },
             buttonDeclineAction: {
-                print("Declined")
+                //TODO Handle click if needed
             }
         )
     }
     @objc private func didTapShowSnackBar() {
         notificationWidget?.showSnackbar(
-            message: "This's snack bar",
-            buttonAcceptText: "Accept",
-            buttonDeclineText: "Decline",
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
             buttonAcceptAction: {
-                
+                //TODO Handle click if needed
             },
             buttonDeclineAction: {
-                
+                //TODO Handle click if needed
             }
         )
     }
     
     @objc private func didTapShowAlert() {
         notificationWidget?.showAlert(
-            title: "Уведомление",
-            message: "Это кастомный алерт диалог.",
-            buttonText: "ОК",
+            title: NSLocalizedString("alert_dialog_title", comment:  ""),
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            buttonText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
             buttonAction: {
-                print("Кнопка ОК была нажата.")
+                //TODO Handle click if needed
             }
         )
     }
