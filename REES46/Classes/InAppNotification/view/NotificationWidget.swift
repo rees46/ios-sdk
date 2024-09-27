@@ -87,7 +87,7 @@ public class NotificationWidget: InAppNotificationProtocol {
     ) {
         let snackbar = UIView()
         snackbar.backgroundColor = .darkGray
-        snackbar.layer.cornerRadius = AppDimensions.CornerRadius.medium
+        snackbar.layer.cornerRadius = AppDimensions.Size.medium
         snackbar.translatesAutoresizingMaskIntoConstraints = false
         self.snackbar = snackbar
         

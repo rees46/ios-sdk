@@ -25,6 +25,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var resetDidButton: UIButton!
     @IBOutlet private weak var showStoriesButton: UIButton!
     @IBOutlet private weak var showAlertButton: UIButton!
+    @IBOutlet private weak var showBottomSheetButton: UIButton!
+    @IBOutlet private weak var showFullScreenDialogButton: UIButton!
+    @IBOutlet private weak var showSnackBarButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -46,6 +49,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     func setupInAppNotifcation(){
         notificationWidget = NotificationWidget(parentViewController: self)
         showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
+        showBottomSheetButton.addTarget(self, action: #selector(didTapShowBottomSheet), for: .touchUpInside)
+        showFullScreenDialogButton.addTarget(self, action: #selector(didTapShowFullScreenDialog), for: .touchUpInside)
+        showSnackBarButton.addTarget(self, action: #selector(didTapShowSnackBar), for: .touchUpInside)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -135,7 +141,36 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
-    @objc private func didTapShowAlert() {
+    @objc private func didTapShowBottomSheet() {
+        notificationWidget?.showBottomSheet(
+            title: "Уведомление",
+            message: "Это кастомный алерт диалог.",
+            buttonAcceptText:"OK",
+            buttonDeclineText:"CANCEL",
+            buttonAcceptAction:{
+                
+            },
+            buttonDeclineAction:{
+                
+            }
+        )
+    }
+    @objc private func didTapShowFullScreenDialog() {
+        notificationWidget?.showFullScreenAlert(
+            title: "Title",
+            message: "This is a full-screen alert with an image background.",
+            imageURL: URL(string: "https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg")!,
+            buttonAcceptText: "Accept",
+            buttonDeclineText: "Decline",
+            buttonAcceptAction: {
+                print("Accepted")
+            },
+            buttonDeclineAction: {
+                print("Declined")
+            }
+        )
+    }
+    @objc private func didTapShowSnackBar() {
         notificationWidget?.showSnackbar(
             message: "This's snack bar",
             buttonAcceptText: "Accept",
@@ -147,39 +182,17 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 
             }
         )
-//        notificationWidget?.showFullScreenAlert(
-//            title: "Title",
-//            message: "This is a full-screen alert with an image background.",
-//            imageURL: URL(string: "https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg")!,
-//            buttonAcceptText: "Accept",
-//            buttonDeclineText: "Decline",
-//            buttonAcceptAction: {
-//                print("Accepted")
-//            },
-//            buttonDeclineAction: {
-//                print("Declined")
-//            }
-//        )
-//        notificationWidget?.showBottomSheet(
-//            title: "Уведомление",
-//            message: "Это кастомный алерт диалог.",
-//            buttonAcceptText:"OK",
-//            buttonDeclineText:"CANCEL",
-//            buttonAcceptAction:{
-//                
-//            },
-//            buttonDeclineAction:{
-//                
-//            }
-//        )
-//        notificationWidget?.showAlert(
-//            title: "Уведомление",
-//            message: "Это кастомный алерт диалог.",
-//            buttonText: "ОК",
-//            buttonAction: {
-//                print("Кнопка ОК была нажата.")
-//            }
-//        )
+    }
+    
+    @objc private func didTapShowAlert() {
+        notificationWidget?.showAlert(
+            title: "Уведомление",
+            message: "Это кастомный алерт диалог.",
+            buttonText: "ОК",
+            buttonAction: {
+                print("Кнопка ОК была нажата.")
+            }
+        )
     }
     
     @objc
