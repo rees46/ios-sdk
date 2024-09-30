@@ -24,12 +24,17 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
     @IBOutlet private weak var showStoriesButton: UIButton!
+    @IBOutlet private weak var showAlertButton: UIButton!
+    @IBOutlet private weak var showBottomSheetButton: UIButton!
+    @IBOutlet private weak var showFullScreenDialogButton: UIButton!
+    @IBOutlet private weak var showSnackBarButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
     @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
     public var newArrivalsCollectionView = RecommendationsWidgetView()
+    private var notificationWidget: NotificationWidget?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,6 +43,16 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupSdkActivityIndicator()
         loadRecommendationsWidget()
         loadNewArrivalsWidget()
+        setupInAppNotifcation()
+    }
+    
+    func setupInAppNotifcation(){
+        notificationWidget = NotificationWidget(parentViewController: self)
+        
+        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
+        showBottomSheetButton.addTarget(self, action: #selector(didTapShowBottomSheet), for: .touchUpInside)
+        showFullScreenDialogButton.addTarget(self, action: #selector(didTapShowFullScreenDialog), for: .touchUpInside)
+        showSnackBarButton.addTarget(self, action: #selector(didTapShowSnackBar), for: .touchUpInside)
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -94,7 +109,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 self.scrollView.addSubview(self.recommendationsCollectionView)
                 
                 // Recommendation Widget height and position settings
-//                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
+                //                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
                 self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 10).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
@@ -125,6 +140,62 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 // For test delete if needed
             }
         }
+    }
+    
+    @objc private func didTapShowBottomSheet() {
+        notificationWidget?.showBottomSheet(
+            title: NSLocalizedString("alert_dialog_title", comment:  ""),
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            buttonAcceptAction:{
+                //TODO Handle click if needed
+            },
+            buttonDeclineAction:{
+                //TODO Handle click if needed
+            }
+        )
+    }
+    @objc private func didTapShowFullScreenDialog() {
+        notificationWidget?.showFullScreenAlert(
+            title: NSLocalizedString("alert_dialog_title", comment:  ""),
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            imageURL: URL(
+                string:"https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg"
+            )!,
+            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            buttonAcceptAction: {
+                //TODO Handle click if needed
+            },
+            buttonDeclineAction: {
+                //TODO Handle click if needed
+            }
+        )
+    }
+    @objc private func didTapShowSnackBar() {
+        notificationWidget?.showSnackbar(
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            buttonAcceptAction: {
+                //TODO Handle click if needed
+            },
+            buttonDeclineAction: {
+                //TODO Handle click if needed
+            }
+        )
+    }
+    
+    @objc private func didTapShowAlert() {
+        notificationWidget?.showAlert(
+            title: NSLocalizedString("alert_dialog_title", comment:  ""),
+            message: NSLocalizedString("alert_dialog_message", comment:  ""),
+            buttonText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            buttonAction: {
+                //TODO Handle click if needed
+            }
+        )
     }
     
     @objc

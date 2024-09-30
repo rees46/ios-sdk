@@ -22,7 +22,7 @@
             <objects>
                 <viewController id="BYZ-38-t0r" customClass="MainViewController" customModule="REES46Demo" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
-                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <rect key="frame" x="0.0" y="0.0" width="391" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" fixedFrame="YES" alwaysBounceVertical="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Jiq-jd-mAB">
@@ -57,7 +57,7 @@
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="User Profile" textAlignment="natural" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NEe-sH-hrg">
-                                                <rect key="frame" x="18" y="1200" width="276" height="30"/>
+                                                <rect key="frame" x="18" y="1160" width="276" height="30"/>
                                                 <autoresizingMask key="autoresizingMask"/>
                                                 <fontDescription key="fontDescription" name="Inter-Bold" family="Inter" pointSize="24"/>
                                                 <nil key="highlightedColor"/>
@@ -81,35 +81,67 @@
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="6xl-Za-SDC" customClass="DemoShopButton" customModule="REES46Demo" customModuleProvider="target">
-                                                <rect key="frame" x="96" y="1750" width="181" height="42"/>
+                                                <rect key="frame" x="96" y="1719" width="181" height="42"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                 <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <state key="normal" title="Button"/>
                                                 <buttonConfiguration key="configuration" style="plain" title="Update"/>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jc1-ab-aKj" customClass="DemoShopButton" customModule="REES46Demo" customModuleProvider="target">
-                                                <rect key="frame" x="96" y="1810" width="181" height="42"/>
+                                                <rect key="frame" x="96" y="1774" width="181" height="42"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                 <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <state key="normal" title="Button"/>
                                                 <buttonConfiguration key="configuration" style="plain" title="Reset Keychain Did"/>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="y5i-q4-Hwz" userLabel="Show Stories Button">
-                                                <rect key="frame" x="96" y="1691" width="198" height="41"/>
-                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                <rect key="frame" x="96" y="1667" width="181" height="41"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
                                                 <color key="tintColor" systemColor="labelColor"/>
                                                 <state key="normal" title="Button"/>
                                                 <buttonConfiguration key="configuration" style="filled" title="Show stories">
                                                     <color key="baseBackgroundColor" systemColor="labelColor"/>
                                                 </buttonConfiguration>
                                             </button>
-                                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yLL-YI-dB0">
-                                                <rect key="frame" x="16" y="88" width="36" height="36"/>
-                                                <autoresizingMask key="autoresizingMask"/>
-                                                <color key="backgroundColor" systemColor="linkColor"/>
-                                                <color key="tintColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="o3z-FP-qqv" userLabel="Show Aler Dialog">
+                                                <rect key="frame" x="96" y="1830" width="181" height="41"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                                <color key="tintColor" systemColor="labelColor"/>
+                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
                                                 <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="plain" image="iconCopyDark"/>
+                                                <buttonConfiguration key="configuration" style="filled" title="Show alert pop-up">
+                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
+                                                </buttonConfiguration>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="W1Y-e3-fTV" userLabel="Show Bottom Sheet Dialog">
+                                                <rect key="frame" x="96" y="1886" width="181" height="41"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                                <color key="tintColor" systemColor="labelColor"/>
+                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
+                                                <state key="normal" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="filled" title="Show bottom pop-up">
+                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
+                                                </buttonConfiguration>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="O96-O6-Bj8" userLabel="Show Full Screen Dialog">
+                                                <rect key="frame" x="96" y="1937" width="181" height="41"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                                <color key="tintColor" systemColor="labelColor"/>
+                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
+                                                <state key="normal" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="filled" title="Show full pop-up">
+                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
+                                                </buttonConfiguration>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="aIl-Dd-MtC" userLabel="Show Snack Bar">
+                                                <rect key="frame" x="96" y="1993" width="181" height="41"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                                                <color key="tintColor" systemColor="labelColor"/>
+                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
+                                                <state key="normal" title="Button"/>
+                                                <buttonConfiguration key="configuration" style="filled" title="Show snack bar">
+                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
+                                                </buttonConfiguration>
                                             </button>
                                         </subviews>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -123,15 +155,15 @@
                                 </connections>
                             </scrollView>
                             <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Hqi-UZ-mLX">
-                                <rect key="frame" x="0.0" y="0.0" width="393" height="135"/>
+                                <rect key="frame" x="0.0" y="0.0" width="391" height="135"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES" flexibleMaxY="YES"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="XUH-xy-HDF">
-                                        <rect key="frame" x="0.0" y="0.0" width="393" height="81"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="391" height="81"/>
                                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                         <subviews>
                                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="logoDemoStore" translatesAutoresizingMaskIntoConstraints="NO" id="fqt-Jb-b4I">
-                                                <rect key="frame" x="89" y="42" width="214" height="38"/>
+                                                <rect key="frame" x="89" y="42" width="212" height="38"/>
                                                 <autoresizingMask key="autoresizingMask" flexibleMinX="YES" widthSizable="YES" flexibleMaxX="YES" flexibleMinY="YES"/>
                                             </imageView>
                                         </subviews>
@@ -143,12 +175,12 @@
                                         <state key="normal" image="iconMenu"/>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="D31-uF-Kju">
-                                        <rect key="frame" x="304" y="92" width="35" height="35"/>
+                                        <rect key="frame" x="302" y="92" width="35" height="35"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="iconSearch"/>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="JFb-Hl-bOv">
-                                        <rect key="frame" x="342" y="89" width="39" height="39"/>
+                                        <rect key="frame" x="340" y="89" width="39" height="39"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                         <state key="normal" image="iconCart"/>
                                     </button>
@@ -159,6 +191,7 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <navigationItem key="navigationItem" id="meJ-Be-Zb0"/>
+                    <size key="freeformSize" width="391" height="852"/>
                     <connections>
                         <outlet property="cartButton" destination="JFb-Hl-bOv" id="CTA-bb-F6p"/>
                         <outlet property="didLabel" destination="Y9V-fl-Soa" id="5DF-iN-AMu"/>
@@ -168,6 +201,10 @@
                         <outlet property="resetDidButton" destination="jc1-ab-aKj" id="L8d-GW-iMu"/>
                         <outlet property="scrollView" destination="Jiq-jd-mAB" id="uSK-EG-y5G"/>
                         <outlet property="searchButton" destination="D31-uF-Kju" id="2TY-o1-Su7"/>
+                        <outlet property="showAlertButton" destination="o3z-FP-qqv" id="koN-oP-Hyx"/>
+                        <outlet property="showBottomSheetButton" destination="W1Y-e3-fTV" id="fx3-Cn-WU6"/>
+                        <outlet property="showFullScreenDialogButton" destination="O96-O6-Bj8" id="h6f-sv-eDI"/>
+                        <outlet property="showSnackBarButton" destination="aIl-Dd-MtC" id="j2d-H4-PJ6"/>
                         <outlet property="showStoriesButton" destination="y5i-q4-Hwz" id="pbq-Gg-8Cy"/>
                         <outlet property="storiesCollectionView" destination="yxV-vz-Ow2" id="4Xl-gF-YIf"/>
                         <outlet property="updateDidButton" destination="6xl-Za-SDC" id="zoX-OX-eXe"/>
@@ -227,15 +264,11 @@
     </designables>
     <resources>
         <image name="iconCart" width="128" height="128"/>
-        <image name="iconCopyDark" width="18" height="18"/>
         <image name="iconMenu" width="128" height="128"/>
         <image name="iconSearch" width="15" height="15"/>
         <image name="logoDemoStore" width="692" height="184"/>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-        </systemColor>
-        <systemColor name="linkColor">
-            <color red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

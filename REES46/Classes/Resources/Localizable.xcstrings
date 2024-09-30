@@ -310,6 +310,40 @@
         }
       }
     },
+    "notification_message_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is notification message"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это сообщение уведомления"
+          }
+        }
+      }
+    },
+    "notification_title_key" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is title"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Это заголовок уведомления"
+          }
+        }
+      }
+    },
     "orange_color_key" : {
       "extractionState" : "manual",
       "localizations" : {

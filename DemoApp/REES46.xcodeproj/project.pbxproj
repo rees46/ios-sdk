@@ -16,6 +16,7 @@
 		7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */; };
 		758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */; };
 		75A4D60C2C5B8EAA00929368 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */; };
+		75D1D5C12CA72BF200C8C564 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */; };
 		75E237902C334AA800119197 /* SdkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E2378E2C334AA800119197 /* SdkTest.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
@@ -95,6 +96,7 @@
 		7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SDKConfigProviderTests.swift; sourceTree = "<group>"; };
 		758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnvironments.struct.swift; sourceTree = "<group>"; };
 		75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		75E2378E2C334AA800119197 /* SdkTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SdkTest.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
@@ -186,6 +188,7 @@
 		607FACC71AFB9204008FA782 = {
 			isa = PBXGroup;
 			children = (
+				75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */,
 				75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */,
 				9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */,
 				9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */,
@@ -484,6 +487,7 @@
 				E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */,
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
+				75D1D5C12CA72BF200C8C564 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
