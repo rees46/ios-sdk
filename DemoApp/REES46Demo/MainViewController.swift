@@ -189,6 +189,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc private func didTapShowAlert() {
         notificationWidget?.showAlert(
+            from : self,
             title: NSLocalizedString("alert_dialog_title", comment:  ""),
             message: NSLocalizedString("alert_dialog_message", comment:  ""),
             buttonText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
