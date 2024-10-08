@@ -10,24 +10,22 @@ public class NotificationWidget: InAppNotificationProtocol {
     }
     
     public func showAlert(
-        from parentViewController: UIViewController,
-        title: String,
-        message: String,
-        buttonText: String,
-        buttonAction: @escaping () -> Void
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String,
+        negativeButtonText: String,
+        onPositiveButtonClick: @escaping () -> Void,
+        onNegativeButtonClick: @escaping () -> Void
     ) {
         let customDialog = CustomAlertDialog()
-        customDialog.titleText = "Pizza ipsum dolor meat lovers buffalo."
-        customDialog.messageText = "Pizza ipsum dolor meat lovers buffalo. Cheese ranch Philly red marinara ricotta lovers steak NY beef."
-        customDialog.imageUrl = "https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png"
-        customDialog.positiveButtonText = "Accept"
-        customDialog.negativeButtonText = "Decline"
-        customDialog.onPositiveButtonClick = {
-            print("Positive button clicked")
-        }
-        customDialog.onNegativeButtonClick = {
-            print("Negative button clicked")
-        }
+        customDialog.titleText = titleText
+        customDialog.messageText = messageText
+        customDialog.imageUrl = imageUrl
+        customDialog.positiveButtonText = positiveButtonText
+        customDialog.negativeButtonText = negativeButtonText
+        customDialog.onPositiveButtonClick = onPositiveButtonClick
+        customDialog.onNegativeButtonClick = onNegativeButtonClick
 
         customDialog.modalPresentationStyle = .overFullScreen
         parentViewController.present(customDialog, animated: true, completion: nil)

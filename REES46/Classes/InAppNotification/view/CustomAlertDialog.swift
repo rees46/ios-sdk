@@ -62,8 +62,8 @@ class CustomAlertDialog: UIViewController {
     }
 
     private func setupCloseButton() {
-        closeButton.setImage(UIImage(named: "xmark"), for: .normal)
-        closeButton.tintColor = .black
+        closeButton.setImage(UIImage(named: "iconWebKitClose"), for: .normal)
+        closeButton.tintColor = .white
         closeButton.alpha = 0.5
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
         contentContainer.addSubview(closeButton)
@@ -112,7 +112,6 @@ class CustomAlertDialog: UIViewController {
         acceptButton.translatesAutoresizingMaskIntoConstraints = false
         declineButton.translatesAutoresizingMaskIntoConstraints = false
 
-        // Установка ограничений
         setContentViewConstraints()
         setBackgroundImageViewConstraints()
         setContentContainerConstraints()

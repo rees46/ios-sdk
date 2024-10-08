@@ -3,11 +3,13 @@ import Foundation
 public protocol InAppNotificationProtocol {
     
     func showAlert(
-        from parentViewController: UIViewController,
-        title: String,
-        message: String,
-        buttonText: String,
-        buttonAction: @escaping () -> Void
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String,
+        negativeButtonText: String,
+        onPositiveButtonClick: @escaping () -> Void,
+        onNegativeButtonClick: @escaping () -> Void
     )
     
     func showBottomSheet(

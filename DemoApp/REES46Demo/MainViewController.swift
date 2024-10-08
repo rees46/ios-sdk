@@ -142,6 +142,22 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
+    @objc private func didTapShowAlert() {
+        notificationWidget?.showAlert(
+            titleText :"Pizza ipsum dolor meat lovers buffalo.",
+            messageText :"Pizza ipsum dolor meat lovers buffalo. Cheese ranch Philly red marinara ricotta lovers steak NY beef.",
+            imageUrl :"https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png",
+            positiveButtonText : "Accept",
+            negativeButtonText : "Decline",
+            onPositiveButtonClick : {
+                print("Positive button clicked")
+            },
+            onNegativeButtonClick: {
+                print("Negative button clicked")
+            }
+        )
+    }
+    
     @objc private func didTapShowBottomSheet() {
         notificationWidget?.showBottomSheet(
             title: NSLocalizedString("alert_dialog_title", comment:  ""),
@@ -182,18 +198,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 //TODO Handle click if needed
             },
             buttonDeclineAction: {
-                //TODO Handle click if needed
-            }
-        )
-    }
-    
-    @objc private func didTapShowAlert() {
-        notificationWidget?.showAlert(
-            from : self,
-            title: NSLocalizedString("alert_dialog_title", comment:  ""),
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            buttonText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonAction: {
                 //TODO Handle click if needed
             }
         )
