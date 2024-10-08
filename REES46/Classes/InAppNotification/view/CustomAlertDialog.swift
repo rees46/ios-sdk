@@ -1,0 +1,177 @@
+import UIKit
+
+class CustomAlertDialog: UIViewController {
+    
+    // MARK: - UI Elements
+    private let backgroundImageView = UIImageView()
+    private let contentView = UIView()
+    private let contentContainer = UIView()
+    private let closeButton = UIButton(type: .system)
+    private let titleLabel = UILabel()
+    private let messageLabel = UILabel()
+    private let acceptButton = UIButton(type: .system)
+    private let declineButton = UIButton(type: .system)
+    
+    var titleText: String = ""
+    var messageText: String = ""
+    var imageUrl: String = ""
+    var positiveButtonText: String = ""
+    var negativeButtonText: String = ""
+    var positiveButtonColor: UIColor = .systemBlue
+    var negativeButtonColor: UIColor = .gray
+    
+    var onPositiveButtonClick: (() -> Void)?
+    var onNegativeButtonClick: (() -> Void)?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        loadImage()
+    }
+    
+    private func setupUI() {
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        
+        contentView.backgroundColor = .white
+        contentView.layer.cornerRadius = 16
+        contentView.clipsToBounds = true
+        view.addSubview(contentView)
+        
+        backgroundImageView.contentMode = .scaleAspectFill
+        backgroundImageView.clipsToBounds = true
+        contentView.addSubview(backgroundImageView)
+        
+        // Content Container (для текста и кнопок)
+        contentContainer.backgroundColor = .white
+        contentContainer.layer.cornerRadius = 16
+        contentContainer.clipsToBounds = true
+        contentView.addSubview(contentContainer)
+        
+        // Close Button
+        closeButton.setImage(UIImage(named: "xmark"), for: .normal)
+        closeButton.tintColor = .black
+        closeButton.alpha = 0.5
+        closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
+        contentContainer.addSubview(closeButton)
+        
+        // Title Label
+        titleLabel.text = titleText
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        titleLabel.textColor = .black
+        contentContainer.addSubview(titleLabel)
+        
+        // Message Label
+        messageLabel.text = messageText
+        messageLabel.font = UIFont.systemFont(ofSize: 16)
+        messageLabel.numberOfLines = 0
+        messageLabel.textColor = .black
+        contentContainer.addSubview(messageLabel)
+        
+        // Accept Button
+        acceptButton.setTitle(positiveButtonText, for: .normal)
+        acceptButton.backgroundColor = positiveButtonColor
+        acceptButton.setTitleColor(.white, for: .normal)
+        acceptButton.layer.cornerRadius = 8
+        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
+        contentContainer.addSubview(acceptButton)
+        
+        // Decline Button
+        declineButton.setTitle(negativeButtonText, for: .normal)
+        declineButton.backgroundColor = negativeButtonColor
+        declineButton.setTitleColor(.white, for: .normal)
+        declineButton.layer.cornerRadius = 8
+        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
+        contentContainer.addSubview(declineButton)
+        
+        layoutUI()
+    }
+    
+    private func layoutUI() {
+        backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentContainer.translatesAutoresizingMaskIntoConstraints = false
+        closeButton.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        acceptButton.translatesAutoresizingMaskIntoConstraints = false
+        declineButton.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            contentView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            backgroundImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            backgroundImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            backgroundImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            backgroundImageView.heightAnchor.constraint(equalToConstant: 200),
+            
+            contentContainer.topAnchor.constraint(equalTo: backgroundImageView.bottomAnchor, constant: -16),
+            contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
+            
+            // Close Button
+            closeButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 8),
+            closeButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -8),
+            closeButton.widthAnchor.constraint(equalToConstant: 24),
+            closeButton.heightAnchor.constraint(equalToConstant: 24),
+            
+            // Title Label
+            titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16),
+            titleLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
+            
+            // Message Label
+            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
+            messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
+            
+            // Decline Button
+            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 16),
+            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
+            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -8),
+            declineButton.heightAnchor.constraint(equalToConstant: 44),
+            
+            // Accept Button
+            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 16),
+            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: 8),
+            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
+            acceptButton.heightAnchor.constraint(equalToConstant: 44),
+            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -16)
+        ])
+    }
+    
+    private func loadImage() {
+        guard let url = URL(string: imageUrl) else {
+            print("Invalid image URL")
+            return
+        }
+        DispatchQueue.global().async {
+            do {
+                let data = try Data(contentsOf: url)
+                let image = UIImage(data: data)
+                DispatchQueue.main.async {
+                    self.backgroundImageView.image = image
+                }
+            } catch {
+                print("Failed to load image: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    @objc private func onAcceptButtonTapped() {
+        onPositiveButtonClick?()
+        dismiss(animated: true, completion: nil)
+    }
+    
+    @objc private func onDeclineButtonTapped() {
+        onNegativeButtonClick?()
+        dismiss(animated: true, completion: nil)
+    }
+    
+    @objc private func dismissDialog() {
+        dismiss(animated: true, completion: nil)
+    }
+}

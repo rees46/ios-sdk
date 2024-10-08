@@ -3,6 +3,7 @@ import Foundation
 public protocol InAppNotificationProtocol {
     
     func showAlert(
+        from parentViewController: UIViewController,
         title: String,
         message: String,
         buttonText: String,
