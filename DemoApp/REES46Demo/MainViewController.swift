@@ -163,11 +163,11 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc private func didTapShowAlert() {
         notificationWidget?.showAlert(
-            titleText :"Pizza ipsum dolor meat lovers buffalo.",
-            messageText :"Pizza ipsum dolor meat lovers buffalo. Cheese ranch Philly red marinara ricotta lovers steak NY beef.",
+            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
+            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
             imageUrl :"https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png",
-            positiveButtonText : "Accept",
-            negativeButtonText : "Decline",
+            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
             onPositiveButtonClick : {
                 print("Positive button clicked")
             },
