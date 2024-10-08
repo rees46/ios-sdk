@@ -62,21 +62,17 @@ class CustomAlertDialog: UIViewController {
     }
     
     private func setupCloseButton() {
-        // Настройка внешнего вида кнопки
         closeButton.tintColor = .white
         closeButton.alpha = 1.0
         closeButton.backgroundColor = .clear
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
 
-        // Нарисуем крестик с помощью CAShapeLayer
         let crossLayer = CAShapeLayer()
         let crossPath = UIBezierPath()
 
-        // Вертикальная линия
         crossPath.move(to: CGPoint(x: 0, y: 0))
         crossPath.addLine(to: CGPoint(x: 24, y: 24))
 
-        // Горизонтальная линия
         crossPath.move(to: CGPoint(x: 24, y: 0))
         crossPath.addLine(to: CGPoint(x: 0, y: 24))
 
@@ -84,7 +80,6 @@ class CustomAlertDialog: UIViewController {
         crossLayer.strokeColor = UIColor.black.cgColor
         crossLayer.lineWidth = 2.0
 
-        // Добавим нарисованный крестик на кнопку
         closeButton.layer.addSublayer(crossLayer)
         contentContainer.addSubview(closeButton)
     }
