@@ -31,42 +31,60 @@ class CustomAlertDialog: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        
+        setupContentView()
+        setupBackgroundImageView()
+        setupContentContainer()
+        setupCloseButton()
+        setupTitleLabel()
+        setupMessageLabel()
+        setupButtons()
+        layoutUI()
+    }
+
+    private func setupContentView() {
         contentView.backgroundColor = .white
         contentView.layer.cornerRadius = 16
         contentView.clipsToBounds = true
         view.addSubview(contentView)
-        
+    }
+
+    private func setupBackgroundImageView() {
         backgroundImageView.contentMode = .scaleAspectFill
         backgroundImageView.clipsToBounds = true
         contentView.addSubview(backgroundImageView)
-        
-        // Content Container (для текста и кнопок)
+    }
+
+    private func setupContentContainer() {
         contentContainer.backgroundColor = .white
         contentContainer.layer.cornerRadius = 16
         contentContainer.clipsToBounds = true
         contentView.addSubview(contentContainer)
-        
-        // Close Button
+    }
+
+    private func setupCloseButton() {
         closeButton.setImage(UIImage(named: "xmark"), for: .normal)
         closeButton.tintColor = .black
         closeButton.alpha = 0.5
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
         contentContainer.addSubview(closeButton)
-        
-        // Title Label
+    }
+
+    private func setupTitleLabel() {
         titleLabel.text = titleText
         titleLabel.font = UIFont.boldSystemFont(ofSize: 18)
         titleLabel.textColor = .black
         contentContainer.addSubview(titleLabel)
-        
-        // Message Label
+    }
+
+    private func setupMessageLabel() {
         messageLabel.text = messageText
         messageLabel.font = UIFont.systemFont(ofSize: 16)
         messageLabel.numberOfLines = 0
         messageLabel.textColor = .black
         contentContainer.addSubview(messageLabel)
-        
+    }
+
+    private func setupButtons() {
         // Accept Button
         acceptButton.setTitle(positiveButtonText, for: .normal)
         acceptButton.backgroundColor = positiveButtonColor
@@ -74,7 +92,7 @@ class CustomAlertDialog: UIViewController {
         acceptButton.layer.cornerRadius = 8
         acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(acceptButton)
-        
+
         // Decline Button
         declineButton.setTitle(negativeButtonText, for: .normal)
         declineButton.backgroundColor = negativeButtonColor
@@ -82,10 +100,8 @@ class CustomAlertDialog: UIViewController {
         declineButton.layer.cornerRadius = 8
         declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(declineButton)
-        
-        layoutUI()
     }
-    
+
     private func layoutUI() {
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -95,39 +111,71 @@ class CustomAlertDialog: UIViewController {
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         acceptButton.translatesAutoresizingMaskIntoConstraints = false
         declineButton.translatesAutoresizingMaskIntoConstraints = false
-        
+
+        // Установка ограничений
+        setContentViewConstraints()
+        setBackgroundImageViewConstraints()
+        setContentContainerConstraints()
+        setCloseButtonConstraints()
+        setTitleLabelConstraints()
+        setMessageLabelConstraints()
+        setButtonConstraints()
+    }
+    
+    private func setContentViewConstraints() {
         NSLayoutConstraint.activate([
             contentView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
+        ])
+    }
+
+    private func setBackgroundImageViewConstraints() {
+        NSLayoutConstraint.activate([
             backgroundImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
             backgroundImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             backgroundImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            backgroundImageView.heightAnchor.constraint(equalToConstant: 200),
-            
+            backgroundImageView.heightAnchor.constraint(equalToConstant: 200)
+        ])
+    }
+
+    private func setContentContainerConstraints() {
+        NSLayoutConstraint.activate([
             contentContainer.topAnchor.constraint(equalTo: backgroundImageView.bottomAnchor, constant: -16),
             contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200),
-            
-            // Close Button
+            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200)
+        ])
+    }
+
+    private func setCloseButtonConstraints() {
+        NSLayoutConstraint.activate([
             closeButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 8),
             closeButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -8),
             closeButton.widthAnchor.constraint(equalToConstant: 24),
-            closeButton.heightAnchor.constraint(equalToConstant: 24),
-            
-            // Title Label
+            closeButton.heightAnchor.constraint(equalToConstant: 24)
+        ])
+    }
+
+    private func setTitleLabelConstraints() {
+        NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16),
             titleLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
-            
-            // Message Label
+            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16)
+        ])
+    }
+
+    private func setMessageLabelConstraints() {
+        NSLayoutConstraint.activate([
             messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
             messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
-            
+            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16)
+        ])
+    }
+
+    private func setButtonConstraints() {
+        NSLayoutConstraint.activate([
             // Decline Button
             declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 16),
             declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
@@ -142,7 +190,7 @@ class CustomAlertDialog: UIViewController {
             acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -16)
         ])
     }
-    
+
     private func loadImage() {
         guard let url = URL(string: imageUrl) else {
             print("Invalid image URL")
@@ -160,17 +208,17 @@ class CustomAlertDialog: UIViewController {
             }
         }
     }
-    
+
     @objc private func onAcceptButtonTapped() {
         onPositiveButtonClick?()
         dismiss(animated: true, completion: nil)
     }
-    
+
     @objc private func onDeclineButtonTapped() {
         onNegativeButtonClick?()
         dismiss(animated: true, completion: nil)
     }
-    
+
     @objc private func dismissDialog() {
         dismiss(animated: true, completion: nil)
     }
