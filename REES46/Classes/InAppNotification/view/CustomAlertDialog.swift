@@ -40,27 +40,27 @@ class CustomAlertDialog: UIViewController {
         setupButtons()
         layoutUI()
     }
-
+    
     private func setupContentView() {
         contentView.backgroundColor = .white
         contentView.layer.cornerRadius = 16
         contentView.clipsToBounds = true
         view.addSubview(contentView)
     }
-
+    
     private func setupBackgroundImageView() {
         backgroundImageView.contentMode = .scaleAspectFill
         backgroundImageView.clipsToBounds = true
         contentView.addSubview(backgroundImageView)
     }
-
+    
     private func setupContentContainer() {
         contentContainer.backgroundColor = .white
         contentContainer.layer.cornerRadius = 16
         contentContainer.clipsToBounds = true
         contentView.addSubview(contentContainer)
     }
-
+    
     private func setupCloseButton() {
         closeButton.setImage(UIImage(named: "iconWebKitClose"), for: .normal)
         closeButton.tintColor = .white
@@ -68,14 +68,14 @@ class CustomAlertDialog: UIViewController {
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
         contentContainer.addSubview(closeButton)
     }
-
+    
     private func setupTitleLabel() {
         titleLabel.text = titleText
         titleLabel.font = UIFont.boldSystemFont(ofSize: 18)
         titleLabel.textColor = .black
         contentContainer.addSubview(titleLabel)
     }
-
+    
     private func setupMessageLabel() {
         messageLabel.text = messageText
         messageLabel.font = UIFont.systemFont(ofSize: 16)
@@ -83,7 +83,7 @@ class CustomAlertDialog: UIViewController {
         messageLabel.textColor = .black
         contentContainer.addSubview(messageLabel)
     }
-
+    
     private func setupButtons() {
         // Accept Button
         acceptButton.setTitle(positiveButtonText, for: .normal)
@@ -92,7 +92,7 @@ class CustomAlertDialog: UIViewController {
         acceptButton.layer.cornerRadius = 8
         acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(acceptButton)
-
+        
         // Decline Button
         declineButton.setTitle(negativeButtonText, for: .normal)
         declineButton.backgroundColor = negativeButtonColor
@@ -101,7 +101,7 @@ class CustomAlertDialog: UIViewController {
         declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(declineButton)
     }
-
+    
     private func layoutUI() {
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -111,7 +111,7 @@ class CustomAlertDialog: UIViewController {
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         acceptButton.translatesAutoresizingMaskIntoConstraints = false
         declineButton.translatesAutoresizingMaskIntoConstraints = false
-
+        
         setContentViewConstraints()
         setBackgroundImageViewConstraints()
         setContentContainerConstraints()
@@ -128,7 +128,7 @@ class CustomAlertDialog: UIViewController {
             contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
     }
-
+    
     private func setBackgroundImageViewConstraints() {
         NSLayoutConstraint.activate([
             backgroundImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
@@ -137,7 +137,7 @@ class CustomAlertDialog: UIViewController {
             backgroundImageView.heightAnchor.constraint(equalToConstant: 200)
         ])
     }
-
+    
     private func setContentContainerConstraints() {
         NSLayoutConstraint.activate([
             contentContainer.topAnchor.constraint(equalTo: backgroundImageView.bottomAnchor, constant: -16),
@@ -147,7 +147,7 @@ class CustomAlertDialog: UIViewController {
             contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200)
         ])
     }
-
+    
     private func setCloseButtonConstraints() {
         NSLayoutConstraint.activate([
             closeButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 8),
@@ -156,7 +156,7 @@ class CustomAlertDialog: UIViewController {
             closeButton.heightAnchor.constraint(equalToConstant: 24)
         ])
     }
-
+    
     private func setTitleLabelConstraints() {
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16),
@@ -164,7 +164,7 @@ class CustomAlertDialog: UIViewController {
             titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16)
         ])
     }
-
+    
     private func setMessageLabelConstraints() {
         NSLayoutConstraint.activate([
             messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
@@ -172,7 +172,7 @@ class CustomAlertDialog: UIViewController {
             messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16)
         ])
     }
-
+    
     private func setButtonConstraints() {
         NSLayoutConstraint.activate([
             // Decline Button
@@ -189,7 +189,7 @@ class CustomAlertDialog: UIViewController {
             acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -16)
         ])
     }
-
+    
     private func loadImage() {
         guard let url = URL(string: imageUrl) else {
             print("Invalid image URL")
@@ -207,17 +207,17 @@ class CustomAlertDialog: UIViewController {
             }
         }
     }
-
+    
     @objc private func onAcceptButtonTapped() {
         onPositiveButtonClick?()
         dismiss(animated: true, completion: nil)
     }
-
+    
     @objc private func onDeclineButtonTapped() {
         onNegativeButtonClick?()
         dismiss(animated: true, completion: nil)
     }
-
+    
     @objc private func dismissDialog() {
         dismiss(animated: true, completion: nil)
     }
