@@ -44,15 +44,34 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         loadRecommendationsWidget()
         loadNewArrivalsWidget()
         setupInAppNotifcation()
+        setupInAppNotifcationActions()
     }
     
     func setupInAppNotifcation(){
         notificationWidget = NotificationWidget(parentViewController: self)
-        
-        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
-        showBottomSheetButton.addTarget(self, action: #selector(didTapShowBottomSheet), for: .touchUpInside)
-        showFullScreenDialogButton.addTarget(self, action: #selector(didTapShowFullScreenDialog), for: .touchUpInside)
-        showSnackBarButton.addTarget(self, action: #selector(didTapShowSnackBar), for: .touchUpInside)
+    }
+    
+    func setupInAppNotifcationActions(){
+        showAlertButton.addTarget(
+            self,
+            action: #selector(didTapShowAlert),
+            for: .touchUpInside
+        )
+        showBottomSheetButton.addTarget(
+            self,
+            action: #selector(didTapShowBottomSheet),
+            for: .touchUpInside
+        )
+        showFullScreenDialogButton.addTarget(
+            self,
+            action: #selector(didTapShowFullScreenDialog),
+            for: .touchUpInside
+        )
+        showSnackBarButton.addTarget(
+            self,
+            action: #selector(didTapShowSnackBar),
+            for: .touchUpInside
+        )
     }
     
     override func viewDidAppear(_ animated: Bool) {
