@@ -62,10 +62,30 @@ class CustomAlertDialog: UIViewController {
     }
     
     private func setupCloseButton() {
-        closeButton.setImage(UIImage(named: "iconWebKitClose"), for: .normal)
+        // Настройка внешнего вида кнопки
         closeButton.tintColor = .white
-        closeButton.alpha = 0.5
+        closeButton.alpha = 1.0
+        closeButton.backgroundColor = .clear
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
+
+        // Нарисуем крестик с помощью CAShapeLayer
+        let crossLayer = CAShapeLayer()
+        let crossPath = UIBezierPath()
+
+        // Вертикальная линия
+        crossPath.move(to: CGPoint(x: 0, y: 0))
+        crossPath.addLine(to: CGPoint(x: 24, y: 24))
+
+        // Горизонтальная линия
+        crossPath.move(to: CGPoint(x: 24, y: 0))
+        crossPath.addLine(to: CGPoint(x: 0, y: 24))
+
+        crossLayer.path = crossPath.cgPath
+        crossLayer.strokeColor = UIColor.black.cgColor
+        crossLayer.lineWidth = 2.0
+
+        // Добавим нарисованный крестик на кнопку
+        closeButton.layer.addSublayer(crossLayer)
         contentContainer.addSubview(closeButton)
     }
     
