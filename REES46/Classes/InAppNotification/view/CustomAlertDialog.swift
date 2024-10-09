@@ -16,8 +16,8 @@ class CustomAlertDialog: UIViewController {
     var imageUrl: String = ""
     var positiveButtonText: String = ""
     var negativeButtonText: String = ""
-    var positiveButtonColor: UIColor = .systemBlue
-    var negativeButtonColor: UIColor = .gray
+    var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
+    var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
     
     var onPositiveButtonClick: (() -> Void)?
     var onNegativeButtonClick: (() -> Void)?
@@ -29,7 +29,7 @@ class CustomAlertDialog: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        view.backgroundColor = AppColors.Background.alertDimmed
         setupContentView()
         setupBackgroundImageView()
         setupContentContainer()
@@ -41,7 +41,7 @@ class CustomAlertDialog: UIViewController {
     }
     
     private func setupContentView() {
-        contentView.backgroundColor = .white
+        contentView.backgroundColor = AppColors.Background.contentView
         contentView.layer.cornerRadius = AppDimensions.Padding.medium
         contentView.clipsToBounds = true
         view.addSubview(contentView)
@@ -54,16 +54,16 @@ class CustomAlertDialog: UIViewController {
     }
     
     private func setupContentContainer() {
-        contentContainer.backgroundColor = .white
+        contentContainer.backgroundColor = AppColors.Background.contentView
         contentContainer.layer.cornerRadius = AppDimensions.Padding.medium
         contentContainer.clipsToBounds = true
         contentView.addSubview(contentContainer)
     }
     
     private func setupCloseButton() {
-        closeButton.tintColor = .white
+        closeButton.tintColor = AppColors.Background.contentView
         closeButton.alpha = 1.0
-        closeButton.backgroundColor = .clear
+        closeButton.backgroundColor = AppColors.ImageView.background
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
         
         let crossLayer = CAShapeLayer()
@@ -95,7 +95,7 @@ class CustomAlertDialog: UIViewController {
     private func setupTitleLabel() {
         titleLabel.text = titleText
         titleLabel.font = UIFont.boldSystemFont(ofSize: AppDimensions.FontSize.large)
-        titleLabel.textColor = .black
+        titleLabel.textColor = AppColors.Text.title
         contentContainer.addSubview(titleLabel)
     }
     
@@ -103,7 +103,7 @@ class CustomAlertDialog: UIViewController {
         messageLabel.text = messageText
         messageLabel.font = UIFont.systemFont(ofSize: AppDimensions.FontSize.medium)
         messageLabel.numberOfLines = 0
-        messageLabel.textColor = .black
+        messageLabel.textColor = AppColors.Text.message
         contentContainer.addSubview(messageLabel)
     }
     
