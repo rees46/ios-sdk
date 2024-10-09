@@ -1,8 +1,7 @@
 import UIKit
 
 class CustomAlertDialog: UIViewController {
-    
-    // MARK: - UI Elements
+
     private let backgroundImageView = UIImageView()
     private let contentView = UIView()
     private let contentContainer = UIView()
@@ -43,7 +42,7 @@ class CustomAlertDialog: UIViewController {
     
     private func setupContentView() {
         contentView.backgroundColor = .white
-        contentView.layer.cornerRadius = 16
+        contentView.layer.cornerRadius = AppDimensions.Padding.medium
         contentView.clipsToBounds = true
         view.addSubview(contentView)
     }
@@ -56,7 +55,7 @@ class CustomAlertDialog: UIViewController {
     
     private func setupContentContainer() {
         contentContainer.backgroundColor = .white
-        contentContainer.layer.cornerRadius = 16
+        contentContainer.layer.cornerRadius = AppDimensions.Padding.medium
         contentContainer.clipsToBounds = true
         contentView.addSubview(contentContainer)
     }
@@ -66,34 +65,43 @@ class CustomAlertDialog: UIViewController {
         closeButton.alpha = 1.0
         closeButton.backgroundColor = .clear
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
-
+        
         let crossLayer = CAShapeLayer()
         let crossPath = UIBezierPath()
-
+        
         crossPath.move(to: CGPoint(x: 0, y: 0))
-        crossPath.addLine(to: CGPoint(x: 24, y: 24))
-
-        crossPath.move(to: CGPoint(x: 24, y: 0))
-        crossPath.addLine(to: CGPoint(x: 0, y: 24))
-
+        crossPath.addLine(to: CGPoint(
+            x: AppDimensions.Padding.large,
+            y: AppDimensions.Padding.large)
+        )
+        
+        crossPath.move(to: CGPoint(
+            x: AppDimensions.Padding.large,
+            y: 0)
+        )
+        crossPath.addLine(to: CGPoint(
+            x: 0,
+            y: AppDimensions.Padding.large)
+        )
+        
         crossLayer.path = crossPath.cgPath
         crossLayer.strokeColor = UIColor.black.cgColor
         crossLayer.lineWidth = 2.0
-
+        
         closeButton.layer.addSublayer(crossLayer)
         contentContainer.addSubview(closeButton)
     }
     
     private func setupTitleLabel() {
         titleLabel.text = titleText
-        titleLabel.font = UIFont.boldSystemFont(ofSize: 18)
+        titleLabel.font = UIFont.boldSystemFont(ofSize: AppDimensions.FontSize.large)
         titleLabel.textColor = .black
         contentContainer.addSubview(titleLabel)
     }
     
     private func setupMessageLabel() {
         messageLabel.text = messageText
-        messageLabel.font = UIFont.systemFont(ofSize: 16)
+        messageLabel.font = UIFont.systemFont(ofSize: AppDimensions.FontSize.medium)
         messageLabel.numberOfLines = 0
         messageLabel.textColor = .black
         contentContainer.addSubview(messageLabel)
@@ -104,7 +112,7 @@ class CustomAlertDialog: UIViewController {
         acceptButton.setTitle(positiveButtonText, for: .normal)
         acceptButton.backgroundColor = positiveButtonColor
         acceptButton.setTitleColor(.white, for: .normal)
-        acceptButton.layer.cornerRadius = 8
+        acceptButton.layer.cornerRadius = AppDimensions.Padding.small
         acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(acceptButton)
         
@@ -112,7 +120,7 @@ class CustomAlertDialog: UIViewController {
         declineButton.setTitle(negativeButtonText, for: .normal)
         declineButton.backgroundColor = negativeButtonColor
         declineButton.setTitleColor(.white, for: .normal)
-        declineButton.layer.cornerRadius = 8
+        declineButton.layer.cornerRadius = AppDimensions.Padding.small
         declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(declineButton)
     }
@@ -139,8 +147,8 @@ class CustomAlertDialog: UIViewController {
     private func setContentViewConstraints() {
         NSLayoutConstraint.activate([
             contentView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDimensions.Padding.large),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDimensions.Padding.large)
         ])
     }
     
@@ -149,59 +157,59 @@ class CustomAlertDialog: UIViewController {
             backgroundImageView.topAnchor.constraint(equalTo: contentView.topAnchor),
             backgroundImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             backgroundImageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            backgroundImageView.heightAnchor.constraint(equalToConstant: 200)
+            backgroundImageView.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
         ])
     }
     
     private func setContentContainerConstraints() {
         NSLayoutConstraint.activate([
-            contentContainer.topAnchor.constraint(equalTo: backgroundImageView.bottomAnchor, constant: -16),
+            contentContainer.topAnchor.constraint(equalTo: backgroundImageView.bottomAnchor, constant: -AppDimensions.Padding.large),
             contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: 200)
+            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: AppDimensions.Size.alertPopUpHeight)
         ])
     }
     
     private func setCloseButtonConstraints() {
         NSLayoutConstraint.activate([
-            closeButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 8),
-            closeButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -8),
-            closeButton.widthAnchor.constraint(equalToConstant: 24),
-            closeButton.heightAnchor.constraint(equalToConstant: 24)
+            closeButton.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: AppDimensions.Padding.small),
+            closeButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.small),
+            closeButton.widthAnchor.constraint(equalToConstant: AppDimensions.Padding.large),
+            closeButton.heightAnchor.constraint(equalToConstant: AppDimensions.Padding.large)
         ])
     }
     
     private func setTitleLabelConstraints() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16)
+            titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: AppDimensions.Padding.medium),
+            titleLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
         ])
     }
     
     private func setMessageLabelConstraints() {
         NSLayoutConstraint.activate([
-            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 8),
-            messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16)
+            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
+            messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
         ])
     }
     
     private func setButtonConstraints() {
         NSLayoutConstraint.activate([
             // Decline Button
-            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 16),
-            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: 16),
-            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -8),
-            declineButton.heightAnchor.constraint(equalToConstant: 44),
+            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+            declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
             
             // Accept Button
-            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 16),
-            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: 8),
-            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -16),
-            acceptButton.heightAnchor.constraint(equalToConstant: 44),
-            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -16)
+            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+            acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
         ])
     }
     
