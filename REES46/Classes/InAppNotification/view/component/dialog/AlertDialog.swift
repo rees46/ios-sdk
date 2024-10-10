@@ -1,16 +1,16 @@
 import UIKit
 
-class CustomAlertDialog: UIViewController {
+class AlertDialog: UIViewController {
 
-    private let backgroundImageView = UIImageView()
+    private let backgroundImageView = DialogImageVeiw()
     private let contentView = UIView()
     private let contentContainer = UIView()
     private let imageContainer = UIView()
-    private let closeButton = UIButton(type: .system)
-    private let titleLabel = UILabel()
-    private let messageLabel = UILabel()
-    private let acceptButton = UIButton(type: .system)
-    private let declineButton = UIButton(type: .system)
+    private let closeButton = DialogButtonClose()
+    private let titleLabel: DialogText
+    private let messageLabel: DialogText
+    private let acceptButton: DialogActionButton
+    private let declineButton: DialogActionButton
 
     var titleText: String = ""
     var messageText: String = ""
@@ -23,21 +23,36 @@ class CustomAlertDialog: UIViewController {
     var onPositiveButtonClick: (() -> Void)?
     var onNegativeButtonClick: (() -> Void)?
 
+    init() {
+        titleLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.large, isBold: true)
+        messageLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.medium)
+        acceptButton = DialogActionButton(title: "", backgroundColor: positiveButtonColor)
+        declineButton = DialogActionButton(title: "", backgroundColor: negativeButtonColor)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        titleLabel.text = titleText
+        messageLabel.text = messageText
+        acceptButton.setTitle(positiveButtonText, for: .normal)
+        declineButton.setTitle(negativeButtonText, for: .normal)
+        acceptButton.backgroundColor = positiveButtonColor
+        declineButton.backgroundColor = negativeButtonColor
+
         setupUI()
-        loadImage()
+        backgroundImageView.loadImage(from: imageUrl)
     }
 
     private func setupUI() {
         view.backgroundColor = AppColors.Background.alertDimmed
         setupContentView()
         setupImageContainer()
-        setupBackgroundImageView()
-        setupContentContainer()
-        setupCloseButton()
-        setupTitleLabel()
-        setupMessageLabel()
         setupButtons()
         layoutUI()
     }
@@ -51,82 +66,24 @@ class CustomAlertDialog: UIViewController {
 
     private func setupImageContainer() {
         contentView.addSubview(imageContainer)
-    }
-
-    private func setupBackgroundImageView() {
-        backgroundImageView.contentMode = .scaleAspectFill
-        backgroundImageView.clipsToBounds = true
         imageContainer.addSubview(backgroundImageView)
-    }
-
-    private func setupContentContainer() {
-        contentContainer.backgroundColor = AppColors.Background.contentView
-        contentContainer.layer.cornerRadius = AppDimensions.Padding.medium
-        contentContainer.clipsToBounds = true
-        contentView.addSubview(contentContainer)
-    }
-
-    private func setupCloseButton() {
-        closeButton.tintColor = UIColor.clear
-        closeButton.alpha = 0.7
-        closeButton.backgroundColor = UIColor(white: 0.5, alpha: 0.5)
-        closeButton.layer.cornerRadius = AppDimensions.Size.closeButtonCornerRadius
-        closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
-
-        let crossLayer = CAShapeLayer()
-        let crossPath = UIBezierPath()
-
-        let crossSize: CGFloat = AppDimensions.Size.crossSize
-        let lineWidth: CGFloat = AppDimensions.Size.crossLineWidth
-
-        let topOffset: CGFloat = AppDimensions.Offset.topOffset
-        let leftOffset: CGFloat = AppDimensions.Offset.leftOffset
-
-        crossPath.move(to: CGPoint(x: leftOffset, y: topOffset))
-        crossPath.addLine(to: CGPoint(x: leftOffset + crossSize, y: topOffset + crossSize))
-
-        crossPath.move(to: CGPoint(x: leftOffset + crossSize, y: topOffset))
-        crossPath.addLine(to: CGPoint(x: leftOffset, y: topOffset + crossSize))
-
-        crossLayer.path = crossPath.cgPath
-        crossLayer.strokeColor = UIColor.gray.cgColor
-        crossLayer.lineWidth = lineWidth
-
-        closeButton.layer.addSublayer(crossLayer)
         imageContainer.addSubview(closeButton)
     }
 
-    private func setupTitleLabel() {
-        titleLabel.text = titleText
-        titleLabel.font = UIFont.boldSystemFont(ofSize: AppDimensions.FontSize.large)
-        titleLabel.textColor = AppColors.Text.title
-        contentContainer.addSubview(titleLabel)
-    }
-
-    private func setupMessageLabel() {
-        messageLabel.text = messageText
-        messageLabel.font = UIFont.systemFont(ofSize: AppDimensions.FontSize.medium)
-        messageLabel.numberOfLines = 0
-        messageLabel.textColor = AppColors.Text.message
-        contentContainer.addSubview(messageLabel)
-    }
-
     private func setupButtons() {
-        // Accept Button
-        acceptButton.setTitle(positiveButtonText, for: .normal)
-        acceptButton.backgroundColor = positiveButtonColor
-        acceptButton.setTitleColor(.white, for: .normal)
-        acceptButton.layer.cornerRadius = AppDimensions.Padding.small
-        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
+        contentContainer.backgroundColor = AppColors.Background.contentView
+        contentContainer.layer.cornerRadius = AppDimensions.Padding.medium
+        contentContainer.clipsToBounds = true
+        
+        contentContainer.addSubview(titleLabel)
+        contentContainer.addSubview(messageLabel)
         contentContainer.addSubview(acceptButton)
-
-        // Decline Button
-        declineButton.setTitle(negativeButtonText, for: .normal)
-        declineButton.backgroundColor = negativeButtonColor
-        declineButton.setTitleColor(.white, for: .normal)
-        declineButton.layer.cornerRadius = AppDimensions.Padding.small
-        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
         contentContainer.addSubview(declineButton)
+        contentView.addSubview(contentContainer)
+
+        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
+        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
+        closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
     }
 
     private func layoutUI() {
@@ -190,8 +147,8 @@ class CustomAlertDialog: UIViewController {
         NSLayoutConstraint.activate([
             closeButton.topAnchor.constraint(equalTo: imageContainer.topAnchor, constant: AppDimensions.Padding.small),
             closeButton.trailingAnchor.constraint(equalTo: imageContainer.trailingAnchor, constant: -AppDimensions.Padding.small),
-            closeButton.widthAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight),
-            closeButton.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
+            closeButton.widthAnchor.constraint(equalToConstant: AppDimensions.Size.closeButtonSize),
+            closeButton.heightAnchor.constraint(equalToConstant: AppDimensions.Size.closeButtonSize)
         ])
     }
 
@@ -226,24 +183,6 @@ class CustomAlertDialog: UIViewController {
             acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
             acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
         ])
-    }
-
-    private func loadImage() {
-        guard let url = URL(string: imageUrl) else {
-            print("Invalid image URL")
-            return
-        }
-        DispatchQueue.global().async {
-            do {
-                let data = try Data(contentsOf: url)
-                let image = UIImage(data: data)
-                DispatchQueue.main.async {
-                    self.backgroundImageView.image = image
-                }
-            } catch {
-                print("Failed to load image: \(error.localizedDescription)")
-            }
-        }
     }
 
     @objc private func onAcceptButtonTapped() {

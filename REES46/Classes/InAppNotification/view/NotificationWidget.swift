@@ -18,7 +18,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         onPositiveButtonClick: @escaping () -> Void,
         onNegativeButtonClick: @escaping () -> Void
     ) {
-        let customDialog = CustomAlertDialog()
+        let customDialog = AlertDialog()
         customDialog.titleText = titleText
         customDialog.messageText = messageText
         customDialog.imageUrl = imageUrl
