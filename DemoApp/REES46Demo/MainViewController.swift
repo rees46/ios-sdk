@@ -165,7 +165,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         notificationWidget?.showAlert(
             titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
             messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
-            imageUrl :"https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png",
+            imageUrl :AppEnvironments.imageUrl,
             positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
             negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
             onPositiveButtonClick : {
@@ -181,7 +181,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         notificationWidget?.showBottomSheet(
             titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
             messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
-            imageUrl :"https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png",
+            imageUrl :AppEnvironments.imageUrl,
             positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
             negativeButtonText : nil,
             onPositiveButtonClick : {
@@ -194,18 +194,16 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     @objc private func didTapShowFullScreenDialog() {
         notificationWidget?.showFullScreenAlert(
-            title: NSLocalizedString("alert_dialog_title", comment:  ""),
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            imageURL: URL(
-                string:"https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg"
-            )!,
-            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            buttonAcceptAction: {
-                //TODO Handle click if needed
+            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
+            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
+            imageUrl :AppEnvironments.imageUrl,
+            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            onPositiveButtonClick : {
+                print("Positive button clicked")
             },
-            buttonDeclineAction: {
-                //TODO Handle click if needed
+            onNegativeButtonClick: {
+                print("Negative button clicked")
             }
         )
     }

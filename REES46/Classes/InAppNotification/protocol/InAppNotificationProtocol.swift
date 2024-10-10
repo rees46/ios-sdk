@@ -23,13 +23,13 @@ public protocol InAppNotificationProtocol {
     )
     
     func showFullScreenAlert(
-        title: String,
-        message: String,
-        imageURL: URL,
-        buttonAcceptText: String,
-        buttonDeclineText: String,
-        buttonAcceptAction: @escaping () -> Void,
-        buttonDeclineAction: @escaping () -> Void
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String,
+        negativeButtonText: String,
+        onPositiveButtonClick: @escaping () -> Void,
+        onNegativeButtonClick: @escaping () -> Void
     )
     
     func showSnackbar(

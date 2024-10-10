@@ -18,17 +18,17 @@ public class NotificationWidget: InAppNotificationProtocol {
         onPositiveButtonClick: @escaping () -> Void,
         onNegativeButtonClick: @escaping () -> Void
     ) {
-        let customDialog = AlertDialog()
-        customDialog.titleText = titleText
-        customDialog.messageText = messageText
-        customDialog.imageUrl = imageUrl
-        customDialog.positiveButtonText = positiveButtonText
-        customDialog.negativeButtonText = negativeButtonText
-        customDialog.onPositiveButtonClick = onPositiveButtonClick
-        customDialog.onNegativeButtonClick = onNegativeButtonClick
+        let dialog = AlertDialog()
+        dialog.titleText = titleText
+        dialog.messageText = messageText
+        dialog.imageUrl = imageUrl
+        dialog.positiveButtonText = positiveButtonText
+        dialog.negativeButtonText = negativeButtonText
+        dialog.onPositiveButtonClick = onPositiveButtonClick
+        dialog.onNegativeButtonClick = onNegativeButtonClick
 
-        customDialog.modalPresentationStyle = .overFullScreen
-        parentViewController.present(customDialog, animated: true, completion: nil)
+        dialog.modalPresentationStyle = .overFullScreen
+        parentViewController.present(dialog, animated: true, completion: nil)
     }
 
     public func showBottomSheet(
@@ -40,39 +40,38 @@ public class NotificationWidget: InAppNotificationProtocol {
         onPositiveButtonClick: @escaping () -> Void,
         onNegativeButtonClick: @escaping () -> Void
     ) {
-        let bottomSheet = BottomSheetDialog()
+        let dialog = BottomSheetDialog()
         
-        bottomSheet.titleText = titleText
-        bottomSheet.messageText = messageText
-        bottomSheet.imageUrl = imageUrl
-        bottomSheet.positiveButtonText = positiveButtonText
-        bottomSheet.negativeButtonText = negativeButtonText
-        bottomSheet.onPositiveButtonClick = onPositiveButtonClick
-        bottomSheet.onNegativeButtonClick = onNegativeButtonClick
+        dialog.titleText = titleText
+        dialog.messageText = messageText
+        dialog.imageUrl = imageUrl
+        dialog.positiveButtonText = positiveButtonText
+        dialog.negativeButtonText = negativeButtonText
+        dialog.onPositiveButtonClick = onPositiveButtonClick
+        dialog.onNegativeButtonClick = onNegativeButtonClick
 
-        parentViewController.present(bottomSheet, animated: true, completion: nil)
+        parentViewController.present(dialog, animated: true, completion: nil)
     }
 
     public func showFullScreenAlert(
-        title: String,
-        message: String,
-        imageURL: URL,
-        buttonAcceptText: String,
-        buttonDeclineText: String,
-        buttonAcceptAction: @escaping () -> Void,
-        buttonDeclineAction: @escaping () -> Void
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String,
+        negativeButtonText: String,
+        onPositiveButtonClick: @escaping () -> Void,
+        onNegativeButtonClick: @escaping () -> Void
     ) {
-        let fullScreenAlert = FullScreenAlertViewController(
-            title: title,
-            message: message,
-            imageURL: imageURL,
-            acceptButtonText: buttonAcceptText,
-            declineButtonText: buttonDeclineText,
-            acceptAction: buttonAcceptAction,
-            declineAction: buttonDeclineAction
-        )
+        let dialog = FullScreenDialog()
+        dialog.titleText = titleText
+        dialog.messageText = messageText
+        dialog.imageUrl = imageUrl
+        dialog.positiveButtonText = positiveButtonText
+        dialog.negativeButtonText = negativeButtonText
+        dialog.onPositiveButtonClick = onPositiveButtonClick
+        dialog.onNegativeButtonClick = onNegativeButtonClick
 
-        parentViewController.present(fullScreenAlert, animated: true, completion: nil)
+        parentViewController.present(dialog, animated: true, completion: nil)
     }
 
     public func showSnackbar(
