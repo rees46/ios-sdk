@@ -32,34 +32,23 @@ public class NotificationWidget: InAppNotificationProtocol {
     }
 
     public func showBottomSheet(
-        title: String,
-        message: String,
-        buttonAcceptText: String,
-        buttonDeclineText: String,
-        buttonAcceptAction: @escaping () -> Void,
-        buttonDeclineAction: @escaping () -> Void
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String,
+        negativeButtonText: String,
+        onPositiveButtonClick: @escaping () -> Void,
+        onNegativeButtonClick: @escaping () -> Void
     ) {
-        let bottomSheet = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
-
-        let acceptAction = UIAlertAction(title: buttonAcceptText, style: .default) { _ in
-            buttonAcceptAction()
-        }
-        let declineAction = UIAlertAction(title: buttonDeclineText, style: .destructive) { _ in
-            buttonDeclineAction()
-        }
-
-        bottomSheet.addAction(acceptAction)
-        bottomSheet.addAction(declineAction)
-
-        if let popoverController = bottomSheet.popoverPresentationController {
-            popoverController.sourceView = parentViewController.view
-            popoverController.sourceRect = CGRect(
-                x: parentViewController.view.bounds.midX,
-                y: parentViewController.view.bounds.midY,
-                width: 0, height: 0
-            )
-            popoverController.permittedArrowDirections = []
-        }
+        let bottomSheet = BottomSheetDialog()
+        
+        bottomSheet.titleText = titleText
+        bottomSheet.messageText = messageText
+        bottomSheet.imageUrl = imageUrl
+        bottomSheet.positiveButtonText = positiveButtonText
+        bottomSheet.negativeButtonText = negativeButtonText
+        bottomSheet.onPositiveButtonClick = onPositiveButtonClick
+        bottomSheet.onNegativeButtonClick = onNegativeButtonClick
 
         parentViewController.present(bottomSheet, animated: true, completion: nil)
     }

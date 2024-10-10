@@ -179,15 +179,16 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @objc private func didTapShowBottomSheet() {
         notificationWidget?.showBottomSheet(
-            title: NSLocalizedString("alert_dialog_title", comment:  ""),
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            buttonAcceptAction:{
-                //TODO Handle click if needed
+            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
+            messageText :NSLocalizedString("alert_bottom_sheet_message", comment:  ""),
+            imageUrl :"https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png",
+            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            onPositiveButtonClick : {
+                print("Positive button clicked")
             },
-            buttonDeclineAction:{
-                //TODO Handle click if needed
+            onNegativeButtonClick: {
+                print("Negative button clicked")
             }
         )
     }

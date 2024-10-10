@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "alert_bottom_sheet_message" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pizza ipsum dolor meat lovers buffalo. Cheese ranch Philly red marinara ricotta lovers steak NY beef. NY green garlic large large banana. Stuffed and fresh broccoli spinach mayo deep sauce. Bianca style lot meatball mushrooms ipsum party."
+          }
+        }
+      }
+    },
     "alert_dialog_button_accept" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -13,12 +13,13 @@ public protocol InAppNotificationProtocol {
     )
     
     func showBottomSheet(
-        title: String,
-        message: String,
-        buttonAcceptText: String,
-        buttonDeclineText: String,
-        buttonAcceptAction: @escaping () -> Void,
-        buttonDeclineAction: @escaping () -> Void
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String,
+        negativeButtonText: String,
+        onPositiveButtonClick: @escaping () -> Void,
+        onNegativeButtonClick: @escaping () -> Void
     )
     
     func showFullScreenAlert(

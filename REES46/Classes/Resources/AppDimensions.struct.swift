@@ -20,6 +20,7 @@ struct AppDimensions {
         static let large: CGFloat = 20.0
         static let closeButtonSize: CGFloat = 26.0
         static let alertPopUpHeight: CGFloat = 200.0
+        static let bottomSheetHeight: CGFloat = 300.0
         static let crossSize: CGFloat = 12.0
         static let crossLineWidth: CGFloat = 2.0
         static let closeButtonCornerRadius: CGFloat = 13.0
