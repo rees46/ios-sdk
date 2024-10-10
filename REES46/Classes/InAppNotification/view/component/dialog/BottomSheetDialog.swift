@@ -16,7 +16,7 @@ class BottomSheetDialog: UIViewController {
     var messageText: String = ""
     var imageUrl: String = ""
     var positiveButtonText: String = ""
-    var negativeButtonText: String = ""
+    var negativeButtonText: String?
     var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
     var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
     
@@ -168,20 +168,32 @@ class BottomSheetDialog: UIViewController {
     }
     
     private func setButtonConstraints() {
-        NSLayoutConstraint.activate([
-            // Decline Button
-            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-            declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+        if let declineButtonText = declineButton.title(for: .normal), !declineButtonText.isEmpty {
+            NSLayoutConstraint.activate([
+                // Decline Button
+                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                
+                // Accept Button
+                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        } else {
+            declineButton.isHidden = true
             
-            // Accept Button
-            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-            acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-        ])
+            NSLayoutConstraint.activate([
+                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        }
     }
     
     @objc private func onAcceptButtonTapped() {

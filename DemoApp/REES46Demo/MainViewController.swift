@@ -180,10 +180,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc private func didTapShowBottomSheet() {
         notificationWidget?.showBottomSheet(
             titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
-            messageText :NSLocalizedString("alert_bottom_sheet_message", comment:  ""),
+            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
             imageUrl :"https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png",
             positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            negativeButtonText : nil,
             onPositiveButtonClick : {
                 print("Positive button clicked")
             },
