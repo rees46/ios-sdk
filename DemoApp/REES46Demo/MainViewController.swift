@@ -195,7 +195,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc private func didTapShowFullScreenDialog() {
         notificationWidget?.showFullScreenAlert(
             titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
-            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
+            messageText :NSLocalizedString("alert_full_screen_meassage", comment:  ""),
             imageUrl :AppEnvironments.imageUrl,
             positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
             negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),

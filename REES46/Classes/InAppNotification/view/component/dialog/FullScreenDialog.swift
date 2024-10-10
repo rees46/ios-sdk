@@ -11,6 +11,7 @@ class FullScreenDialog: UIViewController {
     private let messageLabel: DialogText
     private let acceptButton: DialogActionButton
     private let declineButton: DialogActionButton
+    private let spacerView = UIView()
     
     var titleText: String = ""
     var messageText: String = ""
@@ -73,6 +74,7 @@ class FullScreenDialog: UIViewController {
         
         contentContainer.addSubview(titleLabel)
         contentContainer.addSubview(messageLabel)
+        contentContainer.addSubview(spacerView)
         contentContainer.addSubview(acceptButton)
         contentContainer.addSubview(declineButton)
         contentView.addSubview(contentContainer)
@@ -92,6 +94,7 @@ class FullScreenDialog: UIViewController {
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         acceptButton.translatesAutoresizingMaskIntoConstraints = false
         declineButton.translatesAutoresizingMaskIntoConstraints = false
+        spacerView.translatesAutoresizingMaskIntoConstraints = false
         
         setContentViewConstraints()
         setImageContainerConstraints()
@@ -100,6 +103,7 @@ class FullScreenDialog: UIViewController {
         setCloseButtonConstraints()
         setTitleLabelConstraints()
         setMessageLabelConstraints()
+        setSpacerConstraints()
         setButtonConstraints()
     }
     
@@ -117,7 +121,7 @@ class FullScreenDialog: UIViewController {
             imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
             imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            imageContainer.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
+            imageContainer.heightAnchor.constraint(equalToConstant: AppDimensions.Size.fullScreenImageHeight)
         ])
     }
     
@@ -135,7 +139,7 @@ class FullScreenDialog: UIViewController {
             contentContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
     
@@ -150,34 +154,43 @@ class FullScreenDialog: UIViewController {
     
     private func setTitleLabelConstraints() {
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: AppDimensions.Padding.medium),
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: AppDimensions.Padding.medium),
-            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -AppDimensions.Padding.medium)
+            titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: AppDimensions.Padding.medium),
+            titleLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
         ])
     }
-
+    
     private func setMessageLabelConstraints() {
         NSLayoutConstraint.activate([
             messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
-            messageLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: AppDimensions.Padding.medium),
-            messageLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -AppDimensions.Padding.medium)
+            messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
+        ])
+    }
+    
+    private func setSpacerConstraints() {
+        NSLayoutConstraint.activate([
+            spacerView.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+            spacerView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            spacerView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            spacerView.bottomAnchor.constraint(equalTo: acceptButton.topAnchor),
+            spacerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 0)
         ])
     }
     
     private func setButtonConstraints() {
         NSLayoutConstraint.activate([
             // Decline Button
-            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
             declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
             declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
             declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+            declineButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large),
             
             // Accept Button
-            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
             acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
             acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
             acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large)
         ])
     }
     

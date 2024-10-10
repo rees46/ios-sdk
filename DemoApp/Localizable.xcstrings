@@ -55,6 +55,17 @@
           }
         }
       }
+    },
+    "alert_full_screen_meassage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pizza ipsum dolor meat lovers buffalo. Garlic sauce party sautéed ipsum cheese. Meatball mayo extra peppers Chicago spinach olives. Philly black crust pineapple steak ranch large large. Chicken hand pie tossed pan mushrooms large Bianca deep. Mozzarella roll string party mouth style lovers Hawaiian pan. Ricotta mayo red pizza fresh style string string. Broccoli meatball wing cheese sautéed. Peppers ipsum Aussie cheese olives Philly Hawaiian Aussie cheese personal. Pork dolor sausage bell mozzarella pepperoni thin deep mushrooms."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
