@@ -67,32 +67,30 @@ class CustomAlertDialog: UIViewController {
     }
 
     private func setupCloseButton() {
-        closeButton.tintColor = AppColors.Background.contentView
-        closeButton.alpha = 1.0
-        closeButton.backgroundColor = AppColors.ImageView.background
+        closeButton.tintColor = UIColor.clear
+        closeButton.alpha = 0.7
+        closeButton.backgroundColor = UIColor(white: 0.5, alpha: 0.5)
+        closeButton.layer.cornerRadius = AppDimensions.Size.closeButtonCornerRadius
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
 
         let crossLayer = CAShapeLayer()
         let crossPath = UIBezierPath()
 
-        crossPath.move(to: CGPoint(x: 0, y: 0))
-        crossPath.addLine(to: CGPoint(
-            x: AppDimensions.Padding.large,
-            y: AppDimensions.Padding.large)
-        )
+        let crossSize: CGFloat = AppDimensions.Size.crossSize
+        let lineWidth: CGFloat = AppDimensions.Size.crossLineWidth
 
-        crossPath.move(to: CGPoint(
-            x: AppDimensions.Padding.large,
-            y: 0)
-        )
-        crossPath.addLine(to: CGPoint(
-            x: 0,
-            y: AppDimensions.Padding.large)
-        )
+        let topOffset: CGFloat = AppDimensions.Offset.topOffset
+        let leftOffset: CGFloat = AppDimensions.Offset.leftOffset
+
+        crossPath.move(to: CGPoint(x: leftOffset, y: topOffset))
+        crossPath.addLine(to: CGPoint(x: leftOffset + crossSize, y: topOffset + crossSize))
+
+        crossPath.move(to: CGPoint(x: leftOffset + crossSize, y: topOffset))
+        crossPath.addLine(to: CGPoint(x: leftOffset, y: topOffset + crossSize))
 
         crossLayer.path = crossPath.cgPath
-        crossLayer.strokeColor = UIColor.black.cgColor
-        crossLayer.lineWidth = 2.0
+        crossLayer.strokeColor = UIColor.gray.cgColor
+        crossLayer.lineWidth = lineWidth
 
         closeButton.layer.addSublayer(crossLayer)
         imageContainer.addSubview(closeButton)
@@ -192,8 +190,8 @@ class CustomAlertDialog: UIViewController {
         NSLayoutConstraint.activate([
             closeButton.topAnchor.constraint(equalTo: imageContainer.topAnchor, constant: AppDimensions.Padding.small),
             closeButton.trailingAnchor.constraint(equalTo: imageContainer.trailingAnchor, constant: -AppDimensions.Padding.small),
-            closeButton.widthAnchor.constraint(equalToConstant: AppDimensions.Padding.large),
-            closeButton.heightAnchor.constraint(equalToConstant: AppDimensions.Padding.large)
+            closeButton.widthAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight),
+            closeButton.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
         ])
     }
 
