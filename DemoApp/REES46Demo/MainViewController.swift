@@ -44,15 +44,34 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         loadRecommendationsWidget()
         loadNewArrivalsWidget()
         setupInAppNotifcation()
+        setupInAppNotifcationActions()
     }
     
     func setupInAppNotifcation(){
         notificationWidget = NotificationWidget(parentViewController: self)
-        
-        showAlertButton.addTarget(self, action: #selector(didTapShowAlert), for: .touchUpInside)
-        showBottomSheetButton.addTarget(self, action: #selector(didTapShowBottomSheet), for: .touchUpInside)
-        showFullScreenDialogButton.addTarget(self, action: #selector(didTapShowFullScreenDialog), for: .touchUpInside)
-        showSnackBarButton.addTarget(self, action: #selector(didTapShowSnackBar), for: .touchUpInside)
+    }
+    
+    func setupInAppNotifcationActions(){
+        showAlertButton.addTarget(
+            self,
+            action: #selector(didTapShowAlert),
+            for: .touchUpInside
+        )
+        showBottomSheetButton.addTarget(
+            self,
+            action: #selector(didTapShowBottomSheet),
+            for: .touchUpInside
+        )
+        showFullScreenDialogButton.addTarget(
+            self,
+            action: #selector(didTapShowFullScreenDialog),
+            for: .touchUpInside
+        )
+        showSnackBarButton.addTarget(
+            self,
+            action: #selector(didTapShowSnackBar),
+            for: .touchUpInside
+        )
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -142,34 +161,49 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
+    @objc private func didTapShowAlert() {
+        notificationWidget?.showAlert(
+            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
+            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
+            imageUrl :AppEnvironments.imageUrl,
+            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            onPositiveButtonClick : {
+                print("Positive button clicked")
+            },
+            onNegativeButtonClick: {
+                print("Negative button clicked")
+            }
+        )
+    }
+    
     @objc private func didTapShowBottomSheet() {
         notificationWidget?.showBottomSheet(
-            title: NSLocalizedString("alert_dialog_title", comment:  ""),
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            buttonAcceptAction:{
-                //TODO Handle click if needed
+            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
+            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
+            imageUrl :AppEnvironments.imageUrl,
+            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            negativeButtonText : nil,
+            onPositiveButtonClick : {
+                print("Positive button clicked")
             },
-            buttonDeclineAction:{
-                //TODO Handle click if needed
+            onNegativeButtonClick: {
+                print("Negative button clicked")
             }
         )
     }
     @objc private func didTapShowFullScreenDialog() {
         notificationWidget?.showFullScreenAlert(
-            title: NSLocalizedString("alert_dialog_title", comment:  ""),
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            imageURL: URL(
-                string:"https://ih1.redbubble.net/image.2487413451.3407/fmp,x_small,gloss,study,product,750x1000.jpg"
-            )!,
-            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            buttonAcceptAction: {
-                //TODO Handle click if needed
+            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
+            messageText :NSLocalizedString("alert_full_screen_meassage", comment:  ""),
+            imageUrl :AppEnvironments.imageUrl,
+            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
+            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
+            onPositiveButtonClick : {
+                print("Positive button clicked")
             },
-            buttonDeclineAction: {
-                //TODO Handle click if needed
+            onNegativeButtonClick: {
+                print("Negative button clicked")
             }
         )
     }
@@ -182,17 +216,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 //TODO Handle click if needed
             },
             buttonDeclineAction: {
-                //TODO Handle click if needed
-            }
-        )
-    }
-    
-    @objc private func didTapShowAlert() {
-        notificationWidget?.showAlert(
-            title: NSLocalizedString("alert_dialog_title", comment:  ""),
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            buttonText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonAction: {
                 //TODO Handle click if needed
             }
         )
