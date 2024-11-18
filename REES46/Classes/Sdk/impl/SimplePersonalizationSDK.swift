@@ -74,7 +74,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         stream: String = "ios",
         enableLogs: Bool = false,
         autoSendPushToken: Bool = true,
-        parentViewController: UIViewController,
+        parentViewController: UIViewController?,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
@@ -107,7 +107,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     
                     if let popup = response.popup {
                         DispatchQueue.main.async {
-                            self.notificationWidget = NotificationWidget(parentViewController: parentViewController, popup: popup)
+                            guard let parentVC = parentViewController else {
+                                fatalError("parentViewController must not be nil")
+                            }
+                            self.notificationWidget = NotificationWidget(
+                                parentViewController: parentVC,
+                                popup: popup
+                            )
                         }
                     }
                     

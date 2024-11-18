@@ -324,7 +324,7 @@ public func createPersonalizationSDK(
         stream: stream,
         enableLogs: enableLogs,
         autoSendPushToken: autoSendPushToken,
-        parentViewController: parentViewController!,
+        parentViewController: parentViewController,
         completion: completion
     )
     
