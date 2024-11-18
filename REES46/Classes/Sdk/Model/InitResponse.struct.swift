@@ -1,20 +1,21 @@
 import Foundation
 
 public struct InitResponse: Codable {
-    var deviceId: String
-    var seance: String
-    var currency: String
-    var emailCollector: Bool
-    var hasEmail: Bool
-    var recommendations: Bool
-    var lazyLoad: Bool
-    var autoCssRecommender: Bool
-    var cms: String
-    var snippets: [String]
-    var search: Search
-    var webPushSettings: WebPushSettings
-    var recone: Bool
-    
+    var deviceId: String = ""
+    var seance: String = ""
+    var currency: String = ""
+    var emailCollector: Bool = false
+    var hasEmail: Bool = false
+    var recommendations: Bool = false
+    var lazyLoad: Bool = false
+    var autoCssRecommender: Bool = false
+    var cms: String = ""
+    var snippets: [String] = []
+    var search: Search = Search()
+    var webPushSettings: WebPushSettings = WebPushSettings()
+    var recone: Bool = false
+    var popupActions: String? = nil  
+
     init(json: [String: Any]) {
         deviceId = json["did"] as? String ?? ""
         seance = json["seance"] as? String ?? ""
@@ -28,6 +29,7 @@ public struct InitResponse: Codable {
         snippets = json["snippets"] as? [String] ?? []
         search = Search(json: json["search"] as? [String: Any] ?? [:])
         webPushSettings = WebPushSettings(json: json["web_push_settings"] as? [String: Any] ?? [:])
+        popupActions = json["popup_actions"] as? String ?? ""
         recone = json["recone"] as? Bool ?? false
     }
     
@@ -44,6 +46,7 @@ public struct InitResponse: Codable {
         self.snippets = []
         self.search = Search()
         self.webPushSettings = WebPushSettings()
+        self.popupActions = ""
         self.recone = false
     }
 }
