@@ -9,6 +9,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     private var global_EL: Bool = false
     
+    var parentViewController: UIViewController?
+     var notificationWidget: NotificationWidget?
+    
     var storiesCode: String?
     var shopId: String
     var deviceId: String
@@ -71,62 +74,54 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         stream: String = "ios",
         enableLogs: Bool = false,
         autoSendPushToken: Bool = true,
+        parentViewController: UIViewController,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
+        self.parentViewController = parentViewController
+        self.notificationWidget = NotificationWidget(parentViewController: parentViewController)
 
         global_EL = enableLogs
-
         self.baseURL = "https://" + apiDomain + "/"
-
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
         self.storiesCode = nil
 
-        // Generate seance
+        // Generate seance and segment
         userSeance = UUID().uuidString
-
-        // Generate segment
         segment = ["A", "B"].randomElement() ?? "A"
 
-        // Trying to fetch user session (permanent user Id)
-        deviceId = "7HvIb6ftsK"
-
+        // Fetch user session (permanent user Id)
+        deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
         urlSession = URLSession.shared
+
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
-                case .success:
-                    if let res = try? initResult.get() {
-                        self.userInfo = res
-                        self.userSeance = res.seance
-                        self.deviceId = res.deviceId
-                        
-                        if let jsonResponse = convertToDictionary(from: res) {
-                            if self.global_EL {
-                                print("[Init] Parsed Response: \(jsonResponse)")
-                            }
-                        } else {
-                            print("[Init] Failed to convert response to dictionary")
+                case .success(let response):
+                    self.userInfo = response
+                    self.userSeance = response.seance
+                    self.deviceId = response.deviceId
+                    
+                    if let popup = response.popup {
+                        DispatchQueue.main.async {
+                            self.showPopup(popup: popup)
                         }
-                        
-                        completion?(nil)
-                        
-                        // Handle push token if autoSendPushToken is true
-                        if self.autoSendPushToken {
-                            self.handleAutoSendPushToken()
-                        }
-                    } else {
-                        completion?(.decodeError)
                     }
-                    self.initSemaphore.signal()
+
+                    // Handle push token if autoSendPushToken is true
+                    if self.autoSendPushToken {
+                        self.handleAutoSendPushToken()
+                    }
+
+                    completion?(nil)
                 case .failure(let error):
                     completion?(error)
-                    self.initSemaphore.signal()
                 }
+                self.initSemaphore.signal()
             }
             self.initSemaphore.wait()
         }
@@ -134,14 +129,30 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         initializeNotificationRegistrar()
     }
 
-    private func parseApiResponse(from json: Any) -> InitResponse? {
-        guard let jsonObject = json as? [String: Any] else {
-            print("[ParseApiResponse] Invalid JSON format")
-            return nil
-        }
+    func showPopup(popup: Popup) {
+        print("POPUP DATA: \(popup)")
         
-        let apiResponse = InitResponse(json: jsonObject)
-        return apiResponse
+        guard let popupActions = popup.getParsedPopupActions() else {
+            print("Popup actions could not be parsed.")
+            return
+        }
+
+        notificationWidget?.showAlert(
+            titleText: popup.popup_actions,
+            messageText: "messageText",
+            imageUrl: "",
+            positiveButtonText: "positiveButtonText",
+            negativeButtonText: "negativeButtonText",
+            onPositiveButtonClick: {
+                print("Positive button clicked")
+                if let link = popupActions.link?.link_ios {
+                    print("Navigating to iOS link: \(link)")
+                }
+            },
+            onNegativeButtonClick: {
+                print("Negative button clicked")
+            }
+        )
     }
     
     func getDeviceId() -> String {

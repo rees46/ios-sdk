@@ -312,6 +312,7 @@ public func createPersonalizationSDK(
     stream: String = "ios",
     enableLogs: Bool = false,
     autoSendPushToken: Bool = true,
+    parentViewController: UIViewController? = nil,
     _ completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(
@@ -323,6 +324,7 @@ public func createPersonalizationSDK(
         stream: stream,
         enableLogs: enableLogs,
         autoSendPushToken: autoSendPushToken,
+        parentViewController: parentViewController!,
         completion: completion
     )
     

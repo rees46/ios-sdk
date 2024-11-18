@@ -8,7 +8,7 @@ class SDKConfigProviderTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        sdk = createPersonalizationSDK(shopId: shopId)
+        sdk = createPersonalizationSDK(shopId: shopId,parentViewController: nil)
     }
     
     override func tearDown() {
