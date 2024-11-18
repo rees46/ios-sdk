@@ -10,7 +10,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
-     var notificationWidget: NotificationWidget?
+    var notificationWidget: NotificationWidget?
     
     var storiesCode: String?
     var shopId: String
@@ -80,8 +80,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
         self.parentViewController = parentViewController
-        self.notificationWidget = NotificationWidget(parentViewController: parentViewController)
-
+        
         global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
         self.userEmail = userEmail
@@ -89,15 +88,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
         self.storiesCode = nil
-
+        
         // Generate seance and segment
         userSeance = UUID().uuidString
         segment = ["A", "B"].randomElement() ?? "A"
-
+        
         // Fetch user session (permanent user Id)
         deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
         urlSession = URLSession.shared
-
+        
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
@@ -108,15 +107,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     
                     if let popup = response.popup {
                         DispatchQueue.main.async {
-                            self.showPopup(popup: popup)
+                            self.notificationWidget = NotificationWidget(parentViewController: parentViewController, popup: popup)
                         }
                     }
-
+                    
                     // Handle push token if autoSendPushToken is true
                     if self.autoSendPushToken {
                         self.handleAutoSendPushToken()
                     }
-
+                    
                     completion?(nil)
                 case .failure(let error):
                     completion?(error)
@@ -125,34 +124,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             self.initSemaphore.wait()
         }
-
-        initializeNotificationRegistrar()
-    }
-
-    func showPopup(popup: Popup) {
-        print("POPUP DATA: \(popup)")
         
-        guard let popupActions = popup.getParsedPopupActions() else {
-            print("Popup actions could not be parsed.")
-            return
-        }
-
-        notificationWidget?.showAlert(
-            titleText: popup.popup_actions,
-            messageText: "messageText",
-            imageUrl: "",
-            positiveButtonText: "positiveButtonText",
-            negativeButtonText: "negativeButtonText",
-            onPositiveButtonClick: {
-                print("Positive button clicked")
-                if let link = popupActions.link?.link_ios {
-                    print("Navigating to iOS link: \(link)")
-                }
-            },
-            onNegativeButtonClick: {
-                print("Negative button clicked")
-            }
-        )
+        initializeNotificationRegistrar()
     }
     
     func getDeviceId() -> String {
@@ -785,7 +758,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
         let hours = secondsFromGMT/3600
-
+        
         var params: [String: String] = [
             "shop_id": shopId,
             "tz": String(hours)
@@ -794,12 +767,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if deviceId != "" {
             params["did"] = deviceId
         }
-
+        
         let advId = UserDefaults.standard.string(forKey: "IDFA") ?? nil
         if (advId != "00000000-0000-0000-0000-000000000000" && advId != nil) {
             params["ios_advertising_id"] = advId
         }
-
+        
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
         sessionConfig.waitsForConnectivity = true
@@ -807,7 +780,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-
+        
         let initData = NSData(contentsOf: initFileNamePath)
         let json = try? JSONSerialization.jsonObject(with: initData as? Data ?? Data())
         if let jsonObject = json as? [String: Any] {
@@ -829,20 +802,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
                     let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
                     self.storeSuccessInit(result: resultResponse)
-
+                    
                     try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
                 }
                 sleep(1)
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             }
-
+            
         } else if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
             try? FileManager.default.removeItem(at: initFileNamePath)
             let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
             let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
             self.storeSuccessInit(result: resultResponse)
-
+            
             try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
             sleep(1)
             completion(.success(resultResponse))

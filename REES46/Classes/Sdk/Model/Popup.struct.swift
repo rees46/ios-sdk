@@ -12,7 +12,7 @@ extension Popup {
     }
 }
 
-struct PopupActions: Codable {
+public struct PopupActions: Codable {
     let link: Link?
     let close: Close?
     
@@ -28,7 +28,7 @@ struct PopupActions: Codable {
     }
 }
 
-struct Popup: Codable {
+public struct Popup: Codable {
     let id: Int
     let channels: [String]
     let position: String

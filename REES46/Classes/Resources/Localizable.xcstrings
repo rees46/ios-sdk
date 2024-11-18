@@ -1,18 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "alert_dialog_button_accept" : {
-
-    },
-    "alert_dialog_button_decline" : {
-
-    },
-    "alert_dialog_message" : {
-
-    },
-    "alert_dialog_title" : {
-
-    },
     "all" : {
       "extractionState" : "manual",
       "localizations" : {

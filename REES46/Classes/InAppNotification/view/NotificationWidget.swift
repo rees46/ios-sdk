@@ -1,13 +1,27 @@
 import UIKit
 
 public class NotificationWidget: InAppNotificationProtocol {
-    
     private var parentViewController: UIViewController
     private var snackbar: UIView?
+    private var popup: Popup?
     
-    public init(parentViewController: UIViewController) {
+    public init(
+        parentViewController: UIViewController,
+        popup: Popup? = nil
+    ) {
         self.parentViewController = parentViewController
+        self.popup = popup
+        
+        if let popup = popup {
+            showPopup(popup)
+        }
     }
+    
+    private func showPopup(_ popup: Popup) {
+        //TODO REMOVE After connecting alerts
+        print("ALERT POPUP DATA \(popup)")
+    }
+    
     
     public func showAlert(
         titleText: String,
