@@ -7,6 +7,8 @@ public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
     
+    private var global_EL: Bool = false
+    
     var storiesCode: String?
     var shopId: String
     var deviceId: String
@@ -73,26 +75,26 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     ) {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
-        
+
         global_EL = enableLogs
-        
+
         self.baseURL = "https://" + apiDomain + "/"
-        
+
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
         self.storiesCode = nil
-        
+
         // Generate seance
         userSeance = UUID().uuidString
-        
+
         // Generate segment
         segment = ["A", "B"].randomElement() ?? "A"
-        
+
         // Trying to fetch user session (permanent user Id)
         deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
-        
+
         urlSession = URLSession.shared
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
@@ -102,8 +104,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         self.userInfo = res
                         self.userSeance = res.seance
                         self.deviceId = res.deviceId
+                        
+                        if let jsonResponse = convertToDictionary(from: res) {
+                            if self.global_EL {
+                                print("[Init] Parsed Response: \(jsonResponse)")
+                            }
+                        } else {
+                            print("[Init] Failed to convert response to dictionary")
+                        }
+                        
                         completion?(nil)
-                        // Automatically handle push token if autoSendPushToken is true
+                        
+                        // Handle push token if autoSendPushToken is true
                         if self.autoSendPushToken {
                             self.handleAutoSendPushToken()
                         }
@@ -118,8 +130,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             self.initSemaphore.wait()
         }
-        
+
         initializeNotificationRegistrar()
+    }
+
+    private func parseApiResponse(from json: Any) -> InitResponse? {
+        guard let jsonObject = json as? [String: Any] else {
+            print("[ParseApiResponse] Invalid JSON format")
+            return nil
+        }
+        
+        let apiResponse = InitResponse(json: jsonObject)
+        return apiResponse
     }
     
     func getDeviceId() -> String {
