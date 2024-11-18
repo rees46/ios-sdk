@@ -14,7 +14,24 @@ public struct InitResponse: Codable {
     var search: Search = Search()
     var webPushSettings: WebPushSettings = WebPushSettings()
     var recone: Bool = false
-    var popupActions: String? = nil  
+    var popup: Popup? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case deviceId = "did"
+        case seance
+        case currency
+        case emailCollector = "email_collector"
+        case hasEmail = "has_email"
+        case recommendations
+        case lazyLoad = "lazy_load"
+        case autoCssRecommender = "auto_css_recommender"
+        case cms
+        case snippets
+        case search
+        case webPushSettings = "web_push_settings"
+        case recone
+        case popup
+    }
 
     init(json: [String: Any]) {
         deviceId = json["did"] as? String ?? ""
@@ -29,10 +46,10 @@ public struct InitResponse: Codable {
         snippets = json["snippets"] as? [String] ?? []
         search = Search(json: json["search"] as? [String: Any] ?? [:])
         webPushSettings = WebPushSettings(json: json["web_push_settings"] as? [String: Any] ?? [:])
-        popupActions = json["popup_actions"] as? String ?? ""
+        popup = Popup(json: json["popup"] as? [String: Any] ?? [:])
         recone = json["recone"] as? Bool ?? false
     }
-    
+
     init() {
         self.deviceId = ""
         self.seance = ""
@@ -46,7 +63,7 @@ public struct InitResponse: Codable {
         self.snippets = []
         self.search = Search()
         self.webPushSettings = WebPushSettings()
-        self.popupActions = ""
+        self.popup = nil
         self.recone = false
     }
 }
