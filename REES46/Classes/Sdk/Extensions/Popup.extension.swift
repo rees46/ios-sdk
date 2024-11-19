@@ -14,9 +14,9 @@ extension Popup {
 
 extension Popup {
     func extractTitleAndSubtitle() -> (title: String?, subTitle: String?) {
-        let titleRegex = "<div class=\\\"popup-title\\\"[^>]*>(.*?)<\\/div>"
-        let subTitleRegex = "<p class=\\\"popup-1318__intro\\\"[^>]*>(.*?)<\\/p>"
-        
+        let titleRegex = "<div class=\"popup-title\"[^>]*>(.*?)<\\/div>"
+        let subTitleRegex = "<p class=\"popup-\\d+__intro\"[^>]*>(.*?)<\\/p>"
+
         func extract(using pattern: String, from html: String) -> String? {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
             let range = NSRange(html.startIndex..<html.endIndex, in: html)
@@ -30,5 +30,26 @@ extension Popup {
         let title = extract(using: titleRegex, from: html)
         let subTitle = extract(using: subTitleRegex, from: html)
         return (title, subTitle)
+    }
+    
+    func extractImageUrl() -> String {
+        if html.isEmpty {
+            return ""
+        }
+        
+        print("HTML content: \(html)")
+
+        let regex = #"<img[^>]+src\s*=\s*['\"]([^'\"]+)['\"]"#
+        guard let regex = try? NSRegularExpression(pattern: regex, options: []) else { return "" }
+        
+        let matches = regex.matches(in: html, options: [], range: NSRange(html.startIndex..<html.endIndex, in: html))
+        
+        if let match = matches.first {
+            if let range = Range(match.range(at: 1), in: html) {
+                return String(html[range])
+            }
+        }
+        
+        return ""
     }
 }

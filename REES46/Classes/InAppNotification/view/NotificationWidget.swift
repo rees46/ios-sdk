@@ -35,13 +35,14 @@ public class NotificationWidget: InAppNotificationProtocol {
         }
         
         let (title, subTitle) = popup.extractTitleAndSubtitle()
-        
+        let imageUrl = popup.extractImageUrl()
+
         switch position {
         case .centered:
             showAlert(
                 titleText: title ?? baseTitle,
                 messageText: subTitle ?? baseSubTitle,
-                imageUrl: "",
+                imageUrl: imageUrl,
                 positiveButtonText: buttonPositive ?? baseButtonPositive,
                 negativeButtonText: buttonNegative ?? baseButtonNegative,
                 onPositiveButtonClick: { [weak self] in
@@ -52,7 +53,7 @@ public class NotificationWidget: InAppNotificationProtocol {
             showBottomSheet(
                 titleText: title ?? baseTitle,
                 messageText: subTitle ?? baseSubTitle,
-                imageUrl: "",
+                imageUrl: imageUrl,
                 positiveButtonText: buttonPositive ?? baseButtonPositive,
                 negativeButtonText: buttonNegative ?? baseButtonNegative,
                 onPositiveButtonClick: { [weak self] in

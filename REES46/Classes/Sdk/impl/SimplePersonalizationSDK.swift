@@ -763,7 +763,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
-        let hours = secondsFromGMT/3600
+        let hours = secondsFromGMT / 3600
         
         var params: [String: String] = [
             "shop_id": shopId,
@@ -800,6 +800,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
                 sleep(1)
+                print("[SDK INIT Response] Successfully retrieved data from local JSON file: \(resultResponse)")
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             } else {
@@ -810,8 +811,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.storeSuccessInit(result: resultResponse)
                     
                     try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
+                    print("[SDK INIT Response] Successfully retrieved data from keychain token: \(resultResponse)")
                 }
                 sleep(1)
+                print("[SDK INIT Response] Successfully completed initialization with keychain data: \(resultResponse)")
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             }
@@ -824,15 +827,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
             sleep(1)
+            print("[SDK INIT Response] Successfully completed initialization from keychain data: \(resultResponse)")
             completion(.success(resultResponse))
             self.serialSemaphore.signal()
         } else {
             getRequest(path: path, params: params, true) { result in
                 switch result {
                 case let .success(successResult):
+                    print("Success: \(successResult)")
                     let resJSON = successResult
                     let resultResponse = InitResponse(json: resJSON)
                     self.storeSuccessInit(result: resultResponse)
+                    print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
                     completion(.success(resultResponse))
                     self.serialSemaphore.signal()
                 case let .failure(error):

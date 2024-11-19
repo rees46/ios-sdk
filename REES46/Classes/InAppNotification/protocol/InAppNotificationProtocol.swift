@@ -8,8 +8,7 @@ public protocol InAppNotificationProtocol {
         imageUrl: String,
         positiveButtonText: String,
         negativeButtonText: String,
-        onPositiveButtonClick: @escaping () -> Void,
-        onNegativeButtonClick: @escaping () -> Void
+        onPositiveButtonClick: @escaping () -> Void
     )
     
     func showBottomSheet(
@@ -18,8 +17,7 @@ public protocol InAppNotificationProtocol {
         imageUrl: String,
         positiveButtonText: String,
         negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void,
-        onNegativeButtonClick: @escaping () -> Void
+        onPositiveButtonClick: @escaping () -> Void
     )
     
     func showFullScreenAlert(

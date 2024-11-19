@@ -3,7 +3,7 @@ import Foundation
 public struct Popup: Codable {
     enum Position: String {
         case centered = "centered"
-        case bottom = "bottom"
+        case bottom = "fixed_bottom"
     }
     
     let id: Int
@@ -16,6 +16,7 @@ public struct Popup: Codable {
     
     func getParsedPopupActions() -> PopupActions? {
         guard let data = popup_actions.data(using: .utf8) else { return nil }
+        print("Received response: \(String(data: data, encoding: .utf8) ?? "No data")")
         let decoder = JSONDecoder()
         do {
             let actions = try decoder.decode(PopupActions.self, from: data)
