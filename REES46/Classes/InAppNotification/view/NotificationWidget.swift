@@ -46,9 +46,6 @@ public class NotificationWidget: InAppNotificationProtocol {
                 negativeButtonText: buttonNegative ?? baseButtonNegative,
                 onPositiveButtonClick: { [weak self] in
                     self?.handlePositiveButtonClick(link: positiveLink)
-                },
-                onNegativeButtonClick: {
-                    print("Нажата отрицательная кнопка")
                 }
             )
         case .bottom:
@@ -60,9 +57,6 @@ public class NotificationWidget: InAppNotificationProtocol {
                 negativeButtonText: buttonNegative ?? baseButtonNegative,
                 onPositiveButtonClick: { [weak self] in
                     self?.handlePositiveButtonClick(link: positiveLink)
-                },
-                onNegativeButtonClick: {
-                    print("Нажата отрицательная кнопка")
                 }
             )
         }
@@ -75,8 +69,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         imageUrl: String,
         positiveButtonText: String,
         negativeButtonText: String,
-        onPositiveButtonClick: @escaping () -> Void,
-        onNegativeButtonClick: @escaping () -> Void
+        onPositiveButtonClick: @escaping () -> Void
     ) {
         let dialog = AlertDialog()
         dialog.titleText = titleText
@@ -89,7 +82,6 @@ public class NotificationWidget: InAppNotificationProtocol {
             dialog.dismiss(animated: true)
         }
         dialog.onNegativeButtonClick = {
-            onNegativeButtonClick()
             dialog.dismiss(animated: true)
         }
         
@@ -103,8 +95,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         imageUrl: String,
         positiveButtonText: String,
         negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void,
-        onNegativeButtonClick: @escaping () -> Void
+        onPositiveButtonClick: @escaping () -> Void
     ) {
         let dialog = BottomSheetDialog()
         
@@ -113,8 +104,13 @@ public class NotificationWidget: InAppNotificationProtocol {
         dialog.imageUrl = imageUrl
         dialog.positiveButtonText = positiveButtonText
         dialog.negativeButtonText = negativeButtonText
-        dialog.onPositiveButtonClick = onPositiveButtonClick
-        dialog.onNegativeButtonClick = onNegativeButtonClick
+        dialog.onPositiveButtonClick = {
+            onPositiveButtonClick()
+            dialog.dismiss(animated: true)
+        }
+        dialog.onNegativeButtonClick = {
+            dialog.dismiss(animated: true)
+        }
         
         parentViewController.present(dialog, animated: true, completion: nil)
     }
@@ -223,13 +219,13 @@ public class NotificationWidget: InAppNotificationProtocol {
         if let urlString = link, let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url, options: [:]) { success in
                 if success {
-                    print("Ссылка открыта: \(urlString)")
+                    print("Link opened: \(urlString)")
                 } else {
-                    print("Не удалось открыть ссылку: \(urlString)")
+                    print("Unable to open link: \(urlString)")
                 }
             }
         } else {
-            print("Ссылка отсутствует или некорректна")
+            print("Link missing or invalid")
         }
     }
 }
