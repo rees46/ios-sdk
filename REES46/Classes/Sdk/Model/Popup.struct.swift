@@ -1,34 +1,11 @@
 import Foundation
 
-extension Popup {
-    init(json: [String: Any]) {
-        self.id = json["id"] as? Int ?? 0
-        self.channels = json["channels"] as? [String] ?? []
-        self.position = json["position"] as? String ?? ""
-        self.delay = json["delay"] as? Int ?? 0
-        self.html = json["html"] as? String ?? ""
-        self.web_push_system = json["web_push_system"] as? Bool ?? false
-        self.popup_actions = json["popup_actions"] as? String ?? ""
-    }
-}
-
-public struct PopupActions: Codable {
-    let link: Link?
-    let close: Close?
-    
-    struct Link: Codable {
-        let link_ios: String?
-        let link_android: String?
-        let link_web: String?
-        let button_text: String?
-    }
-    
-    struct Close: Codable {
-        let button_text: String?
-    }
-}
-
 public struct Popup: Codable {
+    enum Position: String {
+        case centered = "centered"
+        case bottom = "bottom"
+    }
+    
     let id: Int
     let channels: [String]
     let position: String
@@ -47,5 +24,21 @@ public struct Popup: Codable {
             print("[getParsedPopupActions] Error decoding popup actions: \(error)")
             return nil
         }
+    }
+}
+
+public struct PopupActions: Codable {
+    let link: Link?
+    let close: Close?
+    
+    struct Link: Codable {
+        let link_ios: String?
+        let link_android: String?
+        let link_web: String?
+        let button_text: String?
+    }
+    
+    struct Close: Codable {
+        let button_text: String?
     }
 }
