@@ -1,4 +1,12 @@
-import Foundation
+public struct PopupComponents: Codable {
+    let text: String?
+    let image: String?
+    let button: String?
+    let header: String?
+    let text_enabled: String?
+    let image_enabled: String?
+    let header_enabled: String?
+}
 
 public struct Popup: Codable {
     enum Position: String {
@@ -11,12 +19,12 @@ public struct Popup: Codable {
     let position: String
     let delay: Int
     let html: String
+    let components: PopupComponents?
     let web_push_system: Bool
     let popup_actions: String
     
     func getParsedPopupActions() -> PopupActions? {
         guard let data = popup_actions.data(using: .utf8) else { return nil }
-        print("Received response: \(String(data: data, encoding: .utf8) ?? "No data")")
         let decoder = JSONDecoder()
         do {
             let actions = try decoder.decode(PopupActions.self, from: data)

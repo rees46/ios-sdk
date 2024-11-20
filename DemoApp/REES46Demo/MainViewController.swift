@@ -195,9 +195,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
             onPositiveButtonClick : {
                 print("Positive button clicked")
-            },
-            onNegativeButtonClick: {
-                print("Negative button clicked")
             }
         )
     }

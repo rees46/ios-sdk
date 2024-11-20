@@ -34,15 +34,16 @@ public class NotificationWidget: InAppNotificationProtocol {
             positiveLink = actions.link?.link_ios ?? actions.link?.link_android ?? actions.link?.link_web
         }
         
-        let (title, subTitle) = popup.extractTitleAndSubtitle()
-        let imageUrl = popup.extractImageUrl()
-
+        let imageUrl = popup.components?.image
+        let title = popup.components?.header
+        let subTitle = popup.components?.text
+        
         switch position {
         case .centered:
             showAlert(
                 titleText: title ?? baseTitle,
                 messageText: subTitle ?? baseSubTitle,
-                imageUrl: imageUrl,
+                imageUrl: imageUrl ?? "",
                 positiveButtonText: buttonPositive ?? baseButtonPositive,
                 negativeButtonText: buttonNegative ?? baseButtonNegative,
                 onPositiveButtonClick: { [weak self] in
@@ -53,7 +54,19 @@ public class NotificationWidget: InAppNotificationProtocol {
             showBottomSheet(
                 titleText: title ?? baseTitle,
                 messageText: subTitle ?? baseSubTitle,
-                imageUrl: imageUrl,
+                imageUrl: imageUrl ?? "",
+                positiveButtonText: buttonPositive ?? baseButtonPositive,
+                negativeButtonText: buttonNegative ?? baseButtonNegative,
+                onPositiveButtonClick: { [weak self] in
+                    self?.handlePositiveButtonClick(link: positiveLink)
+                }
+            )
+            
+        default:
+            showFullScreenAlert(
+                titleText: title ?? baseTitle,
+                messageText: subTitle ?? baseSubTitle,
+                imageUrl: imageUrl ?? "",
                 positiveButtonText: buttonPositive ?? baseButtonPositive,
                 negativeButtonText: buttonNegative ?? baseButtonNegative,
                 onPositiveButtonClick: { [weak self] in
@@ -122,8 +135,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         imageUrl: String,
         positiveButtonText: String,
         negativeButtonText: String,
-        onPositiveButtonClick: @escaping () -> Void,
-        onNegativeButtonClick: @escaping () -> Void
+        onPositiveButtonClick: @escaping () -> Void
     ) {
         let dialog = FullScreenDialog()
         dialog.titleText = titleText
@@ -131,8 +143,13 @@ public class NotificationWidget: InAppNotificationProtocol {
         dialog.imageUrl = imageUrl
         dialog.positiveButtonText = positiveButtonText
         dialog.negativeButtonText = negativeButtonText
-        dialog.onPositiveButtonClick = onPositiveButtonClick
-        dialog.onNegativeButtonClick = onNegativeButtonClick
+        dialog.onPositiveButtonClick = {
+            onPositiveButtonClick()
+            dialog.dismiss(animated: true)
+        }
+        dialog.onNegativeButtonClick = {
+            dialog.dismiss(animated: true)
+        }
         
         parentViewController.present(dialog, animated: true, completion: nil)
     }
