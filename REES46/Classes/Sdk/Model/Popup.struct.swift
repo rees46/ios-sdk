@@ -1,12 +1,3 @@
-public struct PopupComponents: Codable {
-    let text: String?
-    let image: String?
-    let button: String?
-    let header: String?
-    let text_enabled: String?
-    let image_enabled: String?
-    let header_enabled: String?
-}
 
 public struct Popup: Codable {
     enum Position: String {
@@ -33,21 +24,5 @@ public struct Popup: Codable {
             print("[getParsedPopupActions] Error decoding popup actions: \(error)")
             return nil
         }
-    }
-}
-
-public struct PopupActions: Codable {
-    let link: Link?
-    let close: Close?
-    
-    struct Link: Codable {
-        let link_ios: String?
-        let link_android: String?
-        let link_web: String?
-        let button_text: String?
-    }
-    
-    struct Close: Codable {
-        let button_text: String?
     }
 }
