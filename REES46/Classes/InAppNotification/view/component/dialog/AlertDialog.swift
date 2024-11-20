@@ -46,6 +46,7 @@ class AlertDialog: UIViewController {
         declineButton.backgroundColor = negativeButtonColor
         
         setupUI()
+        backgroundImageView.loadImage(from: imageUrl)
     }
     
     private func setupUI() {
