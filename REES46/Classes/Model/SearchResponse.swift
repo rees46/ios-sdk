@@ -266,6 +266,7 @@ public struct Category {
     public var url: String?
     public var alias: String?
     public var parentId: String?
+    public var count: Int?
 
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
@@ -273,6 +274,7 @@ public struct Category {
         url = json["url"] as? String
         alias = json["alias"] as? String
         parentId = json["parent"] as? String
+        count = json["count"] as? Int
     }
 }
 
