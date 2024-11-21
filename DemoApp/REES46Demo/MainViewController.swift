@@ -24,9 +24,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
     @IBOutlet private weak var showStoriesButton: UIButton!
-    @IBOutlet private weak var showAlertButton: UIButton!
-    @IBOutlet private weak var showBottomSheetButton: UIButton!
-    @IBOutlet private weak var showFullScreenDialogButton: UIButton!
     @IBOutlet private weak var showSnackBarButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
@@ -52,21 +49,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     func setupInAppNotifcationActions(){
-        showAlertButton.addTarget(
-            self,
-            action: #selector(didTapShowAlert),
-            for: .touchUpInside
-        )
-        showBottomSheetButton.addTarget(
-            self,
-            action: #selector(didTapShowBottomSheet),
-            for: .touchUpInside
-        )
-        showFullScreenDialogButton.addTarget(
-            self,
-            action: #selector(didTapShowFullScreenDialog),
-            for: .touchUpInside
-        )
         showSnackBarButton.addTarget(
             self,
             action: #selector(didTapShowSnackBar),
@@ -160,53 +142,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             }
         }
     }
-    
-    @objc private func didTapShowAlert() {
-        notificationWidget?.showAlert(
-            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
-            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
-            imageUrl :AppEnvironments.imageUrl,
-            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            onPositiveButtonClick : {
-                print("Positive button clicked")
-            },
-            onNegativeButtonClick: {
-                print("Negative button clicked")
-            }
-        )
-    }
-    
-    @objc private func didTapShowBottomSheet() {
-        notificationWidget?.showBottomSheet(
-            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
-            messageText :NSLocalizedString("alert_dialog_message", comment:  ""),
-            imageUrl :AppEnvironments.imageUrl,
-            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            negativeButtonText : nil,
-            onPositiveButtonClick : {
-                print("Positive button clicked")
-            },
-            onNegativeButtonClick: {
-                print("Negative button clicked")
-            }
-        )
-    }
-    @objc private func didTapShowFullScreenDialog() {
-        notificationWidget?.showFullScreenAlert(
-            titleText :NSLocalizedString("alert_dialog_title", comment:  ""),
-            messageText :NSLocalizedString("alert_full_screen_meassage", comment:  ""),
-            imageUrl :AppEnvironments.imageUrl,
-            positiveButtonText : NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            negativeButtonText : NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            onPositiveButtonClick : {
-                print("Positive button clicked")
-            },
-            onNegativeButtonClick: {
-                print("Negative button clicked")
-            }
-        )
-    }
+
     @objc private func didTapShowSnackBar() {
         notificationWidget?.showSnackbar(
             message: NSLocalizedString("alert_dialog_message", comment:  ""),

@@ -7,6 +7,11 @@ public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
     
+    private var global_EL: Bool = false
+    
+    var parentViewController: UIViewController?
+    var notificationWidget: NotificationWidget?
+    
     var storiesCode: String?
     var shopId: String
     var deviceId: String
@@ -69,52 +74,59 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         stream: String = "ios",
         enableLogs: Bool = false,
         autoSendPushToken: Bool = true,
+        parentViewController: UIViewController?,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
+        self.parentViewController = parentViewController
         
         global_EL = enableLogs
-        
         self.baseURL = "https://" + apiDomain + "/"
-        
         self.userEmail = userEmail
         self.userPhone = userPhone
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
         self.storiesCode = nil
         
-        // Generate seance
+        // Generate seance and segment
         userSeance = UUID().uuidString
-        
-        // Generate segment
         segment = ["A", "B"].randomElement() ?? "A"
         
-        // Trying to fetch user session (permanent user Id)
+        // Fetch user session (permanent user Id)
         deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
-        
         urlSession = URLSession.shared
+        
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
-                case .success:
-                    if let res = try? initResult.get() {
-                        self.userInfo = res
-                        self.userSeance = res.seance
-                        self.deviceId = res.deviceId
-                        completion?(nil)
-                        // Automatically handle push token if autoSendPushToken is true
-                        if self.autoSendPushToken {
-                            self.handleAutoSendPushToken()
+                case .success(let response):
+                    self.userInfo = response
+                    self.userSeance = response.seance
+                    self.deviceId = response.deviceId
+                    
+                    if let popup = response.popup {
+                        DispatchQueue.main.async {
+                            guard let parentVC = parentViewController else {
+                                fatalError("parentViewController must not be nil")
+                            }
+                            self.notificationWidget = NotificationWidget(
+                                parentViewController: parentVC,
+                                popup: popup
+                            )
                         }
-                    } else {
-                        completion?(.decodeError)
                     }
-                    self.initSemaphore.signal()
+                    
+                    // Handle push token if autoSendPushToken is true
+                    if self.autoSendPushToken {
+                        self.handleAutoSendPushToken()
+                    }
+                    
+                    completion?(nil)
                 case .failure(let error):
                     completion?(error)
-                    self.initSemaphore.signal()
                 }
+                self.initSemaphore.signal()
             }
             self.initSemaphore.wait()
         }
@@ -751,7 +763,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private func sendInitRequest(completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
-        let hours = secondsFromGMT/3600
+        let hours = secondsFromGMT / 3600
         
         var params: [String: String] = [
             "shop_id": shopId,
@@ -788,6 +800,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
                 sleep(1)
+                print("[SDK INIT Response] Successfully retrieved data from local JSON file: \(resultResponse)")
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             } else {
@@ -798,8 +811,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.storeSuccessInit(result: resultResponse)
                     
                     try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
+                    print("[SDK INIT Response] Successfully retrieved data from keychain token: \(resultResponse)")
                 }
                 sleep(1)
+                print("[SDK INIT Response] Successfully completed initialization with keychain data: \(resultResponse)")
                 completion(.success(resultResponse))
                 self.serialSemaphore.signal()
             }
@@ -812,15 +827,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
             sleep(1)
+            print("[SDK INIT Response] Successfully completed initialization from keychain data: \(resultResponse)")
             completion(.success(resultResponse))
             self.serialSemaphore.signal()
         } else {
             getRequest(path: path, params: params, true) { result in
                 switch result {
                 case let .success(successResult):
+                    print("Success: \(successResult)")
                     let resJSON = successResult
                     let resultResponse = InitResponse(json: resJSON)
                     self.storeSuccessInit(result: resultResponse)
+                    print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
                     completion(.success(resultResponse))
                     self.serialSemaphore.signal()
                 case let .failure(error):

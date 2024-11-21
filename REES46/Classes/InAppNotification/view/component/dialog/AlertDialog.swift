@@ -116,12 +116,21 @@ class AlertDialog: UIViewController {
     }
     
     private func setImageContainerConstraints() {
-        NSLayoutConstraint.activate([
-            imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
-            imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            imageContainer.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
-        ])
+        if imageUrl.isEmpty {
+            NSLayoutConstraint.activate([
+                imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
+                imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                imageContainer.heightAnchor.constraint(equalToConstant: 0)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
+                imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                imageContainer.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
+            ])
+        }
     }
     
     private func setBackgroundImageViewConstraints() {
@@ -135,7 +144,7 @@ class AlertDialog: UIViewController {
     
     private func setContentContainerConstraints() {
         NSLayoutConstraint.activate([
-            contentContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor, constant: -AppDimensions.Padding.medium),
+            contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),

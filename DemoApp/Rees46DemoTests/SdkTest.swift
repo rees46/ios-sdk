@@ -22,7 +22,10 @@ class SdkTests: XCTestCase {
     }
     
     func test_device_id_initialization() {
-        sdk = createPersonalizationSDK(shopId: shopId)
+        sdk = createPersonalizationSDK(
+            shopId: shopId,
+            parentViewController: nil
+        )
         trackEventAndCheck(
             eventId: "123",
             getValue: { self.sdk?.getDeviceId() },
@@ -34,9 +37,15 @@ class SdkTests: XCTestCase {
     }
     
     func test_device_id_rewrite() {
-        sdk = createPersonalizationSDK(shopId: shopId)
+        sdk = createPersonalizationSDK(
+            shopId: shopId,
+            parentViewController: nil
+        )
         let oldDeviceId = sdk?.getDeviceId()
-        sdk = createPersonalizationSDK(shopId: shopId)
+        sdk = createPersonalizationSDK(
+            shopId: shopId,
+            parentViewController: nil
+        )
         trackEventAndCheck(
             eventId: "",
             getValue: { self.sdk?.getDeviceId() },
@@ -48,9 +57,15 @@ class SdkTests: XCTestCase {
     }
     
     func test_session_generated() {
-        sdk = createPersonalizationSDK(shopId: shopId)
+        sdk = createPersonalizationSDK(
+            shopId: shopId,
+            parentViewController: nil
+        )
         let oldSession = sdk?.getSession()
-        sdk = createPersonalizationSDK(shopId: shopId)
+        sdk = createPersonalizationSDK(
+            shopId: shopId,
+            parentViewController: nil
+        )
         trackEventAndCheck(
             eventId: "",
             getValue: { self.sdk?.getSession() },
