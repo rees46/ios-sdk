@@ -75,7 +75,7 @@ public class NotificationWidget: InAppNotificationProtocol {
             )
         }
     }
-    
+
     public func showAlert(
         titleText: String,
         messageText: String,

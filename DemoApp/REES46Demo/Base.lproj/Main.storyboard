@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="bdj-YT-ijg">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="bdj-YT-ijg">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22685"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -103,36 +103,6 @@
                                                     <color key="baseBackgroundColor" systemColor="labelColor"/>
                                                 </buttonConfiguration>
                                             </button>
-                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="o3z-FP-qqv" userLabel="Show Aler Dialog">
-                                                <rect key="frame" x="96" y="1830" width="181" height="41"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                                <color key="tintColor" systemColor="labelColor"/>
-                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
-                                                <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="filled" title="Show alert pop-up">
-                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
-                                                </buttonConfiguration>
-                                            </button>
-                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="W1Y-e3-fTV" userLabel="Show Bottom Sheet Dialog">
-                                                <rect key="frame" x="96" y="1886" width="181" height="41"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                                <color key="tintColor" systemColor="labelColor"/>
-                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
-                                                <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="filled" title="Show bottom pop-up">
-                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
-                                                </buttonConfiguration>
-                                            </button>
-                                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="O96-O6-Bj8" userLabel="Show Full Screen Dialog">
-                                                <rect key="frame" x="96" y="1937" width="181" height="41"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
-                                                <color key="tintColor" systemColor="labelColor"/>
-                                                <inset key="contentEdgeInsets" minX="0.0" minY="0.0" maxX="0.0" maxY="-1"/>
-                                                <state key="normal" title="Button"/>
-                                                <buttonConfiguration key="configuration" style="filled" title="Show full pop-up">
-                                                    <color key="baseBackgroundColor" systemColor="labelColor"/>
-                                                </buttonConfiguration>
-                                            </button>
                                             <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="aIl-Dd-MtC" userLabel="Show Snack Bar">
                                                 <rect key="frame" x="96" y="1993" width="181" height="41"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
@@ -201,9 +171,6 @@
                         <outlet property="resetDidButton" destination="jc1-ab-aKj" id="L8d-GW-iMu"/>
                         <outlet property="scrollView" destination="Jiq-jd-mAB" id="uSK-EG-y5G"/>
                         <outlet property="searchButton" destination="D31-uF-Kju" id="2TY-o1-Su7"/>
-                        <outlet property="showAlertButton" destination="o3z-FP-qqv" id="koN-oP-Hyx"/>
-                        <outlet property="showBottomSheetButton" destination="W1Y-e3-fTV" id="fx3-Cn-WU6"/>
-                        <outlet property="showFullScreenDialogButton" destination="O96-O6-Bj8" id="h6f-sv-eDI"/>
                         <outlet property="showSnackBarButton" destination="aIl-Dd-MtC" id="j2d-H4-PJ6"/>
                         <outlet property="showStoriesButton" destination="y5i-q4-Hwz" id="pbq-Gg-8Cy"/>
                         <outlet property="storiesCollectionView" destination="yxV-vz-Ow2" id="4Xl-gF-YIf"/>
@@ -254,14 +221,6 @@
             <point key="canvasLocation" x="639" y="20"/>
         </scene>
     </scenes>
-    <designables>
-        <designable name="6xl-Za-SDC">
-            <size key="intrinsicContentSize" width="80" height="34.333333333333336"/>
-        </designable>
-        <designable name="jc1-ab-aKj">
-            <size key="intrinsicContentSize" width="170.33333333333334" height="34.333333333333336"/>
-        </designable>
-    </designables>
     <resources>
         <image name="iconCart" width="128" height="128"/>
         <image name="iconMenu" width="128" height="128"/>
