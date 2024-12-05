@@ -6,7 +6,6 @@ struct SdkConstants {
     static let categoryLimit: String = "category_limit"
     static let colors: String = "colors"
     static let defaultTimeout: Double = 1.0
-    static let deviceId: String = "did"
     static let deviceIdKey = "device_id"
     static let deviceToken = "device_token"
     static let disableClarification: String = "no_clarification"
@@ -27,10 +26,11 @@ struct SdkConstants {
     static let seance = "seance"
     static let segment: String = "segment"
     static let shopId = "shop_id"
+    static let tz = "tz"
     static let sid = "sid"
     static let did = "did"
     static let sortBy: String = "sort_by"
     static let sortDir: String = "sort_dir"
     static let type: String = "type"
-    static let userSeance: String = "seance"
+    static let keychainDid: String = "keychainDid"
 }

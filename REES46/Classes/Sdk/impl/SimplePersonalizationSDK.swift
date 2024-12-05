@@ -798,16 +798,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
         let hours = secondsFromGMT / 3600
         var params: [String: String] = [
-            "shop_id": shopId,
-            "tz": String(hours)
+            SdkConstants.shopId: shopId,
+            SdkConstants.tz: String(hours)
         ]
         
         if needReInitialization {
-            UserDefaults.standard.removeObject(forKey: "device_id")
+            UserDefaults.standard.removeObject(forKey: SdkConstants.deviceIdKey)
+            print("USER DEVICE ID WAS REMOVED")
         }
         
-        if let deviceId = UserDefaults.standard.string(forKey: "device_id"), !deviceId.isEmpty {
-            params["did"] = deviceId
+        if let deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey), !deviceId.isEmpty {
+            params[SdkConstants.did] = deviceId
         }
         
         if let advId = UserDefaults.standard.string(forKey: "IDFA"), advId != "00000000-0000-0000-0000-000000000000" {
@@ -839,15 +840,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     ) {
         let successInitDeviceId = resultResponse.deviceId
         let successSeanceId = resultResponse.seance
-        let keychainDid = UserDefaults.standard.string(forKey: "device_id") ?? ""
+        let keychainDid = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
         
         if keychainDid.isEmpty || needReInitialization {
-            DispatchQueue.onceTechService(token: "keychainDid") {
-                UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
+            DispatchQueue.onceTechService(token: SdkConstants.keychainDid) {
+                UserDefaults.standard.set(successInitDeviceId, forKey: SdkConstants.deviceIdKey)
             }
             UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
             sleep(1)
-            print("[SDK INIT Response] Successfully retrieved data from local JSON file: \(resultResponse)")
             completion(.success(resultResponse))
         } else {
             storeKeychainData(from: initFileNamePath, resultResponse: resultResponse)
@@ -918,13 +918,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let hours = secondsFromGMT/3600
         
         var params: [String: String] = [
-            "shop_id": shopId,
-            "tz": String(hours)
+            SdkConstants.shopId: shopId,
+            SdkConstants.tz: String(hours)
         ]
         
-        let dId = UserDefaults.standard.string(forKey: "device_id") ?? ""
+        let dId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
         if dId != "" {
-            params["did"] = dId
+            params[SdkConstants.did] = dId
         }
         
         let advId = idfa.uuidString
@@ -956,7 +956,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         try? FileManager.default.removeItem(at: initFileNamePath)
         
-        UserDefaults.standard.set(nil, forKey: "device_id")
+        UserDefaults.standard.set(nil, forKey: SdkConstants.deviceIdKey)
         UserDefaults.standard.set(nil, forKey: "seance_id")
     }
     
@@ -965,8 +965,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.storiesCode = code
             let path = "stories/\(code)"
             let params: [String: String] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId
+                SdkConstants.shopId: self.shopId,
+                SdkConstants.did: self.deviceId
             ]
             let sessionConfig = URLSessionConfiguration.default
             if SdkConfiguration.stories.storiesSlideReloadManually {
