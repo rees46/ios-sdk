@@ -763,7 +763,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    private func sendInitRequest(completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
+    private func sendInitRequest(
+        completion: @escaping (Result<InitResponse, SdkError>) -> Void
+    ) {
         let path = "init"
         let params = prepareRequestParameters()
         configureSession()
@@ -774,7 +776,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             .appendingPathComponent(convertedInitJsonFileName)
         
         if let resultResponse = readLocalInitData(from: initFileNamePath) {
-            handleSuccessfulLocalData(
+            handleInitializationResponse(
                 resultResponse,
                 initFileNamePath: initFileNamePath,
                 completion: completion
@@ -790,7 +792,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         serialSemaphore.wait()
     }
-    
+
+
     private func prepareRequestParameters() -> [String: String] {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
         let hours = secondsFromGMT / 3600
@@ -798,12 +801,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             "shop_id": shopId,
             "tz": String(hours)
         ]
+        
+        if needReInitialization {
+            UserDefaults.standard.removeObject(forKey: "device_id")
+        }
+        
         if let deviceId = UserDefaults.standard.string(forKey: "device_id"), !deviceId.isEmpty {
             params["did"] = deviceId
         }
+        
         if let advId = UserDefaults.standard.string(forKey: "IDFA"), advId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advId
         }
+        
         return params
     }
     
@@ -822,7 +832,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return InitResponse(json: json)
     }
     
-    private func handleSuccessfulLocalData(
+    private func handleInitializationResponse(
         _ resultResponse: InitResponse,
         initFileNamePath: URL,
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
@@ -831,7 +841,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let successSeanceId = resultResponse.seance
         let keychainDid = UserDefaults.standard.string(forKey: "device_id") ?? ""
         
-        if keychainDid.isEmpty {
+        if keychainDid.isEmpty || needReInitialization {
             DispatchQueue.onceTechService(token: "keychainDid") {
                 UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
             }
@@ -840,10 +850,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             print("[SDK INIT Response] Successfully retrieved data from local JSON file: \(resultResponse)")
             completion(.success(resultResponse))
         } else {
-            storeKeychainData(
-                from: initFileNamePath,
-                resultResponse: resultResponse
-            )
+            storeKeychainData(from: initFileNamePath, resultResponse: resultResponse)
             completion(.success(resultResponse))
         }
         serialSemaphore.signal()
