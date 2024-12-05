@@ -302,7 +302,6 @@ public extension PersonalizationSDK {
     }
 }
 
-
 public func createPersonalizationSDK(
     shopId: String,
     userEmail: String? = nil,
@@ -313,6 +312,7 @@ public func createPersonalizationSDK(
     enableLogs: Bool = false,
     autoSendPushToken: Bool = true,
     parentViewController: UIViewController? = nil,
+    needReInitialization: Bool = false,
     _ completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(
@@ -325,6 +325,7 @@ public func createPersonalizationSDK(
         enableLogs: enableLogs,
         autoSendPushToken: autoSendPushToken,
         parentViewController: parentViewController,
+        needReInitialization: needReInitialization,
         completion: completion
     )
     

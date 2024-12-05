@@ -33,10 +33,12 @@ public class NotificationWidget: InAppNotificationProtocol {
             buttonNegative = actions.close?.button_text
             positiveLink = actions.link?.link_ios ?? actions.link?.link_android ?? actions.link?.link_web
         }
+
+        let (header, text) = popup.extractTitleAndSubtitle()
         
         let imageUrl = popup.components?.image
-        let title = popup.components?.header
-        let subTitle = popup.components?.text
+        let title = popup.components?.header ?? header
+        let subTitle = popup.components?.text ?? text
         
         switch position {
         case .centered:
