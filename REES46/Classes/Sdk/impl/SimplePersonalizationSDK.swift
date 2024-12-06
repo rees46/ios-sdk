@@ -20,6 +20,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var baseURL: String
     let baseInitJsonFileName = ".json"
     let autoSendPushToken: Bool
+    let needReInitialization: Bool
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -75,6 +76,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         enableLogs: Bool = false,
         autoSendPushToken: Bool = true,
         parentViewController: UIViewController?,
+        needReInitialization: Bool = false,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
@@ -88,6 +90,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.userLoyaltyId = userLoyaltyId
         self.stream = stream
         self.storiesCode = nil
+        self.needReInitialization = needReInitialization
         
         // Generate seance and segment
         userSeance = UUID().uuidString
@@ -760,93 +763,157 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    private func sendInitRequest(completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
+    private func sendInitRequest(
+        completion: @escaping (Result<InitResponse, SdkError>) -> Void
+    ) {
         let path = "init"
-        var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
-        let hours = secondsFromGMT / 3600
+        let params = prepareRequestParameters()
+        configureSession()
         
+        let convertedInitJsonFileName = shopId + baseInitJsonFileName
+        let initFileNamePath = SdkGlobalHelper.sharedInstance
+            .getSdkDocumentsDirectory()
+            .appendingPathComponent(convertedInitJsonFileName)
+        
+        if needReInitialization {
+            fetchServerInitData(
+                path: path,
+                params: params,
+                completion: completion
+            )
+        } else {
+            if let resultResponse = readLocalInitData(from: initFileNamePath) {
+                handleInitializationResponse(
+                    resultResponse,
+                    initFileNamePath: initFileNamePath,
+                    completion: completion
+                )
+            } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
+                completion(.success(resultResponse))
+            }
+
+        }
+ 
+        serialSemaphore.wait()
+    }
+
+
+    private func prepareRequestParameters() -> [String: String] {
+        let secondsFromGMT = TimeZone.current.secondsFromGMT()
+        let hours = secondsFromGMT / 3600
         var params: [String: String] = [
-            "shop_id": shopId,
-            "tz": String(hours)
+            SdkConstants.shopId: shopId,
+            SdkConstants.tz: String(hours)
         ]
-        let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? ""
-        if deviceId != "" {
-            params["did"] = deviceId
+        
+        if needReInitialization {
+            UserDefaults.standard.removeObject(forKey: SdkConstants.deviceIdKey)
+            print("USER DEVICE ID WAS REMOVED")
         }
         
-        let advId = UserDefaults.standard.string(forKey: "IDFA") ?? nil
-        if (advId != "00000000-0000-0000-0000-000000000000" && advId != nil) {
+        if let deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey), !deviceId.isEmpty {
+            params[SdkConstants.did] = deviceId
+        }
+        
+        if let advId = UserDefaults.standard.string(forKey: "IDFA"), advId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advId
         }
         
+        return params
+    }
+    
+    private func configureSession() {
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
         sessionConfig.waitsForConnectivity = true
         self.urlSession = URLSession(configuration: sessionConfig)
-        
-        let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
-        let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-        
-        let initData = NSData(contentsOf: initFileNamePath)
-        let json = try? JSONSerialization.jsonObject(with: initData as? Data ?? Data())
-        if let jsonObject = json as? [String: Any] {
-            let resultResponse = InitResponse(json: jsonObject)
-            let successInitDeviceId: String? = resultResponse.deviceId
-            let successSeanceId: String? = resultResponse.seance
-            let keychainDid: String? = UserDefaults.standard.string(forKey: "device_id") ?? ""
-            if (keychainDid == nil || keychainDid == "") {
-                DispatchQueue.onceTechService(token: "keychainDid") {
-                    UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
-                }
-                UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
-                sleep(1)
-                print("[SDK INIT Response] Successfully retrieved data from local JSON file: \(resultResponse)")
-                completion(.success(resultResponse))
-                self.serialSemaphore.signal()
-            } else {
-                if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
-                    try? FileManager.default.removeItem(at: initFileNamePath)
-                    let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
-                    let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
-                    self.storeSuccessInit(result: resultResponse)
-                    
-                    try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
-                    print("[SDK INIT Response] Successfully retrieved data from keychain token: \(resultResponse)")
-                }
-                sleep(1)
-                print("[SDK INIT Response] Successfully completed initialization with keychain data: \(resultResponse)")
-                completion(.success(resultResponse))
-                self.serialSemaphore.signal()
-            }
-            
-        } else if let keychainIpfsSecret = try? InitService.getKeychainDidToken(identifier: sdkBundleId!, instanceKeychainService: appBundleId!) {
-            try? FileManager.default.removeItem(at: initFileNamePath)
-            let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret)
-            let resultResponse = InitResponse(json: jsonSecret as! [String : Any])
-            self.storeSuccessInit(result: resultResponse)
-            
-            try? self.saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: convertedInitJsonFileName)
-            sleep(1)
-            print("[SDK INIT Response] Successfully completed initialization from keychain data: \(resultResponse)")
-            completion(.success(resultResponse))
-            self.serialSemaphore.signal()
-        } else {
-            getRequest(path: path, params: params, true) { result in
-                switch result {
-                case let .success(successResult):
-                    print("Success: \(successResult)")
-                    let resJSON = successResult
-                    let resultResponse = InitResponse(json: resJSON)
-                    self.storeSuccessInit(result: resultResponse)
-                    print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
-                    completion(.success(resultResponse))
-                    self.serialSemaphore.signal()
-                case let .failure(error):
-                    completion(.failure(error))
-                }
-            }
+    }
+    
+    private func readLocalInitData(from filePath: URL) -> InitResponse? {
+        guard let initData = NSData(contentsOf: filePath),
+              let json = try? JSONSerialization.jsonObject(with: initData as Data) as? [String: Any] else {
+            return nil
         }
-        self.serialSemaphore.wait()
+        return InitResponse(json: json)
+    }
+    
+    private func handleInitializationResponse(
+        _ resultResponse: InitResponse,
+        initFileNamePath: URL,
+        completion: @escaping (Result<InitResponse, SdkError>) -> Void
+    ) {
+        let successInitDeviceId = resultResponse.deviceId
+        let successSeanceId = resultResponse.seance
+        let keychainDid = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        
+        if keychainDid.isEmpty || needReInitialization {
+            DispatchQueue.onceTechService(token: SdkConstants.keychainDid) {
+                UserDefaults.standard.set(successInitDeviceId, forKey: SdkConstants.deviceIdKey)
+            }
+            UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
+            sleep(1)
+            completion(.success(resultResponse))
+        } else {
+            storeKeychainData(from: initFileNamePath, resultResponse: resultResponse)
+            completion(.success(resultResponse))
+        }
+        serialSemaphore.signal()
+    }
+    
+    private func handleKeychainInitData(initFileNamePath: URL) -> InitResponse? {
+        guard let keychainIpfsSecret = try? InitService.getKeychainDidToken(
+            identifier: sdkBundleId!,
+            instanceKeychainService: appBundleId!
+        ),
+            let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
+            return nil
+        }
+        
+        let resultResponse = InitResponse(json: jsonSecret)
+        storeSuccessInit(result: resultResponse)
+        
+        try? saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: initFileNamePath.lastPathComponent)
+        sleep(1)
+        print("[SDK INIT Response] Successfully completed initialization from keychain data: \(resultResponse)")
+        serialSemaphore.signal()
+        return resultResponse
+    }
+    
+    private func fetchServerInitData(
+        path: String,
+        params: [String: String],
+        completion: @escaping (Result<InitResponse, SdkError>) -> Void
+    ) {
+        getRequest(path: path, params: params) { result in
+            switch result {
+            case let .success(successResult):
+                let resultResponse = InitResponse(json: successResult)
+                self.storeSuccessInit(result: resultResponse)
+                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
+                completion(.success(resultResponse))
+            case let .failure(error):
+                completion(.failure(error))
+            }
+            self.serialSemaphore.signal()
+        }
+    }
+    
+    private func storeKeychainData(from filePath: URL, resultResponse: InitResponse) {
+        try? FileManager.default.removeItem(at: filePath)
+        print("[SDK INIT Response] Successfully completed initialization with keychain data: \(resultResponse)")
+    }
+    
+    func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
+        let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
+        do {
+            let fileExists = (try? jsonFileURL.checkResourceIsReachable()) ?? false
+            if !fileExists {
+                try data.write(to: jsonFileURL)
+            }
+        } catch {
+            print(error)
+            try data.write(to: jsonFileURL)
+        }
     }
     
     public func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
@@ -855,13 +922,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let hours = secondsFromGMT/3600
         
         var params: [String: String] = [
-            "shop_id": shopId,
-            "tz": String(hours)
+            SdkConstants.shopId: shopId,
+            SdkConstants.tz: String(hours)
         ]
         
-        let dId = UserDefaults.standard.string(forKey: "device_id") ?? ""
+        let dId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
         if dId != "" {
-            params["did"] = dId
+            params[SdkConstants.did] = dId
         }
         
         let advId = idfa.uuidString
@@ -893,7 +960,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         try? FileManager.default.removeItem(at: initFileNamePath)
         
-        UserDefaults.standard.set(nil, forKey: "device_id")
+        UserDefaults.standard.set(nil, forKey: SdkConstants.deviceIdKey)
         UserDefaults.standard.set(nil, forKey: "seance_id")
     }
     
@@ -902,8 +969,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.storiesCode = code
             let path = "stories/\(code)"
             let params: [String: String] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId
+                SdkConstants.shopId: self.shopId,
+                SdkConstants.did: self.deviceId
             ]
             let sessionConfig = URLSessionConfiguration.default
             if SdkConfiguration.stories.storiesSlideReloadManually {
@@ -929,21 +996,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
-        let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
-        do {
-            let fileExists = (try? jsonFileURL.checkResourceIsReachable()) ?? false
-            print("SDK Success initialization with exist json file\n\(jsonFileURL)\n")
-            if !fileExists {
-                try data.write(to: jsonFileURL)
-            }
-            
-        } catch let error as NSError {
-            print(error)
-            try data.write(to: jsonFileURL)
-        }
-    }
-    
     func storeSuccessInit(result: InitResponse) {
         let successInitDeviceId: String? = result.deviceId
         let successSeanceId: String? = result.seance
@@ -962,32 +1014,34 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         let urlString = baseURL + path
-#if DEBUG
+    #if DEBUG
         print("LOG: getRequest to: \(urlString)")
-#endif
-        
+    #endif
+
         var url = URLComponents(string: urlString)
-        
+
         var queryItems = [URLQueryItem]()
         for item in params {
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
-        
+
         queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
-        
-        if (!isInit && path == "init") {
+
+        if needReInitialization {
+            print("Reinitialization needed. Clearing saved data...")
             let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
             let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-            let iData = NSData(contentsOf: initFileNamePath)
-            let json = try? JSONSerialization.jsonObject(with: iData! as Data)
-            if let jsonObject = json as? [String: Any] {
-                completion(.success(jsonObject))
-            } else {
-                completion(.failure(.decodeError))
+            do {
+                if FileManager.default.fileExists(atPath: initFileNamePath.path) {
+                    try FileManager.default.removeItem(at: initFileNamePath)
+                    print("Saved data deleted successfully.")
+                }
+            } catch {
+                print("Error deleting saved data: \(error)")
             }
         }
-        
+
         if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
@@ -1007,7 +1061,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
                             try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
                         }
-                        
+
                         let json = try JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             completion(.success(jsonObject))
@@ -1020,7 +1074,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-                    
+
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
                     } else if connectionStatus == .Offline {

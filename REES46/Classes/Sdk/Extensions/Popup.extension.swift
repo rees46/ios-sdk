@@ -15,4 +15,16 @@ extension Popup {
             self.components = nil
         }
     }
+
+    func extractTitleAndSubtitle() -> (title: String?, subTitle: String?) {
+        let title = RegexHelper.extract(
+            using: RegexPattern.title,
+            from: html
+        )
+        let subTitle = RegexHelper.extract(
+            using: RegexPattern.subTitle,
+            from: html
+        )
+        return (title, subTitle)
+    }
 }
