@@ -33,51 +33,41 @@ public class NotificationWidget: InAppNotificationProtocol {
             buttonNegative = actions.close?.button_text
             positiveLink = actions.link?.link_ios ?? actions.link?.link_android ?? actions.link?.link_web
         }
-
+        
         let (header, text) = popup.extractTitleAndSubtitle()
         
         let imageUrl = popup.components?.image
         let title = popup.components?.header ?? header
         let subTitle = popup.components?.text ?? text
         
-        switch position {
-        case .centered:
-            showAlert(
-                titleText: title ?? baseTitle,
-                messageText: subTitle ?? baseSubTitle,
-                imageUrl: imageUrl ?? "",
-                positiveButtonText: buttonPositive ?? baseButtonPositive,
-                negativeButtonText: buttonNegative ?? baseButtonNegative,
-                onPositiveButtonClick: { [weak self] in
-                    self?.handlePositiveButtonClick(link: positiveLink)
-                }
-            )
-        case .bottom:
-            showBottomSheet(
-                titleText: title ?? baseTitle,
-                messageText: subTitle ?? baseSubTitle,
-                imageUrl: imageUrl ?? "",
-                positiveButtonText: buttonPositive ?? baseButtonPositive,
-                negativeButtonText: buttonNegative ?? baseButtonNegative,
-                onPositiveButtonClick: { [weak self] in
-                    self?.handlePositiveButtonClick(link: positiveLink)
-                }
-            )
-            
-        default:
-            showFullScreenAlert(
-                titleText: title ?? baseTitle,
-                messageText: subTitle ?? baseSubTitle,
-                imageUrl: imageUrl ?? "",
-                positiveButtonText: buttonPositive ?? baseButtonPositive,
-                negativeButtonText: buttonNegative ?? baseButtonNegative,
-                onPositiveButtonClick: { [weak self] in
-                    self?.handlePositiveButtonClick(link: positiveLink)
-                }
-            )
+        if title != nil && subTitle != nil {
+            switch position {
+            case .centered:
+                showAlert(
+                    titleText: title ?? baseTitle,
+                    messageText: subTitle ?? baseSubTitle,
+                    imageUrl: imageUrl ?? "",
+                    positiveButtonText: buttonPositive ?? baseButtonPositive,
+                    negativeButtonText: buttonNegative ?? baseButtonNegative,
+                    onPositiveButtonClick: { [weak self] in
+                        self?.handlePositiveButtonClick(link: positiveLink)
+                    }
+                )
+            case .bottom:
+                showBottomSheet(
+                    titleText: title ?? baseTitle,
+                    messageText: subTitle ?? baseSubTitle,
+                    imageUrl: imageUrl ?? "",
+                    positiveButtonText: buttonPositive ?? baseButtonPositive,
+                    negativeButtonText: buttonNegative ?? baseButtonNegative,
+                    onPositiveButtonClick: { [weak self] in
+                        self?.handlePositiveButtonClick(link: positiveLink)
+                    }
+                )
+            }
         }
     }
-
+    
     public func showAlert(
         titleText: String,
         messageText: String,

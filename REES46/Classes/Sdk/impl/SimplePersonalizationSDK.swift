@@ -775,21 +775,25 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             .getSdkDocumentsDirectory()
             .appendingPathComponent(convertedInitJsonFileName)
         
-        if let resultResponse = readLocalInitData(from: initFileNamePath) {
-            handleInitializationResponse(
-                resultResponse,
-                initFileNamePath: initFileNamePath,
-                completion: completion
-            )
-        } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
-            completion(.success(resultResponse))
-        } else {
+        if needReInitialization {
             fetchServerInitData(
                 path: path,
                 params: params,
                 completion: completion
             )
+        } else {
+            if let resultResponse = readLocalInitData(from: initFileNamePath) {
+                handleInitializationResponse(
+                    resultResponse,
+                    initFileNamePath: initFileNamePath,
+                    completion: completion
+                )
+            } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
+                completion(.success(resultResponse))
+            }
+
         }
+ 
         serialSemaphore.wait()
     }
 
@@ -880,7 +884,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         params: [String: String],
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
-        getRequest(path: path, params: params, true) { result in
+        getRequest(path: path, params: params) { result in
             switch result {
             case let .success(successResult):
                 let resultResponse = InitResponse(json: successResult)
@@ -1010,32 +1014,34 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         let urlString = baseURL + path
-#if DEBUG
+    #if DEBUG
         print("LOG: getRequest to: \(urlString)")
-#endif
-        
+    #endif
+
         var url = URLComponents(string: urlString)
-        
+
         var queryItems = [URLQueryItem]()
         for item in params {
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
-        
+
         queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
-        
-        if (!isInit && path == "init") {
+
+        if needReInitialization {
+            print("Reinitialization needed. Clearing saved data...")
             let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
             let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-            let iData = NSData(contentsOf: initFileNamePath)
-            let json = try? JSONSerialization.jsonObject(with: iData! as Data)
-            if let jsonObject = json as? [String: Any] {
-                completion(.success(jsonObject))
-            } else {
-                completion(.failure(.decodeError))
+            do {
+                if FileManager.default.fileExists(atPath: initFileNamePath.path) {
+                    try FileManager.default.removeItem(at: initFileNamePath)
+                    print("Saved data deleted successfully.")
+                }
+            } catch {
+                print("Error deleting saved data: \(error)")
             }
         }
-        
+
         if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
@@ -1055,7 +1061,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
                             try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
                         }
-                        
+
                         let json = try JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             completion(.success(jsonObject))
@@ -1068,7 +1074,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-                    
+
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
                     } else if connectionStatus == .Offline {

@@ -54,6 +54,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             apiDomain: AppEnvironments.apiDomain,
             enableLogs: true,
             parentViewController: (window?.rootViewController)!,
+            needReInitialization: true,
             { error in
                 globalSDK = self.sdk
                 NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
