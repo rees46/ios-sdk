@@ -1,6 +1,7 @@
 public struct PopupActions: Codable {
     let link: Link?
     let close: Close?
+    let system_mobile_push_subscribe: SystemMobilePushSubscribe?
     
     struct Link: Codable {
         let link_ios: String?
@@ -10,6 +11,10 @@ public struct PopupActions: Codable {
     }
     
     struct Close: Codable {
+        let button_text: String?
+    }
+    
+    struct SystemMobilePushSubscribe: Codable{
         let button_text: String?
     }
 }
