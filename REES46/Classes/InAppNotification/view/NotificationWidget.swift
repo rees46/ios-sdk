@@ -27,10 +27,12 @@ public class NotificationWidget: InAppNotificationProtocol {
         var buttonPositive: String?
         var buttonNegative: String?
         var positiveLink: String?
+        var buttonPushPermissions: String?
         
         if let actions = popup.getParsedPopupActions() {
             buttonPositive = actions.link?.button_text
             buttonNegative = actions.close?.button_text
+            buttonPushPermissions = actions.system_mobile_push_subscribe?.button_text
             positiveLink = actions.link?.link_ios ?? actions.link?.link_android ?? actions.link?.link_web
         }
         
@@ -41,32 +43,45 @@ public class NotificationWidget: InAppNotificationProtocol {
         let subTitle = popup.components?.text ?? text
         
         if title != nil && subTitle != nil {
+            
+            let positiveAction: () -> Void
+            let positiveText: String
+            
+            if let pushPermissionsText = buttonPushPermissions {
+                positiveText = pushPermissionsText
+                positiveAction = { [weak self] in
+                    self?.navigateToPushSettings()
+                }
+            } else {
+                positiveText = buttonPositive ?? baseButtonPositive
+                positiveAction = { [weak self] in
+                    self?.handlePositiveButtonClick(link: positiveLink)
+                }
+            }
+            
             switch position {
             case .centered:
                 showAlert(
                     titleText: title ?? baseTitle,
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
-                    positiveButtonText: buttonPositive ?? baseButtonPositive,
+                    positiveButtonText: positiveText,
                     negativeButtonText: buttonNegative ?? baseButtonNegative,
-                    onPositiveButtonClick: { [weak self] in
-                        self?.handlePositiveButtonClick(link: positiveLink)
-                    }
+                    onPositiveButtonClick: positiveAction
                 )
             case .bottom:
                 showBottomSheet(
                     titleText: title ?? baseTitle,
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
-                    positiveButtonText: buttonPositive ?? baseButtonPositive,
+                    positiveButtonText: positiveText,
                     negativeButtonText: buttonNegative ?? baseButtonNegative,
-                    onPositiveButtonClick: { [weak self] in
-                        self?.handlePositiveButtonClick(link: positiveLink)
-                    }
+                    onPositiveButtonClick: positiveAction
                 )
             }
         }
     }
+    
     
     public func showAlert(
         titleText: String,
@@ -237,4 +252,11 @@ public class NotificationWidget: InAppNotificationProtocol {
             print("Link missing or invalid")
         }
     }
+    
+    private func navigateToPushSettings() {
+        if let appSettingsURL = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(appSettingsURL, options: [:], completionHandler: nil)
+        }
+    }
+    
 }
