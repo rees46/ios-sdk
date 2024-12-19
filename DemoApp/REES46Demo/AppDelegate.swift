@@ -83,6 +83,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     
+    func getFirebaseToken(){
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("Error fetching FCM token: \(error.localizedDescription)")
+            } else if let token = token {
+                print("FCM Token: \(token)")
+                self.sdk.setPushTokenNotification(
+                    token: token,
+                    isFirebaseNotification: true,
+                    completion: {completion in
+                    
+                }
+                )
+            }
+        }
+    }
+    
     @available(iOS 13.0, *)
     func scene(
         _ scene: UIScene,
@@ -138,6 +155,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         // END TEST
         
         notificationService?.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: deviceToken)
+        
+        getFirebaseToken()
+        
     }
     
     func userNotificationCenter(

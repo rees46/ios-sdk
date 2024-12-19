@@ -69,13 +69,18 @@ public class NotificationService: NotificationServiceProtocol {
         }
     }
     
-    public func didReceiveRemoteNotifications(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void) {
+    public func didReceiveRemoteNotifications(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void
+    ) {
         
         notificationDelivered(userInfo: userInfo)
         
         switch application.applicationState {
         case .active:
-            log("Application is in active state, displaying notification")
+            log("Application is in active state, processing notification")
+            pushProcessing(userInfo: userInfo)
         case .background:
             log("Application is in background state")
             pushRetrieved(userInfo: userInfo)
@@ -87,6 +92,7 @@ public class NotificationService: NotificationServiceProtocol {
         }
         completionHandler(.newData, "CompletionHandler")
     }
+    
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
         log("didReceiveRegistrationFCMToken with token: \(String(describing: fcmToken))")
@@ -177,24 +183,25 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func notificationDelivered(userInfo: [AnyHashable: Any]) {
+        log("Notification delivered")
         guard let (eventType, srcID) = extractTypeAndCode(from: userInfo) else {
             handleNonSDKPush(userInfo: userInfo)
             return
         }
         sdk.notificationDelivered(type: eventType, code: srcID) { error in
-            self.log("NotificationDelivered: \(error)")
+            self.log("Notification Delivered: \(error)")
         }
     }
     
     private func notificationClicked(type: String, code: String) {
         sdk.notificationClicked(type: type, code: code) { error in
-            self.log("NotificationClicked: \(error)")
+            self.log("Notification Clicked: \(error)")
         }
     }
     
     private func notificationReceived(type: String, code: String) {
         sdk.notificationReceived(type: type, code: code) { error in
-            self.log("NotificationReceived: \(error)")
+            self.log("Notification Received: \(error)")
         }
     }
     
