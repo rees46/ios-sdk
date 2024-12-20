@@ -132,7 +132,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        // FIREBASE TOKEN FOR TEST
         fcmGlobalToken = fcmToken ?? ""
         print("Push Token Firebase:\(String(describing: fcmToken)) ")
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
@@ -141,7 +140,6 @@ extension AppDelegate: MessagingDelegate {
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        // FOR TEST
         let tokenParts = deviceToken.map { data -> String in
             String(format: "%02.2hhx", data)
         }
