@@ -76,7 +76,7 @@ public class NotificationService: NotificationServiceProtocol {
     ) {
         
         notificationDelivered(userInfo: userInfo)
-        
+
         switch application.applicationState {
         case .active:
             log("Application is in active state, processing notification")
@@ -92,7 +92,29 @@ public class NotificationService: NotificationServiceProtocol {
         }
         completionHandler(.newData, "CompletionHandler")
     }
+
+    private func notificationDelivered(userInfo: [AnyHashable: Any]) {
+        log("Notification delivered")
+        logAllPushKeysAndValues(userInfo: userInfo)
+
+        guard let (eventType, srcID) = extractTypeAndCode(from: userInfo) else {
+            log("Failed to extract type and code, skipping notificationDelivered")
+            return
+        }
+        log("Extracted eventType: \(eventType), srcID: \(srcID)")
+        
+        sdk.notificationDelivered(type: eventType, code: srcID) { error in
+                self.log("Notification Delivered Error: \(error)")
+        }
+    }
     
+    private func logAllPushKeysAndValues(userInfo: [AnyHashable: Any]) {
+        log("Logging all keys and values from push:")
+        for (key, value) in userInfo {
+            log("Key: \(key), Value: \(value)")
+        }
+        log("End of logging keys and values.")
+    }
     
     public func didReceiveRegistrationFCMToken(fcmToken: String?) {
         log("didReceiveRegistrationFCMToken with token: \(String(describing: fcmToken))")
@@ -140,57 +162,50 @@ public class NotificationService: NotificationServiceProtocol {
     
     private func pushProcessing(userInfo: [AnyHashable: Any]) {
         log("pushProcessing with userInfo: \(userInfo)")
-        
+
         guard let (eventType, srcID) = extractTypeAndCode(from: userInfo) else {
+            log("Failed to extract type and code, skipping processing")
             handleNonSDKPush(userInfo: userInfo)
             return
         }
-        
+
         notificationClicked(type: eventType, code: srcID)
-        
-        if eventType != PushEventType.carousel.rawValue, var eventLink = (
-            parseDictionary(key: Constants.eventKey, userInfo: userInfo)?[Constants.uriKey] as? String
-        ) {
-            if eventLink.contains(Constants.urlScheme) {
-                eventLink += "?recommended_by=\(eventType)&mail_code=\(srcID)"
+
+        if let eventLink = parseDictionary(key: Constants.eventKey, userInfo: userInfo)?[Constants.uriKey] as? String {
+            var modifiedEventLink = eventLink
+            if modifiedEventLink.contains(Constants.urlScheme) {
+                modifiedEventLink += "?recommended_by=\(eventType)&mail_code=\(srcID)"
             }
-            processingEventType(eventType: eventType, eventLink: eventLink)
+            processingEventType(eventType: eventType, eventLink: modifiedEventLink)
+        } else {
+            log("Event link not found or invalid")
         }
     }
+
     
     private func pushRetrieved(userInfo: [AnyHashable: Any]) {
         log("pushRetrieved with userInfo: \(userInfo)")
-        
+
         guard let (type, code) = extractTypeAndCode(from: userInfo) else {
             handleNonSDKPush(userInfo: userInfo)
             return
         }
-        
+
         notificationReceived(type: type, code: code)
-        
+
         guard let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
               let eventType = eventJSON[Constants.typeKey] as? String,
-              var eventLink = eventJSON[Constants.uriKey] as? String else {
+              let eventLink = eventJSON[Constants.uriKey] as? String else {
             handleNonSDKPush(userInfo: userInfo)
             return
         }
-        
-        if eventLink.contains(Constants.urlScheme) {
-            eventLink += "?recommended_by=\(eventType)&mail_code=\(code)"
+
+        var modifiedEventLink = eventLink
+        if modifiedEventLink.contains(Constants.urlScheme) {
+            modifiedEventLink += "?recommended_by=\(eventType)&mail_code=\(code)"
         }
-        
-        processingEventType(eventType: eventType, eventLink: eventLink)
-    }
-    
-    private func notificationDelivered(userInfo: [AnyHashable: Any]) {
-        log("Notification delivered")
-        guard let (eventType, srcID) = extractTypeAndCode(from: userInfo) else {
-            handleNonSDKPush(userInfo: userInfo)
-            return
-        }
-        sdk.notificationDelivered(type: eventType, code: srcID) { error in
-            self.log("Notification Delivered: \(error)")
-        }
+
+        processingEventType(eventType: eventType, eventLink: modifiedEventLink)
     }
     
     private func notificationClicked(type: String, code: String) {
@@ -219,7 +234,6 @@ public class NotificationService: NotificationServiceProtocol {
             openCustom(url: eventLink)
         }
     }
-    
     private func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
         if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
            let eventType = eventJSON[Constants.typeKey] as? String,
@@ -229,16 +243,16 @@ public class NotificationService: NotificationServiceProtocol {
            let srcID = src[Constants.idKey] as? String {
             return (eventType, srcID)
         }
-        
+
         if let type = userInfo[Constants.typeKey] as? String, let id = userInfo[Constants.idKey] as? String {
             return (type, id)
         }
-        
+
         if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
            let type = src[Constants.typeKey] as? String, let id = src[Constants.idKey] as? String {
             return (type, id)
         }
-        
+
         return nil
     }
     
@@ -249,10 +263,10 @@ public class NotificationService: NotificationServiceProtocol {
            let jsonDict = jsonObject as? [String: Any] {
             return jsonDict
         }
-        
+
         return userInfo[key] as? [String: Any]
     }
-    
+
     private func openCategory(categoryId: String) {
         pushActionDelegate?.openCategory(categoryId: categoryId)
     }
@@ -274,6 +288,6 @@ public class NotificationService: NotificationServiceProtocol {
     }
     
     private func log(_ message: String) {
-        print("\(logTag): \(message)")
+        print("📩\(logTag): \(message)")
     }
 }
