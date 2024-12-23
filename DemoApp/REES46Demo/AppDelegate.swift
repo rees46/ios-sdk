@@ -83,6 +83,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     
+    func getFirebaseToken(){
+        Messaging.messaging().token { token, error in
+            if let error = error {
+                print("Error fetching FCM token: \(error.localizedDescription)")
+            } else if let token = token {
+                print("FCM Token: \(token)")
+                self.sdk.setPushTokenNotification(
+                    token: token,
+                    isFirebaseNotification: true,
+                    completion: {completion in
+                    
+                }
+                )
+            }
+        }
+    }
+    
     @available(iOS 13.0, *)
     func scene(
         _ scene: UIScene,
@@ -115,7 +132,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 extension AppDelegate: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        // FIREBASE TOKEN FOR TEST
         fcmGlobalToken = fcmToken ?? ""
         print("Push Token Firebase:\(String(describing: fcmToken)) ")
         UserDefaults.standard.set(fcmToken, forKey: "fcmGlobalToken")
@@ -124,7 +140,6 @@ extension AppDelegate: MessagingDelegate {
 
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        // FOR TEST
         let tokenParts = deviceToken.map { data -> String in
             String(format: "%02.2hhx", data)
         }
@@ -138,6 +153,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         // END TEST
         
         notificationService?.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: deviceToken)
+        
+        getFirebaseToken()
+        
     }
     
     func userNotificationCenter(
