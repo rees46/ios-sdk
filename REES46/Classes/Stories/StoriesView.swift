@@ -202,43 +202,58 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId,
+            for: indexPath
+        ) as? StoriesCollectionViewPreviewCell else {
+            return UICollectionViewCell()
+        }
         
-        if let currentStory = stories?[indexPath.row] {
-            
-            let storyId = currentStory.id
-            let storyName = "viewed.slide." + storyId
-            
-            var allStoriesMainArray: [String] = []
-            for (index, _) in currentStory.slides.enumerated() {
-                //print("Story has \(index + 1): \(currentStory.slides[(index)].id)")
-                allStoriesMainArray.append(currentStory.slides[(index)].id)
-            }
-            
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
-            if (viewedSlidesStoriesCachedArray.count == allStoriesMainArray.count) {
-                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, storyId: currentStory.id)
-                cell.configure(story: currentStory)
-            } else {
-                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false, storyId: currentStory.id)
-                cell.configure(story: currentStory)
-            }
-        } else {
-            if (isInDownloadMode && stories == nil) {
+        guard let stories = stories, indexPath.row < stories.count else {
+            if isInDownloadMode && stories == nil {
                 cell.storyBackCircle.alpha = 0.0
                 
                 var placeholderColor = SdkConfiguration.stories.iconPlaceholderColor.hexToRGB()
-                
                 if SdkConfiguration.isDarkMode {
                     placeholderColor = SdkConfiguration.stories.iconPlaceholderColorDarkMode.hexToRGB()
                 }
                 
-                cell.storyBackCircle.backgroundColor = UIColor(red: placeholderColor.red, green: placeholderColor.green, blue: placeholderColor.blue, alpha: 1.0)
-                UIView.animate(withDuration: 5.0, animations: {
+                cell.storyBackCircle.backgroundColor = UIColor(
+                    red: placeholderColor.red,
+                    green: placeholderColor.green,
+                    blue: placeholderColor.blue,
+                    alpha: 1.0
+                )
+                
+                UIView.animate(withDuration: 5.0) {
                     cell.storyBackCircle.alpha = 1.0
-                })
+                }
             }
+            return cell
         }
+        
+        let currentStory = stories[indexPath.row]
+        
+        let storyId = currentStory.id
+        let storyName = "viewed.slide." + storyId
+        
+        var allStoriesMainArray: [String] = []
+        for slide in currentStory.slides {
+            allStoriesMainArray.append(slide.id)
+        }
+        
+        let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(
+            for: UserDefaults.Key(storyName)
+        ) as? [String] ?? []
+        
+        let viewedLocalKey = viewedSlidesStoriesCachedArray.count == allStoriesMainArray.count
+        cell.configureCell(
+            settings: settings,
+            viewed: currentStory.viewed,
+            viewedLocalKey: viewedLocalKey,
+            storyId: currentStory.id
+        )
+        cell.configure(story: currentStory)
         
         return cell
     }
