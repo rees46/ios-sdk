@@ -200,6 +200,48 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             return 18
         }
     }
+
+    //    public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+          //        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
+          //
+          //        if let currentStory = stories?[indexPath.row] {
+          //
+          //            let storyId = currentStory.id
+          //            let storyName = "viewed.slide." + storyId
+          //
+          //            var allStoriesMainArray: [String] = []
+          //            for (index, _) in currentStory.slides.enumerated() {
+          //                //print("Story has \(index + 1): \(currentStory.slides[(index)].id)")
+          //                allStoriesMainArray.append(currentStory.slides[(index)].id)
+          //            }
+          //
+          //            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+          //            if (viewedSlidesStoriesCachedArray.count == allStoriesMainArray.count) {
+          //                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, storyId: currentStory.id)
+          //                cell.configure(story: currentStory)
+          //            } else {
+          //                cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: false, storyId: currentStory.id)
+          //                cell.configure(story: currentStory)
+          //            }
+          //        } else {
+          //            if (isInDownloadMode && stories == nil) {
+          //                cell.storyBackCircle.alpha = 0.0
+          //
+          //                var placeholderColor = SdkConfiguration.stories.iconPlaceholderColor.hexToRGB()
+          //
+          //                if SdkConfiguration.isDarkMode {
+          //                    placeholderColor = SdkConfiguration.stories.iconPlaceholderColorDarkMode.hexToRGB()
+          //                }
+          //
+          //                cell.storyBackCircle.backgroundColor = UIColor(red: placeholderColor.red, green: placeholderColor.green, blue: placeholderColor.blue, alpha: 1.0)
+          //                UIView.animate(withDuration: 5.0, animations: {
+          //                    cell.storyBackCircle.alpha = 1.0
+          //                })
+          //            }
+          //        }
+          //
+          //        return cell
+          //    }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(
@@ -254,7 +296,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
             storyId: currentStory.id
         )
         cell.configure(story: currentStory)
-        
+
         return cell
     }
     
@@ -310,7 +352,6 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         mainVC?.present(storyVC, animated: true)
     }
 }
-
 
 extension StoriesView: StoriesViewLinkProtocol {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {

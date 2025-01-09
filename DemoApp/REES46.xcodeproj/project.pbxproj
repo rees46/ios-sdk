@@ -1028,7 +1028,7 @@
 				607FACEE1AFB9204008FA782 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		607FACEF1AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Demo" */ = {
 			isa = XCConfigurationList;
@@ -1037,7 +1037,7 @@
 				607FACF11AFB9204008FA782 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "REES46Tests" */ = {
 			isa = XCConfigurationList;
@@ -1046,7 +1046,7 @@
 				607FACF41AFB9204008FA782 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		9A7A95ED25BC40E900FFA40A /* Build configuration list for PBXNativeTarget "REESNotificationContentExtension" */ = {
 			isa = XCConfigurationList;
@@ -1055,7 +1055,7 @@
 				9A7A95EC25BC40E900FFA40A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		9A7A961525BC436D00FFA40A /* Build configuration list for PBXNativeTarget "REESNotificationServiceExtension" */ = {
 			isa = XCConfigurationList;
@@ -1064,7 +1064,7 @@
 				9A7A961725BC436D00FFA40A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
