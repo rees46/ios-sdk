@@ -288,7 +288,11 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 productWithPromocodeSuperview.configPromoView(promoData: selectedPromoCodeElement!)
                 productWithPromocodeSuperview.isHidden = false
                 
-                self.displayPromocodeBanner(promoTitle: elementProduct.title, promoCodeData: self.selectedPromoCodeElement!)
+                if selectedPromoCodeElement!.discount_percent != 0 {
+                    self.displayPromocodeBanner(promoTitle: elementProduct.title, promoCodeData: self.selectedPromoCodeElement!)
+                } else {
+                    self.displayPromocodeBanner(promoTitle: elementProduct.title, promoCodeData: self.selectedPromoCodeElement!)
+                }
                 
                 insertSubview(muteButton, aboveSubview: productWithPromocodeSuperview)
                 insertSubview(muteButton, aboveSubview: promocodeBannerView)
@@ -535,70 +539,79 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
     
-
     func displayPromocodeBanner(promoTitle: String?, promoCodeData: StoriesPromoCodeElement) {
-        print("PROMO DATA \(promoCodeData.promocode)")
         
         let screenSize: CGRect = UIScreen.main.bounds
         promocodeBannerView.size = CGSize(width: screenSize.width - 32, height: 68)
         promocodeBannerView.cornerRadius = 6
         promocodeBannerView.displayTime = 0
         promocodeBannerView.padding = (16, 90)
-        promocodeBannerView.animationDuration = 0.0
-
-        // Настраиваем UILabel для отображения цены
+        promocodeBannerView.animationDuration = 0.0 //0.75
+        
         let presentedBannerLabel = UILabel()
         var bgPriceSectionColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
-        if let configuredColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor {
-            bgPriceSectionColor = configuredColor
+        if SdkConfiguration.stories.bannerPriceSectionBackgroundColor != nil {
+            bgPriceSectionColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor!
         }
         presentedBannerLabel.backgroundColor = bgPriceSectionColor
         
-        let clearPriceAttributedString = NSMutableAttributedString()
-
-        // Добавляем старую цену с зачеркнутым текстом
+        let codePromo = "promoCodeData.promocode"
+        let clearPriceText = ""
+        let clearPriceAttributedString = NSMutableAttributedString(string:clearPriceText)
+        
+        var oldPriceText = "   "
         if promoCodeData.oldprice != 0 {
-            var oldPriceText = "   " + (promoCodeData.oldprice_formatted.isEmpty ? String(promoCodeData.oldprice) : promoCodeData.oldprice_formatted)
+            oldPriceText = "   " + String(promoCodeData.oldprice_formatted)
+            if (promoCodeData.oldprice_formatted == "") {
+                oldPriceText = "   " + String(promoCodeData.oldprice)
+            }
             
             var oldPriceTextColorBySdk = UIColor.white.withAlphaComponent(0.7)
-            if let configuredColor = SdkConfiguration.stories.bannerOldPriceSectionFontColor {
-                oldPriceTextColorBySdk = configuredColor.withAlphaComponent(0.7)
+            if SdkConfiguration.stories.bannerOldPriceSectionFontColor != nil {
+                oldPriceTextColorBySdk = (SdkConfiguration.stories.bannerOldPriceSectionFontColor?.withAlphaComponent(0.7))!
             }
             
             var promocodeBannerFontNameBySdk = UIFont.systemFont(ofSize: 16, weight: .heavy)
-            if let configuredFontName = SdkConfiguration.stories.promoCodeSlideFontNameChanged {
-                promocodeBannerFontNameBySdk = UIFont(name: configuredFontName, size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .heavy)
+            if SdkConfiguration.stories.promoCodeSlideFontNameChanged != nil {
+                promocodeBannerFontNameBySdk = UIFont(name: SdkConfiguration.stories.promoCodeSlideFontNameChanged!, size: 16)!
             }
             
-            let oldPriceTextAttrs: [NSAttributedString.Key: Any] = [
-                .font: promocodeBannerFontNameBySdk,
-                .strikethroughStyle: NSUnderlineStyle.single.rawValue,
-                .foregroundColor: oldPriceTextColorBySdk,
-                .strikethroughColor: oldPriceTextColorBySdk.withAlphaComponent(0.5)
-            ]
+            var oldPriceTextAttrs = [NSAttributedString.Key.font: promocodeBannerFontNameBySdk,
+                                     NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                                     .foregroundColor: oldPriceTextColorBySdk] as [NSAttributedString.Key: Any]
             
-            let oldPriceAttributedString = NSAttributedString(string: oldPriceText, attributes: oldPriceTextAttrs)
-            clearPriceAttributedString.append(oldPriceAttributedString)
+            if oldPriceText.utf16.count >= 10 {
+                //oldPriceText = "    " + String(promoData.oldprice)
+                oldPriceTextAttrs = [NSAttributedString.Key.font: promocodeBannerFontNameBySdk,
+                                     NSAttributedString.Key.strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                                     .foregroundColor: oldPriceTextColorBySdk] as [NSAttributedString.Key: Any]
+            }
+            
+            let boldString = NSMutableAttributedString(string: oldPriceText, attributes:oldPriceTextAttrs)
+            clearPriceAttributedString.append(boldString)
+            
+            clearPriceAttributedString.addAttributes([
+                .strikethroughColor: oldPriceTextColorBySdk.withAlphaComponent(0.5)
+            ], range: NSRange(location: 0, length: oldPriceText.count))
             
             let spaceText = "  \n"
-            let attrsSpace: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 1, weight: .thin),
-                .foregroundColor: UIColor.white
-            ]
-            let spaceAttributedString = NSAttributedString(string: spaceText, attributes: attrsSpace)
-            clearPriceAttributedString.append(spaceAttributedString)
+            let attrsSpace = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 1, weight: .thin), .foregroundColor: UIColor.white]
+            let boldStringSpace = NSMutableAttributedString(string: spaceText, attributes:attrsSpace)
+            clearPriceAttributedString.append(boldStringSpace)
         }
-
-        // Добавляем новую цену
-        var formattedPriceWithPromocode = promoCodeData.price_with_promocode_formatted.isEmpty ? promoCodeData.price_formatted : promoCodeData.price_with_promocode_formatted
+        
+        var formattedPriceWithPromocode = String(promoCodeData.price_with_promocode_formatted)
+        if formattedPriceWithPromocode == "" {
+            formattedPriceWithPromocode = String(promoCodeData.price_formatted)
+        }
         let currentCurrency = promoCodeData.currency
         let replaceCurrencyPriceWithPromocode = formattedPriceWithPromocode.replacingOccurrences(of: currentCurrency, with: "")
         
         let newPriceText = "   " + replaceCurrencyPriceWithPromocode
         
         var priceSectionFontColorBySdk = UIColor.white
-        if let configuredColor = SdkConfiguration.stories.bannerPriceSectionFontColor {
-            priceSectionFontColorBySdk = configuredColor
+        if SdkConfiguration.stories.bannerPriceSectionFontColor != nil {
+            priceSectionFontColorBySdk = SdkConfiguration.stories.bannerPriceSectionFontColor!
         }
         
         var newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 28, weight: .black), .foregroundColor: priceSectionFontColorBySdk]
@@ -614,8 +627,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
             newPriceTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .black), .foregroundColor: priceSectionFontColorBySdk]
         }
         
-        let newPriceAttributedString = NSAttributedString(string: newPriceText, attributes: newPriceTextAttributes)
-        clearPriceAttributedString.append(newPriceAttributedString)
+        let boldString = NSMutableAttributedString(string: newPriceText, attributes:newPriceTextAttributes)
+        clearPriceAttributedString.append(boldString)
         
         let currencyText = " " + promoCodeData.currency
         var currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: priceSectionFontColorBySdk]
@@ -631,8 +644,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
             currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 14, weight: .black), .foregroundColor: priceSectionFontColorBySdk]
         }
         
-        let currencyTextAttributedString = NSAttributedString(string: currencyText, attributes: currencyTextAttrs)
-        clearPriceAttributedString.append(currencyTextAttributedString)
+        //let currencyTextAttrs = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 19, weight: .black), .foregroundColor: UIColor.white]
+        let currencyTextBoldString = NSMutableAttributedString(string: currencyText, attributes:currencyTextAttrs)
+        clearPriceAttributedString.append(currencyTextBoldString)
         
         presentedBannerLabel.numberOfLines = 3
         presentedBannerLabel.attributedText = clearPriceAttributedString
@@ -641,69 +655,70 @@ class StoryCollectionViewCell: UICollectionViewCell {
         let percentSymbol = "%"
         
         var titlePromo = promoTitle! + nextStepSymbol
-        if promoCodeData.promocode.isEmpty {
+        if codePromo == "" {
             titlePromo = ""
         }
         let attributedDiscountSectionString = NSMutableAttributedString(string:"")
         
         let titlePromoAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 13, weight: .bold), .foregroundColor: UIColor.white]
-        let discountSectionString = NSAttributedString(string: titlePromo, attributes: titlePromoAttributes)
+        let discountSectionString = NSMutableAttributedString(string: titlePromo, attributes:titlePromoAttributes)
         attributedDiscountSectionString.append(discountSectionString)
         
         let nextStepSymbolAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 1, weight: .thin), .foregroundColor: UIColor.white]
-        let nextStepSymbolString = NSAttributedString(string: nextStepSymbol, attributes: nextStepSymbolAttributes)
+        let nextStepSymbolString = NSMutableAttributedString(string: nextStepSymbol, attributes:nextStepSymbolAttributes)
         attributedDiscountSectionString.append(nextStepSymbolString)
         
-        if promoCodeData.promocode.isEmpty {
+        if codePromo == "" {
             let percentReplacement = "-" + String(promoCodeData.discount_percent) + percentSymbol
             
             let priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 27, weight: .heavy), .foregroundColor: UIColor.black]
-            let promoCodeLabelAttributedString = NSAttributedString(string: percentReplacement, attributes: priceLabelAttributes)
+            let promoCodeLabelAttributedString = NSMutableAttributedString(string: percentReplacement, attributes:priceLabelAttributes)
             attributedDiscountSectionString.append(promoCodeLabelAttributedString)
         } else {
             var priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .heavy), .foregroundColor: UIColor.white]
-            if promoCodeData.promocode.utf16.count <= 4 {
+            if codePromo.utf16.count <= 4 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 31, weight: .heavy), .foregroundColor: UIColor.white]
-            } else if promoCodeData.promocode.utf16.count <= 8 {
+            } else if codePromo.utf16.count <= 8 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 27, weight: .heavy), .foregroundColor: UIColor.white]
-            } else if promoCodeData.promocode.utf16.count < 11 {
+            } else if codePromo.utf16.count < 11 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .heavy), .foregroundColor: UIColor.white]
-            } else if promoCodeData.promocode.utf16.count <= 12 {
+            } else if codePromo.utf16.count <= 12 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 20, weight: .heavy), .foregroundColor: UIColor.white]
-            } else if promoCodeData.promocode.utf16.count <= 14 {
+            } else if codePromo.utf16.count <= 14 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 16, weight: .heavy), .foregroundColor: UIColor.white]
-            } else if promoCodeData.promocode.utf16.count <= 16 {
+            } else if codePromo.utf16.count <= 16 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 15, weight: .bold), .foregroundColor: UIColor.white]
-            } else if promoCodeData.promocode.utf16.count <= 18 {
+            } else if codePromo.utf16.count <= 18 {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 13, weight: .bold), .foregroundColor: UIColor.white]
             } else {
                 priceLabelAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 11, weight: .regular), .foregroundColor: UIColor.white]
             }
-            let promoCodeLabelAttributedString = NSAttributedString(string: promoCodeData.promocode, attributes: priceLabelAttributes)
+            let promoCodeLabelAttributedString = NSMutableAttributedString(string: codePromo, attributes:priceLabelAttributes)
             attributedDiscountSectionString.append(promoCodeLabelAttributedString)
         }
         
         let v = UIView()
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkNilTap(_:)))
+        //v.addGestureRecognizer(tap)
         promocodeBannerView.addGestureRecognizer(tap)
         v.addSubview(presentedBannerLabel)
         
         let promoBtn = UIButton()
-        if promoCodeData.discount_percent != 0 || !promoCodeData.promocode.isEmpty {
+        if promoCodeData.discount_percent != 0 || codePromo != "" {
             promoBtn.setAttributedTitle(attributedDiscountSectionString, for: .normal)
             promoBtn.titleLabel?.textAlignment = .left
             promoBtn.titleLabel?.numberOfLines = 3
             
             var bgAdditionalColor = SdkConfiguration.stories.bannerPromocodeSectionBackgroundColor ?? UIColor(red: 23/255, green: 170/255, blue: 223/255, alpha: 1.0)
             
-            if promoCodeData.promocode.isEmpty {
+            if codePromo == "" {
                 bgAdditionalColor = SdkConfiguration.stories.bannerDiscountSectionBackgroundColor ?? UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
             } else {
                 
                 var frameworkBundle = Bundle(for: classForCoder)
-    #if SWIFT_PACKAGE
+#if SWIFT_PACKAGE
                 frameworkBundle = Bundle.module
-    #endif
+#endif
                 let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
                 
                 let copyIconImageView = UIImageView(image: copyIcon)
@@ -722,29 +737,30 @@ class StoryCollectionViewCell: UICollectionViewCell {
             }
             
             promoBtn.backgroundColor = bgAdditionalColor
+            v.addSubview(promoBtn)
+            
         } else {
             var bgPriceSectionColor = UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
-            if let configuredColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor {
-                bgPriceSectionColor = configuredColor
+            if SdkConfiguration.stories.bannerPriceSectionBackgroundColor != nil {
+                bgPriceSectionColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor!
             }
             promoBtn.backgroundColor = bgPriceSectionColor
+            v.addSubview(promoBtn)
         }
-        
-        v.addSubview(promoBtn)
         
         promocodeBannerView.setView(view: v)
         showInCellPromocodeBanner(promoBanner: promocodeBannerView)
         
-        if promoCodeData.promocode.isEmpty {
+        if codePromo == "" {
             presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.72, height: v.frame.height)
             promoBtn.frame = CGRect(x: (v.frame.width * 0.72) - 5, y: 0, width: v.frame.width - (v.frame.width * 0.72) + 10, height: v.frame.height)
         } else {
-            if promoCodeData.discount_percent != 0 || !promoCodeData.promocode.isEmpty {
+            if promoCodeData.discount_percent != 0 || codePromo != "" {
                 if SdkGlobalHelper.DeviceType.IS_IPHONE_14_PRO_MAX || SdkGlobalHelper.DeviceType.IS_IPHONE_14_PLUS {
-                    if promoCodeData.promocode.utf16.count < 11 {
+                    if codePromo.utf16.count < 11 {
                         presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.6, height: v.frame.height)
                         promoBtn.frame = CGRect(x: v.frame.width * 0.6, y: 0, width: v.frame.width - (v.frame.width * 0.6), height: v.frame.height)
-                    } else if promoCodeData.promocode.utf16.count <= 12 {
+                    } else if codePromo.utf16.count <= 12 {
                         presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: v.frame.width * 0.54, height: v.frame.height)
                         promoBtn.frame = CGRect(x: v.frame.width * 0.54, y: 0, width: v.frame.width - (v.frame.width * 0.54), height: v.frame.height)
                     } else {
