@@ -854,19 +854,19 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     private func setupGestureRecognizerOnCollection() {
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
-        
-        collectionView.gestureRecognizers = []
         longPressedGesture.isEnabled = true
         longPressedGesture.minimumPressDuration = 0.20
-        
         longPressedGesture.allowableMovement = 50
         longPressedGesture.delaysTouchesBegan = true
-        longPressedGesture.cancelsTouchesInView = true
+        longPressedGesture.cancelsTouchesInView = false
+
         let singleTap = UITapGestureRecognizer(target: self, action: #selector(didSingleTapOnScreen(_:)))
-        singleTap.require(toFail: longPressedGesture)
+        singleTap.cancelsTouchesInView = false
+
+        collectionView.gestureRecognizers = [] 
         collectionView.addGestureRecognizer(longPressedGesture)
         collectionView.addGestureRecognizer(singleTap)
-        
+
         let leftSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeLeft))
         leftSwipe.direction = .left
         leftSwipe.require(toFail: longPressedGesture)
@@ -876,12 +876,12 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         let downSwipe = UISwipeGestureRecognizer(target: self, action: #selector(didSwipeDown))
         downSwipe.direction = .down
         downSwipe.require(toFail: longPressedGesture)
-        
+
         collectionView.addGestureRecognizer(leftSwipe)
         collectionView.addGestureRecognizer(rightSwipe)
         collectionView.addGestureRecognizer(downSwipe)
     }
-    
+
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return false
     }

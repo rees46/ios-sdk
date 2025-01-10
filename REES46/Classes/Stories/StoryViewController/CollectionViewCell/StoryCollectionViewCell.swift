@@ -14,6 +14,8 @@ protocol StoryCollectionViewCellDelegate: AnyObject {
 class StoryCollectionViewCell: UICollectionViewCell {
     
     static let cellId = "StoryCollectionViewCellId"
+    var promoBtn: UIButton!
+     weak var delegate: StoryCollectionViewCellDelegate?
     
     let videoView = UIView()
     let storySlideImageView = UIImageView()
@@ -161,7 +163,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         
         let stackView = createStackView()
         addStackView(stackView)
-    
+        
         for textBlockView in textBlockViews {
             stackView.addArrangedSubview(textBlockView)
         }
@@ -307,6 +309,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 bringSubviewToFront(muteButton)
                 bringSubviewToFront(storyButton)
                 bringSubviewToFront(productsButton)
+                bringSubviewToFront(promocodeBannerView)
                 makeConstraints()
             }
             
@@ -512,6 +515,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
         //
+        print("DFGHJKLJHGFGHJKJHGFGHJKJHGHjk")
     }
     
     @objc
@@ -531,8 +535,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 icon: errorIcon,
                 iconSpacing: 16,
                 position: .centerCustom,
-                onTap: { print("SDK Alert popup tapped")
-                }
+                onTap: { print("SDK Alert popup tapped") }
             )
             popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
             popupView.show()
@@ -546,21 +549,28 @@ class StoryCollectionViewCell: UICollectionViewCell {
             promoTitle: promoTitle,
             promoCodeData: promoCodeData
         )
-
+        
         let view = UIView()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.sdkNilTap(_:)))
+        let tap = UITapGestureRecognizer(
+            target: self,
+            action: #selector(self.sdkNilTap(_:))
+        )
+        tap.cancelsTouchesInView = false
         promocodeBannerView.addGestureRecognizer(tap)
-        view.addSubview(presentedBannerLabel)
 
+        view.addSubview(presentedBannerLabel)
+        
         let promoBtn = createPromoButton(
             promoCodeData: promoCodeData,
             attributedDiscountSectionString: attributedDiscountSectionString
         )
+    
         view.addSubview(promoBtn)
-
+        
         promocodeBannerView.setView(view: view)
+        promocodeBannerView.isUserInteractionEnabled = true
         showInCellPromocodeBanner(promoBanner: promocodeBannerView)
-
+        
         setupBannerFrames(
             presentedBannerLabel: presentedBannerLabel,
             promoBtn: promoBtn,
@@ -569,7 +579,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             discountPercent: promoCodeData.discount_percent
         )
     }
-
+    
     private func setupPromocodeBannerView() {
         let screenSize = UIScreen.main.bounds
         promocodeBannerView.size = CGSize(width: screenSize.width - 32, height: 68)
@@ -577,40 +587,46 @@ class StoryCollectionViewCell: UICollectionViewCell {
         promocodeBannerView.displayTime = 0
         promocodeBannerView.padding = (16, 90)
         promocodeBannerView.animationDuration = 0.0
+        promocodeBannerView.isUserInteractionEnabled = true
     }
-
+    
     private func createPresentedBannerLabel(promoCodeData: StoriesPromoCodeElement) -> UILabel {
         let presentedBannerLabel = UILabel()
-        presentedBannerLabel.backgroundColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor ?? UIColor(red: 252/255, green: 107/255, blue: 63/255, alpha: 1.0)
-
+        presentedBannerLabel.backgroundColor = SdkConfiguration.stories.bannerPriceSectionBackgroundColor ?? UIColor(
+            red: 252/255,
+            green: 107/255,
+            blue: 63/255,
+            alpha: 1.0
+        )
+        
         let clearPriceAttributedString = createPriceAttributedString(promoCodeData: promoCodeData)
         presentedBannerLabel.numberOfLines = 3
         presentedBannerLabel.attributedText = clearPriceAttributedString
-
+        
         return presentedBannerLabel
     }
-
+    
     private func createPriceAttributedString(promoCodeData: StoriesPromoCodeElement) -> NSMutableAttributedString {
         let clearPriceAttributedString = NSMutableAttributedString(string: "")
         let oldPriceText = createOldPriceText(promoCodeData: promoCodeData)
         clearPriceAttributedString.append(oldPriceText)
-
+        
         let newPriceText = createNewPriceText(promoCodeData: promoCodeData)
         clearPriceAttributedString.append(newPriceText)
-
+        
         let currencyText = createCurrencyText(promoCodeData: promoCodeData)
         clearPriceAttributedString.append(currencyText)
-
+        
         return clearPriceAttributedString
     }
-
+    
     private func createOldPriceText(promoCodeData: StoriesPromoCodeElement) -> NSAttributedString {
         var oldPriceText = "   "
         if promoCodeData.oldprice != 0 {
             oldPriceText = "   " + (promoCodeData.oldprice_formatted.isEmpty ? String(promoCodeData.oldprice) : promoCodeData.oldprice_formatted)
             let oldPriceTextColor = SdkConfiguration.stories.bannerOldPriceSectionFontColor?.withAlphaComponent(0.7) ?? UIColor.white.withAlphaComponent(0.7)
             let oldPriceFont = SdkConfiguration.stories.promoCodeSlideFontNameChanged.flatMap { UIFont(name: $0, size: 16) } ?? UIFont.systemFont(ofSize: 16, weight: .heavy)
-
+            
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: oldPriceFont,
                 .strikethroughStyle: NSUnderlineStyle.single.rawValue,
@@ -621,15 +637,15 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
         return NSAttributedString(string: oldPriceText)
     }
-
+    
     private func createNewPriceText(promoCodeData: StoriesPromoCodeElement) -> NSAttributedString {
         var formattedPrice = promoCodeData.price_with_promocode_formatted.isEmpty ? promoCodeData.price_formatted : promoCodeData.price_with_promocode_formatted
         formattedPrice = formattedPrice.replacingOccurrences(of: promoCodeData.currency, with: "")
         let newPriceText = "   " + formattedPrice
-
+        
         let priceFontColor = SdkConfiguration.stories.bannerPriceSectionFontColor ?? UIColor.white
         let fontSize: CGFloat
-
+        
         switch newPriceText.utf16.count {
         case 0...10:
             fontSize = 26
@@ -642,19 +658,19 @@ class StoryCollectionViewCell: UICollectionViewCell {
         default:
             fontSize = 14
         }
-
+        
         let attributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize, weight: .black),
             .foregroundColor: priceFontColor
         ]
         return NSAttributedString(string: newPriceText, attributes: attributes)
     }
-
+    
     private func createCurrencyText(promoCodeData: StoriesPromoCodeElement) -> NSAttributedString {
         let currencyText = " " + promoCodeData.currency
         let priceFontColor = SdkConfiguration.stories.bannerPriceSectionFontColor ?? UIColor.white
         let fontSize: CGFloat
-
+        
         switch currencyText.utf16.count {
         case 0...10:
             fontSize = 26
@@ -667,35 +683,42 @@ class StoryCollectionViewCell: UICollectionViewCell {
         default:
             fontSize = 14
         }
-
+        
         let attributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: fontSize, weight: .black),
             .foregroundColor: priceFontColor
         ]
         return NSAttributedString(string: currencyText, attributes: attributes)
     }
-
-    private func createDiscountSectionString(promoTitle: String?, promoCodeData: StoriesPromoCodeElement) -> NSMutableAttributedString {
+    
+    private func createDiscountSectionString(
+        promoTitle: String?,
+        promoCodeData: StoriesPromoCodeElement
+    ) -> NSMutableAttributedString {
+        
         let attributedDiscountSectionString = NSMutableAttributedString()
         let nextStepSymbol = " \n"
         let percentSymbol = "%"
-
+        
         let titlePromo = (promoTitle ?? "") + nextStepSymbol
-
+        
         let titlePromoAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 13, weight: .bold),
             .foregroundColor: UIColor.white
         ]
-        let discountSectionString = NSMutableAttributedString(string: titlePromo, attributes: titlePromoAttributes)
+        let discountSectionString = NSMutableAttributedString(
+            string: titlePromo,
+            attributes: titlePromoAttributes
+        )
         attributedDiscountSectionString.append(discountSectionString)
-
+        
         let nextStepSymbolAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 1, weight: .thin),
             .foregroundColor: UIColor.white
         ]
         let nextStepSymbolString = NSMutableAttributedString(string: nextStepSymbol, attributes: nextStepSymbolAttributes)
         attributedDiscountSectionString.append(nextStepSymbolString)
-
+        
         if promoCodeData.promocode.isEmpty {
             let percentReplacement = "-" + String(promoCodeData.discount_percent) + percentSymbol
             let priceLabelAttributes: [NSAttributedString.Key: Any] = [
@@ -709,16 +732,16 @@ class StoryCollectionViewCell: UICollectionViewCell {
             let promoCodeLabelAttributedString = NSMutableAttributedString(string: promoCodeData.promocode, attributes: priceLabelAttributes)
             attributedDiscountSectionString.append(promoCodeLabelAttributedString)
         }
-
+        
         return attributedDiscountSectionString
     }
-
+    
     private func getPromoCodeLabelAttributes(promoCode: String) -> [NSAttributedString.Key: Any] {
         var priceLabelAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 25, weight: .heavy),
             .foregroundColor: UIColor.white
         ]
-
+        
         switch promoCode.utf16.count {
         case 0...4:
             priceLabelAttributes[.font] = UIFont.systemFont(ofSize: 31, weight: .heavy)
@@ -737,10 +760,10 @@ class StoryCollectionViewCell: UICollectionViewCell {
         default:
             priceLabelAttributes[.font] = UIFont.systemFont(ofSize: 11, weight: .regular)
         }
-
+        
         return priceLabelAttributes
     }
-
+    
     private func createPromoButton(promoCodeData: StoriesPromoCodeElement, attributedDiscountSectionString: NSAttributedString) -> UIButton {
         let promoBtn = UIButton()
         if promoCodeData.discount_percent != 0 || !promoCodeData.promocode.isEmpty {
@@ -753,7 +776,13 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 bgAdditionalColor = SdkConfiguration.stories.bannerDiscountSectionBackgroundColor ?? UIColor(red: 251/255, green: 184/255, blue: 0/255, alpha: 1.0)
             } else {
                 addCopyIcon(to: promoBtn)
-                promoBtn.addTarget(self, action: #selector(copyPromocodeToClipboard), for: .touchUpInside)
+
+                objc_setAssociatedObject(promoBtn, &AssociatedKeys.promocodeKey, promoCodeData.promocode, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
+                promoBtn.addTarget(self, action: #selector(copyPromocodeToClipboard(_:)), for: .touchUpInside)
+                promoBtn.isUserInteractionEnabled = true
+                print("Target added to promoBtn")
+
             }
             promoBtn.backgroundColor = bgAdditionalColor
         } else {
@@ -764,16 +793,81 @@ class StoryCollectionViewCell: UICollectionViewCell {
         return promoBtn
     }
 
+    private struct AssociatedKeys {
+        static var promocodeKey = "promocodeKey"
+    }
+
+    @objc
+    public func copyPromocodeToClipboard(_ sender: UIButton) {
+        print("PROMO WAS COPIED ")
+        if let promocode = objc_getAssociatedObject(sender, &AssociatedKeys.promocodeKey) as? String {
+            print("PROMO WAS COPIED \(promocode)")
+            let pasteboard = UIPasteboard.general
+            pasteboard.string = promocode
+
+            showToast(message: "Промокод скопирован: \(promocode)")
+        }
+    }
+
+    // Создаем функцию для отображения тост-сообщения
+    func showToast(message: String) {
+        guard let window = UIApplication.shared.keyWindow else { return }
+
+        let toastContainer = UIView(frame: CGRect())
+        toastContainer.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+        toastContainer.alpha = 0.0
+        toastContainer.layer.cornerRadius = 25
+        toastContainer.clipsToBounds = true
+
+        let toastLabel = UILabel(frame: CGRect())
+        toastLabel.textColor = UIColor.white
+        toastLabel.textAlignment = .center
+        toastLabel.font = UIFont(name: "Montserrat-Light", size: 12.0)
+        toastLabel.text = message
+        toastLabel.clipsToBounds = true
+        toastLabel.numberOfLines = 0
+
+        toastContainer.addSubview(toastLabel)
+        window.addSubview(toastContainer)
+
+        toastLabel.translatesAutoresizingMaskIntoConstraints = false
+        toastContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        let labelConstraints = [
+            toastLabel.leadingAnchor.constraint(equalTo: toastContainer.leadingAnchor, constant: 15),
+            toastLabel.trailingAnchor.constraint(equalTo: toastContainer.trailingAnchor, constant: -15),
+            toastLabel.topAnchor.constraint(equalTo: toastContainer.topAnchor, constant: 15),
+            toastLabel.bottomAnchor.constraint(equalTo: toastContainer.bottomAnchor, constant: -15)
+        ]
+        NSLayoutConstraint.activate(labelConstraints)
+
+        let containerConstraints = [
+            toastContainer.leadingAnchor.constraint(equalTo: window.leadingAnchor, constant: 25),
+            toastContainer.trailingAnchor.constraint(equalTo: window.trailingAnchor, constant: -25),
+            toastContainer.bottomAnchor.constraint(equalTo: window.bottomAnchor, constant: -75)
+        ]
+        NSLayoutConstraint.activate(containerConstraints)
+
+        UIView.animate(withDuration: 0.5, delay: 0.0, options: .curveEaseIn, animations: {
+            toastContainer.alpha = 1.0
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.5, delay: 2.5, options: .curveEaseOut, animations: {
+                toastContainer.alpha = 0.0
+            }, completion: { _ in
+                toastContainer.removeFromSuperview()
+            })
+        })
+    }
+    
     private func addCopyIcon(to button: UIButton) {
         var frameworkBundle = Bundle(for: classForCoder)
-        #if SWIFT_PACKAGE
+#if SWIFT_PACKAGE
         frameworkBundle = Bundle.module
-        #endif
+#endif
         let copyIcon = UIImage(named: "iconCopyLight", in: frameworkBundle, compatibleWith: nil)
         let copyIconImageView = UIImageView(image: copyIcon)
         copyIconImageView.translatesAutoresizingMaskIntoConstraints = false
         button.addSubview(copyIconImageView)
-
         let copyIconLength = CGFloat(17)
         NSLayoutConstraint.activate([
             copyIconImageView.leadingAnchor.constraint(equalTo: button.trailingAnchor, constant: -28),
@@ -782,7 +876,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             copyIconImageView.heightAnchor.constraint(equalToConstant: copyIconLength)
         ])
     }
-
+    
     private func setupBannerFrames(presentedBannerLabel: UILabel, promoBtn: UIButton, view: UIView, codePromo: String, discountPercent: Int) {
         if codePromo.isEmpty {
             presentedBannerLabel.frame = CGRect(x: 0, y: 0, width: view.frame.width * 0.72, height: view.frame.height)
@@ -810,17 +904,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 promoBtn.frame = CGRect(x: view.frame.width * 1.0, y: 0, width: view.frame.width - (view.frame.width * 1.0), height: view.frame.height)
             }
         }
-    }
-    
-    @objc
-    public func copyPromocodeToClipboard() {
-        let pasteboard = UIPasteboard.general
-        pasteboard.string = selectedPromoCodeElement?.promocode
-        
-        if (sdkPopupAlertView.window != nil) {
-            return
-        }
-        sdkPopupAlertView.show()
     }
     
     @objc
