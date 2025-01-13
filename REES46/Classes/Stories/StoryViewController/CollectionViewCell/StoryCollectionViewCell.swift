@@ -14,14 +14,14 @@ protocol StoryCollectionViewCellDelegate: AnyObject {
 class StoryCollectionViewCell: UICollectionViewCell {
     
     static let cellId = "StoryCollectionViewCellId"
-    var promoBtn: UIButton!
-     weak var delegate: StoryCollectionViewCellDelegate?
+    weak var delegate: StoryCollectionViewCellDelegate?
     
     let videoView = UIView()
     let storySlideImageView = UIImageView()
     let storyButton = StoryButton()
     let productsButton = ProductsButton()
     let muteButton = UIButton()
+    let promoBtn = StoryButton()
     let reloadButton = ReloadButton()
     
     private var currentSlide: Slide?
@@ -95,6 +95,9 @@ class StoryCollectionViewCell: UICollectionViewCell {
         productsButton.setTitle("Continue", for: .normal)
         productsButton.addTarget(self, action: #selector(didTapOnProductsButton), for: .touchUpInside)
         addSubview(productsButton)
+        
+        promoBtn.isHidden = true
+        addSubview(promoBtn)
         
         self.setMuteButtonToDefault()
         
@@ -215,7 +218,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     private func bringImportantSubviewsToFront() {
-        bringSubviewsToFront([storyButton, productsButton, muteButton, productWithPromocodeSuperview, promocodeBannerView])
+        bringSubviewsToFront([storyButton, productsButton,promoBtn, muteButton, productWithPromocodeSuperview, promocodeBannerView])
     }
     
     
@@ -307,6 +310,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 insertSubview(productWithPromocodeSuperview, aboveSubview: storySlideImageView)
                 
                 bringSubviewToFront(muteButton)
+                bringSubviewToFront(promoBtn)
                 bringSubviewToFront(storyButton)
                 bringSubviewToFront(productsButton)
                 bringSubviewToFront(promocodeBannerView)
@@ -515,7 +519,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
     @objc
     func sdkNilTap(_ sender: UITapGestureRecognizer? = nil) {
         //
-        print("DFGHJKLJHGFGHJKJHGFGHJKJHGHjk")
     }
     
     @objc
@@ -559,8 +562,8 @@ class StoryCollectionViewCell: UICollectionViewCell {
         promocodeBannerView.addGestureRecognizer(tap)
 
         view.addSubview(presentedBannerLabel)
-        
-        let promoBtn = createPromoButton(
+
+        let promo = createPromoButton(
             promoCodeData: promoCodeData,
             attributedDiscountSectionString: attributedDiscountSectionString
         )
@@ -587,7 +590,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         promocodeBannerView.displayTime = 0
         promocodeBannerView.padding = (16, 90)
         promocodeBannerView.animationDuration = 0.0
-        promocodeBannerView.isUserInteractionEnabled = true
+        promocodeBannerView.isUserInteractionEnabled = false
     }
     
     private func createPresentedBannerLabel(promoCodeData: StoriesPromoCodeElement) -> UILabel {
@@ -765,7 +768,10 @@ class StoryCollectionViewCell: UICollectionViewCell {
     }
     
     private func createPromoButton(promoCodeData: StoriesPromoCodeElement, attributedDiscountSectionString: NSAttributedString) -> UIButton {
-        let promoBtn = UIButton()
+        promoBtn.isHidden = false
+        promoBtn.isUserInteractionEnabled = true
+        promoBtn.addTarget(self, action: #selector(copyPromocodeToClipboard(_:)), for: .touchUpInside)
+        
         if promoCodeData.discount_percent != 0 || !promoCodeData.promocode.isEmpty {
             promoBtn.setAttributedTitle(attributedDiscountSectionString, for: .normal)
             promoBtn.titleLabel?.textAlignment = .left
@@ -780,9 +786,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 objc_setAssociatedObject(promoBtn, &AssociatedKeys.promocodeKey, promoCodeData.promocode, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
                 promoBtn.addTarget(self, action: #selector(copyPromocodeToClipboard(_:)), for: .touchUpInside)
-                promoBtn.isUserInteractionEnabled = true
                 print("Target added to promoBtn")
-
             }
             promoBtn.backgroundColor = bgAdditionalColor
         } else {
@@ -809,7 +813,6 @@ class StoryCollectionViewCell: UICollectionViewCell {
         }
     }
 
-    // Создаем функцию для отображения тост-сообщения
     func showToast(message: String) {
         guard let window = UIApplication.shared.keyWindow else { return }
 
@@ -1031,12 +1034,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         productWithPromocodeSuperview.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
         productWithPromocodeSuperview.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         productWithPromocodeSuperview.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
-        
-        //        reloadButton.widthAnchor.constraint(equalToConstant: 76).isActive = true
-        //        reloadButton.heightAnchor.constraint(equalToConstant: 76).isActive = true
-        //        reloadButton.centerXAnchor.constraint(equalTo: centerXAnchor).isActive = true
-        //        reloadButton.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
-        
+
         if SdkGlobalHelper.sharedInstance.willDeviceHaveDynamicIsland() {
             
             clearConstraints()
