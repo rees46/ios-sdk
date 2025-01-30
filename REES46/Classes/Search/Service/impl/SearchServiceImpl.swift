@@ -42,6 +42,7 @@ class SearchServiceImpl: SearchServiceProtocol {
         sortBy: String?,
         sortDir: String?,
         locations: String?,
+        excludedMerchants: [String]?,
         brands: String?,
         filters: [String: Any]?,
         priceMin: Double?,
@@ -89,6 +90,10 @@ class SearchServiceImpl: SearchServiceProtocol {
         }
         if let locations = locations {
             params["locations"] = locations
+            if let excludedMerchants = excludedMerchants {
+                let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
+                params["excluded_merchants"] = excludeMerchantsString
+            }
         }
         if let brands = brands {
             params["brands"] = brands
@@ -156,6 +161,7 @@ class SearchServiceImpl: SearchServiceProtocol {
         sortBy: String?,
         sortDir: String?,
         locations: String?,
+        excludedMerchants: [String]?,
         brands: String?,
         filters: [String: Any]?,
         priceMin: Double?,
@@ -182,6 +188,7 @@ class SearchServiceImpl: SearchServiceProtocol {
                 sortBy: sortBy,
                 sortDir: sortDir,
                 locations: locations,
+                excludedMerchants: excludedMerchants,
                 brands: brands,
                 filters: filters,
                 priceMin: priceMin,
