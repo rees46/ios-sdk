@@ -421,7 +421,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {
+    func suggest(query: String, locations: String?, excluded_merchants:  [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
             var params = [
@@ -436,6 +436,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             if let locations = locations {
                 params["locations"] = locations
+                if let excluded_merchants = excluded_merchants {
+                    let excludeMerchantsString = excluded_merchants.joined(separator: ", ")
+                    print(excludeMerchantsString)
+                    params["excluded_merchants"] = excludeMerchantsString
+                }
             }
             if let extended = extended {
                 params["extended"] = extended

@@ -28,7 +28,7 @@ public protocol PersonalizationSDK {
     func trackSource(source: RecommendedByCase, code: String)
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
-    func suggest(query: String, locations: String?, timeOut: Double?, extended: String?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
+    func suggest(query: String, locations: String?, excluded_merchants: [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void)
     func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void)
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void)
     func getProductInfo(id: String, completion: @escaping(Result<ProductInfo, SdkError>) -> Void)
@@ -87,8 +87,8 @@ public extension PersonalizationSDK {
         recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
     }
     
-    func suggest(query: String, locations: String? = nil, timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SdkError>) -> Void) {
-        suggest(query: query, locations: locations, timeOut: timeOut, extended: extended, completion: completion)
+    func suggest(query: String, locations: String? = nil, excluded_merchants: [String]? = nil ,timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SdkError>) -> Void) {
+        suggest(query: query, locations: locations, excluded_merchants: excluded_merchants, timeOut: timeOut, extended: extended, completion: completion)
     }
     
     func getProductsList(brands: String? = nil, merchants: String? = nil, categories: String? = nil, locations: String? = nil, limit: Int? = nil, page: Int? = nil, filters: [String: Any]? = nil, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void) {
