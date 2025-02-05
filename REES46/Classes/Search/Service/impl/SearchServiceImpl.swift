@@ -64,66 +64,34 @@ class SearchServiceImpl: SearchServiceProtocol {
             "segment": sdk?.segment ?? ""
         ]
         
-        if let limit = limit {
-            params["limit"] = String(limit)
-        }
-        if let offset = offset {
-            params["offset"] = String(offset)
-        }
-        if let categoryLimit = categoryLimit {
-            params["category_limit"] = String(categoryLimit)
-        }
-        if let brandLimit = brandLimit {
-            params["brand_limit"] = String(brandLimit)
-        }
-        if let categories = categories {
-            params["categories"] = categories.map { String($0) }.joined(separator: ",")
-        }
-        if let extended = extended {
-            params["extended"] = extended
-        }
-        if let sortBy = sortBy {
-            params["sort_by"] = sortBy
-        }
-        if let sortDir = sortDir {
-            params["sort_dir"] = sortDir
-        }
-        if let locations = locations {
-            params["locations"] = locations
-            if let excludedMerchants = excludedMerchants {
-                let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
-                params["excluded_merchants"] = excludeMerchantsString
-            }
-        }
-        if let brands = brands {
-            params["brands"] = brands
-        }
-        if let filters = filters,
-           let jsonData = try? JSONSerialization.data(withJSONObject: filters, options: []),
-           let jsonString = String(data: jsonData, encoding: .utf8) {
-            params["filters"] = jsonString
-        }
-        if let priceMin = priceMin {
-            params["price_min"] = String(priceMin)
-        }
-        if let priceMax = priceMax {
-            params["price_max"] = String(priceMax)
-        }
-        if let colors = colors {
-            params["colors"] = sdk?.generateString(array: colors) ?? ""
-        }
-        if let fashionSizes = fashionSizes {
-            params["fashion_sizes"] = sdk?.generateString(array: fashionSizes) ?? ""
-        }
-        if let exclude = exclude {
-            params["exclude"] = exclude
-        }
-        if let email = email {
-            params["email"] = email
-        }
-        if let disableClarification = disableClarification, disableClarification {
-            params["no_clarification"] = "1"
-        }
+        let optionalParams: [String: String?] = [
+            "limit": limit.map(String.init),
+            "offset": offset.map(String.init),
+            "category_limit": categoryLimit.map(String.init),
+            "brand_limit": brandLimit.map(String.init),
+            "categories": categories?.map(String.init).joined(separator: ","),
+            "extended": extended,
+            "sort_by": sortBy,
+            "sort_dir": sortDir,
+            "locations": locations,
+            "excluded_merchants": locations != nil ? excludedMerchants?.joined(separator: ", ") : nil ,
+            "brands": brands,
+            "price_min": priceMin.map { String(describing: $0) },
+            "price_max": priceMax.map { String(describing: $0) },
+            "colors": sdk?.generateString(array: colors ?? []),
+            "fashion_sizes": sdk?.generateString(array: fashionSizes ?? []),
+            "exclude": exclude,
+            "email": email,
+            "no_clarification": disableClarification == true ? "1" : nil,
+            "filters": {
+                guard let filters = filters,
+                      let jsonData = try? JSONSerialization.data(withJSONObject: filters, options: []),
+                      let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
+                return jsonString
+            }()
+        ]
+        
+        params.merge(optionalParams.compactMapValues { $0 }) { _, new in new }
         
         return params
     }
