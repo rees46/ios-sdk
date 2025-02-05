@@ -130,7 +130,6 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         if let phone = phone {
             params[Constants.phone] = phone
         }
-    }
     if email.isValid(email: email){
       if phone.isValid(phone: phone){
         handlePostRequest(
