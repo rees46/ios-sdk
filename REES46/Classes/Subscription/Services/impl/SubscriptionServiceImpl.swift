@@ -124,66 +124,66 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     updatedParams[Constants.itemId] = id
     updatedParams[Constants.price] = currentPrice
     
-  guard let email = email, isValid(email: email) else {
-        completion(.failure(.custom(error: "subscribeForBackInStock: email is not valid")))
-        return
+    guard let email = email, isValid(email: email) else {
+      completion(.failure(.custom(error: "subscribeForBackInStock: email is not valid")))
+      return
     }
-  guard let phone = phone, isValid(phone: phone) else {
-        completion(.failure(.custom(error: "subscribeForBackInStock: phone number is not valid")))
-        return
+    guard let phone = phone, isValid(phone: phone) else {
+      completion(.failure(.custom(error: "subscribeForBackInStock: phone number is not valid")))
+      return
     }
     updatedParams[Constants.email] = email
     updatedParams[Constants.phone] = phone
-      
-      handlePostRequest(
-        path: Constants.subscribeForProductPricePath,
-        params: params,
-        completion: completion
-      )
+    
+    handlePostRequest(
+      path: Constants.subscribeForProductPricePath,
+      params: params,
+      completion: completion
+    )
   }
   
   func subscribeForBackInStock(
-      id: String,
-      email: String? = nil,
-      phone: String? = nil,
-      fashionSize: String? = nil,
-      fashionColor: String? = nil,
-      barcode: String? = nil,
-      completion: @escaping (Result<Void, SdkError>) -> Void
+    id: String,
+    email: String? = nil,
+    phone: String? = nil,
+    fashionSize: String? = nil,
+    fashionColor: String? = nil,
+    barcode: String? = nil,
+    completion: @escaping (Result<Void, SdkError>) -> Void
   ) {
-      guard let params = prepareBasicParams() else {
-          completion(.failure(.custom(error: "subscribeForBackInStock: SDK is not initialized")))
-          return
-      }
-      
-      var updatedParams = params
-      updatedParams[Constants.itemId] = id
-      
-      var properties: [String: String] = [:]
-      
-      if let fashionSize = fashionSize { properties[Constants.fashionSize] = fashionSize }
-      if let fashionColor = fashionColor { properties[Constants.fashionColor] = fashionColor }
-      if let barcode = barcode { properties[Constants.barcode] = barcode }
-      
-      if !properties.isEmpty {
-          updatedParams[Constants.properties] = try? JSONSerialization.data(withJSONObject: properties)
-      }
-    guard let email = email, isValid(email: email) else {
-          completion(.failure(.custom(error: "subscribeForBackInStock: email is not valid")))
-          return
-      }
-    guard let phone = phone, isValid(phone: phone) else {
-          completion(.failure(.custom(error: "subscribeForBackInStock: phone number is not valid")))
-          return
-      }
-      updatedParams[Constants.email] = email
-      updatedParams[Constants.phone] = phone
+    guard let params = prepareBasicParams() else {
+      completion(.failure(.custom(error: "subscribeForBackInStock: SDK is not initialized")))
+      return
+    }
     
-      handlePostRequest(
-          path: Constants.subscribePath,
-          params: updatedParams,
-          completion: completion
-      )
+    var updatedParams = params
+    updatedParams[Constants.itemId] = id
+    
+    var properties: [String: String] = [:]
+    
+    if let fashionSize = fashionSize { properties[Constants.fashionSize] = fashionSize }
+    if let fashionColor = fashionColor { properties[Constants.fashionColor] = fashionColor }
+    if let barcode = barcode { properties[Constants.barcode] = barcode }
+    
+    if !properties.isEmpty {
+      updatedParams[Constants.properties] = try? JSONSerialization.data(withJSONObject: properties)
+    }
+    guard let email = email, isValid(email: email) else {
+      completion(.failure(.custom(error: "subscribeForBackInStock: email is not valid")))
+      return
+    }
+    guard let phone = phone, isValid(phone: phone) else {
+      completion(.failure(.custom(error: "subscribeForBackInStock: phone number is not valid")))
+      return
+    }
+    updatedParams[Constants.email] = email
+    updatedParams[Constants.phone] = phone
+    
+    handlePostRequest(
+      path: Constants.subscribePath,
+      params: updatedParams,
+      completion: completion
+    )
   }
   
   func unsubscribeForBackInStock(
@@ -198,13 +198,13 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     }
     
     guard let email = email, isValid(email: email) else {
-          completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
-          return
-      }
+      completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
+      return
+    }
     guard let phone = phone, isValid(phone: phone) else {
-          completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
-          return
-      }
+      completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
+      return
+    }
     params[Constants.email] = email
     params[Constants.phone] = phone
     
@@ -243,13 +243,13 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     }
     
     guard let email = email, isValid(email: email) else {
-          completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
-          return
-      }
+      completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
+      return
+    }
     guard let phone = phone, isValid(phone: phone) else {
-          completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
-          return
-      }
+      completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
+      return
+    }
     
     handlePostRequest(
       path: Constants.unSubscribeForProductPricePath,
@@ -284,13 +284,13 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     }
     
     guard let email = email, isValid(email: email) else {
-          completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
-          return
-      }
+      completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
+      return
+    }
     guard let phone = phone, isValid(phone: phone) else {
-          completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
-          return
-      }
+      completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
+      return
+    }
     
     params[Constants.email] = email
     params[Constants.phone] = phone
