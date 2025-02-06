@@ -7,3 +7,5 @@ func isValid(email:String) -> Bool {
   
   return emailPredicate.evaluate(with:email)
 }
+
+
