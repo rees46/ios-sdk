@@ -1,6 +1,6 @@
 import Foundation
 
-class Story {
+class Story: Codable {
   var id: String
   let ids: Int
   let avatar: String
@@ -9,20 +9,23 @@ class Story {
   let name: String
   let pinned: Bool
   let slides: [Slide]
+  private enum CodingKeys: String, CodingKey {
+    case id, avatar, viewed, name, pinned, slides
+    case startPosition = "start_position"
   
-  public init(json: [String: Any]) {
-    self.id = json["id"] as? String ?? "-1"
-    self.ids = json["id"] as? Int ?? -1
-    self.avatar = json["avatar"] as? String ?? ""
-    self.viewed = json["viewed"] as? Bool ?? false
-    self.startPosition = json["start_position"] as? Int ?? 0
-    self.name = json["name"] as? String ?? ""
-    self.pinned = json["pinned"] as? Bool ?? false
-    let _slides = json["slides"] as? [[String: Any]] ?? []
-    self.slides = _slides.map({Slide(json: $0)})
-    
-    if let ids = json["id"] as? Int {
-      self.id = String(ids)
+  }
+  required public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id) ?? "-1"
+    ids = try container.decodeIfPresent(Int.self, forKey: .id) ?? -1
+     if let ids = try container.decodeIfPresent(Int.self, forKey: .id) {
+      id = String(ids)
+    }
+    avatar = try container.decode(String.self, forKey: .avatar)
+    viewed = try container.decode(Bool.self, forKey: .viewed)
+    startPosition = try container.decode(Int.self, forKey: .startPosition)
+    name = try container.decode(String.self, forKey: .name)
+    pinned = try container.decode(Bool.self, forKey: .pinned)
+    slides = try container.decode([Slide].self, forKey: .slides)
     }
   }
-}

@@ -1,13 +1,21 @@
 import Foundation
 
-public struct Suggest {
+public struct Suggest: Codable {
   public var name: String
   public var url: String
   public var deeplinkIos: String
   
-  init(json: [String: Any]) {
-    self.name = json["name"] as? String ?? ""
-    self.url = json["url"] as? String ?? ""
-    self.deeplinkIos = json["deeplink_ios"] as? String ?? ""
+  public enum CodingKeys: String, CodingKey {
+    case name = "name"
+    case url = "url"
+    case deeplinkIos = "deeplink_ios"
+  }
+  
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    
+    name = try container.decode(String.self, forKey: .name)
+    url = try container.decode(String.self, forKey: .url)
+    deeplinkIos = try container.decode(String.self, forKey: .deeplinkIos)
   }
 }

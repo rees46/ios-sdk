@@ -1,15 +1,14 @@
 import Foundation
 
-public struct UserPayloadResponse {
+public struct UserPayloadResponse: Codable {
   
   public var notifications: [UserNotificationsResponse]
+  public enum CodingKeys: String, CodingKey {
+    case notifications
+  }
   
-  init(json: [String: Any]) {
-    let notificationsArray = json["messages"] as? [[String: Any]] ?? []
-    var notificationsTemp = [UserNotificationsResponse]()
-    for item in notificationsArray {
-      notificationsTemp.append(UserNotificationsResponse(json: item))
-    }
-    notifications = notificationsTemp
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    notifications = try container.decode([UserNotificationsResponse].self, forKey: .notifications)
   }
 }

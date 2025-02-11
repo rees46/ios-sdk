@@ -1,116 +1,105 @@
 import Foundation
 
-public struct RecommenderResponse {
+public struct RecommenderResponse:Codable {
   public var recommended: [Recommended]
-  public var title: String = ""
+  public var title: String
   public var locations: [Location]?
   
-  init(json: [String: Any]) {
-    let recs = json[Constants.JSONKeys.recommends] as? [[String: Any]] ?? []
-    var recsTemp = [Recommended]()
-    for item in recs {
-      recsTemp.append(Recommended(json: item))
-    }
-    recommended = recsTemp
-    title = (json[Constants.JSONKeys.title] as? String) ?? ""
+  private enum CodingKeys: String, CodingKey {
+    case recommended = "recommends"
+    case title = "title"
+    case locations = "locations"
+  }
+  
+  
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
     
-    if let locationsArray = json[Constants.JSONKeys.locations] as? [[String: Any]] {
-      var locationsTemp = [Location]()
-      for locationItem in locationsArray {
-        locationsTemp.append(Location(json: locationItem))
-      }
-      locations = locationsTemp
-    }
+    recommended = (try container.decodeIfPresent([Recommended].self, forKey: .recommended) ?? [])
+    title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+    locations = try container.decodeIfPresent([Location].self, forKey: .locations)
   }
 }
 
-public struct Recommended {
-  public var id: String = ""
-  public var barcode: String = ""
-  public var name: String = ""
-  public var brand: String = ""
-  public var model: String = ""
-  public var description: String = ""
-  public var imageUrl: String = ""
-  public var resizedImageUrl: String = ""
-  public var url: String = ""
-  public var deeplinkIos: String = ""
+public struct Recommended:Codable {
+  public var id: String
+  public var barcode: String
+  public var name: String
+  public var brand: String
+  public var model: String
+  public var description: String
+  public var imageUrl: String
+  public var resizedImageUrl: String
+  public var url: String
+  public var deeplinkIos: String
   public var categories = [Category]()
   public var locations = [Location]()
   
-  public var price: Double = 0
+  public var price: Double
   public var priceFormatted: String?
-  public var priceFull: Double = 0
+  public var priceFull: Double
   public var priceFullFormatted: String?
-  public var oldPrice: Double = 0
+  public var oldPrice: Double
   public var oldPriceFormatted: String?
-  public var oldPriceFull: Double = 0
+  public var oldPriceFull: Double
   public var oldPriceFullFormatted: String?
   
-  public var currency: String = ""
-  public var salesRate: Int = 0
-  public var discount: Int = 0
-  public var rating: Int = 0
-  public var relativeSalesRate: Float = 0.0
+  public var currency: String
+  public var salesRate: Int
+  public var discount: Int
+  public var rating: Int
+  public var relativeSalesRate: Float
   public var paramsRaw: [[String: Any]]?
-  public var fashionOriginalSizes: [String] = []
-  public var fashionSizes: [String] = []
-  public var fashionColors: [String] = []
-  public var resizedImages: [String: String] = [:]
+  public var fashionOriginalSizes: [String]
+  public var fashionSizes: [String]
+  public var fashionColors: [String]
+  public var resizedImages: [String: String]
   
-  init(json: [String: Any]) {
-    id = json[Constants.JSONKeys.id] as? String ?? ""
-    barcode = json[Constants.JSONKeys.barcode] as? String ?? ""
-    name = json[Constants.JSONKeys.name] as? String ?? ""
-    brand = json[Constants.JSONKeys.brand] as? String ?? ""
-    model = json[Constants.JSONKeys.model] as? String ?? ""
-    description = json[Constants.JSONKeys.description] as? String ?? ""
-    imageUrl = json[Constants.JSONKeys.imageUrl] as? String ?? ""
-    resizedImageUrl = json[Constants.JSONKeys.picture] as? String ?? ""
-    url = json[Constants.JSONKeys.url] as? String ?? ""
-    deeplinkIos = json[Constants.JSONKeys.deeplinkIos] as? String ?? ""
-    price = json[Constants.JSONKeys.price] as? Double ?? 0
-    priceFormatted = json[Constants.JSONKeys.priceFormatted] as? String
-    priceFull = json[Constants.JSONKeys.priceFull] as? Double ?? 0
-    priceFullFormatted = json[Constants.JSONKeys.priceFullFormatted] as? String
-    oldPrice = json[Constants.JSONKeys.oldPrice] as? Double ?? 0
-    oldPriceFormatted = json[Constants.JSONKeys.oldPriceFormatted] as? String
-    oldPriceFull = json[Constants.JSONKeys.oldPriceFull] as? Double ?? 0
-    oldPriceFullFormatted = json[Constants.JSONKeys.oldPriceFullFormatted] as? String
-    currency = json[Constants.JSONKeys.currency] as? String ?? ""
-    salesRate = json[Constants.JSONKeys.salesRate] as? Int ?? 0
-    relativeSalesRate = json[Constants.JSONKeys.relativeSalesRate] as? Float ?? 0.0
-    discount = json[Constants.JSONKeys.discount] as? Int ?? 0
-    rating = json[Constants.JSONKeys.rating] as? Int ?? 0
-    resizedImages = json[Constants.JSONKeys.image_url_resized] as? [String: String] ?? [:]
+  
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: Constants.JSONKeys.self)
     
-    let categoriesArray = json[Constants.JSONKeys.categories] as? [[String: Any]] ?? []
-    var categoriesTemp = [Category]()
-    for item in categoriesArray {
-      categoriesTemp.append(Category(json: item))
+    id = try container.decode(String.self, forKey: .id)
+    barcode = try container.decode(String.self, forKey: .barcode)
+    name = try container.decode(String.self, forKey: .name)
+    brand = try container.decode(String.self, forKey: .brand)
+    model = try container.decode(String.self, forKey: .model)
+    description = try container.decode(String.self, forKey: .description)
+    imageUrl = try container.decode(String.self, forKey: .imageUrl)
+    resizedImageUrl = try container.decode(String.self, forKey: .picture)
+    url = try container.decode(String.self, forKey: .url)
+    deeplinkIos = try container.decode(String.self, forKey: .deeplinkIos)
+    price = try container.decode(Double.self, forKey: .price)
+    priceFormatted = try container.decodeIfPresent(String.self, forKey: .priceFormatted) ?? ""
+    priceFull = try container.decode(Double.self, forKey: .priceFull)
+    priceFullFormatted = try container.decodeIfPresent(String.self, forKey: .priceFullFormatted) ?? ""
+    oldPrice = try container.decode(Double.self, forKey: .oldPrice)
+    oldPriceFormatted = try container.decodeIfPresent(String.self, forKey: .oldPriceFormatted) ?? ""
+    oldPriceFull = try container.decode(Double.self, forKey: .oldPriceFull)
+    oldPriceFullFormatted = try container.decodeIfPresent(String.self, forKey: .oldPriceFullFormatted) ?? ""
+    currency = try container.decode(String.self, forKey: .currency)
+    salesRate = try container.decode(Int.self, forKey: .salesRate)
+    relativeSalesRate = try container.decode(Float.self, forKey: .relativeSalesRate)
+    discount = try container.decode(Int.self, forKey: .discount)
+    rating = try container.decode(Int.self, forKey: .rating)
+    resizedImages = try container.decode([String:String].self, forKey: .image_url_resized)
+    locations = try container.decode([Location].self, forKey: .locations)
+    categories = try container.decode([Category].self, forKey: .categories).compactMap { $0 }
+    fashionOriginalSizes = try container.decode([String].self, forKey: .fashionOriginalSizes)
+    fashionSizes = try container.decode([String].self, forKey: .fashionSizes)
+    fashionColors = try container.decode([String].self, forKey: .fashionColors)
+    
+    if let paramsData = try? container.decodeIfPresent(Data.self, forKey: .params) {
+      paramsRaw = try? JSONSerialization.jsonObject(with: paramsData, options: []) as? [[String: Any]]
+    } else {
+      paramsRaw = nil
     }
-    categories = categoriesTemp
-    
-    if let withLocations = json[Constants.JSONKeys.withLocations] as? Bool, withLocations,
-       let extended = json[Constants.JSONKeys.extended] as? Bool, extended,
-       let locationsArray = json[Constants.JSONKeys.locations] as? [[String: Any]] {
-      self.locations = locationsArray.map { Location(json: $0) }
+  }
+  public func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: Constants.JSONKeys.self)
+    if let params = paramsRaw {
+      let paramsData = try JSONSerialization.data(withJSONObject: params, options: [])
+      try container.encode(paramsData, forKey: .params)
     }
-    
-    if let locationsArray = json[Constants.JSONKeys.locations] as? [[String: Any]] {
-      var locationsTemp = [Location]()
-      for item in locationsArray {
-        locationsTemp.append(Location(json: item))
-      }
-      locations = locationsTemp
-    }
-    
-    fashionOriginalSizes = json[Constants.JSONKeys.fashionOriginalSizes] as? [String] ?? []
-    fashionSizes = json[Constants.JSONKeys.fashionSizes] as? [String] ?? []
-    fashionColors = json[Constants.JSONKeys.fashionColors] as? [String] ?? []
-    
-    // TODO: convert to objects
-    paramsRaw = json[Constants.JSONKeys.params] as? [[String: Any]]
-    
   }
 }

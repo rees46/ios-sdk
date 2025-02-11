@@ -1,33 +1,23 @@
 import Foundation
 
-public struct SearchBlankResponse {
+public struct SearchBlankResponse: Codable {
   public var lastQueries: [Query]
   public var suggests: [Suggest]
   public var lastProducts: Bool
   public var products: [Product]
   
-  init(json: [String: Any]) {
-    let lastQueriesTemp = json["last_queries"] as? [[String: Any]] ?? []
-    var quyArr = [Query]()
-    for item in lastQueriesTemp {
-      quyArr.append(Query(json: item))
-    }
-    lastQueries = quyArr
+  private enum CodingKeys: String, CodingKey{
+    case suggests, products
+    case lastQueries = "last_queries"
+    case lastProducts = "last_products"
+  }
+  
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
     
-    let suggestsTemp = json["suggests"] as? [[String: Any]] ?? []
-    var sugArr = [Suggest]()
-    for item in suggestsTemp {
-      sugArr.append(Suggest(json: item))
-    }
-    suggests = sugArr
-    
-    lastProducts = json["last_products"] as? Bool ?? true
-    
-    let productsTemp = json["products"] as? [[String: Any]] ?? []
-    var productArr = [Product]()
-    for item in productsTemp {
-      productArr.append(Product(json: item))
-    }
-    products = productArr
+    lastProducts = try container.decode(Bool.self, forKey: .lastProducts)
+    products = try container.decode([Product].self, forKey: .products)
+    lastQueries = try container.decode([Query].self, forKey: .lastQueries)
+    suggests = try container.decode([Suggest].self, forKey: .suggests)
   }
 }

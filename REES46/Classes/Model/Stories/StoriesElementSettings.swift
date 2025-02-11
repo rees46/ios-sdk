@@ -1,20 +1,24 @@
-class Labels {
+class Labels: Codable {
   let hideCarousel, showCarousel: String
-  
-  public init(json: [String: Any]) {
-    self.hideCarousel = json["hide_carousel"] as? String ?? ""
-    self.showCarousel = json["show_carousel"] as? String ?? ""
+  private enum CodingKeys: String, CodingKey {
+    case hideCarousel = "hide_carousel"
+    case showCarousel = "show_carousel"
+  }
+  required public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    hideCarousel = try container.decode(String.self, forKey: .hideCarousel)
+    showCarousel = try container.decode(String.self, forKey: .showCarousel)
   }
 }
 
-public enum FontType: String {
+public enum FontType: String, Codable {
   case monospaced
   case serif
   case sansSerif = "sans-serif"
   case unknown
 }
 
-enum ElementType: String {
+enum ElementType: String, Codable {
   case button = "button"
   case products = "products"
   case product = "product"
@@ -22,7 +26,7 @@ enum ElementType: String {
   case unknown
 }
 
-enum TextAlignment: String {
+enum TextAlignment: String, Codable {
   case left
   case right
   case center

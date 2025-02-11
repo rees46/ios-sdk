@@ -1,44 +1,42 @@
 import Foundation
 
-public struct ProductsListResponse {
+public struct ProductsListResponse: Codable {
   public var brands: [String]?
   public var filters: [String: Filter]?
   public var priceRange: PriceRange?
   public var products: [Product]
   public var productsTotal: Int
   
-  init(json: [String: Any]) {
-    if let brandsJSON = json["brands"] as? [[String: Any]] {
-      var brandsResult = [String]()
-      for item in brandsJSON {
-        if let name = item["name"] as? String {
-          brandsResult.append(name)
+  public enum CodingKeys: String, CodingKey {
+    case brands, filters, products
+    case priceRange = "price_range"
+    case productsTotal = "products_total"
+  }
+  
+  public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    
+    if let brandsArray = try? container.decodeIfPresent([[String: String]].self, forKey: .brands) {
+      brands = brandsArray.compactMap { $0["name"] }
+    } else {
+      brands = nil
+    }
+    
+    if let filtersDict = try? container.decodeIfPresent([String: Filter].self, forKey: .filters) {
+      filters = filtersDict.compactMapValues { dict in
+        if let filterData = try? JSONSerialization.data(withJSONObject: dict, options: []) {
+          return try? JSONDecoder().decode(Filter.self, from: filterData)
         }
+        return nil
       }
-      self.brands = brandsResult
+    } else {
+      filters = nil
     }
     
-    if let filtersJSON = json["filters"] as? [String: Any] {
-      var filtersResult = [String: Filter]()
-      for item in filtersJSON {
-        if let dict = item.value as? [String: Any] {
-          filtersResult[item.key] = Filter(json: dict)
-        }
-      }
-      self.filters = filtersResult
-    }
+    priceRange = try container.decodeIfPresent(PriceRange.self, forKey: .priceRange)
     
-    if let priceRangeJSON = json["price_range"] as? [String: Any] {
-      self.priceRange = PriceRange(json: priceRangeJSON)
-    }
+    products = try container.decode([Product].self, forKey: .products)
     
-    let prods = json["products"] as? [[String: Any]] ?? []
-    var prodsTemp = [Product]()
-    for item in prods {
-      prodsTemp.append(Product(json: item))
-    }
-    products = prodsTemp
-    
-    productsTotal = (json["products_total"] as? Int) ?? 0
+    productsTotal = try container.decode(Int.self, forKey: .productsTotal)
   }
 }

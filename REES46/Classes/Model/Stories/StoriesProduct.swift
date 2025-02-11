@@ -1,6 +1,6 @@
 import Foundation
 
-public class StoriesProduct {
+public class StoriesProduct: Codable {
   let name: String
   let currency: String
   let price: Int
@@ -16,23 +16,27 @@ public class StoriesProduct {
   public var url: String
   public var deeplinkIos: String
   
-  public init(json: [String:Any]) {
-    self.name = json["name"] as? String ?? ""
-    self.currency = json["currency"] as? String ?? ""
-    self.price = json["price"] as? Int ?? 0
-    self.price_full = json["price_full"] as? Int ?? 0
-    self.price_formatted = json["price_formatted"] as? String ?? ""
-    self.price_full_formatted = json["price_full_formatted"] as? String ?? ""
-    self.oldprice = json["oldprice"] as? Int ?? 0
-    self.oldprice_full = json["oldprice_full"] as? Int ?? 0
-    self.oldprice_formatted = json["oldprice_formatted"] as? String ?? ""
-    self.oldprice_full_formatted = json["oldprice_full_formatted"] as? String ?? ""
-    self.url = json["url"] as? String ?? ""
-    self.deeplinkIos = json["deeplink_ios"] as? String ?? ""
-    self.picture = json["picture"] as? String ?? ""
-    self.discount = json["discount"] as? String ?? ""
-    self.discount_formatted = json["discount_formatted"] as? String ?? "0%"
-    let _category = json["category"] as? [String: Any] ?? [:]
-    self.category = StoriesCategory(json: _category)
+  private enum CodingKeys: String, CodingKey {
+    case name, currency, price, price_full, price_formatted, price_full_formatted, oldprice,oldprice_full, oldprice_formatted, oldprice_full_formatted, picture, discount, discount_formatted, category, url
+    case deeplinkIos = "deeplink_ios"
+  }
+  required public init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    self.name = try container.decode(String.self, forKey: .name)
+    self.currency = try container.decode(String.self, forKey: .currency)
+    self.price = try container.decode(Int.self, forKey: .price)
+    self.price_full = try container.decode(Int.self, forKey: .price_full)
+    self.price_formatted = try container.decode(String.self, forKey: .price_formatted)
+    self.price_full_formatted = try container.decode(String.self, forKey: .price_full_formatted)
+    self.oldprice = try container.decodeIfPresent(Int.self, forKey: .oldprice)
+    self.oldprice_full = try container.decode(Int.self, forKey: .oldprice_full)
+    self.oldprice_formatted = try container.decode(String.self, forKey: .oldprice_formatted)
+    self.oldprice_full_formatted = try container.decode(String.self, forKey: .oldprice_full_formatted)
+    self.picture = try container.decode(String.self, forKey: .picture)
+    self.discount = try container.decodeIfPresent(String.self, forKey: .discount)
+    self.discount_formatted = try container.decodeIfPresent(String.self, forKey: .discount_formatted)
+    self.category = try container.decode(StoriesCategory.self, forKey: .category)
+    self.url = try container.decode(String.self, forKey: .url)
+    self.deeplinkIos = try container.decode(String.self, forKey: .deeplinkIos)
   }
 }

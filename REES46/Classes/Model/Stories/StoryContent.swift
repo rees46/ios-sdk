@@ -1,21 +1,23 @@
 import Foundation
 
-public class StoryContent {
+public class StoryContent: Codable {
   var id: String
   let ids: Int
   let settings: StoriesSettings
   let stories: [Story]
   
-  public init(json: [String: Any]) {
-    self.id = json["id"] as? String ?? "-1"
-    self.ids = json["id"] as? Int ?? -1
-    let _settings = json["settings"] as? [String: Any] ?? [:]
-    self.settings = StoriesSettings(json: _settings)
-    let _stories = json["stories"] as? [[String: Any]] ?? []
-    self.stories = _stories.map({Story(json: $0)})
-    
-    if let ids = json["id"] as? Int {
-      self.id = String(ids)
-    }
+  private enum CodingKeys: String, CodingKey {
+    case id,settings, stories
+  }
+  
+  required public init(from decoder: any Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id) ?? "-1"
+    ids = try container.decodeIfPresent(Int.self, forKey: .id) ?? -1
+    if let ids = try container.decodeIfPresent(Int.self, forKey: .id) {
+     id = String(ids)
+   }
+    settings = try container.decode(StoriesSettings.self, forKey: .settings)
+    stories = try container.decode([Story].self, forKey: .stories)
   }
 }

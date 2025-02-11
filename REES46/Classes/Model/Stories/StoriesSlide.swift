@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-class Slide {
+class Slide: Codable {
   var id: String
   var duration: Int
   let background: String
@@ -16,23 +16,24 @@ class Slide {
   
   public let vDownloadManager = VideoDownloadManager.shared
   var sdkDirectoryName: String = "SDKCacheDirectory"
-  
-  public init(json: [String: Any]) {
-    self.id = json["id"] as? String ?? "-1"
-    self.ids = json["id"] as? Int ?? -1
-    self.duration = json["duration"] as? Int ?? 10
-    self.background = json["background"] as? String ?? ""
-    self.backgroundColor = json["background_color"] as? String ?? ""
-    self.preview = json["preview"] as? String
-    let _type = json["type"] as? String ?? ""
-    self.type = SlideType(rawValue: _type) ?? .unknown
-    let _elements = json["elements"] as? [[String: Any]] ?? []
-    self.elements = _elements.map({StoriesElement(json: $0)})
-    
-    if let ids = json["id"] as? Int {
-      self.id = String(ids)
-    }
-    
+  private enum CodingKeys: String, CodingKey {
+    case id, duration, background, preview, type, elements
+    case backgroundColor = "background_color"
+  }
+  required public init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decode(String.self, forKey: .id)
+    ids = try container.decode(Int.self, forKey: .id)
+    if let ids = try container.decodeIfPresent(Int.self, forKey: .id) {
+     id = String(ids)
+   }
+    duration = try container.decode(Int.self, forKey: .duration)
+    background = try container.decode(String.self, forKey: .background)
+    backgroundColor = try container.decode(String.self, forKey: .backgroundColor)
+    preview = try container.decodeIfPresent(String.self, forKey: .preview)
+    type = SlideType(rawValue: try container.decode(String.self, forKey: .type)) ?? .unknown
+    elements = try container.decode([StoriesElement].self, forKey: .elements)
+
     if type == .video {
       if preview != nil {
         setImage(imageURL: preview!, isPreview: true)
@@ -172,7 +173,7 @@ class Slide {
   }
 }
 
-enum SlideType: String {
+enum SlideType: String, Codable {
   case image = "image"
   case video = "video"
   case unknown = ""
