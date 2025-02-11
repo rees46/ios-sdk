@@ -10,15 +10,9 @@ public struct ProductsListResponse {
   init(json: [String: Any]) {
     brands = (json["brands"] as? [[String: Any]])?.compactMap { $0["name"] as? String }
     
-    if let filtersJSON = json["filters"] as? [String: Any] {
-      var filtersResult = [String: Filter]()
-      for item in filtersJSON {
-        if let dict = item.value as? [String: Any] {
-          filtersResult[item.key] = Filter(json: dict)
-        }
-      }
-      self.filters = filtersResult
-    }
+    filters = (json["filters"] as? [String: Any])?.reduce(into: [:]) { result, item in  
+    if let dict = item.value as? [String: Any] { result[item.key] = Filter(json: dict) }
+}
     
     if let priceRangeJSON = json["price_range"] as? [String: Any] {
       self.priceRange = PriceRange(json: priceRangeJSON)
