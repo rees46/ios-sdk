@@ -139,11 +139,16 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
             self.getRequest(path: Constants.notificationPath, params: params) { result in
                 switch result {
                 case let .success(successResult):
-                    let resJSON = successResult
-                    let result = UserPayloadResponse(json: resJSON)
-                    completion(.success(result))
+                  do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: successResult, options: [])
+                    let decoder = JSONDecoder()
+                    let resultResponse = try decoder.decode(UserPayloadResponse.self, from: jsonData)
+                    completion(.success(resultResponse))
+                  } catch {
+                    completion(.failure(.decodeError))
+                  }
                 case let .failure(error):
-                    completion(.failure(error))
+                  completion(.failure(error))
                 }
             }
         }

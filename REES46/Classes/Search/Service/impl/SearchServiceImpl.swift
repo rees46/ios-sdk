@@ -136,15 +136,21 @@ class SearchServiceImpl: SearchServiceProtocol {
             self.getRequest(path: "search/blank", params: params) { (result: Result<[String: Any], SdkError>) in
                 switch result {
                 case let .success(successResult):
-                    let resultResponse = SearchBlankResponse(json: successResult)
+                  do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: successResult, options: [])
+                    let decoder = JSONDecoder()
+                    let resultResponse = try decoder.decode(SearchBlankResponse.self, from: jsonData)
                     completion(.success(resultResponse))
+                  } catch {
+                    completion(.failure(.decodeError))
+                  }
                 case let .failure(error):
-                    completion(.failure(error))
+                  completion(.failure(error))
                 }
             }
         }
     }
-    
+  
     func search(
         query: String,
         limit: Int?,
@@ -197,10 +203,16 @@ class SearchServiceImpl: SearchServiceProtocol {
             self.getRequest(path: "search", params: params) { (result: Result<[String: Any], SdkError>) in
                 switch result {
                 case let .success(json):
-                    let resultResponse = SearchResponse(json: json)
+                  do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: json, options: [])
+                    let decoder = JSONDecoder()
+                    let resultResponse = try decoder.decode(SearchResponse.self, from: jsonData)
                     completion(.success(resultResponse))
+                  } catch {
+                    completion(.failure(.decodeError))
+                  }
                 case let .failure(error):
-                    completion(.failure(error))
+                  completion(.failure(error))
                 }
             }
         }
