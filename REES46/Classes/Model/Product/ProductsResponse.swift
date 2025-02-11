@@ -32,12 +32,7 @@ public struct ProductsListResponse {
       self.priceRange = PriceRange(json: priceRangeJSON)
     }
     
-    let prods = json["products"] as? [[String: Any]] ?? []
-    var prodsTemp = [Product]()
-    for item in prods {
-      prodsTemp.append(Product(json: item))
-    }
-    products = prodsTemp
+    products = (json["products"] as? [[String: Any]])?.map { Product(json: $0) } ?? []
     
     productsTotal = (json["products_total"] as? Int) ?? 0
   }
