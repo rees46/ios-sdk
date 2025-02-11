@@ -1,12 +1,7 @@
 import Foundation
 
-class StoriesCategory {
+class StoriesCategory: Codable {
   let name: String
   let url: String
-  
-  public init(json: [String: Any]) {
-    self.name = json["name"] as? String ?? ""
-    self.url = json["url"] as? String ?? ""
-  }
 }
 
