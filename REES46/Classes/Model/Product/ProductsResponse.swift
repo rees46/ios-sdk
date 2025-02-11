@@ -8,15 +8,7 @@ public struct ProductsListResponse {
   public var productsTotal: Int
   
   init(json: [String: Any]) {
-    if let brandsJSON = json["brands"] as? [[String: Any]] {
-      var brandsResult = [String]()
-      for item in brandsJSON {
-        if let name = item["name"] as? String {
-          brandsResult.append(name)
-        }
-      }
-      self.brands = brandsResult
-    }
+    brands = (json["brands"] as? [[String: Any]])?.compactMap { $0["name"] as? String }
     
     if let filtersJSON = json["filters"] as? [String: Any] {
       var filtersResult = [String: Filter]()
