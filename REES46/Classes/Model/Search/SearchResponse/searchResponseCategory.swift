@@ -9,12 +9,9 @@ public struct Category: Codable {
   public var count: Int?
   
   enum CodingKeys: String, CodingKey {
-    case id = "id"
-    case name = "name"
-    case url = "url"
-    case alias = "alias"
+    case id,name ,url ,alias ,count
     case parentId = "parent"
-    case count = "count"
+
   }
   
   public init(from decoder: Decoder) throws {
@@ -22,9 +19,9 @@ public struct Category: Codable {
     
     id = try container.decode(String.self, forKey: .id)
     name = try container.decode(String.self, forKey: .name)
-    url = try container.decode(String.self, forKey: .url)
-    alias = try container.decode(String.self, forKey: .alias)
-    parentId = try container.decode(String.self, forKey: .parentId)
+    url = try container.decodeIfPresent(String.self, forKey: .url)
+    alias = try container.decodeIfPresent(String.self, forKey: .alias)
+    parentId = try container.decodeIfPresent(String.self, forKey: .parentId)
     count = try container.decode(Int.self, forKey: .count)
   }
 }
