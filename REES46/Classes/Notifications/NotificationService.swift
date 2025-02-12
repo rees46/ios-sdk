@@ -34,11 +34,10 @@ public class NotificationService: NotificationServiceProtocol {
   private let notificationLogger: NotificationLogger
   private let notificationTracker: NotificationTracker
   
-  
   public init(sdk: PersonalizationSDK) {
     self.sdk = sdk
-    self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
     self.notificationLogger = NotificationLogger(sdk: sdk)
+    self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
     self.notificationTracker = NotificationTracker(sdk: sdk)
     setupNotificationCategories()
   }
