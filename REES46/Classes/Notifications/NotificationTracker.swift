@@ -6,13 +6,11 @@ public class NotificationTracker{
     static let srcKey: String = "src"
   }
   private let notificationLogger: NotificationLogger
-  private let notificationService: NotificationService
-  private let sdk: PersonalizationSDK
+  private var sdk: PersonalizationSDK?
   
   public init(sdk: PersonalizationSDK) {
     self.sdk = sdk
     self.notificationLogger = NotificationLogger(sdk: sdk)
-    self.notificationService = NotificationService(sdk: sdk)
   }
   
   public func notificationDelivered(userInfo: [AnyHashable: Any]) {
@@ -25,7 +23,7 @@ public class NotificationTracker{
     }
     notificationLogger.log("Extracted eventType: \(eventType), srcID: \(srcID)")
     
-    sdk.notificationDelivered(type: eventType, code: srcID) { error in
+    sdk?.notificationDelivered(type: eventType, code: srcID) { error in
       self.notificationLogger.log("Notification Delivered Error: \(error)")
     }
   }
