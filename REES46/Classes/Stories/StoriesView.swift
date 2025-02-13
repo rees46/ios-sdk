@@ -18,6 +18,9 @@ public protocol StoriesViewLinkProtocol: AnyObject {
 }
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
+  
+    public var onStoriesLoadComplete: ((Bool) -> Void)?
+
     
     let cellId = "StoriesCollectionViewPreviewCell"
     
@@ -162,6 +165,8 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
                 DispatchQueue.main.async {
                     self.isInDownloadMode = false
                     self.collectionView.reloadData()
+                  print("StoriesView: Stories successfully loaded")
+                  self.onStoriesLoadComplete?(true)
                 }
             case let .failure(error):
                 switch error {
@@ -170,6 +175,10 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
                 default:
                     print("Error:", error.description)
                 }
+              DispatchQueue.main.async {
+                print("StoriesView: Stories load failed")
+                             self.onStoriesLoadComplete?(false)
+                         }
             }
         }
     }
