@@ -28,18 +28,18 @@ public class NotificationService: NotificationServiceProtocol {
   }
   
   public var pushActionDelegate: NotificationActionsProtocol?
+
   
   public let sdk: PersonalizationSDK
   private let notificationRegistrar: NotificationRegistrar
   private let notificationLogger: NotificationLogger
   private let notificationTracker: NotificationTracker
   
-  public init(sdk: PersonalizationSDK) {
+  public init(sdk: PersonalizationSDK, notificationLogger: NotificationLogger, notificationTracker: NotificationTracker) {
     self.sdk = sdk
-    self.notificationLogger = NotificationLogger(sdk: sdk)
+    self.notificationLogger = notificationLogger
+    self.notificationTracker = notificationTracker
     self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
-    self.notificationTracker = NotificationTracker(sdk: sdk)
-    setupNotificationCategories()
   }
   
   public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
@@ -149,7 +149,7 @@ public class NotificationService: NotificationServiceProtocol {
       return
     }
     
-    notificationLogger.notificationClicked(type: eventType, code: srcID)
+    notificationTracker.notificationClicked(type: eventType, code: srcID)
     
     if let eventLink = parseDictionary(key: Constants.eventKey, userInfo: userInfo)?[Constants.uriKey] as? String {
       var modifiedEventLink = eventLink
@@ -171,7 +171,7 @@ public class NotificationService: NotificationServiceProtocol {
       return
     }
     
-    notificationLogger.notificationReceived(type: type, code: code)
+    notificationTracker.notificationReceived(type: type, code: code)
     
     guard let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
           let eventType = eventJSON[Constants.typeKey] as? String,
@@ -202,7 +202,6 @@ public class NotificationService: NotificationServiceProtocol {
       openCustom(url: eventLink)
     }
   }
-  
   
   private func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
     if let eventJSONString = userInfo[key] as? String,
