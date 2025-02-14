@@ -66,32 +66,36 @@ public class NotificationTracker{
   }
   
   private func extractValue(for key: String, from userInfo: [AnyHashable: Any]) -> String? {
-    if let value = userInfo[key] as? String {
-      return value
-    }
-    
-    if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
-       let value = src[key] as? String {
-      return value
-    }
-    return nil
-  }
-  
-  public func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
-    if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
-       let eventType = eventJSON[Constants.typeKey] as? String {
-      
-      if let srcID = extractValue(for: Constants.idKey, from: userInfo) {
-        return (eventType, srcID)
+      if let value = userInfo[key] as? String {
+          return value
       }
-    }
-    if let type = extractValue(for: Constants.typeKey, from: userInfo),
-       let id = extractValue(for: Constants.idKey, from: userInfo) {
-      return (type, id)
-    }
-    return nil
+      if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
+         let value = src[key] as? String {
+          return value
+      }
+      return nil
   }
-  
+
+  public func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
+      if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
+         let eventType = eventJSON[Constants.typeKey] as? String {
+
+          if let srcID = extractValue(for: Constants.idKey, from: userInfo) {
+              return (eventType, srcID)
+          }
+          if let srcID = userInfo[Constants.idKey] as? [String: Any] {
+              if let value = srcID[Constants.idKey] as? String {
+                  return (eventType, value)
+              }
+          }
+      }
+      if let type = extractValue(for: Constants.typeKey, from: userInfo),
+         let id = extractValue(for: Constants.idKey, from: userInfo) {
+          return (type, id)
+      }
+      return nil
+  }
+
   public func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
     if let eventJSONString = userInfo[key] as? String{
       do{
