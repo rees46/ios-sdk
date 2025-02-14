@@ -19,26 +19,32 @@ public class NotificationTracker{
   
   public func notificationClicked(type: String, code: String) {
     notificationService?.sdk.notificationClicked(type: type, code: code) { [weak self] result in
+      guard let self = self else {
+        return
+      }
       switch result {
-        
       case .success:
-        self?.notificationLogger.log("Notification Clicked Successfully")
+        self.notificationLogger.log("Notification Clicked Successfully")
       case .failure(let error):
-        self?.notificationLogger.log(NotificationClickError.failed(error).localizedDescription)
+        self.notificationLogger.log(NotificationClickError.failed(error).localizedDescription)
       }
     }
   }
   
   public func notificationReceived(type: String, code: String) {
     notificationService?.sdk.notificationReceived(type: type, code: code) { [weak self] result in
+      guard let self = self else {
+        return
+      }
       switch result {
       case .success:
-        self?.notificationLogger.log("Notification Received Successfully")
+        self.notificationLogger.log("Notification Received Successfully")
       case .failure(let error):
-        self?.notificationLogger.log(NotificationReceiveError.failed(error).localizedDescription)
+        self.notificationLogger.log(NotificationReceiveError.failed(error).localizedDescription)
       }
     }
   }
+  
   public func notificationDelivered(userInfo: [AnyHashable: Any]) {
     notificationLogger.log("Notification delivered")
     notificationLogger.logAllPushKeysAndValues(userInfo: userInfo)
@@ -49,36 +55,42 @@ public class NotificationTracker{
     }
     notificationLogger.log("Extracted eventType: \(eventType), srcID: \(srcID)")
     
-    notificationService?.sdk.notificationDelivered(type: eventType, code: srcID) { error in
-      self.notificationLogger.log("Notification Delivered Error: \(error)")
+    notificationService?.sdk.notificationDelivered(type: eventType, code: srcID) { result in
+      switch result {
+      case .success:
+        self.notificationLogger.log("Notification Delivered Successfully")
+      case .failure(let error):
+        self.notificationLogger.log("Notification Delivered Error: \(error)")
+      }
     }
   }
-
+  
+  private func extractValue(for key: String, from userInfo: [AnyHashable: Any]) -> String? {
+    if let value = userInfo[key] as? String {
+      return value
+    }
+    
+    if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
+       let value = src[key] as? String {
+      return value
+    }
+    return nil
+  }
   
   public func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
-      if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
-         let eventType = eventJSON[Constants.typeKey] as? String {
-          if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo) ??
-              (userInfo[Constants.idKey] as? String).map({ [Constants.idKey: $0] }) {
-              if let srcID = src[Constants.idKey] as? String {
-                  return (eventType, srcID)
-              }
-          }
+    if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
+       let eventType = eventJSON[Constants.typeKey] as? String {
+      
+      if let srcID = extractValue(for: Constants.idKey, from: userInfo) {
+        return (eventType, srcID)
       }
-      if let type = userInfo[Constants.typeKey] as? String, let id = userInfo[Constants.idKey] as? String {
-          return (type, id)
-      }
-      if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
-         let type = src[Constants.typeKey] as? String, let id = src[Constants.idKey] as? String {
-          return (type, id)
-      }
-      return nil
+    }
+    if let type = extractValue(for: Constants.typeKey, from: userInfo),
+       let id = extractValue(for: Constants.idKey, from: userInfo) {
+      return (type, id)
+    }
+    return nil
   }
-//  private func extractValue(for key:String) -> String?{
-//    
-//    return value
-//  }
-
   
   public func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
     if let eventJSONString = userInfo[key] as? String{
