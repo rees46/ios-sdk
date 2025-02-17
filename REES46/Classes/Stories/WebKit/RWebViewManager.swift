@@ -9,7 +9,7 @@ public class RWebViewManager {
   
   public func openURL(_ urlString: String, needOpeningWebView: Bool, from viewController: UIViewController) {
     guard let url = URL(string: urlString) else {
-      print("❌ Ошибка: Некорректный URL")
+      print(WrongUrlError.failed("Wrong URL").localizedDescription)
       return
     }
     if isHttpURL(url) {
@@ -26,12 +26,12 @@ public class RWebViewManager {
   }
   
   private func openInBrowser(_ url: URL) {
-    print("🌐 Открываем в браузере: \(url)")
+    print("Opening in browser: \(url)")
     UIApplication.shared.open(url, options: [:])
   }
   
   private func openInWebView(_ url: URL, from viewController: UIViewController) {
-    print("📲 Открываем WebView: \(url)")
+    print("Opening in WebView: \(url)")
     viewController.presentWebKit(urlRequest: URLRequest(url: url))
   }
 }
