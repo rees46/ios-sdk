@@ -9,7 +9,7 @@ public class RWebViewManager {
   
   public func openURL(_ urlString: String, needOpeningWebView: Bool, from viewController: UIViewController) {
     guard let url = URL(string: urlString) else {
-      print(WrongUrlError.failed("Wrong URL").localizedDescription)
+      print(WrongUrlError.failed("string is not a URL").localizedDescription)
       return
     }
     if isHttpURL(url) {
@@ -18,6 +18,9 @@ public class RWebViewManager {
       } else {
         openInBrowser(url)
       }
+    }else{
+      print(WrongUrlError.failed("not a valid URL").localizedDescription)
+      return
     }
   }
   
