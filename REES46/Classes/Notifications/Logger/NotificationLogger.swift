@@ -8,6 +8,9 @@ public class NotificationLogger{
   public func log(_ message: String) {
     print("\(logTag): \(message)")
   }
+  public func log(_ message: Error){
+    print("\(logTag):\(message.localizedDescription)")
+  }
   
   public func logAllPushKeysAndValues(userInfo: [AnyHashable: Any?]) {
     log("Logging all keys and values from push:")
