@@ -4,6 +4,6 @@ enum SdkNotInitialized: Error {
     case SdkNotInitialized
 
     var localizedDescription: String {
-        return "❌ SDK is not initialized"
+        return "SDK is not initialized"
     }
 }
