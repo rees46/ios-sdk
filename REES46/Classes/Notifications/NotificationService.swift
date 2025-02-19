@@ -25,21 +25,23 @@ public class NotificationService: NotificationServiceProtocol {
     static let typeKey: String = "type"
     static let uriKey: String = "uri"
     static let urlScheme: String = "https://"
+    static let idKey: String = "id"
+    static let srcKey: String = "src"
   }
   
   public var pushActionDelegate: NotificationActionsProtocol?
-
+  public var notificationTrackerDelegate: NotificationTrackerDelegate?
   
   public let sdk: PersonalizationSDK
   private let notificationRegistrar: NotificationRegistrar
   private let notificationLogger: NotificationLogger
-  private let notificationTracker: NotificationTracker
   
-  public init(sdk: PersonalizationSDK, notificationLogger: NotificationLogger, notificationTracker: NotificationTracker) {
+  public init(sdk: PersonalizationSDK, notificationLogger: NotificationLogger) {
     self.sdk = sdk
     self.notificationLogger = notificationLogger
-    self.notificationTracker = notificationTracker
     self.notificationRegistrar = NotificationRegistrar(sdk: sdk)
+    
+    setupNotificationCategories()
   }
   
   public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
@@ -76,7 +78,7 @@ public class NotificationService: NotificationServiceProtocol {
     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void
   ) {
     
-    notificationTracker.notificationDelivered(userInfo: userInfo)
+    notificationDelivered(userInfo: userInfo)
     
     switch application.applicationState {
     case .active:
@@ -143,13 +145,13 @@ public class NotificationService: NotificationServiceProtocol {
   private func pushProcessing(userInfo: [AnyHashable: Any]) {
     notificationLogger.log("pushProcessing with userInfo: \(userInfo)")
     
-    guard let (eventType, srcID) = notificationTracker.extractTypeAndCode(from: userInfo) else {
+    guard let (eventType, srcID) = extractTypeAndCode(from: userInfo) else {
       notificationLogger.log("Failed to extract type and code, skipping processing")
       handleNonSDKPush(userInfo: userInfo)
       return
     }
     
-    notificationTracker.notificationClicked(type: eventType, code: srcID)
+    notificationClicked(type: eventType, code: srcID)
     
     if let eventLink = parseDictionary(key: Constants.eventKey, userInfo: userInfo)?[Constants.uriKey] as? String {
       var modifiedEventLink = eventLink
@@ -166,12 +168,12 @@ public class NotificationService: NotificationServiceProtocol {
   private func pushRetrieved(userInfo: [AnyHashable: Any]) {
     notificationLogger.log("pushRetrieved with userInfo: \(userInfo)")
     
-    guard let (type, code) = notificationTracker.extractTypeAndCode(from: userInfo) else {
+    guard let (type, code) = extractTypeAndCode(from: userInfo) else {
       handleNonSDKPush(userInfo: userInfo)
       return
     }
     
-    notificationTracker.notificationReceived(type: type, code: code)
+    notificationReceived(type: type, code: code)
     
     guard let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
           let eventType = eventJSON[Constants.typeKey] as? String,
@@ -203,15 +205,68 @@ public class NotificationService: NotificationServiceProtocol {
     }
   }
   
-  private func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
-    if let eventJSONString = userInfo[key] as? String,
-       let data = eventJSONString.data(using: .utf8),
-       let jsonObject = try? JSONSerialization.jsonObject(with: data),
-       let jsonDict = jsonObject as? [String: Any] {
-      return jsonDict
+  private func extractValue(for key: String, from userInfo: [AnyHashable: Any]) -> String? {
+    if let value = userInfo[key] as? String {
+      return value
     }
+    if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
+       let value = src[key] as? String {
+      return value
+    }
+    return nil
+  }
+  
+  public func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
     
-    return userInfo[key] as? [String: Any]
+    let id = extractValue(for: Constants.idKey, from: userInfo)
+    
+    if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
+       let eventType = eventJSON[Constants.typeKey] as? String {
+      
+      if let id {
+        return (eventType, id)
+      }
+      if let srcID = userInfo[Constants.idKey] as? [String: Any] {
+        if let value = srcID[Constants.idKey] as? String {
+          return (eventType, value)
+        }
+      }
+    }
+    if let type = extractValue(for: Constants.typeKey, from: userInfo),
+       let id {
+      return (type, id)
+    }
+    return nil
+  }
+  
+  public func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
+      guard let eventJSONString = userInfo[key] as? String else {
+          return nil
+      }
+      do {
+          guard let data = eventJSONString.data(using: .utf8) else {
+              return nil
+          }
+          let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
+          if let jsonDict = jsonObject as? [String: Any] {
+              return jsonDict
+          }
+      } catch {
+          notificationLogger.log("JSON parsing error for key \(key): \(error)")
+      }
+      return nil
+  }
+
+  private func notificationClicked(type: String, code: String){
+    notificationTrackerDelegate?.notificationClicked(type: type, code: code)
+  }
+  
+  private func notificationReceived(type: String, code: String){
+    notificationTrackerDelegate?.notificationReceived(type: type, code: code)
+  }
+  
+  private func notificationDelivered(userInfo: [AnyHashable: Any]){
+    notificationTrackerDelegate?.notificationDelivered(userInfo: userInfo)
   }
   
   private func openCategory(categoryId: String) {
