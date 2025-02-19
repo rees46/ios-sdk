@@ -68,11 +68,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func registerPushNotification(){
         UNUserNotificationCenter.current().delegate = self
-      let notLogger = NotificationLogger()
-      let notTracker = NotificationTracker(notificationLogger: notLogger)
-      let notService = NotificationService(sdk: sdk,notificationLogger: notLogger ,notificationTracker: notTracker)
-      notTracker.setNotificationService(service: notService)
-      notificationService = notService
+      let notificationLogger = NotificationLogger()
+      let notififcationServices = NotificationService(sdk: sdk, notificationLogger: notificationLogger)
+      let notificationTracker = NotificationTracker(notificationLogger: notificationLogger, notificationService: notififcationServices)
+      notificationService = notififcationServices
       
         notificationService?.pushActionDelegate = self
     }
