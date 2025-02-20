@@ -1172,6 +1172,90 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             completion(.failure(.invalidResponse))
         }
     }
+  
+  func deleteRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+      #if DEBUG
+      print("LOG: deleteRequest to: \(self.baseURL + path)")
+      #endif
+      
+      var requestParams: [String: Any] = [
+          "stream": stream
+      ]
+      for (key, value) in params {
+          requestParams[key] = value
+      }
+      
+      if self.deviceId == "" {
+          self.sessionQueue.pause()
+          sleep(5)
+          let dId = UserDefaults.standard.string(forKey: "device_id") ?? ""
+          self.deviceId = dId
+          requestParams["did"] = dId
+          self.sessionQueue.resume()
+      }
+      
+      if let url = URL(string: baseURL + path) {
+          var request = URLRequest(url: url)
+          request.httpMethod = "DELETE"  // Используем метод DELETE для удаления
+          
+          do {
+              request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
+          } catch let error {
+              completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
+              return
+          }
+          
+          request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+          request.addValue("application/json", forHTTPHeaderField: "Accept")
+          
+          urlSession.postTask(with: request) { result in
+              switch result {
+              case .success(let (response, data)):
+                  guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
+                      if let json = try? JSONSerialization.jsonObject(with: data) {
+                          if let jsonObject = json as? [String: Any] {
+                              if let status = jsonObject["status"] as? String, status == "error" {
+                                  if let errorMessage = jsonObject["message"] as? String {
+                                      completion(.failure(.custom(error: errorMessage)))
+                                  }
+                              }
+                          }
+                      }
+                      completion(.failure(.invalidResponse))
+                      return
+                  }
+                  do {
+                      if data.isEmpty {
+                          if path.contains("clicked") || path.contains("closed") || path.contains("received") {
+                              completion(.success([:]))
+                              return
+                          }
+                      }
+                      let json = try JSONSerialization.jsonObject(with: data)
+                      if let jsonObject = json as? [String: Any] {
+                          completion(.success(jsonObject))
+                      } else {
+                          completion(.failure(.decodeError))
+                      }
+                  } catch {
+                      completion(.failure(.decodeError))
+                  }
+              case .failure:
+                  let networkManager = NetworkStatus.nManager
+                  let connectionStatus = networkManager.connectionStatus
+                  
+                  if connectionStatus == .Online {
+                      completion(.failure(.invalidResponse))
+                  } else if connectionStatus == .Offline {
+                      completion(.failure(.networkOfflineError))
+                  }
+              }
+          }.resume()
+      } else {
+          completion(.failure(.invalidResponse))
+      }
+  }
+
     
     func generateString(array : [String]) -> String {
         let mapArray = array.map{ String($0) }

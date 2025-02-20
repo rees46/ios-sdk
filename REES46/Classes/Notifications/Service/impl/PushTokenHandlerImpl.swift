@@ -62,4 +62,45 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
             )
         }
     }
+  func removePushToken(
+    token: String,
+    isFirebaseNotification: Bool = false,
+    completion: @escaping (Result<Void, SdkError>) -> Void
+  ) {
+    guard let sdk = sdk else {
+      completion(.failure(.custom(error: "removePushToken: SDK is not initialized")))
+      return
+    }
+    let operation = BlockOperation{
+        var params = [
+          Constants.shopId: sdk.shopId,
+          Constants.did: sdk.deviceId,
+          Constants.token: token
+        ]
+        
+        if isFirebaseNotification {
+          params[Constants.platform] = Constants.iosFirebase
+        } else {
+          params[Constants.platform] = Constants.ios
+        }
+        
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 1
+        sessionConfig.waitsForConnectivity = true
+        
+        sdk.configureURLSession(configuration: sessionConfig)
+        
+        sdk.deleteRequest(
+          path: Constants.mobilePushTokensPath, params: params, completion: { result in
+            switch result {
+            case .success:
+              completion(.success(Void()))
+            case let .failure(error):
+              completion(.failure(error))
+            }
+          }
+        )
+      }
+    sessionQueue.addOperation(operation)
+  }
 }
