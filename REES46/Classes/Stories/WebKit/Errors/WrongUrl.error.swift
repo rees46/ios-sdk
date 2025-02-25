@@ -1,11 +1,15 @@
 import Foundation
 
 enum WrongUrlError: Error {
-  case failed(String)
+    case invalidURL
+    case unsupportedURL
+
     var localizedDescription: String {
         switch self {
-        case .failed(let error):
-            return "WebView error: \(error)"
+        case .invalidURL:
+            return "WebView error: String is not URL"
+        case .unsupportedURL:
+            return "WebView error: Unsupported URL"
         }
     }
 }
