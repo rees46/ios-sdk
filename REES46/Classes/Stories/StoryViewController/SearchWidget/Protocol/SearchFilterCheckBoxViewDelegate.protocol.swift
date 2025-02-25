@@ -1,3 +1,5 @@
+import Foundation
+
 protocol SearchFilterCheckBoxViewDelegate: AnyObject {
     func searchFilterCheckBoxView(
         _ view: SearchFilterCheckBoxView,

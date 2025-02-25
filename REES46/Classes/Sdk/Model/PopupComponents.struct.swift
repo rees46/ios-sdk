@@ -1,3 +1,5 @@
+import Foundation
+
 public struct PopupComponents: Codable {
     let text: String?
     let image: String?

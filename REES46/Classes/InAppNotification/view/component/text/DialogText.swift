@@ -1,3 +1,4 @@
+import UIKit
 class DialogText: UILabel {
     
     init(text: String, fontSize: CGFloat, isBold: Bool = false) {

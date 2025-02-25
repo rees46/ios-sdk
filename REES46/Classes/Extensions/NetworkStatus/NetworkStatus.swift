@@ -1,3 +1,4 @@
+import Foundation
 import Network
 #if os(iOS)
 import CoreTelephony

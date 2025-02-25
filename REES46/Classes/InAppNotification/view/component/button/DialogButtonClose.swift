@@ -1,3 +1,4 @@
+import UIKit
 class DialogButtonClose: UIButton {
     
     private let crossLayer = CAShapeLayer()

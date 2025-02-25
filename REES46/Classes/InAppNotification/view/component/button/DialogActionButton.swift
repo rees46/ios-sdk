@@ -1,3 +1,4 @@
+import UIKit
 class DialogActionButton: UIButton {
     
     init(title: String, backgroundColor: UIColor) {

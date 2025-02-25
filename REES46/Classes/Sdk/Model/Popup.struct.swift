@@ -1,3 +1,4 @@
+import Foundation
 
 public struct Popup: Codable {
     enum Position: String {

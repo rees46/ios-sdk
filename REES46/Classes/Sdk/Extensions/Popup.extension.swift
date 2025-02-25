@@ -1,3 +1,4 @@
+import Foundation
 extension Popup {
     init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? 0

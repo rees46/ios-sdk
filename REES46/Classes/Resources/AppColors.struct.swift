@@ -1,6 +1,6 @@
 import UIKit
 
-struct AppColors {
+public struct AppColors {
     
     struct Background {
         static let alertDimmed: UIColor = UIColor.black.withAlphaComponent(0.6)

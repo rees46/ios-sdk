@@ -1,3 +1,4 @@
+import Foundation
 extension Bundle {
     private static var frameworkBundle: Bundle {
         return Bundle(for: BundleToken.self)

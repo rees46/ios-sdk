@@ -1,3 +1,5 @@
+import Foundation
+
 struct RegexHelper {
     static func extract(using pattern: String, from text: String) -> String? {
         guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }

@@ -1,3 +1,5 @@
+import Foundation
+
 public struct PopupActions: Codable {
     let link: Link?
     let close: Close?

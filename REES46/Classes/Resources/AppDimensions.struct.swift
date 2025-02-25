@@ -1,6 +1,6 @@
 import UIKit
 
-struct AppDimensions {
+public struct AppDimensions {
     
     struct Padding {
         static let small: CGFloat = 8.0
