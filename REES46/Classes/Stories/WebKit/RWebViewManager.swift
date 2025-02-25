@@ -3,34 +3,35 @@ import WebKit
 
 public class RWebViewManager {
   
-  public static let shared = RWebViewManager()
+  private var urlSession: URLSession
+  private var urlHandler: URLHandler
   
-  private init() {}
+  public init() {
+    let configuration = URLSessionConfiguration.default
+    self.urlSession = URLSession(configuration: configuration)
+    self.urlHandler = UIApplicationHandler()
+  }
   
-  public func openURL(_ urlString: String, needOpeningWebView: Bool, from viewController: UIViewController) {
+  public func openURL(_ urlString: String, needOpeningWebView: Bool, from viewController: UIViewController, completion: @escaping (Result<Void, Error>) -> Void) {
     guard let url = URL(string: urlString) else {
-      print(WrongUrlError.failed("string is not a URL").localizedDescription)
+      completion(.failure(WrongUrlError.invalidURL))
       return
     }
     if isHttpURL(url) {
       if needOpeningWebView {
         openInWebView(url, from: viewController)
+        completion(.success(()))
       } else {
-        openInBrowser(url)
+        urlHandler.open(url: url, completion: completion)
+        completion(.success(()))
       }
-    }else{
-      print(WrongUrlError.failed("not a valid URL").localizedDescription)
-      return
+    } else {
+      completion(.failure(WrongUrlError.unsupportedURL))
     }
   }
   
   private func isHttpURL(_ url: URL) -> Bool {
-    return url.scheme?.lowercased() == "http" || url.scheme?.lowercased() == "https"
-  }
-  
-  private func openInBrowser(_ url: URL) {
-    print("Opening in browser: \(url)")
-    UIApplication.shared.open(url, options: [:])
+    return url.scheme?.caseInsensitiveCompare("http") == .orderedSame || url.scheme?.caseInsensitiveCompare("https") == .orderedSame
   }
   
   private func openInWebView(_ url: URL, from viewController: UIViewController) {
