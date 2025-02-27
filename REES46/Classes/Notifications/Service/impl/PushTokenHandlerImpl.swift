@@ -2,64 +2,90 @@
 import Foundation
 
 class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
+  
+  private var sdk: PersonalizationSDK?
+  private let sessionQueue: SessionQueue
+  
+  init(sdk: PersonalizationSDK) {
+    self.sdk = sdk
+    self.sessionQueue = sdk.sessionQueue
+  }
+  
+  private struct Constants {
+    static let mobilePushTokensPath = "mobile_push_tokens"
+    static let shopId = "shop_id"
+    static let did = "did"
+    static let iosFirebase = "ios_firebase"
+    static let ios = "ios"
+    static let platform = "platform"
+    static let token = "token"
+  }
+  
+  func setPushToken(
+    token: String,
+    isFirebaseNotification: Bool = false,
+    completion: @escaping (Result<Void, SdkError>) -> Void
+  ) {
     
-    private var sdk: PersonalizationSDK?
-    private let sessionQueue: SessionQueue
-    
-    init(sdk: PersonalizationSDK) {
-        self.sdk = sdk
-        self.sessionQueue = sdk.sessionQueue
+    guard let sdk = sdk else {
+      completion(.failure(.custom(error: "setPushToken: SDK is not initialized")))
+      return
     }
     
-    private struct Constants {
-        static let mobilePushTokensPath = "mobile_push_tokens"
-        static let shopId = "shop_id"
-        static let did = "did"
-        static let iosFirebase = "ios_firebase"
-        static let ios = "ios"
-        static let platform = "platform"
-        static let token = "token"
-    }
-    
-    func setPushToken(
-        token: String,
-        isFirebaseNotification: Bool = false,
-        completion: @escaping (Result<Void, SdkError>) -> Void
-    ) {
-        
-        guard let sdk = sdk else {
-            completion(.failure(.custom(error: "setPushToken: SDK is not initialized")))
-            return
-        }
-        
-        sessionQueue.addOperation {
-            var params = [
-                Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
-                Constants.token: token
-            ]
-            
-            if isFirebaseNotification {
-                params[Constants.platform] = Constants.iosFirebase
+    sessionQueue.addOperation {
+      var params = [
+        Constants.shopId: sdk.shopId,
+        Constants.did: sdk.deviceId,
+        Constants.token: token
+      ]
+      
+      if isFirebaseNotification {
+        params[Constants.platform] = Constants.iosFirebase
+      } else {
+        params[Constants.platform] = Constants.ios
+      }
+      
+      let sessionConfig = URLSessionConfiguration.default
+      sessionConfig.timeoutIntervalForRequest = 1
+      sessionConfig.waitsForConnectivity = true
+      
+      sdk.configureURLSession(configuration: sessionConfig)
+      sdk.postRequest(
+        path: Constants.mobilePushTokensPath, params: params, completion: { result in
+          switch result {
+          case .success:
+            completion(.success(Void()))
+          case let .failure(error):
+            if error.localizedDescription.contains("410") || error.localizedDescription.contains("400") {
+              self.removePushToken(token: token, completion: completion)
             } else {
-                params[Constants.platform] = Constants.ios
+              completion(.failure(error))
             }
-            
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            
-            sdk.configureURLSession(configuration: sessionConfig)
-            sdk.postRequest(
-                path: Constants.mobilePushTokensPath, params: params, completion: { result in
-                    switch result {
-                    case .success:
-                        completion(.success(Void()))
-                    case let .failure(error):
-                        completion(.failure(error))
-                    }
-                }
-            )
+          }
         }
+      )
     }
+  }
+  
+  private func removePushToken(
+    token: String,
+    completion: @escaping (Result<Void, SdkError>) -> Void
+  ) {
+    let params: [String: Any] = [
+      Constants.token: token,
+      Constants.shopId: sdk?.shopId ?? "",
+      Constants.did: sdk?.deviceId ?? ""
+    ]
+    
+    let removeTokenPath = "remove_mobile_push_token"
+    
+    sdk?.postRequest(path: removeTokenPath, params: params) { result in
+      switch result {
+      case .success:
+        completion(.success(Void()))
+      case let .failure(error):
+        completion(.failure(error))
+      }
+    }
+  }
 }
