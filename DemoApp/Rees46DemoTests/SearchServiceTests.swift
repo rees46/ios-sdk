@@ -50,9 +50,76 @@ class SearchServiceImplTests: XCTestCase {
         
         XCTAssertEqual(productsTotalWithLocation, productsTotalWithoutLocation)
         
+    }
+    
+    func testSearch_withExcludeBrands() {
+        let expectation1 = XCTestExpectation(description: "First search completes")
+        let expectation2 = XCTestExpectation(description: "Second search completes")
         
+        var productsTotalWithBrands: Int?
+        var productsTotalWithoutBrands: Int?
         
+        sdk?.search(
+            query: "пудра-бронзер"
+        ) { result in
+            switch result {
+            case .success(let response):
+                productsTotalWithBrands = response.productsTotal
+                expectation1.fulfill()
+            case .failure(let error):
+                XCTFail("Search failed with error: \(error)")
+            }
+        }
         
+        sdk?.search(
+            query: "пудра-бронзер",
+            excludedBrands: ["dior","estee lauder"]
+        ) { result in
+            switch result {
+            case .success(let response):
+                productsTotalWithoutBrands = response.productsTotal
+                expectation2.fulfill()
+            case .failure(let error):
+                XCTFail("Search failed with error: \(error)")
+            }
+        }
+        wait(for: [expectation1, expectation2], timeout: 10)
+        XCTAssertNotEqual(productsTotalWithBrands, productsTotalWithoutBrands)
+    }
+    
+    func testSuggest_withExcludeBrands() {
+        let expectation1 = XCTestExpectation(description: "First search completes")
+        let expectation2 = XCTestExpectation(description: "Second search completes")
+        
+        var productsTotalWithBrands: Int?
+        var productsTotalWithoutBrands: Int?
+        
+        sdk?.suggest(
+            query: "пудра-бронзер"
+        ) { result in
+            switch result {
+            case .success(let response):
+                productsTotalWithBrands = response.productsTotal
+                expectation1.fulfill()
+            case .failure(let error):
+                XCTFail("Search failed with error: \(error)")
+            }
+        }
+        
+        sdk?.suggest(
+            query: "пудра-бронзер",
+            excludedBrands: ["dior","estee lauder"]
+        ) { result in
+            switch result {
+            case .success(let response):
+                productsTotalWithoutBrands = response.productsTotal
+                expectation2.fulfill()
+            case .failure(let error):
+                XCTFail("Search failed with error: \(error)")
+            }
+        }
+        wait(for: [expectation1, expectation2], timeout: 10)
+        XCTAssertNotEqual(productsTotalWithBrands, productsTotalWithoutBrands)
     }
     
     func testSearch_withAllFields() {

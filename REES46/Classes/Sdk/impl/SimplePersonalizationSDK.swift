@@ -271,6 +271,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sortDir: String?,
         locations: String?,
         excludedMerchants: [String]?,
+        excludedBrands: [String]?,
         brands: String?,
         filters: [String: Any]?,
         priceMin: Double?,
@@ -295,6 +296,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             sortDir:sortDir,
             locations:locations,
             excludedMerchants:excludedMerchants,
+            excludedBrands:excludedBrands,
             brands:brands,
             filters:filters,
             priceMin:priceMin,
@@ -423,7 +425,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
-    func suggest(query: String, locations: String?, excludedMerchants:  [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {
+    func suggest(query: String, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "search"
             var params = [
@@ -442,6 +444,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
                     params["excluded_merchants"] = excludeMerchantsString
                 }
+            }
+            if let excludedBrands = excludedBrands {
+                params["excluded_brands"] = excludedBrands.joined(separator: ", ")
             }
             if let extended = extended {
                 params["extended"] = extended

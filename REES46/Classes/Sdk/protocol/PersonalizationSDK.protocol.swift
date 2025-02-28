@@ -28,7 +28,7 @@ public protocol PersonalizationSDK {
     func trackSource(source: RecommendedByCase, code: String)
     func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
-    func suggest(query: String, locations: String?, excludedMerchants: [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void)
+    func suggest(query: String, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void)
     func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void)
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void)
     func getProductInfo(id: String, completion: @escaping(Result<ProductInfo, SdkError>) -> Void)
@@ -39,7 +39,7 @@ public protocol PersonalizationSDK {
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping(Result<Void, SdkError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SdkError>) -> Void)
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
@@ -87,8 +87,8 @@ public extension PersonalizationSDK {
         recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
     }
     
-    func suggest(query: String, locations: String? = nil, excludedMerchants: [String]? = nil ,timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SdkError>) -> Void) {
-        suggest(query: query, locations: locations, excludedMerchants: excludedMerchants, timeOut: timeOut, extended: extended, completion: completion)
+    func suggest(query: String, locations: String? = nil, excludedMerchants: [String]? = nil, excludedBrands: [String]? = nil, timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SdkError>) -> Void) {
+        suggest(query: query, locations: locations, excludedMerchants: excludedMerchants, excludedBrands: excludedBrands, timeOut: timeOut, extended: extended, completion: completion)
     }
     
     func getProductsList(brands: String? = nil, merchants: String? = nil, categories: String? = nil, locations: String? = nil, limit: Int? = nil, page: Int? = nil, filters: [String: Any]? = nil, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void) {
@@ -111,6 +111,7 @@ public extension PersonalizationSDK {
         sortDir: String? = nil,
         locations: String? = nil,
         excludedMerchants: [String]? = nil,
+        excludedBrands: [String]? = nil,
         brands: String? = nil,
         filters: [String: Any]? = nil,
         priceMin: Double? = nil,
@@ -135,6 +136,7 @@ public extension PersonalizationSDK {
             sortDir:sortDir,
             locations:locations,
             excludedMerchants:excludedMerchants,
+            excludedBrands:excludedBrands,
             brands:brands,
             filters:filters,
             priceMin:priceMin,
