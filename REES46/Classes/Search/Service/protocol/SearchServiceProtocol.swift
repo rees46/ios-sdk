@@ -18,6 +18,7 @@ protocol SearchServiceProtocol{
       sortDir: String?,
       locations: String?,
       excludedMerchants: [String]?,
+      excludedBrands: [String]?,
       brands: String?,
       filters: [String: Any]?,
       priceMin: Double?,
