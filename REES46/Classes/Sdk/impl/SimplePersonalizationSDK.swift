@@ -446,7 +446,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
             if let excludedBrands = excludedBrands {
-                params["excluded_brands"] = excludedBrands.joined(separator: ", ")
+                params["excluded_brands"] = excludedBrands.joined(separator: ",")
             }
             if let extended = extended {
                 params["extended"] = extended
