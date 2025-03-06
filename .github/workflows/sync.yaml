@@ -15,3 +15,5 @@ jobs:
     permissions: write-all
     secrets:
       token: ${{ secrets.JADE_SMITH_BOT_TOKEN }}
+    with:
+      targetRepository: personaclick/ios-sdk
