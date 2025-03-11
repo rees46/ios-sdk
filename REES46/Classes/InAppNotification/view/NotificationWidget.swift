@@ -76,6 +76,15 @@ public class NotificationWidget: InAppNotificationProtocol {
                     negativeButtonText: buttonNegative,
                     onPositiveButtonClick: positiveAction
                 )
+            case .top:
+                showTopDialog(
+                    titleText: title ?? baseTitle,
+                    messageText: subTitle ?? baseSubTitle,
+                    imageUrl: imageUrl ?? "",
+                    positiveButtonText: positiveText,
+                    negativeButtonText: buttonNegative,
+                    onPositiveButtonClick: positiveAction
+                )
             }
         }
     }
@@ -130,6 +139,31 @@ public class NotificationWidget: InAppNotificationProtocol {
             dialog.dismiss(animated: true)
         }
         
+        parentViewController.present(dialog, animated: true, completion: nil)
+    }
+    
+    public func showTopDialog(
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        positiveButtonText: String?,
+        negativeButtonText: String?,
+        onPositiveButtonClick: @escaping () -> Void
+    ) {
+        let dialog = TopDialog()
+        
+        dialog.titleText = titleText
+        dialog.messageText = messageText
+        dialog.imageUrl = imageUrl
+        dialog.positiveButtonText = positiveButtonText
+        dialog.negativeButtonText = negativeButtonText
+        dialog.onPositiveButtonClick = {
+            onPositiveButtonClick()
+            dialog.dismiss(animated: true)
+        }
+        dialog.onNegativeButtonClick = {
+            dialog.dismiss(animated: true)
+        }
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
