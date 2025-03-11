@@ -15,8 +15,8 @@ class AlertDialog: UIViewController {
     var titleText: String = ""
     var messageText: String = ""
     var imageUrl: String = ""
-    var positiveButtonText: String = ""
-    var negativeButtonText: String = ""
+    var positiveButtonText: String?
+    var negativeButtonText: String?
     var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
     var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
     
@@ -40,11 +40,21 @@ class AlertDialog: UIViewController {
         
         titleLabel.text = titleText
         messageLabel.text = messageText
-        acceptButton.setTitle(positiveButtonText, for: .normal)
-        declineButton.setTitle(negativeButtonText, for: .normal)
-        acceptButton.backgroundColor = positiveButtonColor
-        declineButton.backgroundColor = negativeButtonColor
         
+        if let positiveText = positiveButtonText, !positiveText.isEmpty {
+            acceptButton.setTitle(positiveText, for: .normal)
+            acceptButton.backgroundColor = positiveButtonColor
+        } else {
+            acceptButton.isHidden = true
+        }
+        
+        if let negativeText = negativeButtonText, !negativeText.isEmpty {
+            declineButton.setTitle(negativeText, for: .normal)
+            declineButton.backgroundColor = negativeButtonColor
+        } else {
+            declineButton.isHidden = true
+        }
+
         setupUI()
         backgroundImageView.loadImage(from: imageUrl)
     }
@@ -55,6 +65,12 @@ class AlertDialog: UIViewController {
         setupImageContainer()
         setupButtons()
         layoutUI()
+
+        if(positiveButtonText == nil && negativeButtonText == nil) {
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissDialog))
+            tapGesture.cancelsTouchesInView = false
+            view.addGestureRecognizer(tapGesture)
+        }
     }
     
     private func setupContentView() {
@@ -178,20 +194,39 @@ class AlertDialog: UIViewController {
     }
     
     private func setButtonConstraints() {
-        NSLayoutConstraint.activate([
-            // Decline Button
-            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-            declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+        let commonConstraints = { [self] (button: UIButton, topAnchor: NSLayoutYAxisAnchor, bottomAnchor: NSLayoutYAxisAnchor?) in
+            NSLayoutConstraint.activate([
+                button.topAnchor.constraint(equalTo: topAnchor, constant: AppDimensions.Padding.medium),
+                button.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                button.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                button.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton)
+            ])
             
-            // Accept Button
-            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-            acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-        ])
+            if let bottomAnchor = bottomAnchor {
+                button.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -AppDimensions.Padding.medium).isActive = true
+            }
+        }
+        
+        if acceptButton.isHidden && declineButton.isHidden {
+            messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium).isActive = true
+        } else if acceptButton.isHidden {
+            commonConstraints(declineButton, messageLabel.bottomAnchor, contentContainer.bottomAnchor)
+        } else if declineButton.isHidden {
+            commonConstraints(acceptButton, messageLabel.bottomAnchor, contentContainer.bottomAnchor)
+        } else {
+            NSLayoutConstraint.activate([
+                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                
+                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        }
     }
     
     @objc private func onAcceptButtonTapped() {

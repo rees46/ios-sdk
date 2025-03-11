@@ -15,7 +15,7 @@ class BottomSheetDialog: UIViewController {
     var titleText: String = ""
     var messageText: String = ""
     var imageUrl: String = ""
-    var positiveButtonText: String = ""
+    var positiveButtonText: String?
     var negativeButtonText: String?
     var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
     var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
@@ -40,10 +40,20 @@ class BottomSheetDialog: UIViewController {
         
         titleLabel.text = titleText
         messageLabel.text = messageText
-        acceptButton.setTitle(positiveButtonText, for: .normal)
-        declineButton.setTitle(negativeButtonText, for: .normal)
-        acceptButton.backgroundColor = positiveButtonColor
-        declineButton.backgroundColor = negativeButtonColor
+        
+        if let positiveText = positiveButtonText, !positiveText.isEmpty {
+                acceptButton.setTitle(positiveText, for: .normal)
+                acceptButton.backgroundColor = positiveButtonColor
+            } else {
+                acceptButton.isHidden = true
+            }
+            
+            if let negativeText = negativeButtonText, !negativeText.isEmpty {
+                declineButton.setTitle(negativeText, for: .normal)
+                declineButton.backgroundColor = negativeButtonColor
+            } else {
+                declineButton.isHidden = true
+            }
         
         setupUI()
         backgroundImageView.loadImage(from: imageUrl)
@@ -59,6 +69,7 @@ class BottomSheetDialog: UIViewController {
     private func setupContentView() {
         contentView.backgroundColor = AppColors.Background.contentView
         contentView.layer.cornerRadius = AppDimensions.Padding.medium
+        contentView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         contentView.clipsToBounds = true
         view.addSubview(contentView)
     }
@@ -110,9 +121,9 @@ class BottomSheetDialog: UIViewController {
     
     private func setContentViewConstraints() {
         NSLayoutConstraint.activate([
-            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDimensions.Padding.small),
-            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDimensions.Padding.small),
-            contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor,constant: -AppDimensions.Padding.large),
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
     
@@ -144,13 +155,23 @@ class BottomSheetDialog: UIViewController {
     }
     
     private func setContentContainerConstraints() {
-        NSLayoutConstraint.activate([
-            contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
-            contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: AppDimensions.Size.alertPopUpHeight)
-        ])
+        if acceptButton.isHidden && declineButton.isHidden {
+            NSLayoutConstraint.activate([
+                contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
+                contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                
+                messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
+                contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+                contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+                contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        }
     }
     
     private func setCloseButtonConstraints() {
@@ -171,38 +192,51 @@ class BottomSheetDialog: UIViewController {
     }
     
     private func setMessageLabelConstraints() {
-        NSLayoutConstraint.activate([
-            messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
-            messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-            messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
-        ])
+        if acceptButton.isHidden && declineButton.isHidden {
+            NSLayoutConstraint.activate([
+                messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
+                messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
+                messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        }
     }
     
     private func setButtonConstraints() {
-        if let declineButtonText = declineButton.title(for: .normal), !declineButtonText.isEmpty {
+        if !declineButton.isHidden && !acceptButton.isHidden {
             NSLayoutConstraint.activate([
-                // Decline Button
                 declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
                 declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
                 declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
                 declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
                 
-                // Accept Button
                 acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
                 acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
                 acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
                 acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
                 acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
             ])
-        } else {
-            declineButton.isHidden = true
-            
+        } else if !acceptButton.isHidden {
             NSLayoutConstraint.activate([
                 acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
                 acceptButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
                 acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
                 acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
                 acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        } else if !declineButton.isHidden {
+            NSLayoutConstraint.activate([
+                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                declineButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                declineButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
             ])
         }
     }

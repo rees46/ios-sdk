@@ -6,8 +6,8 @@ public protocol InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String,
-        negativeButtonText: String,
+        positiveButtonText: String?,
+        negativeButtonText: String?,
         onPositiveButtonClick: @escaping () -> Void
     )
     
@@ -15,7 +15,7 @@ public protocol InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String,
+        positiveButtonText: String?,
         negativeButtonText: String?,
         onPositiveButtonClick: @escaping () -> Void
     )

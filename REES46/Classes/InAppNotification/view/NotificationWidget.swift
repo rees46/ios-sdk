@@ -21,8 +21,6 @@ public class NotificationWidget: InAppNotificationProtocol {
         let position: Popup.Position = Popup.Position(rawValue: popup.position) ?? .centered
         let baseTitle: String = NSLocalizedString("alert_dialog_title", comment:  "")
         let baseSubTitle: String = NSLocalizedString("alert_dialog_message", comment:  "")
-        let baseButtonPositive: String = NSLocalizedString("alert_dialog_button_accept", comment:  "")
-        let baseButtonNegative: String = NSLocalizedString("alert_dialog_button_decline", comment:  "")
         
         var buttonPositive: String?
         var buttonNegative: String?
@@ -45,7 +43,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         if title != nil && subTitle != nil {
             
             let positiveAction: () -> Void
-            let positiveText: String
+            let positiveText: String?
             
             if let pushPermissionsText = buttonPushPermissions {
                 positiveText = pushPermissionsText
@@ -53,7 +51,7 @@ public class NotificationWidget: InAppNotificationProtocol {
                     self?.navigateToPushSettings()
                 }
             } else {
-                positiveText = buttonPositive ?? baseButtonPositive
+                positiveText = buttonPositive
                 positiveAction = { [weak self] in
                     self?.handlePositiveButtonClick(link: positiveLink)
                 }
@@ -66,7 +64,7 @@ public class NotificationWidget: InAppNotificationProtocol {
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
                     positiveButtonText: positiveText,
-                    negativeButtonText: buttonNegative ?? baseButtonNegative,
+                    negativeButtonText: buttonNegative,
                     onPositiveButtonClick: positiveAction
                 )
             case .bottom:
@@ -75,7 +73,7 @@ public class NotificationWidget: InAppNotificationProtocol {
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
                     positiveButtonText: positiveText,
-                    negativeButtonText: buttonNegative ?? baseButtonNegative,
+                    negativeButtonText: buttonNegative,
                     onPositiveButtonClick: positiveAction
                 )
             }
@@ -87,8 +85,8 @@ public class NotificationWidget: InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String,
-        negativeButtonText: String,
+        positiveButtonText: String?,
+        negativeButtonText: String?,
         onPositiveButtonClick: @escaping () -> Void
     ) {
         let dialog = AlertDialog()
@@ -113,7 +111,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String,
+        positiveButtonText: String?,
         negativeButtonText: String?,
         onPositiveButtonClick: @escaping () -> Void
     ) {
