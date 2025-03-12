@@ -4,7 +4,7 @@ class TopDialog: UIViewController {
     
     private let backgroundImageView = DialogImageVeiw()
     private let contentView = UIView()
-    private let contentContainer = UIView()
+    private let contentContainer = UIStackView()
     private let imageContainer = UIView()
     private let closeButton = DialogButtonClose()
     private let titleLabel: DialogText
@@ -89,14 +89,25 @@ class TopDialog: UIViewController {
     }
     
     private func setupButtons() {
-        contentContainer.backgroundColor = AppColors.Background.contentView
-        contentContainer.layer.cornerRadius = AppDimensions.Padding.medium
-        contentContainer.clipsToBounds = true
+        contentContainer.axis = .vertical
+        contentContainer.alignment = .fill
+        contentContainer.spacing = AppDimensions.Padding.medium
+        contentContainer.distribution = .fill
+        contentContainer.addArrangedSubview(titleLabel)
+        contentContainer.addArrangedSubview(messageLabel)
         
-        contentContainer.addSubview(titleLabel)
-        contentContainer.addSubview(messageLabel)
-        contentContainer.addSubview(acceptButton)
-        contentContainer.addSubview(declineButton)
+        if !declineButton.isHidden && !acceptButton.isHidden {
+            let buttonStack = UIStackView(arrangedSubviews: [declineButton, acceptButton])
+            buttonStack.axis = .horizontal
+            buttonStack.spacing = AppDimensions.Padding.small
+            buttonStack.alignment = .fill
+            buttonStack.distribution = .fillEqually
+            contentContainer.addArrangedSubview(buttonStack)
+        } else if !acceptButton.isHidden {
+            contentContainer.addArrangedSubview(acceptButton)
+        } else if !declineButton.isHidden {
+            contentContainer.addArrangedSubview(declineButton)
+        }
         contentView.addSubview(contentContainer)
         
         acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
@@ -120,9 +131,6 @@ class TopDialog: UIViewController {
         setBackgroundImageViewConstraints()
         setContentContainerConstraints()
         setCloseButtonConstraints()
-        setTitleLabelConstraints()
-        setMessageLabelConstraints()
-        setButtonConstraints()
     }
     
     private func setContentViewConstraints() {
@@ -161,100 +169,34 @@ class TopDialog: UIViewController {
     }
     
     private func setContentContainerConstraints() {
-        if acceptButton.isHidden && declineButton.isHidden {
-            NSLayoutConstraint.activate([
-                contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
-                contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-                
-                messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
-                contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        }
+        NSLayoutConstraint.activate([
+            contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
+            contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+        ])
+        contentContainer.layoutMargins = UIEdgeInsets(top: AppDimensions.Padding.medium, left: AppDimensions.Padding.medium, bottom: AppDimensions.Padding.medium, right: AppDimensions.Padding.medium)
+                contentContainer.isLayoutMarginsRelativeArrangement = true
     }
     
     private func setCloseButtonConstraints() {
         NSLayoutConstraint.activate([
             closeButton.topAnchor.constraint(equalTo: imageContainer.topAnchor, constant: AppDimensions.Padding.small),
-            closeButton.trailingAnchor.constraint(equalTo: imageContainer.trailingAnchor, constant: -AppDimensions.Padding.small),
+            closeButton.leadingAnchor.constraint(greaterThanOrEqualTo: imageContainer.leadingAnchor, constant: AppDimensions.Padding.small),
+            closeButton.trailingAnchor.constraint(equalTo: imageContainer.trailingAnchor, constant: AppDimensions.Padding.small),
             closeButton.widthAnchor.constraint(equalToConstant: AppDimensions.Size.closeButtonSize),
             closeButton.heightAnchor.constraint(equalToConstant: AppDimensions.Size.closeButtonSize)
         ])
     }
     
-    private func setTitleLabelConstraints() {
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: contentContainer.topAnchor, constant: AppDimensions.Padding.medium),
-            titleLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-            titleLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
-        ])
-    }
-    
-    private func setMessageLabelConstraints() {
-        if acceptButton.isHidden && declineButton.isHidden {
-            NSLayoutConstraint.activate([
-                messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
-                messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
-                messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                messageLabel.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        }
-    }
-    
-    private func setButtonConstraints() {
-        if !declineButton.isHidden && !acceptButton.isHidden {
-            NSLayoutConstraint.activate([
-                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                
-                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        } else if !acceptButton.isHidden {
-            NSLayoutConstraint.activate([
-                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        } else if !declineButton.isHidden {
-            NSLayoutConstraint.activate([
-                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                declineButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
-        }
-    }
-    
     @objc private func onAcceptButtonTapped() {
         onPositiveButtonClick?()
-        dismiss(animated: false, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
     
     @objc private func onDeclineButtonTapped() {
         onNegativeButtonClick?()
-        dismiss(animated: false, completion: nil)
+        dismiss(animated: true, completion: nil)
     }
     
     @objc private func dismissDialog() {
