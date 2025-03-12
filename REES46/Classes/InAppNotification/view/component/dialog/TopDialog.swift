@@ -38,6 +38,7 @@ class TopDialog: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         titleLabel.text = titleText
         messageLabel.text = messageText
         

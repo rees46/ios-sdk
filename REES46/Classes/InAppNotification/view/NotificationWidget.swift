@@ -164,6 +164,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         dialog.onNegativeButtonClick = {
             dialog.dismiss(animated: true)
         }
+        dialog.modalPresentationStyle = .overFullScreen
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
