@@ -106,6 +106,7 @@ public class PromocodeBanner: UIView {
     public func setView(view: UIView) {
         view.frame = CGRect(x: 0, y: 0, width: frame.width, height: frame.height)
         view.clipsToBounds = true
+        view.translatesAutoresizingMaskIntoConstraints = true
         addSubview(view)
     }
     

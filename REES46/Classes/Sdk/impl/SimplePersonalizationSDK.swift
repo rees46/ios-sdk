@@ -110,13 +110,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     
                     if let popup = response.popup {
                         DispatchQueue.main.async {
-                            guard let parentVC = parentViewController else {
-                                fatalError("parentViewController must not be nil")
+                            if parentViewController == nil {
+                                print("parentViewController is nil")
+                            }else{
+                                self.notificationWidget = NotificationWidget(
+                                    parentViewController: parentViewController!,
+                                    popup: popup
+                                )
                             }
-                            self.notificationWidget = NotificationWidget(
-                                parentViewController: parentVC,
-                                popup: popup
-                            )
                         }
                     }
                     
@@ -802,13 +803,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
                 completion(.success(resultResponse))
             }
-
+            
         }
- 
+        
         serialSemaphore.wait()
     }
-
-
+    
+    
     private func prepareRequestParameters() -> [String: String] {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
         let hours = secondsFromGMT / 3600
@@ -876,7 +877,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             identifier: sdkBundleId!,
             instanceKeychainService: appBundleId!
         ),
-            let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
+              let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
             return nil
         }
         
@@ -1025,20 +1026,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         let urlString = baseURL + path
-    #if DEBUG
+#if DEBUG
         print("LOG: getRequest to: \(urlString)")
-    #endif
-
+#endif
+        
         var url = URLComponents(string: urlString)
-
+        
         var queryItems = [URLQueryItem]()
         for item in params {
             queryItems.append(URLQueryItem(name: item.key, value: item.value))
         }
-
+        
         queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
-
+        
         if needReInitialization {
             print("Reinitialization needed. Clearing saved data...")
             let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
@@ -1052,7 +1053,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 print("Error deleting saved data: \(error)")
             }
         }
-
+        
         if let endUrl = url?.url {
             urlSession.dataTask(with: endUrl) { result in
                 switch result {
@@ -1072,7 +1073,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
                             try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
                         }
-
+                        
                         let json = try JSONSerialization.jsonObject(with: data)
                         if let jsonObject = json as? [String: Any] {
                             completion(.success(jsonObject))
@@ -1085,7 +1086,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure:
                     let networkManager = NetworkStatus.nManager
                     let connectionStatus = networkManager.connectionStatus
-
+                    
                     if connectionStatus == .Online {
                         completion(.failure(.invalidResponse))
                     } else if connectionStatus == .Offline {
