@@ -124,7 +124,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         negativeButtonText: String?,
         onPositiveButtonClick: @escaping () -> Void
     ) {
-        let dialog = BottomSheetDialog()
+        let dialog = BottomDialog()
         
         dialog.titleText = titleText
         dialog.messageText = messageText

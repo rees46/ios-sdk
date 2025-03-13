@@ -1,6 +1,6 @@
 import UIKit
 
-class BottomSheetDialog: UIViewController {
+class BottomDialog: UIViewController {
     
     private let backgroundImageView = DialogImageVeiw()
     private let contentView = UIView()
