@@ -113,6 +113,28 @@ class AlertDialog: UIViewController {
         confirmButton.translatesAutoresizingMaskIntoConstraints = false
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
         
+        applyContraints()
+    }
+    
+    
+    
+    @objc private func onAcceptButtonTapped() {
+        onConfirmButtonClick?()
+        dismiss(animated: true, completion: nil)
+    }
+    
+    @objc private func onDeclineButtonTapped() {
+        onDismissButtonClick?()
+        dismiss(animated: true, completion: nil)
+    }
+    
+    @objc private func dismissDialog() {
+        dismiss(animated: true, completion: nil)
+    }
+}
+
+extension AlertDialog {
+    func applyContraints() {
         setContentViewConstraints()
         setImageContainerConstraints()
         setBackgroundImageViewConstraints()
@@ -227,19 +249,5 @@ class AlertDialog: UIViewController {
                 confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
             ])
         }
-    }
-    
-    @objc private func onAcceptButtonTapped() {
-        onConfirmButtonClick?()
-        dismiss(animated: true, completion: nil)
-    }
-    
-    @objc private func onDeclineButtonTapped() {
-        onDismissButtonClick?()
-        dismiss(animated: true, completion: nil)
-    }
-    
-    @objc private func dismissDialog() {
-        dismiss(animated: true, completion: nil)
     }
 }
