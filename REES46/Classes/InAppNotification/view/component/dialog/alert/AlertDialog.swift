@@ -142,7 +142,7 @@ extension AlertDialog {
         setCloseButtonConstraints()
         setTitleLabelConstraints()
         setMessageLabelConstraints()
-        setButtonConstraints()
+        setButtonConstraints(buttonState: determineState())
     }
     
     private func setContentViewConstraints() {
@@ -215,7 +215,7 @@ extension AlertDialog {
         ])
     }
     
-    private func setButtonConstraints() {
+    private func setButtonConstraints(buttonState: ButtonState) {
         let commonConstraints = { [self] (button: UIButton, topAnchor: NSLayoutYAxisAnchor, bottomAnchor: NSLayoutYAxisAnchor?) in
             NSLayoutConstraint.activate([
                 button.topAnchor.constraint(equalTo: topAnchor, constant: AppDimensions.Padding.medium),
@@ -229,25 +229,38 @@ extension AlertDialog {
             }
         }
         
-        if confirmButton.isHidden && dismissButton.isHidden {
-            messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium).isActive = true
-        } else if confirmButton.isHidden {
-            commonConstraints(dismissButton, messageLabel.bottomAnchor, contentContainer.bottomAnchor)
-        } else if dismissButton.isHidden {
-            commonConstraints(confirmButton, messageLabel.bottomAnchor, contentContainer.bottomAnchor)
-        } else {
-            NSLayoutConstraint.activate([
-                dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                dismissButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-                dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+        switch(buttonState) {
+            case .noButtons:
+                messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium).isActive = true
+            case .onlyAccept:
+                commonConstraints(dismissButton, messageLabel.bottomAnchor, contentContainer.bottomAnchor)
+            case .onlyDecline:
+                commonConstraints(confirmButton, messageLabel.bottomAnchor, contentContainer.bottomAnchor)
+            case .bothButtons:
+                NSLayoutConstraint.activate([
+                    dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                    dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                    dismissButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+                    dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
                 
-                confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                confirmButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-                confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-            ])
+                    confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                    confirmButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+                    confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                    confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                    confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+                ])
         }
+    }
+    
+    private func determineState() -> ButtonState {
+      if confirmButton.isHidden && dismissButton.isHidden {
+          return .noButtons
+      } else if confirmButton.isHidden {
+          return .onlyDecline
+      } else if dismissButton.isHidden {
+          return .onlyAccept
+      } else {
+          return .bothButtons
+      }
     }
 }
