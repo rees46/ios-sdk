@@ -10,26 +10,26 @@ class FullScreenDialog: UIViewController {
     private let closeButton = DialogButtonClose()
     private let titleLabel: DialogText
     private let messageLabel: DialogText
-    private let acceptButton: DialogActionButton
-    private let declineButton: DialogActionButton
+    private let confirmButton: DialogActionButton
+    private let dismissButton: DialogActionButton
     private let spacerView = UIView()
     
     var titleText: String = ""
     var messageText: String = ""
     var imageUrl: String = ""
-    var positiveButtonText: String = ""
-    var negativeButtonText: String = ""
-    var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
-    var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
+    var confirmButtonText: String = ""
+    var dismissButtonText: String = ""
+    var confirmButtonColor: UIColor = AppColors.Background.buttonPositive
+    var dismissButtonColor: UIColor = AppColors.Background.buttonNegative
     
-    var onPositiveButtonClick: (() -> Void)?
-    var onNegativeButtonClick: (() -> Void)?
+    var onConfirmButtonClick: (() -> Void)?
+    var onDismissButtonClick: (() -> Void)?
     
     init() {
         titleLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.large, isBold: true)
         messageLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.medium)
-        acceptButton = DialogActionButton(title: "", backgroundColor: positiveButtonColor)
-        declineButton = DialogActionButton(title: "", backgroundColor: negativeButtonColor)
+        confirmButton = DialogActionButton(title: "", backgroundColor: confirmButtonColor)
+        dismissButton = DialogActionButton(title: "", backgroundColor: dismissButtonColor)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -42,10 +42,10 @@ class FullScreenDialog: UIViewController {
         
         titleLabel.text = titleText
         messageLabel.text = messageText
-        acceptButton.setTitle(positiveButtonText, for: .normal)
-        declineButton.setTitle(negativeButtonText, for: .normal)
-        acceptButton.backgroundColor = positiveButtonColor
-        declineButton.backgroundColor = negativeButtonColor
+        confirmButton.setTitle(confirmButtonText, for: .normal)
+        dismissButton.setTitle(dismissButtonText, for: .normal)
+        confirmButton.backgroundColor = confirmButtonColor
+        dismissButton.backgroundColor = dismissButtonColor
         
         setupUI()
         backgroundImageView.loadImage(from: imageUrl)
@@ -76,12 +76,12 @@ class FullScreenDialog: UIViewController {
         contentContainer.addSubview(titleLabel)
         contentContainer.addSubview(messageLabel)
         contentContainer.addSubview(spacerView)
-        contentContainer.addSubview(acceptButton)
-        contentContainer.addSubview(declineButton)
+        contentContainer.addSubview(confirmButton)
+        contentContainer.addSubview(dismissButton)
         contentView.addSubview(contentContainer)
         
-        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
-        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
+        confirmButton.addTarget(self, action: #selector(onConfirmButtonTapped), for: .touchUpInside)
+        dismissButton.addTarget(self, action: #selector(onDismissButtonTapped), for: .touchUpInside)
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
     }
     
@@ -93,8 +93,8 @@ class FullScreenDialog: UIViewController {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        acceptButton.translatesAutoresizingMaskIntoConstraints = false
-        declineButton.translatesAutoresizingMaskIntoConstraints = false
+        confirmButton.translatesAutoresizingMaskIntoConstraints = false
+        dismissButton.translatesAutoresizingMaskIntoConstraints = false
         spacerView.translatesAutoresizingMaskIntoConstraints = false
         
         setContentViewConstraints()
@@ -174,34 +174,34 @@ class FullScreenDialog: UIViewController {
             spacerView.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
             spacerView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
             spacerView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
-            spacerView.bottomAnchor.constraint(equalTo: acceptButton.topAnchor),
+            spacerView.bottomAnchor.constraint(equalTo: confirmButton.topAnchor),
             spacerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 0)
         ])
     }
     
     private func setButtonConstraints() {
         NSLayoutConstraint.activate([
-            // Decline Button
-            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-            declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            declineButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large),
+            // Dismiss Button
+            dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            dismissButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+            dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+            dismissButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large),
             
-            // Accept Button
-            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-            acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large)
+            // Confirm Button
+            confirmButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+            confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+            confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+            confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large)
         ])
     }
     
-    @objc private func onAcceptButtonTapped() {
-        onPositiveButtonClick?()
+    @objc private func onConfirmButtonTapped() {
+        onConfirmButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
-    @objc private func onDeclineButtonTapped() {
-        onNegativeButtonClick?()
+    @objc private func onDismissButtonTapped() {
+        onDismissButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     

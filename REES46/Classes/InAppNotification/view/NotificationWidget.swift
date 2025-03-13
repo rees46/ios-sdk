@@ -22,16 +22,16 @@ public class NotificationWidget: InAppNotificationProtocol {
         let baseTitle: String = NSLocalizedString("alert_dialog_title", comment:  "")
         let baseSubTitle: String = NSLocalizedString("alert_dialog_message", comment:  "")
         
-        var buttonPositive: String?
-        var buttonNegative: String?
-        var positiveLink: String?
+        var buttonConfirmText: String?
+        var buttonDismissText: String?
+        var confirmLink: String?
         var buttonPushPermissions: String?
         
         if let actions = popup.getParsedPopupActions() {
-            buttonPositive = actions.link?.button_text
-            buttonNegative = actions.close?.button_text
+            buttonConfirmText = actions.link?.button_text
+            buttonDismissText = actions.close?.button_text
             buttonPushPermissions = actions.system_mobile_push_subscribe?.button_text
-            positiveLink = actions.link?.link_ios ?? actions.link?.link_android ?? actions.link?.link_web
+            confirmLink = actions.link?.link_ios ?? actions.link?.link_android ?? actions.link?.link_web
         }
         
         let (header, text) = popup.extractTitleAndSubtitle()
@@ -42,18 +42,18 @@ public class NotificationWidget: InAppNotificationProtocol {
         
         if title != nil && subTitle != nil {
             
-            let positiveAction: () -> Void
-            let positiveText: String?
+            let confirmAction: () -> Void
+            let confirmText: String?
             
             if let pushPermissionsText = buttonPushPermissions {
-                positiveText = pushPermissionsText
-                positiveAction = { [weak self] in
+                confirmText = pushPermissionsText
+                confirmAction = { [weak self] in
                     self?.navigateToPushSettings()
                 }
             } else {
-                positiveText = buttonPositive
-                positiveAction = { [weak self] in
-                    self?.handlePositiveButtonClick(link: positiveLink)
+                confirmText = buttonConfirmText
+                confirmAction = { [weak self] in
+                    self?.handleConfirmButtonClick(link: confirmLink)
                 }
             }
             
@@ -63,27 +63,27 @@ public class NotificationWidget: InAppNotificationProtocol {
                     titleText: title ?? baseTitle,
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
-                    positiveButtonText: positiveText,
-                    negativeButtonText: buttonNegative,
-                    onPositiveButtonClick: positiveAction
+                    confirmButtonText: confirmText,
+                    dismissButtonText: buttonDismissText,
+                    onConfirmButtonClick: confirmAction
                 )
             case .bottom:
                 showBottomSheet(
                     titleText: title ?? baseTitle,
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
-                    positiveButtonText: positiveText,
-                    negativeButtonText: buttonNegative,
-                    onPositiveButtonClick: positiveAction
+                    confirmButtonText: confirmText,
+                    dismissButtonText: buttonDismissText,
+                    onConfirmButtonClick: confirmAction
                 )
             case .top:
                 showTopDialog(
                     titleText: title ?? baseTitle,
                     messageText: subTitle ?? baseSubTitle,
                     imageUrl: imageUrl ?? "",
-                    positiveButtonText: positiveText,
-                    negativeButtonText: buttonNegative,
-                    onPositiveButtonClick: positiveAction
+                    confirmButtonText: confirmText,
+                    dismissButtonText: buttonDismissText,
+                    onConfirmButtonClick: confirmAction
                 )
             }
         }
@@ -94,21 +94,21 @@ public class NotificationWidget: InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String?,
-        negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: @escaping () -> Void
     ) {
         let dialog = AlertDialog()
         dialog.titleText = titleText
         dialog.messageText = messageText
         dialog.imageUrl = imageUrl
-        dialog.positiveButtonText = positiveButtonText
-        dialog.negativeButtonText = negativeButtonText
-        dialog.onPositiveButtonClick = {
-            onPositiveButtonClick()
+        dialog.confirmButtonText = confirmButtonText
+        dialog.dismissButtonText = dismissButtonText
+        dialog.onConfirmButtonClick = {
+            onConfirmButtonClick()
             dialog.dismiss(animated: true)
         }
-        dialog.onNegativeButtonClick = {
+        dialog.onDismissButtonClick = {
             dialog.dismiss(animated: true)
         }
         
@@ -120,22 +120,22 @@ public class NotificationWidget: InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String?,
-        negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: @escaping () -> Void
     ) {
         let dialog = BottomDialog()
         
         dialog.titleText = titleText
         dialog.messageText = messageText
         dialog.imageUrl = imageUrl
-        dialog.positiveButtonText = positiveButtonText
-        dialog.negativeButtonText = negativeButtonText
-        dialog.onPositiveButtonClick = {
-            onPositiveButtonClick()
+        dialog.confirmButtonText = confirmButtonText
+        dialog.dismissButtonText = dismissButtonText
+        dialog.onConfirmButtonClick = {
+            onConfirmButtonClick()
             dialog.dismiss(animated: true)
         }
-        dialog.onNegativeButtonClick = {
+        dialog.onDismissButtonClick = {
             dialog.dismiss(animated: true)
         }
         
@@ -146,22 +146,22 @@ public class NotificationWidget: InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String?,
-        negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: @escaping () -> Void
     ) {
         let dialog = TopDialog()
         
         dialog.titleText = titleText
         dialog.messageText = messageText
         dialog.imageUrl = imageUrl
-        dialog.positiveButtonText = positiveButtonText
-        dialog.negativeButtonText = negativeButtonText
-        dialog.onPositiveButtonClick = {
-            onPositiveButtonClick()
+        dialog.confirmButtonText = confirmButtonText
+        dialog.dismissButtonText = dismissButtonText
+        dialog.onConfirmButtonClick = {
+            onConfirmButtonClick()
             dialog.dismiss(animated: true)
         }
-        dialog.onNegativeButtonClick = {
+        dialog.onDismissButtonClick = {
             dialog.dismiss(animated: true)
         }
         dialog.modalPresentationStyle = .overFullScreen
@@ -172,21 +172,21 @@ public class NotificationWidget: InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String,
-        negativeButtonText: String,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String,
+        dismissButtonText: String,
+        onConfirmButtonClick: @escaping () -> Void
     ) {
         let dialog = FullScreenDialog()
         dialog.titleText = titleText
         dialog.messageText = messageText
         dialog.imageUrl = imageUrl
-        dialog.positiveButtonText = positiveButtonText
-        dialog.negativeButtonText = negativeButtonText
-        dialog.onPositiveButtonClick = {
-            onPositiveButtonClick()
+        dialog.confirmButtonText = confirmButtonText
+        dialog.dismissButtonText = dismissButtonText
+        dialog.onConfirmButtonClick = {
+            onConfirmButtonClick()
             dialog.dismiss(animated: true)
         }
-        dialog.onNegativeButtonClick = {
+        dialog.onDismissButtonClick = {
             dialog.dismiss(animated: true)
         }
         
@@ -272,7 +272,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         }
     }
     
-    private func handlePositiveButtonClick(link: String?) {
+    private func handleConfirmButtonClick(link: String?) {
         if let urlString = link, let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url, options: [:]) { success in
                 if success {

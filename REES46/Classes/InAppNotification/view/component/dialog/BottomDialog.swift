@@ -9,25 +9,25 @@ class BottomDialog: UIViewController {
     private let closeButton = DialogButtonClose()
     private let titleLabel: DialogText
     private let messageLabel: DialogText
-    private let acceptButton: DialogActionButton
-    private let declineButton: DialogActionButton
+    private let confirmButton: DialogActionButton
+    private let dismissButton: DialogActionButton
     
     var titleText: String = ""
     var messageText: String = ""
     var imageUrl: String = ""
-    var positiveButtonText: String?
-    var negativeButtonText: String?
-    var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
-    var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
+    var confirmButtonText: String?
+    var dismissButtonText: String?
+    var confirmButtonColor: UIColor = AppColors.Background.buttonPositive
+    var dismissButtonColor: UIColor = AppColors.Background.buttonNegative
     
-    var onPositiveButtonClick: (() -> Void)?
-    var onNegativeButtonClick: (() -> Void)?
+    var onConfirmButtonClick: (() -> Void)?
+    var onDismissButtonClick: (() -> Void)?
     
     init() {
         titleLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.large, isBold: true)
         messageLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.medium)
-        acceptButton = DialogActionButton(title: "", backgroundColor: positiveButtonColor)
-        declineButton = DialogActionButton(title: "", backgroundColor: negativeButtonColor)
+        confirmButton = DialogActionButton(title: "", backgroundColor: confirmButtonColor)
+        dismissButton = DialogActionButton(title: "", backgroundColor: dismissButtonColor)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -41,18 +41,18 @@ class BottomDialog: UIViewController {
         titleLabel.text = titleText
         messageLabel.text = messageText
         
-        if let positiveText = positiveButtonText, !positiveText.isEmpty {
-                acceptButton.setTitle(positiveText, for: .normal)
-                acceptButton.backgroundColor = positiveButtonColor
+        if let confirmText = confirmButtonText, !confirmText.isEmpty {
+                confirmButton.setTitle(confirmText, for: .normal)
+                confirmButton.backgroundColor = confirmButtonColor
             } else {
-                acceptButton.isHidden = true
+                confirmButton.isHidden = true
             }
             
-            if let negativeText = negativeButtonText, !negativeText.isEmpty {
-                declineButton.setTitle(negativeText, for: .normal)
-                declineButton.backgroundColor = negativeButtonColor
+            if let dismissText = dismissButtonText, !dismissText.isEmpty {
+                dismissButton.setTitle(dismissText, for: .normal)
+                dismissButton.backgroundColor = dismissButtonColor
             } else {
-                declineButton.isHidden = true
+                dismissButton.isHidden = true
             }
         
         setupUI()
@@ -89,12 +89,12 @@ class BottomDialog: UIViewController {
         
         contentContainer.addSubview(titleLabel)
         contentContainer.addSubview(messageLabel)
-        contentContainer.addSubview(acceptButton)
-        contentContainer.addSubview(declineButton)
+        contentContainer.addSubview(confirmButton)
+        contentContainer.addSubview(dismissButton)
         contentView.addSubview(contentContainer)
         
-        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
-        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
+        confirmButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
+        dismissButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
     }
     
@@ -106,8 +106,8 @@ class BottomDialog: UIViewController {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        acceptButton.translatesAutoresizingMaskIntoConstraints = false
-        declineButton.translatesAutoresizingMaskIntoConstraints = false
+        confirmButton.translatesAutoresizingMaskIntoConstraints = false
+        dismissButton.translatesAutoresizingMaskIntoConstraints = false
         
         setContentViewConstraints()
         setImageContainerConstraints()
@@ -155,7 +155,7 @@ class BottomDialog: UIViewController {
     }
     
     private func setContentContainerConstraints() {
-        if acceptButton.isHidden && declineButton.isHidden {
+        if confirmButton.isHidden && dismissButton.isHidden {
             NSLayoutConstraint.activate([
                 contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
                 contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
@@ -192,7 +192,7 @@ class BottomDialog: UIViewController {
     }
     
     private func setMessageLabelConstraints() {
-        if acceptButton.isHidden && declineButton.isHidden {
+        if confirmButton.isHidden && dismissButton.isHidden {
             NSLayoutConstraint.activate([
                 messageLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: AppDimensions.Padding.small),
                 messageLabel.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
@@ -209,45 +209,45 @@ class BottomDialog: UIViewController {
     }
     
     private func setButtonConstraints() {
-        if !declineButton.isHidden && !acceptButton.isHidden {
+        if !dismissButton.isHidden && !confirmButton.isHidden {
             NSLayoutConstraint.activate([
-                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                dismissButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+                dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
                 
-                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+                confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                confirmButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+                confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
             ])
-        } else if !acceptButton.isHidden {
+        } else if !confirmButton.isHidden {
             NSLayoutConstraint.activate([
-                acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                acceptButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+                confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                confirmButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
             ])
-        } else if !declineButton.isHidden {
+        } else if !dismissButton.isHidden {
             NSLayoutConstraint.activate([
-                declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                declineButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                declineButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+                dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                dismissButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+                dismissButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
             ])
         }
     }
     
     @objc private func onAcceptButtonTapped() {
-        onPositiveButtonClick?()
+        onConfirmButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
     @objc private func onDeclineButtonTapped() {
-        onNegativeButtonClick?()
+        onDismissButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     

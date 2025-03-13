@@ -6,27 +6,36 @@ public protocol InAppNotificationProtocol {
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String?,
-        negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: @escaping () -> Void
     )
     
     func showBottomSheet(
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String?,
-        negativeButtonText: String?,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: @escaping () -> Void
     )
     
     func showFullScreenAlert(
         titleText: String,
         messageText: String,
         imageUrl: String,
-        positiveButtonText: String,
-        negativeButtonText: String,
-        onPositiveButtonClick: @escaping () -> Void
+        confirmButtonText: String,
+        dismissButtonText: String,
+        onConfirmButtonClick: @escaping () -> Void
+    )
+    
+    func showTopDialog(
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: @escaping () -> Void
     )
     
     func showSnackbar(

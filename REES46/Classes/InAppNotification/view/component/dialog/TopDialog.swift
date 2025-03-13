@@ -9,25 +9,25 @@ class TopDialog: UIViewController {
     private let closeButton = DialogButtonClose()
     private let titleLabel: DialogText
     private let messageLabel: DialogText
-    private let acceptButton: DialogActionButton
-    private let declineButton: DialogActionButton
+    private let confirmButton: DialogActionButton
+    private let dismissButton: DialogActionButton
     
     var titleText: String = ""
     var messageText: String = ""
     var imageUrl: String = ""
-    var positiveButtonText: String?
-    var negativeButtonText: String?
-    var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
-    var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
+    var confirmButtonText: String?
+    var dismissButtonText: String?
+    var confirmButtonColor: UIColor = AppColors.Background.buttonPositive
+    var dismissButtonColor: UIColor = AppColors.Background.buttonNegative
     
-    var onPositiveButtonClick: (() -> Void)?
-    var onNegativeButtonClick: (() -> Void)?
+    var onConfirmButtonClick: (() -> Void)?
+    var onDismissButtonClick: (() -> Void)?
     
     init() {
         titleLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.large, isBold: true)
         messageLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.medium)
-        acceptButton = DialogActionButton(title: "", backgroundColor: positiveButtonColor)
-        declineButton = DialogActionButton(title: "", backgroundColor: negativeButtonColor)
+        confirmButton = DialogActionButton(title: "", backgroundColor: confirmButtonColor)
+        dismissButton = DialogActionButton(title: "", backgroundColor: dismissButtonColor)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -42,18 +42,18 @@ class TopDialog: UIViewController {
         titleLabel.text = titleText
         messageLabel.text = messageText
         
-        if let positiveText = positiveButtonText, !positiveText.isEmpty {
-            acceptButton.setTitle(positiveText, for: .normal)
-            acceptButton.backgroundColor = positiveButtonColor
+        if let confirmText = confirmButtonText, !confirmText.isEmpty {
+            confirmButton.setTitle(confirmText, for: .normal)
+            confirmButton.backgroundColor = confirmButtonColor
         } else {
-            acceptButton.isHidden = true
+            confirmButton.isHidden = true
         }
         
-        if let negativeText = negativeButtonText, !negativeText.isEmpty {
-            declineButton.setTitle(negativeText, for: .normal)
-            declineButton.backgroundColor = negativeButtonColor
+        if let dismissText = dismissButtonText, !dismissText.isEmpty {
+            dismissButton.setTitle(dismissText, for: .normal)
+            dismissButton.backgroundColor = dismissButtonColor
         } else {
-            declineButton.isHidden = true
+            dismissButton.isHidden = true
         }
         
         setupUI()
@@ -66,7 +66,7 @@ class TopDialog: UIViewController {
         setupButtons()
         layoutUI()
         
-        if positiveButtonText == nil && negativeButtonText == nil {
+        if confirmButtonText == nil && dismissButtonText == nil {
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissDialog))
             tapGesture.cancelsTouchesInView = false
             view.addGestureRecognizer(tapGesture)
@@ -96,22 +96,22 @@ class TopDialog: UIViewController {
         contentContainer.addArrangedSubview(titleLabel)
         contentContainer.addArrangedSubview(messageLabel)
         
-        if !declineButton.isHidden && !acceptButton.isHidden {
-            let buttonStack = UIStackView(arrangedSubviews: [declineButton, acceptButton])
+        if !dismissButton.isHidden && !confirmButton.isHidden {
+            let buttonStack = UIStackView(arrangedSubviews: [dismissButton, confirmButton])
             buttonStack.axis = .horizontal
             buttonStack.spacing = AppDimensions.Padding.small
             buttonStack.alignment = .fill
             buttonStack.distribution = .fillEqually
             contentContainer.addArrangedSubview(buttonStack)
-        } else if !acceptButton.isHidden {
-            contentContainer.addArrangedSubview(acceptButton)
-        } else if !declineButton.isHidden {
-            contentContainer.addArrangedSubview(declineButton)
+        } else if !confirmButton.isHidden {
+            contentContainer.addArrangedSubview(confirmButton)
+        } else if !dismissButton.isHidden {
+            contentContainer.addArrangedSubview(dismissButton)
         }
         contentView.addSubview(contentContainer)
         
-        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
-        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
+        confirmButton.addTarget(self, action: #selector(onConfirmButtonTapped), for: .touchUpInside)
+        dismissButton.addTarget(self, action: #selector(onDismissButtonTapped), for: .touchUpInside)
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
     }
     
@@ -123,8 +123,8 @@ class TopDialog: UIViewController {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        acceptButton.translatesAutoresizingMaskIntoConstraints = false
-        declineButton.translatesAutoresizingMaskIntoConstraints = false
+        confirmButton.translatesAutoresizingMaskIntoConstraints = false
+        dismissButton.translatesAutoresizingMaskIntoConstraints = false
         
         setContentViewConstraints()
         setImageContainerConstraints()
@@ -189,13 +189,13 @@ class TopDialog: UIViewController {
         ])
     }
     
-    @objc private func onAcceptButtonTapped() {
-        onPositiveButtonClick?()
+    @objc private func onConfirmButtonTapped() {
+        onConfirmButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
-    @objc private func onDeclineButtonTapped() {
-        onNegativeButtonClick?()
+    @objc private func onDismissButtonTapped() {
+        onDismissButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
