@@ -1,7 +1,7 @@
 import UIKit
 
 extension BaseDialog {
-    func applyConstraints() {
+    func applyConstraints(buttonState: ButtonState) {
         setContentViewConstraints()
         setImageContainerConstraints()
         setBackgroundImageViewConstraints()
@@ -9,7 +9,7 @@ extension BaseDialog {
         setCloseButtonConstraints()
         setTitleLabelConstraints()
         setMessageLabelConstraints()
-        setButtonConstraints(buttonState: determineButtonState())
+        setButtonConstraints(buttonState: buttonState)
     }
     
     private func setImageContainerConstraints() {
@@ -102,18 +102,6 @@ extension BaseDialog {
                     confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
                     confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
                 ])
-        }
-    }
-    
-    private func determineButtonState() -> ButtonState {
-        if confirmButton.isHidden && dismissButton.isHidden {
-            return .noButtons
-        } else if confirmButton.isHidden {
-            return .onlyDecline
-        } else if dismissButton.isHidden {
-            return .onlyAccept
-        } else {
-            return .bothButtons
         }
     }
 }

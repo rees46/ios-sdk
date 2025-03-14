@@ -41,7 +41,6 @@ class BaseDialog: UIViewController {
         titleLabel.text = titleText
         messageLabel.text = messageText
         
-        
         if let confirmText = confirmButtonText, !confirmText.isEmpty {
             confirmButton.setTitle(confirmText, for: .normal)
             confirmButton.backgroundColor = confirmButtonColor
@@ -65,6 +64,7 @@ class BaseDialog: UIViewController {
         setupImageContainer()
         setupButtons()
         layoutUI()
+        addDismissTapGesture()
     }
     
     func setupContentView() {
@@ -96,6 +96,9 @@ class BaseDialog: UIViewController {
     }
     
     private func layoutUI() {
+        let state = determineButtonState()
+        applyConstraints(buttonState: state)
+        
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -105,10 +108,24 @@ class BaseDialog: UIViewController {
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         confirmButton.translatesAutoresizingMaskIntoConstraints = false
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        applyConstraints()
     }
     
+    private func determineButtonState() -> ButtonState {
+        if confirmButton.isHidden && dismissButton.isHidden {
+            return .noButtons
+        } else if confirmButton.isHidden {
+            return .onlyDecline
+        } else if dismissButton.isHidden {
+            return .onlyAccept
+        } else {
+            return .bothButtons
+        }
+    }
+    
+    private func addDismissTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissDialog))
+        view.addGestureRecognizer(tapGesture)
+    }
     
     internal func setContentViewConstraints() {
         fatalError("Must be overridden in subclass")
@@ -118,6 +135,10 @@ class BaseDialog: UIViewController {
         fatalError("Must be overridden in subclass")
     }
     
+    @objc internal func dismissDialog() {
+        dismiss(animated: true, completion: nil)
+    }
+    
     @objc func onConfirmButtonTapped() {
         onConfirmButtonClick?()
         dismiss(animated: true, completion: nil)
@@ -125,10 +146,6 @@ class BaseDialog: UIViewController {
     
     @objc func onDismissButtonTapped() {
         onDismissButtonClick?()
-        dismiss(animated: true, completion: nil)
-    }
-    
-    @objc func dismissDialog() {
-        dismiss(animated: true, completion: nil)
+        dismissDialog()
     }
 }

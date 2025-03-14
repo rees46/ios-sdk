@@ -30,4 +30,12 @@ class TopDialog: BaseDialog {
             contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
+    
+    @objc override func dismissDialog() {
+        UIView.animate(withDuration: AppDimensions.Animation.duration, animations: {
+            self.view.frame.origin.y = -self.view.frame.height
+        }, completion: { _ in
+            self.dismiss(animated: false, completion: nil)
+        })
+    }
 }
