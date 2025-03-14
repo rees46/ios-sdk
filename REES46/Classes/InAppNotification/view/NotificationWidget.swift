@@ -291,5 +291,4 @@ public class NotificationWidget: InAppNotificationProtocol {
             UIApplication.shared.open(appSettingsURL, options: [:], completionHandler: nil)
         }
     }
-    
 }
