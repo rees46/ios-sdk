@@ -60,11 +60,13 @@ class BaseDialog: UIViewController {
     }
     
     private func setupUI() {
+        let state = determineButtonState()
         setupContentView()
         setupImageContainer()
         setupButtons()
         layoutUI()
-        addDismissTapGesture()
+        applyConstraints(buttonState: state)
+        addDismissTapGesture(hasButtons: state.self == .noButtons)
     }
     
     func setupContentView() {
@@ -96,9 +98,6 @@ class BaseDialog: UIViewController {
     }
     
     private func layoutUI() {
-        let state = determineButtonState()
-        applyConstraints(buttonState: state)
-        
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
@@ -122,9 +121,11 @@ class BaseDialog: UIViewController {
         }
     }
     
-    private func addDismissTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissDialog))
-        view.addGestureRecognizer(tapGesture)
+    private func addDismissTapGesture(hasButtons: Bool) {
+        if(hasButtons) {
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissDialog))
+            view.addGestureRecognizer(tapGesture)
+        }
     }
     
     internal func setContentViewConstraints() {
