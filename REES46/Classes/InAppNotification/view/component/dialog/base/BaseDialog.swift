@@ -40,27 +40,14 @@ class BaseDialog: UIViewController {
         
         titleLabel.text = titleText
         messageLabel.text = messageText
-        
-        if let confirmText = confirmButtonText, !confirmText.isEmpty {
-            confirmButton.setTitle(confirmText, for: .normal)
-            confirmButton.backgroundColor = confirmButtonColor
-        } else {
-            confirmButton.isHidden = true
-        }
-        
-        if let dismissText = dismissButtonText, !dismissText.isEmpty {
-            dismissButton.setTitle(dismissText, for: .normal)
-            dismissButton.backgroundColor = dismissButtonColor
-        } else {
-            dismissButton.isHidden = true
-        }
-        
         setupUI()
         backgroundImageView.loadImage(from: imageUrl)
     }
     
     private func setupUI() {
         let state = determineButtonState()
+        
+        configureButtons(for: state)
         setupContentView()
         setupImageContainer()
         setupButtons()
@@ -118,6 +105,25 @@ class BaseDialog: UIViewController {
             return .onlyConfirm
         } else {
             return .bothButtons
+        }
+    }
+    
+    private func configureButtons(for state: ButtonState) {
+        switch state {
+            case .onlyConfirm:
+                confirmButton.setTitle(confirmButtonText, for: .normal)
+                confirmButton.backgroundColor = confirmButtonColor
+            case .onlyDismiss:
+                dismissButton.setTitle(dismissButtonText, for: .normal)
+                dismissButton.backgroundColor = dismissButtonColor
+            case .noButtons:
+                confirmButton.isHidden = true
+                dismissButton.isHidden = true
+            case .bothButtons:
+                confirmButton.setTitle(confirmButtonText, for: .normal)
+                confirmButton.backgroundColor = confirmButtonColor
+                dismissButton.setTitle(dismissButtonText, for: .normal)
+                dismissButton.backgroundColor = dismissButtonColor
         }
     }
     
