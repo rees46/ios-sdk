@@ -1,6 +1,6 @@
 enum ButtonState {
     case bothButtons
-    case onlyAccept
-    case onlyDecline
+    case onlyConfirm
+    case onlyDismiss
     case noButtons
 }

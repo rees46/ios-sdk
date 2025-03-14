@@ -71,7 +71,7 @@ extension BaseDialog {
                     messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
                 ])
                 
-            case .onlyAccept:
+            case .onlyConfirm:
                 NSLayoutConstraint.activate([
                     confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
                     confirmButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
@@ -80,7 +80,7 @@ extension BaseDialog {
                     confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
                 ])
                 
-            case .onlyDecline:
+            case .onlyDismiss:
                 NSLayoutConstraint.activate([
                     dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
                     dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),

@@ -113,9 +113,9 @@ class BaseDialog: UIViewController {
         if confirmButton.isHidden && dismissButton.isHidden {
             return .noButtons
         } else if confirmButton.isHidden {
-            return .onlyDecline
+            return .onlyDismiss
         } else if dismissButton.isHidden {
-            return .onlyAccept
+            return .onlyConfirm
         } else {
             return .bothButtons
         }
