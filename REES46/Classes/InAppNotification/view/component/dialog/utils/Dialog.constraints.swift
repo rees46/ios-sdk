@@ -1,9 +1,9 @@
 import UIKit
 
 extension BaseDialog {
-    func applyConstraints(buttonState: ButtonState) {
+    func applyConstraints(buttonState: ButtonState, isImageContainerHidden: Bool) {
         setContentViewConstraints()
-        setImageContainerConstraints()
+        setImageContainerConstraints(isHidden: isImageContainerHidden)
         setBackgroundImageViewConstraints()
         setContentContainerConstraints()
         setCloseButtonConstraints()
@@ -12,8 +12,8 @@ extension BaseDialog {
         setButtonConstraints(buttonState: buttonState)
     }
     
-    private func setImageContainerConstraints() {
-        if imageUrl.isEmpty {
+    private func setImageContainerConstraints(isHidden: Bool) {
+        if isHidden {
             NSLayoutConstraint.activate([
                 imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
                 imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),

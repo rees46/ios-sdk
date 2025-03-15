@@ -12,18 +12,15 @@ class BaseDialog: UIViewController {
     let confirmButton: DialogActionButton
     let dismissButton: DialogActionButton
     
-    var titleText: String = ""
-    var messageText: String = ""
-    var imageUrl: String = ""
-    var confirmButtonText: String?
-    var dismissButtonText: String?
+    let viewModel: DialogViewModel
+    
     var confirmButtonColor: UIColor = AppColors.Background.buttonPositive
     var dismissButtonColor: UIColor = AppColors.Background.buttonNegative
     
-    var onConfirmButtonClick: (() -> Void)?
-    var onDismissButtonClick: (() -> Void)?
-    
-    init() {
+    init(
+        viewModel: DialogViewModel
+    ) {
+        self.viewModel = viewModel
         titleLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.large, isBold: true)
         messageLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.medium)
         confirmButton = DialogActionButton(title: "", backgroundColor: confirmButtonColor)
@@ -37,23 +34,22 @@ class BaseDialog: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        titleLabel.text = titleText
-        messageLabel.text = messageText
+        titleLabel.text = viewModel.titleText
+        messageLabel.text = viewModel.messageText
         setupUI()
-        backgroundImageView.loadImage(from: imageUrl)
+        backgroundImageView.loadImage(from: viewModel.imageUrl)
     }
     
     private func setupUI() {
-        let state = determineButtonState()
+        let state = viewModel.determineButtonState()
         
         configureButtons(for: state)
         setupContentView()
         setupImageContainer()
         setupButtons()
         layoutUI()
-        applyConstraints(buttonState: state)
-        addDismissTapGesture(hasButtons: state.self == .noButtons)
+        applyConstraints(buttonState: state, isImageContainerHidden: viewModel.isImageContainerHidden)
+        addDismissTapGesture(hasButtons: viewModel.hasButtons)
     }
     
     func setupContentView() {
@@ -66,7 +62,7 @@ class BaseDialog: UIViewController {
         contentView.addSubview(imageContainer)
         imageContainer.addSubview(backgroundImageView)
         imageContainer.addSubview(closeButton)
-        imageContainer.isHidden = imageUrl.isEmpty
+        imageContainer.isHidden = viewModel.isImageContainerHidden
     }
     
     private func setupButtons() {
@@ -96,33 +92,24 @@ class BaseDialog: UIViewController {
         dismissButton.translatesAutoresizingMaskIntoConstraints = false
     }
     
-    private func determineButtonState() -> ButtonState {
-        if confirmButton.isHidden && dismissButton.isHidden {
-            return .noButtons
-        } else if confirmButton.isHidden {
-            return .onlyDismiss
-        } else if dismissButton.isHidden {
-            return .onlyConfirm
-        } else {
-            return .bothButtons
-        }
-    }
     
     private func configureButtons(for state: ButtonState) {
         switch state {
             case .onlyConfirm:
-                confirmButton.setTitle(confirmButtonText, for: .normal)
+                confirmButton.setTitle(viewModel.confirmButtonText, for: .normal)
                 confirmButton.backgroundColor = confirmButtonColor
+                dismissButton.isHidden = true
             case .onlyDismiss:
-                dismissButton.setTitle(dismissButtonText, for: .normal)
+                dismissButton.setTitle(viewModel.dismissButtonText, for: .normal)
                 dismissButton.backgroundColor = dismissButtonColor
+                confirmButton.isHidden = true
             case .noButtons:
                 confirmButton.isHidden = true
                 dismissButton.isHidden = true
             case .bothButtons:
-                confirmButton.setTitle(confirmButtonText, for: .normal)
+                confirmButton.setTitle(viewModel.confirmButtonText, for: .normal)
                 confirmButton.backgroundColor = confirmButtonColor
-                dismissButton.setTitle(dismissButtonText, for: .normal)
+                dismissButton.setTitle(viewModel.dismissButtonText, for: .normal)
                 dismissButton.backgroundColor = dismissButtonColor
         }
     }
@@ -147,12 +134,11 @@ class BaseDialog: UIViewController {
     }
     
     @objc func onConfirmButtonTapped() {
-        onConfirmButtonClick?()
+        viewModel.onConfirmButtonClick()
         dismiss(animated: true, completion: nil)
     }
     
     @objc func onDismissButtonTapped() {
-        onDismissButtonClick?()
         dismissDialog()
     }
 }
