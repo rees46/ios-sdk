@@ -18,6 +18,8 @@ public class DialogViewModel {
     private var hasConfirmButton: Bool { confirmButtonText != nil }
     private var hasDismissButton: Bool { dismissButtonText != nil }
     
+    var image: UIImage? = nil
+    
     init(
         titleText: String,
         messageText: String,
@@ -41,6 +43,19 @@ public class DialogViewModel {
             case (false, true): return .onlyDismiss
             case (true, false): return .onlyConfirm
             case (true, true): return .bothButtons
+        }
+    }
+    
+    func loadImage(onImageLoaded: @escaping (UIImage) -> Void) {
+        guard let url = URL(string: imageUrl) else { return }
+        
+        DefaultImageLoader().loadImage(from: url) { result in
+            switch result {
+                case .success(let image):
+                    onImageLoaded(image)
+                case .failure(let error):
+                    self.isImageContainerHidden = true
+            }
         }
     }
 }

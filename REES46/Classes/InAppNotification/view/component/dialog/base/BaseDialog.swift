@@ -37,7 +37,9 @@ class BaseDialog: UIViewController {
         titleLabel.text = viewModel.titleText
         messageLabel.text = viewModel.messageText
         setupUI()
-        backgroundImageView.loadImage(from: viewModel.imageUrl)
+        viewModel.loadImage(onImageLoaded: {image in
+            self.backgroundImageView.image = image
+        })
     }
     
     private func setupUI() {
