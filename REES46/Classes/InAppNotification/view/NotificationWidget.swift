@@ -56,67 +56,98 @@ public class NotificationWidget: InAppNotificationProtocol {
                     self?.handleConfirmButtonClick(link: confirmLink)
                 }
             }
-            
-            let viewModel = DialogViewModel(
-                titleText: title ?? baseTitle,
-                messageText: subTitle ?? baseSubTitle,
-                imageUrl: imageUrl ?? "",
-                confirmButtonText: confirmText,
-                dismissButtonText: buttonDismissText,
-                onConfirmButtonClick: confirmAction
-            )
-            
+
             switch position {
                 case .centered:
-                    showAlert(viewModel: viewModel)
+                    showAlert(
+                        titleText: title ?? baseTitle,
+                        messageText: subTitle ?? baseSubTitle,
+                        imageUrl: imageUrl ?? "",
+                        confirmButtonText: confirmText,
+                        dismissButtonText: buttonDismissText,
+                        onConfirmButtonClick: confirmAction
+                    )
                 case .bottom:
-                    showBottomDialog(viewModel: viewModel)
+                    showBottomDialog(
+                        titleText: title ?? baseTitle,
+                        messageText: subTitle ?? baseSubTitle,
+                        imageUrl: imageUrl ?? "",
+                        confirmButtonText: confirmText,
+                        dismissButtonText: buttonDismissText,
+                        onConfirmButtonClick: confirmAction
+                    )
                 case .top:
-                    showTopDialog(viewModel: viewModel)
+                    showTopDialog(
+                        titleText: title ?? baseTitle,
+                        messageText: subTitle ?? baseSubTitle,
+                        imageUrl: imageUrl ?? "",
+                        confirmButtonText: confirmText,
+                        dismissButtonText: buttonDismissText,
+                        onConfirmButtonClick: confirmAction
+                    )
             }
         }
     }
     
-    
-    public func showAlert(viewModel: DialogViewModel) {
+    public func showAlert(
+        titleText: String,
+        messageText: String,
+        imageUrl: String = "",
+        confirmButtonText: String? = nil,
+        dismissButtonText: String? = nil,
+        onConfirmButtonClick: (() -> Void)? = nil
+    ) {
+        let viewModel = DialogViewModel(
+            titleText: titleText,
+            messageText: messageText,
+            imageUrl: imageUrl,
+            confirmButtonText: confirmButtonText,
+            dismissButtonText: dismissButtonText,
+            onConfirmButtonClick: onConfirmButtonClick
+        )
         let dialog = AlertDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
-    public func showBottomDialog(viewModel: DialogViewModel) {
+    public func showBottomDialog(
+        titleText: String,
+        messageText: String,
+        imageUrl: String = "",
+        confirmButtonText: String? = nil,
+        dismissButtonText: String? = nil,
+        onConfirmButtonClick: (() -> Void)? = nil
+    ) {
+        let viewModel = DialogViewModel(
+            titleText: titleText,
+            messageText: messageText,
+            imageUrl: imageUrl,
+            confirmButtonText: confirmButtonText,
+            dismissButtonText: dismissButtonText,
+            onConfirmButtonClick: onConfirmButtonClick
+        )
         let dialog = BottomDialog(viewModel: viewModel)
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
-    public func showTopDialog(viewModel: DialogViewModel) {
-        let dialog = TopDialog(viewModel: viewModel)
-        dialog.modalPresentationStyle = .overFullScreen
-        parentViewController.present(dialog, animated: true, completion: nil)
-    }
-    
-    public func showFullScreenAlert(
+    public func showTopDialog(
         titleText: String,
         messageText: String,
-        imageUrl: String,
-        confirmButtonText: String,
-        dismissButtonText: String,
-        onConfirmButtonClick: @escaping () -> Void
+        imageUrl: String = "",
+        confirmButtonText: String? = nil,
+        dismissButtonText: String? = nil,
+        onConfirmButtonClick: (() -> Void)? = nil
     ) {
-        let dialog = FullScreenDialog()
-        dialog.titleText = titleText
-        dialog.messageText = messageText
-        dialog.imageUrl = imageUrl
-        dialog.confirmButtonText = confirmButtonText
-        dialog.dismissButtonText = dismissButtonText
-        dialog.onConfirmButtonClick = {
-            onConfirmButtonClick()
-            dialog.dismiss(animated: true)
-        }
-        dialog.onDismissButtonClick = {
-            dialog.dismiss(animated: true)
-        }
-        
+        let viewModel = DialogViewModel(
+            titleText: titleText,
+            messageText: messageText,
+            imageUrl: imageUrl,
+            confirmButtonText: confirmButtonText,
+            dismissButtonText: dismissButtonText,
+            onConfirmButtonClick: onConfirmButtonClick
+        )
+        let dialog = TopDialog(viewModel: viewModel)
+        dialog.modalPresentationStyle = .overFullScreen
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     

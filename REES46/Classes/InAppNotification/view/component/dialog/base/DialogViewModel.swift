@@ -13,7 +13,7 @@ public class DialogViewModel {
     var hasButtons: Bool {
         buttonState == .noButtons
     }
-    var onConfirmButtonClick: () -> Void
+    var onConfirmButtonClick: (() -> Void)?
     
     private var hasConfirmButton: Bool { confirmButtonText != nil }
     private var hasDismissButton: Bool { dismissButtonText != nil }
@@ -26,7 +26,7 @@ public class DialogViewModel {
         imageUrl: String,
         confirmButtonText: String?,
         dismissButtonText: String?,
-        onConfirmButtonClick: @escaping () -> Void
+        onConfirmButtonClick: (() -> Void)?
     ) {
         self.titleText = titleText
         self.messageText = messageText

@@ -2,26 +2,30 @@ import Foundation
 
 public protocol InAppNotificationProtocol {
     
-    func showAlert(viewModel: DialogViewModel)
-    
-    func showBottomDialog(viewModel: DialogViewModel)
-    
-    func showFullScreenAlert(
+    func showAlert(
         titleText: String,
         messageText: String,
         imageUrl: String,
-        confirmButtonText: String,
-        dismissButtonText: String,
-        onConfirmButtonClick: @escaping () -> Void
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: (() -> Void)?
     )
     
-    func showTopDialog(viewModel: DialogViewModel)
+    func showBottomDialog(
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: (() -> Void)?
+    )
     
-    func showSnackbar(
-        message: String,
-        buttonAcceptText: String,
-        buttonDeclineText: String,
-        buttonAcceptAction: @escaping () -> Void,
-        buttonDeclineAction: @escaping () -> Void
+    func showTopDialog(
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: (() -> Void)?
     )
 }

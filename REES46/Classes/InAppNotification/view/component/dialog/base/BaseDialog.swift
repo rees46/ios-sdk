@@ -136,7 +136,7 @@ class BaseDialog: UIViewController {
     }
     
     @objc func onConfirmButtonTapped() {
-        viewModel.onConfirmButtonClick()
+        viewModel.onConfirmButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
