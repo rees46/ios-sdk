@@ -41,19 +41,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         loadRecommendationsWidget()
         loadNewArrivalsWidget()
         setupInAppNotifcation()
-        setupInAppNotifcationActions()
     }
     
     func setupInAppNotifcation(){
         notificationWidget = NotificationWidget(parentViewController: self)
-    }
-    
-    func setupInAppNotifcationActions(){
-        showSnackBarButton.addTarget(
-            self,
-            action: #selector(didTapShowSnackBar),
-            for: .touchUpInside
-        )
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -143,19 +134,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
-    @objc private func didTapShowSnackBar() {
-        notificationWidget?.showSnackbar(
-            message: NSLocalizedString("alert_dialog_message", comment:  ""),
-            buttonAcceptText: NSLocalizedString("alert_dialog_button_accept", comment:  ""),
-            buttonDeclineText: NSLocalizedString("alert_dialog_button_decline", comment:  ""),
-            buttonAcceptAction: {
-                //TODO Handle click if needed
-            },
-            buttonDeclineAction: {
-                //TODO Handle click if needed
-            }
-        )
-    }
     
     @objc
     private func didTapMenu() {

@@ -4,6 +4,7 @@ public struct Popup: Codable {
     enum Position: String {
         case centered = "centered"
         case bottom = "fixed_bottom"
+        case top = "top"
     }
     
     let id: Int

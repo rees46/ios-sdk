@@ -44,4 +44,8 @@ public struct AppDimensions {
         static let topOffset: CGFloat = 7.0
         static let leftOffset: CGFloat = 7.0
     }
+    
+    struct Alpha {
+        static let background: CGFloat = 0.5
+    }
 }

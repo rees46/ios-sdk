@@ -1,6 +1,7 @@
+import Foundation
 import UIKit
 
-class AlertDialog: UIViewController {
+class FullScreenDialog: UIViewController {
     
     private let backgroundImageView = DialogImageVeiw()
     private let contentView = UIView()
@@ -9,25 +10,26 @@ class AlertDialog: UIViewController {
     private let closeButton = DialogButtonClose()
     private let titleLabel: DialogText
     private let messageLabel: DialogText
-    private let acceptButton: DialogActionButton
-    private let declineButton: DialogActionButton
+    private let confirmButton: DialogActionButton
+    private let dismissButton: DialogActionButton
+    private let spacerView = UIView()
     
     var titleText: String = ""
     var messageText: String = ""
     var imageUrl: String = ""
-    var positiveButtonText: String = ""
-    var negativeButtonText: String = ""
-    var positiveButtonColor: UIColor = AppColors.Background.buttonPositive
-    var negativeButtonColor: UIColor = AppColors.Background.buttonNegative
+    var confirmButtonText: String = ""
+    var dismissButtonText: String = ""
+    var confirmButtonColor: UIColor = AppColors.Background.buttonPositive
+    var dismissButtonColor: UIColor = AppColors.Background.buttonNegative
     
-    var onPositiveButtonClick: (() -> Void)?
-    var onNegativeButtonClick: (() -> Void)?
+    var onConfirmButtonClick: (() -> Void)?
+    var onDismissButtonClick: (() -> Void)?
     
     init() {
         titleLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.large, isBold: true)
         messageLabel = DialogText(text: "", fontSize: AppDimensions.FontSize.medium)
-        acceptButton = DialogActionButton(title: "", backgroundColor: positiveButtonColor)
-        declineButton = DialogActionButton(title: "", backgroundColor: negativeButtonColor)
+        confirmButton = DialogActionButton(title: "", backgroundColor: confirmButtonColor)
+        dismissButton = DialogActionButton(title: "", backgroundColor: dismissButtonColor)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -40,10 +42,10 @@ class AlertDialog: UIViewController {
         
         titleLabel.text = titleText
         messageLabel.text = messageText
-        acceptButton.setTitle(positiveButtonText, for: .normal)
-        declineButton.setTitle(negativeButtonText, for: .normal)
-        acceptButton.backgroundColor = positiveButtonColor
-        declineButton.backgroundColor = negativeButtonColor
+        confirmButton.setTitle(confirmButtonText, for: .normal)
+        dismissButton.setTitle(dismissButtonText, for: .normal)
+        confirmButton.backgroundColor = confirmButtonColor
+        dismissButton.backgroundColor = dismissButtonColor
         
         setupUI()
         backgroundImageView.loadImage(from: imageUrl)
@@ -59,8 +61,6 @@ class AlertDialog: UIViewController {
     
     private func setupContentView() {
         contentView.backgroundColor = AppColors.Background.contentView
-        contentView.layer.cornerRadius = AppDimensions.Padding.medium
-        contentView.clipsToBounds = true
         view.addSubview(contentView)
     }
     
@@ -72,17 +72,16 @@ class AlertDialog: UIViewController {
     
     private func setupButtons() {
         contentContainer.backgroundColor = AppColors.Background.contentView
-        contentContainer.layer.cornerRadius = AppDimensions.Padding.medium
-        contentContainer.clipsToBounds = true
         
         contentContainer.addSubview(titleLabel)
         contentContainer.addSubview(messageLabel)
-        contentContainer.addSubview(acceptButton)
-        contentContainer.addSubview(declineButton)
+        contentContainer.addSubview(spacerView)
+        contentContainer.addSubview(confirmButton)
+        contentContainer.addSubview(dismissButton)
         contentView.addSubview(contentContainer)
         
-        acceptButton.addTarget(self, action: #selector(onAcceptButtonTapped), for: .touchUpInside)
-        declineButton.addTarget(self, action: #selector(onDeclineButtonTapped), for: .touchUpInside)
+        confirmButton.addTarget(self, action: #selector(onConfirmButtonTapped), for: .touchUpInside)
+        dismissButton.addTarget(self, action: #selector(onDismissButtonTapped), for: .touchUpInside)
         closeButton.addTarget(self, action: #selector(dismissDialog), for: .touchUpInside)
     }
     
@@ -94,8 +93,9 @@ class AlertDialog: UIViewController {
         closeButton.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
-        acceptButton.translatesAutoresizingMaskIntoConstraints = false
-        declineButton.translatesAutoresizingMaskIntoConstraints = false
+        confirmButton.translatesAutoresizingMaskIntoConstraints = false
+        dismissButton.translatesAutoresizingMaskIntoConstraints = false
+        spacerView.translatesAutoresizingMaskIntoConstraints = false
         
         setContentViewConstraints()
         setImageContainerConstraints()
@@ -104,33 +104,26 @@ class AlertDialog: UIViewController {
         setCloseButtonConstraints()
         setTitleLabelConstraints()
         setMessageLabelConstraints()
+        setSpacerConstraints()
         setButtonConstraints()
     }
     
     private func setContentViewConstraints() {
         NSLayoutConstraint.activate([
-            contentView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: AppDimensions.Padding.large),
-            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -AppDimensions.Padding.large)
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentView.topAnchor.constraint(equalTo: view.topAnchor),
+            contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
     
     private func setImageContainerConstraints() {
-        if imageUrl.isEmpty {
-            NSLayoutConstraint.activate([
-                imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
-                imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                imageContainer.heightAnchor.constraint(equalToConstant: 0)
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
-                imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-                imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-                imageContainer.heightAnchor.constraint(equalToConstant: AppDimensions.Size.alertPopUpHeight)
-            ])
-        }
+        NSLayoutConstraint.activate([
+            imageContainer.topAnchor.constraint(equalTo: contentView.topAnchor),
+            imageContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            imageContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            imageContainer.heightAnchor.constraint(equalToConstant: AppDimensions.Size.fullScreenImageHeight)
+        ])
     }
     
     private func setBackgroundImageViewConstraints() {
@@ -144,11 +137,10 @@ class AlertDialog: UIViewController {
     
     private func setContentContainerConstraints() {
         NSLayoutConstraint.activate([
-            contentContainer.topAnchor.constraint(equalTo: imageContainer.isHidden ? contentView.topAnchor : imageContainer.bottomAnchor),
+            contentContainer.topAnchor.constraint(equalTo: imageContainer.bottomAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             contentContainer.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            contentContainer.heightAnchor.constraint(greaterThanOrEqualToConstant: AppDimensions.Size.alertPopUpHeight)
+            contentContainer.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
         ])
     }
     
@@ -177,30 +169,39 @@ class AlertDialog: UIViewController {
         ])
     }
     
-    private func setButtonConstraints() {
+    private func setSpacerConstraints() {
         NSLayoutConstraint.activate([
-            // Decline Button
-            declineButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-            declineButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-            declineButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            
-            // Accept Button
-            acceptButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-            acceptButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-            acceptButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-            acceptButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-            acceptButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            spacerView.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+            spacerView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor),
+            spacerView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor),
+            spacerView.bottomAnchor.constraint(equalTo: confirmButton.topAnchor),
+            spacerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 0)
         ])
     }
     
-    @objc private func onAcceptButtonTapped() {
-        onPositiveButtonClick?()
+    private func setButtonConstraints() {
+        NSLayoutConstraint.activate([
+            // Dismiss Button
+            dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+            dismissButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
+            dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+            dismissButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large),
+            
+            // Confirm Button
+            confirmButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
+            confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+            confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
+            confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.large)
+        ])
+    }
+    
+    @objc private func onConfirmButtonTapped() {
+        onConfirmButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
-    @objc private func onDeclineButtonTapped() {
-        onNegativeButtonClick?()
+    @objc private func onDismissButtonTapped() {
+        onDismissButtonClick?()
         dismiss(animated: true, completion: nil)
     }
     
