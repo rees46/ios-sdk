@@ -202,14 +202,18 @@ public class NotificationWidget: InAppNotificationProtocol {
     private func handleConfirmButtonClick(link: String?) {
         if let urlString = link, let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url, options: [:]) { success in
-                if success {
-                    print("Link opened: \(urlString)")
-                } else {
-                    print("Unable to open link: \(urlString)")
-                }
+                self.logLinkOpeningResult(success: success, urlString: urlString)
             }
         } else {
-            print("Link missing or invalid")
+            self.logLinkOpeningResult(success: false, urlString: link)
+        }
+    }
+
+    private func logLinkOpeningResult(success: Bool, urlString: String?) {
+        if success {
+            print("Link opened: \(urlString ?? "unknown")")
+        } else {
+            print("Unable to open link: \(urlString ?? "unknown")")
         }
     }
     
