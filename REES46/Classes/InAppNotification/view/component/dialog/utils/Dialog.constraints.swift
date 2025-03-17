@@ -65,43 +65,47 @@ extension BaseDialog {
     }
     
     private func setButtonConstraints(buttonState: ButtonState) {
-        switch buttonState {
-            case .noButtons:
-                NSLayoutConstraint.activate([
-                    messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-                ])
-                
-            case .onlyConfirm:
-                NSLayoutConstraint.activate([
-                    confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                    confirmButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                    confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                    confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                    confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-                ])
-                
-            case .onlyDismiss:
-                NSLayoutConstraint.activate([
-                    dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                    dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                    dismissButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                    dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                    dismissButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-                ])
-                
+        let buttonStackView = configureButtonStackView()
+        
+        confirmButton.isHidden = buttonState != .onlyConfirm && buttonState != .bothButtons
+        dismissButton.isHidden = buttonState != .onlyDismiss && buttonState != .bothButtons
+        
+        switch(buttonState) {
             case .bothButtons:
-                NSLayoutConstraint.activate([
-                    dismissButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                    dismissButton.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
-                    dismissButton.trailingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: -AppDimensions.Padding.small),
-                    dismissButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                    
-                    confirmButton.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
-                    confirmButton.leadingAnchor.constraint(equalTo: contentContainer.centerXAnchor, constant: AppDimensions.Padding.small),
-                    confirmButton.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
-                    confirmButton.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton),
-                    confirmButton.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
-                ])
+                buttonStackView.addArrangedSubview(dismissButton)
+                buttonStackView.addArrangedSubview(confirmButton)
+            case .onlyConfirm:
+                buttonStackView.addArrangedSubview(confirmButton)
+            case .onlyDismiss:
+                buttonStackView.addArrangedSubview(dismissButton)
+            case .noButtons:
+                break
         }
+        
+        contentContainer.addSubview(buttonStackView)
+        buttonStackView.translatesAutoresizingMaskIntoConstraints = false
+        
+        if buttonState != .noButtons {
+            NSLayoutConstraint.activate([
+                buttonStackView.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: AppDimensions.Padding.medium),
+                buttonStackView.leadingAnchor.constraint(equalTo: contentContainer.leadingAnchor, constant: AppDimensions.Padding.medium),
+                buttonStackView.trailingAnchor.constraint(equalTo: contentContainer.trailingAnchor, constant: -AppDimensions.Padding.medium),
+                buttonStackView.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium),
+                buttonStackView.heightAnchor.constraint(equalToConstant: AppDimensions.Height.popUpButton)
+            ])
+        }else {
+            NSLayoutConstraint.activate([
+                messageLabel.bottomAnchor.constraint(equalTo: contentContainer.bottomAnchor, constant: -AppDimensions.Padding.medium)
+            ])
+        }
+    }
+    
+    private func configureButtonStackView() -> UIStackView {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = AppDimensions.Padding.medium
+        stackView.alignment = .center
+        stackView.distribution = .fillEqually
+        return stackView
     }
 }
