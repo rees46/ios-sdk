@@ -4,13 +4,12 @@ class BottomDialog: BaseDialog {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        DialogStyle.applyBackgroundStyle(to: view)
     }
     
     override func setupContentView() {
         super.setupContentView()
-        contentView.layer.cornerRadius = AppDimensions.Padding.medium
-        contentView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        DialogStyle.applyBottomDialogStyle(to: contentView)
     }
     
     override func setContentContainerConstraints() {
