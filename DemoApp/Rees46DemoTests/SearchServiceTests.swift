@@ -1,5 +1,5 @@
 import XCTest
-@testable import REES46
+import REES46
 
 class SearchServiceImplTests: XCTestCase {
 
