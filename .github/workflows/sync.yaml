@@ -16,4 +16,10 @@ jobs:
     secrets:
       token: ${{ secrets.JADE_SMITH_BOT_TOKEN }}
     with:
+      repositoryOwner: personaclick
       targetRepository: personaclick/ios-sdk
+      sourceDirname: "REES46"
+      targetDirname: "PersonaClick"
+      syncIgnore: ".git,.idea,.github,.gitignore,Readme.md,DemoApp,REES46.podspec,version.properties"
+      replacementExtentions: ""
+      replacementContents: ""
