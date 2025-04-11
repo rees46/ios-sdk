@@ -14,8 +14,9 @@ jobs:
     uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@refactor/reusable-ios-synchronization
     permissions: write-all
     secrets:
-      token: ${{ secrets.JADE_SMITH_BOT_TOKEN }}
+      privateKey: ${{ secrets.PERSONACLICK_COURIER_SECRET }}
     with:
+      appId: ${{ vars.PERSONACLICK_COURIER_ID }}
       versionFilePath: version.properties
       repositoryOwner: personaclick
       targetRepository: personaclick/ios-sdk
