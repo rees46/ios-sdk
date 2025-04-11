@@ -16,6 +16,7 @@ jobs:
     secrets:
       token: ${{ secrets.JADE_SMITH_BOT_TOKEN }}
     with:
+      versionFilePath: version.properties
       repositoryOwner: personaclick
       targetRepository: personaclick/ios-sdk
       sourceDirname: "REES46"
