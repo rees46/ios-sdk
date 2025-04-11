@@ -21,5 +21,5 @@ jobs:
       sourceDirname: "REES46"
       targetDirname: "PersonaClick"
       syncIgnore: ".git,.idea,.github,.gitignore,Readme.md,DemoApp,REES46.podspec,version.properties"
-      replacementExtentions: ""
-      replacementContents: ""
+      replacementExtentions: "*.swift,*.podspec,*.xib,"
+      replacementContents: "https://api.rees46.com/|https://api.personaclick.com/,api.rees46.com|api.personaclick.com,rees46.com|personaclick.com,rees46|personaClick,REES46|PersonaClick,Rees46|PersonaClick"
