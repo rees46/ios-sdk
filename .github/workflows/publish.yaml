@@ -34,8 +34,8 @@ jobs:
   publish:
     # needs: release
     # TODO uncomment
-    uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@master
-    # uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@fix/ios-publish
+    # uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@master
+    uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@fix/ios-publish
     permissions: write-all
     with:
       appId: ${{ vars.PUBLIVERSIONER_ID }}
