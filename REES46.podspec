@@ -32,7 +32,7 @@ Pod::Spec.new do |s|
 
   s.screenshots = ['https://rees46.com/static-images/cocoapods/r46_ios_sdk_cocoapods_cover.png']
 
-  s.source           = { :git => "https://github.com/rees46/ios-sdk.git", :branch => 'master' }
+  s.source           = { :git => "https://github.com/rees46/ios-sdk.git", :branch => "master" }
 
   s.ios.deployment_target = '12.0'
 
