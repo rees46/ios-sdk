@@ -1,17 +1,17 @@
 name: Sync repositories
 
 on:
-  workflow_run:
-    workflows:
-      - "Bump version, create release and publish"
+  pull_request:
     types:
-      - completed
+      - closed
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
   run:
-    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
-    uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@refactor/reusable-ios-synchronization
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@master
     permissions: write-all
     secrets:
       privateKey: ${{ secrets.PERSONACLICK_COURIER_SECRET }}
