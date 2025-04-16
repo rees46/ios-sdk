@@ -108,13 +108,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.userSeance = response.seance
                     self.deviceId = response.deviceId
                     
-                    if let popup = response.popup {
+                    if let popup = response.popup, let parentViewController {
                         DispatchQueue.main.async {
-                            guard let parentVC = parentViewController else {
-                                fatalError("parentViewController must not be nil")
-                            }
                             self.notificationWidget = NotificationWidget(
-                                parentViewController: parentVC,
+                                parentViewController: parentViewController,
                                 popup: popup
                             )
                         }
