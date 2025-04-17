@@ -104,18 +104,16 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     validator.validate(email: email, phone: phone) { result in
         switch result {
           case .success(let validated):
-              params.merge(validated) { _, new in new }
-
+            params.merge(validated) { _, new in new }
+            self.handlePostRequest(
+              path: Constants.subscribeForProductPricePath,
+              params: params,
+              completion: completion
+            )
           case .failure(let error):
               self.handleValidationFailure(error: error, actionName: "subscribeForBackInStock", completion: completion)
         }
     }
-    
-    handlePostRequest(
-      path: Constants.subscribeForProductPricePath,
-      params: params,
-      completion: completion
-    )
   }
   
   func subscribeForBackInStock(
@@ -144,7 +142,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     switch result {
         case .success(let validated):
             params.merge(validated) { _, new in new }
-            handlePostRequest(
+            self.handlePostRequest(
               path: Constants.subscribePath,
               params: params,
               completion: completion
@@ -248,17 +246,20 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
       return
     }
     
-    guard let email = email, isValid(email: email) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
-      return
+    validator.validate(email: email, phone: phone) { result in
+        switch result {
+            case .success(let validated):
+              params.merge(validated) { _, new in new }
+              self.handlePostRequest(
+                  path: Constants.manageSubscriptionPath,
+                  params: params,
+                  completion: completion
+              )
+            case .failure(let error):
+              self.handleValidationFailure(error: error, actionName: "manageSubscription", completion: completion)
+        }
     }
-    guard let phone = phone, isValid(phone: phone) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
-      return
-    }
-    
-    params[Constants.email] = email
-    params[Constants.phone] = phone
+
     
     if let userExternalId          = userExternalId             { params[Constants.externalId]                 = userExternalId }
     if let userLoyaltyId           = userLoyaltyId              { params[Constants.loyaltyId]                  = userLoyaltyId }
@@ -275,12 +276,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     if let mobilePushBulk          = mobilePushBulk             { params[Constants.mobilePushBulk]            = mobilePushBulk }
     if let mobilePushChain         = mobilePushChain            { params[Constants.mobilePushChain]           = mobilePushChain }
     if let mobilePushTransactional = mobilePushTransactional    { params[Constants.mobilePushTransactional]   = mobilePushTransactional }
-    
-    handlePostRequest(
-      path: Constants.manageSubscriptionPath,
-      params: params,
-      completion: completion
-    )
+
   }
     
     private func handleValidationFailure(

@@ -37,6 +37,7 @@
 		D0B99F9F2DB169D80012E4F0 /* UnsubscribeBackInStockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99F9E2DB169D30012E4F0 /* UnsubscribeBackInStockTests.swift */; };
 		D0B99FA32DB16C960012E4F0 /* SubscribeForPriceDropTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDropTests.swift */; };
 		D0B99FA52DB16D290012E4F0 /* UnsubscribePriceDropTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDropTests.swift */; };
+		D0B99FA72DB172940012E4F0 /* ManageSubscriptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA62DB1728D0012E4F0 /* ManageSubscriptionTests.swift */; };
 		D589BD74A3C4A24BF7BCCD2C /* Pods_REES46Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B57812A2700376CF0EC5D913 /* Pods_REES46Tests.framework */; };
 		E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */; };
 		E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */; };
@@ -130,6 +131,7 @@
 		D0B99F9E2DB169D30012E4F0 /* UnsubscribeBackInStockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribeBackInStockTests.swift; sourceTree = "<group>"; };
 		D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDropTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeForPriceDropTests.swift; sourceTree = "<group>"; };
 		D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDropTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribePriceDropTests.swift; sourceTree = "<group>"; };
+		D0B99FA62DB1728D0012E4F0 /* ManageSubscriptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscriptionTests.swift; sourceTree = "<group>"; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
@@ -350,6 +352,7 @@
 		D0B99FA02DB16C5A0012E4F0 /* subscribeTests */ = {
 			isa = PBXGroup;
 			children = (
+				D0B99FA62DB1728D0012E4F0 /* ManageSubscriptionTests.swift */,
 				D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDropTests.swift */,
 				D0B99F832DB106640012E4F0 /* SubscribeForBackInStockTests.swift */,
 			);
@@ -649,6 +652,7 @@
 				D0B99F842DB106710012E4F0 /* SubscribeForBackInStockTests.swift in Sources */,
 				D0B99FA32DB16C960012E4F0 /* SubscribeForPriceDropTests.swift in Sources */,
 				D0B99FA52DB16D290012E4F0 /* UnsubscribePriceDropTests.swift in Sources */,
+				D0B99FA72DB172940012E4F0 /* ManageSubscriptionTests.swift in Sources */,
 				75E237902C334AA800119197 /* SdkTest.swift in Sources */,
 				D0B70C172D522DAF0001782A /* SearchServiceTests.swift in Sources */,
 				D0B99F9F2DB169D80012E4F0 /* UnsubscribeBackInStockTests.swift in Sources */,
