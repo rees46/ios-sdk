@@ -5,7 +5,7 @@ class SubscribeForPriceDropTests: XCTestCase {
     
     private let testShopId = "357382bf66ac0ce2f1722677c59511"
     private let testItemId = "486"
-    private let testEmail = "testsubscriptionprice@mail.ru"
+    private let testEmail = "ga@rees46.ru"
     private let testPhone = "+79966999666"
     private let testCurrentPrice = 170.0
     private let testItemIds = ["486"]
