@@ -29,5 +29,5 @@ jobs:
       targetDirname: "PersonaClick"
       replacementFilenames: "REES46|PersonaClick,REES|PersonaClick"
       syncIgnore: ".git,.idea,.github/workflows/sync.yaml,.gitignore,Readme.md,version.properties,xcodebuild.log"
-      replacementExtentions: "*.swift,*.podspec,*.xib,*.md,*.yaml,LICENSE,.xcscheme,Podfile"
+      replacementExtentions: "*.swift,*.podspec,*.xib,*.md,*.yaml,LICENSE,*.xcscheme,Podfile,*.storyboard,*.plist"
       replacementContents: "PUBLIVERSIONER_SECRET|PERSONACLICK_COURIER_SECRET,PUBLIVERSIONER_ID|PERSONACLICK_COURIER_ID,https://reference.api.rees46.com/#introduction|https://personaclick.atlassian.net/wiki/spaces/english/overview?mode=global,desk@rees46.com|success@personaclick.com,https://github.com/user-attachments/assets/f84f80c5-5884-42f5-92d5-65f2a4c30aee|https://github.com/user-attachments/assets/06eba2ec-d342-43a0-9ab5-bec6352490f0,https://api.rees46.com/|https://api.personaclick.com/,api.rees46.com|api.personaclick.com,rees46.com|personaclick.com,rees46|personaClick,REES46|PersonaClick,REES|PersonaClick,Rees46|PersonaClick"
