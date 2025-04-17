@@ -5,6 +5,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
   
   private var sdk: PersonalizationSDK?
   private var sessionQueue: SessionQueue
+  private let validator = ContactValidator()
   typealias RequesParams = [String: Any]
   
   init(sdk: PersonalizationSDK) {
@@ -84,29 +85,6 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     ]
   }
   
-  private func prepareUnsubscriptionParams(
-    itemIds: [String],
-    email: String?,
-    phone: String?,
-    additionalParams: RequesParams = [:]
-  ) -> RequesParams? {
-    guard var params = prepareBasicParams() else { return nil }
-    
-    params[Constants.itemIds] = itemIds
-    
-    if let email = email {
-      params[Constants.email] = email
-    }
-    if let phone = phone {
-      params[Constants.phone] = phone
-    }
-    
-    for (key, value) in additionalParams {
-      params[key] = value
-    }
-    
-    return params
-  }
   
   func subscribeForPriceDrop(
     id: String,
@@ -115,25 +93,23 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     phone: String? = nil,
     completion: @escaping (Result<Void, SdkError>) -> Void
   ) {
-    guard let params = prepareBasicParams() else {
+    guard var params = prepareBasicParams() else {
       completion(.failure(.custom(error: "subscribeForPriceDrop: SDK is not initialized")))
       return
     }
-    var updatedParams = params
     
-    updatedParams[Constants.itemId] = id
-    updatedParams[Constants.price] = currentPrice
+    params[Constants.itemId] = id
+    params[Constants.price] = currentPrice
     
-    guard let email = email, isValid(email: email) else {
-      completion(.failure(.custom(error: "subscribeForBackInStock: email is not valid")))
-      return
+    validator.validate(email: email, phone: phone) { result in
+        switch result {
+          case .success(let validated):
+              params.merge(validated) { _, new in new }
+
+          case .failure(let error):
+              self.handleValidationFailure(error: error, actionName: "subscribeForBackInStock", completion: completion)
+        }
     }
-    guard let phone = phone, isValid(phone: phone) else {
-      completion(.failure(.custom(error: "subscribeForBackInStock: phone number is not valid")))
-      return
-    }
-    updatedParams[Constants.email] = email
-    updatedParams[Constants.phone] = phone
     
     handlePostRequest(
       path: Constants.subscribeForProductPricePath,
@@ -151,13 +127,12 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     barcode: String? = nil,
     completion: @escaping (Result<Void, SdkError>) -> Void
   ) {
-    guard let params = prepareBasicParams() else {
+    guard var params = prepareBasicParams() else {
       completion(.failure(.custom(error: "subscribeForBackInStock: SDK is not initialized")))
       return
     }
     
-    var updatedParams = params
-    updatedParams[Constants.itemId] = id
+    params[Constants.itemId] = id
     
     var properties: [String: String] = [:]
     
@@ -165,98 +140,88 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     if let fashionColor = fashionColor { properties[Constants.fashionColor] = fashionColor }
     if let barcode = barcode { properties[Constants.barcode] = barcode }
     
-    if !properties.isEmpty {
-      updatedParams[Constants.properties] = try? JSONSerialization.data(withJSONObject: properties)
+    validator.validate(email: email, phone: phone) { result in
+    switch result {
+        case .success(let validated):
+            params.merge(validated) { _, new in new }
+            handlePostRequest(
+              path: Constants.subscribePath,
+              params: params,
+              completion: completion
+            )
+        case .failure(let error):
+            self.handleValidationFailure(error: error, actionName: "subscribeForBackInStock", completion: completion)
+        }
     }
-    guard let email = email, isValid(email: email) else {
-      completion(.failure(.custom(error: "subscribeForBackInStock: email is not valid")))
-      return
-    }
-    guard let phone = phone, isValid(phone: phone) else {
-      completion(.failure(.custom(error: "subscribeForBackInStock: phone number is not valid")))
-      return
-    }
-    updatedParams[Constants.email] = email
-    updatedParams[Constants.phone] = phone
-    
-    handlePostRequest(
-      path: Constants.subscribePath,
-      params: updatedParams,
-      completion: completion
-    )
   }
   
-  func unsubscribeForBackInStock(
-    itemIds: [String],
-    email: String? = nil,
-    phone: String? = nil,
-    completion: @escaping (Result<Void, SdkError>) -> Void
-  ) {
-    guard var params = prepareUnsubscriptionParams(itemIds: itemIds, email: email, phone: phone) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: SDK is not initialized")))
-      return
+    func unsubscribeForBackInStock(
+      itemIds: [String],
+      email: String? = nil,
+      phone: String? = nil,
+      completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+      guard var params = prepareBasicParams() else {
+        completion(.failure(.custom(error: "unsubscribeForBackInStock: SDK is not initialized")))
+        return
+      }
+
+      params[Constants.itemIds] = itemIds
+
+      validator.validate(email: email, phone: phone) { result in
+        switch result {
+        case .success(let validated):
+          params.merge(validated) { _, new in new }
+            
+          self.handlePostRequest(
+            path: Constants.unsubscribePath,
+            params: params,
+            completion: completion
+          )
+
+        case .failure(let error):
+          self.handleValidationFailure(error: error, actionName: "unsubscribeForBackInStock", completion: completion)
+        }
+      }
     }
-    
-    guard let email = email, isValid(email: email) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
-      return
-    }
-    guard let phone = phone, isValid(phone: phone) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
-      return
-    }
-    params[Constants.email] = email
-    params[Constants.phone] = phone
-    
-    handlePostRequest(
-      path: Constants.unsubscribePath,
-      params: params,
-      completion: completion
-    )
-  }
+
   
-  func unsubscribeForPriceDrop(
-    itemIds: [String],
-    currentPrice: Double,
-    email: String? = nil,
-    phone: String? = nil,
-    completion: @escaping (Result<Void, SdkError>) -> Void
-  ) {
-    var additionalParams: RequesParams = [
-      Constants.price: currentPrice
-    ]
-    
-    if let sdk = sdk {
-      additionalParams[Constants.seance] = sdk.userSeance
-      additionalParams[Constants.sid] = sdk.userSeance
-      additionalParams[Constants.segment] = sdk.segment
+    func unsubscribeForPriceDrop(
+      itemIds: [String],
+      currentPrice: Double,
+      email: String? = nil,
+      phone: String? = nil,
+      completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+      guard var params = prepareBasicParams() else {
+        completion(.failure(.custom(error: "unsubscribeForPriceDrop: SDK is not initialized")))
+        return
+      }
+
+      params[Constants.itemIds] = itemIds
+      params[Constants.price] = currentPrice
+
+      if let sdk = sdk {
+        params[Constants.seance] = sdk.userSeance
+        params[Constants.sid] = sdk.userSeance
+        params[Constants.segment] = sdk.segment
+      }
+
+      validator.validate(email: email, phone: phone) { result in
+        switch result {
+        case .success(let validated):
+          params.merge(validated) { _, new in new }
+          self.handlePostRequest(
+            path: Constants.unSubscribeForProductPricePath,
+            params: params,
+            completion: completion
+          )
+        case .failure(let error):
+          self.handleValidationFailure(error: error, actionName: "unsubscribeForPriceDrop", completion: completion)
+        }
+      }
     }
-    
-    guard let params = prepareUnsubscriptionParams(
-      itemIds: itemIds,
-      email: email,
-      phone: phone,
-      additionalParams: additionalParams
-    ) else {
-      completion(.failure(.custom(error: "unsubscribeForPriceDrop: SDK is not initialized")))
-      return
-    }
-    
-    guard let email = email, isValid(email: email) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: email is not valid")))
-      return
-    }
-    guard let phone = phone, isValid(phone: phone) else {
-      completion(.failure(.custom(error: "unsubscribeForBackInStock: phone number is not valid")))
-      return
-    }
-    
-    handlePostRequest(
-      path: Constants.unSubscribeForProductPricePath,
-      params: params,
-      completion: completion
-    )
-  }
+
   
   func manageSubscription(
     email: String? = nil,
@@ -317,5 +282,21 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
       completion: completion
     )
   }
+    
+    private func handleValidationFailure(
+      error: ValidationError,
+      actionName: String,
+      completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        let message: String
+        switch error {
+        case .invalidEmail:
+            message = "\(actionName): email is not valid"
+        case .invalidPhone:
+            message = "\(actionName): phone number is not valid"
+        }
+
+        completion(.failure(.custom(error: message)))
+    }
 }
 
