@@ -2,16 +2,20 @@ name: Sync repositories
 
 on:
   pull_request:
-    types:
-      - closed
-    branches:
-      - master
-  workflow_dispatch:
+  # TODO uncomment
+  # pull_request:
+  #   types:
+  #     - closed
+  #   branches:
+  #     - master
+  # workflow_dispatch:
 
 jobs:
   run:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@master
+    # TODO uncomment
+    # if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    # uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@master
+    uses: rees46/workflow/.github/workflows/reusable-ios-synchronization.yaml@refactor/ios-sync-workflow
     permissions: write-all
     secrets:
       privateKey: ${{ secrets.PERSONACLICK_COURIER_SECRET }}
