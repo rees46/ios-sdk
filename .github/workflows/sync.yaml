@@ -25,8 +25,7 @@ jobs:
       versionFilePath: version.properties
       repositoryOwner: personaclick
       targetRepository: personaclick/ios-sdk
-      sourceDirname: "REES46"
-      targetDirname: "PersonaClick"
+      replacementDirnames: "REES46|PersonaClick,REES|PersonaClick"
       replacementFilenames: "REES46|PersonaClick,REES|PersonaClick"
       syncIgnore: ".git,.idea,.github/workflows/sync.yaml,.gitignore,Readme.md,version.properties,xcodebuild.log"
       replacementExtentions: "*.swift,*.podspec,*.xib,*.md,*.yaml,LICENSE,*.xcscheme,Podfile,*.storyboard,*.plist"
