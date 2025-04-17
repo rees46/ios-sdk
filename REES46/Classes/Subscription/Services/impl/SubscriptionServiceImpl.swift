@@ -250,13 +250,9 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         switch result {
             case .success(let validated):
               params.merge(validated) { _, new in new }
-              self.handlePostRequest(
-                  path: Constants.manageSubscriptionPath,
-                  params: params,
-                  completion: completion
-              )
             case .failure(let error):
               self.handleValidationFailure(error: error, actionName: "manageSubscription", completion: completion)
+                return 
         }
     }
 
@@ -276,6 +272,12 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     if let mobilePushBulk          = mobilePushBulk             { params[Constants.mobilePushBulk]            = mobilePushBulk }
     if let mobilePushChain         = mobilePushChain            { params[Constants.mobilePushChain]           = mobilePushChain }
     if let mobilePushTransactional = mobilePushTransactional    { params[Constants.mobilePushTransactional]   = mobilePushTransactional }
+      
+    handlePostRequest(
+      path: Constants.manageSubscriptionPath,
+      params: params,
+      completion: completion
+    )
 
   }
     
