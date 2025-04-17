@@ -20,6 +20,7 @@ jobs:
     secrets:
       privateKey: ${{ secrets.PERSONACLICK_COURIER_SECRET }}
     with:
+      reviewerUsername: iwwwanow
       appId: ${{ vars.PERSONACLICK_COURIER_ID }}
       versionFilePath: version.properties
       repositoryOwner: personaclick
