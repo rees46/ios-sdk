@@ -4,16 +4,19 @@ import XCTest
 class UnsubscribePriceDropTests: XCTestCase {
     
     private let testShopId = "357382bf66ac0ce2f1722677c59511"
-    private let testItemId = "486"
-    private let testEmail = "ga@rees46.ru"
-    private let testPhone = "+79966999666"
-    private let testCurrentPrice = 170.0
     private let testItemIds = ["486"]
+    private let testCurrentPrice = 170.0
+    
+    private var testEmail: String!
+    private var testPhone: String!
     
     var sdk: PersonalizationSDK!
     
     override func setUp() {
         super.setUp()
+        testEmail = MockGenerator.generateEmail()
+        testPhone = MockGenerator.generatePhoneNumber()
+        
         sdk = createPersonalizationSDK(
             shopId: testShopId,
             apiDomain: "api.rees46.ru",
@@ -35,10 +38,10 @@ class UnsubscribePriceDropTests: XCTestCase {
             email: testEmail,
             completion: { result in
                 switch result {
-                case .success:
-                    print("Unsubscribe PriceDrop with email succeeded")
-                case .failure(let error):
-                    XCTFail("Unsubscribe PriceDrop with email failed: \(error.localizedDescription)")
+                    case .success:
+                        print("Unsubscribe PriceDrop with email succeeded")
+                    case .failure(let error):
+                        XCTFail("Unsubscribe PriceDrop with email failed: \(error.localizedDescription)")
                 }
                 expectation.fulfill()
             }
@@ -55,10 +58,10 @@ class UnsubscribePriceDropTests: XCTestCase {
             phone: testPhone,
             completion: { result in
                 switch result {
-                case .success:
-                    print("Unsubscribe PriceDrop with phone succeeded")
-                case .failure(let error):
-                    XCTFail("Unsubscribe PriceDrop with phone failed: \(error.localizedDescription)")
+                    case .success:
+                        print("Unsubscribe PriceDrop with phone succeeded")
+                    case .failure(let error):
+                        XCTFail("Unsubscribe PriceDrop with phone failed: \(error.localizedDescription)")
                 }
                 expectation.fulfill()
             }
@@ -76,10 +79,10 @@ class UnsubscribePriceDropTests: XCTestCase {
             phone: testPhone,
             completion: { result in
                 switch result {
-                case .success:
-                    print("Unsubscribe PriceDrop with email and phone succeeded")
-                case .failure(let error):
-                    XCTFail("Unsubscribe PriceDrop with email and phone failed: \(error.localizedDescription)")
+                    case .success:
+                        print("Unsubscribe PriceDrop with email and phone succeeded")
+                    case .failure(let error):
+                        XCTFail("Unsubscribe PriceDrop with email and phone failed: \(error.localizedDescription)")
                 }
                 expectation.fulfill()
             }
@@ -95,10 +98,10 @@ class UnsubscribePriceDropTests: XCTestCase {
             currentPrice: testCurrentPrice,
             completion: { result in
                 switch result {
-                case .success:
-                    print("Unubscribe with did succeeded")
-                case .failure(let error):
-                    XCTFail("Unubscribe with did failed: \(error.localizedDescription)")
+                    case .success:
+                        print("Unubscribe with did succeeded")
+                    case .failure(let error):
+                        XCTFail("Unubscribe with did failed: \(error.localizedDescription)")
                 }
                 expectation.fulfill()
             }
