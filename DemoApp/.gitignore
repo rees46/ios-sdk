@@ -1,3 +1,5 @@
 GoogleService-Info.plist
 .build
 build/ios
+/build
+/REES46.xcworkspace

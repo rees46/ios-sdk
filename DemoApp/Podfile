@@ -7,6 +7,7 @@ target 'REES46Demo' do
   pod 'Firebase'
   pod 'Firebase/Core'
   pod 'Firebase/Messaging'
+  pod 'Fakery'
   
   target 'REES46Tests' do
     inherit! :search_paths
