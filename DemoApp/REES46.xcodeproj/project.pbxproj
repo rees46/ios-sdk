@@ -32,6 +32,7 @@
 		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */; };
 		9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */; };
+		D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D005D80C2DB2CDE000841D78 /* MockGenerator.swift */; };
 		D0B70C172D522DAF0001782A /* SearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B70C162D522DAF0001782A /* SearchServiceTests.swift */; };
 		D0B99F842DB106710012E4F0 /* SubscribeForBackInStockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99F832DB106640012E4F0 /* SubscribeForBackInStockTests.swift */; };
 		D0B99F9F2DB169D80012E4F0 /* UnsubscribeBackInStockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99F9E2DB169D30012E4F0 /* UnsubscribeBackInStockTests.swift */; };
@@ -126,12 +127,13 @@
 		9E7FFE52FCE8111B44F38A5E /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
 		AAB9149EDCCCB4FF18DB87D6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
 		B57812A2700376CF0EC5D913 /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D005D80C2DB2CDE000841D78 /* MockGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGenerator.swift; sourceTree = "<group>"; };
 		D0B70C162D522DAF0001782A /* SearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchServiceTests.swift; sourceTree = "<group>"; };
 		D0B99F832DB106640012E4F0 /* SubscribeForBackInStockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeForBackInStockTests.swift; sourceTree = "<group>"; };
 		D0B99F9E2DB169D30012E4F0 /* UnsubscribeBackInStockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribeBackInStockTests.swift; sourceTree = "<group>"; };
 		D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDropTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeForPriceDropTests.swift; sourceTree = "<group>"; };
 		D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDropTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribePriceDropTests.swift; sourceTree = "<group>"; };
-		D0B99FA62DB1728D0012E4F0 /* ManageSubscriptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscriptionTests.swift; sourceTree = "<group>"; };
+		D0B99FA62DB1728D0012E4F0 /* ManageSubscriptionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscriptionTests.swift; sourceTree = "<group>"; wrapsLines = 0; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
@@ -300,6 +302,7 @@
 		75E2378C2C334A5300119197 /* sdk */ = {
 			isa = PBXGroup;
 			children = (
+				D005D80C2DB2CDE000841D78 /* MockGenerator.swift */,
 				D0B99FA12DB16C740012E4F0 /* unsubscribeTests */,
 				D0B99FA02DB16C5A0012E4F0 /* subscribeTests */,
 				D0B70C162D522DAF0001782A /* SearchServiceTests.swift */,
@@ -559,6 +562,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-REES46Demo/Pods-REES46Demo-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/Fakery/Fakery.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseCore/FirebaseCore.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseCoreInternal/FirebaseCoreInternal.framework",
 				"${BUILT_PRODUCTS_DIR}/FirebaseInstallations/FirebaseInstallations.framework",
@@ -571,6 +575,7 @@
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Fakery.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCore.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseCoreInternal.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FirebaseInstallations.framework",
@@ -658,6 +663,7 @@
 				D0B99F9F2DB169D80012E4F0 /* UnsubscribeBackInStockTests.swift in Sources */,
 				7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */,
 				75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */,
+				D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
