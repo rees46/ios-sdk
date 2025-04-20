@@ -1,0 +1,5 @@
+replacements:
+  - from: "https://api.rees46.com/"
+    to: "https://api.personaclick.com/"
+  - from: "rees46"
+    to: "personaClick"
