@@ -1,0 +1,38 @@
+name: Repository synchronization
+
+on:
+  pull_request
+  # TODO uncomment
+  # pull_request:
+  #   types:
+  #     - closed
+  #   branches:
+  #     - master
+  # workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      replacements: ${{ steps.getReplacementsStep.outputs.replacements }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read replacements from file
+        id: getReplacementsStep
+        run: |
+          REPLACEMENTS=$(yq eval -o=json '.replacements' .github/workflows/constants/replacements.yml | jq -c)
+          echo "$REPLACEMENTS"
+          echo "replacements=$REPLACEMENTS" >> $GITHUB_OUTPUT
+
+      # TODO uncomment
+      # if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+      # uses: rees46/workflow/.github/workflows/reusable-repo-sync.yml@master
+  repoSync:
+    needs: prepare
+    uses: rees46/workflow/.github/workflows/reusable-repo-sync.yml@refactor/ios-sync-workflow
+    secrets:
+      appSecret: ${{ secrets.PERSONACLICK_COURIER_SECRET }}
+    with:
+      appId: ${{ vars.PERSONACLICK_COURIER_ID }}
+      replacements: ${{ needs.prepare.outputs.replacements }}
