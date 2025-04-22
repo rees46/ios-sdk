@@ -1,14 +1,12 @@
 name: Repository synchronization
 
 on:
-  pull_request
-  # TODO uncomment
-  # pull_request:
-  #   types:
-  #     - closed
-  #   branches:
-  #     - master
-  # workflow_dispatch:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
+  workflow_dispatch:
 
 jobs:
   prepare:
@@ -25,12 +23,10 @@ jobs:
           echo "$REPLACEMENTS"
           echo "replacements=$REPLACEMENTS" >> $GITHUB_OUTPUT
 
-      # TODO uncomment
-      # if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-      # uses: rees46/workflow/.github/workflows/reusable-repo-sync.yml@master
   repoSync:
     needs: prepare
-    uses: rees46/workflow/.github/workflows/reusable-repo-sync.yml@refactor/ios-sync-workflow
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    uses: rees46/workflow/.github/workflows/reusable-repo-sync.yml@master
     secrets:
       appSecret: ${{ secrets.PERSONACLICK_COURIER_SECRET }}
     with:
