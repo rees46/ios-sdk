@@ -1,5 +1,27 @@
+deletions:
+  - .github/workflows/sync.yaml
+ignore:
+  - version.properties
 replacements:
-  - from: "https://api.rees46.com/"
-    to: "https://api.personaclick.com/"
+  - from: "PUBLIVERSIONER_SECRET"
+    to: "PERSONACLICK_COURIER_SECRET"
+  - from: "PUBLIVERSIONER_ID"
+    to: "PERSONACLICK_COURIER_ID"
+  - from: "https://reference.api.rees46.com/#introduction"
+    to: "https://personaclick.atlassian.net/wiki/spaces/english/overview?mode=global"
+  - from: "desk@rees46.com"
+    to: "success@personaclick.com"
+  - from: "https://github.com/user-attachments/assets/f84f80c5-5884-42f5-92d5-65f2a4c30aee"
+    to: "https://github.com/user-attachments/assets/06eba2ec-d342-43a0-9ab5-bec6352490f0"
+  - from: "api.rees46.com"
+    to: "api.personaclick.com"
+  - from: "rees46.com"
+    to: "personaclick.com"
   - from: "rees46"
     to: "personaClick"
+  - from: "REES46"
+    to: "PersonaClick"
+  - from: "REES"
+    to: "PersonaClick"
+  - from: "Rees46"
+    to: "PersonaClick"
