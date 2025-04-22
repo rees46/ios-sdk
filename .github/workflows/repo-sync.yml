@@ -21,7 +21,7 @@ jobs:
       - name: Read replacements from file
         id: getReplacementsStep
         run: |
-          REPLACEMENTS=$(yq eval -o=json '.replacements' .github/workflows/constants/replacements.yml | jq -c)
+          REPLACEMENTS=$(yq eval -o=json . .github/workflows/constants/replacements.yml | jq -c)
           echo "$REPLACEMENTS"
           echo "replacements=$REPLACEMENTS" >> $GITHUB_OUTPUT
 
@@ -36,3 +36,4 @@ jobs:
     with:
       appId: ${{ vars.PERSONACLICK_COURIER_ID }}
       replacements: ${{ needs.prepare.outputs.replacements }}
+      targetRepository: personaclick/ios-sdk
