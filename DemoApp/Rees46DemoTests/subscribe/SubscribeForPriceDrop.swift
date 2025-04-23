@@ -43,7 +43,7 @@ class SubscribeForPriceDrop: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testSubscribeForPriceDrop_withPhoneOnly() {
@@ -63,7 +63,7 @@ class SubscribeForPriceDrop: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testSubscribeForPriceDrop_withEmailAndPhone() {
@@ -84,7 +84,7 @@ class SubscribeForPriceDrop: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testSubscribeForPriceDrop_withoutContactInfo() {
@@ -103,6 +103,6 @@ class SubscribeForPriceDrop: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 }

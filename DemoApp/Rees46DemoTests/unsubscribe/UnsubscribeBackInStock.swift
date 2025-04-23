@@ -41,7 +41,7 @@ class UnsubscribeBackInStock: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testUnsubscribeBackInStock_withPhoneOnly() {
@@ -60,7 +60,7 @@ class UnsubscribeBackInStock: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 
     func testUnsubscribeBackInStock_withEmailAndPhone() {
@@ -80,7 +80,7 @@ class UnsubscribeBackInStock: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testUnsubscribeBackInStock_withoutContactInfo() {
@@ -98,6 +98,6 @@ class UnsubscribeBackInStock: XCTestCase {
                 expectation.fulfill()
             }
         )
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 }

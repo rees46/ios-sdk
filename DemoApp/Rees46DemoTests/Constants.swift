@@ -6,4 +6,5 @@ struct Constants {
     static let testCurrentPrice = 170.0
     static let testApiDomain = "api.rees46.ru"
     static let testItemId = "486"
+    static let defaultTimeout = 5.0
 }

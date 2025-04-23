@@ -42,7 +42,7 @@ class ManageSubscription: XCTestCase {
             }
         )
         
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testManageSubscription_withPhoneOnly() {
@@ -61,7 +61,7 @@ class ManageSubscription: XCTestCase {
             }
         )
         
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testManageSubscription_withEmailAndPhone() {
@@ -81,7 +81,7 @@ class ManageSubscription: XCTestCase {
             }
         )
         
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     func testManageSubscription_withoutContactInfo() {
@@ -99,6 +99,6 @@ class ManageSubscription: XCTestCase {
             }
         )
         
-        wait(for: [expectation], timeout: 5.0)
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 }
