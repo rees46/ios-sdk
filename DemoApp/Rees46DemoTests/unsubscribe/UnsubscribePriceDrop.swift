@@ -14,8 +14,8 @@ class UnsubscribePriceDrop: XCTestCase {
         testPhone = MockGenerator.generatePhoneNumber()
         
         sdk = createPersonalizationSDK(
-            shopId: testShopId,
-            apiDomain: "api.rees46.ru",
+            shopId: Constants.testShopId,
+            apiDomain: Constants.testApiDomain,
             enableLogs: true
         )
     }
@@ -29,8 +29,8 @@ class UnsubscribePriceDrop: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe PriceDrop with email")
         
         sdk.unsubscribeForPriceDrop(
-            itemIds: testItemIds,
-            currentPrice: testCurrentPrice,
+            itemIds: Constants.testItemIds,
+            currentPrice: Constants.testCurrentPrice,
             email: testEmail,
             completion: { result in
                 switch result {
@@ -49,8 +49,8 @@ class UnsubscribePriceDrop: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe PriceDrop with phone")
         
         sdk.unsubscribeForPriceDrop(
-            itemIds: testItemIds,
-            currentPrice: testCurrentPrice,
+            itemIds: Constants.testItemIds,
+            currentPrice: Constants.testCurrentPrice,
             phone: testPhone,
             completion: { result in
                 switch result {
@@ -69,8 +69,8 @@ class UnsubscribePriceDrop: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe PriceDrop with email and phone")
         
         sdk.unsubscribeForPriceDrop(
-            itemIds: testItemIds,
-            currentPrice: testCurrentPrice,
+            itemIds: Constants.testItemIds,
+            currentPrice: Constants.testCurrentPrice,
             email: testEmail,
             phone: testPhone,
             completion: { result in
@@ -90,8 +90,8 @@ class UnsubscribePriceDrop: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe PriceDrop without contact info")
         
         sdk.unsubscribeForPriceDrop(
-            itemIds: testItemIds,
-            currentPrice: testCurrentPrice,
+            itemIds: Constants.testItemIds,
+            currentPrice: Constants.testCurrentPrice,
             completion: { result in
                 switch result {
                     case .success:

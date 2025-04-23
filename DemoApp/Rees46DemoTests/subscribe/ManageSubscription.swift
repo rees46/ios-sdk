@@ -15,8 +15,8 @@ class ManageSubscription: XCTestCase {
         testPhone = MockGenerator.generatePhoneNumber()
         
         sdk = createPersonalizationSDK(
-            shopId: testShopId,
-            apiDomain: "api.rees46.ru",
+            shopId: Constants.testShopId,
+            apiDomain: Constants.testApiDomain,
             enableLogs: true
         )
     }
@@ -30,7 +30,7 @@ class ManageSubscription: XCTestCase {
         let expectation = XCTestExpectation(description: "Manage subscription with email only")
         
         self.sdk.manageSubscription(
-            email: "asdss@mail.ru",
+            email: testEmail,
             completion: { result in
                 switch result {
                     case .success:
@@ -49,7 +49,7 @@ class ManageSubscription: XCTestCase {
         let expectation = XCTestExpectation(description: "Manage subscription with phone only")
         
         self.sdk.manageSubscription(
-            phone: "+79966996666",
+            phone: testPhone,
             completion: { result in
                 switch result {
                     case .success:
@@ -68,8 +68,8 @@ class ManageSubscription: XCTestCase {
         let expectation = XCTestExpectation(description: "Manage subscription with email and phone")
         
         self.sdk.manageSubscription(
-            email: "asdasdadsad@mail.ru",
-            phone: "+79999999999",
+            email: testEmail,
+            phone: testPhone,
             completion: { result in
                 switch result {
                 case .success:

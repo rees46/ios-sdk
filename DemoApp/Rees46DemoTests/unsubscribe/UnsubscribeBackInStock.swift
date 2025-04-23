@@ -14,8 +14,8 @@ class UnsubscribeBackInStock: XCTestCase {
         testPhone = MockGenerator.generatePhoneNumber()
         
         sdk = createPersonalizationSDK(
-            shopId: testShopId,
-            apiDomain: "api.rees46.ru",
+            shopId: Constants.testShopId,
+            apiDomain: Constants.testApiDomain,
             enableLogs: true
         )
     }
@@ -29,7 +29,7 @@ class UnsubscribeBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe with email only")
         
         sdk.unsubscribeForBackInStock(
-            itemIds: testItemIds,
+            itemIds: Constants.testItemIds,
             email: testEmail,
             completion: { result in
                 switch result {
@@ -48,7 +48,7 @@ class UnsubscribeBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe with phone only")
         
         sdk.unsubscribeForBackInStock(
-            itemIds: testItemIds,
+            itemIds: Constants.testItemIds,
             phone: testPhone,
             completion: { result in
                 switch result {
@@ -67,7 +67,7 @@ class UnsubscribeBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe with email and phone")
         
         sdk.unsubscribeForBackInStock(
-            itemIds: testItemIds,
+            itemIds: Constants.testItemIds,
             email: testEmail,
             phone: testPhone,
             completion: { result in
@@ -87,7 +87,7 @@ class UnsubscribeBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe without contact info")
         
         sdk.unsubscribeForBackInStock(
-            itemIds: testItemIds,
+            itemIds: Constants.testItemIds,
             completion: { result in
                 switch result {
                     case .success:

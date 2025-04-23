@@ -14,8 +14,8 @@ class SubscribeForBackInStock: XCTestCase {
         testPhone = MockGenerator.generatePhoneNumber()
         
         sdk = createPersonalizationSDK(
-            shopId: testShopId,
-            apiDomain: "api.rees46.ru",
+            shopId: Constants.testShopId,
+            apiDomain: Constants.testApiDomain,
             enableLogs: true
         )
     }
@@ -29,7 +29,7 @@ class SubscribeForBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Subscribe with email only")
         
         sdk.subscribeForBackInStock(
-            id: testItemId,
+            id: Constants.testItemId,
             email: testEmail,
             completion: { result in
                 switch result {
@@ -48,7 +48,7 @@ class SubscribeForBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Subscribe with phone only")
         
         sdk.subscribeForBackInStock(
-            id: testItemId,
+            id: Constants.testItemId,
             phone: testPhone,
             completion: { result in
                 switch result {
@@ -67,7 +67,7 @@ class SubscribeForBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Subscribe with email and phone")
         
         sdk.subscribeForBackInStock(
-            id: testItemId,
+            id: Constants.testItemId,
             email: testEmail,
             phone: testPhone,
             completion: { result in
@@ -87,7 +87,7 @@ class SubscribeForBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Subscribe without contact info")
         
         sdk.subscribeForBackInStock(
-            id: testItemId,
+            id: Constants.testItemId,
             completion: { result in
                 switch result {
                     case .success:
