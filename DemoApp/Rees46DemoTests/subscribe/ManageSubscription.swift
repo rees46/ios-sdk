@@ -1,9 +1,7 @@
 import XCTest
 @testable import REES46
 
-class ManageSubscriptionTests: XCTestCase {
-    
-    private let testShopId = "357382bf66ac0ce2f1722677c59511"
+class ManageSubscription: XCTestCase {
     
     private var testEmail: String!
     private var testPhone: String!

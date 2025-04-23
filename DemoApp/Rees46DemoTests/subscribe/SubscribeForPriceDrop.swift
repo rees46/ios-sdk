@@ -2,11 +2,7 @@ import XCTest
 import Fakery
 @testable import REES46
 
-class SubscribeForPriceDropTests: XCTestCase {
-    
-    private let testShopId = "357382bf66ac0ce2f1722677c59511"
-    private let testItemId = "486"
-    private let testCurrentPrice = 170.0
+class SubscribeForPriceDrop: XCTestCase {
     
     private var testEmail: String!
     private var testPhone: String!

@@ -1,10 +1,7 @@
 import XCTest
 @testable import REES46
 
-class UnsubscribeBackInStockTests: XCTestCase {
-    
-    private let testShopId = "357382bf66ac0ce2f1722677c59511"
-    private let testItemIds = ["486"]
+class UnsubscribeBackInStock: XCTestCase {
     
     private var testEmail: String!
     private var testPhone: String!
