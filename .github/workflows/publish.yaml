@@ -1,4 +1,4 @@
-name: Bump version, create release and publish
+name: Publish to cocoapods
 
 on:
   pull_request:
@@ -6,34 +6,13 @@ on:
       - closed
     branches:
       - master
-    paths-ignore:
-      - ".github/**"
   workflow_dispatch:
 
 jobs:
-  version:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    uses: rees46/workflow/.github/workflows/reusable-ios-version.yaml@master
-    permissions: write-all
-    with:
-      podSpecFilePath: "REES46.podspec"
-      appId: ${{ vars.PUBLIVERSIONER_ID }}
-    secrets:
-      appSecret: ${{ secrets.PUBLIVERSIONER_SECRET }}
-
-  release:
-    needs: version
-    uses: rees46/workflow/.github/workflows/reusable-ios-release.yaml@master
-    permissions: write-all
-    with:
-      podSpecFilePath: "REES46.podspec"
-      appId: ${{ vars.PUBLIVERSIONER_ID }}
-    secrets:
-      appSecret: ${{ secrets.PUBLIVERSIONER_SECRET }}
-
-  publish:
+  cocoapods_publish:
     needs: release
-    uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@master
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/'))
+    uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@1cfee7e2e762eed3a3d7d67c413aa0bae7f5ffae
     permissions: write-all
     with:
       appId: ${{ vars.PUBLIVERSIONER_ID }}
