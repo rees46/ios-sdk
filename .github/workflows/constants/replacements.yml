@@ -17,6 +17,8 @@ replacements:
     to: "api.personaclick.com"
   - from: "rees46.com"
     to: "personaclick.com"
+  - from: "rees46.ru"
+    to: "personaclick.com"
   - from: "rees46"
     to: "personaClick"
   - from: "REES46"
