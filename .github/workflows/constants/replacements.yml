@@ -1,5 +1,6 @@
 deletions:
-  - .github/workflows/sync.yaml
+  - .github/workflows/repo-sync.yaml
+  - DemoApp
 ignore:
   - version.properties
 replacements:
@@ -14,6 +15,8 @@ replacements:
   - from: "https://github.com/user-attachments/assets/f84f80c5-5884-42f5-92d5-65f2a4c30aee"
     to: "https://github.com/user-attachments/assets/06eba2ec-d342-43a0-9ab5-bec6352490f0"
   - from: "api.rees46.com"
+    to: "api.personaclick.com"
+  - from: "api.rees46.ru"
     to: "api.personaclick.com"
   - from: "rees46.com"
     to: "personaclick.com"
