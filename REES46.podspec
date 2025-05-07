@@ -45,4 +45,3 @@ Pod::Spec.new do |s|
   s.swift_version = '5'
 
 end
-
