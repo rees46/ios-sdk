@@ -3,7 +3,7 @@ name: Bump version
 on:
   push:
     branches:
-      - debug
+      - master
     paths-ignore:
       - ".github/**"
       - "version.properties"
