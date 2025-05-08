@@ -1,5 +1,6 @@
 deletions:
   - .github/workflows/repo-sync.yml
+  - .github/workflows/checks.yaml
   - DemoApp
 ignore:
   - version.properties
