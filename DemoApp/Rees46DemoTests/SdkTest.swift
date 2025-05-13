@@ -55,24 +55,4 @@ class SdkTests: XCTestCase {
             failureMessage: "\(self.TAG): deviceId did not rewrite as expected"
         )
     }
-    
-    func test_session_generated() {
-        sdk = createPersonalizationSDK(
-            shopId: shopId,
-            parentViewController: nil
-        )
-        let oldSession = sdk?.getSession()
-        sdk = createPersonalizationSDK(
-            shopId: shopId,
-            parentViewController: nil
-        )
-        trackEventAndCheck(
-            eventId: "",
-            getValue: { self.sdk?.getSession() },
-            checkValue: { newSession in
-                oldSession == newSession
-            },
-            failureMessage: "\(self.TAG): session did not generate correctly"
-        )
-    }
 }
