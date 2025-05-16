@@ -14,7 +14,7 @@ jobs:
     uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@master
     permissions: write-all
     with:
-      appId: ${{ vars.PUBLIVERSIONER_ID }}
+      appId: ${{ vars.PUBLISHER_ID }}
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
-      appSecret: ${{ secrets.PUBLIVERSIONER_SECRET }}
+      appSecret: ${{ secrets.PUBLISHER_SECRET }}
