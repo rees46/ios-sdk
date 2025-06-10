@@ -279,6 +279,18 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             })
         }
     }
+    
+    private func showPopup(jsonResult: [String: Any] ) {
+        let popup = Popup(json: jsonResult["popup"] as? [String: Any] ?? [:])
+        if let parentViewController = self.parentViewController {
+            DispatchQueue.main.async {
+                self.notificationWidget = NotificationWidget(
+                    parentViewController: parentViewController,
+                    popup: popup
+                )
+            }
+        }
+    }
 }
 
 class TrackSourceServiceImpl: TrackSourceServiceProtocol {
