@@ -5,10 +5,14 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue
+    private let parentViewController: UIViewController?
+    private var notificationWidget: NotificationWidget?
     
-    init(sdk: PersonalizationSDK) {
+    init(sdk: PersonalizationSDK, parentViewController: UIViewController?) {
         self.sdk = sdk
         self.sessionQueue = sdk.sessionQueue
+        self.parentViewController = parentViewController
+    
     }
     
     private struct Constants {
