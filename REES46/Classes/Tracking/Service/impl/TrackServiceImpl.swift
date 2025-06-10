@@ -210,6 +210,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                         let resJSON = successResult
                         let status = resJSON[Constants.status] as? String ?? ""
                         if status == Constants.success {
+                            self.showPopup(jsonResult: resJSON)
                             completion(.success(Void()))
                         } else {
                             completion(.failure(.responseError))
@@ -273,6 +274,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     let resJSON = successResult
                     let status = resJSON[Constants.status] as? String ?? ""
                     if status == Constants.success {
+                        self.showPopup(jsonResult: resJSON)
                         completion(.success(Void()))
                     } else {
                         completion(.failure(.responseError))
