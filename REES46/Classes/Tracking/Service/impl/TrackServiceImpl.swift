@@ -5,10 +5,14 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue
+    private let parentViewController: UIViewController?
+    private var notificationWidget: NotificationWidget?
     
-    init(sdk: PersonalizationSDK) {
+    init(sdk: PersonalizationSDK, parentViewController: UIViewController?) {
         self.sdk = sdk
         self.sessionQueue = sdk.sessionQueue
+        self.parentViewController = parentViewController
+    
     }
     
     private struct Constants {
@@ -206,6 +210,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                         let resJSON = successResult
                         let status = resJSON[Constants.status] as? String ?? ""
                         if status == Constants.success {
+                            self.showPopup(jsonResult: resJSON)
                             completion(.success(Void()))
                         } else {
                             completion(.failure(.responseError))
@@ -269,6 +274,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     let resJSON = successResult
                     let status = resJSON[Constants.status] as? String ?? ""
                     if status == Constants.success {
+                        self.showPopup(jsonResult: resJSON)
                         completion(.success(Void()))
                     } else {
                         completion(.failure(.responseError))
@@ -277,6 +283,18 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     completion(.failure(error))
                 }
             })
+        }
+    }
+    
+    private func showPopup(jsonResult: [String: Any] ) {
+        let popup = Popup(json: jsonResult["popup"] as? [String: Any] ?? [:])
+        if let parentViewController = self.parentViewController {
+            DispatchQueue.main.async {
+                self.notificationWidget = NotificationWidget(
+                    parentViewController: parentViewController,
+                    popup: popup
+                )
+            }
         }
     }
 }
