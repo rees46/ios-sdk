@@ -279,11 +279,13 @@ public struct Category {
 }
 
 public struct Location {
-    public var id: String = ""
-    public var name: String = ""
+    public var id: String
+    public var name: String
+    public var type: String? = nil
 
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
         name = json["name"] as? String ?? ""
+        type = json["type"] as? String
     }
 }
