@@ -122,6 +122,7 @@ public struct Redirect {
 public struct SearchResponse {
     public var categories: [Category]
     public var products: [Product]
+    public var locations: [Location]?
     public var productsTotal: Int
     public var queries: [Query]
     public var filters: [String: Filter]?
@@ -172,6 +173,10 @@ public struct SearchResponse {
                 }
             }
             self.brands = brandsResult
+        }
+        
+        if let locationsJSON = json["locations"] as? [[String: Any]] {
+            self.locations = locationsJSON.map { Location(json: $0) }
         }
         
         if let industrialFiltersJSON = json["industrial_filters"] as? [String: Any] {
@@ -279,11 +284,13 @@ public struct Category {
 }
 
 public struct Location {
-    public var id: String = ""
-    public var name: String = ""
+    public var id: String
+    public var name: String
+    public var type: String? = nil
 
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
         name = json["name"] as? String ?? ""
+        type = json["type"] as? String
     }
 }
