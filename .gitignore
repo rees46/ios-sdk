@@ -9,6 +9,7 @@ Pods/*
 DemoApp/Pods/*
 DemoApp/Podfile.lock
 GoogleService-Info.plist
+node_modules
 
 /.index-build/x86_64-apple-macosx/debug/index/db/v13/p41336--8d9c1c/data.mdb
 /.index-build/x86_64-apple-macosx/debug/index/db/v13/p41336--8d9c1c/lock.mdb
