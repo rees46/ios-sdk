@@ -33,4 +33,4 @@ jobs:
       replacements: ${{ needs.prepare.outputs.replacements }}
       targetRepository: personaclick/ios-sdk
       repositoryOwner: personaclick
-      reviewerUsername: iwwwanow
+      reviewerUsername: torinasakura
