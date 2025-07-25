@@ -14,12 +14,12 @@ class UpdateAdvertisingIdUseCase {
                 return
             }
 
-            let profile = ProfileData(advertisingId: id) 
+            let profile = ProfileData(advertisingId: id.value)
 
             self.profileData.setProfileData(profileData: profile) { result in
                 switch result {
                 case .success:
-                    completion(.success(AdvertisingId(value: id)))
+                    completion(.success(id))
                 case .failure(let error):
                     completion(.failure(error))
                 }
