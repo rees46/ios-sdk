@@ -6,24 +6,34 @@ public final class IDFAAdapter: AdvertisingIdPort {
 
     public func getAdvertisingId(completion: @escaping (AdvertisingId?) -> Void) {
         if #available(iOS 14, *) {
-            ATTrackingManager.requestTrackingAuthorization { status in
-                guard status == .authorized else {
-                    completion(nil)
-                    return
+            DispatchQueue.main.async {
+                let status = ATTrackingManager.trackingAuthorizationStatus
+                switch status {
+                case .notDetermined:
+                    ATTrackingManager.requestTrackingAuthorization { newStatus in
+                        self.handleAuthorizationStatus(newStatus, completion: completion)
+                    }
+                default:
+                    self.handleAuthorizationStatus(status, completion: completion)
                 }
-
-                let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-                let isValid = idfa != NullIDFA
-                completion(isValid ? AdvertisingId(value: idfa) : nil)
             }
         } else {
             if ASIdentifierManager.shared().isAdvertisingTrackingEnabled {
                 let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-                let isValid = idfa != NullIDFA
-                completion(isValid ? AdvertisingId(value: idfa) : nil)
+                completion(idfa != NullIDFA ? AdvertisingId(value: idfa) : nil)
             } else {
                 completion(nil)
             }
         }
+    }
+
+    @available(iOS 14, *)
+    private func handleAuthorizationStatus(_ status: ATTrackingManager.AuthorizationStatus, completion: @escaping (AdvertisingId?) -> Void) {
+        guard status == .authorized else {
+            completion(nil)
+            return
+        }
+        let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+        completion(idfa != NullIDFA ? AdvertisingId(value: idfa) : nil)
     }
 }
