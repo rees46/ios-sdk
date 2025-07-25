@@ -130,7 +130,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             self.initSemaphore.wait()
         }
-        
+       
+        if ASIdentifierManager.shared().isAdvertisingTrackingEnabled {
+            let advId = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+            if advId != "00000000-0000-0000-0000-000000000000" {
+                self.setProfileData(advertisingId: advId) { result in
+                    switch result {
+                    case .success:
+                        #if DEBUG
+                        print("Advertising ID sent successfully: \(advId)")
+                        #endif
+                    case .failure(let error):
+                        #if DEBUG
+                        print("Failed to send Advertising ID: \(error.localizedDescription)")
+                        #endif
+                    }
+                }
+            } else {
+                #if DEBUG
+                print("Advertising ID is all-zero, likely restricted")
+                #endif
+            }
+        } else {
+            #if DEBUG
+            print("Advertising tracking is disabled")
+            #endif
+        }
+
         initializeNotificationRegistrar()
     }
     
