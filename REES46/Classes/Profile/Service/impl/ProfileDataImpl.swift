@@ -58,6 +58,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyCardLocation, value: profileData.loyaltyCardLocation)
         addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyId, value: profileData.userLoyaltyId)
         addIfNotNil(params: &params, key: ProfileDataConstants.loyaltyStatus, value: profileData.loyaltyStatus)
+        addIfNotNil(params: &params, key: ProfileDataConstants.advertisingId, value: profileData.advertisingId)
         addIfNotNil(params: &params, key: ProfileDataConstants.fbId, value: profileData.fbID)
         addIfNotNil(params: &params, key: ProfileDataConstants.vkId, value: profileData.vkID)
         addIfNotNil(params: &params, key: ProfileDataConstants.telegramId, value: profileData.telegramId)
