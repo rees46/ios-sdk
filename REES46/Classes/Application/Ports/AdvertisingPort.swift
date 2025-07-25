@@ -1,3 +1,3 @@
 public protocol AdvertisingIdPort {
-    func getAdvertisingId(completion: @escaping (String?) -> Void)
+    func getAdvertisingId(completion: @escaping (AdvertisingId?) -> Void)
 }

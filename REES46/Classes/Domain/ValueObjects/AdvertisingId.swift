@@ -1,3 +1,3 @@
-struct AdvertisingId {
+public struct AdvertisingId {
     let value: String
 }
