@@ -33,6 +33,7 @@ public protocol PersonalizationSDK {
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void)
     func getProductInfo(id: String, completion: @escaping(Result<ProductInfo, SdkError>) -> Void)
     func getDeviceId() -> String
+    func getNotificationWidget() -> NotificationWidget?
     func getSession() -> String
     func getCurrentSegment() -> String
     func getShopId() -> String

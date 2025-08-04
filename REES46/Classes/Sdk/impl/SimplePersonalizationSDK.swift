@@ -138,6 +138,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return deviceId
     }
     
+    func getNotificationWidget() -> NotificationWidget? {
+        return notificationWidget
+    }
+    
     func getSession() -> String {
         return userSeance
     }
