@@ -6,7 +6,6 @@ import AppTrackingTransparency
 public var global_EL: Bool = true
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-    
     private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
@@ -136,6 +135,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func getDeviceId() -> String {
         return deviceId
+    }
+    
+    func setParentViewController(controller: UIViewController, completion: @escaping () -> Void) {
+        self.parentViewController = controller
+        completion()
     }
     
     func getNotificationWidget() -> NotificationWidget? {
