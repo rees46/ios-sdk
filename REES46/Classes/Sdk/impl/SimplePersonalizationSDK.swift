@@ -66,6 +66,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return ProfileDataImpl(sdk: self, configProvider: self)
     }()
     
+    lazy var updateAdvertisingIdUseCase: UpdateAdvertisingIdUseCase = {
+        let advertisingIdAdapter = IDFAAdapter()
+        return UpdateAdvertisingIdUseCase(
+            advertisingIdPort: advertisingIdAdapter,
+            profileData: self.profileData
+        )
+    }()
+    
     init(
         shopId: String,
         userEmail: String? = nil,
@@ -130,7 +138,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             self.initSemaphore.wait()
         }
-        
+       
+        updateAdvertisingIdUseCase.execute { result in
+            switch result {
+            case .success(let advertisingId):
+                #if DEBUG
+                print("Advertising ID sent successfully: \(advertisingId.value)")
+                #endif
+            case .failure(let error):
+                #if DEBUG
+                print("Failed to send Advertising ID: \(error.localizedDescription)")
+                #endif
+            }
+        }
+
         initializeNotificationRegistrar()
     }
     
@@ -318,6 +339,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         lastName: String?,
         location: String?,
         gender: Gender?,
+        advertisingId: String?,
         fbID: String?,
         vkID: String?,
         telegramId: String?,
@@ -341,6 +363,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 lastName:lastName,
                 location:location,
                 gender:gender,
+                advertisingId:advertisingId,
                 fbID:fbID,
                 vkID:vkID,
                 telegramId:telegramId,

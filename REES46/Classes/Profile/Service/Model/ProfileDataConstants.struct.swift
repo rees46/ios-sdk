@@ -7,6 +7,7 @@ struct ProfileDataConstants{
     static let lastName = "last_name"
     static let phone = "phone"
     static let location = "location"
+    static let advertisingId = "apple_advertising_id"
     static let fbId = "fb_id"
     static let vkId = "vk_id"
     static let telegramId = "telegram_id"

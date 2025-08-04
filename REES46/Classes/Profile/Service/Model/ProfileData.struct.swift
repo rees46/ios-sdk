@@ -10,6 +10,7 @@ struct ProfileData {
     var lastName: String?
     var location: String?
     var gender: Gender?
+    var advertisingId: String?
     var fbID: String?
     var vkID: String?
     var telegramId: String?
