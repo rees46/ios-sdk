@@ -3,7 +3,7 @@ name: Check PR
 on:
   pull_request:
     paths-ignore:
-      - '.github/**'
+      - .github
 
 env:
   ACTIONS_IS_RUNNING: true
