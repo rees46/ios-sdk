@@ -317,6 +317,7 @@ public func createPersonalizationSDK(
     stream: String = "ios",
     enableLogs: Bool = false,
     autoSendPushToken: Bool = true,
+    sendAdvertisingId: Bool = false,
     parentViewController: UIViewController? = nil,
     needReInitialization: Bool = false,
     _ completion: ((SdkError?) -> Void)? = nil
@@ -330,6 +331,7 @@ public func createPersonalizationSDK(
         stream: stream,
         enableLogs: enableLogs,
         autoSendPushToken: autoSendPushToken,
+        sendAdvertisingId: sendAdvertisingId,
         parentViewController: parentViewController,
         needReInitialization: needReInitialization,
         completion: completion
