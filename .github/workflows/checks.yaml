@@ -3,13 +3,14 @@ name: Check PR
 on:
   pull_request:
     paths-ignore:
-      - '.github/**'
+      - .github
 
 env:
   ACTIONS_IS_RUNNING: true
 
 jobs:
   run:
+    if: ${{ !startsWith(github.ref_name, 'release') }}
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
     secrets:
