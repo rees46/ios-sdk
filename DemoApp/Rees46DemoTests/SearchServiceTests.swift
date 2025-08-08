@@ -5,13 +5,25 @@ class SearchServiceImplTests: XCTestCase {
 
     var sdk: PersonalizationSDK!
     
-    let shopId = "693ff081028570920fd8a6b971eb5e"
+    var shopId: String {
+        guard let value = ProcessInfo.processInfo.environment[Constants.testShopIdKey] else {
+            fatalError("Environment variable TEST_SHOP_ID is not set")
+        }
+        return value
+    }
+    
+    var apiDomain: String {
+        guard let value = ProcessInfo.processInfo.environment[Constants.testApiUrlKey] else {
+            fatalError("Environment variable TEST_API_URL is not set")
+        }
+        return value
+    }
 
     override func setUp() {
         super.setUp()
         sdk = createPersonalizationSDK(
             shopId: shopId,
-            apiDomain: "api-r46.halykmarket.kz",
+            apiDomain: apiDomain,
             parentViewController: nil
         )
     }
