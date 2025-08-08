@@ -10,6 +10,7 @@ env:
 
 jobs:
   run:
+    if: ${{ !startsWith(github.ref_name, 'release') }}
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
     secrets:
