@@ -114,16 +114,6 @@
             value = "https://mir-s3-cdn-cf.behance.net/projects/404/01d316151239201.Y3JvcCwzMzA0LDI1ODUsMzQzLDA.png"
             isEnabled = "YES">
          </EnvironmentVariable>
-         <EnvironmentVariable
-             key = "TEST_SHOP_ID"
-             value = ""
-             isEnabled = "YES">
-         </EnvironmentVariable>
-          <EnvironmentVariable
-             key = "TEST_API_URL"
-             value = ""
-             isEnabled = "YES">
-          </EnvironmentVariable>
       </EnvironmentVariables>
       <AdditionalOptions>
          <AdditionalOption
