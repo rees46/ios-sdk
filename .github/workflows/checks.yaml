@@ -7,6 +7,8 @@ on:
 
 env:
   ACTIONS_IS_RUNNING: true
+  TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
+  TEST_API_URL: ${{ secrets.TEST_API_URL }}
 
 jobs:
   run:
