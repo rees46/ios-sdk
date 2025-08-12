@@ -24,8 +24,8 @@ jobs:
         run: |
           echo "test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
           echo "test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          echo "test-shop-id=$(echo $SIMCTL_CHILD_TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          echo "test-api-url=$(echo $SIMCTL_CHILD_TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "simctl-test-shop-id=$(echo $SIMCTL_CHILD_TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "simctl-test-api-url=$(echo $SIMCTL_CHILD_TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
 
   run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
