@@ -11,8 +11,8 @@ jobs:
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
     with:
-      testShopId: ${{ inputs.TEST_SHOP_ID }}
-      testApiUrl: ${{ inputs.TEST_API_URL }}
+      testShopId: ${{ vars.TEST_SHOP_ID }}
+      testApiUrl: ${{ vars.TEST_API_URL }}
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
