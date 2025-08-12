@@ -5,9 +5,6 @@ on:
     paths-ignore:
       - .github
 
-env:
-  ACTIONS_IS_RUNNING: true
-
 jobs:
   run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
@@ -16,5 +13,5 @@ jobs:
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
-      testShopId: ${{ secrets.TEST_SHOP_ID }}
-      testApiUrl: ${{ secrets.TEST_API_URL }}
+      testShopId: ${{ secrets.TEST_SHOP_ID || '357382bf66ac0ce2f1722677c59511' }}
+      testApiUrl: ${{ secrets.TEST_API_URL || 'api.rees46.ru' }}
