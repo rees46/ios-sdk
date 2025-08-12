@@ -6,10 +6,10 @@ on:
       - .github
 
 env:
-  TEST_SHOP_ID: ${{ secrets.testShopId }}
-  TEST_API_URL: ${{ secrets.testApiUrl }}
-  SIMCTL_CHILD_TEST_SHOP_ID: ${{ inputs.testShopId }}
-  SIMCTL_CHILD_TEST_API_URL: ${{ inputs.testApiUrl }}
+  TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
+  TEST_API_URL: ${{ secrets.TEST_API_URL }}
+  SIMCTL_CHILD_TEST_SHOP_ID: ${{ vars.TEST_SHOP_ID }}
+  SIMCTL_CHILD_TEST_API_URL: ${{ vars.TEST_API_URL }}
 
 jobs:
   vars:
