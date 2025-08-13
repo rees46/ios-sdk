@@ -34,5 +34,5 @@ jobs:
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
-      testShopId: ${{ needs.vars.otuputs.simctl-test-shop-id }}
-      testApiUrl: ${{ needs.vars.otuputs.simctl-test-api-url }}
+      testShopId: ${{ needs.vars.outputs.simctl-test-shop-id }}
+      testApiUrl: ${{ needs.vars.outputs.simctl-test-api-url }}
