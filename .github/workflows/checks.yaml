@@ -3,15 +3,32 @@ name: Check PR
 on:
   pull_request:
     paths-ignore:
-      - '.github/**'
-
-env:
-  ACTIONS_IS_RUNNING: true
+      - .github
 
 jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      test-shop-id: ${{ steps.test.outputs.test-shop-id }}
+      test-api-url: ${{ steps.test.outputs.test-api-url }}
+    steps:
+      - name: Confirm variables set
+        id: test
+        env:
+          TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
+          TEST_API_URL: ${{ secrets.TEST_API_URL }}
+        run: |
+          echo "test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+
   run:
+    if: ${{ !startsWith(github.ref_name, 'release') }}
+    needs: vars
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
+      env_vars: |
+        TEST_RUNNER_TEST_SHOP_ID=${{ needs.vars.outputs.test-shop-id }}
+        TEST_RUNNER_TEST_API_URL=${{ needs.vars.outputs.test-api-url }}
