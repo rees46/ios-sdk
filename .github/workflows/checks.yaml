@@ -18,14 +18,8 @@ jobs:
           TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
           TEST_API_URL: ${{ secrets.TEST_API_URL }}
         run: |
-          echo "Raw TEST_SHOP_ID: $TEST_SHOP_ID"
-          echo "Raw TEST_API_URL: $TEST_API_URL"
-          
           echo "test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
           echo "test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          
-          echo "Encoded test-shop-id: $(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)"
-          echo "Encoded test-api-url: $(echo $TEST_API_URL | base64 -w0 | base64 -w0)"
 
   run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
