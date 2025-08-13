@@ -9,8 +9,8 @@ jobs:
   vars:
     runs-on: ubuntu-latest
     outputs:
-      runner-test-shop-id: ${{ steps.test.outputs.runner-test-shop-id }}
-      runner-test-api-url: ${{ steps.test.outputs.runner-test-api-url }}
+      test-shop-id: ${{ steps.test.outputs.test-shop-id }}
+      test-api-url: ${{ steps.test.outputs.test-api-url }}
     steps:
       - name: Confirm variables set
         id: test
@@ -18,8 +18,14 @@ jobs:
           TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
           TEST_API_URL: ${{ secrets.TEST_API_URL }}
         run: |
-          echo "runner-test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          echo "runner-test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "Raw TEST_SHOP_ID: $TEST_SHOP_ID"
+          echo "Raw TEST_API_URL: $TEST_API_URL"
+          
+          echo "test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          
+          echo "Encoded test-shop-id: $(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)"
+          echo "Encoded test-api-url: $(echo $TEST_API_URL | base64 -w0 | base64 -w0)"
 
   run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
@@ -30,5 +36,5 @@ jobs:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
       env_vars: |
-        TEST_RUNNER_TEST_SHOP_ID=${{ needs.vars.outputs.runner-test-shop-id }}
-        TEST_RUNNER_TEST_API_URL=${{ needs.vars.outputs.runner-test-api-url }}
+        TEST_RUNNER_TEST_SHOP_ID=${{ needs.vars.outputs.test-shop-id }}
+        TEST_RUNNER_TEST_API_URL=${{ needs.vars.outputs.test-api-url }}
