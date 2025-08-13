@@ -7,4 +7,7 @@ struct Constants {
     static let testApiDomain = "api.rees46.ru"
     static let testItemId = "486"
     static let defaultTimeout = 5.0
+    
+    static let testShopIdKey = "TEST_SHOP_ID"
+    static let testApiUrlKey = "TEST_API_URL"
 }
