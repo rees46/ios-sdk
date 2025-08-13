@@ -6,15 +6,33 @@ on:
       - .github
 
 env:
-  ACTIONS_IS_RUNNING: true
-  TEST_RUNNER_TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
-  TEST_RUNNER_TEST_API_URL: ${{ secrets.TEST_API_URL }}
+  TEST_SHOP_ID: ${{ secrets.testShopId }}
+  TEST_API_URL: ${{ secrets.testApiUrl }}
+  TEST_RUNNER_TEST_SHOP_ID: ${{ inputs.testShopId }}
+  TEST_RUNNER_TEST_API_URL: ${{ inputs.testApiUrl }}
 
 jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      test-shop-id: ${{ env.TEST_SHOP_ID }}
+      test-api-url: ${{ env.TEST_API_URL }}
+      runner-test-shop-id: ${{ env.TEST_RUNNER_TEST_SHOP_ID }}
+      runner-test-api-url: ${{ env.TEST_RUNNER_TEST_API_URL }}
+    steps:
+      - name: Confirm variables set
+        run: echo "Variables set"
+
   run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
+    needs: vars
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
+    with:
+      testShopId: ${{ needs.vars.outputs.test-shop-id }}
+      testApiUrl: ${{ needs.vars.otuputs.test-api-url }}
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
+      testShopId: ${{ needs.vars.otuputs.simctl-test-shop-id }}
+      testApiUrl: ${{ needs.vars.otuputs.simctl-test-api-url }}
