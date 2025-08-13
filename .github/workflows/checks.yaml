@@ -15,13 +15,13 @@ jobs:
       - name: Confirm variables set
         id: test
         env:
-          TEST_RUNNER_TEST_SHOP_ID: ${{ vars.TEST_SHOP_ID }}
-          TEST_RUNNER_TEST_API_URL: ${{ vars.TEST_API_URL }}
+          TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
+          TEST_API_URL: ${{ secrets.TEST_API_URL }}
         run: |
-          echo "runner-test-shop-id=$(echo $TEST_RUNNER_TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          echo "runner-test-api-url=$(echo $TEST_RUNNER_TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "runner-test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
+          echo "runner-test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
 
-  test_runner:
+  run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
     needs: vars
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
