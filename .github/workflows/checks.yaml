@@ -18,3 +18,5 @@ jobs:
     secrets:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
+      TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
+      TEST_API_URL: ${{ secrets.TEST_API_URL }}
