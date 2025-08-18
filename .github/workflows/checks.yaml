@@ -11,21 +11,15 @@ jobs:
     outputs:
       test-shop-id: ${{ steps.test.outputs.test-shop-id }}
       test-api-url: ${{ steps.test.outputs.test-api-url }}
-      simctl-test-shop-id: ${{ steps.test.outputs.simctl-test-shop-id }}
-      simctl-test-api-url: ${{ steps.test.outputs.simctl-test-api-url }}
     steps:
       - name: Confirm variables set
         id: test
         env:
           TEST_SHOP_ID: ${{ secrets.TEST_SHOP_ID }}
           TEST_API_URL: ${{ secrets.TEST_API_URL }}
-          SIMCTL_CHILD_TEST_SHOP_ID: ${{ vars.TEST_SHOP_ID }}
-          SIMCTL_CHILD_TEST_API_URL: ${{ vars.TEST_API_URL }}
         run: |
           echo "test-shop-id=$(echo $TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
           echo "test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          echo "simctl-test-shop-id=$(echo $SIMCTL_CHILD_TEST_SHOP_ID | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
-          echo "simctl-test-api-url=$(echo $SIMCTL_CHILD_TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
 
   run:
     if: ${{ !startsWith(github.ref_name, 'release') }}
@@ -36,7 +30,5 @@ jobs:
       cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
       googleServicesString: ${{ secrets.GOOGLE_SERVICES_IOS_FILE_AS_BASE64_STRING }}
       env_vars: |
-        TEST_SHOP_ID=${{ needs.vars.outputs.test-shop-id }}
-        TEST_API_URL=${{ needs.vars.outputs.test-api-url }}
-        SIMCTL_CHILD_TEST_SHOP_ID=${{ needs.vars.outputs.simctl-test-shop-id }}
-        SIMCTL_CHILD_TEST_API_URL=${{ needs.vars.outputs.simctl-test-api-url  }}
+        TEST_RUNNER_TEST_SHOP_ID=${{ needs.vars.outputs.test-shop-id }}
+        TEST_RUNNER_TEST_API_URL=${{ needs.vars.outputs.test-api-url }}
