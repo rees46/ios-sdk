@@ -5,14 +5,11 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     
     private var sdk: PersonalizationSDK?
     private let sessionQueue: SessionQueue
-    private let parentViewController: UIViewController?
     private var notificationWidget: NotificationWidget?
     
-    init(sdk: PersonalizationSDK, parentViewController: UIViewController?) {
+    init(sdk: PersonalizationSDK) {
         self.sdk = sdk
         self.sessionQueue = sdk.sessionQueue
-        self.parentViewController = parentViewController
-    
     }
     
     private struct Constants {
@@ -286,17 +283,17 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
     }
     
-    private func showPopup(jsonResult: [String: Any] ) {
-        let popup = Popup(json: jsonResult["popup"] as? [String: Any] ?? [:])
-        if let parentViewController = self.parentViewController {
-            DispatchQueue.main.async {
-                self.notificationWidget = NotificationWidget(
-                    parentViewController: parentViewController,
-                    popup: popup
-                )
-            }
-        }
-    }
+    private func showPopup(jsonResult: [String: Any]) {
+       let popup = Popup(json: jsonResult["popup"] as? [String: Any] ?? [:])
+        if let parentViewController = sdk?.parentViewController {
+           DispatchQueue.main.async {
+               self.notificationWidget = NotificationWidget(
+                   parentViewController: parentViewController,
+                   popup: popup
+               )
+           }
+       }
+   }
 }
 
 class TrackSourceServiceImpl: TrackSourceServiceProtocol {
