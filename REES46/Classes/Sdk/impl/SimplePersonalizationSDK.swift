@@ -39,7 +39,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let serialSemaphore = DispatchSemaphore(value: 0)
     
     lazy var trackEventService: TrackEventServiceProtocol = {
-        return TrackEventServiceImpl(sdk: self, parentViewController: parentViewController)
+        return TrackEventServiceImpl(sdk: self)
     }()
     
     lazy var trackSourceService: TrackSourceServiceProtocol = {

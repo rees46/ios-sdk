@@ -296,7 +296,7 @@ open class SearchWidgetMainView: UIView {
             self.searchResultsView.isHidden = results.isEmpty
             self.updateShowAllButton(withCount: results.isEmpty ? nil : results.count)
             
-            self.showAllButton.isHidden = results.isEmpty
+            self.showAllButton?.isHidden = results.isEmpty
         }
     }
     

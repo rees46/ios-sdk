@@ -16,6 +16,7 @@ public protocol PersonalizationSDK {
     var segment: String { get }
     var storiesCode: String? { get }
     var sessionQueue: SessionQueue { get }
+    var parentViewController: UIViewController? {get}
     var urlSession: URLSession { get set }
     
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void)
