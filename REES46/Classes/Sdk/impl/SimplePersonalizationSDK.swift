@@ -131,31 +131,30 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     if self.autoSendPushToken {
                         self.handleAutoSendPushToken()
                     }
+
+                    if self.sendAdvertisingId {
+                        self.updateAdvertisingIdUseCase.execute { result in
+                            #if DEBUG
+                            switch result {
+                            case .success(let advertisingId):
+                                print("Advertising ID sent successfully: \(advertisingId.value)")
+                            case .failure(let error):
+                                print("Failed to send Advertising ID: \(error.localizedDescription)")
+                            }
+                            #endif
+                        }
+                    }
                     
                     completion?(nil)
+                    
                 case .failure(let error):
                     completion?(error)
                 }
+                
                 self.initSemaphore.signal()
             }
-            self.initSemaphore.wait()
         }
-       
-        if(sendAdvertisingId) {
-            updateAdvertisingIdUseCase.execute { result in
-                switch result {
-                case .success(let advertisingId):
-                    #if DEBUG
-                    print("Advertising ID sent successfully: \(advertisingId.value)")
-                    #endif
-                case .failure(let error):
-                    #if DEBUG
-                    print("Failed to send Advertising ID: \(error.localizedDescription)")
-                    #endif
-                }
-            }
-        }
-
+        
         initializeNotificationRegistrar()
     }
     
@@ -834,6 +833,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 )
             } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
                 completion(.success(resultResponse))
+            } else {
+                fetchServerInitData(
+                    path: path,
+                    params: params,
+                    completion: completion
+                )
             }
 
         }
