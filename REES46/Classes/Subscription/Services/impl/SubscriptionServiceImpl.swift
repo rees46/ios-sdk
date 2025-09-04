@@ -68,7 +68,6 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         case .success:
           completion(.success(Void()))
         case let .failure(error):
-            print("print error \(error)")
           completion(.failure(error))
         }
       }
