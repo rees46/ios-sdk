@@ -63,10 +63,12 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     
     sdk.sessionQueue.addOperation {
       sdk.postRequest(path: path, params: params) { result in
+    
         switch result {
         case .success:
           completion(.success(Void()))
         case let .failure(error):
+            print("print error \(error)")
           completion(.failure(error))
         }
       }

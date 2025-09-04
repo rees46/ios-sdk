@@ -6,18 +6,29 @@ class SubscribeForBackInStock: XCTestCase {
     private var testEmail: String!
     private var testPhone: String!
     
-    var sdk: PersonalizationSDK!
+    private var sdk: PersonalizationSDK!
     
     override func setUp() {
         super.setUp()
+        
         testEmail = MockGenerator.generateEmail()
         testPhone = MockGenerator.generatePhoneNumber()
+        
+        let expectation = XCTestExpectation(description: "SDK init")
         
         sdk = createPersonalizationSDK(
             shopId: Constants.testShopId,
             apiDomain: Constants.testApiDomain,
-            enableLogs: true
-        )
+            enableLogs: true,
+            needReInitialization: true
+        ) { error in
+            if let error = error {
+                XCTFail("SDK init failed: \(error.localizedDescription)")
+            }
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     override func tearDown() {
@@ -30,17 +41,17 @@ class SubscribeForBackInStock: XCTestCase {
         
         sdk.subscribeForBackInStock(
             id: Constants.testItemId,
-            email: testEmail,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Subscribe with email succeeded")
-                    case .failure(let error):
-                        XCTFail("Subscribe with email failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            email: testEmail
+        ) { result in
+            switch result {
+            case .success:
+                print("Subscribe with email succeeded")
+            case .failure(let error):
+                XCTFail("Subscribe with email failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
@@ -49,17 +60,17 @@ class SubscribeForBackInStock: XCTestCase {
         
         sdk.subscribeForBackInStock(
             id: Constants.testItemId,
-            phone: testPhone,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Subscribe with phone succeeded")
-                    case .failure(let error):
-                        XCTFail("Subscribe with phone failed: \(error.localizedDescription)")
-                    }
-                expectation.fulfill()
+            phone: testPhone
+        ) { result in
+            switch result {
+            case .success:
+                print("Subscribe with phone succeeded")
+            case .failure(let error):
+                XCTFail("Subscribe with phone failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
@@ -69,17 +80,17 @@ class SubscribeForBackInStock: XCTestCase {
         sdk.subscribeForBackInStock(
             id: Constants.testItemId,
             email: testEmail,
-            phone: testPhone,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Subscribe with email and phone succeeded")
-                    case .failure(let error):
-                        XCTFail("Subscribe with email and phone failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            phone: testPhone
+        ) { result in
+            switch result {
+            case .success:
+                print("Subscribe with email+phone succeeded")
+            case .failure(let error):
+                XCTFail("Subscribe with email+phone failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
@@ -87,17 +98,17 @@ class SubscribeForBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Subscribe without contact info")
         
         sdk.subscribeForBackInStock(
-            id: Constants.testItemId,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Subscribe with did succeeded")
-                    case .failure(let error):
-                        XCTFail("Subscribe with did failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            id: Constants.testItemId
+        ) { result in
+            switch result {
+            case .success:
+                print("Subscribe without contact info succeeded")
+            case .failure(let error):
+                XCTFail("Subscribe without contact info failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 }

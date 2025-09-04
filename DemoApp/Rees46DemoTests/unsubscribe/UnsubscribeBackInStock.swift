@@ -6,18 +6,28 @@ class UnsubscribeBackInStock: XCTestCase {
     private var testEmail: String!
     private var testPhone: String!
     
-    var sdk: PersonalizationSDK!
+    private var sdk: PersonalizationSDK!
     
     override func setUp() {
         super.setUp()
+        
         testEmail = MockGenerator.generateEmail()
         testPhone = MockGenerator.generatePhoneNumber()
+        
+        let expectation = XCTestExpectation(description: "SDK init")
         
         sdk = createPersonalizationSDK(
             shopId: Constants.testShopId,
             apiDomain: Constants.testApiDomain,
             enableLogs: true
-        )
+        ) { error in
+            if let error = error {
+                XCTFail("SDK init failed: \(error.localizedDescription)")
+            }
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
     override func tearDown() {
@@ -30,17 +40,17 @@ class UnsubscribeBackInStock: XCTestCase {
         
         sdk.unsubscribeForBackInStock(
             itemIds: Constants.testItemIds,
-            email: testEmail,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Unsubscribe with email succeeded")
-                    case .failure(let error):
-                        XCTFail("Unsubscribe with email failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            email: testEmail
+        ) { result in
+            switch result {
+            case .success:
+                print("Unsubscribe with email succeeded")
+            case .failure(let error):
+                XCTFail("Unsubscribe with email failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
@@ -49,17 +59,17 @@ class UnsubscribeBackInStock: XCTestCase {
         
         sdk.unsubscribeForBackInStock(
             itemIds: Constants.testItemIds,
-            phone: testPhone,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Unsubscribe with phone succeeded")
-                    case .failure(let error):
-                        XCTFail("Unsubscribe with phone failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            phone: testPhone
+        ) { result in
+            switch result {
+            case .success:
+                print("Unsubscribe with phone succeeded")
+            case .failure(let error):
+                XCTFail("Unsubscribe with phone failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 
@@ -69,17 +79,17 @@ class UnsubscribeBackInStock: XCTestCase {
         sdk.unsubscribeForBackInStock(
             itemIds: Constants.testItemIds,
             email: testEmail,
-            phone: testPhone,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Unsubscribe with email and phone succeeded")
-                    case .failure(let error):
-                        XCTFail("Unsubscribe with email and phone failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            phone: testPhone
+        ) { result in
+            switch result {
+            case .success:
+                print("Unsubscribe with email and phone succeeded")
+            case .failure(let error):
+                XCTFail("Unsubscribe with email and phone failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
     
@@ -87,17 +97,17 @@ class UnsubscribeBackInStock: XCTestCase {
         let expectation = XCTestExpectation(description: "Unsubscribe without contact info")
         
         sdk.unsubscribeForBackInStock(
-            itemIds: Constants.testItemIds,
-            completion: { result in
-                switch result {
-                    case .success:
-                        print("Unubscribe with did succeeded")
-                    case .failure(let error):
-                        XCTFail("Unubscribe with did failed: \(error.localizedDescription)")
-                }
-                expectation.fulfill()
+            itemIds: Constants.testItemIds
+        ) { result in
+            switch result {
+            case .success:
+                print("Unsubscribe without contact info succeeded")
+            case .failure(let error):
+                XCTFail("Unsubscribe without contact info failed: \(error.localizedDescription)")
             }
-        )
+            expectation.fulfill()
+        }
+        
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 }
