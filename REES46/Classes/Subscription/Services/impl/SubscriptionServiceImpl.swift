@@ -63,6 +63,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     
     sdk.sessionQueue.addOperation {
       sdk.postRequest(path: path, params: params) { result in
+    
         switch result {
         case .success:
           completion(.success(Void()))

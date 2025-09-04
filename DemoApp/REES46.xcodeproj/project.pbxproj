@@ -306,6 +306,7 @@
 		75E2378C2C334A5300119197 /* sdk */ = {
 			isa = PBXGroup;
 			children = (
+				D07DC5102E689AE500D27E7D /* init */,
 				D0B99FA12DB16C740012E4F0 /* unsubscribe */,
 				D0B99FA02DB16C5A0012E4F0 /* subscribe */,
 				D0B70C162D522DAF0001782A /* SearchServiceTests.swift */,
@@ -361,6 +362,13 @@
 				D005D80C2DB2CDE000841D78 /* MockGenerator.swift */,
 			);
 			path = generators;
+			sourceTree = "<group>";
+		};
+		D07DC5102E689AE500D27E7D /* init */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = init;
 			sourceTree = "<group>";
 		};
 		D0B99FA02DB16C5A0012E4F0 /* subscribe */ = {
