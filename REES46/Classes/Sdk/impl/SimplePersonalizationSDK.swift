@@ -1177,6 +1177,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                                 if let status = jsonObject["status"] as? String, status == "error" {
                                     if let errorMessage = jsonObject["message"] as? String {
                                         completion(.failure(.custom(error: errorMessage)))
+                                        return
                                     }
                                 }
                             }
