@@ -132,12 +132,16 @@ class BaseDialog: UIViewController {
     }
     
     @objc internal func dismissDialog() {
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: { [weak self] in
+            self?.viewModel.onDismiss?()
+        })
     }
     
     @objc func onConfirmButtonTapped() {
         viewModel.onConfirmButtonClick?()
-        dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: { [weak self] in
+            self?.viewModel.onDismiss?()
+        })
     }
     
     @objc func onDismissButtonTapped() {

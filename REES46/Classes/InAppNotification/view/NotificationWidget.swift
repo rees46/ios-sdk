@@ -4,13 +4,16 @@ public class NotificationWidget: InAppNotificationProtocol {
     private var parentViewController: UIViewController
     private var snackbar: UIView?
     private var popup: Popup?
+    private var onDismiss: (() -> Void)?
     
     public init(
         parentViewController: UIViewController,
-        popup: Popup? = nil
+        popup: Popup? = nil,
+        onDismiss: (() -> Void)? = nil
     ) {
         self.parentViewController = parentViewController
         self.popup = popup
+        self.onDismiss = onDismiss
         
         if let popup = popup {
             showPopup(popup)
@@ -103,7 +106,8 @@ public class NotificationWidget: InAppNotificationProtocol {
             imageUrl: imageUrl,
             confirmButtonText: confirmButtonText,
             dismissButtonText: dismissButtonText,
-            onConfirmButtonClick: onConfirmButtonClick
+            onConfirmButtonClick: onConfirmButtonClick,
+            onDismiss: onDismiss
         )
         let dialog = AlertDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
@@ -124,7 +128,8 @@ public class NotificationWidget: InAppNotificationProtocol {
             imageUrl: imageUrl,
             confirmButtonText: confirmButtonText,
             dismissButtonText: dismissButtonText,
-            onConfirmButtonClick: onConfirmButtonClick
+            onConfirmButtonClick: onConfirmButtonClick,
+            onDismiss: onDismiss
         )
         let dialog = BottomDialog(viewModel: viewModel)
         parentViewController.present(dialog, animated: true, completion: nil)
@@ -144,7 +149,8 @@ public class NotificationWidget: InAppNotificationProtocol {
             imageUrl: imageUrl,
             confirmButtonText: confirmButtonText,
             dismissButtonText: dismissButtonText,
-            onConfirmButtonClick: onConfirmButtonClick
+            onConfirmButtonClick: onConfirmButtonClick,
+            onDismiss: onDismiss
         )
         let dialog = TopDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
