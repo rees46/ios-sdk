@@ -34,7 +34,9 @@ class TopDialog: BaseDialog {
         UIView.animate(withDuration: AppDimensions.Animation.duration, animations: {
             self.view.frame.origin.y = -self.view.frame.height
         }, completion: { _ in
-            self.dismiss(animated: false, completion: nil)
+            self.dismiss(animated: false, completion: { [weak self] in
+                self?.viewModel.onDismiss?()
+            })
         })
     }
 }

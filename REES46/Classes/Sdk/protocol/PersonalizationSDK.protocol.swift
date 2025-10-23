@@ -9,6 +9,8 @@
 import Foundation
 import UIKit
 
+// MARK: - Main SDK Protocol
+
 public protocol PersonalizationSDK {
     var shopId: String { get }
     var deviceId: String { get }
@@ -18,6 +20,11 @@ public protocol PersonalizationSDK {
     var sessionQueue: SessionQueue { get }
     var parentViewController: UIViewController? {get}
     var urlSession: URLSession { get set }
+    
+    // New popup presentation properties
+    var popupPresentationDelegate: PopupPresentationDelegate? { get set }
+    var enableAutoPopupPresentation: Bool { get set }
+    var popupPresenter: PopupPresenter { get }
     
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void)
     func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void)
@@ -34,6 +41,7 @@ public protocol PersonalizationSDK {
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void)
     func getProductInfo(id: String, completion: @escaping(Result<ProductInfo, SdkError>) -> Void)
     func getDeviceId() -> String
+    @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void)
     func getNotificationWidget() -> NotificationWidget?
     func getSession() -> String
@@ -320,6 +328,7 @@ public func createPersonalizationSDK(
     autoSendPushToken: Bool = true,
     sendAdvertisingId: Bool = false,
     parentViewController: UIViewController? = nil,
+    enableAutoPopupPresentation: Bool = true,
     needReInitialization: Bool = false,
     _ completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
@@ -334,6 +343,7 @@ public func createPersonalizationSDK(
         autoSendPushToken: autoSendPushToken,
         sendAdvertisingId: sendAdvertisingId,
         parentViewController: parentViewController,
+        enableAutoPopupPresentation: enableAutoPopupPresentation,
         needReInitialization: needReInitialization,
         completion: completion
     )
