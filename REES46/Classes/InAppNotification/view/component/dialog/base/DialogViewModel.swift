@@ -14,6 +14,7 @@ public class DialogViewModel {
         buttonState == .noButtons
     }
     var onConfirmButtonClick: (() -> Void)?
+    var onDismiss: (() -> Void)?
     
     private var hasConfirmButton: Bool { confirmButtonText != nil }
     private var hasDismissButton: Bool { dismissButtonText != nil }
@@ -26,7 +27,8 @@ public class DialogViewModel {
         imageUrl: String,
         confirmButtonText: String?,
         dismissButtonText: String?,
-        onConfirmButtonClick: (() -> Void)?
+        onConfirmButtonClick: (() -> Void)?,
+        onDismiss: (() -> Void)? = nil
     ) {
         self.titleText = titleText
         self.messageText = messageText
@@ -35,6 +37,7 @@ public class DialogViewModel {
         self.dismissButtonText = dismissButtonText
         self.isImageContainerHidden = imageUrl.isEmpty
         self.onConfirmButtonClick = onConfirmButtonClick
+        self.onDismiss = onDismiss
     }
     
     func determineButtonState() -> ButtonState {

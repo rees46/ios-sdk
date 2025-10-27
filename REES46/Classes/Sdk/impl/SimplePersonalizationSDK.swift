@@ -5,11 +5,16 @@ import AppTrackingTransparency
 
 public var global_EL: Bool = true
 
+// MARK: - SimplePersonalizationSDK
+
 class SimplePersonalizationSDK: PersonalizationSDK {
     private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
     var notificationWidget: NotificationWidget?
+    
+    weak var popupPresentationDelegate: PopupPresentationDelegate?
+    var enableAutoPopupPresentation: Bool
     
     var storiesCode: String?
     var shopId: String
@@ -74,6 +79,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }()
     
+    lazy var popupPresenter: PopupPresenter = {
+        return PopupPresenter(sdk: self)
+    }()
+    
     init(
         shopId: String,
         userEmail: String? = nil,
@@ -84,13 +93,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         enableLogs: Bool = false,
         autoSendPushToken: Bool = true,
         sendAdvertisingId: Bool = false,
-        parentViewController: UIViewController?,
+        parentViewController: UIViewController? = nil,
+        enableAutoPopupPresentation: Bool = true,
         needReInitialization: Bool = false,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
         self.autoSendPushToken = autoSendPushToken
         self.parentViewController = parentViewController
+        self.enableAutoPopupPresentation = enableAutoPopupPresentation
         
         global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
@@ -118,13 +129,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.userSeance = response.seance
                     self.deviceId = response.deviceId
                     
-                    if let popup = response.popup, let parentViewController {
-                        DispatchQueue.main.async {
-                            self.notificationWidget = NotificationWidget(
-                                parentViewController: parentViewController,
-                                popup: popup
-                            )
-                        }
+                    if let popup = response.popup {
+                        self.popupPresenter.presentPopup(popup)
                     }
                     
                     // Handle push token if autoSendPushToken is true
@@ -162,9 +168,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return deviceId
     }
     
+    @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void) {
         self.parentViewController = controller
-        completion()
+        DispatchQueue.main.async {
+            completion()
+        }
     }
     
     func getNotificationWidget() -> NotificationWidget? {
