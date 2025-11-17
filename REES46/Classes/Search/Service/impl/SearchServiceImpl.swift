@@ -52,7 +52,8 @@ class SearchServiceImpl: SearchServiceProtocol {
         fashionSizes: [String]?,
         exclude: String?,
         email: String?,
-        disableClarification: Bool?
+        disableClarification: Bool?,
+        correction: Bool?
     ) -> [String: String] {
         
         var params: [String: String] = [
@@ -85,6 +86,7 @@ class SearchServiceImpl: SearchServiceProtocol {
             "exclude": exclude,
             "email": email,
             "no_clarification": disableClarification == true ? "1" : nil,
+            "correction": correction == true ? "1" : nil,
             "filters": {
                 guard let filters = filters,
                       let jsonData = try? JSONSerialization.data(withJSONObject: filters, options: []),
@@ -143,6 +145,7 @@ class SearchServiceImpl: SearchServiceProtocol {
         email: String?,
         timeOut: Double?,
         disableClarification: Bool?,
+        correction: Bool?,
         completion: @escaping (Result<SearchResponse, SdkError>) -> Void
     ) {
         guard let sdk = sdk.checkInitialization(completion: completion) else { return }
@@ -169,7 +172,8 @@ class SearchServiceImpl: SearchServiceProtocol {
                 fashionSizes: fashionSizes,
                 exclude: exclude,
                 email: email,
-                disableClarification: disableClarification
+                disableClarification: disableClarification,
+                correction: correction
             )
             
             self.configureSession(timeOut: timeOut)

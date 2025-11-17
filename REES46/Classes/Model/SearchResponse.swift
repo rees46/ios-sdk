@@ -130,6 +130,7 @@ public struct SearchResponse {
     public var brands: [String]?
     public var priceRange: PriceRange?
     public var redirect: Redirect?
+    public var queryFixed: String?
 
     init(json: [String: Any]) {
         let cats = json["categories"] as? [[String: Any]] ?? []
@@ -190,6 +191,8 @@ public struct SearchResponse {
         if let redirectJSON = json["search_query_redirects"] as? [String: Any] {
             self.redirect = Redirect(json: redirectJSON)
         }
+        
+        queryFixed = json["query_fixed"] as? String
     }
 }
 

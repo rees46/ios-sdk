@@ -50,7 +50,7 @@ public protocol PersonalizationSDK {
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping(Result<Void, SdkError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SdkError>) -> Void)
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, correction: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
@@ -133,6 +133,7 @@ public extension PersonalizationSDK {
         email: String? = nil,
         timeOut: Double? = nil,
         disableClarification: Bool? = nil,
+        correction: Bool? = nil,
         completion: @escaping(Result<SearchResponse, SdkError>) -> Void
     ) {
         search(
@@ -158,6 +159,7 @@ public extension PersonalizationSDK {
             email:email,
             timeOut:timeOut,
             disableClarification:disableClarification,
+            correction:correction,
             completion: completion
         )
     }
