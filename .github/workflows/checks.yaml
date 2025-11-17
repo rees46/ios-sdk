@@ -2,11 +2,20 @@ name: Check PR
 
 on:
   pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
     paths-ignore:
       - .github
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   vars:
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
       test-shop-id: ${{ steps.test.outputs.test-shop-id }}
@@ -22,7 +31,7 @@ jobs:
           echo "test-api-url=$(echo $TEST_API_URL | base64 -w0 | base64 -w0)" >> $GITHUB_OUTPUT
 
   run:
-    if: ${{ !startsWith(github.ref_name, 'release') }}
+    if: github.event.pull_request.draft == false
     needs: vars
     uses: rees46/workflow/.github/workflows/reusable-ios-checks.yaml@master
     permissions: write-all
