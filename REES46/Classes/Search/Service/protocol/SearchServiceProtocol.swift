@@ -29,6 +29,7 @@ protocol SearchServiceProtocol{
       email: String?,
       timeOut: Double?,
       disableClarification: Bool?,
+      correction: Bool?,
       completion: @escaping (Result<SearchResponse, SdkError>) -> Void
     )
     
