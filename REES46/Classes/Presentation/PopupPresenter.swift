@@ -56,11 +56,11 @@ public class PopupPresenter {
     // MARK: - Private Methods
     
     private func showPopupNow(_ popup: Popup) {
-        // Проверяем, был ли попап показан в последние 60 секунд
+        // Check if popup was shown in the last 60 seconds
         if let shownDate = popupShownFlags[popup.id] {
             let timeSinceShown = Date().timeIntervalSince(shownDate)
             if timeSinceShown < 60 {
-                return // Попап уже был показан, не показываем снова
+                return // Popup was already shown, skip
             }
         }
         
@@ -78,18 +78,18 @@ public class PopupPresenter {
                 }
             )
             
-            // Сохраняем флаг показа в памяти на 60 секунд
+            // Store popup shown flag in memory for 60 seconds
             self.popupShownFlags[popup.id] = Date()
             
-            // Удаляем флаг через 60 секунд
+            // Remove flag after 60 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
                 self?.popupShownFlags.removeValue(forKey: popup.id)
             }
             
-            // Отправляем событие показа попапа на сервер
+            // Send popup shown event to server
             if let sdk = self.sdk as? PersonalizationSDK {
                 sdk.trackPopupShown(popupId: popup.id) { _ in
-                    // Обработка результата (логирование при необходимости)
+                    // Handle result (log if needed)
                 }
             }
         }

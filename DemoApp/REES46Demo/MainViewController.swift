@@ -283,7 +283,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         showTestPopupButton.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(showTestPopupButton)
         
-        // Размещаем кнопку рядом с другими тестовыми кнопками
+        // Place button next to other test buttons
         NSLayoutConstraint.activate([
             showTestPopupButton.topAnchor.constraint(equalTo: showStoriesButton.bottomAnchor, constant: 10),
             showTestPopupButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
