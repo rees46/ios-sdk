@@ -25,6 +25,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var resetDidButton: UIButton!
     @IBOutlet private weak var showStoriesButton: UIButton!
     @IBOutlet private weak var showSnackBarButton: UIButton!
+    private var showTestPopupButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -188,6 +189,48 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         storiesCollectionView.showStories()
     }
     
+    @objc
+    private func showTestPopup() {
+        guard let sdk = globalSDK else {
+            return
+        }
+        
+        let componentsDict: [String: Any] = [
+            "header": "Test Popup",
+            "text": "This is a test popup for iOS SDK"
+        ]
+        
+        let componentsJSON: String
+        if let componentsData = try? JSONSerialization.data(withJSONObject: componentsDict),
+           let componentsString = String(data: componentsData, encoding: .utf8) {
+            componentsJSON = componentsString
+        } else {
+            componentsJSON = "{}"
+        }
+        
+        let testPopupData: [String: Any] = [
+            "id": 999,
+            "channels": ["email"],
+            "position": "centered",
+            "delay": 0,
+            "html": """
+            <div class="popup-title">Test Popup</div>
+            <p class="popup-999__intro">This is a test popup for iOS SDK</p>
+            """,
+            "components": componentsJSON,
+            "web_push_system": false,
+            "popup_actions": "{}"
+        ]
+        
+        let testPopup = Popup(json: testPopupData)
+        
+        sdk.popupPresenter.dismissCurrentPopup()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            sdk.popupPresenter.presentPopup(testPopup)
+        }
+    }
+    
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
         scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2000)
@@ -198,6 +241,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
         resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
         showStoriesButton.addTarget(self, action: #selector(showStories), for: .touchUpInside)
+        
+        setupTestPopupButton()
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -229,6 +274,24 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         self.view.addSubview(self.waitIndicator)
         self.waitIndicator.center = self.view.center
         self.waitIndicator.hideIndicatorWhenStopped = true
+    }
+    
+    func setupTestPopupButton() {
+        showTestPopupButton = DemoShopButton(type: .system)
+        showTestPopupButton.setTitle("Show Test Popup", for: .normal)
+        showTestPopupButton.setTitleColor(.white, for: .normal)
+        showTestPopupButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(showTestPopupButton)
+        
+        // Размещаем кнопку рядом с другими тестовыми кнопками
+        NSLayoutConstraint.activate([
+            showTestPopupButton.topAnchor.constraint(equalTo: showStoriesButton.bottomAnchor, constant: 10),
+            showTestPopupButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            showTestPopupButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            showTestPopupButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor)
+        ])
+        
+        showTestPopupButton.addTarget(self, action: #selector(showTestPopup), for: .touchUpInside)
     }
     
     func fontInterPreload() {

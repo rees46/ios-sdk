@@ -1,22 +1,22 @@
 import Foundation
 
 public struct Popup: Codable {
-    enum Position: String {
+    public enum Position: String {
         case centered = "centered"
         case bottom = "fixed_bottom"
         case top = "top"
     }
     
-    let id: Int
-    let channels: [String]
-    let position: String
-    let delay: Int
-    let html: String
-    let components: PopupComponents?
-    let web_push_system: Bool
-    let popup_actions: String
+    public let id: Int
+    public let channels: [String]
+    public let position: String
+    public let delay: Int
+    public let html: String
+    public let components: PopupComponents?
+    public let web_push_system: Bool
+    public let popup_actions: String
     
-    func getParsedPopupActions() -> PopupActions? {
+    public func getParsedPopupActions() -> PopupActions? {
         guard let data = popup_actions.data(using: .utf8) else { return nil }
         let decoder = JSONDecoder()
         do {

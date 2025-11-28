@@ -408,6 +408,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         trackEventService.trackEvent(event: event, category: category, label: label, value: value, completion: completion)
     }
     
+    func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackEventService.trackPopupShown(popupId: popupId, completion: completion)
+    }
+    
     func trackSource(source: RecommendedByCase, code: String) {
         trackSourceService.trackSource(source: source, code: code)
     }
@@ -1196,7 +1200,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     }
                     do {
                         if data.isEmpty {
-                            if path.contains("clicked") || path.contains("closed") || path.contains("received") {
+                            if path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") {
                                 completion(.success([:]))
                                 return
                             }

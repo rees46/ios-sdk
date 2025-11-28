@@ -15,6 +15,7 @@ public class PopupPresenter {
     private var currentPopup: NotificationWidget?
     private var popupQueue: [Popup] = []
     private let serialQueue = DispatchQueue(label: "com.rees46.popup.presenter")
+    private var popupShownFlags: [Int: Date] = [:]
     
     public init(sdk: AnyObject) {
         self.sdk = sdk
@@ -55,6 +56,14 @@ public class PopupPresenter {
     // MARK: - Private Methods
     
     private func showPopupNow(_ popup: Popup) {
+        // Проверяем, был ли попап показан в последние 60 секунд
+        if let shownDate = popupShownFlags[popup.id] {
+            let timeSinceShown = Date().timeIntervalSince(shownDate)
+            if timeSinceShown < 60 {
+                return // Попап уже был показан, не показываем снова
+            }
+        }
+        
         guard let presentingVC = getPresentingViewController(for: popup) else {
             return // No VC available or delegate prevented presentation
         }
@@ -68,6 +77,21 @@ public class PopupPresenter {
                     self?.dismissCurrentPopup()
                 }
             )
+            
+            // Сохраняем флаг показа в памяти на 60 секунд
+            self.popupShownFlags[popup.id] = Date()
+            
+            // Удаляем флаг через 60 секунд
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
+                self?.popupShownFlags.removeValue(forKey: popup.id)
+            }
+            
+            // Отправляем событие показа попапа на сервер
+            if let sdk = self.sdk as? PersonalizationSDK {
+                sdk.trackPopupShown(popupId: popup.id) { _ in
+                    // Обработка результата (логирование при необходимости)
+                }
+            }
         }
     }
     
