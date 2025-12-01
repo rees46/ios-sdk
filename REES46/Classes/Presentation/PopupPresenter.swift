@@ -15,6 +15,7 @@ public class PopupPresenter {
     private var currentPopup: NotificationWidget?
     private var popupQueue: [Popup] = []
     private let serialQueue = DispatchQueue(label: "com.rees46.popup.presenter")
+    private var popupShownFlags: [Int: Date] = [:]
     
     public init(sdk: AnyObject) {
         self.sdk = sdk
@@ -55,6 +56,14 @@ public class PopupPresenter {
     // MARK: - Private Methods
     
     private func showPopupNow(_ popup: Popup) {
+        // Check if popup was shown in the last 60 seconds
+        if let shownDate = popupShownFlags[popup.id] {
+            let timeSinceShown = Date().timeIntervalSince(shownDate)
+            if timeSinceShown < 60 {
+                return // Popup was already shown, skip
+            }
+        }
+        
         guard let presentingVC = getPresentingViewController(for: popup) else {
             return // No VC available or delegate prevented presentation
         }
@@ -68,6 +77,21 @@ public class PopupPresenter {
                     self?.dismissCurrentPopup()
                 }
             )
+            
+            // Store popup shown flag in memory for 60 seconds
+            self.popupShownFlags[popup.id] = Date()
+            
+            // Remove flag after 60 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
+                self?.popupShownFlags.removeValue(forKey: popup.id)
+            }
+            
+            // Send popup shown event to server
+            if let sdk = self.sdk as? PersonalizationSDK {
+                sdk.trackPopupShown(popupId: popup.id) { _ in
+                    // Handle result (log if needed)
+                }
+            }
         }
     }
     

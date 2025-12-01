@@ -65,7 +65,12 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
       sdk.postRequest(path: path, params: params) { result in
     
         switch result {
-        case .success:
+        case let .success(successResult):
+          // Check if response contains popup and show it
+          if let popupData = successResult["popup"] as? [String: Any], !popupData.isEmpty {
+            let popup = Popup(json: popupData)
+            sdk.popupPresenter.presentPopup(popup)
+          }
           completion(.success(Void()))
         case let .failure(error):
           completion(.failure(error))

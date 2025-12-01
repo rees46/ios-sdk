@@ -1,6 +1,6 @@
 import Foundation
 extension Popup {
-    init(json: [String: Any]) {
+    public init(json: [String: Any]) {
         self.id = json["id"] as? Int ?? 0
         self.channels = json["channels"] as? [String] ?? []
         self.position = json["position"] as? String ?? ""
@@ -17,7 +17,7 @@ extension Popup {
         }
     }
 
-    func extractTitleAndSubtitle() -> (title: String?, subTitle: String?) {
+    public func extractTitleAndSubtitle() -> (title: String?, subTitle: String?) {
         let title = RegexHelper.extract(
             using: RegexPattern.title,
             from: html

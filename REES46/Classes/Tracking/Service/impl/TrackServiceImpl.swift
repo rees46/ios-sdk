@@ -15,6 +15,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     private struct Constants {
         static let trackStoriesPath = "track/stories"
         static let trackCustomEventPath = "push/custom"
+        static let popupShownPath = "popup/showed"
         
         static let id = "id"
         static let amount = "amount"
@@ -280,6 +281,31 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     completion(.failure(error))
                 }
             })
+        }
+    }
+    
+    func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        guard let sdk = sdk else {
+            completion(.failure(.custom(error: "trackPopupShown: SDK is not initialized")))
+            return
+        }
+        
+        sessionQueue.addOperation {
+            let params: [String: Any] = [
+                Constants.shopId: sdk.shopId,
+                Constants.did: sdk.deviceId,
+                Constants.sid: sdk.userSeance,
+                "popup": popupId
+            ]
+            
+            sdk.postRequest(path: Constants.popupShownPath, params: params) { result in
+                switch result {
+                case .success:
+                    completion(.success(Void()))
+                case .failure(let error):
+                    completion(.failure(error))
+                }
+            }
         }
     }
     
