@@ -6,17 +6,11 @@ class SearchServiceImplTests: XCTestCase {
     var sdk: PersonalizationSDK!
     
     var shopId: String {
-        guard let value = ProcessInfo.processInfo.environment[Constants.testShopIdKey] else {
-            fatalError("Environment variable TEST_SHOP_ID is not set")
-        }
-        return value
+        return ProcessInfo.processInfo.environment[Constants.testShopIdKey] ?? Constants.testShopId
     }
     
     var apiDomain: String {
-        guard let value = ProcessInfo.processInfo.environment[Constants.testApiUrlKey] else {
-            fatalError("Environment variable TEST_API_URL is not set")
-        }
-        return value
+        return ProcessInfo.processInfo.environment[Constants.testApiUrlKey] ?? Constants.testApiDomain
     }
 
     override func setUp() {
