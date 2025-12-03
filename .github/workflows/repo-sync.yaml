@@ -1,11 +1,11 @@
 name: Repository synchronization
 
 on:
-  pull_request:
+  workflow_run:
+    workflows:
+      - Bump version
     types:
-      - closed
-    branches:
-      - master
+      - completed
   workflow_dispatch:
 
 jobs:
