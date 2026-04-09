@@ -11,6 +11,19 @@ import REES46
 import AdSupport
 import AppTrackingTransparency
 
+private enum DemoTrackEventDemoConstants {
+    static let sampleUnixTime = 123_456
+    static let successEventName = "custom_event"
+    static let category = "demo_category"
+    static let label = "demo_label"
+    static let sampleValue = 100
+    static let safeCustomFieldKey = "demo_custom_key"
+    static let safeCustomFieldValue = "ios_demo_app"
+    /// Reserved request key; must trigger trackEvent validation error when passed inside customFields.
+    static let reservedCollisionKey = "shop_id"
+    static let reservedCollisionValue = "collision_demo"
+}
+
 class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @IBOutlet private weak var menuButton: UIButton!
@@ -26,6 +39,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var showStoriesButton: UIButton!
     @IBOutlet private weak var showSnackBarButton: UIButton!
     private var showTestPopupButton: UIButton!
+    private var trackEventCustomFieldsSuccessButton: UIButton!
+    private var trackEventCustomFieldsCollisionButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -243,6 +258,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         showStoriesButton.addTarget(self, action: #selector(showStories), for: .touchUpInside)
         
         setupTestPopupButton()
+        setupTrackEventDemoButtons()
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -292,6 +308,114 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         ])
         
         showTestPopupButton.addTarget(self, action: #selector(showTestPopup), for: .touchUpInside)
+    }
+    
+    func setupTrackEventDemoButtons() {
+        trackEventCustomFieldsSuccessButton = DemoShopButton(type: .system)
+        trackEventCustomFieldsSuccessButton.setTitle("Track event (custom fields)", for: .normal)
+        trackEventCustomFieldsSuccessButton.setTitleColor(.white, for: .normal)
+        trackEventCustomFieldsSuccessButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(trackEventCustomFieldsSuccessButton)
+        
+        trackEventCustomFieldsCollisionButton = DemoShopButton(type: .system)
+        trackEventCustomFieldsCollisionButton.setTitle("Track event (reserved key collision)", for: .normal)
+        trackEventCustomFieldsCollisionButton.setTitleColor(.white, for: .normal)
+        trackEventCustomFieldsCollisionButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(trackEventCustomFieldsCollisionButton)
+        
+        NSLayoutConstraint.activate([
+            trackEventCustomFieldsSuccessButton.topAnchor.constraint(equalTo: showTestPopupButton.bottomAnchor, constant: 10),
+            trackEventCustomFieldsSuccessButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            trackEventCustomFieldsSuccessButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            trackEventCustomFieldsSuccessButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            
+            trackEventCustomFieldsCollisionButton.topAnchor.constraint(equalTo: trackEventCustomFieldsSuccessButton.bottomAnchor, constant: 10),
+            trackEventCustomFieldsCollisionButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            trackEventCustomFieldsCollisionButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            trackEventCustomFieldsCollisionButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor)
+        ])
+        
+        trackEventCustomFieldsSuccessButton.addTarget(self, action: #selector(didTapTrackEventCustomFieldsSuccess), for: .touchUpInside)
+        trackEventCustomFieldsCollisionButton.addTarget(self, action: #selector(didTapTrackEventCustomFieldsCollision), for: .touchUpInside)
+    }
+    
+    private func presentTrackEventDemoAlert(title: String, message: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(alert, animated: true)
+        }
+    }
+    
+    private static func sdkErrorDescription(_ error: SdkError) -> String {
+        switch error {
+        case .custom(let message):
+            return message
+        default:
+            return String(describing: error)
+        }
+    }
+    
+    @objc
+    private func didTapTrackEventCustomFieldsSuccess() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        
+        let customFields: [String: Any] = [
+            DemoTrackEventDemoConstants.safeCustomFieldKey: DemoTrackEventDemoConstants.safeCustomFieldValue
+        ]
+        
+        sdk.trackEvent(
+            event: DemoTrackEventDemoConstants.successEventName,
+            time: DemoTrackEventDemoConstants.sampleUnixTime,
+            category: DemoTrackEventDemoConstants.category,
+            label: DemoTrackEventDemoConstants.label,
+            value: DemoTrackEventDemoConstants.sampleValue,
+            customFields: customFields
+        ) { result in
+            switch result {
+            case .success:
+                self.presentTrackEventDemoAlert(title: "trackEvent", message: "Request sent (custom fields OK).")
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "trackEvent failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+    
+    @objc
+    private func didTapTrackEventCustomFieldsCollision() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        
+        let customFields: [String: Any] = [
+            DemoTrackEventDemoConstants.reservedCollisionKey: DemoTrackEventDemoConstants.reservedCollisionValue
+        ]
+        
+        sdk.trackEvent(
+            event: DemoTrackEventDemoConstants.successEventName,
+            time: DemoTrackEventDemoConstants.sampleUnixTime,
+            category: DemoTrackEventDemoConstants.category,
+            label: DemoTrackEventDemoConstants.label,
+            value: DemoTrackEventDemoConstants.sampleValue,
+            customFields: customFields
+        ) { result in
+            switch result {
+            case .success:
+                self.presentTrackEventDemoAlert(title: "Unexpected", message: "Expected validation failure for reserved customFields keys.")
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "Reserved keys (expected)",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
     }
     
     func fontInterPreload() {

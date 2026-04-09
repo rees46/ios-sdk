@@ -404,8 +404,24 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
     
-    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        trackEventService.trackEvent(event: event, category: category, label: label, value: value, completion: completion)
+    func trackEvent(
+        event: String,
+        time: Int?,
+        category: String?,
+        label: String?,
+        value: Int?,
+        customFields: [String: Any]?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        trackEventService.trackEvent(
+            event: event,
+            time: time,
+            category: category,
+            label: label,
+            value: value,
+            customFields: customFields,
+            completion: completion
+        )
     }
     
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
@@ -1184,7 +1200,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             urlSession.postTask(with: request) { result in
                 switch result {
                 case .success(let (response, data)):
-                    guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                    guard 200 ..< 299 ~= statusCode else {
+#if DEBUG
+                        let errorBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body, \(data.count) bytes>"
+                        print("LOG: postRequest HTTP \(statusCode) path=\(path) response=\(errorBody)")
+#endif
                         if let json = try? JSONSerialization.jsonObject(with: data) {
                             if let jsonObject = json as? [String:Any] {
                                 if let status = jsonObject["status"] as? String, status == "error" {
@@ -1198,6 +1219,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(.failure(.invalidResponse))
                         return
                     }
+#if DEBUG
+                    let successBody = data.isEmpty
+                        ? "<empty>"
+                        : (String(data: data, encoding: .utf8) ?? "<non-utf8 body, \(data.count) bytes>")
+                    print("LOG: postRequest HTTP \(statusCode) path=\(path) response=\(successBody)")
+#endif
                     do {
                         if data.isEmpty {
                             if path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") {
