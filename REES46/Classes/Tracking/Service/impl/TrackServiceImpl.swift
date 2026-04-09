@@ -274,7 +274,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 params[Constants.label] = label
             }
             if let value = value {
-                params[Constants.value] = String(value)
+                params[Constants.value] = value
             }
 
             if let customFields = customFields, !customFields.isEmpty {

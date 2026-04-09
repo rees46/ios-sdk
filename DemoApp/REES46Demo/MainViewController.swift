@@ -13,7 +13,7 @@ import AppTrackingTransparency
 
 private enum DemoTrackEventDemoConstants {
     static let sampleUnixTime = 123_456
-    static let successEventName = "demo_my_event"
+    static let successEventName = "custom_event"
     static let category = "demo_category"
     static let label = "demo_label"
     static let sampleValue = 100

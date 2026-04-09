@@ -49,7 +49,7 @@ final class TrackEventCustomFieldsTests: XCTestCase {
         XCTAssertEqual(params["time"] as? Int, time)
         XCTAssertEqual(params["category"] as? String, category)
         XCTAssertEqual(params["label"] as? String, label)
-        XCTAssertEqual(params["value"] as? String, String(value))
+        XCTAssertEqual(params["value"] as? Int, value)
         
         XCTAssertEqual(params["foo"] as? String, "bar")
         XCTAssertEqual(params["baz"] as? Int, 42)
