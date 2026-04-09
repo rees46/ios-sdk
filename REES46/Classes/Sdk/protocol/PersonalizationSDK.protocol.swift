@@ -34,7 +34,7 @@ public protocol PersonalizationSDK {
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?,  advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
-    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
     func suggest(query: String, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void)
@@ -167,8 +167,26 @@ public extension PersonalizationSDK {
         track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
     
-    func trackEvent(event: String, category: String? = nil, label: String? = nil, value: Int? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        trackEvent(event: event, category: category, label: label, value: value, completion: completion)
+    func trackEvent(
+        event: String,
+        category: String? = nil,
+        label: String? = nil,
+        value: Int? = nil,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        trackEvent(event: event, time: nil, category: category, label: label, value: value, customFields: nil, completion: completion)
+    }
+    
+    func trackEvent(
+        event: String,
+        time: Int? = nil,
+        category: String? = nil,
+        label: String? = nil,
+        value: Int? = nil,
+        customFields: [String: Any]? = nil,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        trackEvent(event: event, time: time, category: category, label: label, value: value, customFields: customFields, completion: completion)
     }
     
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {

@@ -8,6 +8,8 @@ Packages
 Pods/*
 DemoApp/Pods/*
 DemoApp/Podfile.lock
+DemoApp/.bundle/
+DemoApp/vendor/
 GoogleService-Info.plist
 node_modules
 source.tgz

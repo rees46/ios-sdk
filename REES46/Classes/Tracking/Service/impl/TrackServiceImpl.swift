@@ -29,8 +29,10 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let email = "email"
         static let phone = "phone"
         static let event = "event"
+        static let time = "time"
         static let label = "label"
         static let value = "value"
+        static let payload = "payload"
         static let source = "source"
         static let status = "status"
         static let success = "success"
@@ -66,6 +68,21 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let wish = "wish"
         static let purchase = "purchase"
     }
+
+    private static let reservedCustomEventKeys: Set<String> = [
+        Constants.shopId,
+        Constants.did,
+        Constants.seance,
+        Constants.sid,
+        Constants.segment,
+        Constants.event,
+        Constants.time,
+        Constants.category,
+        Constants.label,
+        Constants.value,
+        Constants.source,
+        Constants.payload
+    ]
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
@@ -221,7 +238,15 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
     }
     
-    func trackEvent(event: String, category: String?, label: String?, value: Int?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+    func trackEvent(
+        event: String,
+        time: Int?,
+        category: String?,
+        label: String?,
+        value: Int?,
+        customFields: [String: Any]?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "trackEvent: SDK is not initialized")))
             return
@@ -238,6 +263,10 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 Constants.event: event
             ]
             
+            if let time = time {
+                params[Constants.time] = time
+            }
+            
             if let category = category {
                 params[Constants.category] = category
             }
@@ -246,6 +275,21 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             }
             if let value = value {
                 params[Constants.value] = String(value)
+            }
+
+            if let customFields = customFields, !customFields.isEmpty {
+                let collisions = Set(customFields.keys).intersection(Self.reservedCustomEventKeys)
+                if !collisions.isEmpty {
+                    let sorted = collisions.sorted().joined(separator: ", ")
+                    completion(.failure(.custom(error: "trackEvent: customFields contains reserved keys: \(sorted)")))
+                    return
+                }
+                
+                for (key, value) in customFields {
+                    params[key] = value
+                }
+                
+                params[Constants.payload] = customFields
             }
             
             // Check source tracker params
