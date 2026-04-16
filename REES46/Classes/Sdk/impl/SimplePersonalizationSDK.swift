@@ -7,6 +7,11 @@ public var global_EL: Bool = true
 
 // MARK: - SimplePersonalizationSDK
 
+private enum ProbabilityToPurchaseNetworkConstants {
+    /// Default `URLSessionConfiguration.timeoutIntervalForRequest` for purchase probability API calls.
+    static let requestTimeoutIntervalSeconds: TimeInterval = 15
+}
+
 class SimplePersonalizationSDK: PersonalizationSDK {
     private var global_EL: Bool = false
     
@@ -479,6 +484,53 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     let resJSON = successResult
                     let resultResponse = RecommenderResponse(json: resJSON)
                     completion(.success(resultResponse))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getProbabilityToPurchase(
+        params: PurchasePredictParams,
+        completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void
+    ) {
+        sessionQueue.addOperation {
+            let path = "predict/probability-to-purchase"
+            var queryParams: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment": self.segment
+            ]
+            if let email = params.email, !email.isEmpty {
+                queryParams["email"] = email
+            }
+            if let phone = params.phone, !phone.isEmpty {
+                queryParams["phone"] = phone
+            }
+            if let telegramId = params.telegramId, !telegramId.isEmpty {
+                queryParams["telegram_id"] = telegramId
+            }
+            if let loyaltyId = params.loyaltyId, !loyaltyId.isEmpty {
+                queryParams["loyalty_id"] = loyaltyId
+            }
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = ProbabilityToPurchaseNetworkConstants.requestTimeoutIntervalSeconds
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: path, params: queryParams) { result in
+                switch result {
+                case let .success(json):
+                    if let parsed = ProbabilityToPurchaseResponse(json: json) {
+                        completion(.success(parsed))
+                    } else {
+                        completion(.failure(.decodeError))
+                    }
                 case let .failure(error):
                     completion(.failure(error))
                 }

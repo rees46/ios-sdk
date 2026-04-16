@@ -231,6 +231,10 @@ private final class MockPersonalizationSDK: PersonalizationSDK {
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
         fatalError("Not needed for these tests")
     }
+
+    func getProbabilityToPurchase(params: PurchasePredictParams, completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
     
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         fatalError("Not needed for these tests")
