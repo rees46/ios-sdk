@@ -11,6 +11,10 @@ import REES46
 import AdSupport
 import AppTrackingTransparency
 
+private enum DemoPurchasePredictConstants {
+    static let demoEmail = "predict-demo@example.com"
+}
+
 private enum DemoTrackEventDemoConstants {
     static let sampleUnixTime = 123_456
     static let successEventName = "custom_event"
@@ -41,6 +45,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var showTestPopupButton: UIButton!
     private var trackEventCustomFieldsSuccessButton: UIButton!
     private var trackEventCustomFieldsCollisionButton: UIButton!
+    private var predictDidOnlyButton: UIButton!
+    private var predictWithEmailButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -259,6 +265,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         
         setupTestPopupButton()
         setupTrackEventDemoButtons()
+        setupPurchasePredictDemoButtons()
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -337,6 +344,70 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         
         trackEventCustomFieldsSuccessButton.addTarget(self, action: #selector(didTapTrackEventCustomFieldsSuccess), for: .touchUpInside)
         trackEventCustomFieldsCollisionButton.addTarget(self, action: #selector(didTapTrackEventCustomFieldsCollision), for: .touchUpInside)
+    }
+
+    func setupPurchasePredictDemoButtons() {
+        predictDidOnlyButton = DemoShopButton(type: .system)
+        predictDidOnlyButton.setTitle("Predict purchase (did only)", for: .normal)
+        predictDidOnlyButton.setTitleColor(.white, for: .normal)
+        predictDidOnlyButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(predictDidOnlyButton)
+
+        predictWithEmailButton = DemoShopButton(type: .system)
+        predictWithEmailButton.setTitle("Predict purchase (did + email)", for: .normal)
+        predictWithEmailButton.setTitleColor(.white, for: .normal)
+        predictWithEmailButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(predictWithEmailButton)
+
+        NSLayoutConstraint.activate([
+            predictDidOnlyButton.topAnchor.constraint(equalTo: trackEventCustomFieldsCollisionButton.bottomAnchor, constant: 24),
+            predictDidOnlyButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            predictDidOnlyButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            predictDidOnlyButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+
+            predictWithEmailButton.topAnchor.constraint(equalTo: predictDidOnlyButton.bottomAnchor, constant: 10),
+            predictWithEmailButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            predictWithEmailButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            predictWithEmailButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor)
+        ])
+
+        predictDidOnlyButton.addTarget(self, action: #selector(didTapPredictDidOnly), for: .touchUpInside)
+        predictWithEmailButton.addTarget(self, action: #selector(didTapPredictWithEmail), for: .touchUpInside)
+    }
+
+    @objc
+    private func didTapPredictDidOnly() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getProbabilityToPurchase(params: PurchasePredictParams()) { result in
+            switch result {
+            case .success(let response):
+                let message = String(format: "probability=%.4f\nclient_id=%@", response.probability, response.clientId)
+                self.presentTrackEventDemoAlert(title: "Predict", message: message)
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(title: "Predict failed", message: Self.sdkErrorDescription(error))
+            }
+        }
+    }
+
+    @objc
+    private func didTapPredictWithEmail() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        let params = PurchasePredictParams(email: DemoPurchasePredictConstants.demoEmail)
+        sdk.getProbabilityToPurchase(params: params) { result in
+            switch result {
+            case .success(let response):
+                let message = String(format: "probability=%.4f\nclient_id=%@", response.probability, response.clientId)
+                self.presentTrackEventDemoAlert(title: "Predict", message: message)
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(title: "Predict failed", message: Self.sdkErrorDescription(error))
+            }
+        }
     }
     
     private func presentTrackEventDemoAlert(title: String, message: String) {

@@ -74,6 +74,7 @@ public protocol PersonalizationSDK {
         completion: @escaping (Result<Void, SdkError>) -> Void
     )
     func getStories(code: String, completion: @escaping(Result<StoryContent, SdkError>) -> Void)
+    func getProbabilityToPurchase(params: PurchasePredictParams, completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void)
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping(Result<Void, SdkError>) -> Void)
@@ -242,6 +243,13 @@ public extension PersonalizationSDK {
         subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
     }
     
+    func getProbabilityToPurchase(
+        params: PurchasePredictParams = PurchasePredictParams(),
+        completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void
+    ) {
+        getProbabilityToPurchase(params: params, completion: completion)
+    }
+
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
         addToSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
     }
