@@ -1,0 +1,16 @@
+name: CocoaPods Trunk Keepalive
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: macos-latest
+    steps:
+      - name: Ping trunk
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TOKEN }}
+        run: |
+          set -e
+          pod trunk me
