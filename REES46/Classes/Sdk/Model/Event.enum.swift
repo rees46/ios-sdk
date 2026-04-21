@@ -13,5 +13,6 @@ public enum Event {
     case synchronizeFavorites(ids: [String])
     case slideView(storyId: String, slideId: String)
     case slideClick(storyId: String, slideId: String)
+    @available(*, deprecated, message: "Use PersonalizationSDK.trackPurchase(_:recommendedBy:completion:) with PurchaseTrackingRequest.")
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
 }
