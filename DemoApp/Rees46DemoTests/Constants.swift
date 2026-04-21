@@ -6,7 +6,8 @@ struct Constants {
     static let testCurrentPrice = 170.0
     static let testApiDomain = "api.rees46.ru"
     static let testItemId = "486"
-    static let defaultTimeout = 5.0
+    // Network-backed integration tests can be slow/flaky on CI runners.
+    static let defaultTimeout = 20.0
     
     static let testShopIdKey = "TEST_SHOP_ID"
     static let testApiUrlKey = "TEST_API_URL"
