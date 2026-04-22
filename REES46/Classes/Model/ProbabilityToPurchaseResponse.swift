@@ -1,8 +1,3 @@
-//
-//  ProbabilityToPurchaseResponse.swift
-//  REES46
-//
-
 import Foundation
 
 public struct ProbabilityToPurchaseResponse {

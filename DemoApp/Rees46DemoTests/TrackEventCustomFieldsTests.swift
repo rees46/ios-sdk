@@ -140,6 +140,10 @@ private final class MockPersonalizationSDK: PersonalizationSDK {
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         fatalError("Not needed for these tests")
     }
+
+    func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
     
     func trackSource(source: RecommendedByCase, code: String) {
         fatalError("Not needed for these tests")

@@ -15,6 +15,16 @@ private enum DemoPurchasePredictConstants {
     static let demoEmail = "predict-demo@example.com"
 }
 
+private enum DemoPurchaseTrackingConstants {
+    static let orderIdMinimal = "ios-demo-order-minimal"
+    static let orderIdFull = "ios-demo-order-full"
+    static let orderPriceMinimal = 199.0
+    static let orderPriceFull = 999.0
+    static let itemId = "ios-demo-sku-001"
+    static let itemAmount = 1
+    static let itemPrice = 99.0
+}
+
 private enum DemoTrackEventDemoConstants {
     static let sampleUnixTime = 123_456
     static let successEventName = "custom_event"
@@ -47,6 +57,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var trackEventCustomFieldsCollisionButton: UIButton!
     private var predictDidOnlyButton: UIButton!
     private var predictWithEmailButton: UIButton!
+    private var trackPurchaseMinimalButton: UIButton!
+    private var trackPurchaseFullButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -266,6 +278,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupTestPopupButton()
         setupTrackEventDemoButtons()
         setupPurchasePredictDemoButtons()
+        setupTrackPurchaseDemoButtons()
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -409,6 +422,36 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             }
         }
     }
+
+    func setupTrackPurchaseDemoButtons() {
+        trackPurchaseMinimalButton = DemoShopButton(type: .system)
+        trackPurchaseMinimalButton.setTitle("Track purchase (minimal)", for: .normal)
+        trackPurchaseMinimalButton.setTitleColor(.white, for: .normal)
+        trackPurchaseMinimalButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(trackPurchaseMinimalButton)
+
+        trackPurchaseFullButton = DemoShopButton(type: .system)
+        trackPurchaseFullButton.setTitle("Track purchase (full)", for: .normal)
+        trackPurchaseFullButton.setTitleColor(.white, for: .normal)
+        trackPurchaseFullButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(trackPurchaseFullButton)
+
+        NSLayoutConstraint.activate([
+            // Place after the predict buttons (which are placed after the trackEvent buttons).
+            trackPurchaseMinimalButton.topAnchor.constraint(equalTo: predictWithEmailButton.bottomAnchor, constant: 24),
+            trackPurchaseMinimalButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            trackPurchaseMinimalButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            trackPurchaseMinimalButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+
+            trackPurchaseFullButton.topAnchor.constraint(equalTo: trackPurchaseMinimalButton.bottomAnchor, constant: 10),
+            trackPurchaseFullButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            trackPurchaseFullButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            trackPurchaseFullButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        trackPurchaseMinimalButton.addTarget(self, action: #selector(didTapTrackPurchaseMinimal), for: .touchUpInside)
+        trackPurchaseFullButton.addTarget(self, action: #selector(didTapTrackPurchaseFull), for: .touchUpInside)
+    }
     
     private func presentTrackEventDemoAlert(title: String, message: String) {
         DispatchQueue.main.async {
@@ -458,6 +501,77 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         }
     }
     
+    @objc
+    private func didTapTrackPurchaseMinimal() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        let request = PurchaseTrackingRequest(
+            orderId: DemoPurchaseTrackingConstants.orderIdMinimal,
+            orderPrice: DemoPurchaseTrackingConstants.orderPriceMinimal,
+            items: [
+                PurchaseItemRequest(
+                    id: DemoPurchaseTrackingConstants.itemId,
+                    amount: DemoPurchaseTrackingConstants.itemAmount,
+                    price: DemoPurchaseTrackingConstants.itemPrice
+                ),
+            ]
+        )
+        sdk.trackPurchase(request) { result in
+            switch result {
+            case .success:
+                self.presentTrackEventDemoAlert(title: "trackPurchase", message: "Request sent (minimal).")
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(title: "trackPurchase failed", message: Self.sdkErrorDescription(error))
+            }
+        }
+    }
+
+    @objc
+    private func didTapTrackPurchaseFull() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        let request = PurchaseTrackingRequest(
+            orderId: DemoPurchaseTrackingConstants.orderIdFull,
+            orderPrice: DemoPurchaseTrackingConstants.orderPriceFull,
+            items: [
+                PurchaseItemRequest(
+                    id: DemoPurchaseTrackingConstants.itemId,
+                    amount: 2,
+                    price: 49.99,
+                    quantity: 2,
+                    lineId: "demo-line-1",
+                    fashionSize: "L"
+                ),
+            ],
+            deliveryType: "courier",
+            deliveryAddress: "Demo address",
+            paymentType: "card",
+            isTaxFree: true,
+            promocode: "DEMO10",
+            orderCash: 100,
+            orderBonuses: 10,
+            orderDelivery: 5,
+            orderDiscount: 15,
+            channel: "mobile",
+            custom: ["demo_custom": "ios_demo"],
+            recommendedSource: ["source_key": "source_value"],
+            stream: "demo-stream",
+            segment: "A"
+        )
+        sdk.trackPurchase(request) { result in
+            switch result {
+            case .success:
+                self.presentTrackEventDemoAlert(title: "trackPurchase", message: "Request sent (full).")
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(title: "trackPurchase failed", message: Self.sdkErrorDescription(error))
+            }
+        }
+    }
+
     @objc
     private func didTapTrackEventCustomFieldsCollision() {
         guard let sdk = globalSDK else {

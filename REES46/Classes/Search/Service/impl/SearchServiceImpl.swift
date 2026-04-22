@@ -76,7 +76,9 @@ class SearchServiceImpl: SearchServiceProtocol {
             "sort_dir": sortDir,
             "locations": locations,
             "excluded_merchants": locations != nil ? excludedMerchants?.joined(separator: ", ") : nil ,
-            "excluded_brands": sdk?.generateString(array: excludedBrands ?? []),
+            // API contract: `exclude_brands` (without `d`).
+            // Tests expect this to affect results.
+            "exclude_brands": excludedBrands?.joined(separator: ", "),
             "brands": brands,
             "price_min": priceMin.map { String(describing: $0) },
             "price_max": priceMax.map { String(describing: $0) },

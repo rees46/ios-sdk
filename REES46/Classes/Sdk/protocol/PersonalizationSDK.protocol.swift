@@ -33,6 +33,7 @@ public protocol PersonalizationSDK {
     
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?,  advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackSource(source: RecommendedByCase, code: String)
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
@@ -166,6 +167,10 @@ public extension PersonalizationSDK {
     
     func track(event: Event, recommendedBy: RecomendedBy? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
         track(event: event, recommendedBy: recommendedBy, completion: completion)
+    }
+
+    func trackPurchase(_ request: PurchaseTrackingRequest, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackPurchase(request, recommendedBy: nil, completion: completion)
     }
     
     func trackEvent(

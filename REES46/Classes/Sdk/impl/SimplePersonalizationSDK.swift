@@ -408,6 +408,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
+
+    func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackEventService.trackPurchase(request, recommendedBy: recommendedBy, completion: completion)
+    }
     
     func trackEvent(
         event: String,

@@ -67,6 +67,17 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let fullWish = "full_wish"
         static let wish = "wish"
         static let purchase = "purchase"
+        static let quantity = "quantity"
+        static let lineId = "line_id"
+        static let fashionSize = "fashion_size"
+        static let custom = "custom"
+        static let recommendedSource = "recommended_source"
+        static let orderCash = "order_cash"
+        static let orderBonuses = "order_bonuses"
+        static let orderDelivery = "order_delivery"
+        static let orderDiscount = "order_discount"
+        static let channel = "channel"
+        static let stream = "stream"
     }
 
     private static let reservedCustomEventKeys: Set<String> = [
@@ -83,6 +94,32 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         Constants.source,
         Constants.payload
     ]
+
+    private static let reservedPurchaseCustomKeys: Set<String> = {
+        var s = reservedCustomEventKeys
+        s.formUnion([
+            Constants.items,
+            Constants.orderId,
+            Constants.orderPrice,
+            Constants.deliveryType,
+            Constants.deliveryAddress,
+            Constants.paymentType,
+            Constants.taxFree,
+            Constants.promocode,
+            Constants.orderCash,
+            Constants.orderBonuses,
+            Constants.orderDelivery,
+            Constants.orderDiscount,
+            Constants.channel,
+            Constants.custom,
+            Constants.recommendedSource,
+            Constants.quantity,
+            Constants.lineId,
+            Constants.fashionSize,
+            Constants.stream,
+        ])
+        return s
+    }()
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
@@ -138,34 +175,28 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 params[Constants.items] = [[Constants.id:id]]
                 paramEvent = Constants.removeWish
             case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
-                var tempItems: [[String: Any]] = []
-                for (_, item) in products.enumerated() {
-                    tempItems.append(
-                        [
-                            Constants.id: item.id,
-                            Constants.amount: String(item.amount),
-                            Constants.price: item.price
-                        ]
+                let mappedItems = products.map { line in
+                    PurchaseItemRequest(
+                        id: line.id,
+                        amount: line.amount,
+                        price: Double(line.price)
                     )
                 }
-                params[Constants.items] = tempItems
-                params[Constants.orderId] = orderId
-                params[Constants.orderPrice] = "\(totalValue)"
-                if let deliveryAddress = deliveryAddress {
-                    params[Constants.deliveryAddress] = deliveryAddress
-                }
-                if let deliveryType = deliveryType {
-                    params[Constants.deliveryType] = deliveryType
-                }
-                if let promocode = promocode {
-                    params[Constants.promocode] = promocode
-                }
-                if let paymentType = paymentType {
-                    params[Constants.paymentType] = paymentType
-                }
-                if let taxFree = taxFree {
-                    params[Constants.taxFree] = taxFree
-                }
+                let purchaseRequest = PurchaseTrackingRequest(
+                    orderId: orderId,
+                    orderPrice: totalValue,
+                    items: mappedItems,
+                    deliveryType: deliveryType,
+                    deliveryAddress: deliveryAddress,
+                    paymentType: paymentType,
+                    isTaxFree: taxFree ?? false,
+                    promocode: promocode,
+                    custom: nil,
+                    recommendedSource: nil,
+                    stream: nil,
+                    segment: nil
+                )
+                Self.mergePurchasePayload(request: purchaseRequest, params: &params)
                 paramEvent = Constants.purchase
             case let .synchronizeCart(items):
                 var tempItems: [[String: Any]] = []
@@ -235,6 +266,187 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     }
                 }
             )
+        }
+    }
+
+    func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        guard let sdk = sdk else {
+            completion(.failure(.custom(error: "trackPurchase: SDK is not initialized")))
+            return
+        }
+        if let validationError = Self.validatePurchaseRequest(request) {
+            completion(.failure(.custom(error: validationError)))
+            return
+        }
+        if let customError = Self.validatePurchaseCustomFields(request.custom) {
+            completion(.failure(.custom(error: customError)))
+            return
+        }
+
+        sessionQueue.addOperation {
+            let path = "push"
+            var params: [String: Any] = [
+                Constants.shopId: sdk.shopId,
+                Constants.did: sdk.deviceId,
+                Constants.seance: sdk.userSeance,
+                Constants.sid: sdk.userSeance,
+                Constants.segment: sdk.segment,
+            ]
+            Self.mergePurchasePayload(request: request, params: &params)
+            params[Constants.event] = Constants.purchase
+
+            if let recommendedBy = recommendedBy {
+                let recomendedParams = recommendedBy.getParams()
+                for item in recomendedParams {
+                    params[item.key] = item.value
+                }
+            }
+
+            let timeValue = UserDefaults.standard.double(forKey: Constants.timeStartSaveKey)
+            let nowTimeValue = Date().timeIntervalSince1970
+            let diff = nowTimeValue - timeValue
+            if diff > 48*60*60 {
+                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedCode)
+                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedType)
+            } else {
+                let savedCode = UserDefaults.standard.string(forKey: Constants.recomendedCode) ?? ""
+                let savedType = UserDefaults.standard.string(forKey: Constants.recomendedType) ?? ""
+                let sourceParams: [String: Any] = [
+                    Constants.sourceFrom: savedType,
+                    Constants.sourceCode: savedCode
+                ]
+                params[Constants.source] = sourceParams
+            }
+
+            sdk.postRequest(
+                path: path, params: params, completion: { result in
+                    switch result {
+                    case let .success(successResult):
+                        let resJSON = successResult
+                        let status = resJSON[Constants.status] as? String ?? ""
+                        if status == Constants.success {
+                            self.showPopup(jsonResult: resJSON)
+                            completion(.success(Void()))
+                        } else {
+                            completion(.failure(.responseError))
+                        }
+                    case let .failure(error):
+                        completion(.failure(error))
+                    }
+                }
+            )
+        }
+    }
+
+    private static func validatePurchaseRequest(_ request: PurchaseTrackingRequest) -> String? {
+        if request.orderId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "trackPurchase: orderId must be non-empty"
+        }
+        if request.items.isEmpty {
+            return "trackPurchase: items must not be empty"
+        }
+        for item in request.items {
+            if item.id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return "trackPurchase: each item.id must be non-empty"
+            }
+            if item.amount <= 0 {
+                return "trackPurchase: each item.amount must be > 0"
+            }
+            if !item.price.isFinite {
+                return "trackPurchase: each item.price must be a finite number"
+            }
+        }
+        if !request.orderPrice.isFinite {
+            return "trackPurchase: orderPrice must be a finite number"
+        }
+        return nil
+    }
+
+    private static func validatePurchaseCustomFields(_ custom: [String: Any]?) -> String? {
+        guard let custom = custom, !custom.isEmpty else { return nil }
+        let effectiveKeys = custom.keys.filter { key in
+            if key.isEmpty { return false }
+            guard let v = custom[key] else { return false }
+            return !(v is NSNull)
+        }
+        let collisions = Set(effectiveKeys).intersection(reservedPurchaseCustomKeys)
+        if !collisions.isEmpty {
+            return "trackPurchase: custom contains reserved keys: \(collisions.sorted().joined(separator: ", "))"
+        }
+        return nil
+    }
+
+    private static func mergePurchasePayload(request: PurchaseTrackingRequest, params: inout [String: Any]) {
+        if let seg = request.segment?.trimmingCharacters(in: .whitespacesAndNewlines), !seg.isEmpty {
+            params[Constants.segment] = seg
+        }
+        if let stream = request.stream?.trimmingCharacters(in: .whitespacesAndNewlines), !stream.isEmpty {
+            params[Constants.stream] = stream
+        }
+
+        var tempItems: [[String: Any]] = []
+        for item in request.items {
+            var row: [String: Any] = [
+                Constants.id: item.id,
+                Constants.amount: item.amount,
+                Constants.price: item.price,
+            ]
+            if let quantity = item.quantity {
+                row[Constants.quantity] = quantity
+            }
+            if let lineId = item.lineId?.trimmingCharacters(in: .whitespacesAndNewlines), !lineId.isEmpty {
+                row[Constants.lineId] = lineId
+            }
+            if let fashionSize = item.fashionSize?.trimmingCharacters(in: .whitespacesAndNewlines), !fashionSize.isEmpty {
+                row[Constants.fashionSize] = fashionSize
+            }
+            tempItems.append(row)
+        }
+        params[Constants.items] = tempItems
+        params[Constants.orderId] = request.orderId
+        params[Constants.orderPrice] = request.orderPrice
+
+        if let deliveryAddress = request.deliveryAddress?.trimmingCharacters(in: .whitespacesAndNewlines), !deliveryAddress.isEmpty {
+            params[Constants.deliveryAddress] = deliveryAddress
+        }
+        if let deliveryType = request.deliveryType?.trimmingCharacters(in: .whitespacesAndNewlines), !deliveryType.isEmpty {
+            params[Constants.deliveryType] = deliveryType
+        }
+        if let paymentType = request.paymentType?.trimmingCharacters(in: .whitespacesAndNewlines), !paymentType.isEmpty {
+            params[Constants.paymentType] = paymentType
+        }
+        if request.isTaxFree {
+            params[Constants.taxFree] = true
+        }
+        if let promocode = request.promocode?.trimmingCharacters(in: .whitespacesAndNewlines), !promocode.isEmpty {
+            params[Constants.promocode] = promocode
+        }
+        if let orderCash = request.orderCash {
+            params[Constants.orderCash] = orderCash
+        }
+        if let orderBonuses = request.orderBonuses {
+            params[Constants.orderBonuses] = orderBonuses
+        }
+        if let orderDelivery = request.orderDelivery {
+            params[Constants.orderDelivery] = orderDelivery
+        }
+        if let orderDiscount = request.orderDiscount {
+            params[Constants.orderDiscount] = orderDiscount
+        }
+        if let channel = request.channel?.trimmingCharacters(in: .whitespacesAndNewlines), !channel.isEmpty {
+            params[Constants.channel] = channel
+        }
+        if let custom = request.custom, !custom.isEmpty {
+            var cleaned: [String: Any] = [:]
+            for (key, value) in custom where !key.isEmpty && !(value is NSNull) {
+                cleaned[key] = value
+            }
+            if !cleaned.isEmpty {
+                params[Constants.custom] = cleaned
+            }
+        }
+        if let recommendedSource = request.recommendedSource, !recommendedSource.isEmpty {
+            params[Constants.recommendedSource] = recommendedSource
         }
     }
     

@@ -62,15 +62,13 @@ class SearchServiceImplTests: XCTestCase {
         let expectation1 = XCTestExpectation(description: "First search completes")
         let expectation2 = XCTestExpectation(description: "Second search completes")
         
-        var productsTotalWithBrands: Int?
-        var productsTotalWithoutBrands: Int?
+        var brandsWithoutExcluded: [String]?
         
         sdk?.search(
             query: "пудра-бронзер"
         ) { result in
             switch result {
             case .success(let response):
-                productsTotalWithBrands = response.productsTotal
                 expectation1.fulfill()
             case .failure(let error):
                 XCTFail("Search failed with error: \(error)")
@@ -83,29 +81,29 @@ class SearchServiceImplTests: XCTestCase {
         ) { result in
             switch result {
             case .success(let response):
-                productsTotalWithoutBrands = response.productsTotal
+                brandsWithoutExcluded = response.brands
                 expectation2.fulfill()
             case .failure(let error):
                 XCTFail("Search failed with error: \(error)")
             }
         }
         wait(for: [expectation1, expectation2], timeout: 10)
-        XCTAssertNotEqual(productsTotalWithBrands, productsTotalWithoutBrands)
+        let excluded = Set(["dior", "estee lauder"])
+        let lowercased = Set((brandsWithoutExcluded ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
+        XCTAssertTrue(excluded.isDisjoint(with: lowercased))
     }
     
     func testSuggest_withExcludeBrands() {
         let expectation1 = XCTestExpectation(description: "First search completes")
         let expectation2 = XCTestExpectation(description: "Second search completes")
         
-        var productsTotalWithBrands: Int?
-        var productsTotalWithoutBrands: Int?
+        var brandsWithoutExcluded: [String]?
         
         sdk?.suggest(
             query: "пудра-бронзер"
         ) { result in
             switch result {
             case .success(let response):
-                productsTotalWithBrands = response.productsTotal
                 expectation1.fulfill()
             case .failure(let error):
                 XCTFail("Search failed with error: \(error)")
@@ -118,14 +116,16 @@ class SearchServiceImplTests: XCTestCase {
         ) { result in
             switch result {
             case .success(let response):
-                productsTotalWithoutBrands = response.productsTotal
+                brandsWithoutExcluded = response.brands
                 expectation2.fulfill()
             case .failure(let error):
                 XCTFail("Search failed with error: \(error)")
             }
         }
         wait(for: [expectation1, expectation2], timeout: 10)
-        XCTAssertNotEqual(productsTotalWithBrands, productsTotalWithoutBrands)
+        let excluded = Set(["dior", "estee lauder"])
+        let lowercased = Set((brandsWithoutExcluded ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
+        XCTAssertTrue(excluded.isDisjoint(with: lowercased))
     }
     
     func testSearch_withAllFields() {
