@@ -187,6 +187,34 @@ class SearchServiceImplTests: XCTestCase {
         waitForExpectations(timeout: 5, handler: nil)
     }
 
+    func testSearchBlank_popularFields() {
+        let expectation = self.expectation(description: "searchBlank completion")
+
+        sdk?.searchBlank { result in
+            switch result {
+            case .success(let response):
+                XCTAssertFalse(response.popularLinks.isEmpty, "popular_links should not be empty for this shop")
+                for item in response.popularLinks {
+                    XCTAssertFalse(item.name.isEmpty, "popular_links item must have a name")
+                    XCTAssertFalse(item.url.isEmpty, "popular_links item must have a url")
+                }
+                for item in response.popularCategories {
+                    XCTAssertFalse(item.name.isEmpty, "popular_categories item must have a name")
+                    XCTAssertFalse(item.url.isEmpty, "popular_categories item must have a url")
+                }
+                for item in response.popularBrands {
+                    XCTAssertFalse(item.name.isEmpty, "popular_brands item must have a name")
+                    XCTAssertFalse(item.url.isEmpty, "popular_brands item must have a url")
+                }
+            case .failure(let error):
+                XCTFail("searchBlank failed with error: \(error)")
+            }
+            expectation.fulfill()
+        }
+
+        waitForExpectations(timeout: 10, handler: nil)
+    }
+
     func testSearch_withMinimalFields() {
         let query = "minimal query"
         
