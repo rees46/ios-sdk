@@ -59,6 +59,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var predictWithEmailButton: UIButton!
     private var trackPurchaseMinimalButton: UIButton!
     private var trackPurchaseFullButton: UIButton!
+    private var getLastOrderProductsButton: UIButton!
+    private var getUserOrdersButton: UIButton!
     
     public var waitIndicator: SdkActivityIndicator!
     
@@ -279,6 +281,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupTrackEventDemoButtons()
         setupPurchasePredictDemoButtons()
         setupTrackPurchaseDemoButtons()
+        setupGetLastOrderProductsButton()
+        setupGetUserOrdersButton()
         
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -452,7 +456,86 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         trackPurchaseMinimalButton.addTarget(self, action: #selector(didTapTrackPurchaseMinimal), for: .touchUpInside)
         trackPurchaseFullButton.addTarget(self, action: #selector(didTapTrackPurchaseFull), for: .touchUpInside)
     }
-    
+
+    func setupGetLastOrderProductsButton() {
+        getLastOrderProductsButton = DemoShopButton(type: .system)
+        getLastOrderProductsButton.setTitle("Get last order products", for: .normal)
+        getLastOrderProductsButton.setTitleColor(.white, for: .normal)
+        getLastOrderProductsButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(getLastOrderProductsButton)
+
+        NSLayoutConstraint.activate([
+            getLastOrderProductsButton.topAnchor.constraint(equalTo: trackPurchaseFullButton.bottomAnchor, constant: 24),
+            getLastOrderProductsButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            getLastOrderProductsButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            getLastOrderProductsButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        getLastOrderProductsButton.addTarget(self, action: #selector(didTapGetLastOrderProducts), for: .touchUpInside)
+    }
+
+    func setupGetUserOrdersButton() {
+        getUserOrdersButton = DemoShopButton(type: .system)
+        getUserOrdersButton.setTitle("Get user orders", for: .normal)
+        getUserOrdersButton.setTitleColor(.white, for: .normal)
+        getUserOrdersButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(getUserOrdersButton)
+
+        NSLayoutConstraint.activate([
+            getUserOrdersButton.topAnchor.constraint(equalTo: getLastOrderProductsButton.bottomAnchor, constant: 10),
+            getUserOrdersButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            getUserOrdersButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            getUserOrdersButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        getUserOrdersButton.addTarget(self, action: #selector(didTapGetUserOrders), for: .touchUpInside)
+    }
+
+    @objc
+    private func didTapGetUserOrders() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        // Placeholder secret for demo only — orders/by_user requires a real server-side shop_secret.
+        sdk.getUserOrders(shopSecret: "demo-shop-secret") { result in
+            switch result {
+            case .success(let orders):
+                self.presentTrackEventDemoAlert(
+                    title: "User orders",
+                    message: "Received \(orders.count) order(s)."
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getUserOrders failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    @objc
+    private func didTapGetLastOrderProducts() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getLastOrderProducts { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Last order products",
+                    message: "Received \(response.products.count) product(s)."
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getLastOrderProducts failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
     private func presentTrackEventDemoAlert(title: String, message: String) {
         DispatchQueue.main.async {
             let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
