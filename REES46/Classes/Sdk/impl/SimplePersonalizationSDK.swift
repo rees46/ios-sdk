@@ -706,6 +706,70 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    func getLastOrderProducts(completion: @escaping (Result<LastOrderProductsResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            let path = "orders/last_for_user"
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment": self.segment
+            ]
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getArrayRequest(path: path, params: params) { result in
+                switch result {
+                case let .success(array):
+                    completion(.success(LastOrderProductsResponse(array: array)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getUserOrders(shopSecret: String, did: String?, email: String?, phone: String?, loyaltyId: String?, externalId: String?, dateFrom: String?, completion: @escaping (Result<[Order], SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            var params: [String: String] = [
+                "shop_id": self.shopId,
+                "shop_secret": shopSecret
+            ]
+
+            let hasIdentifier = [did, email, phone, loyaltyId, externalId].contains { $0 != nil }
+            if let did = did { params["did"] = did }
+            if let email = email { params["email"] = email }
+            if let phone = phone { params["phone"] = phone }
+            if let loyaltyId = loyaltyId { params["loyalty_id"] = loyaltyId }
+            if let externalId = externalId { params["external_id"] = externalId }
+            // Default to the current device id when no explicit identifier is provided.
+            if !hasIdentifier { params["did"] = self.deviceId }
+            if let dateFrom = dateFrom { params["date_from"] = dateFrom }
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            // Envelope: { "status": ..., "data": { "orders": [...] } }
+            self.getRequest(path: "orders/by_user", params: params) { result in
+                switch result {
+                case let .success(json):
+                    let ordersJson = (json["data"] as? [String: Any])?["orders"] as? [[String: Any]] ?? []
+                    completion(.success(ordersJson.map { Order(json: $0) }))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/clicked",
@@ -1221,6 +1285,62 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    /// Variant of `getRequest` for endpoints that return a top-level JSON array
+    /// (e.g. `orders/last_for_user`), which `getRequest` cannot decode into `[String: Any]`.
+    private func getArrayRequest(path: String, params: [String: String], completion: @escaping (Result<[[String: Any]], SdkError>) -> Void) {
+        let urlString = baseURL + path
+    #if DEBUG
+        print("LOG: getArrayRequest to: \(urlString)")
+    #endif
+
+        var url = URLComponents(string: urlString)
+
+        var queryItems = [URLQueryItem]()
+        for item in params {
+            queryItems.append(URLQueryItem(name: item.key, value: item.value))
+        }
+        queryItems.append(URLQueryItem(name: "stream", value: stream))
+        url?.queryItems = queryItems
+
+        if let endUrl = url?.url {
+            urlSession.dataTask(with: endUrl) { result in
+                switch result {
+                case .success(let (response, data)):
+                    guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
+                        let json = try? JSONSerialization.jsonObject(with: data)
+                        if let jsonObject = json as? [String: Any] {
+                            let statusMessage = jsonObject["message"] as? String ?? ""
+                            print("\nStatus message: ", statusMessage)
+                        }
+                        completion(.failure(.invalidResponse))
+                        return
+                    }
+                    do {
+                        let json = try JSONSerialization.jsonObject(with: data)
+                        if let jsonArray = json as? [[String: Any]] {
+                            completion(.success(jsonArray))
+                        } else {
+                            completion(.failure(.decodeError))
+                        }
+                    } catch {
+                        completion(.failure(.decodeError))
+                    }
+                case .failure:
+                    let networkManager = NetworkStatus.nManager
+                    let connectionStatus = networkManager.connectionStatus
+
+                    if connectionStatus == .Online {
+                        completion(.failure(.invalidResponse))
+                    } else if connectionStatus == .Offline {
+                        completion(.failure(.networkOfflineError))
+                    }
+                }
+            }.resume()
+        } else {
+            completion(.failure(.invalidResponse))
+        }
+    }
+
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
 #if DEBUG
         print("LOG: postRequest to: \(self.baseURL + path)")

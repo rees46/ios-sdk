@@ -42,6 +42,8 @@ public protocol PersonalizationSDK {
     func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void)
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void)
     func getProductInfo(id: String, completion: @escaping(Result<ProductInfo, SdkError>) -> Void)
+    func getLastOrderProducts(completion: @escaping(Result<LastOrderProductsResponse, SdkError>) -> Void)
+    func getUserOrders(shopSecret: String, did: String?, email: String?, phone: String?, loyaltyId: String?, externalId: String?, dateFrom: String?, completion: @escaping(Result<[Order], SdkError>) -> Void)
     func getDeviceId() -> String
     @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void)
@@ -111,6 +113,10 @@ public extension PersonalizationSDK {
     
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void) {
         getProductsFromCart(completion: completion)
+    }
+
+    func getUserOrders(shopSecret: String, did: String? = nil, email: String? = nil, phone: String? = nil, loyaltyId: String? = nil, externalId: String? = nil, dateFrom: String? = nil, completion: @escaping(Result<[Order], SdkError>) -> Void) {
+        getUserOrders(shopSecret: shopSecret, did: did, email: email, phone: phone, loyaltyId: loyaltyId, externalId: externalId, dateFrom: dateFrom, completion: completion)
     }
     
     func search(

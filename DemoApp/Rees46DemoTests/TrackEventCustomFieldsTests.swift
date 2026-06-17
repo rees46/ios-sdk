@@ -176,7 +176,15 @@ private final class MockPersonalizationSDK: PersonalizationSDK {
     func getProductInfo(id: String, completion: @escaping (Result<ProductInfo, SdkError>) -> Void) {
         fatalError("Not needed for these tests")
     }
-    
+
+    func getLastOrderProducts(completion: @escaping (Result<LastOrderProductsResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
+    func getUserOrders(shopSecret: String, did: String?, email: String?, phone: String?, loyaltyId: String?, externalId: String?, dateFrom: String?, completion: @escaping (Result<[Order], SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
     func getDeviceId() -> String { deviceId }
     
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void) {
