@@ -770,6 +770,62 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
+    func joinLoyalty(phone: String, email: String?, firstName: String?, lastName: String?, completion: @escaping (Result<LoyaltyJoinResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            // The shop is identified by `shop_id`; only the member fields are passed here.
+            var params: [String: Any] = [
+                "shop_id": self.shopId,
+                "phone": phone
+            ]
+            if let email = email { params["email"] = email }
+            if let firstName = firstName { params["first_name"] = firstName }
+            if let lastName = lastName { params["last_name"] = lastName }
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.postRequest(path: "loyalty/members/join", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(LoyaltyJoinResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getLoyaltyStatus(identifier: String, completion: @escaping (Result<LoyaltyStatusResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment": self.segment,
+                "identifier": identifier
+            ]
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: "loyalty/members/status", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(LoyaltyStatusResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/clicked",

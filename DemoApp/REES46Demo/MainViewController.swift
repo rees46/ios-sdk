@@ -61,7 +61,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var trackPurchaseFullButton: UIButton!
     private var getLastOrderProductsButton: UIButton!
     private var getUserOrdersButton: UIButton!
-    
+    private var loyaltyJoinButton: UIButton!
+    private var loyaltyStatusButton: UIButton!
+
     public var waitIndicator: SdkActivityIndicator!
     
     @IBOutlet private weak var storiesCollectionView: StoriesView!
@@ -283,7 +285,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupTrackPurchaseDemoButtons()
         setupGetLastOrderProductsButton()
         setupGetUserOrdersButton()
-        
+        setupLoyaltyJoinButton()
+        setupLoyaltyStatusButton()
+
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.setupSdkLabels()
@@ -530,6 +534,89 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             case .failure(let error):
                 self.presentTrackEventDemoAlert(
                     title: "getLastOrderProducts failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    func setupLoyaltyJoinButton() {
+        loyaltyJoinButton = DemoShopButton(type: .system)
+        loyaltyJoinButton.setTitle("Loyalty: join", for: .normal)
+        loyaltyJoinButton.setTitleColor(.white, for: .normal)
+        loyaltyJoinButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(loyaltyJoinButton)
+
+        NSLayoutConstraint.activate([
+            loyaltyJoinButton.topAnchor.constraint(equalTo: getUserOrdersButton.bottomAnchor, constant: 24),
+            loyaltyJoinButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            loyaltyJoinButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            loyaltyJoinButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        loyaltyJoinButton.addTarget(self, action: #selector(didTapLoyaltyJoin), for: .touchUpInside)
+    }
+
+    func setupLoyaltyStatusButton() {
+        loyaltyStatusButton = DemoShopButton(type: .system)
+        loyaltyStatusButton.setTitle("Loyalty: status", for: .normal)
+        loyaltyStatusButton.setTitleColor(.white, for: .normal)
+        loyaltyStatusButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(loyaltyStatusButton)
+
+        NSLayoutConstraint.activate([
+            loyaltyStatusButton.topAnchor.constraint(equalTo: loyaltyJoinButton.bottomAnchor, constant: 10),
+            loyaltyStatusButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            loyaltyStatusButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            loyaltyStatusButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        loyaltyStatusButton.addTarget(self, action: #selector(didTapLoyaltyStatus), for: .touchUpInside)
+    }
+
+    @objc
+    private func didTapLoyaltyJoin() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.joinLoyalty(
+            phone: "79991234567",
+            email: "demo@rees46.ru",
+            firstName: "Demo",
+            lastName: "User"
+        ) { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Loyalty join",
+                    message: "status: \(response.status ?? "—")"
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "joinLoyalty failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    @objc
+    private func didTapLoyaltyStatus() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getLoyaltyStatus(identifier: "79991234567") { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Loyalty status",
+                    message: "status: \(response.status ?? "—"), member: \(response.member.map(String.init) ?? "—"), level: \(response.level?.name ?? "—")"
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getLoyaltyStatus failed",
                     message: Self.sdkErrorDescription(error)
                 )
             }
