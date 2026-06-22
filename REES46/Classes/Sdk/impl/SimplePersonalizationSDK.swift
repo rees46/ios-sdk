@@ -770,6 +770,62 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
+    func joinLoyalty(phone: String, email: String?, firstName: String?, lastName: String?, completion: @escaping (Result<LoyaltyJoinResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            // The shop is identified by `shop_id`; only the member fields are passed here.
+            var params: [String: Any] = [
+                "shop_id": self.shopId,
+                "phone": phone
+            ]
+            if let email = email { params["email"] = email }
+            if let firstName = firstName { params["first_name"] = firstName }
+            if let lastName = lastName { params["last_name"] = lastName }
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.postRequest(path: "loyalty/members/join", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(LoyaltyJoinResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getLoyaltyStatus(identifier: String, completion: @escaping (Result<LoyaltyStatusResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment": self.segment,
+                "identifier": identifier
+            ]
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: "loyalty/members/status", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(LoyaltyStatusResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/clicked",
@@ -1040,15 +1096,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         initFileNamePath: URL,
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
-        let successInitDeviceId = resultResponse.deviceId
-        let successSeanceId = resultResponse.seance
         let keychainDid = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
-        
+
         if keychainDid.isEmpty || needReInitialization {
-            DispatchQueue.onceTechService(token: SdkConstants.keychainDid) {
-                UserDefaults.standard.set(successInitDeviceId, forKey: SdkConstants.deviceIdKey)
-            }
-            UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
+            persistDeviceIdIfAbsent(resultResponse.deviceId)
+            UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
             sleep(1)
             completion(.success(resultResponse))
         } else {
@@ -1195,15 +1247,25 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func storeSuccessInit(result: InitResponse) {
-        let successInitDeviceId: String? = result.deviceId
-        let successSeanceId: String? = result.seance
-        let keychainDid: String? = UserDefaults.standard.string(forKey: "device_id") ?? ""
-        if (keychainDid == nil || keychainDid == "") {
-            DispatchQueue.onceTechService(token: "keychainDid") {
-                UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
-            }
+        persistDeviceIdIfAbsent(result.deviceId)
+        UserDefaults.standard.set(result.seance, forKey: "seance_id")
+    }
+
+    private static let deviceIdPersistLock = NSObject()
+
+    /// Persists the server-assigned device id exactly once — only when none is stored yet.
+    ///
+    /// Gated on the *current* stored value under a process-wide lock (not a one-shot token), so
+    /// concurrent inits can't clobber each other with different ids, while a deliberate reset
+    /// (`needReInitialization`, `deleteUserCredentials`) can still re-establish it afterwards.
+    private func persistDeviceIdIfAbsent(_ deviceId: String?) {
+        guard let deviceId = deviceId, !deviceId.isEmpty else { return }
+        objc_sync_enter(Self.deviceIdPersistLock)
+        defer { objc_sync_exit(Self.deviceIdPersistLock) }
+        let current = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        if current.isEmpty {
+            UserDefaults.standard.set(deviceId, forKey: SdkConstants.deviceIdKey)
         }
-        UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
     }
     
     internal func configuration() -> SdkConfiguration.Type {

@@ -4,7 +4,7 @@ import REES46
 class SdkTests: XCTestCase {
     
     var sdk: PersonalizationSDK?
-    let shopId = "357382bf66ac0ce2f1722677c59511"
+    let shopId = Constants.testShopId
     let TAG = "SdkTests"
 
     override func setUp() {

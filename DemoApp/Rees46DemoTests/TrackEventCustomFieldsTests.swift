@@ -185,6 +185,14 @@ private final class MockPersonalizationSDK: PersonalizationSDK {
         fatalError("Not needed for these tests")
     }
 
+    func joinLoyalty(phone: String, email: String?, firstName: String?, lastName: String?, completion: @escaping (Result<LoyaltyJoinResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
+    func getLoyaltyStatus(identifier: String, completion: @escaping (Result<LoyaltyStatusResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
     func getDeviceId() -> String { deviceId }
     
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void) {

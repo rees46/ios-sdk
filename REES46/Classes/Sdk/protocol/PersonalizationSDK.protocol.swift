@@ -44,6 +44,8 @@ public protocol PersonalizationSDK {
     func getProductInfo(id: String, completion: @escaping(Result<ProductInfo, SdkError>) -> Void)
     func getLastOrderProducts(completion: @escaping(Result<LastOrderProductsResponse, SdkError>) -> Void)
     func getUserOrders(shopSecret: String, did: String?, email: String?, phone: String?, loyaltyId: String?, externalId: String?, dateFrom: String?, completion: @escaping(Result<[Order], SdkError>) -> Void)
+    func joinLoyalty(phone: String, email: String?, firstName: String?, lastName: String?, completion: @escaping(Result<LoyaltyJoinResponse, SdkError>) -> Void)
+    func getLoyaltyStatus(identifier: String, completion: @escaping(Result<LoyaltyStatusResponse, SdkError>) -> Void)
     func getDeviceId() -> String
     @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void)
@@ -117,6 +119,10 @@ public extension PersonalizationSDK {
 
     func getUserOrders(shopSecret: String, did: String? = nil, email: String? = nil, phone: String? = nil, loyaltyId: String? = nil, externalId: String? = nil, dateFrom: String? = nil, completion: @escaping(Result<[Order], SdkError>) -> Void) {
         getUserOrders(shopSecret: shopSecret, did: did, email: email, phone: phone, loyaltyId: loyaltyId, externalId: externalId, dateFrom: dateFrom, completion: completion)
+    }
+
+    func joinLoyalty(phone: String, email: String? = nil, firstName: String? = nil, lastName: String? = nil, completion: @escaping(Result<LoyaltyJoinResponse, SdkError>) -> Void) {
+        joinLoyalty(phone: phone, email: email, firstName: firstName, lastName: lastName, completion: completion)
     }
     
     func search(
