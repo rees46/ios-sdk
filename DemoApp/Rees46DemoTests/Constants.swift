@@ -3,9 +3,9 @@ import Foundation
 struct Constants {
     static let phonePrefix = "+7"
     static let phoneLength = 10
-    static let testItemIds = ["486"]
+    static let testItemIds = ["300275"]
     static let testCurrentPrice = 170.0
-    static let testItemId = "486"
+    static let testItemId = "300275"
     // Network-backed integration tests can be slow/flaky on CI runners.
     static let defaultTimeout = 20.0
 
