@@ -4,7 +4,7 @@ import REES46
 class SDKConfigProviderTests: XCTestCase {
     
     var sdk: PersonalizationSDK?
-    let shopId = "357382bf66ac0ce2f1722677c59511"
+    let shopId = Constants.testShopId
     
     override func setUp() {
         super.setUp()
