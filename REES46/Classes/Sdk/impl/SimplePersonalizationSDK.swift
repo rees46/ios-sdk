@@ -1096,15 +1096,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         initFileNamePath: URL,
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
-        let successInitDeviceId = resultResponse.deviceId
-        let successSeanceId = resultResponse.seance
         let keychainDid = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
-        
+
         if keychainDid.isEmpty || needReInitialization {
-            DispatchQueue.onceTechService(token: SdkConstants.keychainDid) {
-                UserDefaults.standard.set(successInitDeviceId, forKey: SdkConstants.deviceIdKey)
-            }
-            UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
+            persistDeviceIdIfAbsent(resultResponse.deviceId)
+            UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
             sleep(1)
             completion(.success(resultResponse))
         } else {
@@ -1251,15 +1247,25 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func storeSuccessInit(result: InitResponse) {
-        let successInitDeviceId: String? = result.deviceId
-        let successSeanceId: String? = result.seance
-        let keychainDid: String? = UserDefaults.standard.string(forKey: "device_id") ?? ""
-        if (keychainDid == nil || keychainDid == "") {
-            DispatchQueue.onceTechService(token: "keychainDid") {
-                UserDefaults.standard.set(successInitDeviceId, forKey: "device_id")
-            }
+        persistDeviceIdIfAbsent(result.deviceId)
+        UserDefaults.standard.set(result.seance, forKey: "seance_id")
+    }
+
+    private static let deviceIdPersistLock = NSObject()
+
+    /// Persists the server-assigned device id exactly once — only when none is stored yet.
+    ///
+    /// Gated on the *current* stored value under a process-wide lock (not a one-shot token), so
+    /// concurrent inits can't clobber each other with different ids, while a deliberate reset
+    /// (`needReInitialization`, `deleteUserCredentials`) can still re-establish it afterwards.
+    private func persistDeviceIdIfAbsent(_ deviceId: String?) {
+        guard let deviceId = deviceId, !deviceId.isEmpty else { return }
+        objc_sync_enter(Self.deviceIdPersistLock)
+        defer { objc_sync_exit(Self.deviceIdPersistLock) }
+        let current = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        if current.isEmpty {
+            UserDefaults.standard.set(deviceId, forKey: SdkConstants.deviceIdKey)
         }
-        UserDefaults.standard.set(successSeanceId, forKey: "seance_id")
     }
     
     internal func configuration() -> SdkConfiguration.Type {
