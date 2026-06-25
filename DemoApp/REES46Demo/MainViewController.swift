@@ -63,6 +63,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var getUserOrdersButton: UIButton!
     private var loyaltyJoinButton: UIButton!
     private var loyaltyStatusButton: UIButton!
+    private var getProfileButton: UIButton!
+    private var getProductCountersButton: UIButton!
+    private var getCategoryButton: UIButton!
+    private var getCollectionButton: UIButton!
 
     public var waitIndicator: SdkActivityIndicator!
     
@@ -287,6 +291,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupGetUserOrdersButton()
         setupLoyaltyJoinButton()
         setupLoyaltyStatusButton()
+        setupGetProfileButton()
+        setupGetProductCountersButton()
+        setupGetCategoryButton()
+        setupGetCollectionButton()
 
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -617,6 +625,162 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             case .failure(let error):
                 self.presentTrackEventDemoAlert(
                     title: "getLoyaltyStatus failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    func setupGetProfileButton() {
+        getProfileButton = DemoShopButton(type: .system)
+        getProfileButton.setTitle("Profile: get", for: .normal)
+        getProfileButton.setTitleColor(.white, for: .normal)
+        getProfileButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(getProfileButton)
+
+        NSLayoutConstraint.activate([
+            getProfileButton.topAnchor.constraint(equalTo: loyaltyStatusButton.bottomAnchor, constant: 24),
+            getProfileButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            getProfileButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            getProfileButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        getProfileButton.addTarget(self, action: #selector(didTapGetProfile), for: .touchUpInside)
+    }
+
+    func setupGetProductCountersButton() {
+        getProductCountersButton = DemoShopButton(type: .system)
+        getProductCountersButton.setTitle("Products: counters", for: .normal)
+        getProductCountersButton.setTitleColor(.white, for: .normal)
+        getProductCountersButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(getProductCountersButton)
+
+        NSLayoutConstraint.activate([
+            getProductCountersButton.topAnchor.constraint(equalTo: getProfileButton.bottomAnchor, constant: 10),
+            getProductCountersButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            getProductCountersButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            getProductCountersButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        getProductCountersButton.addTarget(self, action: #selector(didTapGetProductCounters), for: .touchUpInside)
+    }
+
+    func setupGetCategoryButton() {
+        getCategoryButton = DemoShopButton(type: .system)
+        getCategoryButton.setTitle("Category: list", for: .normal)
+        getCategoryButton.setTitleColor(.white, for: .normal)
+        getCategoryButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(getCategoryButton)
+
+        NSLayoutConstraint.activate([
+            getCategoryButton.topAnchor.constraint(equalTo: getProductCountersButton.bottomAnchor, constant: 10),
+            getCategoryButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            getCategoryButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            getCategoryButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        getCategoryButton.addTarget(self, action: #selector(didTapGetCategory), for: .touchUpInside)
+    }
+
+    @objc
+    private func didTapGetProfile() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getProfile { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Profile",
+                    message: "id: \(response.id ?? "—"), hasEmail: \(response.hasEmail.map(String.init) ?? "—"), gender: \(response.gender ?? "—")"
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getProfile failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    @objc
+    private func didTapGetProductCounters() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getProductCounters(item: "300275") { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Product counters",
+                    message: "now.view: \(response.now?.view ?? 0), price_drop: \(response.triggers?.priceDrop ?? 0)"
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getProductCounters failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    @objc
+    private func didTapGetCategory() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getCategory(category: "smartfony-i-gadzhety", limit: 5) { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Category",
+                    message: "total: \(response.productsTotal), products: \(response.products.count)"
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getCategory failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    func setupGetCollectionButton() {
+        getCollectionButton = DemoShopButton(type: .system)
+        getCollectionButton.setTitle("Collection: get", for: .normal)
+        getCollectionButton.setTitleColor(.white, for: .normal)
+        getCollectionButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(getCollectionButton)
+
+        NSLayoutConstraint.activate([
+            getCollectionButton.topAnchor.constraint(equalTo: getCategoryButton.bottomAnchor, constant: 10),
+            getCollectionButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            getCollectionButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            getCollectionButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        getCollectionButton.addTarget(self, action: #selector(didTapGetCollection), for: .touchUpInside)
+    }
+
+    @objc
+    private func didTapGetCollection() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.getCollection(collectionId: "1") { result in
+            switch result {
+            case .success(let response):
+                self.presentTrackEventDemoAlert(
+                    title: "Collection",
+                    message: "products: \(response.products.count)"
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "getCollection failed",
                     message: Self.sdkErrorDescription(error)
                 )
             }

@@ -46,6 +46,10 @@ public protocol PersonalizationSDK {
     func getUserOrders(shopSecret: String, did: String?, email: String?, phone: String?, loyaltyId: String?, externalId: String?, dateFrom: String?, completion: @escaping(Result<[Order], SdkError>) -> Void)
     func joinLoyalty(phone: String, email: String?, firstName: String?, lastName: String?, completion: @escaping(Result<LoyaltyJoinResponse, SdkError>) -> Void)
     func getLoyaltyStatus(identifier: String, completion: @escaping(Result<LoyaltyStatusResponse, SdkError>) -> Void)
+    func getProfile(completion: @escaping(Result<GetProfileResponse, SdkError>) -> Void)
+    func getProductCounters(item: String, completion: @escaping(Result<ProductCountersResponse, SdkError>) -> Void)
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void)
+    func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping(Result<CollectionResponse, SdkError>) -> Void)
     func getDeviceId() -> String
     @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void)
@@ -124,7 +128,15 @@ public extension PersonalizationSDK {
     func joinLoyalty(phone: String, email: String? = nil, firstName: String? = nil, lastName: String? = nil, completion: @escaping(Result<LoyaltyJoinResponse, SdkError>) -> Void) {
         joinLoyalty(phone: phone, email: email, firstName: firstName, lastName: lastName, completion: completion)
     }
-    
+
+    func getCategory(category: String, limit: Int? = nil, page: Int? = nil, brands: String? = nil, locations: String? = nil, filters: [String: Any]? = nil, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void) {
+        getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
+    }
+
+    func getCollection(collectionId: String, location: String? = nil, email: String? = nil, phone: String? = nil, externalId: String? = nil, loyaltyId: String? = nil, completion: @escaping(Result<CollectionResponse, SdkError>) -> Void) {
+        getCollection(collectionId: collectionId, location: location, email: email, phone: phone, externalId: externalId, loyaltyId: loyaltyId, completion: completion)
+    }
+
     func search(
         query: String,
         limit: Int? = nil,
