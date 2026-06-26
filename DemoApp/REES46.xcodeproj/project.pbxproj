@@ -21,6 +21,7 @@
 		A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */; };
 		A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */; };
 		A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000006 /* LoyaltyTests.swift */; };
+		A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000008 /* CatalogReadTests.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
 		D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
@@ -113,6 +114,7 @@
 		A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastOrderProductsTest.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUserOrdersTest.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000006 /* LoyaltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTests.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000008 /* CatalogReadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogReadTests.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
 		D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackEventCustomFieldsTests.swift; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
@@ -323,6 +325,7 @@
 				A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */,
 				A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */,
 				A1B2C3D40000000000000006 /* LoyaltyTests.swift */,
+				A1B2C3D40000000000000008 /* CatalogReadTests.swift */,
 				D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */,
 			);
 			name = sdk;
@@ -694,6 +697,7 @@
 				A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */,
 				A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */,
 				A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */,
+				A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */,
 				D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */,
 				D0B70C172D522DAF0001782A /* SearchServiceTests.swift in Sources */,
 				D0B99F9F2DB169D80012E4F0 /* UnsubscribeBackInStock.swift in Sources */,

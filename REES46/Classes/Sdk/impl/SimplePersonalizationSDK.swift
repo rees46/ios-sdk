@@ -826,6 +826,118 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
+    func getProfile(completion: @escaping (Result<GetProfileResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId
+            ]
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: "profile", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(GetProfileResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getProductCounters(item: String, completion: @escaping (Result<ProductCountersResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            let params: [String: String] = [
+                "shop_id": self.shopId,
+                "item": item
+            ]
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: "products/counters", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(ProductCountersResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            var params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance
+            ]
+            if let limit = limit { params["limit"] = String(limit) }
+            if let page = page { params["page"] = String(page) }
+            if let brands = brands { params["brands"] = brands }
+            if let locations = locations { params["locations"] = locations }
+            if let filters = filters,
+               let data = try? JSONSerialization.data(withJSONObject: filters, options: []),
+               let text = String(data: data, encoding: .utf8) {
+                params["filters"] = text
+            }
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: "category/\(category)", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(CategoryResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping (Result<CollectionResponse, SdkError>) -> Void) {
+        sessionQueue.addOperation {
+            var params: [String: String] = [
+                "shop_id": self.shopId,
+                "did": self.deviceId
+            ]
+            if let location = location { params["location"] = location }
+            if let email = email { params["email"] = email }
+            if let phone = phone { params["phone"] = phone }
+            if let externalId = externalId { params["external_id"] = externalId }
+            if let loyaltyId = loyaltyId { params["loyalty_id"] = loyaltyId }
+
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 1
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
+            self.urlSession = URLSession(configuration: sessionConfig)
+
+            self.getRequest(path: "collection/\(collectionId)", params: params) { result in
+                switch result {
+                case let .success(json):
+                    completion(.success(CollectionResponse(json: json)))
+                case let .failure(error):
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         notificationService.trackNotification(
             path: "track/clicked",

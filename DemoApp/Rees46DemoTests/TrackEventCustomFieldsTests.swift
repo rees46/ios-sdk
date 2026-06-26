@@ -193,6 +193,22 @@ private final class MockPersonalizationSDK: PersonalizationSDK {
         fatalError("Not needed for these tests")
     }
 
+    func getProfile(completion: @escaping (Result<GetProfileResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
+    func getProductCounters(item: String, completion: @escaping (Result<ProductCountersResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
+    func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping (Result<CollectionResponse, SdkError>) -> Void) {
+        fatalError("Not needed for these tests")
+    }
+
     func getDeviceId() -> String { deviceId }
     
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void) {
