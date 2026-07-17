@@ -990,18 +990,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     public func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide) {
-        let stateButton: Bool = UserDefaults.standard.bool(forKey: "LastTapButtonMemorySdkSetting")
-        if stateButton {
-            continueTimer()
-            
-            let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
-            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-            print("SDK Start Timer Play Content")
-            UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
-        } else {
-            print("SDK Pause Timer\n")
-            UserDefaults.standard.set(true, forKey: "LastTapButtonMemorySdkSetting")
-        }
+        openUrl(link: url)
     }
     
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
