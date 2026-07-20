@@ -818,8 +818,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("WebKitClosedContinueTimerSetting"), object: nil)
             }
             
-            UIApplication.shared.open(linkUrl, options: [:], completionHandler: nil)
-            
+            if sdkLinkDelegate?.shouldOpenLinkBySdk(url: link) ?? true {
+                UIApplication.shared.open(linkUrl, options: [:], completionHandler: nil)
+            }
+
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
             NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             
