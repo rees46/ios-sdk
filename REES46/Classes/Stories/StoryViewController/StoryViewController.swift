@@ -851,6 +851,16 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
         })
     }
+
+    private func trackClickSlide(for slide: Slide) {
+        for (section, story) in stories.enumerated() {
+            for (row, storySlide) in story.slides.enumerated() {
+                if storySlide.id == slide.id {
+                    trackClickSlide(index: IndexPath(row: row, section: section))
+                }
+            }
+        }
+    }
     
     private func setupGestureRecognizerOnCollection() {
         let longPressedGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(gestureRecognizer:)))
@@ -990,6 +1000,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     public func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide) {
+        trackClickSlide(for: slide)
         openUrl(link: url)
     }
     
@@ -1110,14 +1121,8 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
 
 extension StoryViewController: StoryCollectionViewCellDelegate {
     public func didTapUrlButton(url: String, slide: Slide) {
-        self.openUrl(link: url)
-        for (section, story) in stories.enumerated() {
-            for (row, storySlide) in story.slides.enumerated() {
-                if storySlide.id == slide.id {
-                    self.trackClickSlide(index: IndexPath(row: row, section: section))
-                }
-            }
-        }
+        trackClickSlide(for: slide)
+        openUrl(link: url)
     }
 }
 
