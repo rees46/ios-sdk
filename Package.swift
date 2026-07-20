@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "REES46",
     platforms: [
-            .iOS(.v11),
+            .iOS(.v13),
             .macOS(.v10_15)
         ],
         products: [

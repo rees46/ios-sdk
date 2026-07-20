@@ -72,12 +72,12 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     
     private var isInDownloadMode: Bool = true
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         commonInit()
     }
-    
-    required init?(coder aDecoder: NSCoder) {
+
+    public required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         commonInit()
     }
