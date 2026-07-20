@@ -9,6 +9,7 @@
 import Firebase
 import FirebaseMessaging
 import REES46
+import SwiftUI
 import UIKit
 import UserNotifications
 
@@ -41,11 +42,55 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         
+        installTabBar()
         initializationMessaging()
         sdkInitialization()
         registerPushNotification()
-        
+
         return true
+    }
+
+    /// Wraps the storyboard screen into a tab bar: the existing screen keeps demoing the SDK
+    /// methods, while the stories UI moves into a SwiftUI tab and a UIKit one so both
+    /// integration styles can be compared.
+    ///
+    /// Runs before `sdkInitialization()`, which passes the root controller to the SDK.
+    private func installTabBar() {
+        guard let apiScreen = window?.rootViewController else { return }
+
+        apiScreen.tabBarItem = UITabBarItem(
+            title: "API",
+            image: tabImage(systemName: "list.bullet"),
+            tag: 0
+        )
+
+        let tabBarController = UITabBarController()
+        tabBarController.viewControllers = [apiScreen, makeUIKitTab(), makeLegacyUITab()]
+        window?.rootViewController = tabBarController
+    }
+
+    private func makeUIKitTab() -> UIViewController {
+        let controller = UIHostingController(rootView: SwiftUIStoriesScreen())
+        controller.tabBarItem = UITabBarItem(
+            title: "UI Kit",
+            image: tabImage(systemName: "square.grid.2x2"),
+            tag: 1
+        )
+        return controller
+    }
+
+    private func makeLegacyUITab() -> UIViewController {
+        let controller = LegacyStoriesViewController()
+        controller.tabBarItem = UITabBarItem(
+            title: "Legacy UI",
+            image: tabImage(systemName: "rectangle.stack"),
+            tag: 2
+        )
+        return controller
+    }
+
+    private func tabImage(systemName: String) -> UIImage? {
+        UIImage(systemName: systemName)
     }
     
     func sdkInitialization(){
