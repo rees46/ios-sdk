@@ -36,6 +36,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// through this typed port, backed by a per-shop partition so two shops in one app do not share
     /// identity. The push token stays device-global. See [UserIdentityRepository].
     let userIdentity: UserIdentityRepository
+
+    /// This shop's keychain-backed init-secret backup (R2), keyed per shop so the did that survives a
+    /// reinstall belongs to this shop only. See [KeychainInitStore].
+    let keychainStore: KeychainInitStore
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -108,6 +112,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         needReInitialization: Bool = false,
         storageKey: String? = nil,
         userIdentity: UserIdentityRepository? = nil,
+        keychainStore: KeychainInitStore? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
@@ -116,6 +121,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // pre-partition identity in once (existing installs keep their did); an injected repository
         // (tests) is used verbatim.
         self.userIdentity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
+
+        // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
+        // reinstall keeps this shop's did. Injected (tests) is used verbatim.
+        let keychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk"
+        self.keychainStore = keychainStore ?? KeychainInitStoreImpl(shopId: shopId, service: keychainService)
 
         self.autoSendPushToken = autoSendPushToken
         self.parentViewController = parentViewController
@@ -1236,10 +1246,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     private func handleKeychainInitData(initFileNamePath: URL) -> InitResponse? {
-        guard let keychainIpfsSecret = try? InitService.getKeychainDidToken(
-            identifier: sdkBundleId!,
-            instanceKeychainService: appBundleId!
-        ),
+        guard let keychainIpfsSecret = keychainStore.readInitData(),
             let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
             return nil
         }
@@ -1336,6 +1343,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         try? FileManager.default.removeItem(at: initFileNamePath)
 
         userIdentity.clearIdentity()
+        // Also drop the keychain backup — otherwise a re-init would restore the very did we just
+        // deleted from its reinstall-surviving copy.
+        keychainStore.clear()
 
         // Multi-instance groundwork (R1): this instance is torn down — drop it from push routing so a
         // superseded object is not fed push tokens or resolved by `shop_id`.
@@ -1453,7 +1463,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         if isInit {
                             let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
-                            try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
+                            self.keychainStore.writeInitData(data)
                         }
 
                         let json = try JSONSerialization.jsonObject(with: data)
