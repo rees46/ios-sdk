@@ -315,6 +315,14 @@ public extension PersonalizationSDK {
     }
 }
 
+/**
+ Creates and registers a single SDK instance.
+
+ Deprecated in favour of the multi-instance `Rees46` facade (R3): `Rees46.initialize(_:)` for an eager
+ instance, or `Rees46.register(shops:)` + `Rees46.instance(for:)` for several shops. It still works and
+ still registers the instance (same return type), so existing hosts keep compiling and running.
+ */
+@available(*, deprecated, message: "Use Rees46.initialize(_:) or Rees46.register(shops:) + Rees46.instance(for:)")
 public func createPersonalizationSDK(
     shopId: String,
     userEmail: String? = nil,
@@ -328,7 +336,50 @@ public func createPersonalizationSDK(
     parentViewController: UIViewController? = nil,
     enableAutoPopupPresentation: Bool = true,
     needReInitialization: Bool = false,
+    storageKey: String? = nil,
     _ completion: ((SdkError?) -> Void)? = nil
+) -> PersonalizationSDK {
+    makeRegisteredSDK(
+        shopId: shopId,
+        userEmail: userEmail,
+        userPhone: userPhone,
+        userLoyaltyId: userLoyaltyId,
+        apiDomain: apiDomain,
+        stream: stream,
+        enableLogs: enableLogs,
+        autoSendPushToken: autoSendPushToken,
+        sendAdvertisingId: sendAdvertisingId,
+        parentViewController: parentViewController,
+        enableAutoPopupPresentation: enableAutoPopupPresentation,
+        needReInitialization: needReInitialization,
+        storageKey: storageKey,
+        completion: completion
+    )
+}
+
+/**
+ Builds a `SimplePersonalizationSDK`, resets its per-shop stories cache, and registers it so it can be
+ resolved by `shop_id` and joins the push fan-out set.
+
+ The single construction path shared by the (soon-deprecated) `createPersonalizationSDK` and the
+ `Rees46` facade — keeping registration and cache-reset in one place. The registry holds the instance
+ weakly, so this does not extend its lifetime; it drops out on dealloc or `deleteUserCredentials`.
+ */
+internal func makeRegisteredSDK(
+    shopId: String,
+    userEmail: String? = nil,
+    userPhone: String? = nil,
+    userLoyaltyId: String? = nil,
+    apiDomain: String = "api.rees46.ru",
+    stream: String = "ios",
+    enableLogs: Bool = false,
+    autoSendPushToken: Bool = true,
+    sendAdvertisingId: Bool = false,
+    parentViewController: UIViewController? = nil,
+    enableAutoPopupPresentation: Bool = true,
+    needReInitialization: Bool = false,
+    storageKey: String? = nil,
+    completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(
         shopId: shopId,
@@ -343,16 +394,11 @@ public func createPersonalizationSDK(
         parentViewController: parentViewController,
         enableAutoPopupPresentation: enableAutoPopupPresentation,
         needReInitialization: needReInitialization,
+        storageKey: storageKey,
         completion: completion
     )
-    
+
     sdk.resetSdkCache()
-
-    // Multi-instance groundwork (R1): record the instance so it can be resolved by `shop_id` and
-    // joins the push fan-out set. Single-instance behaviour is unchanged — nothing reads the registry
-    // yet through the public API. The registry holds the instance weakly, so this does not extend its
-    // lifetime; it drops out on dealloc or `deleteUserCredentials`.
     SdkRegistry.shared.register(shopId: shopId, sdk: sdk)
-
     return sdk
 }

@@ -13,14 +13,14 @@ import Foundation
  cancelled when the view that registered it detaches, so the callback (and whatever it captures) is
  not leaked.
 
- Mirror of the Android `Cancellable` fun-interface. Kept `internal` in R1 (the registry is the only
- caller); the public `Rees46.awaitInstance` facade in R3 will re-expose it. `cancel()` is idempotent
- — calling it after the subscription already fired or was cancelled is a no-op.
+ Mirror of the Android `Cancellable` fun-interface. Public since R3 — `Rees46.awaitInstance` hands it
+ back to callers — but only the SDK constructs one (the `init` stays `internal`). `cancel()` is
+ idempotent: calling it after the subscription already fired or was cancelled is a no-op.
  */
-internal final class Cancellable {
+public final class Cancellable {
 
     /// A no-op handle for subscriptions that resolved synchronously and hold nothing.
-    static let noop = Cancellable {}
+    public static let noop = Cancellable {}
 
     private let onCancel: () -> Void
     private let lock = NSLock()
@@ -30,7 +30,7 @@ internal final class Cancellable {
         self.onCancel = onCancel
     }
 
-    func cancel() {
+    public func cancel() {
         lock.lock()
         let alreadyCancelled = cancelled
         cancelled = true

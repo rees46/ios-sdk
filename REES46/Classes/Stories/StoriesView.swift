@@ -44,7 +44,11 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private var stories: [Story]?
     private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
-    
+
+    /// Subscription from the `configure(shopId:...)` overload; torn down when the view goes away or is
+    /// reconfigured, so the `awaitInstance` callback is not held.
+    private var sdkAwaitCancellable: Cancellable?
+
     public weak var communicationDelegate: StoriesCommunicationProtocol?
     
     private var mainVC: UIViewController?
@@ -134,7 +138,34 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         self.code = code
         loadStoriesData()
     }
-    
+
+    /**
+     Multi-instance overload (R3): resolves the SDK instance for `shopId` from the `Rees46` registry
+     instead of taking one directly, so the host does not have to hold and thread the SDK. With no
+     `shopId` the single default instance is used. The resolution is reactive — if the shop is not
+     initialized yet, the view loads as soon as it registers.
+
+     An ambiguous request (no `shopId` while several shops are registered) resolves to nothing and the
+     view stays empty — pass an explicit `shopId` in a multi-shop app. Reconfiguring cancels any
+     previous pending resolution.
+     */
+    public func configure(shopId: String? = nil, mainVC: UIViewController, code: String) {
+        self.mainVC = mainVC
+        self.code = code
+        sdkAwaitCancellable?.cancel()
+        sdkAwaitCancellable = Rees46.awaitInstance(for: shopId) { [weak self] sdk in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.sdk = sdk
+                self.loadStoriesData()
+            }
+        }
+    }
+
+    deinit {
+        sdkAwaitCancellable?.cancel()
+    }
+
     private func setBgColor() {
         if SdkConfiguration.isDarkMode {
             DispatchQueue.main.async {
