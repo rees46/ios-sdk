@@ -29,6 +29,10 @@ final class FakeSDK: PersonalizationSDK {
     var enableAutoPopupPresentation: Bool = true
     lazy var popupPresenter: PopupPresenter = PopupPresenter(sdk: self)
 
+    /// Records notification-track calls so tests can assert push routing hit the right instance.
+    private(set) var receivedTracks: [(type: String, code: String)] = []
+    private(set) var clickedTracks: [(type: String, code: String)] = []
+
     init(shopId: String = "fake-shop") {
         self.shopId = shopId
     }
@@ -66,9 +70,13 @@ final class FakeSDK: PersonalizationSDK {
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func searchBlank(completion: @escaping (Result<SearchBlankResponse, SdkError>) -> Void) {}
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {}
-    func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {}
+    func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        clickedTracks.append((type, code))
+    }
     func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {}
-    func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {}
+    func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        receivedTracks.append((type, code))
+    }
     func subscribeForBackInStock(id: String, email: String?, phone: String?, fashionSize: String?, fashionColor: String?, barcode: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func unsubscribeForBackInStock(itemIds: [String], email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}

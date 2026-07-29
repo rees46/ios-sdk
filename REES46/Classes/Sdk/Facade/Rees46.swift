@@ -165,6 +165,38 @@ public enum Rees46 {
         }
     }
 
+    // MARK: - Push
+
+    /**
+     Routes a push to the instance it belongs to and tracks `event` for it. The target is the payload's
+     `shop_id`; with no `shop_id` a single-instance app still resolves, but an unknown shop — or an
+     absent `shop_id` while several shops are live — **drops** the push (via `PushTargetResolver`)
+     instead of tracking it against the wrong one. A payload that is not an SDK push (no resolvable
+     `type`/`code`) is ignored. Call this from a host that owns its messaging service.
+
+     `received` tracks `track/received`; `clicked` tracks `track/clicked`. Navigation stays with the
+     host: unlike the Android singleton, iOS routes click actions through the host's own deep-link
+     handling (or the legacy `NotificationService`'s action delegate), so this method tracks but does
+     not open the target screen.
+     */
+    public static func handlePush(_ payload: [AnyHashable: Any], event: PushEvent) {
+        guard let shopId = PushTargetResolver.resolve(
+            payloadShopId: PushPayloadParser.shopId(from: payload),
+            liveShopIds: SdkRegistry.shared.shopIds()
+        ), let sdk = SdkRegistry.shared.byShopId(shopId) else {
+            return
+        }
+        guard let (type, code) = PushPayloadParser.typeAndCode(from: payload) else {
+            return
+        }
+        switch event {
+        case .received:
+            sdk.notificationReceived(type: type, code: code) { _ in }
+        case .clicked:
+            sdk.notificationClicked(type: type, code: code) { _ in }
+        }
+    }
+
     // MARK: - Internals
 
     /// Initializes a pending registration for `shopId`, tolerating a lost race with another caller.

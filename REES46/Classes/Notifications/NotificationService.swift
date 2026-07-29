@@ -205,38 +205,9 @@ public class NotificationService: NotificationServiceProtocol {
     }
   }
   
-  private func extractValue(for key: String, from userInfo: [AnyHashable: Any]) -> String? {
-    if let value = userInfo[key] as? String {
-      return value
-    }
-    if let src = parseDictionary(key: Constants.srcKey, userInfo: userInfo),
-       let value = src[key] as? String {
-      return value
-    }
-    return nil
-  }
-  
   public func extractTypeAndCode(from userInfo: [AnyHashable: Any]) -> (type: String, code: String)? {
-    
-    let id = extractValue(for: Constants.idKey, from: userInfo)
-    
-    if let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
-       let eventType = eventJSON[Constants.typeKey] as? String {
-      
-      if let id {
-        return (eventType, id)
-      }
-      if let srcID = userInfo[Constants.idKey] as? [String: Any] {
-        if let value = srcID[Constants.idKey] as? String {
-          return (eventType, value)
-        }
-      }
-    }
-    if let type = extractValue(for: Constants.typeKey, from: userInfo),
-       let id {
-      return (type, id)
-    }
-    return nil
+    // Shared with `Rees46.handlePush` so both paths accept the same payload shapes.
+    PushPayloadParser.typeAndCode(from: userInfo)
   }
   
   public func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
