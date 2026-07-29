@@ -281,7 +281,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         }
         
         let storyId = stories[currentPosition.section].id
-        let storyName = "viewed.slide." + storyId
         
         guard currentPosition.row < stories[currentPosition.section].slides.count else {
             print("Row index out of range")
@@ -290,14 +289,14 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         
         let slideId = stories[currentPosition.section].slides[currentPosition.row].id
         
-        var viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        var viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
         let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
             $0.range(of: slideId) != nil
         })
         
         if !viewedStorySlideIdExists {
             viewedSlidesStoriesCachedArray.append(slideId)
-            UserDefaults.standard.setValue(viewedSlidesStoriesCachedArray, for: UserDefaults.Key(storyName))
+            sdk?.localState?.setViewedSlides(viewedSlidesStoriesCachedArray, storyId: storyId)
             needSaveStoryLocal = true
         }
         
@@ -320,7 +319,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             }
             
             let storyId = stories[currentPosition.section + 1].id
-            let storyName = "viewed.slide." + storyId
             
             guard currentPosition.row < stories[currentPosition.section + 1].slides.count else {
                 print("Row index out of range")
@@ -334,7 +332,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 allStoriesMainArray.append(stories[currentPosition.section + 1].slides[index].id)
             }
             
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
             let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
                 $0.range(of: slideId) != nil
             })
@@ -392,7 +390,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             currentPosition.row = 0
             
             let storyId = stories[currentPosition.section - 1].id
-            let storyName = "viewed.slide." + storyId
             let slideId = stories[currentPosition.section - 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
@@ -400,7 +397,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 allStoriesMainArray.append(stories[currentPosition.section - 1].slides[(index)].id)
             }
             
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
             let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
                 $0.range(of: slideId) != nil
             })
@@ -461,7 +458,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             currentPosition.row = 0
             
             let storyId = stories[currentPosition.section + 1].id
-            let storyName = "viewed.slide." + storyId
             let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
@@ -469,7 +465,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
             }
             
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
             let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
                 $0.range(of: slideId) != nil
             })
@@ -524,7 +520,6 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             currentPosition.row = 0
             
             let storyId = stories[currentPosition.section - 1].id
-            let storyName = "viewed.slide." + storyId
             let slideId = stories[currentPosition.section - 1].slides[currentPosition.row].id
             
             var allStoriesMainArray: [String] = []
@@ -532,7 +527,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 allStoriesMainArray.append(stories[currentPosition.section - 1].slides[(index)].id)
             }
             
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+            let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
             let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
                 $0.range(of: slideId) != nil
             })
@@ -663,8 +658,8 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         
         let superviewSlideId = stories[currentPosition.section].slides[currentPosition.row].id
         let cachedSlideMediaId = "cached.slide." + superviewSlideId
-        
-        let imagesForStoriesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(cachedSlideMediaId)) as? [String] ?? []
+
+        let imagesForStoriesDownloadedArray: [String] = sdk?.localState?.downloadedMedia(slideId: superviewSlideId) ?? []
         let imageStoryIdDownloaded = imagesForStoriesDownloadedArray.contains(where: {
             $0.range(of: cachedSlideMediaId) != nil
         })
@@ -737,15 +732,14 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 currentPosition.row = 0
                 
                 let storyId = stories[currentPosition.section + 1].id
-                let storyName = "viewed.slide." + storyId
-                let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
+                    let slideId = stories[currentPosition.section + 1].slides[currentPosition.row].id
                 
                 var allStoriesMainArray: [String] = []
                 for (index, _) in stories[currentPosition.section + 1].slides.enumerated() {
                     allStoriesMainArray.append(stories[currentPosition.section + 1].slides[(index)].id)
                 }
                 
-                let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+                let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
                 let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
                     $0.range(of: slideId) != nil
                 })
@@ -790,17 +784,16 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     
     private func saveStorySlideWatching(index: IndexPath) {
         let storyId = stories[index.section].id
-        let storyName = "viewed.slide." + storyId
         let slideId = stories[index.section].slides[index.row].id
         
-        var viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+        var viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
         let viewedStorySlideIdExists = viewedSlidesStoriesCachedArray.contains(where: {
             $0.range(of: slideId) != nil
         })
         
         if !viewedStorySlideIdExists {
             viewedSlidesStoriesCachedArray.append(slideId)
-            UserDefaults.standard.setValue(viewedSlidesStoriesCachedArray, for: UserDefaults.Key(storyName))
+            sdk?.localState?.setViewedSlides(viewedSlidesStoriesCachedArray, storyId: storyId)
         }
     }
     

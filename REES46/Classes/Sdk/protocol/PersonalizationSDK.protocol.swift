@@ -295,81 +295,23 @@ public extension PersonalizationSDK {
         deleteUserCredentials()
     }
     
+    // R2: these caches are partitioned per shop — delegate to the shop's [LocalStateRepository] via
+    // the internal `localState` bridge instead of scanning the shared `.standard` domain.
     func resetSdkCache() {
-        let included_prefixes = ["viewed.slide."]
-        let dict = UserDefaults.standard.dictionaryRepresentation()
-        let keys = dict.keys.filter { key in
-            for prefix in included_prefixes {
-                if key.hasPrefix(prefix) {
-                    return true
-                }
-            }
-            return false
-        }
-        for key in keys {
-            if dict[key] != nil { 
-                UserDefaults.standard.removeObject(forKey: key)
-            }
-        }
-        UserDefaults.standard.synchronize()
+        localState?.clearViewedSlides()
         resetDownloadedStoriesStates()
     }
-    
+
     func resetDownloadedStoriesStates() {
-        let included_prefixes = ["cached.slide."]
-        let dict = UserDefaults.standard.dictionaryRepresentation()
-        let keys = dict.keys.filter { key in
-            for prefix in included_prefixes {
-                if key.hasPrefix(prefix) {
-                    return true
-                }
-            }
-            return false
-        }
-        for key in keys {
-            if dict[key] != nil {
-                UserDefaults.standard.removeObject(forKey: key)
-            }
-        }
-        UserDefaults.standard.synchronize()
+        localState?.clearDownloadedMedia()
     }
-    
+
     func resetCartProductStates() {
-        let included_prefixes = ["cart.product."]
-        let dict = UserDefaults.standard.dictionaryRepresentation()
-        let keys = dict.keys.filter { key in
-            for prefix in included_prefixes {
-                if key.hasPrefix(prefix) {
-                    return true
-                }
-            }
-            return false
-        }
-        for key in keys {
-            if dict[key] != nil {
-                UserDefaults.standard.removeObject(forKey: key)
-            }
-        }
-        UserDefaults.standard.synchronize()
+        localState?.clearCartProducts()
     }
-    
+
     func resetFavoritesProductStates() {
-        let included_prefixes = ["favorites.product."]
-        let dict = UserDefaults.standard.dictionaryRepresentation()
-        let keys = dict.keys.filter { key in
-            for prefix in included_prefixes {
-                if key.hasPrefix(prefix) {
-                    return true
-                }
-            }
-            return false
-        }
-        for key in keys {
-            if dict[key] != nil {
-                UserDefaults.standard.removeObject(forKey: key)
-            }
-        }
-        UserDefaults.standard.synchronize()
+        localState?.clearFavoriteProducts()
     }
 }
 

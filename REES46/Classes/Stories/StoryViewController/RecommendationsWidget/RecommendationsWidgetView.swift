@@ -131,8 +131,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         }
         
         let pId = cells[indexPath.row].id
-        let productCartId = "cart.product." + pId
-        let cartItemsCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productCartId)) as? [String] ?? []
+        let cartItemsCachedArray: [String] = sdk?.localState?.cartProducts(productId: pId) ?? []
         let itemIdExistInCart = cartItemsCachedArray.contains(where: {
             $0.range(of: pId) != nil
         })
@@ -156,8 +155,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
             cell.recommendationsCartButton.backgroundColor = bgColor
         }
         
-        let productFavoritesId = "favorites.product." + pId
-        let favoritesItemsCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productFavoritesId)) as? [String] ?? []
+        let favoritesItemsCachedArray: [String] = sdk?.localState?.favoriteProducts(productId: pId) ?? []
         let itemIdExistInFavorites = favoritesItemsCachedArray.contains(where: {
             $0.range(of: pId) != nil
         })
@@ -170,15 +168,14 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         if let indexPath = indexPath(for: cell) {
             let selectedProductForCartFromWidget = cells[indexPath.row]
             
-            let productInCartId = "cart.product." + selectedProductForCartFromWidget.id
-            var viewedSlidesCartCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productInCartId)) as? [String] ?? []
+            var viewedSlidesCartCachedArray: [String] = sdk?.localState?.cartProducts(productId: selectedProductForCartFromWidget.id) ?? []
             let viewedCartSlideIdExists = viewedSlidesCartCachedArray.contains(where: {
                 $0.range(of: selectedProductForCartFromWidget.id) != nil
             })
             
             if !viewedCartSlideIdExists {
                 viewedSlidesCartCachedArray.append(selectedProductForCartFromWidget.id)
-                UserDefaults.standard.setValue(viewedSlidesCartCachedArray, for: UserDefaults.Key(productInCartId))
+                sdk?.localState?.setCartProducts(viewedSlidesCartCachedArray, productId: selectedProductForCartFromWidget.id)
                 
                 cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetRemoveFromCartButtonText, for: .normal)
                 sdkAddToCart(productId: selectedProductForCartFromWidget.id)
@@ -186,7 +183,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 if let index = viewedSlidesCartCachedArray.firstIndex(of: selectedProductForCartFromWidget.id) {
                     viewedSlidesCartCachedArray.remove(at: index)
                 }
-                UserDefaults.standard.setValue(viewedSlidesCartCachedArray, for: UserDefaults.Key(productInCartId))
+                sdk?.localState?.setCartProducts(viewedSlidesCartCachedArray, productId: selectedProductForCartFromWidget.id)
                 
                 cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetAddToCartButtonText, for: .normal)
                 sdkRemoveFromCart(productId: selectedProductForCartFromWidget.id)
@@ -202,9 +199,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     public func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
         if let indexPath = indexPath(for: cell) {
             let selectedProductForFavoritesFromWidget = cells[indexPath.row]
-            let productFavoritesId = "favorites.product." + selectedProductForFavoritesFromWidget.id
-            
-            var viewedSlidesFavoritesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(productFavoritesId)) as? [String] ?? []
+            var viewedSlidesFavoritesCachedArray: [String] = sdk?.localState?.favoriteProducts(productId: selectedProductForFavoritesFromWidget.id) ?? []
             let viewedFavoritesSlideIdExists = viewedSlidesFavoritesCachedArray.contains(where: {
                 $0.range(of: selectedProductForFavoritesFromWidget.id) != nil
             })
@@ -215,7 +210,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
 #endif
             if !viewedFavoritesSlideIdExists {
                 viewedSlidesFavoritesCachedArray.append(selectedProductForFavoritesFromWidget.id)
-                UserDefaults.standard.setValue(viewedSlidesFavoritesCachedArray, for: UserDefaults.Key(productFavoritesId))
+                sdk?.localState?.setFavoriteProducts(viewedSlidesFavoritesCachedArray, productId: selectedProductForFavoritesFromWidget.id)
                 
                 sdkAddToFavorites(productId: selectedProductForFavoritesFromWidget.id)
                 
@@ -237,7 +232,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                 if let index = viewedSlidesFavoritesCachedArray.firstIndex(of: selectedProductForFavoritesFromWidget.id) {
                     viewedSlidesFavoritesCachedArray.remove(at: index)
                 }
-                UserDefaults.standard.setValue(viewedSlidesFavoritesCachedArray, for: UserDefaults.Key(productFavoritesId))
+                sdk?.localState?.setFavoriteProducts(viewedSlidesFavoritesCachedArray, productId: selectedProductForFavoritesFromWidget.id)
                 
                 sdkRemoveFromFavorites(productId: selectedProductForFavoritesFromWidget.id)
                 

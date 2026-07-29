@@ -216,15 +216,14 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         if let currentStory = stories?[indexPath.row] {
             
             let storyId = currentStory.id
-            let storyName = "viewed.slide." + storyId
-            
+
             var allStoriesMainArray: [String] = []
             for (index, _) in currentStory.slides.enumerated() {
                 //print("Story has \(index + 1): \(currentStory.slides[(index)].id)")
                 allStoriesMainArray.append(currentStory.slides[(index)].id)
             }
-            
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+
+            let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
             if (viewedSlidesStoriesCachedArray.count == allStoriesMainArray.count) {
                 cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, storyId: currentStory.id)
                 cell.configure(story: currentStory)
@@ -280,15 +279,13 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         storyVC.sdkLinkDelegate = self
         storyVC.sdk = sdk
         storyVC.stories = stories ?? []
-        
-        let sId = "viewed.slide." + story.id
-        
+
         var allSlidesIDs: [String] = []
         for slide in story.slides {
             allSlidesIDs.append(slide.id)
         }
-        
-        let viewedSlidesCachedIDs: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
+
+        let viewedSlidesCachedIDs: [String] = sdk?.localState?.viewedSlides(storyId: story.id) ?? []
         
         if let lastViewedSlideID = viewedSlidesCachedIDs.last,
            let defaultIndex = allSlidesIDs.firstIndex(of: lastViewedSlideID) {

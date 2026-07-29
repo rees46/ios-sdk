@@ -44,6 +44,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Owns the session id with a rolling 2h TTL, persisted per shop and reused across cold starts —
     /// aligned with Android/RN. See [SessionManager].
     let sessionManager: SessionManager
+
+    /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
+    /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
+    let localStateStore: LocalStateRepository
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -118,6 +122,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
         sessionManager: SessionManager? = nil,
+        localState: LocalStateRepository? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
@@ -127,6 +132,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // (tests) is used verbatim.
         let identity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
         self.userIdentity = identity
+
+        // R2: stories UI state (viewed/downloaded/cart/favourites) shares this shop's partition suite.
+        self.localStateStore = localState
+            ?? LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId, storageKey: storageKey))
 
         // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
         // reinstall keeps this shop's did. Injected (tests) is used verbatim.
@@ -1392,7 +1401,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.getRequest(path: path, params: params, false) { result in
                 switch result {
                 case let .success(successResult):
-                    let res = StoryContent(json: successResult)
+                    let res = StoryContent(json: successResult, shopId: self.shopId)
                     completion(.success(res))
                 case let .failure(error):
                     completion(.failure(error))
