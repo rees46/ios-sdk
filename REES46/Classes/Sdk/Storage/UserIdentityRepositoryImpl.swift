@@ -47,6 +47,22 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
         set { store.set(newValue, forKey: StoragePartition.seanceKey) }
     }
 
+    var seanceLastActTime: Date? {
+        get {
+            guard let seconds = store.object(forKey: StoragePartition.seanceLastActKey) as? Double else {
+                return nil
+            }
+            return Date(timeIntervalSince1970: seconds)
+        }
+        set {
+            if let newValue = newValue {
+                store.set(newValue.timeIntervalSince1970, forKey: StoragePartition.seanceLastActKey)
+            } else {
+                store.removeObject(forKey: StoragePartition.seanceLastActKey)
+            }
+        }
+    }
+
     var advertisingId: String? {
         get { store.string(forKey: StoragePartition.idfaKey) }
         set { store.set(newValue, forKey: StoragePartition.idfaKey) }
@@ -59,5 +75,6 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
     func clearIdentity() {
         store.set(nil, forKey: StoragePartition.deviceIdKey)
         store.set(nil, forKey: StoragePartition.seanceKey)
+        store.removeObject(forKey: StoragePartition.seanceLastActKey)
     }
 }

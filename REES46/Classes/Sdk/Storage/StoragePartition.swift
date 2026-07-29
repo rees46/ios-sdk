@@ -30,6 +30,7 @@ enum StoragePartition {
     // Keys that are partitioned per shop (identity + session + advertising id).
     static let deviceIdKey = SdkConstants.deviceIdKey // "device_id"
     static let seanceKey = "seance_id"
+    static let seanceLastActKey = "seance_last_act"
     static let idfaKey = "IDFA"
 
     /// Global flag (kept in the legacy `.standard` domain) marking the one-time legacy adoption as

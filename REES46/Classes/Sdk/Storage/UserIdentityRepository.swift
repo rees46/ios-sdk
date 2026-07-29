@@ -29,6 +29,10 @@ protocol UserIdentityRepository: AnyObject {
     /// The persisted session id (`seance`/`sid`).
     var seance: String? { get set }
 
+    /// When the session was last active — the anchor for the rolling session TTL. Nil when no session
+    /// has been recorded yet.
+    var seanceLastActTime: Date? { get set }
+
     /// The advertising id (`IDFA`).
     var advertisingId: String? { get set }
 

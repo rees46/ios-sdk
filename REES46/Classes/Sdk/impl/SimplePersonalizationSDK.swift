@@ -40,6 +40,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// This shop's keychain-backed init-secret backup (R2), keyed per shop so the did that survives a
     /// reinstall belongs to this shop only. See [KeychainInitStore].
     let keychainStore: KeychainInitStore
+
+    /// Owns the session id with a rolling 2h TTL, persisted per shop and reused across cold starts —
+    /// aligned with Android/RN. See [SessionManager].
+    let sessionManager: SessionManager
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -113,6 +117,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         storageKey: String? = nil,
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
+        sessionManager: SessionManager? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
@@ -120,12 +125,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // R2: identity/session live in this shop's partition. The default repository migrates the
         // pre-partition identity in once (existing installs keep their did); an injected repository
         // (tests) is used verbatim.
-        self.userIdentity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
+        let identity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
+        self.userIdentity = identity
 
         // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
         // reinstall keeps this shop's did. Injected (tests) is used verbatim.
         let keychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk"
         self.keychainStore = keychainStore ?? KeychainInitStoreImpl(shopId: shopId, service: keychainService)
+
+        // Session (aligned with Android/RN): a rolling 2h client session over the per-shop partition.
+        self.sessionManager = sessionManager ?? SessionManagerImpl(identity: identity)
 
         self.autoSendPushToken = autoSendPushToken
         self.parentViewController = parentViewController
@@ -141,8 +150,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.needReInitialization = needReInitialization
         self.sendAdvertisingId = sendAdvertisingId
         
-        // Generate seance and segment
-        userSeance = UUID().uuidString
+        // Resolve the session (reuse the persisted one within the 2h window, else start a new one)
+        // and pick an A/B segment.
+        userSeance = self.sessionManager.currentSessionId()
         segment = ["A", "B"].randomElement() ?? "A"
         
         // Fetch user session (permanent user Id)
@@ -154,7 +164,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 switch initResult {
                 case .success(let response):
                     self.userInfo = response
-                    self.userSeance = response.seance
+                    // Session is client-owned (see SessionManager) — the server-assigned seance is
+                    // intentionally not adopted, matching Android/RN.
                     self.deviceId = response.deviceId
                     
                     if let popup = response.popup {
@@ -1235,7 +1246,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
         if keychainDid.isEmpty || needReInitialization {
             persistDeviceIdIfAbsent(resultResponse.deviceId)
-            userIdentity.seance = resultResponse.seance
+            // Session is client-owned — do not overwrite it with the server-assigned seance.
             sleep(1)
             completion(.success(resultResponse))
         } else {
@@ -1392,7 +1403,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func storeSuccessInit(result: InitResponse) {
         persistDeviceIdIfAbsent(result.deviceId)
-        userIdentity.seance = result.seance
+        // Session is client-owned (see SessionManager) — the server seance is not persisted here.
     }
 
     private static let deviceIdPersistLock = NSObject()

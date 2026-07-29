@@ -58,6 +58,7 @@
 		E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */; };
 		E9CF44412B30809C000F53F1 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CF44402B30809C000F53F1 /* SearchViewController.swift */; };
 		E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9EAB8662AF08A43003DC1B5 /* Inter.ttf */; };
+		EEF5CF9F6430FD8202BB58BE /* SessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1E786F1F3C200D5DFE5D4 /* SessionManagerTests.swift */; };
 		F0605CC99B325F3301237A28 /* StorageMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */; };
 		F808067588CEF0AA10BCA7D7 /* UserIdentityRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */; };
 /* End PBXBuildFile section */
@@ -171,6 +172,7 @@
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
 		E9CF44402B30809C000F53F1 /* SearchViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SearchViewController.swift; sourceTree = "<group>"; };
 		E9EAB8662AF08A43003DC1B5 /* Inter.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Inter.ttf; sourceTree = "<group>"; };
+		F1F1E786F1F3C200D5DFE5D4 /* SessionManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionManagerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -304,6 +306,7 @@
 				8237EEC8810D8D4E8706C65B /* UserIdentityRepositoryIsolationTests.swift */,
 				5B55388A3AAFA52F88B08E3E /* KeychainPartitionTests.swift */,
 				CD265D9DC0347C2031552262 /* KeychainInitStoreTests.swift */,
+				F1F1E786F1F3C200D5DFE5D4 /* SessionManagerTests.swift */,
 			);
 			path = Rees46DemoTests;
 			sourceTree = "<group>";
@@ -744,6 +747,7 @@
 				8A5B5B19354E21262D482DEB /* UserIdentityRepositoryIsolationTests.swift in Sources */,
 				CFA0CA171D71D6AB7A4895CC /* KeychainPartitionTests.swift in Sources */,
 				020434BEE53FB36FF675571D /* KeychainInitStoreTests.swift in Sources */,
+				EEF5CF9F6430FD8202BB58BE /* SessionManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

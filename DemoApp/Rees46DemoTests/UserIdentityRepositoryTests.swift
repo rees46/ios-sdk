@@ -13,9 +13,10 @@ import XCTest
 final class InMemoryUserIdentityRepository: UserIdentityRepository {
     var deviceId: String?
     var seance: String?
+    var seanceLastActTime: Date?
     var advertisingId: String?
     func removeDeviceId() { deviceId = nil }
-    func clearIdentity() { deviceId = nil; seance = nil }
+    func clearIdentity() { deviceId = nil; seance = nil; seanceLastActTime = nil }
 }
 
 final class UserIdentityRepositoryTests: XCTestCase {
@@ -57,6 +58,17 @@ final class UserIdentityRepositoryTests: XCTestCase {
 
         XCTAssertNil(repo.deviceId)
         XCTAssertEqual(repo.seance, "seance-1")
+    }
+
+    func test_seance_last_act_time_round_trips_and_is_cleared_with_identity() {
+        let repo = UserIdentityRepositoryImpl(store: freshSuite())
+        let timestamp = Date(timeIntervalSince1970: 1_234_567)
+
+        repo.seanceLastActTime = timestamp
+        XCTAssertEqual(repo.seanceLastActTime?.timeIntervalSince1970, timestamp.timeIntervalSince1970)
+
+        repo.clearIdentity()
+        XCTAssertNil(repo.seanceLastActTime)
     }
 
     func test_clearIdentity_clears_device_id_and_seance_but_not_advertising_id() {
