@@ -8,22 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		0169B35A9F893F6D8D22820A /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */; };
+		147DA400223F6CCA5AC65661 /* PushTargetResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78EB6EC250D2FE2569EEF80E /* PushTargetResolverTests.swift */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* MainViewController.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
+		67B36DC5275BCA31AB0A0363 /* SdkRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6493F884A898C533B4817F97 /* SdkRegistryTests.swift */; };
+		6805322F7DF2A2E2F1234B24 /* InstanceResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */; };
 		7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */; };
 		758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */; };
 		75A4D60C2C5B8EAA00929368 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */; };
 		75D1D5C12CA72BF200C8C564 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */; };
 		75E237902C334AA800119197 /* SdkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E2378E2C334AA800119197 /* SdkTest.swift */; };
-		A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */; };
-		A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */; };
-		A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000006 /* LoyaltyTests.swift */; };
-		A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000008 /* CatalogReadTests.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
-		D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */; };
+		7FEFCE64D31526E14ADA2679 /* FakeSDK.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */; };
 		9A7A95DF25BC40E900FFA40A /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31DE25A1C6F700D9D1AA /* UserNotifications.framework */; };
 		9A7A95E025BC40E900FFA40A /* UserNotificationsUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9ADC31E025A1C6F700D9D1AA /* UserNotificationsUI.framework */; };
 		9A7A95E325BC40E900FFA40A /* NotificationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A7A95E225BC40E900FFA40A /* NotificationViewController.swift */; };
@@ -37,6 +36,10 @@
 		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */; };
 		9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */; };
+		A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */; };
+		A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */; };
+		A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000006 /* LoyaltyTests.swift */; };
+		A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000008 /* CatalogReadTests.swift */; };
 		D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D005D80C2DB2CDE000841D78 /* MockGenerator.swift */; };
 		D0763E5A2DB8F51D0013E367 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0763E592DB8F5170013E367 /* Constants.swift */; };
 		D0B70C172D522DAF0001782A /* SearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B70C162D522DAF0001782A /* SearchServiceTests.swift */; };
@@ -45,6 +48,7 @@
 		D0B99FA32DB16C960012E4F0 /* SubscribeForPriceDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDrop.swift */; };
 		D0B99FA52DB16D290012E4F0 /* UnsubscribePriceDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDrop.swift */; };
 		D0B99FA72DB172940012E4F0 /* ManageSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */; };
+		D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */; };
 		D589BD74A3C4A24BF7BCCD2C /* Pods_REES46Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B57812A2700376CF0EC5D913 /* Pods_REES46Tests.framework */; };
 		E9049B762B1F561100BD7FEB /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */; };
 		E9049B782B1F56D700BD7FEB /* Inter-Semibold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */; };
@@ -105,18 +109,15 @@
 		607FACDF1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		607FACE51AFB9204008FA782 /* REES46Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6493F884A898C533B4817F97 /* SdkRegistryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SdkRegistryTests.swift; sourceTree = "<group>"; };
 		6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SDKConfigProviderTests.swift; sourceTree = "<group>"; };
 		758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppEnvironments.struct.swift; sourceTree = "<group>"; };
 		75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		75E2378E2C334AA800119197 /* SdkTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SdkTest.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastOrderProductsTest.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUserOrdersTest.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000006 /* LoyaltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTests.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000008 /* CatalogReadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogReadTests.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
-		D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackEventCustomFieldsTests.swift; sourceTree = "<group>"; };
+		78EB6EC250D2FE2569EEF80E /* PushTargetResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushTargetResolverTests.swift; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -136,7 +137,13 @@
 		9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPresentViewController.swift; sourceTree = "<group>"; };
 		9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PushPresentViewController.xib; sourceTree = "<group>"; };
 		9E7FFE52FCE8111B44F38A5E /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
+		A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastOrderProductsTest.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUserOrdersTest.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000006 /* LoyaltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTests.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000008 /* CatalogReadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogReadTests.swift; sourceTree = "<group>"; };
 		AAB9149EDCCCB4FF18DB87D6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
+		AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeSDK.swift; sourceTree = "<group>"; };
+		B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InstanceResolverTests.swift; sourceTree = "<group>"; };
 		B57812A2700376CF0EC5D913 /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D005D80C2DB2CDE000841D78 /* MockGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockGenerator.swift; sourceTree = "<group>"; };
 		D0763E592DB8F5170013E367 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
@@ -146,6 +153,7 @@
 		D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeForPriceDrop.swift; sourceTree = "<group>"; };
 		D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribePriceDrop.swift; sourceTree = "<group>"; };
 		D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscription.swift; sourceTree = "<group>"; wrapsLines = 0; };
+		D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackEventCustomFieldsTests.swift; sourceTree = "<group>"; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
@@ -274,6 +282,10 @@
 				D0763E592DB8F5170013E367 /* Constants.swift */,
 				75E2378B2C334A4200119197 /* services */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
+				AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */,
+				B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */,
+				78EB6EC250D2FE2569EEF80E /* PushTargetResolverTests.swift */,
+				6493F884A898C533B4817F97 /* SdkRegistryTests.swift */,
 			);
 			path = Rees46DemoTests;
 			sourceTree = "<group>";
@@ -704,6 +716,10 @@
 				7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */,
 				75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */,
 				D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */,
+				7FEFCE64D31526E14ADA2679 /* FakeSDK.swift in Sources */,
+				6805322F7DF2A2E2F1234B24 /* InstanceResolverTests.swift in Sources */,
+				147DA400223F6CCA5AC65661 /* PushTargetResolverTests.swift in Sources */,
+				67B36DC5275BCA31AB0A0363 /* SdkRegistryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

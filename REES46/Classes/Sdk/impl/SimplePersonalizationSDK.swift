@@ -1321,9 +1321,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         try? FileManager.default.removeItem(at: initFileNamePath)
-        
+
         UserDefaults.standard.set(nil, forKey: SdkConstants.deviceIdKey)
         UserDefaults.standard.set(nil, forKey: "seance_id")
+
+        // Multi-instance groundwork (R1): this instance is torn down — drop it from push routing so a
+        // superseded object is not fed push tokens or resolved by `shop_id`.
+        SdkRegistry.shared.unregister(self)
+    }
+
+    deinit {
+        // Weak registry (see SdkRegistry): a host-released instance deallocs here — purge its routing
+        // slots eagerly instead of waiting for the next compaction.
+        SdkRegistry.shared.unregister(self)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {

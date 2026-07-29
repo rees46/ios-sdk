@@ -405,6 +405,12 @@ public func createPersonalizationSDK(
     )
     
     sdk.resetSdkCache()
-    
+
+    // Multi-instance groundwork (R1): record the instance so it can be resolved by `shop_id` and
+    // joins the push fan-out set. Single-instance behaviour is unchanged — nothing reads the registry
+    // yet through the public API. The registry holds the instance weakly, so this does not extend its
+    // lifetime; it drops out on dealloc or `deleteUserCredentials`.
+    SdkRegistry.shared.register(shopId: shopId, sdk: sdk)
+
     return sdk
 }
