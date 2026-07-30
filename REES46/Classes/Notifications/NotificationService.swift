@@ -30,6 +30,11 @@ public class NotificationService: NotificationServiceProtocol {
   }
   
   public var pushActionDelegate: NotificationActionsProtocol?
+
+  /// Retained for source compatibility. Notification tracking now routes through `Rees46.handlePush`
+  /// (which resolves the shop by `shop_id`), so this service no longer drives the delegate — a delegate
+  /// that called back into a single captured `sdk` would mis-track in a multi-shop app and double-track
+  /// alongside `handlePush`. `NotificationTracker` still constructs but is inert.
   public var notificationTrackerDelegate: NotificationTrackerDelegate?
   
   public let sdk: PersonalizationSDK
@@ -78,8 +83,11 @@ public class NotificationService: NotificationServiceProtocol {
     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult, String) -> Void
   ) {
     
-    notificationDelivered(userInfo: userInfo)
-    
+    // Track against the shop the push names (multi-instance): `Rees46.handlePush` resolves the target
+    // by `shop_id` instead of the single sdk captured at init, which would otherwise mis-track in a
+    // multi-shop app. Navigation below stays with this service / the host.
+    Rees46.handlePush(userInfo, event: .delivered)
+
     switch application.applicationState {
     case .active:
       notificationLogger.log("Application is in active state, processing notification")
@@ -150,8 +158,8 @@ public class NotificationService: NotificationServiceProtocol {
       handleNonSDKPush(userInfo: userInfo)
       return
     }
-    
-    notificationClicked(type: eventType, code: srcID)
+
+    Rees46.handlePush(userInfo, event: .clicked)
     
     if let eventLink = parseDictionary(key: Constants.eventKey, userInfo: userInfo)?[Constants.uriKey] as? String {
       var modifiedEventLink = eventLink
@@ -172,8 +180,8 @@ public class NotificationService: NotificationServiceProtocol {
       handleNonSDKPush(userInfo: userInfo)
       return
     }
-    
-    notificationReceived(type: type, code: code)
+
+    Rees46.handlePush(userInfo, event: .received)
     
     guard let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
           let eventType = eventJSON[Constants.typeKey] as? String,
@@ -228,18 +236,6 @@ public class NotificationService: NotificationServiceProtocol {
       return nil
   }
 
-  private func notificationClicked(type: String, code: String){
-    notificationTrackerDelegate?.notificationClicked(type: type, code: code)
-  }
-  
-  private func notificationReceived(type: String, code: String){
-    notificationTrackerDelegate?.notificationReceived(type: type, code: code)
-  }
-  
-  private func notificationDelivered(userInfo: [AnyHashable: Any]){
-    notificationTrackerDelegate?.notificationDelivered(userInfo: userInfo)
-  }
-  
   private func openCategory(categoryId: String) {
     pushActionDelegate?.openCategory(categoryId: categoryId)
   }

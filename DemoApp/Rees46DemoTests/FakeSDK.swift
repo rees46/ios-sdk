@@ -30,6 +30,7 @@ final class FakeSDK: PersonalizationSDK {
     lazy var popupPresenter: PopupPresenter = PopupPresenter(sdk: self)
 
     /// Records notification-track calls so tests can assert push routing hit the right instance.
+    private(set) var deliveredTracks: [(type: String, code: String)] = []
     private(set) var receivedTracks: [(type: String, code: String)] = []
     private(set) var clickedTracks: [(type: String, code: String)] = []
 
@@ -73,7 +74,9 @@ final class FakeSDK: PersonalizationSDK {
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         clickedTracks.append((type, code))
     }
-    func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {}
+    func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        deliveredTracks.append((type, code))
+    }
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         receivedTracks.append((type, code))
     }

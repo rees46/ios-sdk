@@ -1,5 +1,8 @@
 import Foundation
 
+/// Superseded by `Rees46.handlePush`, which tracks against the shop the push names (`shop_id`) instead
+/// of a single captured `sdk`. `NotificationService` no longer drives this delegate, so constructing a
+/// `NotificationTracker` is now a no-op kept for source compatibility. New code should not rely on it.
 public class NotificationTracker: NotificationTrackerDelegate{
   
   private let notificationLogger: NotificationLogger

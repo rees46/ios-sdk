@@ -174,10 +174,10 @@ public enum Rees46 {
      instead of tracking it against the wrong one. A payload that is not an SDK push (no resolvable
      `type`/`code`) is ignored. Call this from a host that owns its messaging service.
 
-     `received` tracks `track/received`; `clicked` tracks `track/clicked`. Navigation stays with the
-     host: unlike the Android singleton, iOS routes click actions through the host's own deep-link
-     handling (or the legacy `NotificationService`'s action delegate), so this method tracks but does
-     not open the target screen.
+     `delivered`/`received`/`clicked` track `track/delivered`/`track/received`/`track/clicked`.
+     Navigation stays with the host: unlike the Android singleton, iOS routes click actions through the
+     host's own deep-link handling (or the legacy `NotificationService`'s action delegate), so this
+     method tracks but does not open the target screen.
      */
     public static func handlePush(_ payload: [AnyHashable: Any], event: PushEvent) {
         guard let shopId = PushTargetResolver.resolve(
@@ -190,6 +190,8 @@ public enum Rees46 {
             return
         }
         switch event {
+        case .delivered:
+            sdk.notificationDelivered(type: type, code: code) { _ in }
         case .received:
             sdk.notificationReceived(type: type, code: code) { _ in }
         case .clicked:

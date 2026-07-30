@@ -56,6 +56,16 @@ final class HandlePushRoutingTests: XCTestCase {
         XCTAssertTrue(b.clickedTracks.isEmpty, "the other shop must not be tracked")
     }
 
+    func test_delivered_is_tracked_against_the_shop_named_in_the_payload() {
+        let a = live("shop-a")
+        let b = live("shop-b")
+
+        Rees46.handlePush(payload(shopId: "shop-a", type: "web", code: "d1"), event: .delivered)
+
+        XCTAssertEqual(a.deliveredTracks.map { $0.code }, ["d1"])
+        XCTAssertTrue(b.deliveredTracks.isEmpty, "the other shop must not be tracked")
+    }
+
     func test_received_is_tracked_against_the_shop_named_in_the_payload() {
         let a = live("shop-a")
         let b = live("shop-b")
