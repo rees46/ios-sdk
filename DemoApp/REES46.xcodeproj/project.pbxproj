@@ -10,6 +10,7 @@
 		0169B35A9F893F6D8D22820A /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */; };
 		020434BEE53FB36FF675571D /* KeychainInitStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD265D9DC0347C2031552262 /* KeychainInitStoreTests.swift */; };
 		147DA400223F6CCA5AC65661 /* PushTargetResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78EB6EC250D2FE2569EEF80E /* PushTargetResolverTests.swift */; };
+		447EFA0789368C931564CA42 /* MultiInstanceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */; };
 		593033DF60A44FEA08C3FAAF /* LocalStateRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F59CB601E63A49FB18F815 /* LocalStateRepositoryTests.swift */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* MainViewController.swift */; };
@@ -64,6 +65,7 @@
 		E9CF44412B30809C000F53F1 /* SearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CF44402B30809C000F53F1 /* SearchViewController.swift */; };
 		E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9EAB8662AF08A43003DC1B5 /* Inter.ttf */; };
 		EEF5CF9F6430FD8202BB58BE /* SessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1E786F1F3C200D5DFE5D4 /* SessionManagerTests.swift */; };
+		EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */; };
 		F0605CC99B325F3301237A28 /* StorageMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */; };
 		F808067588CEF0AA10BCA7D7 /* UserIdentityRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */; };
 /* End PBXBuildFile section */
@@ -126,6 +128,7 @@
 		607FACE51AFB9204008FA782 /* REES46Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = REES46Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6493F884A898C533B4817F97 /* SdkRegistryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SdkRegistryTests.swift; sourceTree = "<group>"; };
+		661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiInstanceViewController.swift; sourceTree = "<group>"; };
 		6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StorageMigrationTests.swift; sourceTree = "<group>"; };
 		732B3CD050F3471973F52C74 /* HandlePushRoutingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HandlePushRoutingTests.swift; sourceTree = "<group>"; };
@@ -138,6 +141,7 @@
 		78EB6EC250D2FE2569EEF80E /* PushTargetResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushTargetResolverTests.swift; sourceTree = "<group>"; };
 		8237EEC8810D8D4E8706C65B /* UserIdentityRepositoryIsolationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryIsolationTests.swift; sourceTree = "<group>"; };
 		86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryTests.swift; sourceTree = "<group>"; };
+		8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiInstanceE2ETest.swift; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -285,6 +289,7 @@
 				607FACDC1AFB9204008FA782 /* Images.xcassets */,
 				9AFB9EE328044E4D001462AC /* PushPresent */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
+				661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */,
 			);
 			name = Rees46Demo;
 			path = REES46Demo;
@@ -322,6 +327,7 @@
 				2EE37E1F7C2A166E0C3DFE89 /* Rees46FacadeTests.swift */,
 				B5AD555A428611EB01D95215 /* PushPayloadParserTests.swift */,
 				732B3CD050F3471973F52C74 /* HandlePushRoutingTests.swift */,
+				8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */,
 			);
 			path = Rees46DemoTests;
 			sourceTree = "<group>";
@@ -729,6 +735,7 @@
 				E9CF44412B30809C000F53F1 /* SearchViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 				758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */,
+				447EFA0789368C931564CA42 /* MultiInstanceViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -768,6 +775,7 @@
 				92BDE27192EC57DFBC01893C /* Rees46FacadeTests.swift in Sources */,
 				D0D6C4E39581EE6F13C7E601 /* PushPayloadParserTests.swift in Sources */,
 				D824C7F34B333C3D68092BA9 /* HandlePushRoutingTests.swift in Sources */,
+				EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
