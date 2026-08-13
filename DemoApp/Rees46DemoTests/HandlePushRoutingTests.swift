@@ -109,4 +109,87 @@ final class HandlePushRoutingTests: XCTestCase {
 
         XCTAssertTrue(a.receivedTracks.isEmpty, "a payload without type/code is not an SDK push")
     }
+
+    // MARK: - Pending (registered-but-not-initialized) shops
+
+    // A pending shop has no instance, so `handlePush` tracks it standalone (no construction/init). The
+    // real tracker POSTs over the network; swap in a recorder so the pending path is asserted offline
+    // — this pins parity with Android (materializeForPush) and RN (standalone trackPush): a push for a
+    // registered shop is NOT dropped just because the shop is not live yet.
+    private struct PendingTrack: Equatable {
+        let shopId: String
+        let event: String
+        let type: String
+        let code: String
+    }
+
+    private func recordPendingTracks(into sink: @escaping (PendingTrack) -> Void) {
+        Rees46.pendingPushTracker = { shopId, _, event, type, code in
+            let name: String
+            switch event {
+            case .delivered: name = "delivered"
+            case .received: name = "received"
+            case .clicked: name = "clicked"
+            }
+            sink(PendingTrack(shopId: shopId, event: name, type: type, code: code))
+        }
+    }
+
+    func test_a_push_for_a_registered_but_pending_shop_is_tracked_without_initializing_it() {
+        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")]) // pending, not initialized
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(payload(shopId: "shop-lazy", type: "product", code: "p9"), event: .delivered)
+
+        XCTAssertEqual(
+            tracks,
+            [PendingTrack(shopId: "shop-lazy", event: "delivered", type: "product", code: "p9")]
+        )
+        XCTAssertNil(registry.byShopId("shop-lazy"), "a push must NOT construct/register the shop")
+        XCTAssertTrue(Rees46.pendingShopIds().contains("shop-lazy"), "the shop stays pending after a push")
+    }
+
+    func test_a_clicked_push_for_a_pending_shop_is_tracked_standalone() {
+        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(payload(shopId: "shop-lazy", type: "web", code: "c3"), event: .clicked)
+
+        XCTAssertEqual(tracks.map { $0.event }, ["clicked"])
+        XCTAssertEqual(tracks.first?.code, "c3")
+    }
+
+    func test_no_shop_id_with_a_single_pending_shop_falls_back_to_it() {
+        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(payload(shopId: nil, code: "solo"), event: .delivered)
+
+        XCTAssertEqual(tracks.map { $0.shopId }, ["shop-lazy"])
+    }
+
+    func test_a_pending_shop_push_without_type_or_code_is_ignored() {
+        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(["shop_id": "shop-lazy", "title": "Hi"], event: .delivered) // no type/code
+
+        XCTAssertTrue(tracks.isEmpty, "a payload without type/code is not an SDK push")
+    }
+
+    func test_no_shop_id_with_one_live_and_one_pending_shop_is_ambiguous_and_dropped() {
+        let a = live("shop-a")
+        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(payload(shopId: nil), event: .delivered)
+
+        XCTAssertTrue(tracks.isEmpty, "a pending shop counts toward ambiguity — no-shop_id must drop")
+        XCTAssertTrue(a.deliveredTracks.isEmpty)
+    }
 }

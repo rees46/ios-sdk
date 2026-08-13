@@ -35,6 +35,12 @@ public enum Rees46 {
     /// Guards `pending`. The live instances themselves live in the (thread-safe) `SdkRegistry`.
     private static let lock = NSLock()
 
+    /// Fires the tracking beacon for a *pending* shop's push without constructing it — see `handlePush`.
+    /// Injectable so tests can assert the pending-track path offline; defaults to the real standalone
+    /// tracker (`PushDeliveryTracker`).
+    internal static var pendingPushTracker: (String, Rees46Config, PushEvent, String, String) -> Void
+        = PushDeliveryTracker.track
+
     // MARK: - Initialization
 
     /**
@@ -168,11 +174,17 @@ public enum Rees46 {
     // MARK: - Push
 
     /**
-     Routes a push to the instance it belongs to and tracks `event` for it. The target is the payload's
-     `shop_id`; with no `shop_id` a single-instance app still resolves, but an unknown shop — or an
-     absent `shop_id` while several shops are live — **drops** the push (via `PushTargetResolver`)
-     instead of tracking it against the wrong one. A payload that is not an SDK push (no resolvable
-     `type`/`code`) is ignored. Call this from a host that owns its messaging service.
+     Routes a push to the shop it belongs to and tracks `event` for it. The target is the payload's
+     `shop_id`; with no `shop_id` a single-shop app still resolves, but an unknown shop — or an absent
+     `shop_id` while several shops are registered — **drops** the push instead of tracking it against the
+     wrong one. A payload that is not an SDK push (no resolvable `type`/`code`) is ignored. Call this from
+     a host that owns its messaging service.
+
+     Resolution matches `instance(for:)` — it considers LIVE and PENDING shops. A push addressed to a
+     registered-but-not-initialized (pending) shop is tracked **without** initializing it: the shop's
+     persisted did in its storage partition is all `track/<event>` needs, so a lazily-registered shop's
+     push is tracked — not dropped — even when the process was launched cold by that push and only eager
+     shops are live (parity with Android's `materializeForPush` and RN's standalone `trackPush`).
 
      `delivered`/`received`/`clicked` track `track/delivered`/`track/received`/`track/clicked`.
      Navigation stays with the host: unlike the Android singleton, iOS routes click actions through the
@@ -180,22 +192,33 @@ public enum Rees46 {
      method tracks but does not open the target screen.
      */
     public static func handlePush(_ payload: [AnyHashable: Any], event: PushEvent) {
-        guard let shopId = PushTargetResolver.resolve(
-            payloadShopId: PushPayloadParser.shopId(from: payload),
-            liveShopIds: SdkRegistry.shared.shopIds()
-        ), let sdk = SdkRegistry.shared.byShopId(shopId) else {
-            return
-        }
+        let resolution = InstanceResolver.resolve(
+            requestedShopId: PushPayloadParser.shopId(from: payload),
+            liveShopIds: SdkRegistry.shared.shopIds(),
+            pendingShopIds: pendingShopIdsSnapshot()
+        )
+        // Not an SDK push (no resolvable type/code) — ignore regardless of the target.
         guard let (type, code) = PushPayloadParser.typeAndCode(from: payload) else {
             return
         }
-        switch event {
-        case .delivered:
-            sdk.notificationDelivered(type: type, code: code) { _ in }
-        case .received:
-            sdk.notificationReceived(type: type, code: code) { _ in }
-        case .clicked:
-            sdk.notificationClicked(type: type, code: code) { _ in }
+        switch resolution {
+        case .existing(let shopId):
+            guard let sdk = SdkRegistry.shared.byShopId(shopId) else { return }
+            switch event {
+            case .delivered:
+                sdk.notificationDelivered(type: type, code: code) { _ in }
+            case .received:
+                sdk.notificationReceived(type: type, code: code) { _ in }
+            case .clicked:
+                sdk.notificationClicked(type: type, code: code) { _ in }
+            }
+        case .pending(let shopId):
+            // Registered but not initialized: track on its persisted identity, no construction/init —
+            // so a lazily-registered shop's push is tracked, not dropped.
+            guard let config = pendingConfig(for: shopId) else { return }
+            pendingPushTracker(shopId, config, event, type, code)
+        case .notRegistered, .ambiguous:
+            return // drop: unknown shop, or ambiguous (no shop_id while several are registered)
         }
     }
 
@@ -223,21 +246,81 @@ public enum Rees46 {
         return Set(pending.keys)
     }
 
+    /// The stored config for a pending shop (its apiDomain/stream/storageKey), needed to track its push
+    /// standalone. `nil` if the shop was materialized (or dropped) in the meantime — then the push drops.
+    private static func pendingConfig(for shopId: String) -> Rees46Config? {
+        lock.lock()
+        defer { lock.unlock() }
+        return pending[shopId]
+    }
+
     private static func registeredShopIds() -> [String] {
         SdkRegistry.shared.shopIds().union(pendingShopIdsSnapshot()).sorted()
     }
 
     // MARK: - Test hooks
 
-    /// Test-only: drops pending registrations. Live instances live in `SdkRegistry`.
+    /// Test-only: drops pending registrations and restores the real push tracker. Live instances live
+    /// in `SdkRegistry`.
     internal static func reset() {
         lock.lock()
         pending.removeAll()
         lock.unlock()
+        pendingPushTracker = PushDeliveryTracker.track
     }
 
     /// Test-only: shops registered lazily and not yet initialized.
     internal static func pendingShopIds() -> Set<String> {
         pendingShopIdsSnapshot()
+    }
+}
+
+/**
+ Fires a push tracking beacon for a shop WITHOUT constructing its SDK. A registered-but-pending shop
+ already has its did persisted in its storage partition — all `track/<event>` needs — so a push for a
+ lazily-registered shop is tracked even when the process was launched cold by that push and only eager
+ shops are live. Standalone counterpart of an instance's `notification{Delivered,Received,Clicked}`;
+ mirror of RN's `trackPush`. iOS keeps the shop pending (the beacon needs no live instance), which also
+ sidesteps the weak `SdkRegistry` — a light-init instance would risk deallocating before the async POST
+ completes.
+ */
+internal enum PushDeliveryTracker {
+
+    static func track(
+        shopId: String,
+        config: Rees46Config,
+        event: PushEvent,
+        type: String,
+        code: String
+    ) {
+        let did = StoragePartition
+            .store(for: shopId, storageKey: config.storageKey)
+            .string(forKey: StoragePartition.deviceIdKey) ?? ""
+
+        let path: String
+        switch event {
+        case .delivered: path = "track/delivered"
+        case .received: path = "track/received"
+        case .clicked: path = "track/clicked"
+        }
+
+        guard let url = URL(string: "https://" + config.apiDomain + "/" + path) else { return }
+
+        // Same wire shape as SimplePersonalizationSDK.postRequest: a JSON body of stream + params.
+        let body: [String: Any] = [
+            "stream": config.stream,
+            "shop_id": shopId,
+            "did": did,
+            "code": code,
+            "type": type,
+        ]
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+        URLSession.shared.dataTask(with: request).resume()
     }
 }

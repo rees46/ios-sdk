@@ -8,8 +8,11 @@
 //
 //  `Rees46` / `SdkRegistry` are process-global, and the demo app registers its own shop at launch, so
 //  each test resets the registry in setUp and makes the shops it needs live itself — assertions are
-//  order-independent. The session-isolation test needs the backend; the resolution-contract tests do
-//  not (registration is synchronous), so they hold even offline.
+//  order-independent. Only `test_two_shops_have_isolated_sessions` needs the live backend (it waits on
+//  `/init` for the did); every other test here is deterministic without the network. The lifecycle
+//  tests (lazy materialization, eagerInit, awaitInstance-on-pending) and the offline session-isolation
+//  test build real SDKs but never await `/init` — they assert only the synchronous registry/session
+//  state the facade establishes at construction, so they hold even with no backend.
 //
 
 import XCTest
@@ -21,6 +24,10 @@ final class MultiInstanceE2ETest: XCTestCase {
     private let shopB = Constants.testShopIdB
     private let apiDomain = Constants.testApiDomain
 
+    /// The registry holds instances weakly, so real SDKs built by these tests are retained here for the
+    /// test's duration (an in-flight `/init` also retains them, but this keeps assertions robust).
+    private var retained: [PersonalizationSDK] = []
+
     override func setUp() {
         super.setUp()
         Rees46.reset()
@@ -30,7 +37,14 @@ final class MultiInstanceE2ETest: XCTestCase {
     override func tearDown() {
         Rees46.reset()
         SdkRegistry.shared.reset()
+        retained.removeAll()
         super.tearDown()
+    }
+
+    @discardableResult
+    private func retain(_ sdk: PersonalizationSDK) -> PersonalizationSDK {
+        retained.append(sdk)
+        return sdk
     }
 
     private func config(_ shopId: String) -> Rees46Config {
@@ -76,6 +90,78 @@ final class MultiInstanceE2ETest: XCTestCase {
                 return XCTFail("expected unknownShopId, got \(error)")
             }
         }
+    }
+
+    // MARK: - Lifecycle: lazy materialization / eagerInit / awaitInstance (no backend)
+
+    /// The core lazy-multi-instance promise: `register(shops:)` only records the config; the SDK is not
+    /// built until the first `instance(for:)`, which materializes it and clears the pending entry.
+    func test_a_lazily_registered_shop_materializes_on_first_use() throws {
+        Rees46.register(shops: [config(shopA)])
+
+        XCTAssertEqual(Rees46.pendingShopIds(), [shopA], "register(shops:) leaves the shop pending")
+        XCTAssertFalse(Rees46.isInitialized(shopId: shopA), "a pending shop is not initialized")
+        XCTAssertTrue(SdkRegistry.shared.shopIds().isEmpty, "nothing is built until first use")
+
+        let sdk = retain(try Rees46.instance(for: shopA))
+
+        XCTAssertEqual(sdk.getShopId(), shopA, "first use builds the SDK for the pending shop")
+        XCTAssertTrue(Rees46.pendingShopIds().isEmpty, "materialization consumes the pending entry")
+        XCTAssertTrue(Rees46.isInitialized(shopId: shopA), "the shop is live after first use")
+        XCTAssertTrue(SdkRegistry.shared.shopIds().contains(shopA))
+    }
+
+    /// A pending shop must materialize exactly once — the second resolution returns the same instance,
+    /// never a rebuild (guards the atomic claim in `Rees46.materialize`).
+    func test_materialization_is_idempotent_and_returns_the_same_instance() throws {
+        Rees46.register(shops: [config(shopA)])
+
+        let first = retain(try Rees46.instance(for: shopA))
+        let second = try Rees46.instance(for: shopA)
+
+        XCTAssertTrue(same(first, second), "a pending shop must materialize once, not rebuild")
+    }
+
+    /// `eagerInit: true` is the super-shop case — every shop is built up front, none left pending.
+    func test_eagerInit_initializes_every_shop_up_front() throws {
+        Rees46.register(shops: [config(shopA), config(shopB)], eagerInit: true)
+
+        XCTAssertTrue(Rees46.pendingShopIds().isEmpty, "eagerInit leaves nothing pending")
+        XCTAssertEqual(SdkRegistry.shared.shopIds(), [shopA, shopB], "both shops are live immediately")
+        XCTAssertTrue(Rees46.isInitialized(shopId: shopA))
+        XCTAssertTrue(Rees46.isInitialized(shopId: shopB))
+        XCTAssertEqual(retain(try Rees46.instance(for: shopA)).getShopId(), shopA)
+        XCTAssertEqual(retain(try Rees46.instance(for: shopB)).getShopId(), shopB)
+    }
+
+    /// `awaitInstance` on a pending shop builds it on the spot and delivers it, consuming the pending
+    /// entry — the reactive path a UI element uses to resolve its SDK without the host wiring it in.
+    func test_awaitInstance_materializes_a_pending_shop_on_the_spot() {
+        Rees46.register(shops: [config(shopA)])
+
+        var delivered: PersonalizationSDK?
+        let handle = Rees46.awaitInstance(for: shopA) { delivered = self.retain($0) }
+
+        XCTAssertEqual(delivered?.getShopId(), shopA, "awaitInstance builds the pending shop and delivers it")
+        XCTAssertTrue(Rees46.pendingShopIds().isEmpty, "the pending entry is consumed")
+        XCTAssertTrue(Rees46.isInitialized(shopId: shopA))
+        handle.cancel()
+    }
+
+    // MARK: - Session isolation without the backend
+
+    /// The seance is client-owned and assigned synchronously at construction from each shop's own
+    /// storage partition (the `/init` response deliberately does not adopt it — see SimplePersonalizationSDK),
+    /// so per-shop isolation is observable immediately, with no network. This is the deterministic
+    /// sibling of `test_two_shops_have_isolated_sessions`, which waits on `/init` only for the did.
+    func test_two_shops_keep_isolated_sessions_without_the_backend() {
+        let a = retain(Rees46.initialize(config(shopA)))
+        let b = retain(Rees46.initialize(config(shopB)))
+
+        XCTAssertNotEqual(a.getShopId(), b.getShopId(), "each shop keeps its own id")
+        XCTAssertFalse(a.getSession().isEmpty, "each shop is given a seance at construction")
+        XCTAssertFalse(b.getSession().isEmpty)
+        XCTAssertNotEqual(a.getSession(), b.getSession(), "each shop keeps its own seance — no cross-shop leak")
     }
 
     // MARK: - Session isolation (live backend)

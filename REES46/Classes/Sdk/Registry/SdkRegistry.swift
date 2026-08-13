@@ -15,7 +15,8 @@ import Foundation
  surface: it owns the routing state — an ordered fan-out set of live instances plus a "current"
  default pointer — so the single-instance behaviour is unchanged while the plumbing for resolving an
  instance by `shop_id` is in place and tested. The public `Rees46.initialize/instance(for:)/register`
- API is layered on top later (R3), and push routing (R4) consumes `PushTargetResolver` + `all()`.
+ API is layered on top later (R3), and push routing (R4) resolves the target via `InstanceResolver`
+ (live + pending) and fans a refreshed token out over `all()`.
 
  Mirror of the Android `SdkRegistry`, with one deliberate iOS difference: **references are weak.** On
  Android the SDK is a long-lived process singleton held by the JVM; on iOS the host owns the SDK's
