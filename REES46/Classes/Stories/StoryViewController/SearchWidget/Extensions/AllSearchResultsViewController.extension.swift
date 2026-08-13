@@ -70,7 +70,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     private func toggleCartItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
         print("Click 1")
         let cartKey = "cart.product.\(productId)"
-        let cartItems = UserDefaults.standard.stringArray(forKey: cartKey) ?? []
+        let cartItems = sdk?.localState?.cartProducts(productId: productId) ?? []
         
         if cartItems.contains(productId) {
             removeProductFromCart(cartItems, productId: productId, cartKey: cartKey, cell: cell)
@@ -82,7 +82,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     private func toggleFavoritesItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
         print("Click 2")
         let favoritesKey = "favorites.product.\(productId)"
-        let favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
+        let favoritesItems = sdk?.localState?.favoriteProducts(productId: productId) ?? []
         
         if favoritesItems.contains(productId) {
             removeProductFromFavorites(favoritesItems, productId: productId, favoritesKey: favoritesKey, cell: cell)
@@ -94,7 +94,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     private func removeProductFromCart(_ cartItems: [String], productId: String, cartKey: String, cell: RecommendationsWidgetViewCell) {
         var updatedCartItems = cartItems
         updatedCartItems.removeAll { $0 == productId }
-        UserDefaults.standard.setValue(updatedCartItems, forKey: cartKey)
+        sdk?.localState?.setCartProducts(updatedCartItems, productId: productId)
         cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetAddToCartButtonText, for: .normal)
         configureCartButtonAppearance(cell: cell, isInCart: false)
     }
@@ -102,7 +102,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     private func addProductToCart(_ cartItems: [String], productId: String, cartKey: String, cell: RecommendationsWidgetViewCell) {
         var updatedCartItems = cartItems
         updatedCartItems.append(productId)
-        UserDefaults.standard.setValue(updatedCartItems, forKey: cartKey)
+        sdk?.localState?.setCartProducts(updatedCartItems, productId: productId)
         cell.recommendationsCartButton.setTitle(SdkConfiguration.recommendations.widgetRemoveFromCartButtonText, for: .normal)
         configureCartButtonAppearance(cell: cell, isInCart: true)
     }
@@ -110,20 +110,20 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     private func removeProductFromFavorites(_ favoritesItems: [String], productId: String, favoritesKey: String, cell: RecommendationsWidgetViewCell) {
         var updatedFavoritesItems = favoritesItems
         updatedFavoritesItems.removeAll { $0 == productId }
-        UserDefaults.standard.setValue(updatedFavoritesItems, forKey: favoritesKey)
+        sdk?.localState?.setFavoriteProducts(updatedFavoritesItems, productId: productId)
         cell.recommendationsFavoritesButton.setImage(UIImage(named: "iconLikeHeartDark"), for: .normal)
     }
     
     private func addProductToFavorites(_ favoritesItems: [String], productId: String, favoritesKey: String, cell: RecommendationsWidgetViewCell) {
         var updatedFavoritesItems = favoritesItems
         updatedFavoritesItems.append(productId)
-        UserDefaults.standard.setValue(updatedFavoritesItems, forKey: favoritesKey)
+        sdk?.localState?.setFavoriteProducts(updatedFavoritesItems, productId: productId)
         cell.recommendationsFavoritesButton.setImage(UIImage(named: "iconLikeHeartFillDark"), for: .normal)
     }
     
     private func configureCartButton(cell: RecommendationsWidgetViewCell, productId: String) {
         let cartKey = "cart.product.\(productId)"
-        let cartItems = UserDefaults.standard.stringArray(forKey: cartKey) ?? []
+        let cartItems = sdk?.localState?.cartProducts(productId: productId) ?? []
         let isInCart = cartItems.contains(productId)
         
         let buttonText = isInCart ? SdkConfiguration.recommendations.widgetRemoveFromCartButtonText : SdkConfiguration.recommendations.widgetAddToCartButtonText
@@ -155,7 +155,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     
     private func configureFavoritesButton(cell: RecommendationsWidgetViewCell, productId: String) {
         let favoritesKey = "favorites.product.\(productId)"
-        let favoritesItems = UserDefaults.standard.stringArray(forKey: favoritesKey) ?? []
+        let favoritesItems = sdk?.localState?.favoriteProducts(productId: productId) ?? []
         
         let isProductFavorited = favoritesItems.contains(productId)
         

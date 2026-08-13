@@ -44,7 +44,11 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private var stories: [Story]?
     private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
-    
+
+    /// Subscription from the `configure(shopId:...)` overload; torn down when the view goes away or is
+    /// reconfigured, so the `awaitInstance` callback is not held.
+    private var sdkAwaitCancellable: Cancellable?
+
     public weak var communicationDelegate: StoriesCommunicationProtocol?
     
     private var mainVC: UIViewController?
@@ -134,7 +138,34 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         self.code = code
         loadStoriesData()
     }
-    
+
+    /**
+     Multi-instance overload (R3): resolves the SDK instance for `shopId` from the `Rees46` registry
+     instead of taking one directly, so the host does not have to hold and thread the SDK. With no
+     `shopId` the single default instance is used. The resolution is reactive — if the shop is not
+     initialized yet, the view loads as soon as it registers.
+
+     An ambiguous request (no `shopId` while several shops are registered) resolves to nothing and the
+     view stays empty — pass an explicit `shopId` in a multi-shop app. Reconfiguring cancels any
+     previous pending resolution.
+     */
+    public func configure(shopId: String? = nil, mainVC: UIViewController, code: String) {
+        self.mainVC = mainVC
+        self.code = code
+        sdkAwaitCancellable?.cancel()
+        sdkAwaitCancellable = Rees46.awaitInstance(for: shopId) { [weak self] sdk in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.sdk = sdk
+                self.loadStoriesData()
+            }
+        }
+    }
+
+    deinit {
+        sdkAwaitCancellable?.cancel()
+    }
+
     private func setBgColor() {
         if SdkConfiguration.isDarkMode {
             DispatchQueue.main.async {
@@ -216,15 +247,14 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         if let currentStory = stories?[indexPath.row] {
             
             let storyId = currentStory.id
-            let storyName = "viewed.slide." + storyId
-            
+
             var allStoriesMainArray: [String] = []
             for (index, _) in currentStory.slides.enumerated() {
                 //print("Story has \(index + 1): \(currentStory.slides[(index)].id)")
                 allStoriesMainArray.append(currentStory.slides[(index)].id)
             }
-            
-            let viewedSlidesStoriesCachedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storyName)) as? [String] ?? []
+
+            let viewedSlidesStoriesCachedArray: [String] = sdk?.localState?.viewedSlides(storyId: storyId) ?? []
             if (viewedSlidesStoriesCachedArray.count == allStoriesMainArray.count) {
                 cell.configureCell(settings: settings, viewed: currentStory.viewed, viewedLocalKey: true, storyId: currentStory.id)
                 cell.configure(story: currentStory)
@@ -280,15 +310,13 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         storyVC.sdkLinkDelegate = self
         storyVC.sdk = sdk
         storyVC.stories = stories ?? []
-        
-        let sId = "viewed.slide." + story.id
-        
+
         var allSlidesIDs: [String] = []
         for slide in story.slides {
             allSlidesIDs.append(slide.id)
         }
-        
-        let viewedSlidesCachedIDs: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(sId)) as? [String] ?? []
+
+        let viewedSlidesCachedIDs: [String] = sdk?.localState?.viewedSlides(storyId: story.id) ?? []
         
         if let lastViewedSlideID = viewedSlidesCachedIDs.last,
            let defaultIndex = allSlidesIDs.firstIndex(of: lastViewedSlideID) {

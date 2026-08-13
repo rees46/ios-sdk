@@ -67,6 +67,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var getProductCountersButton: UIButton!
     private var getCategoryButton: UIButton!
     private var getCollectionButton: UIButton!
+    private var multiInstanceButton: UIButton!
 
     public var waitIndicator: SdkActivityIndicator!
     
@@ -274,7 +275,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
-        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2000)
+        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2100)
         
         menuButton.addTarget(self, action: #selector(didTapMenu), for: .touchUpInside)
         searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
@@ -295,6 +296,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupGetProductCountersButton()
         setupGetCategoryButton()
         setupGetCollectionButton()
+        setupMultiInstanceButton()
 
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -312,7 +314,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 fcmGlobalToken = UserDefaults.standard.string(forKey: "fcmGlobalToken") ?? "No Firebase token"
             }
             
-            let deviceId = UserDefaults.standard.string(forKey: "device_id") ?? "No did token"
+            // R2: the did lives in the shop's partition, not `.standard` — read it from the instance.
+            let deviceId = globalSDK?.getDeviceId() ?? "No did token"
             self.didLabel.text = "DID\n\n" + deviceId
             
             self.pushTokenLabel.text = "PUSHTOKEN\n\n" + pushGlobalToken
@@ -763,6 +766,29 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         ])
 
         getCollectionButton.addTarget(self, action: #selector(didTapGetCollection), for: .touchUpInside)
+    }
+
+    func setupMultiInstanceButton() {
+        multiInstanceButton = DemoShopButton(type: .system)
+        multiInstanceButton.setTitle("Multi-instance demo", for: .normal)
+        multiInstanceButton.setTitleColor(.white, for: .normal)
+        multiInstanceButton.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(multiInstanceButton)
+
+        NSLayoutConstraint.activate([
+            multiInstanceButton.topAnchor.constraint(equalTo: getCollectionButton.bottomAnchor, constant: 10),
+            multiInstanceButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+            multiInstanceButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+            multiInstanceButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+        ])
+
+        multiInstanceButton.addTarget(self, action: #selector(didTapMultiInstance), for: .touchUpInside)
+    }
+
+    @objc private func didTapMultiInstance() {
+        let nav = UINavigationController(rootViewController: MultiInstanceViewController())
+        nav.modalPresentationStyle = .fullScreen
+        present(nav, animated: true)
     }
 
     @objc

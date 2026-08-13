@@ -31,6 +31,23 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     let autoSendPushToken: Bool
     let needReInitialization: Bool
     let sendAdvertisingId: Bool
+
+    /// This shop's identity/session storage (R2): `device_id` / `seance` / `IDFA` are read and written
+    /// through this typed port, backed by a per-shop partition so two shops in one app do not share
+    /// identity. The push token stays device-global. See [UserIdentityRepository].
+    let userIdentity: UserIdentityRepository
+
+    /// This shop's keychain-backed init-secret backup (R2), keyed per shop so the did that survives a
+    /// reinstall belongs to this shop only. See [KeychainInitStore].
+    let keychainStore: KeychainInitStore
+
+    /// Owns the session id with a rolling 2h TTL, persisted per shop and reused across cold starts —
+    /// aligned with Android/RN. See [SessionManager].
+    let sessionManager: SessionManager
+
+    /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
+    /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
+    let localStateStore: LocalStateRepository
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -101,9 +118,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         parentViewController: UIViewController? = nil,
         enableAutoPopupPresentation: Bool = true,
         needReInitialization: Bool = false,
+        storageKey: String? = nil,
+        userIdentity: UserIdentityRepository? = nil,
+        keychainStore: KeychainInitStore? = nil,
+        sessionManager: SessionManager? = nil,
+        localState: LocalStateRepository? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+
+        // R2: identity/session live in this shop's partition. The default repository migrates the
+        // pre-partition identity in once (existing installs keep their did); an injected repository
+        // (tests) is used verbatim.
+        let identity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
+        self.userIdentity = identity
+
+        // R2: stories UI state (viewed/downloaded/cart/favourites) shares this shop's partition suite.
+        self.localStateStore = localState
+            ?? LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId, storageKey: storageKey))
+
+        // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
+        // reinstall keeps this shop's did. Injected (tests) is used verbatim.
+        let keychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk"
+        self.keychainStore = keychainStore ?? KeychainInitStoreImpl(shopId: shopId, service: keychainService)
+
+        // Session (aligned with Android/RN): a rolling 2h client session over the per-shop partition.
+        self.sessionManager = sessionManager ?? SessionManagerImpl(identity: identity)
+
         self.autoSendPushToken = autoSendPushToken
         self.parentViewController = parentViewController
         self.enableAutoPopupPresentation = enableAutoPopupPresentation
@@ -118,12 +159,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.needReInitialization = needReInitialization
         self.sendAdvertisingId = sendAdvertisingId
         
-        // Generate seance and segment
-        userSeance = UUID().uuidString
+        // Resolve the session (reuse the persisted one within the 2h window, else start a new one)
+        // and pick an A/B segment.
+        userSeance = self.sessionManager.currentSessionId()
         segment = ["A", "B"].randomElement() ?? "A"
         
         // Fetch user session (permanent user Id)
-        deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        deviceId = self.userIdentity.deviceId ?? ""
         urlSession = URLSession.shared
         
         sessionQueue.addOperation {
@@ -131,7 +173,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 switch initResult {
                 case .success(let response):
                     self.userInfo = response
-                    self.userSeance = response.seance
+                    // Session is client-owned (see SessionManager) — the server-assigned seance is
+                    // intentionally not adopted, matching Android/RN.
                     self.deviceId = response.deviceId
                     
                     if let popup = response.popup {
@@ -1173,15 +1216,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         ]
         
         if needReInitialization {
-            UserDefaults.standard.removeObject(forKey: SdkConstants.deviceIdKey)
+            userIdentity.removeDeviceId()
             print("USER DEVICE ID WAS REMOVED")
         }
-        
-        if let deviceId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey), !deviceId.isEmpty {
+
+        if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
             params[SdkConstants.did] = deviceId
         }
-        
-        if let advId = UserDefaults.standard.string(forKey: "IDFA"), advId != "00000000-0000-0000-0000-000000000000" {
+
+        if let advId = userIdentity.advertisingId, advId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advId
         }
         
@@ -1208,11 +1251,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         initFileNamePath: URL,
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
-        let keychainDid = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        let keychainDid = userIdentity.deviceId ?? ""
 
         if keychainDid.isEmpty || needReInitialization {
             persistDeviceIdIfAbsent(resultResponse.deviceId)
-            UserDefaults.standard.set(resultResponse.seance, forKey: "seance_id")
+            // Session is client-owned — do not overwrite it with the server-assigned seance.
             sleep(1)
             completion(.success(resultResponse))
         } else {
@@ -1223,10 +1266,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     private func handleKeychainInitData(initFileNamePath: URL) -> InitResponse? {
-        guard let keychainIpfsSecret = try? InitService.getKeychainDidToken(
-            identifier: sdkBundleId!,
-            instanceKeychainService: appBundleId!
-        ),
+        guard let keychainIpfsSecret = keychainStore.readInitData(),
             let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
             return nil
         }
@@ -1288,17 +1328,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             SdkConstants.tz: String(hours)
         ]
         
-        let dId = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        let dId = userIdentity.deviceId ?? ""
         if dId != "" {
             params[SdkConstants.did] = dId
         }
-        
+
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
             return
         }
         params["ios_advertising_id"] = advId
-        UserDefaults.standard.set(advId, forKey: "IDFA")
+        userIdentity.advertisingId = advId
         
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 1
@@ -1321,9 +1361,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
         let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
         try? FileManager.default.removeItem(at: initFileNamePath)
-        
-        UserDefaults.standard.set(nil, forKey: SdkConstants.deviceIdKey)
-        UserDefaults.standard.set(nil, forKey: "seance_id")
+
+        userIdentity.clearIdentity()
+        // Also drop the keychain backup — otherwise a re-init would restore the very did we just
+        // deleted from its reinstall-surviving copy.
+        keychainStore.clear()
+
+        // Multi-instance groundwork (R1): this instance is torn down — drop it from push routing so a
+        // superseded object is not fed push tokens or resolved by `shop_id`.
+        SdkRegistry.shared.unregister(self)
+    }
+
+    deinit {
+        // Weak registry (see SdkRegistry): a host-released instance deallocs here — purge its routing
+        // slots eagerly instead of waiting for the next compaction.
+        SdkRegistry.shared.unregister(self)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
@@ -1349,7 +1401,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.getRequest(path: path, params: params, false) { result in
                 switch result {
                 case let .success(successResult):
-                    let res = StoryContent(json: successResult)
+                    let res = StoryContent(json: successResult, shopId: self.shopId)
                     completion(.success(res))
                 case let .failure(error):
                     completion(.failure(error))
@@ -1360,7 +1412,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func storeSuccessInit(result: InitResponse) {
         persistDeviceIdIfAbsent(result.deviceId)
-        UserDefaults.standard.set(result.seance, forKey: "seance_id")
+        // Session is client-owned (see SessionManager) — the server seance is not persisted here.
     }
 
     private static let deviceIdPersistLock = NSObject()
@@ -1374,9 +1426,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         guard let deviceId = deviceId, !deviceId.isEmpty else { return }
         objc_sync_enter(Self.deviceIdPersistLock)
         defer { objc_sync_exit(Self.deviceIdPersistLock) }
-        let current = UserDefaults.standard.string(forKey: SdkConstants.deviceIdKey) ?? ""
+        let current = userIdentity.deviceId ?? ""
         if current.isEmpty {
-            UserDefaults.standard.set(deviceId, forKey: SdkConstants.deviceIdKey)
+            userIdentity.deviceId = deviceId
         }
     }
     
@@ -1431,7 +1483,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         if isInit {
                             let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
                             try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
-                            try InitService.insertKeychainDidToken(data, identifier: self.sdkBundleId!, instanceKeychainService: self.appBundleId!)
+                            self.keychainStore.writeInitData(data)
                         }
 
                         let json = try JSONSerialization.jsonObject(with: data)
@@ -1528,7 +1580,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if self.deviceId == "" {
             self.sessionQueue.pause()
             sleep(5)
-            let dId = UserDefaults.standard.string(forKey: "device_id") ?? ""
+            let dId = self.userIdentity.deviceId ?? ""
             self.deviceId = dId
             requestParams["did"] = dId
             self.sessionQueue.resume()

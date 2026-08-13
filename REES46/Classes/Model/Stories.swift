@@ -8,14 +8,14 @@ public class StoryContent {
     let settings: StoriesSettings
     let stories: [Story]
     
-    public init(json: [String: Any]) {
+    public init(json: [String: Any], shopId: String = "") {
         self.id = json["id"] as? String ?? "-1"
         self.ids = json["id"] as? Int ?? -1
         let _settings = json["settings"] as? [String: Any] ?? [:]
         self.settings = StoriesSettings(json: _settings)
         let _stories = json["stories"] as? [[String: Any]] ?? []
-        self.stories = _stories.map({Story(json: $0)})
-        
+        self.stories = _stories.map({ Story(json: $0, shopId: shopId) })
+
         if let ids = json["id"] as? Int {
             self.id = String(ids)
         }
@@ -57,8 +57,8 @@ class Story {
     let name: String
     let pinned: Bool
     let slides: [Slide]
-    
-    public init(json: [String: Any]) {
+
+    public init(json: [String: Any], shopId: String = "") {
         self.id = json["id"] as? String ?? "-1"
         self.ids = json["id"] as? Int ?? -1
         self.avatar = json["avatar"] as? String ?? ""
@@ -67,8 +67,8 @@ class Story {
         self.name = json["name"] as? String ?? ""
         self.pinned = json["pinned"] as? Bool ?? false
         let _slides = json["slides"] as? [[String: Any]] ?? []
-        self.slides = _slides.map({Slide(json: $0)})
-        
+        self.slides = _slides.map({ Slide(json: $0, shopId: shopId) })
+
         if let ids = json["id"] as? Int {
             self.id = String(ids)
         }
@@ -92,8 +92,15 @@ class Slide {
     
     public let vDownloadManager = VideoDownloadManager.shared
     var sdkDirectoryName: String = "SDKCacheDirectory"
-    
-    public init(json: [String: Any]) {
+
+    /// The shop this slide belongs to, so its downloaded-media state lands in the right partition.
+    /// Slide ids are not unique across shops, so this state must be per shop.
+    private let shopId: String
+    private lazy var localState: LocalStateRepository =
+        LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId))
+
+    public init(json: [String: Any], shopId: String = "") {
+        self.shopId = shopId
         self.id = json["id"] as? String ?? "-1"
         self.ids = json["id"] as? Int ?? -1
         self.duration = json["duration"] as? Int ?? 10
@@ -231,20 +238,22 @@ class Slide {
     }
     
     private func completionCached(slideWithId: String, actualSlideUrl: String) {
+        // Storage is per shop (slide ids collide across shops); the notification name stays the raw
+        // in-process signal.
         let storySlideMediaId = "cached.slide." + slideWithId
-        
-        var slidesDownloadedArray: [String] = UserDefaults.standard.getValue(for: UserDefaults.Key(storySlideMediaId)) as? [String] ?? []
+
+        var slidesDownloadedArray = localState.downloadedMedia(slideId: slideWithId)
         let slideWithIdExists = slidesDownloadedArray.contains(where: {
             $0.range(of: storySlideMediaId) != nil
         })
-        
+
         if !slideWithIdExists {
             slidesDownloadedArray.append(storySlideMediaId)
-            UserDefaults.standard.setValue(slidesDownloadedArray, for: UserDefaults.Key(storySlideMediaId))
+            localState.setDownloadedMedia(slidesDownloadedArray, slideId: slideWithId)
         }
-        
+
         let userInfo = ["url": actualSlideUrl] as [String: Any]
-        NotificationCenter.default.post(name:Notification.Name(storySlideMediaId), object: userInfo)
+        NotificationCenter.default.post(name: Notification.Name(storySlideMediaId), object: userInfo)
     }
 }
 

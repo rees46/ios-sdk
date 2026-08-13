@@ -14,9 +14,18 @@ class NotificationRegistrar {
     init(sdk: PersonalizationSDK) {
         self.sdk = sdk
     }
-    
+
+    /// Per-shop throttle key: the APNs token is device-global, but each shop uploads it to its own
+    /// backend on its own weekly schedule. A single global key let the first shop's upload throttle
+    /// every other shop for a week (so their backends never got the token). Namespacing by `shop_id`
+    /// makes each initialized instance register the token independently — the iOS analog of Android's
+    /// per-shop `PushTokenManager` throttle, and what implicitly fans the token out across shops.
+    private var lastUploadDateKey: String {
+        "\(Constants.mainPushTokenLastUploadDateKey).\(sdk.shopId)"
+    }
+
     func registerWithDeviceToken(deviceToken: Data) {
-        if let pushTokenLastUpdateDate = UserDefaults.standard.object(forKey: Constants.mainPushTokenLastUploadDateKey) as? Date {
+        if let pushTokenLastUpdateDate = UserDefaults.standard.object(forKey: lastUploadDateKey) as? Date {
             let currentDate = Date()
             let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
             guard timeSincePushTokenLastUpdate >= Constants.oneWeekInSeconds else {
@@ -35,7 +44,7 @@ class NotificationRegistrar {
             switch tokenResponse {
             case .success():
                 let currentDate = Date()
-                UserDefaults.standard.setValue(currentDate, forKey: Constants.mainPushTokenLastUploadDateKey)
+                UserDefaults.standard.setValue(currentDate, forKey: self.lastUploadDateKey)
                 let nextPossibleSendDate = currentDate.addingTimeInterval(Constants.oneWeekInSeconds)
 #if DEBUG
                 print("Push token successfully sent. Last upload date: \(currentDate). Next possible send date: \(nextPossibleSendDate)")
