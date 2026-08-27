@@ -38,6 +38,16 @@ private enum DemoTrackEventDemoConstants {
     static let reservedCollisionValue = "collision_demo"
 }
 
+private enum DemoTrackingNamespaceConstants {
+    static let itemId = "ios-demo-sku-001"
+    static let secondItemId = "ios-demo-sku-002"
+    static let categoryId = "ios-demo-category"
+    static let searchQuery = "demo boots"
+    static let quantity = 2
+    static let price = 49.9
+    static let sourceCode = "ios-demo-block"
+}
+
 class MainViewController: UIViewController, UIScrollViewDelegate {
     
     @IBOutlet private weak var menuButton: UIButton!
@@ -68,6 +78,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private var getCategoryButton: UIButton!
     private var getCollectionButton: UIButton!
     private var multiInstanceButton: UIButton!
+    private var trackingNamespaceButtons: [UIButton] = []
 
     public var waitIndicator: SdkActivityIndicator!
     
@@ -275,7 +286,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     
     func setupSdkDemoAppViews() {
         navigationController?.navigationBar.isHidden = true
-        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2100)
+        scrollView.contentSize = CGSize(width: UIScreen.main.bounds.size.width, height: 2800)
         
         menuButton.addTarget(self, action: #selector(didTapMenu), for: .touchUpInside)
         searchButton.addTarget(self, action: #selector(didTapSearch), for: .touchUpInside)
@@ -297,6 +308,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         setupGetCategoryButton()
         setupGetCollectionButton()
         setupMultiInstanceButton()
+        setupTrackingNamespaceButtons()
 
         fontInterPreload()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -789,6 +801,182 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         let nav = UINavigationController(rootViewController: MultiInstanceViewController())
         nav.modalPresentationStyle = .fullScreen
         present(nav, animated: true)
+    }
+
+    // MARK: - Tracking namespace (sdk.tracking.*)
+
+    /// One button per standard event, all of them going through the `tracking` namespace.
+    /// The identifiers are what `TrackingNamespaceUITests` taps.
+    func setupTrackingNamespaceButtons() {
+        let actions: [(title: String, identifier: String, selector: Selector)] = [
+            ("Tracking: product view", "tracking_product_view", #selector(didTapTrackingProductView)),
+            ("Tracking: category view", "tracking_category_view", #selector(didTapTrackingCategoryView)),
+            ("Tracking: search", "tracking_search", #selector(didTapTrackingSearch)),
+            ("Tracking: add to cart", "tracking_add_to_cart", #selector(didTapTrackingAddToCart)),
+            ("Tracking: sync cart", "tracking_sync_cart", #selector(didTapTrackingSyncCart)),
+            ("Tracking: remove from cart", "tracking_remove_from_cart", #selector(didTapTrackingRemoveFromCart)),
+            ("Tracking: add to favorites", "tracking_add_to_favorites", #selector(didTapTrackingAddToFavorites)),
+            ("Tracking: sync favorites", "tracking_sync_favorites", #selector(didTapTrackingSyncFavorites)),
+            ("Tracking: remove from favorites", "tracking_remove_from_favorites", #selector(didTapTrackingRemoveFromFavorites)),
+            ("Tracking: set source", "tracking_set_source", #selector(didTapTrackingSetSource)),
+        ]
+
+        var previous: UIView = multiInstanceButton
+        for action in actions {
+            let button = DemoShopButton(type: .system)
+            button.setTitle(action.title, for: .normal)
+            button.setTitleColor(.white, for: .normal)
+            button.accessibilityIdentifier = action.identifier
+            button.translatesAutoresizingMaskIntoConstraints = false
+            scrollView.addSubview(button)
+
+            NSLayoutConstraint.activate([
+                button.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: 10),
+                button.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
+                button.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
+                button.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            ])
+
+            button.addTarget(self, action: action.selector, for: .touchUpInside)
+            trackingNamespaceButtons.append(button)
+            previous = button
+        }
+    }
+
+    /// Runs one namespace call and reports the outcome in an alert titled `<method> OK` or
+    /// `<method> failed` — the UI test asserts on exactly those titles.
+    private func runTrackingDemo(
+        _ method: String,
+        _ call: (TrackingAPI, @escaping (Result<Void, SdkError>) -> Void) -> Void
+    ) {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        call(sdk.tracking) { result in
+            switch result {
+            case .success:
+                self.presentTrackEventDemoAlert(
+                    title: "\(method) OK",
+                    message: "Sent through sdk.tracking.\(method)."
+                )
+            case .failure(let error):
+                self.presentTrackEventDemoAlert(
+                    title: "\(method) failed",
+                    message: Self.sdkErrorDescription(error)
+                )
+            }
+        }
+    }
+
+    @objc
+    private func didTapTrackingProductView() {
+        runTrackingDemo("productView") { tracking, done in
+            tracking.productView(
+                id: DemoTrackingNamespaceConstants.itemId,
+                source: TrackingSource(type: .dynamic, code: DemoTrackingNamespaceConstants.sourceCode),
+                completion: done
+            )
+        }
+    }
+
+    @objc
+    private func didTapTrackingCategoryView() {
+        runTrackingDemo("categoryView") { tracking, done in
+            tracking.categoryView(id: DemoTrackingNamespaceConstants.categoryId, completion: done)
+        }
+    }
+
+    @objc
+    private func didTapTrackingSearch() {
+        runTrackingDemo("search") { tracking, done in
+            tracking.search(
+                query: DemoTrackingNamespaceConstants.searchQuery,
+                results: [DemoTrackingNamespaceConstants.itemId, DemoTrackingNamespaceConstants.secondItemId],
+                completion: done
+            )
+        }
+    }
+
+    @objc
+    private func didTapTrackingAddToCart() {
+        runTrackingDemo("addToCart") { tracking, done in
+            tracking.addToCart(
+                item: TrackingItem(
+                    id: DemoTrackingNamespaceConstants.itemId,
+                    quantity: DemoTrackingNamespaceConstants.quantity,
+                    price: DemoTrackingNamespaceConstants.price
+                ),
+                completion: done
+            )
+        }
+    }
+
+    @objc
+    private func didTapTrackingSyncCart() {
+        runTrackingDemo("syncCart") { tracking, done in
+            tracking.syncCart(
+                items: [
+                    TrackingItem(
+                        id: DemoTrackingNamespaceConstants.itemId,
+                        quantity: DemoTrackingNamespaceConstants.quantity,
+                        price: DemoTrackingNamespaceConstants.price
+                    ),
+                    TrackingItem(id: DemoTrackingNamespaceConstants.secondItemId),
+                ],
+                completion: done
+            )
+        }
+    }
+
+    @objc
+    private func didTapTrackingRemoveFromCart() {
+        runTrackingDemo("removeFromCart") { tracking, done in
+            tracking.removeFromCart(id: DemoTrackingNamespaceConstants.itemId, completion: done)
+        }
+    }
+
+    @objc
+    private func didTapTrackingAddToFavorites() {
+        runTrackingDemo("addToFavorites") { tracking, done in
+            tracking.addToFavorites(id: DemoTrackingNamespaceConstants.itemId, completion: done)
+        }
+    }
+
+    @objc
+    private func didTapTrackingSyncFavorites() {
+        runTrackingDemo("syncFavorites") { tracking, done in
+            tracking.syncFavorites(
+                ids: [
+                    DemoTrackingNamespaceConstants.itemId,
+                    DemoTrackingNamespaceConstants.secondItemId,
+                ],
+                completion: done
+            )
+        }
+    }
+
+    @objc
+    private func didTapTrackingRemoveFromFavorites() {
+        runTrackingDemo("removeFromFavorites") { tracking, done in
+            tracking.removeFromFavorites(id: DemoTrackingNamespaceConstants.itemId, completion: done)
+        }
+    }
+
+    /// `setSource` stores the attribution locally and has no completion — report it as sent.
+    @objc
+    private func didTapTrackingSetSource() {
+        guard let sdk = globalSDK else {
+            presentTrackEventDemoAlert(title: "SDK", message: "globalSDK is not initialized.")
+            return
+        }
+        sdk.tracking.setSource(
+            TrackingSource(type: .dynamic, code: DemoTrackingNamespaceConstants.sourceCode)
+        )
+        presentTrackEventDemoAlert(
+            title: "setSource OK",
+            message: "Stored source for the next events."
+        )
     }
 
     @objc
