@@ -96,7 +96,8 @@ final class TrackEventCustomFieldsTests: XCTestCase {
     }
 }
 
-private final class MockPersonalizationSDK: PersonalizationSDK {
+/// Shared across the tracking test files in this target (see `TrackingNamespaceTests`).
+final class MockPersonalizationSDK: PersonalizationSDK {
     var shopId: String = "shop"
     var deviceId: String = "device"
     var userSeance: String = "seance"

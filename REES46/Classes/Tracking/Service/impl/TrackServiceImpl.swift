@@ -48,6 +48,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let view = "view"
         static let click = "click"
         static let searchQuery = "search_query"
+        static let results = "results"
         static let search = "search"
         static let categoryId = "category_id"
         static let category = "category"
@@ -153,8 +154,11 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.click
-            case let .search(query):
+            case let .search(query, results):
                 params[Constants.searchQuery] = query
+                if let results = results, !results.isEmpty {
+                    params[Constants.results] = results.joined(separator: ",")
+                }
                 paramEvent = Constants.search
             case let .categoryView(id):
                 params[Constants.categoryId] = id
@@ -162,8 +166,12 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             case let .productView(id):
                 params[Constants.items] = [[Constants.id:id]]
                 paramEvent = Constants.view
-            case let .productAddedToCart(id, amount):
-                params[Constants.items] = [[Constants.id:id, Constants.amount:amount] as [String : Any]]
+            case let .productAddedToCart(id, amount, price):
+                var item: [String: Any] = [Constants.id: id, Constants.amount: amount]
+                if let price = price {
+                    item[Constants.price] = price
+                }
+                params[Constants.items] = [item]
                 paramEvent = Constants.cart
             case let .productAddedToFavorites(id):
                 params[Constants.items] = [[Constants.id:id]]
@@ -200,11 +208,15 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 paramEvent = Constants.purchase
             case let .synchronizeCart(items):
                 var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
-                    tempItems.append([
+                for item in items {
+                    var row: [String: Any] = [
                         Constants.id: item.productId,
                         Constants.amount: String(item.quantity)
-                    ])
+                    ]
+                    if let price = item.price {
+                        row[Constants.price] = price
+                    }
+                    tempItems.append(row)
                 }
                 params[Constants.items] = tempItems
                 params[Constants.fullCart] = Constants.fullCartValue

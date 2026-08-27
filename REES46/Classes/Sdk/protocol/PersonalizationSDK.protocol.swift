@@ -26,6 +26,12 @@ public protocol PersonalizationSDK {
     var enableAutoPopupPresentation: Bool { get set }
     var popupPresenter: PopupPresenter { get }
     
+    /// Standard tracking events, grouped: `sdk.tracking.productView(id:)`, `.addToCart(item:)`, …
+    ///
+    /// Conformers get a working implementation for free (see the default below), so adding this
+    /// requirement does not break types that already conform.
+    var tracking: TrackingAPI { get }
+
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void)
     func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void)
     func configureURLSession(configuration: URLSessionConfiguration)
@@ -33,8 +39,11 @@ public protocol PersonalizationSDK {
     
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?,  advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    @available(*, deprecated, renamed: "tracking.purchase(_:source:completion:)", message: "Use the tracking namespace: sdk.tracking.purchase(request).")
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    @available(*, deprecated, renamed: "tracking.setSource(_:)", message: "Use the tracking namespace: sdk.tracking.setSource(TrackingSource(type:code:)).")
     func trackSource(source: RecommendedByCase, code: String)
+    @available(*, deprecated, renamed: "tracking.custom(event:time:category:label:value:customFields:completion:)", message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
@@ -93,6 +102,13 @@ public protocol PersonalizationSDK {
 }
 
 public extension PersonalizationSDK {
+
+    /// Default `tracking` implementation — a stateless wrapper over the same services the
+    /// root-level tracking methods use. Conformers may override it; none has to.
+    var tracking: TrackingAPI {
+        TrackingAPIImpl(sdk: self)
+    }
+
     func setPushTokenNotification(token: String,isFirebaseNotification: Bool = false, completion: @escaping(Result<Void, SdkError>) -> Void) {
         setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
     }
@@ -193,10 +209,12 @@ public extension PersonalizationSDK {
         track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
 
+    @available(*, deprecated, renamed: "tracking.purchase(_:source:completion:)", message: "Use the tracking namespace: sdk.tracking.purchase(request).")
     func trackPurchase(_ request: PurchaseTrackingRequest, completion: @escaping (Result<Void, SdkError>) -> Void) {
         trackPurchase(request, recommendedBy: nil, completion: completion)
     }
     
+    @available(*, deprecated, renamed: "tracking.custom(event:time:category:label:value:customFields:completion:)", message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(
         event: String,
         category: String? = nil,
@@ -207,6 +225,7 @@ public extension PersonalizationSDK {
         trackEvent(event: event, time: nil, category: category, label: label, value: value, customFields: nil, completion: completion)
     }
     
+    @available(*, deprecated, renamed: "tracking.custom(event:time:category:label:value:customFields:completion:)", message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(
         event: String,
         time: Int? = nil,

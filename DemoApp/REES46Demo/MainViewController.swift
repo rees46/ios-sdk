@@ -841,7 +841,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             DemoTrackEventDemoConstants.safeCustomFieldKey: DemoTrackEventDemoConstants.safeCustomFieldValue
         ]
         
-        sdk.trackEvent(
+        sdk.tracking.custom(
             event: DemoTrackEventDemoConstants.successEventName,
             time: DemoTrackEventDemoConstants.sampleUnixTime,
             category: DemoTrackEventDemoConstants.category,
@@ -878,7 +878,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 ),
             ]
         )
-        sdk.trackPurchase(request) { result in
+        sdk.tracking.purchase(request) { result in
             switch result {
             case .success:
                 self.presentTrackEventDemoAlert(title: "trackPurchase", message: "Request sent (minimal).")
@@ -922,7 +922,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             stream: "demo-stream",
             segment: "A"
         )
-        sdk.trackPurchase(request) { result in
+        sdk.tracking.purchase(request) { result in
             switch result {
             case .success:
                 self.presentTrackEventDemoAlert(title: "trackPurchase", message: "Request sent (full).")
@@ -943,7 +943,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             DemoTrackEventDemoConstants.reservedCollisionKey: DemoTrackEventDemoConstants.reservedCollisionValue
         ]
         
-        sdk.trackEvent(
+        sdk.tracking.custom(
             event: DemoTrackEventDemoConstants.successEventName,
             time: DemoTrackEventDemoConstants.sampleUnixTime,
             category: DemoTrackEventDemoConstants.category,
