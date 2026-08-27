@@ -11,8 +11,8 @@ public enum Event {
     case search (query: String, results: [String]? = nil)
     case synchronizeCart (items: [CartItem])
     case synchronizeFavorites(ids: [String])
-    case slideView(storyId: String, slideId: String)
-    case slideClick(storyId: String, slideId: String)
+    case slideView(storyId: String, slideId: String, code: String? = nil)
+    case slideClick(storyId: String, slideId: String, code: String? = nil)
     @available(*, deprecated, message: "Use PersonalizationSDK.trackPurchase(_:recommendedBy:completion:) with PurchaseTrackingRequest.")
     case orderCreated(orderId: String, totalValue: Double, products: [(id: String, amount: Int, price: Float)], deliveryAddress: String? = nil, deliveryType: String? = nil, promocode: String? = nil, paymentType: String? = nil, taxFree: Bool? = nil)
 }

@@ -140,17 +140,17 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 Constants.segment: sdk.segment
             ]
             switch event {
-            case let .slideView(storyId, slideId):
+            case let .slideView(storyId, slideId, code):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = sdk.storiesCode
+                params[Constants.sourceCode] = code ?? sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.view
-            case let .slideClick(storyId, slideId):
+            case let .slideClick(storyId, slideId, code):
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = sdk.storiesCode
+                params[Constants.sourceCode] = code ?? sdk.storiesCode
                 path = Constants.trackStoriesPath
                 
                 paramEvent = Constants.click

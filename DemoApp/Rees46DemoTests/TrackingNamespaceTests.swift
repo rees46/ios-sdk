@@ -114,6 +114,27 @@ final class TrackingNamespaceTests: XCTestCase {
         XCTAssertEqual(ids, ["sku-1", "sku-3"])
     }
 
+    func test_storyEvents_mapToSlideEvents() {
+        let spy = TrackEventServiceSpy()
+        let tracking = TrackingAPIImpl(trackService: spy, sourceService: TrackSourceServiceSpy())
+
+        tracking.storyView(storyId: "42", slideId: "3", code: "main_stories")
+        guard case let .slideView(viewedStory, viewedSlide, viewedCode) = spy.lastEvent else {
+            return XCTFail("Expected .slideView, got \(String(describing: spy.lastEvent))")
+        }
+        XCTAssertEqual(viewedStory, "42")
+        XCTAssertEqual(viewedSlide, "3")
+        XCTAssertEqual(viewedCode, "main_stories")
+
+        tracking.storyClick(storyId: "42", slideId: "3")
+        guard case let .slideClick(clickedStory, clickedSlide, clickedCode) = spy.lastEvent else {
+            return XCTFail("Expected .slideClick, got \(String(describing: spy.lastEvent))")
+        }
+        XCTAssertEqual(clickedStory, "42")
+        XCTAssertEqual(clickedSlide, "3")
+        XCTAssertNil(clickedCode, "omitted code must fall back to the SDK's loaded block")
+    }
+
     // MARK: - Attribution
 
     func test_source_isForwardedAsRecommendedBy() {
@@ -211,6 +232,40 @@ final class TrackingNamespaceTests: XCTestCase {
         XCTAssertEqual(sdk.lastPostParams?["event"] as? String, "search")
         XCTAssertEqual(sdk.lastPostParams?["search_query"] as? String, "boots")
         XCTAssertEqual(sdk.lastPostParams?["results"] as? String, "sku-1,sku-2")
+    }
+
+    func test_storyView_reachesTheStoriesEndpoint() {
+        let sdk = MockPersonalizationSDK()
+        let service = TrackEventServiceImpl(sdk: sdk)
+        let expectation = expectation(description: "story view tracked")
+
+        TrackingAPIImpl(trackService: service, sourceService: TrackSourceServiceSpy())
+            .storyView(storyId: "42", slideId: "3", code: "main_stories") { _ in
+                expectation.fulfill()
+            }
+
+        waitForExpectations(timeout: 2.0)
+
+        XCTAssertEqual(sdk.lastPostPath, "track/stories")
+        XCTAssertEqual(sdk.lastPostParams?["event"] as? String, "view")
+        XCTAssertEqual(sdk.lastPostParams?["story_id"] as? String, "42")
+        XCTAssertEqual(sdk.lastPostParams?["slide_id"] as? String, "3")
+        XCTAssertEqual(sdk.lastPostParams?["code"] as? String, "main_stories")
+    }
+
+    func test_storyView_withoutCode_fallsBackToTheLoadedBlock() {
+        let sdk = MockPersonalizationSDK()
+        sdk.storiesCode = "loaded_block"
+        let service = TrackEventServiceImpl(sdk: sdk)
+        let expectation = expectation(description: "story view tracked")
+
+        TrackingAPIImpl(trackService: service, sourceService: TrackSourceServiceSpy())
+            .storyClick(storyId: "42", slideId: "3") { _ in expectation.fulfill() }
+
+        waitForExpectations(timeout: 2.0)
+
+        XCTAssertEqual(sdk.lastPostParams?["event"] as? String, "click")
+        XCTAssertEqual(sdk.lastPostParams?["code"] as? String, "loaded_block")
     }
 
     func test_productViewWithoutNewFields_wireIsUnchanged() {

@@ -102,6 +102,25 @@ public protocol TrackingAPI {
         completion: @escaping (Result<Void, SdkError>) -> Void
     )
 
+    /// A story slide was shown (`track/stories`, `view`).
+    ///
+    /// `code` is the stories block code; when omitted the SDK uses the code of the block it
+    /// last loaded.
+    func storyView(
+        storyId: String,
+        slideId: String,
+        code: String?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    )
+
+    /// A story slide was tapped (`track/stories`, `click`).
+    func storyClick(
+        storyId: String,
+        slideId: String,
+        code: String?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    )
+
     /// Completed order (`purchase`).
     func purchase(
         _ request: PurchaseTrackingRequest,
@@ -199,6 +218,24 @@ public extension TrackingAPI {
         completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
     ) {
         removeFromFavorites(id: id, completion: completion)
+    }
+
+    func storyView(
+        storyId: String,
+        slideId: String,
+        code: String? = nil,
+        completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
+    ) {
+        storyView(storyId: storyId, slideId: slideId, code: code, completion: completion)
+    }
+
+    func storyClick(
+        storyId: String,
+        slideId: String,
+        code: String? = nil,
+        completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
+    ) {
+        storyClick(storyId: storyId, slideId: slideId, code: code, completion: completion)
     }
 
     func purchase(

@@ -834,15 +834,13 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     private func trackViewSlide(index: IndexPath) {
         let storyId = stories[index.section].id
         let slideId = stories[index.section].slides[index.row].id
-        sdk?.track(event: .slideView(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
-        })
+        sdk?.tracking.storyView(storyId: storyId, slideId: slideId)
     }
     
     private func trackClickSlide(index: IndexPath) {
         let storyId = stories[index.section].id
         let slideId = stories[index.section].slides[index.row].id
-        sdk?.track(event: .slideClick(storyId: storyId, slideId: slideId), recommendedBy: nil, completion: { result in
-        })
+        sdk?.tracking.storyClick(storyId: storyId, slideId: slideId)
     }
     
     private func setupGestureRecognizerOnCollection() {

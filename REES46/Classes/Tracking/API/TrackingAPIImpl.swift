@@ -132,6 +132,32 @@ struct TrackingAPIImpl: TrackingAPI {
         )
     }
 
+    func storyView(
+        storyId: String,
+        slideId: String,
+        code: String?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        trackService.track(
+            event: .slideView(storyId: storyId, slideId: slideId, code: code),
+            recommendedBy: nil,
+            completion: completion
+        )
+    }
+
+    func storyClick(
+        storyId: String,
+        slideId: String,
+        code: String?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        trackService.track(
+            event: .slideClick(storyId: storyId, slideId: slideId, code: code),
+            recommendedBy: nil,
+            completion: completion
+        )
+    }
+
     func purchase(
         _ request: PurchaseTrackingRequest,
         source: TrackingSource?,

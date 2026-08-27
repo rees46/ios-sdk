@@ -52,6 +52,12 @@ final class TrackingBackCompatTests: XCTestCase {
         let cartWithDefaultAmount: Event = .productAddedToCart(id: "sku-1")
         let cartWithAmount: Event = .productAddedToCart(id: "sku-1", amount: 3)
         let search: Event = .search(query: "boots")
+        let slideView: Event = .slideView(storyId: "42", slideId: "3")
+
+        guard case let .slideView(_, _, slideCode) = slideView else {
+            return XCTFail("Expected .slideView")
+        }
+        XCTAssertNil(slideCode, "code must default to nil so the stored block is still used")
 
         guard case let .productAddedToCart(_, defaultAmount, defaultPrice) = cartWithDefaultAmount else {
             return XCTFail("Expected .productAddedToCart")
@@ -186,6 +192,14 @@ final class TrackingBackCompatTests: XCTestCase {
         assertSameWire(
             legacy: { $0.track(event: .synchronizeFavorites(ids: ["sku-1", "sku-2"]), recommendedBy: nil, completion: $1) },
             namespace: { $0.tracking.syncFavorites(ids: ["sku-1", "sku-2"], completion: $1) }
+        )
+        assertSameWire(
+            legacy: { $0.track(event: .slideView(storyId: "42", slideId: "3"), recommendedBy: nil, completion: $1) },
+            namespace: { $0.tracking.storyView(storyId: "42", slideId: "3", completion: $1) }
+        )
+        assertSameWire(
+            legacy: { $0.track(event: .slideClick(storyId: "42", slideId: "3"), recommendedBy: nil, completion: $1) },
+            namespace: { $0.tracking.storyClick(storyId: "42", slideId: "3", completion: $1) }
         )
         assertSameWire(
             legacy: { sdk, done in
