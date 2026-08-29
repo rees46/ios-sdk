@@ -369,6 +369,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         email: String?,
         timeOut: Double?,
         disableClarification: Bool?,
+        correction: Bool?,
         completion: @escaping (Result<SearchResponse, SdkError>) -> Void
     ) {
         searchService.search(
@@ -394,6 +395,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             email:email,
             timeOut:timeOut,
             disableClarification:disableClarification,
+            correction:correction,
             completion: completion
         )
     }
