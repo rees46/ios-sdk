@@ -141,7 +141,8 @@ final class MockPersonalizationSDK: PersonalizationSDK {
     // Tracking is delegated to the real services, the way SimplePersonalizationSDK does it, so
     // tests can compare the legacy root-level calls against the `tracking` namespace.
     private lazy var trackEventService: TrackEventServiceProtocol = TrackEventServiceImpl(sdk: self)
-    private lazy var trackSourceService: TrackSourceServiceProtocol = TrackSourceServiceImpl()
+    private lazy var trackSourceService: TrackSourceServiceProtocol =
+        TrackSourceServiceImpl(store: self.trackingSourceStore)
 
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)

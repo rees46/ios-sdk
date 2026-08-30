@@ -24,7 +24,7 @@ class SdkTests: XCTestCase {
         failureMessage: String
     ) {
         let expectation = XCTestExpectation(description: "Track event completion")
-        sdk?.tracking.productView(id: eventId) { response in
+        sdk?.tracking.productView(itemId: eventId) { response in
             let value = getValue()
             let result = checkValue(value)
             print("\(self.TAG): Checking value \(String(describing: value)), result: \(result)")

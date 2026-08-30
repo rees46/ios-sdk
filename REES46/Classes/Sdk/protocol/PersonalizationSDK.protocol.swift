@@ -26,7 +26,7 @@ public protocol PersonalizationSDK {
     var enableAutoPopupPresentation: Bool { get set }
     var popupPresenter: PopupPresenter { get }
     
-    /// Standard tracking events, grouped: `sdk.tracking.productView(id:)`, `.addToCart(item:)`, …
+    /// Standard tracking events, grouped: `sdk.tracking.productView(itemId:)`, `.addToCart(item:)`, …
     ///
     /// Conformers get a working implementation for free (see the default below), so adding this
     /// requirement does not break types that already conform.
@@ -38,13 +38,13 @@ public protocol PersonalizationSDK {
     func generateString(array : [String]) -> String
     
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?,  advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void)
-    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(id:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(itemId:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
-    @available(*, deprecated, renamed: "tracking.purchase(_:source:completion:)", message: "Use the tracking namespace: sdk.tracking.purchase(request).")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.purchase(request).")
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
-    @available(*, deprecated, renamed: "tracking.setSource(_:)", message: "Use the tracking namespace: sdk.tracking.setSource(TrackingSource(type:code:)).")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.setSource(TrackingSource(type:code:)).")
     func trackSource(source: RecommendedByCase, code: String)
-    @available(*, deprecated, renamed: "tracking.custom(event:time:category:label:value:customFields:completion:)", message: "Use the tracking namespace: sdk.tracking.custom(event:).")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
@@ -104,8 +104,9 @@ public protocol PersonalizationSDK {
 
 public extension PersonalizationSDK {
 
-    /// Default `tracking` implementation — a stateless wrapper over the same services the
-    /// root-level tracking methods use. Conformers may override it; none has to.
+    /// Default `tracking` implementation, so conformers that predate the namespace keep compiling.
+    /// Seeing only the public protocol, it builds its own services; `SimplePersonalizationSDK`
+    /// overrides it with one that reuses the SDK's own long-lived services.
     var tracking: TrackingAPI {
         TrackingAPIImpl(sdk: self)
     }
@@ -206,17 +207,17 @@ public extension PersonalizationSDK {
         )
     }
     
-    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(id:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(itemId:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
     func track(event: Event, recommendedBy: RecomendedBy? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
         track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
 
-    @available(*, deprecated, renamed: "tracking.purchase(_:source:completion:)", message: "Use the tracking namespace: sdk.tracking.purchase(request).")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.purchase(request).")
     func trackPurchase(_ request: PurchaseTrackingRequest, completion: @escaping (Result<Void, SdkError>) -> Void) {
         trackPurchase(request, recommendedBy: nil, completion: completion)
     }
     
-    @available(*, deprecated, renamed: "tracking.custom(event:time:category:label:value:customFields:completion:)", message: "Use the tracking namespace: sdk.tracking.custom(event:).")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(
         event: String,
         category: String? = nil,
@@ -227,7 +228,7 @@ public extension PersonalizationSDK {
         trackEvent(event: event, time: nil, category: category, label: label, value: value, customFields: nil, completion: completion)
     }
     
-    @available(*, deprecated, renamed: "tracking.custom(event:time:category:label:value:customFields:completion:)", message: "Use the tracking namespace: sdk.tracking.custom(event:).")
+    @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(
         event: String,
         time: Int? = nil,

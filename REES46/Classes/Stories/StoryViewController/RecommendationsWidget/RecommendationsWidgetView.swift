@@ -351,7 +351,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     }
     
     public func sdkRemoveFromCart(productId: String) {
-        sdk?.tracking.removeFromCart(id: productId) { trackResponse in
+        sdk?.tracking.removeFromCart(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
                 print("Product id \(productId) removed from 'Cart' success")
@@ -367,7 +367,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     }
     
     public func sdkAddToFavorites(productId: String) {
-        sdk?.tracking.addToFavorites(id: productId) { trackResponse in
+        sdk?.tracking.addToFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
                 print("Product id \(productId) added to 'Favorites' success")
@@ -383,7 +383,7 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     }
     
     public func sdkRemoveFromFavorites(productId: String) {
-        sdk?.tracking.removeFromFavorites(id: productId) { trackResponse in
+        sdk?.tracking.removeFromFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
                 print("Product id \(productId) removed from 'Favorites' success")

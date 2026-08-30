@@ -3,17 +3,21 @@ import Foundation
 /// Implementation of the `tracking` namespace.
 ///
 /// A lightweight value wrapper that owns no state: every call is routed through the same
-/// services the (deprecated) root-level tracking methods use, so behaviour — popup handling,
-/// stored-source attribution, session queueing — is byte-for-byte what it was.
+/// `TrackEventService` / `TrackSourceService` instances the (deprecated) root-level tracking methods
+/// use — `SimplePersonalizationSDK` hands its own lazy services to this type — so behaviour (popup
+/// handling, stored-source attribution, session queueing) is one code path, not two.
 struct TrackingAPIImpl: TrackingAPI {
 
     private let trackService: TrackEventServiceProtocol
     private let sourceService: TrackSourceServiceProtocol
 
+    /// Fallback used by the `PersonalizationSDK.tracking` default, which sees only the public protocol
+    /// and so has to build its own services. `SimplePersonalizationSDK` overrides `tracking` and uses
+    /// the initializer below instead.
     init(sdk: PersonalizationSDK) {
         self.init(
             trackService: TrackEventServiceImpl(sdk: sdk),
-            sourceService: TrackSourceServiceImpl()
+            sourceService: TrackSourceServiceImpl(store: sdk.trackingSourceStore)
         )
     }
 
@@ -26,24 +30,26 @@ struct TrackingAPIImpl: TrackingAPI {
     }
 
     func productView(
-        id: String,
+        itemId: String,
         source: TrackingSource?,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .productView(id: id),
-            recommendedBy: source?.recommendedBy,
+            event: .productView(id: itemId),
+            source: source?.wire,
+            details: .none,
             completion: completion
         )
     }
 
     func categoryView(
-        id: String,
+        categoryId: String,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .categoryView(id: id),
-            recommendedBy: nil,
+            event: .categoryView(id: categoryId),
+            source: nil,
+            details: .none,
             completion: completion
         )
     }
@@ -54,8 +60,9 @@ struct TrackingAPIImpl: TrackingAPI {
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .search(query: query, results: results),
-            recommendedBy: nil,
+            event: .search(query: query),
+            source: nil,
+            details: TrackEventDetails(results: results),
             completion: completion
         )
     }
@@ -66,12 +73,9 @@ struct TrackingAPIImpl: TrackingAPI {
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .productAddedToCart(
-                id: item.id,
-                amount: item.quantity,
-                price: item.price
-            ),
-            recommendedBy: source?.recommendedBy,
+            event: .productAddedToCart(id: item.id, amount: item.quantity),
+            source: source?.wire,
+            details: TrackEventDetails(price: item.price),
             completion: completion
         )
     }
@@ -82,52 +86,57 @@ struct TrackingAPIImpl: TrackingAPI {
     ) {
         trackService.track(
             event: .synchronizeCart(items: items.map(\.cartItem)),
-            recommendedBy: nil,
+            source: nil,
+            details: .none,
             completion: completion
         )
     }
 
     func removeFromCart(
-        id: String,
+        itemId: String,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .productRemovedFromCart(id: id),
-            recommendedBy: nil,
+            event: .productRemovedFromCart(id: itemId),
+            source: nil,
+            details: .none,
             completion: completion
         )
     }
 
     func addToFavorites(
-        id: String,
+        itemId: String,
         source: TrackingSource?,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .productAddedToFavorites(id: id),
-            recommendedBy: source?.recommendedBy,
+            event: .productAddedToFavorites(id: itemId),
+            source: source?.wire,
+            details: .none,
             completion: completion
         )
     }
 
     func syncFavorites(
-        ids: [String],
+        itemIds: [String],
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .synchronizeFavorites(ids: ids),
-            recommendedBy: nil,
+            event: .synchronizeFavorites(ids: itemIds),
+            source: nil,
+            details: .none,
             completion: completion
         )
     }
 
     func removeFromFavorites(
-        id: String,
+        itemId: String,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .productRemovedFromFavorites(id: id),
-            recommendedBy: nil,
+            event: .productRemovedFromFavorites(id: itemId),
+            source: nil,
+            details: .none,
             completion: completion
         )
     }
@@ -139,8 +148,9 @@ struct TrackingAPIImpl: TrackingAPI {
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .slideView(storyId: storyId, slideId: slideId, code: code),
-            recommendedBy: nil,
+            event: .slideView(storyId: storyId, slideId: slideId),
+            source: nil,
+            details: TrackEventDetails(storiesCode: code),
             completion: completion
         )
     }
@@ -152,8 +162,9 @@ struct TrackingAPIImpl: TrackingAPI {
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         trackService.track(
-            event: .slideClick(storyId: storyId, slideId: slideId, code: code),
-            recommendedBy: nil,
+            event: .slideClick(storyId: storyId, slideId: slideId),
+            source: nil,
+            details: TrackEventDetails(storiesCode: code),
             completion: completion
         )
     }
@@ -165,7 +176,7 @@ struct TrackingAPIImpl: TrackingAPI {
     ) {
         trackService.trackPurchase(
             request,
-            recommendedBy: source?.recommendedBy,
+            source: source?.wire,
             completion: completion
         )
     }
@@ -191,13 +202,13 @@ struct TrackingAPIImpl: TrackingAPI {
     }
 
     func setSource(_ source: TrackingSource) {
-        sourceService.trackSource(source: source.type, code: source.code)
+        sourceService.trackSource(type: source.type.rawValue, code: source.code)
     }
 }
 
 private extension TrackingSource {
-    var recommendedBy: RecomendedBy {
-        RecomendedBy(type: type, code: code)
+    var wire: TrackingSourceWire {
+        TrackingSourceWire(type: type.rawValue, code: code)
     }
 }
 

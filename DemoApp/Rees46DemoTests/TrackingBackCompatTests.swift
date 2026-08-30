@@ -37,7 +37,7 @@ final class TrackingBackCompatTests: XCTestCase {
         let sdk = MockPersonalizationSDK()
         let expectation = expectation(description: "tracked through the default implementation")
 
-        sdk.tracking.productView(id: "sku-1") { _ in expectation.fulfill() }
+        sdk.tracking.productView(itemId: "sku-1") { _ in expectation.fulfill() }
 
         waitForExpectations(timeout: 2.0)
         XCTAssertEqual(sdk.postCallCount, 1)
@@ -47,35 +47,47 @@ final class TrackingBackCompatTests: XCTestCase {
 
     // MARK: - Old call shapes still compile
 
+    /// `Event` is public, so a host may both build cases *and* pattern-match them. Adding an
+    /// associated value would keep construction compiling while silently breaking every `case let`
+    /// with the old number of bindings — so the namespace's extra payload lives in the internal
+    /// `TrackEventDetails` instead, and the cases stay exactly as they shipped.
+    ///
+    /// This test is written the way a host on the previous release writes them: if an arity ever
+    /// changes again, this file stops compiling.
     func test_eventCases_keepTheirPreviousArities() {
-        // Written the way a host on the previous release writes them.
         let cartWithDefaultAmount: Event = .productAddedToCart(id: "sku-1")
         let cartWithAmount: Event = .productAddedToCart(id: "sku-1", amount: 3)
         let search: Event = .search(query: "boots")
         let slideView: Event = .slideView(storyId: "42", slideId: "3")
+        let slideClick: Event = .slideClick(storyId: "42", slideId: "3")
 
-        guard case let .slideView(_, _, slideCode) = slideView else {
+        guard case let .slideView(viewStoryId, viewSlideId) = slideView else {
             return XCTFail("Expected .slideView")
         }
-        XCTAssertNil(slideCode, "code must default to nil so the stored block is still used")
+        XCTAssertEqual(viewStoryId, "42")
+        XCTAssertEqual(viewSlideId, "3")
 
-        guard case let .productAddedToCart(_, defaultAmount, defaultPrice) = cartWithDefaultAmount else {
+        guard case let .slideClick(clickStoryId, clickSlideId) = slideClick else {
+            return XCTFail("Expected .slideClick")
+        }
+        XCTAssertEqual(clickStoryId, "42")
+        XCTAssertEqual(clickSlideId, "3")
+
+        guard case let .productAddedToCart(defaultId, defaultAmount) = cartWithDefaultAmount else {
             return XCTFail("Expected .productAddedToCart")
         }
+        XCTAssertEqual(defaultId, "sku-1")
         XCTAssertEqual(defaultAmount, 1)
-        XCTAssertNil(defaultPrice, "price must default to nil so the old wire shape is unchanged")
 
-        guard case let .productAddedToCart(_, amount, priceForOldCall) = cartWithAmount else {
+        guard case let .productAddedToCart(_, amount) = cartWithAmount else {
             return XCTFail("Expected .productAddedToCart")
         }
         XCTAssertEqual(amount, 3)
-        XCTAssertNil(priceForOldCall)
 
-        guard case let .search(query, results) = search else {
+        guard case let .search(query) = search else {
             return XCTFail("Expected .search")
         }
         XCTAssertEqual(query, "boots")
-        XCTAssertNil(results, "results must default to nil so the old wire shape is unchanged")
     }
 
     func test_cartItem_keepsItsPreviousInitializers() {
@@ -159,11 +171,11 @@ final class TrackingBackCompatTests: XCTestCase {
     func test_wireIsIdenticalBetweenLegacyCallAndNamespace() {
         assertSameWire(
             legacy: { $0.track(event: .productView(id: "sku-1"), recommendedBy: nil, completion: $1) },
-            namespace: { $0.tracking.productView(id: "sku-1", completion: $1) }
+            namespace: { $0.tracking.productView(itemId: "sku-1", completion: $1) }
         )
         assertSameWire(
             legacy: { $0.track(event: .categoryView(id: "cat-1"), recommendedBy: nil, completion: $1) },
-            namespace: { $0.tracking.categoryView(id: "cat-1", completion: $1) }
+            namespace: { $0.tracking.categoryView(categoryId: "cat-1", completion: $1) }
         )
         assertSameWire(
             legacy: { $0.track(event: .search(query: "boots"), recommendedBy: nil, completion: $1) },
@@ -175,15 +187,15 @@ final class TrackingBackCompatTests: XCTestCase {
         )
         assertSameWire(
             legacy: { $0.track(event: .productRemovedFromCart(id: "sku-1"), recommendedBy: nil, completion: $1) },
-            namespace: { $0.tracking.removeFromCart(id: "sku-1", completion: $1) }
+            namespace: { $0.tracking.removeFromCart(itemId: "sku-1", completion: $1) }
         )
         assertSameWire(
             legacy: { $0.track(event: .productAddedToFavorites(id: "sku-1"), recommendedBy: nil, completion: $1) },
-            namespace: { $0.tracking.addToFavorites(id: "sku-1", completion: $1) }
+            namespace: { $0.tracking.addToFavorites(itemId: "sku-1", completion: $1) }
         )
         assertSameWire(
             legacy: { $0.track(event: .productRemovedFromFavorites(id: "sku-1"), recommendedBy: nil, completion: $1) },
-            namespace: { $0.tracking.removeFromFavorites(id: "sku-1", completion: $1) }
+            namespace: { $0.tracking.removeFromFavorites(itemId: "sku-1", completion: $1) }
         )
         assertSameWire(
             legacy: { $0.track(event: .synchronizeCart(items: [CartItem(productId: "sku-1", quantity: 2)]), recommendedBy: nil, completion: $1) },
@@ -191,7 +203,7 @@ final class TrackingBackCompatTests: XCTestCase {
         )
         assertSameWire(
             legacy: { $0.track(event: .synchronizeFavorites(ids: ["sku-1", "sku-2"]), recommendedBy: nil, completion: $1) },
-            namespace: { $0.tracking.syncFavorites(ids: ["sku-1", "sku-2"], completion: $1) }
+            namespace: { $0.tracking.syncFavorites(itemIds: ["sku-1", "sku-2"], completion: $1) }
         )
         assertSameWire(
             legacy: { $0.track(event: .slideView(storyId: "42", slideId: "3"), recommendedBy: nil, completion: $1) },

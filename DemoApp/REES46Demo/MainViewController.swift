@@ -873,7 +873,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func didTapTrackingProductView() {
         runTrackingDemo("productView") { tracking, done in
             tracking.productView(
-                id: DemoTrackingNamespaceConstants.itemId,
+                itemId: DemoTrackingNamespaceConstants.itemId,
                 source: TrackingSource(type: .dynamic, code: DemoTrackingNamespaceConstants.sourceCode),
                 completion: done
             )
@@ -883,7 +883,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func didTapTrackingCategoryView() {
         runTrackingDemo("categoryView") { tracking, done in
-            tracking.categoryView(id: DemoTrackingNamespaceConstants.categoryId, completion: done)
+            tracking.categoryView(categoryId: DemoTrackingNamespaceConstants.categoryId, completion: done)
         }
     }
 
@@ -932,14 +932,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func didTapTrackingRemoveFromCart() {
         runTrackingDemo("removeFromCart") { tracking, done in
-            tracking.removeFromCart(id: DemoTrackingNamespaceConstants.itemId, completion: done)
+            tracking.removeFromCart(itemId: DemoTrackingNamespaceConstants.itemId, completion: done)
         }
     }
 
     @objc
     private func didTapTrackingAddToFavorites() {
         runTrackingDemo("addToFavorites") { tracking, done in
-            tracking.addToFavorites(id: DemoTrackingNamespaceConstants.itemId, completion: done)
+            tracking.addToFavorites(itemId: DemoTrackingNamespaceConstants.itemId, completion: done)
         }
     }
 
@@ -947,7 +947,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func didTapTrackingSyncFavorites() {
         runTrackingDemo("syncFavorites") { tracking, done in
             tracking.syncFavorites(
-                ids: [
+                itemIds: [
                     DemoTrackingNamespaceConstants.itemId,
                     DemoTrackingNamespaceConstants.secondItemId,
                 ],
@@ -959,7 +959,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @objc
     private func didTapTrackingRemoveFromFavorites() {
         runTrackingDemo("removeFromFavorites") { tracking, done in
-            tracking.removeFromFavorites(id: DemoTrackingNamespaceConstants.itemId, completion: done)
+            tracking.removeFromFavorites(itemId: DemoTrackingNamespaceConstants.itemId, completion: done)
         }
     }
 
