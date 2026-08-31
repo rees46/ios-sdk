@@ -161,7 +161,7 @@ final class MockPersonalizationSDK: PersonalizationSDK {
     }
     
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        fatalError("Not needed for these tests")
+        trackEventService.trackPopupShown(popupId: popupId, completion: completion)
     }
     
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void) {

@@ -498,6 +498,96 @@ final class StoredSourceOnFollowingRequestsTests: XCTestCase {
         }
     }
 
+    func test_storedSource_reachesAPurchase() {
+        let sdk = MockPersonalizationSDK()
+        sdk.tracking.setSource(TrackingSource(type: .dynamic, code: "block-1"))
+        let request = PurchaseTrackingRequest(
+            orderId: "order-1",
+            orderPrice: 100,
+            items: [PurchaseItemRequest(id: "sku-1", amount: 1, price: 100)]
+        )
+
+        let body = track(sdk) { $0.purchase(request, completion: $1) }
+
+        let source = body["source"] as? [String: Any]
+        XCTAssertEqual(source?["from"] as? String, "dynamic")
+        XCTAssertEqual(source?["code"] as? String, "block-1")
+    }
+
+    func test_storedSource_reachesACustomEvent() {
+        let sdk = MockPersonalizationSDK()
+        sdk.tracking.setSource(TrackingSource(type: .bulk, code: "newsletter"))
+
+        let body = track(sdk) { $0.custom(event: "shared", completion: $1) }
+
+        XCTAssertEqual(sdk.lastPostPath, "push/custom")
+        let source = body["source"] as? [String: Any]
+        XCTAssertEqual(source?["from"] as? String, "bulk")
+        XCTAssertEqual(source?["code"] as? String, "newsletter")
+    }
+
+    /// `popup/showed` carries no attribution — the one send path left alone, on both platforms.
+    func test_storedSource_doesNotReachPopupShown() {
+        let sdk = MockPersonalizationSDK()
+        sdk.tracking.setSource(TrackingSource(type: .dynamic, code: "block-1"))
+
+        let done = expectation(description: "popup tracked")
+        sdk.trackPopupShown(popupId: 7) { _ in done.fulfill() }
+        wait(for: [done], timeout: 2.0)
+
+        XCTAssertEqual(sdk.lastPostPath, "popup/showed")
+        XCTAssertNil(sdk.lastPostParams?["source"])
+    }
+
+    func test_withNoSourceStored_requestsCarryNoSourceField() {
+        let sdk = MockPersonalizationSDK()
+
+        let body = track(sdk) { $0.productView(itemId: "sku-1", completion: $1) }
+
+        XCTAssertNil(body["source"])
+    }
+
+    func test_anExpiredSource_neverReachesTheWire() {
+        let sdk = MockPersonalizationSDK()
+        sdk.tracking.setSource(TrackingSource(type: .dynamic, code: "stale"))
+        // Push the window shut; the store drops the values on the next read.
+        UserDefaults.standard.setValue(
+            Date().timeIntervalSince1970 - (49 * 60 * 60),
+            forKey: "timeStartSave"
+        )
+
+        let body = track(sdk) { $0.productView(itemId: "sku-1", completion: $1) }
+
+        XCTAssertNil(body["source"])
+    }
+
+    func test_storyClick_alsoMakesItsBlockTheSource() {
+        let sdk = MockPersonalizationSDK()
+
+        let clicked = expectation(description: "story tracked")
+        sdk.tracking.storyClick(storyId: "42", slideId: "3", code: "main_stories") { _ in
+            clicked.fulfill()
+        }
+        wait(for: [clicked], timeout: 2.0)
+
+        let body = track(sdk) { $0.productView(itemId: "sku-1", completion: $1) }
+
+        let source = body["source"] as? [String: Any]
+        XCTAssertEqual(source?["from"] as? String, "stories")
+        XCTAssertEqual(source?["code"] as? String, "main_stories")
+    }
+
+    func test_aRawSourceTypeTheLegacyEnumLacks_survivesTheRoundTrip() {
+        let sdk = MockPersonalizationSDK()
+        sdk.tracking.setSource(TrackingSource(type: .stories, code: "main_stories"))
+
+        let body = track(sdk) { $0.productView(itemId: "sku-1", completion: $1) }
+
+        let source = body["source"] as? [String: Any]
+        XCTAssertEqual(source?["from"] as? String, "stories", "RecommendedByCase has no stories case")
+        XCTAssertEqual(source?["code"] as? String, "main_stories")
+    }
+
     /// The stored source and a per-call `source:` do not use the same fields. Pinning it so the
     /// difference is visible rather than discovered against the backend.
     func test_storedSourceAndPerCallSource_useDifferentWireFields() {
