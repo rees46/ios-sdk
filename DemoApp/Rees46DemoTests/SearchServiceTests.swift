@@ -184,7 +184,11 @@ class SearchServiceImplTests: XCTestCase {
             expectation.fulfill()
         }
     
-        waitForExpectations(timeout: 5, handler: nil)
+        // Live request against the test shop. The wait is a hang guard, not a latency assertion:
+        // the call takes well under a second on its own, but the suite fires many real requests at
+        // one host at once, and a 5s budget lost that race often enough to fail CI (which runs the
+        // whole suite with no retries).
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testSearchBlank_popularFields() {
@@ -254,7 +258,11 @@ class SearchServiceImplTests: XCTestCase {
             expectation.fulfill()
         }
         
-        waitForExpectations(timeout: 5, handler: nil)
+        // Live request against the test shop. The wait is a hang guard, not a latency assertion:
+        // the call takes well under a second on its own, but the suite fires many real requests at
+        // one host at once, and a 5s budget lost that race often enough to fail CI (which runs the
+        // whole suite with no retries).
+        waitForExpectations(timeout: 30, handler: nil)
     }
     
 }
