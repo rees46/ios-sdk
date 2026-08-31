@@ -365,10 +365,20 @@ final class TrackingSourceStoreTests: XCTestCase {
     private let suiteB = "personalization_sdk_test_shop_b"
     private let legacySuite = "personalization_sdk_test_legacy"
 
+    /// Suites created through the real partition factory, removed in tearDown.
+    private var suiteNames: [String] = []
+
+    private func uniqueShop(_ label: String) -> String {
+        let shopId = "\(label)-\(UUID().uuidString)"
+        suiteNames.append(StoragePartition.suiteName(for: shopId))
+        return shopId
+    }
+
     override func tearDown() {
-        for suite in [suiteA, suiteB, legacySuite] {
+        for suite in Set([suiteA, suiteB, legacySuite] + suiteNames) {
             UserDefaults.standard.removePersistentDomain(forName: suite)
         }
+        suiteNames.removeAll()
         super.tearDown()
     }
 
@@ -414,6 +424,66 @@ final class TrackingSourceStoreTests: XCTestCase {
 
         XCTAssertNil(subject.currentSource())
         XCTAssertNil(store.string(forKey: "recomendedCode"), "an expired source is cleared, not re-read")
+    }
+
+    // MARK: - Multi-instance
+
+    /// The isolation the previous test shows, but reached the way an SDK instance reaches it:
+    /// through `StoragePartition.store(for: shopId)`, so the derivation from shop id to suite is
+    /// what is under test rather than two hand-picked suite names. Mirrors the Android
+    /// `TrackingSourceMultiInstanceTest`.
+    func test_twoShops_derivedFromTheirIds_haveIsolatedSources() {
+        let shopA = uniqueShop("shop-a")
+        let shopB = uniqueShop("shop-b")
+        let storeA = TrackingSourceStoreImpl(store: StoragePartition.store(for: shopA), legacy: defaults(legacySuite))
+        let storeB = TrackingSourceStoreImpl(store: StoragePartition.store(for: shopB), legacy: defaults(legacySuite))
+
+        storeA.store(type: "dynamic", code: "block-a")
+        storeB.store(type: "stories", code: "block-b")
+
+        XCTAssertEqual(storeA.currentSource()?.type, "dynamic")
+        XCTAssertEqual(storeA.currentSource()?.code, "block-a")
+        XCTAssertEqual(storeB.currentSource()?.type, "stories")
+        XCTAssertEqual(storeB.currentSource()?.code, "block-b")
+    }
+
+    /// Written to the shop's suite, so a later instance for the same shop still sees it.
+    func test_aSourceSurvivesTheInstanceThatSetIt() {
+        let shop = uniqueShop("shop-a")
+
+        TrackingSourceStoreImpl(store: StoragePartition.store(for: shop), legacy: defaults(legacySuite))
+            .store(type: "chain", code: "block-a")
+
+        let freshInstance = TrackingSourceStoreImpl(
+            store: StoragePartition.store(for: shop),
+            legacy: defaults(legacySuite)
+        )
+        XCTAssertEqual(freshInstance.currentSource()?.type, "chain")
+        XCTAssertEqual(freshInstance.currentSource()?.code, "block-a")
+    }
+
+    /// A host passing its own `storageKey` opts out of per-shop partitioning. Pinned so the opt-out
+    /// stays visible — two shops on one key deliberately share a store.
+    func test_aHostSuppliedStorageKey_isUsedVerbatim() {
+        let hostKey = "host_own_key_\(UUID().uuidString)"
+        suiteNames.append(hostKey)
+        let shop = uniqueShop("shop-a")
+
+        TrackingSourceStoreImpl(
+            store: StoragePartition.store(for: shop, storageKey: hostKey),
+            legacy: defaults(legacySuite)
+        ).store(type: "dynamic", code: "shared")
+
+        let onHostKey = TrackingSourceStoreImpl(
+            store: StoragePartition.store(for: shop, storageKey: hostKey),
+            legacy: defaults(legacySuite)
+        )
+        let onPartition = TrackingSourceStoreImpl(
+            store: StoragePartition.store(for: shop),
+            legacy: defaults(legacySuite)
+        )
+        XCTAssertEqual(onHostKey.currentSource()?.code, "shared")
+        XCTAssertNil(onPartition.currentSource(), "the per-shop partition must stay clean")
     }
 
     func test_neverSetSource_addsNothingToTheRequest() {
