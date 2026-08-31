@@ -181,9 +181,11 @@ public protocol TrackingAPI {
     /// Stores the attribution source and attaches it to every event for the next 48 hours.
     ///
     /// Use it when the source outlives a single call — a user entering the catalog from a recommender
-    /// block. For a single event prefer the `source` parameter, which behaves identically on every
-    /// platform; the stored source is per shop, but its lifetime is platform-specific (Android applies
-    /// it to the next event only).
+    /// block. It is stored per shop and survives a cold start, and it travels in its own `source`
+    /// field rather than the `recommended_by` a per-call `source` uses. For a single event prefer
+    /// that per-call parameter.
+    ///
+    /// Same behaviour and same wire shape as Android.
     func setSource(_ source: TrackingSource)
 }
 
