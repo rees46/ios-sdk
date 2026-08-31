@@ -1,29 +1,69 @@
 name: Publish to cocoapods
 
+# Fires on the tag pushed by deploy.yaml, so the tag a podspec points at always
+# exists before CocoaPods validates it. Publishing used to be triggered by the
+# merge of a release or synchronization PR, which ran it *before* any tagging —
+# that is how a pod version could reach trunk with no tag behind it.
+#
+# The steps live here rather than in rees46/workflow so this pipeline can be
+# changed without touching every other SDK.
+
 on:
-  pull_request:
-    types:
-      - closed
-    branches:
-      - master
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
 
 jobs:
   cocoapods_publish:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.merged == true &&
-        (
-          startsWith(github.event.pull_request.head.ref, 'release/') ||
-          startsWith(github.event.pull_request.head.ref, 'sync/release-')
-        )
-      )
-    uses: rees46/workflow/.github/workflows/reusable-ios-publish.yaml@master
-    permissions: write-all
-    with:
-      appId: ${{ vars.PUBLISHER_ID }}
-    secrets:
-      cocoapodsToken: ${{ secrets.COCOAPODS_TOKEN }}
-      appSecret: ${{ secrets.PUBLISHER_SECRET }}
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: swift-actions/setup-swift@v2
+
+      - name: Publish to cocoapods.org
+        env:
+          COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          podspecs=(./*.podspec)
+          name=$(basename "${podspecs[0]}" .podspec)
+          version=$(grep -m1 VERSION_NAME version.properties | cut -d'=' -f2)
+
+          on_trunk() {
+            pod trunk info "$name" 2>/dev/null | grep -qF -- "- $version ("
+          }
+
+          # Already on trunk before this run started means a second run is
+          # publishing the same tag. That is a fault upstream, not something to
+          # paper over with a green tick.
+          if on_trunk; then
+            echo "::error::$name $version is already published on trunk"
+            exit 1
+          fi
+
+          for attempt in 1 2 3 4 5; do
+            if pod trunk push --allow-warnings; then
+              exit 0
+            fi
+
+            # trunk answers 500 to the client now and then after it has already
+            # stored the version. Re-check instead of retrying straight into
+            # `Unable to accept duplicate entry`, which costs a full validation
+            # build per attempt and ends the job red on a successful publish.
+            if on_trunk; then
+              echo "::warning::trunk rejected the client but stored $version (attempt $attempt)"
+              exit 0
+            fi
+
+            echo "Push failed, retrying in 30 seconds ($attempt/5)"
+            sleep 30
+          done
+
+          echo "::error::all 5 push attempts failed"
+          exit 1

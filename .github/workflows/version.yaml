@@ -1,5 +1,20 @@
 name: Bump version
 
+# Self-contained autobump: semantic-release runs in dry-run and only computes the
+# next version + notes from Conventional Commits. This workflow writes the version
+# into version.properties and commits `chore(release): <version>` to master.
+# deploy.yaml then tags v<version>, and that tag push triggers publish.yaml.
+#
+# The steps live here rather than in rees46/workflow so this pipeline can be
+# changed without touching every other SDK.
+#
+# The mirror must never compute a version of its own: its history is a chain of
+# `feat(release): sync (#N)` commits — all `feat`, so semantic-release would invent
+# a minor bump per synchronization and drift away from this repository. The guard
+# below is phrased as a `personaclick` check on purpose: the sync rewrites `rees46`
+# into `personaclick` inside file contents, so an `== 'rees46'` guard would survive
+# the rename and stay true in the mirror.
+
 on:
   push:
     branches:
@@ -9,22 +24,62 @@ on:
   workflow_dispatch:
 
 jobs:
-  find-release-commit:
-    uses: rees46/workflow/.github/workflows/reusable-release-commit-finder.yaml@master
-    secrets:
-      githubToken: ${{ secrets.GITHUB_TOKEN }}
-
   bump-version:
-    needs: find-release-commit
-    if: |
-      github.event_name == 'workflow_dispatch' || (
-        github.event_name == 'push' &&
-        needs.find-release-commit.outputs.hasCommit == 'false')
-    uses: rees46/workflow/.github/workflows/reusable-multiplatform-version-bump.yaml@master
+    if: ${{ !contains(github.repository_owner, 'personaclick') }}
+    runs-on: ubuntu-latest
     permissions: write-all
-    secrets:
-      appSecret: ${{ secrets.VERSIONER_SECRET }}
-      githubToken: ${{ secrets.GITHUB_TOKEN }}
-    with:
-      appId: ${{ vars.VERSIONER_ID }}
-      reviewerUsername: ${{ vars.REVIEWER_USERNAME }}
+
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.VERSIONER_ID }}
+          private-key: ${{ secrets.VERSIONER_SECRET }}
+
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      # The push made at the end of this job lands on master and retriggers the
+      # workflow. Without this check the second run would bump again, forever.
+      - name: Skip release commits
+        id: guard
+        run: |
+          if git log -1 --pretty=%s | grep -q '^chore(release):'; then
+            echo "HEAD is a release commit — nothing to bump"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Computes the next version and release notes without tagging, committing or
+      # publishing anything. Reads .releaserc.yml from the repository root.
+      - name: Compute next version
+        id: semantic
+        if: steps.guard.outputs.skip != 'true'
+        uses: docker://ghcr.io/codfish/semantic-release-action:v3
+        with:
+          dry-run: true
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Commit version bump
+        if: |
+          steps.guard.outputs.skip != 'true' &&
+          steps.semantic.outputs.new-release-published == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.semantic.outputs.release-version }}
+          RELEASE_NOTES: ${{ steps.semantic.outputs.release-notes }}
+        run: |
+          chmod +x ./scripts/update_version.sh
+          ./scripts/update_version.sh "$RELEASE_VERSION"
+
+          git config user.name "rees46-versioner[bot]"
+          git config user.email "rees46-versioner[bot]@users.noreply.github.com"
+          git add version.properties
+
+          # The notes go into the commit body: deploy.yaml reads them back when it
+          # opens the GitHub release, so nothing has to be stashed in a file.
+          git commit -m "chore(release): $RELEASE_VERSION" -m "$RELEASE_NOTES"
+          git push origin HEAD:master

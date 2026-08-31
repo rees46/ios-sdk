@@ -1,0 +1,67 @@
+name: Deploy
+
+# Tags whatever version currently sits in version.properties and opens a GitHub
+# release for it. Runs in this repository and in the personaclick mirror alike:
+# here it reacts to the `chore(release)` commit from version.yaml, there to the
+# merged synchronization PR that brings the new version.properties in. That is why
+# it carries no owner guard — the mirror needs exactly this job and nothing else.
+#
+# Tagging is idempotent. An existing tag is left alone, which is what stops a pair
+# of synchronization PRs carrying the same version from producing two tags and,
+# downstream, two competing publishes of one pod version.
+#
+# The tag is created with a GitHub App token on purpose: a ref pushed with
+# GITHUB_TOKEN does not trigger other workflows, and publish.yaml has to fire.
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.VERSIONER_ID }}
+          private-key: ${{ secrets.VERSIONER_SECRET }}
+
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+
+      - name: Tag version and open release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          version=$(grep -m1 VERSION_NAME version.properties | cut -d'=' -f2)
+          tag="v$version"
+
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo "$tag already exists — nothing to do"
+            exit 0
+          fi
+
+          gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+            -f ref="refs/tags/$tag" -f sha="$GITHUB_SHA"
+
+          # version.yaml puts the semantic-release notes into the body of the
+          # `chore(release)` commit, and those notes carry compare links back to
+          # this repository. Only that commit may supply them, so a mirror — where
+          # the subject is `feat(release): sync (#N)` — never republishes an
+          # upstream name and falls back to notes generated from its own history.
+          if git log -1 --pretty=%s | grep -q '^chore(release):'; then
+            notes=$(git log -1 --pretty=%b)
+          else
+            notes=""
+          fi
+          if [ -n "$notes" ]; then
+            gh release create "$tag" --title "$tag" --notes "$notes"
+          else
+            gh release create "$tag" --title "$tag" --generate-notes
+          fi

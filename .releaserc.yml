@@ -1,29 +1,17 @@
-{
-  branches: ["master"],
-  plugins:
-    [
-      "@semantic-release/commit-analyzer",
-      "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/github",
-        {
-          "assets": "source.tgz",
-          "successComment": false,
-          "releasedLabels": false,
-        },
-      ],
-      [
-        "@semantic-release/git",
-        {
-          "assets": ["version.properties"],
-          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}",
-        },
-      ],
-      [
-        "@semantic-release/exec",
-        {
-          "prepareCmd": "chmod +x ./scripts/update_version.sh && ./scripts/update_version.sh ${nextRelease.version} && tar --exclude=source.tgz -czvf source.tgz *",
-        },
-      ],
-    ],
-}
+# Release configuration for the iOS SDK.
+#
+# semantic-release runs in DRY-RUN mode from .github/workflows/version.yaml — it
+# only computes the next version and release notes from Conventional Commits
+# (feat: -> minor, fix: -> patch, BREAKING CHANGE -> major). It does not tag,
+# commit or publish, so the plugin list holds nothing but the two analysers.
+#
+# The workflow writes the computed version into version.properties and commits
+# `chore(release): <version>`; deploy.yaml tags it and opens the GitHub release;
+# publish.yaml reacts to the tag and pushes the pod. Keeping tagging out of
+# semantic-release is what lets the personaclick mirror — which has no
+# semantic-release run of its own — produce identical tags from the same file.
+branches:
+  - master
+plugins:
+  - '@semantic-release/commit-analyzer'
+  - '@semantic-release/release-notes-generator'
