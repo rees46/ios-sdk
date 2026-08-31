@@ -811,8 +811,10 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
                 NotificationCenter.default.addObserver(self, selector: #selector(continueTimer), name: Notification.Name("WebKitClosedContinueTimerSetting"), object: nil)
             }
             
-            UIApplication.shared.open(linkUrl, options: [:], completionHandler: nil)
-            
+            if sdkLinkDelegate?.shouldOpenLinkBySdk(url: link) ?? true {
+                UIApplication.shared.open(linkUrl, options: [:], completionHandler: nil)
+            }
+
             let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
             NotificationCenter.default.post(name: .init(rawValue: "PauseVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
             
@@ -841,6 +843,16 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         let storyId = stories[index.section].id
         let slideId = stories[index.section].slides[index.row].id
         sdk?.tracking.storyClick(storyId: storyId, slideId: slideId)
+    }
+
+    private func trackClickSlide(for slide: Slide) {
+        for (section, story) in stories.enumerated() {
+            for (row, storySlide) in story.slides.enumerated() {
+                if storySlide.id == slide.id {
+                    trackClickSlide(index: IndexPath(row: row, section: section))
+                }
+            }
+        }
     }
     
     private func setupGestureRecognizerOnCollection() {
@@ -981,18 +993,8 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     public func didTapOpenLinkExternalServiceMethod(url: String, slide: Slide) {
-        let stateButton: Bool = UserDefaults.standard.bool(forKey: "LastTapButtonMemorySdkSetting")
-        if stateButton {
-            continueTimer()
-            
-            let sIdDetect: String = UserDefaults.standard.string(forKey: "LastViewedSlideMemorySetting") ?? ""
-            NotificationCenter.default.post(name: .init(rawValue: "PlayVideoLongTap"), object: nil, userInfo: ["slideID": sIdDetect])
-            print("SDK Start Timer Play Content")
-            UserDefaults.standard.set(false, forKey: "LastTapButtonMemorySdkSetting")
-        } else {
-            print("SDK Pause Timer\n")
-            UserDefaults.standard.set(true, forKey: "LastTapButtonMemorySdkSetting")
-        }
+        trackClickSlide(for: slide)
+        openUrl(link: url)
     }
     
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
@@ -1112,14 +1114,8 @@ extension StoryViewController: UICollectionViewDelegate, UICollectionViewDataSou
 
 extension StoryViewController: StoryCollectionViewCellDelegate {
     public func didTapUrlButton(url: String, slide: Slide) {
-        self.openUrl(link: url)
-        for (section, story) in stories.enumerated() {
-            for (row, storySlide) in story.slides.enumerated() {
-                if storySlide.id == slide.id {
-                    self.trackClickSlide(index: IndexPath(row: row, section: section))
-                }
-            }
-        }
+        trackClickSlide(for: slide)
+        openUrl(link: url)
     }
 }
 

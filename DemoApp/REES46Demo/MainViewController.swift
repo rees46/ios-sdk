@@ -60,7 +60,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     @IBOutlet private weak var scrollView: UIScrollView!
     @IBOutlet private weak var updateDidButton: UIButton!
     @IBOutlet private weak var resetDidButton: UIButton!
-    @IBOutlet private weak var showStoriesButton: UIButton!
     @IBOutlet private weak var showSnackBarButton: UIButton!
     private var showTestPopupButton: UIButton!
     private var trackEventCustomFieldsSuccessButton: UIButton!
@@ -82,7 +81,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
     public var waitIndicator: SdkActivityIndicator!
     
-    @IBOutlet private weak var storiesCollectionView: StoriesView!
     public var recommendationsCollectionView = RecommendationsWidgetView()
     public var newArrivalsCollectionView = RecommendationsWidgetView()
     private var notificationWidget: NotificationWidget?
@@ -109,12 +107,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     func addSdkObservers() {
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(loadStoriesViewBlock),
-            name: globalSDKNotificationNameMainInit, object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
             selector: #selector(loadRecommendationsWidget),
             name: globalSDKNotificationNameAdditionalInit, object: nil
         )
@@ -132,17 +124,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     }
     
     @objc
-    private func loadStoriesViewBlock() {
-        if let globalSDK = globalSDK {
-            storiesCollectionView.configure(
-                sdk: globalSDK,
-                mainVC: self,
-                code: AppEnvironments.storiesCode
-            )
-        }
-    }
-    
-    @objc
     private func loadRecommendationsWidget() {
         sleep(3)
         if let globalSDKAdditionalInit = globalSDK {
@@ -156,7 +137,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
                 
                 // Recommendation Widget height and position settings
                 //                self.recommendationsCollectionView.heightAnchor.constraint(equalToConstant: 400).isActive = true //height
-                self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.storiesCollectionView.bottomAnchor, constant: 10).isActive = true //top
+                self.recommendationsCollectionView.topAnchor.constraint(equalTo: self.scrollView.topAnchor, constant: 300).isActive = true //top
                 self.recommendationsCollectionView.leadingAnchor.constraint(equalTo: self.view.leadingAnchor).isActive = true //left
                 self.recommendationsCollectionView.trailingAnchor.constraint(equalTo: self.view.trailingAnchor).isActive = true //right
                 
@@ -214,10 +195,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     private func didTapUpdate() {
         setupSdkLabels()
         globalSDK?.resetSdkCache()
-        
-        if let globalSDK = globalSDK {
-            storiesCollectionView.configure(sdk: globalSDK, mainVC: self, code: AppEnvironments.storiesCode)
-        }
     }
     
     @objc
@@ -235,11 +212,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             self.setupSdkLabels()
             self.waitIndicator.stopAnimating()
         }
-    }
-    
-    @objc
-    private func showStories(){
-        storiesCollectionView.showStories()
     }
     
     @objc
@@ -293,7 +265,6 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         cartButton.addTarget(self, action: #selector(didTapCart), for: .touchUpInside)
         updateDidButton.addTarget(self, action: #selector(didTapUpdate), for: .touchUpInside)
         resetDidButton.addTarget(self, action: #selector(didTapReset), for: .touchUpInside)
-        showStoriesButton.addTarget(self, action: #selector(showStories), for: .touchUpInside)
         
         setupTestPopupButton()
         setupTrackEventDemoButtons()
@@ -352,10 +323,10 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         
         // Place button next to other test buttons
         NSLayoutConstraint.activate([
-            showTestPopupButton.topAnchor.constraint(equalTo: showStoriesButton.bottomAnchor, constant: 10),
-            showTestPopupButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            showTestPopupButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            showTestPopupButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor)
+            showTestPopupButton.topAnchor.constraint(equalTo: showSnackBarButton.bottomAnchor, constant: 10),
+            showTestPopupButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            showTestPopupButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            showTestPopupButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor)
         ])
         
         showTestPopupButton.addTarget(self, action: #selector(showTestPopup), for: .touchUpInside)
@@ -376,14 +347,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         
         NSLayoutConstraint.activate([
             trackEventCustomFieldsSuccessButton.topAnchor.constraint(equalTo: showTestPopupButton.bottomAnchor, constant: 10),
-            trackEventCustomFieldsSuccessButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            trackEventCustomFieldsSuccessButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            trackEventCustomFieldsSuccessButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            trackEventCustomFieldsSuccessButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            trackEventCustomFieldsSuccessButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            trackEventCustomFieldsSuccessButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
             
             trackEventCustomFieldsCollisionButton.topAnchor.constraint(equalTo: trackEventCustomFieldsSuccessButton.bottomAnchor, constant: 10),
-            trackEventCustomFieldsCollisionButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            trackEventCustomFieldsCollisionButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            trackEventCustomFieldsCollisionButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor)
+            trackEventCustomFieldsCollisionButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            trackEventCustomFieldsCollisionButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            trackEventCustomFieldsCollisionButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor)
         ])
         
         trackEventCustomFieldsSuccessButton.addTarget(self, action: #selector(didTapTrackEventCustomFieldsSuccess), for: .touchUpInside)
@@ -405,14 +376,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             predictDidOnlyButton.topAnchor.constraint(equalTo: trackEventCustomFieldsCollisionButton.bottomAnchor, constant: 24),
-            predictDidOnlyButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            predictDidOnlyButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            predictDidOnlyButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            predictDidOnlyButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            predictDidOnlyButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            predictDidOnlyButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
 
             predictWithEmailButton.topAnchor.constraint(equalTo: predictDidOnlyButton.bottomAnchor, constant: 10),
-            predictWithEmailButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            predictWithEmailButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            predictWithEmailButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor)
+            predictWithEmailButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            predictWithEmailButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            predictWithEmailButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor)
         ])
 
         predictDidOnlyButton.addTarget(self, action: #selector(didTapPredictDidOnly), for: .touchUpInside)
@@ -470,14 +441,14 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
         NSLayoutConstraint.activate([
             // Place after the predict buttons (which are placed after the trackEvent buttons).
             trackPurchaseMinimalButton.topAnchor.constraint(equalTo: predictWithEmailButton.bottomAnchor, constant: 24),
-            trackPurchaseMinimalButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            trackPurchaseMinimalButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            trackPurchaseMinimalButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            trackPurchaseMinimalButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            trackPurchaseMinimalButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            trackPurchaseMinimalButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
 
             trackPurchaseFullButton.topAnchor.constraint(equalTo: trackPurchaseMinimalButton.bottomAnchor, constant: 10),
-            trackPurchaseFullButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            trackPurchaseFullButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            trackPurchaseFullButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            trackPurchaseFullButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            trackPurchaseFullButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            trackPurchaseFullButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         trackPurchaseMinimalButton.addTarget(self, action: #selector(didTapTrackPurchaseMinimal), for: .touchUpInside)
@@ -493,9 +464,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             getLastOrderProductsButton.topAnchor.constraint(equalTo: trackPurchaseFullButton.bottomAnchor, constant: 24),
-            getLastOrderProductsButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            getLastOrderProductsButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            getLastOrderProductsButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            getLastOrderProductsButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            getLastOrderProductsButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            getLastOrderProductsButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         getLastOrderProductsButton.addTarget(self, action: #selector(didTapGetLastOrderProducts), for: .touchUpInside)
@@ -510,9 +481,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             getUserOrdersButton.topAnchor.constraint(equalTo: getLastOrderProductsButton.bottomAnchor, constant: 10),
-            getUserOrdersButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            getUserOrdersButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            getUserOrdersButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            getUserOrdersButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            getUserOrdersButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            getUserOrdersButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         getUserOrdersButton.addTarget(self, action: #selector(didTapGetUserOrders), for: .touchUpInside)
@@ -572,9 +543,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             loyaltyJoinButton.topAnchor.constraint(equalTo: getUserOrdersButton.bottomAnchor, constant: 24),
-            loyaltyJoinButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            loyaltyJoinButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            loyaltyJoinButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            loyaltyJoinButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            loyaltyJoinButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            loyaltyJoinButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         loyaltyJoinButton.addTarget(self, action: #selector(didTapLoyaltyJoin), for: .touchUpInside)
@@ -589,9 +560,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             loyaltyStatusButton.topAnchor.constraint(equalTo: loyaltyJoinButton.bottomAnchor, constant: 10),
-            loyaltyStatusButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            loyaltyStatusButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            loyaltyStatusButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            loyaltyStatusButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            loyaltyStatusButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            loyaltyStatusButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         loyaltyStatusButton.addTarget(self, action: #selector(didTapLoyaltyStatus), for: .touchUpInside)
@@ -655,9 +626,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             getProfileButton.topAnchor.constraint(equalTo: loyaltyStatusButton.bottomAnchor, constant: 24),
-            getProfileButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            getProfileButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            getProfileButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            getProfileButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            getProfileButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            getProfileButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         getProfileButton.addTarget(self, action: #selector(didTapGetProfile), for: .touchUpInside)
@@ -672,9 +643,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             getProductCountersButton.topAnchor.constraint(equalTo: getProfileButton.bottomAnchor, constant: 10),
-            getProductCountersButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            getProductCountersButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            getProductCountersButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            getProductCountersButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            getProductCountersButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            getProductCountersButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         getProductCountersButton.addTarget(self, action: #selector(didTapGetProductCounters), for: .touchUpInside)
@@ -689,9 +660,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             getCategoryButton.topAnchor.constraint(equalTo: getProductCountersButton.bottomAnchor, constant: 10),
-            getCategoryButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            getCategoryButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            getCategoryButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            getCategoryButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            getCategoryButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            getCategoryButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         getCategoryButton.addTarget(self, action: #selector(didTapGetCategory), for: .touchUpInside)
@@ -772,9 +743,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             getCollectionButton.topAnchor.constraint(equalTo: getCategoryButton.bottomAnchor, constant: 10),
-            getCollectionButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            getCollectionButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            getCollectionButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            getCollectionButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            getCollectionButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            getCollectionButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         getCollectionButton.addTarget(self, action: #selector(didTapGetCollection), for: .touchUpInside)
@@ -789,9 +760,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
         NSLayoutConstraint.activate([
             multiInstanceButton.topAnchor.constraint(equalTo: getCollectionButton.bottomAnchor, constant: 10),
-            multiInstanceButton.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-            multiInstanceButton.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-            multiInstanceButton.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+            multiInstanceButton.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+            multiInstanceButton.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+            multiInstanceButton.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
         ])
 
         multiInstanceButton.addTarget(self, action: #selector(didTapMultiInstance), for: .touchUpInside)
@@ -832,9 +803,9 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
 
             NSLayoutConstraint.activate([
                 button.topAnchor.constraint(equalTo: previous.bottomAnchor, constant: 10),
-                button.leadingAnchor.constraint(equalTo: showStoriesButton.leadingAnchor),
-                button.widthAnchor.constraint(equalTo: showStoriesButton.widthAnchor),
-                button.heightAnchor.constraint(equalTo: showStoriesButton.heightAnchor),
+                button.leadingAnchor.constraint(equalTo: showSnackBarButton.leadingAnchor),
+                button.widthAnchor.constraint(equalTo: showSnackBarButton.widthAnchor),
+                button.heightAnchor.constraint(equalTo: showSnackBarButton.heightAnchor),
             ])
 
             button.addTarget(self, action: action.selector, for: .touchUpInside)

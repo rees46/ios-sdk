@@ -6,6 +6,21 @@ public protocol StoriesCommunicationProtocol: AnyObject {
     func receiveSelectedProductData(products: StoriesElement)
     func receiveSelectedCarouselProductData(products: StoriesProduct)
     func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement)
+
+    /// Asked before the SDK opens a link tapped inside stories: a slide button
+    /// deeplink or link, a promocode deeplink, or a carousel product.
+    ///
+    /// Implement it and return `false` to keep the SDK from opening the url when the
+    /// host routes it on its own — the story is dismissed either way, so the screen
+    /// the host navigates to is not covered by the viewer.
+    ///
+    /// - Parameter url: the url the SDK is about to open.
+    /// - Returns: `true` if the url should be opened by the SDK itself. Defaults to `true`.
+    func shouldOpenLinkBySdk(url: String) -> Bool
+}
+
+public extension StoriesCommunicationProtocol {
+    func shouldOpenLinkBySdk(url: String) -> Bool { true }
 }
 
 public protocol StoriesViewLinkProtocol: AnyObject {
@@ -15,6 +30,11 @@ public protocol StoriesViewLinkProtocol: AnyObject {
     func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement)
     func reloadStoriesCollectionSubviews()
     func updateBgColor()
+    func shouldOpenLinkBySdk(url: String) -> Bool
+}
+
+public extension StoriesViewLinkProtocol {
+    func shouldOpenLinkBySdk(url: String) -> Bool { true }
 }
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
@@ -56,12 +76,12 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     
     private var isInDownloadMode: Bool = true
     
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         commonInit()
     }
-    
-    required init?(coder aDecoder: NSCoder) {
+
+    public required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         commonInit()
     }
@@ -356,6 +376,10 @@ extension StoriesView: StoriesViewLinkProtocol {
     public func linkIosExternalUse(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
         print("\nSDK Received linkIos for external use: \(url)\n\n")
+    }
+
+    public func shouldOpenLinkBySdk(url: String) -> Bool {
+        self.communicationDelegate?.shouldOpenLinkBySdk(url: url) ?? true
     }
     
     public func reloadStoriesCollectionSubviews() {
