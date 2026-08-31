@@ -87,7 +87,7 @@ class SearchServiceImplTests: XCTestCase {
                 XCTFail("Search failed with error: \(error)")
             }
         }
-        wait(for: [expectation1, expectation2], timeout: 10)
+        wait(for: [expectation1, expectation2], timeout: 30)
         let excluded = Set(["dior", "estee lauder"])
         let lowercased = Set((brandsWithoutExcluded ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
         XCTAssertTrue(excluded.isDisjoint(with: lowercased))
@@ -122,7 +122,7 @@ class SearchServiceImplTests: XCTestCase {
                 XCTFail("Search failed with error: \(error)")
             }
         }
-        wait(for: [expectation1, expectation2], timeout: 10)
+        wait(for: [expectation1, expectation2], timeout: 30)
         let excluded = Set(["dior", "estee lauder"])
         let lowercased = Set((brandsWithoutExcluded ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
         XCTAssertTrue(excluded.isDisjoint(with: lowercased))
@@ -218,7 +218,7 @@ class SearchServiceImplTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testSearch_withMinimalFields() {

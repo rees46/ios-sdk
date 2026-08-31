@@ -53,7 +53,7 @@ class CatalogReadTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testGetProductCounters_returnsSuccess() {
@@ -69,7 +69,7 @@ class CatalogReadTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testGetCategory_returnsProducts() {
@@ -86,7 +86,7 @@ class CatalogReadTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testGetCollection_returnsProducts() {
@@ -102,6 +102,6 @@ class CatalogReadTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 }

@@ -458,3 +458,65 @@ final class StoryAttributionTests: XCTestCase {
         XCTAssertEqual(source?["code"] as? String, "main_stories")
     }
 }
+
+/// What a stored source actually does to the requests that follow it. Written because a tester
+/// reported `setSource` "not working": the answer depends entirely on which request you look at,
+/// and on which platform.
+final class StoredSourceOnFollowingRequestsTests: XCTestCase {
+
+    private let sourceKeys = ["recomendedCode", "recomendedType", "timeStartSave"]
+
+    override func setUp() {
+        super.setUp()
+        sourceKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+    }
+
+    override func tearDown() {
+        sourceKeys.forEach { UserDefaults.standard.removeObject(forKey: $0) }
+        super.tearDown()
+    }
+
+    private func track(_ sdk: MockPersonalizationSDK, _ body: (TrackingAPI, @escaping (Result<Void, SdkError>) -> Void) -> Void) -> [String: Any] {
+        let done = expectation(description: "tracked")
+        body(sdk.tracking) { _ in done.fulfill() }
+        wait(for: [done], timeout: 2.0)
+        return sdk.lastPostParams ?? [:]
+    }
+
+    func test_storedSource_staysOnEveryFollowingRequest() {
+        let sdk = MockPersonalizationSDK()
+        sdk.tracking.setSource(TrackingSource(type: .dynamic, code: "block-1"))
+
+        let first = track(sdk) { $0.productView(itemId: "sku-1", completion: $1) }
+        let second = track(sdk) { $0.categoryView(categoryId: "cat-1", completion: $1) }
+        let third = track(sdk) { $0.addToFavorites(itemId: "sku-2", completion: $1) }
+
+        for (name, body) in [("first", first), ("second", second), ("third", third)] {
+            let source = body["source"] as? [String: Any]
+            XCTAssertEqual(source?["from"] as? String, "dynamic", "\(name) request lost the source")
+            XCTAssertEqual(source?["code"] as? String, "block-1", "\(name) request lost the code")
+        }
+    }
+
+    /// The stored source and a per-call `source:` do not use the same fields. Pinning it so the
+    /// difference is visible rather than discovered against the backend.
+    func test_storedSourceAndPerCallSource_useDifferentWireFields() {
+        let sdk = MockPersonalizationSDK()
+
+        sdk.tracking.setSource(TrackingSource(type: .dynamic, code: "stored-block"))
+        let stored = track(sdk) { $0.productView(itemId: "sku-1", completion: $1) }
+
+        XCTAssertNotNil(stored["source"], "a stored source travels in the `source` object")
+        XCTAssertNil(stored["recommended_by"], "…and not as recommended_by")
+
+        let perCall = track(sdk) {
+            $0.productView(
+                itemId: "sku-1",
+                source: TrackingSource(type: .chain, code: "call-block"),
+                completion: $1
+            )
+        }
+        XCTAssertEqual(perCall["recommended_by"] as? String, "chain")
+        XCTAssertEqual(perCall["recommended_code"] as? String, "call-block")
+    }
+}

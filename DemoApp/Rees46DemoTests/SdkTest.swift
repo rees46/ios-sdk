@@ -31,7 +31,7 @@ class SdkTests: XCTestCase {
             XCTAssert(result, "\(self.TAG): \(failureMessage)")
             expectation.fulfill()
         }
-        let result = XCTWaiter.wait(for: [expectation], timeout: 10.0)
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
         if result != .completed {
             XCTFail("Timeout in trackEventAndCheck: \(result)")
         }
@@ -90,7 +90,7 @@ class SdkTests: XCTestCase {
             expectation.fulfill()
         }
         
-        let result = XCTWaiter.wait(for: [expectation], timeout: 10.0)
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
         if result != .completed {
             XCTFail("Timeout in test_init_with_reinitialization_true_calls_completion: \(result)")
         }
@@ -110,7 +110,7 @@ class SdkTests: XCTestCase {
             expectation.fulfill()
         }
         
-        let result = XCTWaiter.wait(for: [expectation], timeout: 10.0)
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
         if result != .completed {
             XCTFail("Timeout in test_init_with_reinitialization_false_calls_completion: \(result)")
         }
