@@ -24,14 +24,14 @@ class SdkTests: XCTestCase {
         failureMessage: String
     ) {
         let expectation = XCTestExpectation(description: "Track event completion")
-        sdk?.track(event: .productView(id: eventId)) { response in
+        sdk?.tracking.productView(itemId: eventId) { response in
             let value = getValue()
             let result = checkValue(value)
             print("\(self.TAG): Checking value \(String(describing: value)), result: \(result)")
             XCTAssert(result, "\(self.TAG): \(failureMessage)")
             expectation.fulfill()
         }
-        let result = XCTWaiter.wait(for: [expectation], timeout: 10.0)
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
         if result != .completed {
             XCTFail("Timeout in trackEventAndCheck: \(result)")
         }
@@ -90,7 +90,7 @@ class SdkTests: XCTestCase {
             expectation.fulfill()
         }
         
-        let result = XCTWaiter.wait(for: [expectation], timeout: 10.0)
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
         if result != .completed {
             XCTFail("Timeout in test_init_with_reinitialization_true_calls_completion: \(result)")
         }
@@ -110,7 +110,7 @@ class SdkTests: XCTestCase {
             expectation.fulfill()
         }
         
-        let result = XCTWaiter.wait(for: [expectation], timeout: 10.0)
+        let result = XCTWaiter.wait(for: [expectation], timeout: 30.0)
         if result != .completed {
             XCTFail("Timeout in test_init_with_reinitialization_false_calls_completion: \(result)")
         }

@@ -206,7 +206,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     }
     
     public func sdkAddToFavorites(productId: String) {
-        sdk?.track(event: .productAddedToFavorites(id: productId)) { trackResponse in
+        sdk?.tracking.addToFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
                 print("Product id \(productId) added to 'Favorites' success")
@@ -217,7 +217,7 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     }
     
     public func sdkRemoveFromFavorites(productId: String) {
-        sdk?.track(event: .productRemovedFromFavorites(id: productId)) { trackResponse in
+        sdk?.tracking.removeFromFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
                 print("Product id \(productId) removed from 'Favorites' success")

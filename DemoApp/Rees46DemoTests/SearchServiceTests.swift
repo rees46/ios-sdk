@@ -87,7 +87,7 @@ class SearchServiceImplTests: XCTestCase {
                 XCTFail("Search failed with error: \(error)")
             }
         }
-        wait(for: [expectation1, expectation2], timeout: 10)
+        wait(for: [expectation1, expectation2], timeout: 30)
         let excluded = Set(["dior", "estee lauder"])
         let lowercased = Set((brandsWithoutExcluded ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
         XCTAssertTrue(excluded.isDisjoint(with: lowercased))
@@ -122,7 +122,7 @@ class SearchServiceImplTests: XCTestCase {
                 XCTFail("Search failed with error: \(error)")
             }
         }
-        wait(for: [expectation1, expectation2], timeout: 10)
+        wait(for: [expectation1, expectation2], timeout: 30)
         let excluded = Set(["dior", "estee lauder"])
         let lowercased = Set((brandsWithoutExcluded ?? []).map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
         XCTAssertTrue(excluded.isDisjoint(with: lowercased))
@@ -184,7 +184,11 @@ class SearchServiceImplTests: XCTestCase {
             expectation.fulfill()
         }
     
-        waitForExpectations(timeout: 5, handler: nil)
+        // Live request against the test shop. The wait is a hang guard, not a latency assertion:
+        // the call takes well under a second on its own, but the suite fires many real requests at
+        // one host at once, and a 5s budget lost that race often enough to fail CI (which runs the
+        // whole suite with no retries).
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testSearchBlank_popularFields() {
@@ -214,7 +218,7 @@ class SearchServiceImplTests: XCTestCase {
             expectation.fulfill()
         }
 
-        waitForExpectations(timeout: 10, handler: nil)
+        waitForExpectations(timeout: 30, handler: nil)
     }
 
     func testSearch_withMinimalFields() {
@@ -254,7 +258,11 @@ class SearchServiceImplTests: XCTestCase {
             expectation.fulfill()
         }
         
-        waitForExpectations(timeout: 5, handler: nil)
+        // Live request against the test shop. The wait is a hang guard, not a latency assertion:
+        // the call takes well under a second on its own, but the suite fires many real requests at
+        // one host at once, and a 5s budget lost that race often enough to fail CI (which runs the
+        // whole suite with no retries).
+        waitForExpectations(timeout: 30, handler: nil)
     }
     
 }

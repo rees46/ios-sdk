@@ -96,7 +96,8 @@ final class TrackEventCustomFieldsTests: XCTestCase {
     }
 }
 
-private final class MockPersonalizationSDK: PersonalizationSDK {
+/// Shared across the tracking test files in this target (see `TrackingNamespaceTests`).
+final class MockPersonalizationSDK: PersonalizationSDK {
     var shopId: String = "shop"
     var deviceId: String = "device"
     var userSeance: String = "seance"
@@ -137,24 +138,30 @@ private final class MockPersonalizationSDK: PersonalizationSDK {
         fatalError("Not needed for these tests")
     }
     
+    // Tracking is delegated to the real services, the way SimplePersonalizationSDK does it, so
+    // tests can compare the legacy root-level calls against the `tracking` namespace.
+    private lazy var trackEventService: TrackEventServiceProtocol = TrackEventServiceImpl(sdk: self)
+    private lazy var trackSourceService: TrackSourceServiceProtocol =
+        TrackSourceServiceImpl(store: self.trackingSourceStore)
+
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        fatalError("Not needed for these tests")
+        trackEventService.track(event: event, recommendedBy: recommendedBy, completion: completion)
     }
 
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        fatalError("Not needed for these tests")
+        trackEventService.trackPurchase(request, recommendedBy: recommendedBy, completion: completion)
     }
     
     func trackSource(source: RecommendedByCase, code: String) {
-        fatalError("Not needed for these tests")
+        trackSourceService.trackSource(source: source, code: code)
     }
     
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        fatalError("Not needed for these tests")
+        trackEventService.trackEvent(event: event, time: time, category: category, label: label, value: value, customFields: customFields, completion: completion)
     }
     
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        fatalError("Not needed for these tests")
+        trackEventService.trackPopupShown(popupId: popupId, completion: completion)
     }
     
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void) {

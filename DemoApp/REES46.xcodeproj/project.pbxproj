@@ -13,6 +13,8 @@
 		593033DF60A44FEA08C3FAAF /* LocalStateRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F59CB601E63A49FB18F815 /* LocalStateRepositoryTests.swift */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* MainViewController.swift */; };
+		A1B2C3D4000000000000000F /* LegacyStoriesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000010 /* LegacyStoriesViewController.swift */; };
+		A1B2C3D4000000000000000D /* SwiftUIStoriesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000E /* SwiftUIStoriesScreen.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
@@ -23,6 +25,12 @@
 		75A4D60C2C5B8EAA00929368 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */; };
 		75D1D5C12CA72BF200C8C564 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */; };
 		75E237902C334AA800119197 /* SdkTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E2378E2C334AA800119197 /* SdkTest.swift */; };
+		A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */; };
+		A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */; };
+		A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000006 /* LoyaltyTests.swift */; };
+		A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000008 /* CatalogReadTests.swift */; };
+		A1B2C3D40000000000000009 /* StoriesLinkOptOutContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000A /* StoriesLinkOptOutContractTests.swift */; };
+		A1B2C3D4000000000000000B /* StoriesLinkOptOutBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000C /* StoriesLinkOptOutBridgeTests.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
 		7FEFCE64D31526E14ADA2679 /* FakeSDK.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */; };
 		8A5B5B19354E21262D482DEB /* UserIdentityRepositoryIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8237EEC8810D8D4E8706C65B /* UserIdentityRepositoryIsolationTests.swift */; };
@@ -41,10 +49,6 @@
 		9A7FC75625C0BB69006D8CF9 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 9A7FC75525C0BB69006D8CF9 /* Readme.md */; };
 		9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */; };
 		9AFB9EE228044E4A001462AC /* PushPresentViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */; };
-		A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */; };
-		A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */; };
-		A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000006 /* LoyaltyTests.swift */; };
-		A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000008 /* CatalogReadTests.swift */; };
 		CFA0CA171D71D6AB7A4895CC /* KeychainPartitionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B55388A3AAFA52F88B08E3E /* KeychainPartitionTests.swift */; };
 		D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D005D80C2DB2CDE000841D78 /* MockGenerator.swift */; };
 		D0763E5A2DB8F51D0013E367 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0763E592DB8F5170013E367 /* Constants.swift */; };
@@ -56,6 +60,9 @@
 		D0B99FA72DB172940012E4F0 /* ManageSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */; };
 		D0D6C4E39581EE6F13C7E601 /* PushPayloadParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AD555A428611EB01D95215 /* PushPayloadParserTests.swift */; };
 		D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */; };
+		D1C0FFF12F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFF02F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift */; };
+		D1C0FFF32F0A1B2C3D4E5F60 /* TrackingBackCompatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFF22F0A1B2C3D4E5F60 /* TrackingBackCompatTests.swift */; };
+		D1C0FFF52F0A1B2C3D4E5F60 /* TrackingNamespaceDemoButtonsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFF42F0A1B2C3D4E5F60 /* TrackingNamespaceDemoButtonsTests.swift */; };
 		D589BD74A3C4A24BF7BCCD2C /* Pods_REES46Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B57812A2700376CF0EC5D913 /* Pods_REES46Tests.framework */; };
 		D824C7F34B333C3D68092BA9 /* HandlePushRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 732B3CD050F3471973F52C74 /* HandlePushRoutingTests.swift */; };
 		DFDB6BC32790E30AA243B4E9 /* StoragePartitionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CF8287AA77C0C1D6CD5046 /* StoragePartitionTests.swift */; };
@@ -121,6 +128,8 @@
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACD51AFB9204008FA782 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		607FACD71AFB9204008FA782 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000010 /* LegacyStoriesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyStoriesViewController.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000E /* SwiftUIStoriesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIStoriesScreen.swift; sourceTree = "<group>"; };
 		607FACDA1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		607FACDC1AFB9204008FA782 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		607FACDF1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
@@ -136,6 +145,12 @@
 		75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		75D1D5C02CA72BF200C8C564 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		75E2378E2C334AA800119197 /* SdkTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SdkTest.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastOrderProductsTest.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUserOrdersTest.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000006 /* LoyaltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTests.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000008 /* CatalogReadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogReadTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000A /* StoriesLinkOptOutContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesLinkOptOutContractTests.swift; sourceTree = "<group>"; };
+		A1B2C3D4000000000000000C /* StoriesLinkOptOutBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesLinkOptOutBridgeTests.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
 		8237EEC8810D8D4E8706C65B /* UserIdentityRepositoryIsolationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryIsolationTests.swift; sourceTree = "<group>"; };
 		86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryTests.swift; sourceTree = "<group>"; };
@@ -159,10 +174,6 @@
 		9AFB9EDF28044E4A001462AC /* PushPresentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPresentViewController.swift; sourceTree = "<group>"; };
 		9AFB9EE028044E4A001462AC /* PushPresentViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PushPresentViewController.xib; sourceTree = "<group>"; };
 		9E7FFE52FCE8111B44F38A5E /* Pods-REES46Demo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Demo.debug.xcconfig"; path = "Target Support Files/Pods-REES46Demo/Pods-REES46Demo.debug.xcconfig"; sourceTree = "<group>"; };
-		A1B2C3D40000000000000002 /* GetLastOrderProductsTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetLastOrderProductsTest.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetUserOrdersTest.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000006 /* LoyaltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoyaltyTests.swift; sourceTree = "<group>"; };
-		A1B2C3D40000000000000008 /* CatalogReadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogReadTests.swift; sourceTree = "<group>"; };
 		AAB9149EDCCCB4FF18DB87D6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
 		AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeSDK.swift; sourceTree = "<group>"; };
 		B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InstanceResolverTests.swift; sourceTree = "<group>"; };
@@ -179,6 +190,9 @@
 		D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribePriceDrop.swift; sourceTree = "<group>"; };
 		D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscription.swift; sourceTree = "<group>"; wrapsLines = 0; };
 		D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackEventCustomFieldsTests.swift; sourceTree = "<group>"; };
+		D1C0FFF02F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingNamespaceTests.swift; sourceTree = "<group>"; };
+		D1C0FFF22F0A1B2C3D4E5F60 /* TrackingBackCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingBackCompatTests.swift; sourceTree = "<group>"; };
+		D1C0FFF42F0A1B2C3D4E5F60 /* TrackingNamespaceDemoButtonsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingNamespaceDemoButtonsTests.swift; sourceTree = "<group>"; };
 		DF636BC1FCE3C2D61578639A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		E9049B752B1F561100BD7FEB /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		E9049B772B1F56D700BD7FEB /* Inter-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Semibold.ttf"; sourceTree = "<group>"; };
@@ -281,6 +295,8 @@
 				758714A72C6CF1EB008E5E4E /* Utils */,
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
 				607FACD71AFB9204008FA782 /* MainViewController.swift */,
+				A1B2C3D40000000000000010 /* LegacyStoriesViewController.swift */,
+				A1B2C3D4000000000000000E /* SwiftUIStoriesScreen.swift */,
 				E9CF44402B30809C000F53F1 /* SearchViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
 				607FACDE1AFB9204008FA782 /* LaunchScreen.xib */,
@@ -377,7 +393,12 @@
 				A1B2C3D40000000000000004 /* GetUserOrdersTest.swift */,
 				A1B2C3D40000000000000006 /* LoyaltyTests.swift */,
 				A1B2C3D40000000000000008 /* CatalogReadTests.swift */,
+				A1B2C3D4000000000000000A /* StoriesLinkOptOutContractTests.swift */,
+				A1B2C3D4000000000000000C /* StoriesLinkOptOutBridgeTests.swift */,
 				D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */,
+				D1C0FFF02F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift */,
+				D1C0FFF22F0A1B2C3D4E5F60 /* TrackingBackCompatTests.swift */,
+				D1C0FFF42F0A1B2C3D4E5F60 /* TrackingNamespaceDemoButtonsTests.swift */,
 			);
 			name = sdk;
 			sourceTree = "<group>";
@@ -728,6 +749,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				607FACD81AFB9204008FA782 /* MainViewController.swift in Sources */,
+				A1B2C3D4000000000000000F /* LegacyStoriesViewController.swift in Sources */,
+				A1B2C3D4000000000000000D /* SwiftUIStoriesScreen.swift in Sources */,
 				9AFB9EE128044E4A001462AC /* PushPresentViewController.swift in Sources */,
 				E9CF44412B30809C000F53F1 /* SearchViewController.swift in Sources */,
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
@@ -750,7 +773,12 @@
 				A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */,
 				A1B2C3D40000000000000005 /* LoyaltyTests.swift in Sources */,
 				A1B2C3D40000000000000007 /* CatalogReadTests.swift in Sources */,
+				A1B2C3D40000000000000009 /* StoriesLinkOptOutContractTests.swift in Sources */,
+				A1B2C3D4000000000000000B /* StoriesLinkOptOutBridgeTests.swift in Sources */,
 				D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */,
+				D1C0FFF12F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift in Sources */,
+				D1C0FFF32F0A1B2C3D4E5F60 /* TrackingBackCompatTests.swift in Sources */,
+				D1C0FFF52F0A1B2C3D4E5F60 /* TrackingNamespaceDemoButtonsTests.swift in Sources */,
 				D0B70C172D522DAF0001782A /* SearchServiceTests.swift in Sources */,
 				D0B99F9F2DB169D80012E4F0 /* UnsubscribeBackInStock.swift in Sources */,
 				7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */,
@@ -888,7 +916,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -937,7 +965,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -954,12 +982,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 138;
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = REES46;
@@ -979,12 +1007,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 138;
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = REES46;
@@ -1001,8 +1029,8 @@
 			baseConfigurationReference = 1C8B363210138CD2A84F29F3 /* Pods-REES46Tests.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -1012,7 +1040,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Rees46DemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1028,14 +1056,14 @@
 			baseConfigurationReference = AAB9149EDCCCB4FF18DB87D6 /* Pods-REES46Tests.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Rees46DemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1058,14 +1086,14 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 138;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1091,13 +1119,13 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 138;
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK1.REESNotificationContentExtension;
@@ -1121,14 +1149,14 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 138;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1154,13 +1182,13 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 138;
+				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK1.REESNotificationServiceExtension;

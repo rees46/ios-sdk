@@ -38,7 +38,6 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let success = "success"
         static let cart = "cart"
         static let items = "items"
-        static let timeStartSaveKey = "timeStartSave"
         static let sourceFrom = "from"
         static let sourceCode = "code"
         static let fullCartValue = "true"
@@ -48,12 +47,10 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let view = "view"
         static let click = "click"
         static let searchQuery = "search_query"
+        static let results = "results"
         static let search = "search"
         static let categoryId = "category_id"
         static let category = "category"
-        static let recomendedCode = "recomendedCode"
-        static let recomendedType = "recomendedType"
-        static let timeStartSave = "timeStartSave"
         static let orderId = "order_id"
         static let orderPrice = "order_price"
         static let promocode = "promocode"
@@ -122,11 +119,25 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }()
     
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        track(
+            event: event,
+            source: recommendedBy.map(TrackingSourceWire.init),
+            details: .none,
+            completion: completion
+        )
+    }
+
+    func track(
+        event: Event,
+        source: TrackingSourceWire?,
+        details: TrackEventDetails,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "track: SDK is not initialized")))
             return
         }
-        
+
         sessionQueue.addOperation {
             var path = "push"
             
@@ -138,23 +149,33 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 Constants.sid: sdk.userSeance,
                 Constants.segment: sdk.segment
             ]
+            /// Set by the story branches so the block can be stored as the attribution source below,
+            /// the way Android's `StoriesManager.trackStory` does.
+            var storiesBlockCode: String?
             switch event {
             case let .slideView(storyId, slideId):
+                let blockCode = details.storiesCode ?? sdk.storiesCode
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = sdk.storiesCode
+                params[Constants.sourceCode] = blockCode
                 path = Constants.trackStoriesPath
-                
+                storiesBlockCode = blockCode
+
                 paramEvent = Constants.view
             case let .slideClick(storyId, slideId):
+                let blockCode = details.storiesCode ?? sdk.storiesCode
                 params[Constants.storyId] = storyId
                 params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = sdk.storiesCode
+                params[Constants.sourceCode] = blockCode
                 path = Constants.trackStoriesPath
-                
+                storiesBlockCode = blockCode
+
                 paramEvent = Constants.click
             case let .search(query):
                 params[Constants.searchQuery] = query
+                if let results = details.results, !results.isEmpty {
+                    params[Constants.results] = results.joined(separator: ",")
+                }
                 paramEvent = Constants.search
             case let .categoryView(id):
                 params[Constants.categoryId] = id
@@ -163,7 +184,11 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 params[Constants.items] = [[Constants.id:id]]
                 paramEvent = Constants.view
             case let .productAddedToCart(id, amount):
-                params[Constants.items] = [[Constants.id:id, Constants.amount:amount] as [String : Any]]
+                var item: [String: Any] = [Constants.id: id, Constants.amount: amount]
+                if let price = details.price {
+                    item[Constants.price] = price
+                }
+                params[Constants.items] = [item]
                 paramEvent = Constants.cart
             case let .productAddedToFavorites(id):
                 params[Constants.items] = [[Constants.id:id]]
@@ -200,11 +225,15 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 paramEvent = Constants.purchase
             case let .synchronizeCart(items):
                 var tempItems: [[String: Any]] = []
-                for (_, item) in items.enumerated() {
-                    tempItems.append([
+                for item in items {
+                    var row: [String: Any] = [
                         Constants.id: item.productId,
                         Constants.amount: String(item.quantity)
-                    ])
+                    ]
+                    if let price = item.price {
+                        row[Constants.price] = price
+                    }
+                    tempItems.append(row)
                 }
                 params[Constants.items] = tempItems
                 params[Constants.fullCart] = Constants.fullCartValue
@@ -222,33 +251,32 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             }
             
             params[Constants.event] = paramEvent
-            
+
             // Process recommendedBy parameter
-            if let recommendedBy = recommendedBy {
-                let recomendedParams = recommendedBy.getParams()
-                for item in recomendedParams {
+            if let source = source {
+                for item in source.params() {
                     params[item.key] = item.value
                 }
             }
-            
+
+            // A story slide attributes the events that follow it to its block — parity with Android's
+            // `StoriesManager.trackStory`, which stores `stories` + code the same way.
+            if let storiesBlockCode = storiesBlockCode, !storiesBlockCode.isEmpty {
+                sdk.trackingSourceStore.store(
+                    type: TrackingSourceType.stories.rawValue,
+                    code: storiesBlockCode
+                )
+            }
+
             // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: Constants.timeStartSaveKey)
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedCode)
-                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedType)
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: Constants.recomendedCode) ?? ""
-                let savedType = UserDefaults.standard.string(forKey: Constants.recomendedType) ?? ""
+            if let stored = sdk.trackingSourceStore.currentSource() {
                 let sourceParams: [String: Any] = [
-                    Constants.sourceFrom: savedType,
-                    Constants.sourceCode: savedCode
+                    Constants.sourceFrom: stored.type,
+                    Constants.sourceCode: stored.code
                 ]
                 params[Constants.source] = sourceParams
             }
-            
+
             sdk.postRequest(
                 path: path, params: params, completion: { result in
                     switch result {
@@ -270,6 +298,10 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }
 
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackPurchase(request, source: recommendedBy.map(TrackingSourceWire.init), completion: completion)
+    }
+
+    func trackPurchase(_ request: PurchaseTrackingRequest, source: TrackingSourceWire?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "trackPurchase: SDK is not initialized")))
             return
@@ -295,25 +327,16 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             Self.mergePurchasePayload(request: request, params: &params)
             params[Constants.event] = Constants.purchase
 
-            if let recommendedBy = recommendedBy {
-                let recomendedParams = recommendedBy.getParams()
-                for item in recomendedParams {
+            if let source = source {
+                for item in source.params() {
                     params[item.key] = item.value
                 }
             }
 
-            let timeValue = UserDefaults.standard.double(forKey: Constants.timeStartSaveKey)
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedCode)
-                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedType)
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: Constants.recomendedCode) ?? ""
-                let savedType = UserDefaults.standard.string(forKey: Constants.recomendedType) ?? ""
+            if let stored = sdk.trackingSourceStore.currentSource() {
                 let sourceParams: [String: Any] = [
-                    Constants.sourceFrom: savedType,
-                    Constants.sourceCode: savedCode
+                    Constants.sourceFrom: stored.type,
+                    Constants.sourceCode: stored.code
                 ]
                 params[Constants.source] = sourceParams
             }
@@ -505,19 +528,10 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             }
             
             // Check source tracker params
-            let timeValue = UserDefaults.standard.double(forKey: Constants.timeStartSave)
-            let nowTimeValue = Date().timeIntervalSince1970
-            let diff = nowTimeValue - timeValue
-            if diff > 48*60*60 {
-                // Recomended params is invalidate
-                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedCode)
-                UserDefaults.standard.setValue(nil, forKey: Constants.recomendedType)
-            } else {
-                let savedCode = UserDefaults.standard.string(forKey: Constants.recomendedCode) ?? ""
-                let savedType = UserDefaults.standard.string(forKey: Constants.recomendedType) ?? ""
+            if let stored = sdk.trackingSourceStore.currentSource() {
                 let sourceParams: [String: Any] = [
-                    Constants.sourceFrom: savedType,
-                    Constants.sourceCode: savedCode
+                    Constants.sourceFrom: stored.type,
+                    Constants.sourceCode: stored.code
                 ]
                 params[Constants.source] = sourceParams
             }
@@ -575,14 +589,85 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
 }
 
 class TrackSourceServiceImpl: TrackSourceServiceProtocol {
-    private struct Constants {
-        static let recomendedCode = "recomendedCode"
-        static let recomendedType = "recomendedType"
-        static let timeStartSave = "timeStartSave"
+
+    private let store: TrackingSourceStore
+
+    init(store: TrackingSourceStore) {
+        self.store = store
     }
+
     func trackSource(source: RecommendedByCase, code: String) {
-        UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: Constants.timeStartSave)
-        UserDefaults.standard.setValue(code, forKey: Constants.recomendedCode)
-        UserDefaults.standard.setValue(source.rawValue, forKey: Constants.recomendedType)
+        store.store(type: source.rawValue, code: code)
+    }
+
+    func trackSource(type: String, code: String) {
+        store.store(type: type, code: code)
+    }
+}
+
+/**
+ The attribution a host set with `tracking.setSource(_:)`, kept for 48 hours and attached to every
+ event sent in that window.
+
+ Multi-instance (R2): the values used to live in `UserDefaults.standard` under bare keys, so two shops
+ in one app shared one attribution — `shopA.tracking.setSource(…)` coloured shopB's next event. The
+ store now writes into the shop's own partition suite, the same one identity and stories state use.
+ Reads fall back to the legacy `.standard` keys once, so an app upgrading mid-window keeps the source
+ it had already been given.
+ */
+protocol TrackingSourceStore {
+
+    /// Persists [type] (the raw `recommended_by` value) and [code], starting a fresh 48h window.
+    func store(type: String, code: String)
+
+    /// The stored attribution, or `nil` when nothing was set or the window has expired.
+    func currentSource() -> (type: String, code: String)?
+}
+
+final class TrackingSourceStoreImpl: TrackingSourceStore {
+
+    private enum Keys {
+        static let code = "recomendedCode"
+        static let type = "recomendedType"
+        static let savedAt = "timeStartSave"
+    }
+
+    /// How long a stored source keeps colouring events. Unchanged from the original implementation.
+    private static let ttl: TimeInterval = 48 * 60 * 60
+
+    private let store: UserDefaults
+    private let legacy: UserDefaults
+
+    init(store: UserDefaults, legacy: UserDefaults = .standard) {
+        self.store = store
+        self.legacy = legacy
+    }
+
+    func store(type: String, code: String) {
+        store.setValue(Date().timeIntervalSince1970, forKey: Keys.savedAt)
+        store.setValue(code, forKey: Keys.code)
+        store.setValue(type, forKey: Keys.type)
+    }
+
+    func currentSource() -> (type: String, code: String)? {
+        if let source = read(from: store) { return source }
+        // Pre-partition install: adopt whatever the shared domain still holds for the rest of its
+        // window. Not copied over — it expires on its own, and later shops must not inherit it.
+        return read(from: legacy)
+    }
+
+    private func read(from defaults: UserDefaults) -> (type: String, code: String)? {
+        let savedAt = defaults.double(forKey: Keys.savedAt)
+        guard savedAt > 0, Date().timeIntervalSince1970 - savedAt <= Self.ttl else {
+            // Expired (or never set) — drop the values so a later read is cheap.
+            defaults.setValue(nil, forKey: Keys.code)
+            defaults.setValue(nil, forKey: Keys.type)
+            return nil
+        }
+        guard let type = defaults.string(forKey: Keys.type), !type.isEmpty,
+              let code = defaults.string(forKey: Keys.code), !code.isEmpty else {
+            return nil
+        }
+        return (type: type, code: code)
     }
 }

@@ -48,6 +48,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
     /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
     let localStateStore: LocalStateRepository
+
+    /// Per-shop attribution set through `tracking.setSource(_:)`. Reached from the tracking services
+    /// through the `PersonalizationSDK.trackingSourceStore` bridge. See [TrackingSourceStore].
+    let sourceStore: TrackingSourceStore
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -70,7 +74,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }()
     
     lazy var trackSourceService: TrackSourceServiceProtocol = {
-        return TrackSourceServiceImpl()
+        return TrackSourceServiceImpl(store: self.sourceStore)
+    }()
+
+    /// The `tracking` namespace, built over the very services the deprecated root-level tracking
+    /// methods use — so both entry points share one popup handler, one session queue and one stored
+    /// source. Overrides the protocol's default (which has to build its own services, having only the
+    /// public protocol to work with) and, being stored, costs one allocation instead of one per call.
+    lazy var tracking: TrackingAPI = {
+        return TrackingAPIImpl(
+            trackService: self.trackEventService,
+            sourceService: self.trackSourceService
+        )
     }()
     
     lazy var subscriptionService: SubscriptionServiceProtocol = {
@@ -136,6 +151,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // R2: stories UI state (viewed/downloaded/cart/favourites) shares this shop's partition suite.
         self.localStateStore = localState
             ?? LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId, storageKey: storageKey))
+
+        // R2: the attribution `tracking.setSource(_:)` stores is shop-scoped too — a source set for one
+        // shop must not colour another shop's events. Reads still fall back to the legacy shared keys
+        // so an install upgrading mid-window keeps its source.
+        self.sourceStore = TrackingSourceStoreImpl(
+            store: StoragePartition.store(for: shopId, storageKey: storageKey)
+        )
 
         // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
         // reinstall keeps this shop's did. Injected (tests) is used verbatim.

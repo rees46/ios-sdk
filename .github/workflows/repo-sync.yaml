@@ -1,16 +1,23 @@
 name: Repository synchronization
 
+# Triggered by the release commit itself rather than by the completion of the
+# `Bump version` workflow. That workflow completes on every push to master — once
+# for the change, once again for the release commit it pushes itself — and each
+# completion used to start a synchronization, so a single release arrived in the
+# mirror as two PRs carrying the same version, and the mirror published it twice.
+
 on:
-  workflow_run:
-    workflows:
-      - Bump version
-    types:
-      - completed
+  push:
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
   prepare:
-    if: ${{ !contains(github.repository_owner, 'personaclick') }}
+    if: |
+      !contains(github.repository_owner, 'personaclick') &&
+      (github.event_name == 'workflow_dispatch' ||
+       startsWith(github.event.head_commit.message, 'chore(release):'))
     runs-on: ubuntu-latest
     outputs:
       replacements: ${{ steps.getReplacementsStep.outputs.replacements }}
