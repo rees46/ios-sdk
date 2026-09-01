@@ -72,6 +72,11 @@ jobs:
           RELEASE_VERSION: ${{ steps.semantic.outputs.release-version }}
           RELEASE_NOTES: ${{ steps.semantic.outputs.release-notes }}
         run: |
+          # The version is computed by a container action, which runs as root and leaves
+          # root-owned objects in .git. This step runs as `runner` and cannot add to the
+          # object database until the workspace is handed back.
+          sudo chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"
+
           chmod +x ./scripts/update_version.sh
           ./scripts/update_version.sh "$RELEASE_VERSION"
 
