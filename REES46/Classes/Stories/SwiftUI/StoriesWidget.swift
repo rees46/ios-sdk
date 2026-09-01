@@ -18,6 +18,9 @@ import UIKit
 /// The widget is a fixed height row — pass `height` to override the default. Every closure is
 /// optional: with none of them set the SDK opens tapped links itself, which is the same
 /// behaviour a UIKit host gets without a `communicationDelegate`.
+/// SwiftUI needs iOS 13; the rest of the SDK still supports 12, so the wrapper is gated rather than
+/// the whole pod. Nested `Container` and `Coordinator` inherit this availability.
+@available(iOS 13.0, *)
 public struct StoriesWidget: View {
 
     /// Height of the stories row in the UIKit collection layout.

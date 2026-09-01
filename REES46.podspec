@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
 
   s.source           = { :git => "https://github.com/rees46/ios-sdk.git", :tag => "v#{version}" }
 
-  s.ios.deployment_target = '13.0'
+  s.ios.deployment_target = '12.0'
 
   s.source_files     = 'REES46/Classes/**/*.{swift}'
   s.resources        = 'REES46/Classes/Resources/*.{xcassets,xib,storyboard,json,png}'
