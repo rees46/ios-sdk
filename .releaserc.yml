@@ -12,6 +12,20 @@
 # semantic-release run of its own — produce identical tags from the same file.
 branches:
   - master
+#
+# Both analysers require the canonical `BREAKING CHANGE:` footer, colon included. The default
+# keyword list matches the bare words anywhere a line starts with them, so a commit body that
+# merely *mentions* a breaking change in prose is read as one and bumps the major. That is not
+# hypothetical: it is what turned 3.31.0 into 4.0.0 and generated release notes describing a
+# break the release did not contain.
 plugins:
-  - '@semantic-release/commit-analyzer'
-  - '@semantic-release/release-notes-generator'
+  - - '@semantic-release/commit-analyzer'
+    - parserOpts:
+        noteKeywords:
+          - 'BREAKING CHANGE:'
+          - 'BREAKING-CHANGE:'
+  - - '@semantic-release/release-notes-generator'
+    - parserOpts:
+        noteKeywords:
+          - 'BREAKING CHANGE:'
+          - 'BREAKING-CHANGE:'
