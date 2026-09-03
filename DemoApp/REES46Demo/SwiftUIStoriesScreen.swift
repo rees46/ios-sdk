@@ -81,6 +81,9 @@ struct SwiftUIStoriesScreen: View {
             .onStoriesLoad { isLoaded in
                 loadState = isLoaded ? .loaded : .failed
             }
+            .onCollapse { _ in
+                log("onCollapse: nothing to show, row collapsed")
+            }
             .onSelectProduct { element in
                 log("onSelectProduct: \(element.deeplinkIos ?? element.link ?? "no link")")
             }

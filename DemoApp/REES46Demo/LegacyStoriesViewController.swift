@@ -64,7 +64,8 @@ final class LegacyStoriesViewController: UIViewController {
         contentStack.addArrangedSubview(title("StoriesView (UIKit)"))
 
         storiesView.translatesAutoresizingMaskIntoConstraints = false
-        storiesView.heightAnchor.constraint(equalToConstant: 135).isActive = true
+        // No height constraint on purpose: the block sizes itself from its intrinsic height and
+        // collapses to nothing when the load brings no stories.
         contentStack.addArrangedSubview(storiesView)
 
         statusLabel.text = "Waiting for the SDK to initialise…"
@@ -90,10 +91,21 @@ final class LegacyStoriesViewController: UIViewController {
 
     private func setupStories() {
         storiesView.communicationDelegate = self
+        // Both callbacks arrive on the main queue, collapse first — so the status is written from
+        // the load one only, otherwise the collapse text would be overwritten a line later.
         storiesView.onStoriesLoadComplete = { [weak self] isLoaded in
-            DispatchQueue.main.async {
-                self?.statusLabel.text = isLoaded ? "Stories loaded" : "Stories failed to load"
+            guard let self = self else { return }
+            switch (isLoaded, self.storiesView.hasStories) {
+            case (true, true):
+                self.statusLabel.text = "Stories loaded"
+            case (true, false):
+                self.statusLabel.text = "Stories block is empty — the row collapsed"
+            case (false, _):
+                self.statusLabel.text = "Stories failed to load — the row collapsed"
             }
+        }
+        storiesView.onStoriesCollapse = { [weak self] isCollapsed in
+            self?.log(isCollapsed ? "onStoriesCollapse: row collapsed" : "onStoriesCollapse: row expanded")
         }
     }
 

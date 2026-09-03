@@ -15,21 +15,26 @@ import UIKit
 ///     .openLinkBySdk { !$0.hasPrefix("myshop://") }
 /// ```
 ///
-/// The widget is a fixed height row — pass `height` to override the default. Every closure is
-/// optional: with none of them set the SDK opens tapped links itself, which is the same
-/// behaviour a UIKit host gets without a `communicationDelegate`.
+/// The widget is a fixed height row — pass `height` to override the default — that drops to zero
+/// height when the block loads with nothing to show, so a block switched off in the dashboard takes
+/// no room. Spacing a surrounding stack puts around the widget is the host's to remove, from
+/// `onCollapse`. Every closure is optional: with none of them set the SDK opens tapped links itself,
+/// which is the same behaviour a UIKit host gets without a `communicationDelegate`.
 /// SwiftUI needs iOS 13; the rest of the SDK still supports 12, so the wrapper is gated rather than
 /// the whole pod. Nested `Container` and `Coordinator` inherit this availability.
 @available(iOS 13.0, *)
 public struct StoriesWidget: View {
 
     /// Height of the stories row in the UIKit collection layout.
-    public static let defaultHeight: CGFloat = 135
+    public static let defaultHeight: CGFloat = StoriesView.defaultHeight
 
     private let sdk: PersonalizationSDK
     private let code: String
     private let height: CGFloat
     private var callbacks = Callbacks()
+
+    /// Set once the block reports it has no stories to show, which takes the row's height to zero.
+    @State private var isCollapsed = false
 
     public init(
         sdk: PersonalizationSDK,
@@ -42,8 +47,8 @@ public struct StoriesWidget: View {
     }
 
     public var body: some View {
-        Container(sdk: sdk, code: code, callbacks: callbacks)
-            .frame(height: height)
+        Container(sdk: sdk, code: code, callbacks: callbacks, isCollapsed: $isCollapsed)
+            .frame(height: isCollapsed ? 0 : height)
     }
 
     // MARK: - Callbacks
@@ -51,6 +56,16 @@ public struct StoriesWidget: View {
     /// Called with the result of loading the stories block.
     public func onStoriesLoad(_ handler: @escaping (Bool) -> Void) -> StoriesWidget {
         modifying { $0.onLoad = handler }
+    }
+
+    /// Called with `true` when the row collapses because the block loaded with nothing to show —
+    /// no stories, or a failed request. The widget takes care of its own height; this is for a host
+    /// that also wants to drop a header, a divider or the stack spacing it draws around the block.
+    ///
+    /// The widget loads its block once, so this is a one-way trip: unlike the UIKit `StoriesView`,
+    /// which reloads on every `configure`, it never reports an expansion back.
+    public func onCollapse(_ handler: @escaping (Bool) -> Void) -> StoriesWidget {
+        modifying { $0.onCollapse = handler }
     }
 
     /// Called when a slide button carrying a product is tapped.
@@ -92,6 +107,7 @@ public struct StoriesWidget: View {
 
     fileprivate struct Callbacks {
         var onLoad: ((Bool) -> Void)?
+        var onCollapse: ((Bool) -> Void)?
         var onSelectProduct: ((StoriesElement) -> Void)?
         var onSelectCarouselProduct: ((StoriesProduct) -> Void)?
         var onSelectPromocode: ((StoriesPromoCodeElement) -> Void)?
@@ -103,9 +119,10 @@ public struct StoriesWidget: View {
         let sdk: PersonalizationSDK
         let code: String
         let callbacks: Callbacks
+        let isCollapsed: Binding<Bool>
 
         func makeCoordinator() -> Coordinator {
-            Coordinator(sdk: sdk, code: code, callbacks: callbacks)
+            Coordinator(sdk: sdk, code: code, callbacks: callbacks, isCollapsed: isCollapsed)
         }
 
         func makeUIView(context: Context) -> StoriesView {
@@ -116,12 +133,14 @@ public struct StoriesWidget: View {
 
         func updateUIView(_ uiView: StoriesView, context: Context) {
             context.coordinator.callbacks = callbacks
+            context.coordinator.isCollapsed = isCollapsed
             context.coordinator.configureIfNeeded(uiView)
         }
     }
 
     fileprivate final class Coordinator: StoriesCommunicationProtocol {
         var callbacks: Callbacks
+        var isCollapsed: Binding<Bool>
 
         private let sdk: PersonalizationSDK
         private let code: String
@@ -131,10 +150,16 @@ public struct StoriesWidget: View {
         /// the hierarchy, hence the bounded retry instead of a single attempt.
         private var remainingAttempts = 10
 
-        init(sdk: PersonalizationSDK, code: String, callbacks: Callbacks) {
+        init(
+            sdk: PersonalizationSDK,
+            code: String,
+            callbacks: Callbacks,
+            isCollapsed: Binding<Bool>
+        ) {
             self.sdk = sdk
             self.code = code
             self.callbacks = callbacks
+            self.isCollapsed = isCollapsed
         }
 
         func configureIfNeeded(_ view: StoriesView) {
@@ -154,7 +179,20 @@ public struct StoriesWidget: View {
             view.onStoriesLoadComplete = { [weak self] isLoaded in
                 self?.callbacks.onLoad?(isLoaded)
             }
+            view.onStoriesCollapse = { [weak self] collapsed in
+                self?.setCollapsed(collapsed)
+            }
             view.configure(sdk: sdk, mainVC: presenter, code: code)
+        }
+
+        /// The block reports its empty state from a load callback, which can land while SwiftUI is
+        /// updating the view — hence the hop to the next main queue turn before touching the state.
+        private func setCollapsed(_ collapsed: Bool) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, self.isCollapsed.wrappedValue != collapsed else { return }
+                self.isCollapsed.wrappedValue = collapsed
+                self.callbacks.onCollapse?(collapsed)
+            }
         }
 
         func receiveIosLink(text: String) {
