@@ -27,6 +27,8 @@ public struct PurchaseTrackingRequest {
     public let stream: String?
     public let segment: String?
 
+    public let isGiftPackage: Bool
+
     public init(
         orderId: String,
         orderPrice: Double,
@@ -44,7 +46,8 @@ public struct PurchaseTrackingRequest {
         custom: [String: Any]? = nil,
         recommendedSource: [String: Any]? = nil,
         stream: String? = nil,
-        segment: String? = nil
+        segment: String? = nil,
+        isGiftPackage: Bool = false
     ) {
         self.orderId = orderId
         self.orderPrice = orderPrice
@@ -63,5 +66,6 @@ public struct PurchaseTrackingRequest {
         self.recommendedSource = recommendedSource
         self.stream = stream
         self.segment = segment
+        self.isGiftPackage = isGiftPackage
     }
 }
