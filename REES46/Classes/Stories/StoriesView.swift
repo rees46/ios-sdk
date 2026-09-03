@@ -38,21 +38,38 @@ public extension StoriesViewLinkProtocol {
 }
 
 public class StoriesView: UIView, UINavigationControllerDelegate {
-  
+
+    /// Height the block takes while it has something to show — the row height of the preview
+    /// collection layout.
+    public static let defaultHeight: CGFloat = 135
+
     public var onStoriesLoadComplete: ((Bool) -> Void)?
 
-    
+    /// Called when the block collapses because a load brought nothing to show (`true`), and when a
+    /// later load brings stories and it expands again (`false`).
+    ///
+    /// The view collapses itself, so a host needs this only to give back space it reserved around
+    /// the block — or when it lays the block out by frame or pins its height with a required
+    /// constraint, neither of which the SDK overrides.
+    public var onStoriesCollapse: ((Bool) -> Void)?
+
+    /// `false` once a load came back with nothing to show — a block turned off in the dashboard
+    /// brings no stories, and a failed request brings nothing either. The view then hides itself and
+    /// reports a zero intrinsic height so it stops taking up space on the host screen. Stays `true`
+    /// while the block is loading, which keeps the placeholder row visible.
+    public private(set) var hasStories: Bool = true
+
     let cellId = "StoriesCollectionViewPreviewCell"
     
     private var collectionView: UICollectionView = {
-        let testFrame = CGRect(x: 0, y: 0, width: 300, height: 135)
+        let testFrame = CGRect(x: 0, y: 0, width: 300, height: StoriesView.defaultHeight)
         let layout = UICollectionViewFlowLayout()
         //layout.horizontalAlignment = .left
         layout.minimumLineSpacing = 10
         layout.minimumInteritemSpacing = 10
         layout.scrollDirection = .horizontal
         
-        layout.itemSize = CGSize(width: SdkConfiguration.stories.iconSize, height: 135)
+        layout.itemSize = CGSize(width: SdkConfiguration.stories.iconSize, height: StoriesView.defaultHeight)
         layout.sectionInset = UIEdgeInsets(top: 0, left: SdkConfiguration.stories.iconMarginX, bottom: 0, right: SdkConfiguration.stories.iconMarginX)
         
         let collectionView = UICollectionView(frame: testFrame, collectionViewLayout: layout)
@@ -75,7 +92,15 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     private var code: String = ""
     
     private var isInDownloadMode: Bool = true
-    
+
+    /// Zero height while the block is empty. Optional priority, so a host that pins its own required
+    /// height keeps winning and can collapse the block itself from `onStoriesCollapse`.
+    private lazy var emptyStateHeightConstraint: NSLayoutConstraint = {
+        let constraint = heightAnchor.constraint(equalToConstant: 0)
+        constraint.priority = UILayoutPriority(999)
+        return constraint
+    }()
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
         commonInit()
@@ -110,6 +135,12 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         //
     }
     
+    /// Lets a host drop the block into a stack view without pinning a height: the row sizes itself,
+    /// and reports nothing to occupy once a load comes back empty.
+    public override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: hasStories ? StoriesView.defaultHeight : 0)
+    }
+
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         let userInterfaceStyle = traitCollection.userInterfaceStyle
@@ -208,16 +239,21 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
     }
     
     private func loadStoriesData() {
+        reopenIfCollapsed()
         sdk?.getStories(code: code) { result in
             switch result {
             case let .success(response):
-                self.stories = response.stories
-                self.settings = response.settings
+                // The list and the settings belong to the collection view, which reads them on the
+                // main queue — this callback arrives on the session queue, so they are handed over
+                // there rather than assigned from here.
                 DispatchQueue.main.async {
+                    self.stories = response.stories
+                    self.settings = response.settings
                     self.isInDownloadMode = false
                     self.collectionView.reloadData()
-                  print("StoriesView: Stories successfully loaded")
-                  self.onStoriesLoadComplete?(true)
+                    self.updateEmptyState(hasStories: !response.stories.isEmpty)
+                    print("StoriesView: Stories successfully loaded")
+                    self.onStoriesLoadComplete?(true)
                 }
             case let .failure(error):
                 switch error {
@@ -226,14 +262,62 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
                 default:
                     print("Error:", error.description)
                 }
-              DispatchQueue.main.async {
-                print("StoriesView: Stories load failed")
-                             self.onStoriesLoadComplete?(false)
-                         }
+                DispatchQueue.main.async {
+                    // Nothing to show either, so the block collapses the same way an empty one does
+                    // instead of leaving a row of placeholders that never resolve.
+                    self.stories = []
+                    self.isInDownloadMode = false
+                    self.collectionView.reloadData()
+                    self.updateEmptyState(hasStories: false)
+                    print("StoriesView: Stories load failed")
+                    self.onStoriesLoadComplete?(false)
+                }
             }
         }
     }
+
+    /// A collapsed block goes back to its placeholder row for the duration of a reload, so a retry
+    /// after an empty or failed load can bring it back. A block that has stories on screen keeps them
+    /// until the new list arrives — reloading is not a reason to blank it.
+    private func reopenIfCollapsed() {
+        let reopen = { [weak self] in
+            guard let self = self, !self.hasStories else { return }
+            self.stories = nil
+            self.isInDownloadMode = true
+            self.collectionView.reloadData()
+            self.updateEmptyState(hasStories: true)
+        }
+
+        // `configure(shopId:)` and the SwiftUI wrapper already call in on the main queue; a host
+        // calling `configure(sdk:)` from a background thread is sent there rather than touching UIKit
+        // off the main queue.
+        if Thread.isMainThread {
+            reopen()
+        } else {
+            DispatchQueue.main.async(execute: reopen)
+        }
+    }
     
+    /// Collapses the block when a load brings nothing to show — no stories (a block switched off in
+    /// the dashboard) or a failed request both otherwise leave an empty row on the host screen — and
+    /// restores it when a later load brings stories.
+    ///
+    /// Hiding is what makes a stack view hand the row's space back; the constraint and the intrinsic
+    /// size cover hosts that lay the block out with constraints of their own.
+    private func updateEmptyState(hasStories: Bool) {
+        guard self.hasStories != hasStories else { return }
+        self.hasStories = hasStories
+        isHidden = !hasStories
+        // A frame-based host lays the view out through the autoresizing mask, where an added
+        // constraint would fight the generated ones — it gets `isHidden` and the callback only.
+        if !translatesAutoresizingMaskIntoConstraints {
+            emptyStateHeightConstraint.isActive = !hasStories
+        }
+        invalidateIntrinsicContentSize()
+        superview?.setNeedsLayout()
+        onStoriesCollapse?(!hasStories)
+    }
+
     public func pauseStoryNow() {
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ExternalActionStoryPause"), object: nil)
     }
@@ -250,7 +334,14 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     }
     
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return isInDownloadMode ? 4 : stories?.count ?? 0
+        // Placeholders only until a list arrives: `stories` is assigned off the main queue, ahead of
+        // `isInDownloadMode`, so counting 4 here once it is set asks for cells the list cannot fill —
+        // an empty block (this is the shape of a block switched off in the dashboard) crashed on the
+        // subscript in `cellForItemAt`.
+        guard let stories = stories else {
+            return isInDownloadMode ? 4 : 0
+        }
+        return stories.count
     }
     
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
@@ -264,7 +355,7 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: StoriesCollectionViewPreviewCell.cellId, for: indexPath) as? StoriesCollectionViewPreviewCell else {return UICollectionViewCell()}
         
-        if let currentStory = stories?[indexPath.row] {
+        if let currentStory = story(at: indexPath.row) {
             
             let storyId = currentStory.id
 
@@ -318,11 +409,20 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
         showStories(at: index, for: firstStory)
     }
     private func showStoriesByUserClick(at index: Int) {
-        guard let story = stories?[index] else {
+        guard let story = story(at: index) else {
             return
         }
         
         showStories(at: index, for: story)
+    }
+
+    /// The loaded list and the cells the collection asks for can disagree for a moment (see
+    /// `numberOfItemsInSection`), so every read of it goes through a bounds check.
+    private func story(at index: Int) -> Story? {
+        guard let stories = stories, stories.indices.contains(index) else {
+            return nil
+        }
+        return stories[index]
     }
     
     private func showStories(at index: Int, for story: Story) {

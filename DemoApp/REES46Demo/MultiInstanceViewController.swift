@@ -122,7 +122,7 @@ final class MultiInstanceViewController: UIViewController {
     private func storiesView(shopId: String, code: String) -> UIView {
         let container = UIView()
         container.backgroundColor = .white // stories label colors assume a light backdrop
-        container.heightAnchor.constraint(equalToConstant: 120).isActive = true
+        // No height of its own: the block sizes the container, so an empty one collapses with it.
 
         let stories = StoriesView()
         stories.translatesAutoresizingMaskIntoConstraints = false

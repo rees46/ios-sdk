@@ -29,6 +29,19 @@ final class FakeSDK: PersonalizationSDK {
     var enableAutoPopupPresentation: Bool = true
     lazy var popupPresenter: PopupPresenter = PopupPresenter(sdk: self)
 
+    /// Stories the fake hands back from `getStories`, so the stories block tests can drive an empty
+    /// and a filled load. Left `nil` the call never completes, as before.
+    var storiesResult: Result<StoryContent, SdkError>?
+
+    /// How long the stories result stays in flight. The real SDK answers from its session queue, so
+    /// the fake answers off the main queue too — raise this to keep a load pending while the test
+    /// drives main-thread work against the block.
+    var storiesResultDelay: TimeInterval = 0
+
+    /// Stands in for the SDK's session queue: whatever `getStories` reports comes from here, never
+    /// from the caller's thread.
+    private let storiesQueue = DispatchQueue(label: "FakeSDK.stories")
+
     /// Records notification-track calls so tests can assert push routing hit the right instance.
     private(set) var deliveredTracks: [(type: String, code: String)] = []
     private(set) var receivedTracks: [(type: String, code: String)] = []
@@ -84,7 +97,12 @@ final class FakeSDK: PersonalizationSDK {
     func unsubscribeForBackInStock(itemIds: [String], email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func subscribeForPriceDrop(id: String, currentPrice: Double, email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func unsubscribeForPriceDrop(itemIds: [String], currentPrice: Double, email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
-    func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {}
+    func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
+        guard let storiesResult = storiesResult else { return }
+        storiesQueue.asyncAfter(deadline: .now() + storiesResultDelay) {
+            completion(storiesResult)
+        }
+    }
     func getProbabilityToPurchase(params: PurchasePredictParams, completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void) {}
     func addToSegment(segmentId: String, email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func removeFromSegment(segmentId: String, email: String?, phone: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}

@@ -32,7 +32,7 @@ final class StoriesLinkOptOutBridgeTests: XCTestCase {
     }
 
     private func makeStoriesView() -> StoriesView {
-        StoriesView(frame: CGRect(x: 0, y: 0, width: 300, height: 135))
+        StoriesView(frame: CGRect(x: 0, y: 0, width: 300, height: StoriesView.defaultHeight))
     }
 
     // MARK: - Tests
