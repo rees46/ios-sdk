@@ -217,6 +217,49 @@ final class TrackingNamespaceTests: XCTestCase {
         XCTAssertEqual(items?.first?["price"] as? Double, 49.9)
     }
 
+    func test_purchaseGiftPackage_reachesTheWire() {
+        let sdk = MockPersonalizationSDK()
+        let service = TrackEventServiceImpl(sdk: sdk)
+        let expectation = expectation(description: "purchase tracked")
+
+        TrackingAPIImpl(trackService: service, sourceService: TrackSourceServiceSpy())
+            .purchase(Self.purchaseRequest(isGiftPackage: true)) { _ in
+                expectation.fulfill()
+            }
+
+        waitForExpectations(timeout: 2.0)
+
+        XCTAssertEqual(sdk.lastPostPath, "push")
+        XCTAssertEqual(sdk.lastPostParams?["event"] as? String, "purchase")
+        XCTAssertEqual(sdk.lastPostParams?["gift_package"] as? Bool, true)
+    }
+
+    func test_purchaseWithoutGiftPackage_omitsTheKey() {
+        let sdk = MockPersonalizationSDK()
+        let service = TrackEventServiceImpl(sdk: sdk)
+        let expectation = expectation(description: "purchase tracked")
+
+        TrackingAPIImpl(trackService: service, sourceService: TrackSourceServiceSpy())
+            .purchase(Self.purchaseRequest(isGiftPackage: false)) { _ in
+                expectation.fulfill()
+            }
+
+        waitForExpectations(timeout: 2.0)
+
+        XCTAssertEqual(sdk.postCallCount, 1)
+        XCTAssertEqual(sdk.lastPostParams?["event"] as? String, "purchase")
+        XCTAssertNil(sdk.lastPostParams?["gift_package"])
+    }
+
+    private static func purchaseRequest(isGiftPackage: Bool) -> PurchaseTrackingRequest {
+        PurchaseTrackingRequest(
+            orderId: "order-1",
+            orderPrice: 100,
+            items: [PurchaseItemRequest(id: "sku-1", amount: 1, price: 100)],
+            isGiftPackage: isGiftPackage
+        )
+    }
+
     func test_searchResults_reachTheWireAsCommaSeparatedList() {
         let sdk = MockPersonalizationSDK()
         let service = TrackEventServiceImpl(sdk: sdk)

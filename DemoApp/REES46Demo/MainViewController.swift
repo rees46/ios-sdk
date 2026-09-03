@@ -1079,7 +1079,8 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
             custom: ["demo_custom": "ios_demo"],
             recommendedSource: ["source_key": "source_value"],
             stream: "demo-stream",
-            segment: "A"
+            segment: "A",
+            isGiftPackage: true
         )
         sdk.tracking.purchase(request) { result in
             switch result {

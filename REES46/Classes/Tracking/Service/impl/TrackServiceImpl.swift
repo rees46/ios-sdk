@@ -60,6 +60,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let removeWish = "remove_wish"
         static let paymentType = "payment_type"
         static let taxFree = "tax_free"
+        static let giftPackage = "gift_package"
         static let fullCart = "full_cart"
         static let fullWish = "full_wish"
         static let wish = "wish"
@@ -440,6 +441,9 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
         if request.isTaxFree {
             params[Constants.taxFree] = true
+        }
+        if request.isGiftPackage {
+            params[Constants.giftPackage] = true
         }
         if let promocode = request.promocode?.trimmingCharacters(in: .whitespacesAndNewlines), !promocode.isEmpty {
             params[Constants.promocode] = promocode
