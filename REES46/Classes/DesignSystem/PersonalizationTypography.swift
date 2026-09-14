@@ -5,8 +5,8 @@ import UIKit
 /// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), страница Typography.
 /// Сгенерировано скриптом; правки вносить в источник, не здесь.
 ///
-/// Inter в SDK не поставляется — используется системный шрифт с нужным
-/// весом. Чтобы перейти на Inter, достаточно подменить `font` в `PersonalizationTextStyle`.
+/// Inter в SDK не поставляется — по умолчанию системный шрифт с нужным весом.
+/// Чтобы перейти на Inter, хост задаёт `PersonalizationTheme.current.font`.
 public struct PersonalizationTextStyle {
 
     public let size: CGFloat
@@ -15,8 +15,10 @@ public struct PersonalizationTextStyle {
     public let tracking: CGFloat
     public let weight: UIFont.Weight
 
+    /// Шрифт берётся из темы: хост подменяет его одним замыканием в
+    /// `PersonalizationTheme.current.font`, кегли и начертания остаются нашими.
     public var font: UIFont {
-        UIFont.systemFont(ofSize: size, weight: weight)
+        PersonalizationTheme.current.font(size, weight)
     }
 
     public var paragraphStyle: NSParagraphStyle {

@@ -1,45 +1,46 @@
-import CoreGraphics
+import UIKit
 
 /// Радиусы скругления дизайн-системы.
 ///
 /// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), страница Typography.
-/// Сгенерировано скриптом; правки вносить в источник, не здесь.
+/// Читает действующую тему: хост может подменить радиусы через
+/// `PersonalizationTheme.current.radius`.
 ///
 /// `rounded` — pill: значение заведомо больше любой стороны, платформа
 /// ограничит его половиной меньшей стороны сама.
 public enum PersonalizationRadius {
 
     /// XS — 2pt.
-    public static let xs: CGFloat = 2
+    public static var xs: CGFloat { PersonalizationTheme.current.radius.xs }
 
     /// SM — 4pt.
-    public static let sm: CGFloat = 4
+    public static var sm: CGFloat { PersonalizationTheme.current.radius.sm }
 
     /// MD — 6pt.
-    public static let md: CGFloat = 6
+    public static var md: CGFloat { PersonalizationTheme.current.radius.md }
 
     /// LG — 8pt.
-    public static let lg: CGFloat = 8
+    public static var lg: CGFloat { PersonalizationTheme.current.radius.lg }
 
     /// XL — 10pt.
-    public static let xl: CGFloat = 10
+    public static var xl: CGFloat { PersonalizationTheme.current.radius.xl }
 
     /// 2XL — 12pt.
-    public static let xl2: CGFloat = 12
+    public static var xl2: CGFloat { PersonalizationTheme.current.radius.xl2 }
 
     /// 3XL — 14pt.
-    public static let xl3: CGFloat = 14
+    public static var xl3: CGFloat { PersonalizationTheme.current.radius.xl3 }
 
     /// 4XL — 16pt.
-    public static let xl4: CGFloat = 16
+    public static var xl4: CGFloat { PersonalizationTheme.current.radius.xl4 }
 
     /// 5XL — 20pt.
-    public static let xl5: CGFloat = 20
+    public static var xl5: CGFloat { PersonalizationTheme.current.radius.xl5 }
 
     /// 6XL — 24pt.
-    public static let xl6: CGFloat = 24
+    public static var xl6: CGFloat { PersonalizationTheme.current.radius.xl6 }
 
     /// Rounded — 999pt.
-    public static let rounded: CGFloat = 999
+    public static var rounded: CGFloat { PersonalizationTheme.current.radius.rounded }
 
 }

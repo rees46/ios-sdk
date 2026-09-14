@@ -5,213 +5,94 @@ import UIKit
 /// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), страница Colors,
 /// фреймы 57:141 (Light) и 187:362 (Dark). Снято 2026-09-09.
 ///
-/// Каждый цвет динамический: сам разрешается по `userInterfaceStyle`.
-/// Динамические цвета требуют iOS 13, а SDK поддерживает 12 — проверка
-/// версии живёт в одном месте, в `dynamic(light:dark:)`, а не в каждом
-/// цвете. На iOS 12 отдаётся светлое значение.
+/// Читает действующую тему, поэтому хост может подменить любой цвет через
+/// `PersonalizationTheme.current.colors` — и подмена дойдёт до уже созданных вью.
+/// Значения по умолчанию и разбор `userInterfaceStyle` живут в
+/// `PersonalizationColorSet`.
 public enum PersonalizationColor {
 
-    private static func rgba(_ hex: UInt32, _ alpha: CGFloat) -> UIColor {
-        UIColor(
-            red: CGFloat((hex >> 16) & 0xFF) / 255,
-            green: CGFloat((hex >> 8) & 0xFF) / 255,
-            blue: CGFloat(hex & 0xFF) / 255,
-            alpha: alpha
-        )
-    }
 
-    private static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
-        if #available(iOS 13.0, *) {
-            return UIColor { $0.userInterfaceStyle == .dark ? dark : light }
-        }
-        return light
-    }
 
     // MARK: brand
 
-    public static let brandPrimary = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var brandPrimary: UIColor { PersonalizationTheme.current.colors.brandPrimary }
 
     // MARK: semantic
 
-    public static let semanticWarning = dynamic(
-        light: rgba(0xF37A17, 1),
-        dark: rgba(0xF37A17, 1)
-    )
+    public static var semanticWarning: UIColor { PersonalizationTheme.current.colors.semanticWarning }
 
     // MARK: background
 
-    public static let backgroundPrimary = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var backgroundPrimary: UIColor { PersonalizationTheme.current.colors.backgroundPrimary }
 
-    public static let backgroundGeneric = dynamic(
-        light: rgba(0xFAFAFA, 1),
-        dark: rgba(0x141414, 1)
-    )
+    public static var backgroundGeneric: UIColor { PersonalizationTheme.current.colors.backgroundGeneric }
 
-    public static let backgroundCard = dynamic(
-        light: rgba(0xF2F2F2, 1),
-        dark: rgba(0x0D0D0D, 1)
-    )
+    public static var backgroundCard: UIColor { PersonalizationTheme.current.colors.backgroundCard }
 
-    public static let backgroundInput = dynamic(
-        light: rgba(0xFAFAFA, 1),
-        dark: rgba(0x141414, 1)
-    )
+    public static var backgroundInput: UIColor { PersonalizationTheme.current.colors.backgroundInput }
 
-    public static let backgroundTransparent = dynamic(
-        light: rgba(0xFFFFFF, 0),
-        dark: rgba(0xFFFFFF, 0)
-    )
+    public static var backgroundTransparent: UIColor { PersonalizationTheme.current.colors.backgroundTransparent }
 
-    public static let backgroundInputDisabled = dynamic(
-        light: rgba(0x000000, 0.05),
-        dark: rgba(0xFFFFFF, 0.05)
-    )
+    public static var backgroundInputDisabled: UIColor { PersonalizationTheme.current.colors.backgroundInputDisabled }
 
     // MARK: button
 
-    public static let buttonPrimary = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var buttonPrimary: UIColor { PersonalizationTheme.current.colors.buttonPrimary }
 
-    public static let buttonPrimaryFocus = dynamic(
-        light: rgba(0x004BC0, 1),
-        dark: rgba(0x32AFFF, 1)
-    )
+    public static var buttonPrimaryFocus: UIColor { PersonalizationTheme.current.colors.buttonPrimaryFocus }
 
-    public static let buttonSecondary = dynamic(
-        light: rgba(0x000000, 0.05),
-        dark: rgba(0xFFFFFF, 0.05)
-    )
+    public static var buttonSecondary: UIColor { PersonalizationTheme.current.colors.buttonSecondary }
 
-    public static let buttonSecondaryFocus = dynamic(
-        light: rgba(0x000000, 0.1),
-        dark: rgba(0xFFFFFF, 0.1)
-    )
+    public static var buttonSecondaryFocus: UIColor { PersonalizationTheme.current.colors.buttonSecondaryFocus }
 
-    public static let buttonPrimaryDisabled = dynamic(
-        light: rgba(0x32AFFF, 1),
-        dark: rgba(0x32AFFF, 1)
-    )
+    public static var buttonPrimaryDisabled: UIColor { PersonalizationTheme.current.colors.buttonPrimaryDisabled }
 
-    public static let buttonSecondaryDisabled = dynamic(
-        light: rgba(0x000000, 0.05),
-        dark: rgba(0xFFFFFF, 0.05)
-    )
+    public static var buttonSecondaryDisabled: UIColor { PersonalizationTheme.current.colors.buttonSecondaryDisabled }
 
-    public static let buttonGhost = dynamic(
-        light: rgba(0xFFFFFF, 0),
-        dark: rgba(0xFFFFFF, 0)
-    )
+    public static var buttonGhost: UIColor { PersonalizationTheme.current.colors.buttonGhost }
 
     // MARK: line
 
-    public static let lineBrand = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var lineBrand: UIColor { PersonalizationTheme.current.colors.lineBrand }
 
-    public static let lineGeneric = dynamic(
-        light: rgba(0x000000, 0.2),
-        dark: rgba(0xFFFFFF, 0.2)
-    )
+    public static var lineGeneric: UIColor { PersonalizationTheme.current.colors.lineGeneric }
 
-    public static let lineGenericSubtle = dynamic(
-        light: rgba(0x000000, 0.05),
-        dark: rgba(0xFFFFFF, 0.05)
-    )
+    public static var lineGenericSubtle: UIColor { PersonalizationTheme.current.colors.lineGenericSubtle }
 
-    public static let lineInput = dynamic(
-        light: rgba(0x000000, 0.2),
-        dark: rgba(0xFFFFFF, 0.2)
-    )
+    public static var lineInput: UIColor { PersonalizationTheme.current.colors.lineInput }
 
-    public static let lineInputFocus = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var lineInputFocus: UIColor { PersonalizationTheme.current.colors.lineInputFocus }
 
     // MARK: text
 
-    public static let textPrimary = dynamic(
-        light: rgba(0x000000, 1),
-        dark: rgba(0xFFFFFF, 1)
-    )
+    public static var textPrimary: UIColor { PersonalizationTheme.current.colors.textPrimary }
 
-    public static let textSecondary = dynamic(
-        light: rgba(0x000000, 0.7),
-        dark: rgba(0xFFFFFF, 0.8)
-    )
+    public static var textSecondary: UIColor { PersonalizationTheme.current.colors.textSecondary }
 
-    public static let textHint = dynamic(
-        light: rgba(0x000000, 0.4),
-        dark: rgba(0xFFFFFF, 0.5)
-    )
+    public static var textHint: UIColor { PersonalizationTheme.current.colors.textHint }
 
-    public static let textDarkPrimary = dynamic(
-        light: rgba(0x000000, 1),
-        dark: rgba(0x000000, 1)
-    )
+    public static var textDarkPrimary: UIColor { PersonalizationTheme.current.colors.textDarkPrimary }
 
-    public static let textDarkSecondary = dynamic(
-        light: rgba(0x000000, 0.7),
-        dark: rgba(0x000000, 0.7)
-    )
+    public static var textDarkSecondary: UIColor { PersonalizationTheme.current.colors.textDarkSecondary }
 
-    public static let textDarkHint = dynamic(
-        light: rgba(0x000000, 0.4),
-        dark: rgba(0x000000, 0.4)
-    )
+    public static var textDarkHint: UIColor { PersonalizationTheme.current.colors.textDarkHint }
 
-    public static let textLightPrimary = dynamic(
-        light: rgba(0xFFFFFF, 1),
-        dark: rgba(0xFFFFFF, 1)
-    )
+    public static var textLightPrimary: UIColor { PersonalizationTheme.current.colors.textLightPrimary }
 
-    public static let textLightSecondary = dynamic(
-        light: rgba(0xFFFFFF, 0.8),
-        dark: rgba(0xFFFFFF, 0.8)
-    )
+    public static var textLightSecondary: UIColor { PersonalizationTheme.current.colors.textLightSecondary }
 
-    public static let textLightHint = dynamic(
-        light: rgba(0xFFFFFF, 0.5),
-        dark: rgba(0xFFFFFF, 0.5)
-    )
+    public static var textLightHint: UIColor { PersonalizationTheme.current.colors.textLightHint }
 
-    public static let textInvertedPrimary = dynamic(
-        light: rgba(0xFFFFFF, 1),
-        dark: rgba(0x000000, 1)
-    )
+    public static var textInvertedPrimary: UIColor { PersonalizationTheme.current.colors.textInvertedPrimary }
 
-    public static let textInvertedSecondary = dynamic(
-        light: rgba(0xFFFFFF, 0.8),
-        dark: rgba(0x000000, 0.7)
-    )
+    public static var textInvertedSecondary: UIColor { PersonalizationTheme.current.colors.textInvertedSecondary }
 
-    public static let textInvertedHint = dynamic(
-        light: rgba(0xFFFFFF, 0.5),
-        dark: rgba(0x000000, 0.4)
-    )
+    public static var textInvertedHint: UIColor { PersonalizationTheme.current.colors.textInvertedHint }
 
-    public static let textBrand = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var textBrand: UIColor { PersonalizationTheme.current.colors.textBrand }
 
-    public static let textLink = dynamic(
-        light: rgba(0x007DF2, 1),
-        dark: rgba(0x007DF2, 1)
-    )
+    public static var textLink: UIColor { PersonalizationTheme.current.colors.textLink }
 
-    public static let textLinkVisited = dynamic(
-        light: rgba(0x4D00F2, 1),
-        dark: rgba(0x4D00F2, 1)
-    )
+    public static var textLinkVisited: UIColor { PersonalizationTheme.current.colors.textLinkVisited }
 
 }
