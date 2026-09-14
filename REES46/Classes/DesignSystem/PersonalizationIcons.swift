@@ -29,6 +29,7 @@ public enum PersonalizationIcons {
     public static var angleLargeRight: UIImage? { image("personalization_angle_large_right") }
     public static var angleUp: UIImage? { image("personalization_angle_up") }
     public static var arrowLeft: UIImage? { image("personalization_arrow_left") }
+    public static var arrowRotateCw: UIImage? { image("personalization_arrow_rotate_cw") }
     public static var arrowsUpDown: UIImage? { image("personalization_arrows_up_down") }
     public static var copy: UIImage? { image("personalization_copy") }
     public static var crossLarge: UIImage? { image("personalization_cross_large") }
