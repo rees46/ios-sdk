@@ -20,6 +20,7 @@ public enum PersonalizationColor {
     // MARK: semantic
 
     public static var semanticWarning: UIColor { PersonalizationTheme.current.colors.semanticWarning }
+    public static var semanticDanger: UIColor { PersonalizationTheme.current.colors.semanticDanger }
 
     // MARK: background
 

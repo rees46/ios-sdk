@@ -51,6 +51,7 @@ public struct PersonalizationColorSet {
 
     public var brandPrimary: UIColor
     public var semanticWarning: UIColor
+    public var semanticDanger: UIColor
     public var backgroundPrimary: UIColor
     public var backgroundGeneric: UIColor
     public var backgroundCard: UIColor
@@ -93,6 +94,10 @@ public struct PersonalizationColorSet {
         semanticWarning: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF37A17, 1),
             dark: PersonalizationColorSet.rgba(0xF37A17, 1)
+        ),
+        semanticDanger: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0xE51919, 1),
+            dark: PersonalizationColorSet.rgba(0xE51919, 1)
         ),
         backgroundPrimary: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0x007DF2, 1),
@@ -229,6 +234,7 @@ public struct PersonalizationColorSet {
     ) {
         self.brandPrimary = brandPrimary
         self.semanticWarning = semanticWarning
+        self.semanticDanger = semanticDanger
         self.backgroundPrimary = backgroundPrimary
         self.backgroundGeneric = backgroundGeneric
         self.backgroundCard = backgroundCard

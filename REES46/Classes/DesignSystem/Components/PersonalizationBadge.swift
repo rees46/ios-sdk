@@ -41,13 +41,23 @@ public final class PersonalizationBadge: UIView {
         didSet { applyText() }
     }
 
+    /// Вид: warning — как в секции Badge, danger — бейдж скидки на карточке товара (Card/Product, 126:2263), тот же SM в цвете Semantic/Danger.
+    public enum View {
+        case warning, danger
+    }
+
+    public var view: View = .warning {
+        didSet { applyStyle() }
+    }
+
     public var size: Size {
         didSet { applyStyle() }
     }
 
     private let label = UILabel()
 
-    public init(text: String? = nil, size: Size = .lg) {
+    public init(text: String? = nil, size: Size = .lg, view: View = .warning) {
+        self.view = view
         self.size = size
         super.init(frame: .zero)
         self.text = text
@@ -61,7 +71,9 @@ public final class PersonalizationBadge: UIView {
     }
 
     private func setup() {
-        backgroundColor = PersonalizationColor.semanticWarning
+        backgroundColor = view == .danger
+            ? PersonalizationColor.semanticDanger
+            : PersonalizationColor.semanticWarning
         clipsToBounds = true
 
         label.translatesAutoresizingMaskIntoConstraints = false
