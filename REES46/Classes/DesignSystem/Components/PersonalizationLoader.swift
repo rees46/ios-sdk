@@ -12,7 +12,10 @@ import UIKit
 /// от плотности экрана.
 public final class PersonalizationLoader: UIView {
 
-    public static let defaultSide: CGFloat = 26
+    /// Слот лоадера из макета: кольцо 26 лежит в квадрате 32 с полем 3.
+    public static let defaultSide: CGFloat = 32
+    /// Диаметр кольца из макета; толщина пропорциональна ему.
+    public static let ringSide: CGFloat = 26
     private static let referenceStroke: CGFloat = 3.5
 
     private let gradientLayer = CAGradientLayer()
@@ -58,13 +61,18 @@ public final class PersonalizationLoader: UIView {
 
         gradientLayer.frame = bounds
 
-        // Толщина пропорциональна эталонным 26 из макета.
-        let scale = min(bounds.width, bounds.height) / Self.defaultSide
-        let stroke = Self.referenceStroke * scale
+        // Кольцо занимает 26/32 слота и стоит по центру; толщина пропорциональна ему.
+        let side = min(bounds.width, bounds.height)
+        let ring = side * Self.ringSide / Self.defaultSide
+        let stroke = Self.referenceStroke * (ring / Self.ringSide)
+        let ringRect = CGRect(
+            x: (bounds.width - ring) / 2, y: (bounds.height - ring) / 2,
+            width: ring, height: ring
+        )
         maskLayer.frame = bounds
         maskLayer.lineWidth = stroke
         maskLayer.path = UIBezierPath(
-            ovalIn: bounds.insetBy(dx: stroke / 2, dy: stroke / 2)
+            ovalIn: ringRect.insetBy(dx: stroke / 2, dy: stroke / 2)
         ).cgPath
     }
 

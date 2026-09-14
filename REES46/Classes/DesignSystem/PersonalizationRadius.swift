@@ -43,4 +43,11 @@ public enum PersonalizationRadius {
     /// Rounded — 999pt.
     public static var rounded: CGFloat { PersonalizationTheme.current.radius.rounded }
 
+    /// Семантические радиусы кнопочного семейства, см. `PersonalizationRadiusScale`.
+    public static var buttonLg: CGFloat { PersonalizationTheme.current.radius.buttonLg }
+    public static var buttonMd: CGFloat { PersonalizationTheme.current.radius.buttonMd }
+    public static var buttonSm: CGFloat { PersonalizationTheme.current.radius.buttonSm }
+    public static var segmentedMd: CGFloat { PersonalizationTheme.current.radius.segmentedMd }
+    public static var segmentedSm: CGFloat { PersonalizationTheme.current.radius.segmentedSm }
+
 }

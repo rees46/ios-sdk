@@ -15,8 +15,8 @@ public final class PersonalizationButtonGroup: UIView {
 
         var cornerRadius: CGFloat {
             switch self {
-            case .md: return PersonalizationRadius.md  // 6
-            case .sm: return PersonalizationRadius.sm  // 4
+            case .md: return PersonalizationRadius.segmentedMd  // 8
+            case .sm: return PersonalizationRadius.segmentedSm  // 6
             }
         }
 
@@ -85,7 +85,7 @@ public final class PersonalizationButtonGroup: UIView {
 
     private func setup() {
         clipsToBounds = true
-        layer.cornerRadius = PersonalizationRadius.lg  // 8
+        layer.cornerRadius = PersonalizationRadius.buttonMd  // 10
         backgroundColor = PersonalizationColor.buttonSecondary
 
         stack.axis = .horizontal

@@ -43,7 +43,7 @@ public final class PersonalizationTag: UIView {
 
     private func setup() {
         clipsToBounds = true
-        layer.cornerRadius = PersonalizationRadius.md  // 6
+        layer.cornerRadius = PersonalizationRadius.buttonSm  // 8
 
         stack.axis = .horizontal
         stack.alignment = .center

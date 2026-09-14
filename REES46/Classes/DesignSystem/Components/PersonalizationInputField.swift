@@ -38,10 +38,9 @@ public final class PersonalizationInputField: UIView {
 
         var cornerRadius: CGFloat {
             switch self {
-            case .lg: return PersonalizationRadius.xl  // 10
-            case .md: return PersonalizationRadius.lg  // 8
-            // Радиус SM — 6, из переменной Button SM, а не 4 из общей шкалы: так в макете.
-            case .sm: return PersonalizationRadius.md  // 6
+            case .lg: return PersonalizationRadius.buttonLg  // 12
+            case .md: return PersonalizationRadius.buttonMd  // 10
+            case .sm: return PersonalizationRadius.buttonSm  // 8
             }
         }
 

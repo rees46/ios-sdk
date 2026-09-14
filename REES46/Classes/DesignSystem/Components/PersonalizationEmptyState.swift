@@ -36,8 +36,10 @@ public final class PersonalizationEmptyState: UIView {
         NSLayoutConstraint.activate([
             label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            label.topAnchor.constraint(equalTo: topAnchor, constant: 92),
-            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -92)
+            // В макете текст отцентрован во фрейме, 92 — не позиция, а минимальное поле.
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            label.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 92),
+            label.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -92)
         ])
 
         applyText()

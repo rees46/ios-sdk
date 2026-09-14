@@ -22,9 +22,9 @@ public final class PersonalizationBadge: UIView {
 
         var cornerRadius: CGFloat {
             switch self {
-            case .lg: return PersonalizationRadius.xl   // 10
-            case .md: return PersonalizationRadius.lg   // 8
-            case .sm: return PersonalizationRadius.md   // 6
+            case .lg: return PersonalizationRadius.buttonLg   // 10
+            case .md: return PersonalizationRadius.buttonMd   // 8
+            case .sm: return PersonalizationRadius.buttonSm   // 6
             }
         }
 

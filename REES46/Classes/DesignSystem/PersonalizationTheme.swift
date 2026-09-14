@@ -107,7 +107,7 @@ public struct PersonalizationColorSet {
             dark: PersonalizationColorSet.rgba(0x0D0D0D, 1)
         ),
         backgroundInput: UIColor = PersonalizationColorSet.dynamic(
-            light: PersonalizationColorSet.rgba(0xFAFAFA, 1),
+            light: PersonalizationColorSet.rgba(0xF2F2F2, 1),
             dark: PersonalizationColorSet.rgba(0x141414, 1)
         ),
         backgroundTransparent: UIColor = PersonalizationColorSet.dynamic(
@@ -300,6 +300,16 @@ public struct PersonalizationRadiusScale {
     public var xl6: CGFloat
     public var rounded: CGFloat
 
+    /// Семантические радиусы: переменные Button LG/MD/SM и Segmented Button MD/SM
+    /// из Figma. К ним привязаны Button, Input, Badge, Tag и Button Group —
+    /// дизайнер меняет их отдельно от шкалы, поэтому и здесь они отдельно.
+    /// Segmented SM в макете не снят, выведен по шагу остальных (+2).
+    public var buttonLg: CGFloat
+    public var buttonMd: CGFloat
+    public var buttonSm: CGFloat
+    public var segmentedMd: CGFloat
+    public var segmentedSm: CGFloat
+
     public init(
         xs: CGFloat = 2,
         sm: CGFloat = 4,
@@ -311,7 +321,12 @@ public struct PersonalizationRadiusScale {
         xl4: CGFloat = 16,
         xl5: CGFloat = 20,
         xl6: CGFloat = 24,
-        rounded: CGFloat = 999
+        rounded: CGFloat = 999,
+        buttonLg: CGFloat = 12,
+        buttonMd: CGFloat = 10,
+        buttonSm: CGFloat = 8,
+        segmentedMd: CGFloat = 8,
+        segmentedSm: CGFloat = 6
     ) {
         self.xs = xs
         self.sm = sm
@@ -324,5 +339,10 @@ public struct PersonalizationRadiusScale {
         self.xl5 = xl5
         self.xl6 = xl6
         self.rounded = rounded
+        self.buttonLg = buttonLg
+        self.buttonMd = buttonMd
+        self.buttonSm = buttonSm
+        self.segmentedMd = segmentedMd
+        self.segmentedSm = segmentedSm
     }
 }

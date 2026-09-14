@@ -30,13 +30,22 @@ public final class PersonalizationButton: UIControl {
 
         var cornerRadius: CGFloat {
             switch self {
-            case .lg: return PersonalizationRadius.xl   // 10
-            case .md: return PersonalizationRadius.lg   // 8
-            case .sm: return PersonalizationRadius.sm   // 4
+            case .lg: return PersonalizationRadius.buttonLg  // 12
+            case .md: return PersonalizationRadius.buttonMd  // 10
+            case .sm: return PersonalizationRadius.buttonSm  // 8
             }
         }
 
         var paddingVertical: CGFloat {
+            switch self {
+            case .lg, .md: return PersonalizationSpacing.md  // 8
+            case .sm: return PersonalizationSpacing.sm       // 4
+            }
+        }
+
+        /// Горизонтальный отступ кнопки-иконки: у LG он 12 при вертикальном 8,
+        /// у остальных равен вертикальному.
+        var paddingIconOnly: CGFloat {
             switch self {
             case .lg: return PersonalizationSpacing.lg  // 12
             case .md: return PersonalizationSpacing.md  // 8
@@ -181,9 +190,9 @@ public final class PersonalizationButton: UIControl {
             trailing = iconEnd == nil ? size.paddingWide : size.paddingNarrow
             vertical = size.paddingVertical
         } else {
-            // Кнопка-иконка: со всех сторон вертикальный отступ, 12/8/4.
-            leading = size.paddingVertical
-            trailing = size.paddingVertical
+            // Кнопка-иконка: по вертикали как у текстовой, по горизонтали своё — 12/8/4.
+            leading = size.paddingIconOnly
+            trailing = size.paddingIconOnly
             vertical = size.paddingVertical
         }
 
