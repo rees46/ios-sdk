@@ -6,7 +6,7 @@ import UIKit
 ///
 /// "Components" walks through the primitives in every size, view and state the design file
 /// defines; "Blocks" shows the compositions built from them (product cards, recommender layouts,
-/// search suggestions, the catalogue). "Stories" keeps the stories block through the SDK's SwiftUI
+/// instant search, the catalogue, the filters screen). "Stories" keeps the stories block through the SDK's SwiftUI
 /// wrapper, the counterpart of the "Legacy UI" tab.
 ///
 /// The kit is SPI until its release, hence the `@_spi(PersonalizationUI)` import. Product data is
@@ -176,6 +176,9 @@ private enum Exhibits {
                 withBack.leading = PersonalizationButton(size: .sm, view: .ghost, iconStart: PersonalizationIcons.arrowLeft)
                 return column([PersonalizationTitle(text: "Recommended for you"), withAction, withBack])
             }),
+            ("Link — text action next to a field or a label", {
+                row([PersonalizationLink(text: "Cancel"), PersonalizationLink(text: "Clear")])
+            }),
             ("Search Results Title", { searchResultsTitle() }),
             ("Accordion — collapsed with count, expanded", {
                 column([
@@ -247,6 +250,21 @@ private enum Exhibits {
                 grid.widthAnchor.constraint(equalToConstant: 161).isActive = true
                 return column([carousel, grid, productCard(type: .list, product: DemoProducts.all[2])], alignment: .leading)
             }),
+            ("Product Card — image 4:3, 1:1, 3:4 (carousel and list)", {
+                let aspects: [PersonalizationProductImage.Aspect] = [.landscape, .square, .portrait]
+                let carousel = aspects.enumerated().map { index, aspect -> UIView in
+                    let card = productCard(type: .carousel, product: DemoProducts.all[index + 3])
+                    card.imageAspect = aspect
+                    card.widthAnchor.constraint(equalToConstant: 220).isActive = true
+                    return card
+                }
+                let list = aspects.enumerated().map { index, aspect -> UIView in
+                    let card = productCard(type: .list, product: DemoProducts.all[index + 3])
+                    card.imageAspect = aspect
+                    return card
+                }
+                return column([scrollableRow(carousel)] + list)
+            }),
             ("Recommender Block — carousel", {
                 recommender(layout: .carousel, title: "Recommended for you", products: DemoProducts.all)
             }),
@@ -256,22 +274,11 @@ private enum Exhibits {
             ("Recommender Block — list", {
                 recommender(layout: .list, title: "Recently viewed", products: Array(DemoProducts.all.prefix(3)))
             }),
-            ("Search Suggestions", {
-                let suggestions = PersonalizationSearchSuggestions()
-                suggestions.highlight = "run"
-                suggestions.showImages = true
-                suggestions.imageLoader = { view, suggestion in DemoImageLoader.shared.load(suggestion.imageUrl, into: view) }
-                suggestions.setTags(["running shoes", "running jacket", "run belt"])
-                suggestions.setCategories([
-                    PersonalizationSearchSuggestions.Suggestion(id: "c1", title: "Running shoes", subtitle: "Shoes"),
-                    PersonalizationSearchSuggestions.Suggestion(id: "c2", title: "Running apparel", subtitle: "Clothing")
-                ])
-                suggestions.setProducts(DemoProducts.all.prefix(3).map {
-                    PersonalizationSearchSuggestions.Suggestion(id: $0.id, title: $0.name, subtitle: $0.price, imageUrl: $0.imageUrl)
-                })
-                return suggestions
-            }),
-            ("Catalog — header, grid ⇄ list, count, load more", { catalog() })
+            ("Instant Search — recent searches", { instantSearch(typing: false, images: false) }),
+            ("Instant Search — typing, matches in bold", { instantSearch(typing: true, images: false) }),
+            ("Instant Search — with images", { instantSearch(typing: false, images: true) }),
+            ("Catalog — header, grid ⇄ list, count, load more", { catalog() }),
+            ("Filters — range, checkbox lists with show more, reset / apply", { filters() })
         ]
     }
 
@@ -380,6 +387,72 @@ private enum Exhibits {
 
     /// The catalogue as a host would wire it: the results title in the header slot drives the
     /// grid/list switch, "load more" appends a page after a short simulated delay.
+    /// Instant search in its three states: recent searches before typing, suggestions with the
+    /// query highlighted while typing, and rows with images. The host owns the data; the kit only
+    /// renders what it is given and reports the taps.
+    private static func instantSearch(typing: Bool, images: Bool) -> PersonalizationInstantSearch {
+        let search = PersonalizationInstantSearch()
+        search.placeholder = "want to buy..."
+        search.cancelText = "Cancel"
+        search.showImages = images
+        search.imageLoader = { view, suggestion in DemoImageLoader.shared.load(suggestion.imageUrl, into: view) }
+        search.categoriesLabel = typing ? "Category" : "Popular category"
+        search.productsLabel = typing ? "Products" : "Frequently searched"
+        if typing {
+            search.query = "boots"
+            search.setSuggestions(["winter", "mens", "kids", "for outdoor", "womens", "low", "black", "orange"])
+            search.setCategories([
+                PersonalizationInstantSearch.Suggestion(id: "c1", title: "Womens boots"),
+                PersonalizationInstantSearch.Suggestion(id: "c2", title: "Mens boots"),
+                PersonalizationInstantSearch.Suggestion(id: "c3", title: "Kids boots")
+            ])
+            search.setProducts([
+                PersonalizationInstantSearch.Suggestion(id: "p1", title: "winter womens boots"),
+                PersonalizationInstantSearch.Suggestion(id: "p2", title: "boots for mens"),
+                PersonalizationInstantSearch.Suggestion(id: "p3", title: "winter boots for mens"),
+                PersonalizationInstantSearch.Suggestion(id: "p4", title: "kids winter boots")
+            ])
+        } else {
+            search.recentLabel = "Recent searches"
+            search.clearText = "Clear"
+            search.moreText = "more"
+            search.setRecentSearches(["mens winter boots", "kids shoes", "bag", "accessories", "black boots"])
+            search.setCategories([
+                PersonalizationInstantSearch.Suggestion(id: "c1", title: "Running shoes", subtitle: "Shoes", imageUrl: DemoProducts.all[0].imageUrl),
+                PersonalizationInstantSearch.Suggestion(id: "c2", title: "Running apparel", subtitle: "Clothing", imageUrl: DemoProducts.all[1].imageUrl),
+                PersonalizationInstantSearch.Suggestion(id: "c3", title: "Trail gear", subtitle: "Outdoor", imageUrl: DemoProducts.all[2].imageUrl)
+            ])
+            search.setProducts(DemoProducts.all.prefix(images ? 3 : 5).map {
+                PersonalizationInstantSearch.Suggestion(id: $0.id, title: $0.name, subtitle: $0.price, imageUrl: $0.imageUrl)
+            })
+        }
+        return search
+    }
+
+    /// The filters screen with the sections from the design file; toggles and ranges update its own state.
+    private static func filters() -> PersonalizationFilters {
+        let filters = PersonalizationFilters()
+        filters.text = "Filters"
+        filters.resetText = "Reset"
+        filters.applyText = "Apply"
+        let colors = ["All", "Black", "White", "Red", "Light blue", "Green", "Yellow", "Brown", "Grey", "Pink"]
+        let ratings = ["All", "5 stars", "4+ stars", "3+ stars"]
+        filters.setSections([
+            .range(id: "size", title: "Size", fromLabel: "From", toLabel: "to", from: "42", to: "43", select: true),
+            .options(
+                id: "colors", title: "Colors",
+                options: colors.enumerated().map { PersonalizationFilters.Option(id: $1.lowercased(), label: $1, checked: $0 == 1) },
+                showMoreText: "Show more", showLessText: "Show less"
+            ),
+            .range(id: "price", title: "Price (USD)", fromLabel: "From", toLabel: "to", from: "50", to: "500"),
+            .options(
+                id: "rating", title: "Rating",
+                options: ratings.enumerated().map { PersonalizationFilters.Option(id: $1, label: $1, checked: $0 == 1) }
+            )
+        ])
+        return filters
+    }
+
     private static func catalog() -> PersonalizationCatalog {
         let catalog = PersonalizationCatalog()
         let header = searchResultsTitle()
