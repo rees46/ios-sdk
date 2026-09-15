@@ -58,7 +58,9 @@ import UIKit
         ])
 
         label.numberOfLines = 0
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // Ниже приоритета по умолчанию (250): свободную ширину забирает заголовок,
+        // а слоты по краям остаются своего размера.
+        label.setContentHuggingPriority(UILayoutPriority(249), for: .horizontal)
         stack.addArrangedSubview(label)
 
         applyText()

@@ -56,7 +56,8 @@ import UIKit
             stack.topAnchor.constraint(equalTo: topAnchor),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor),
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor)
+            // Шеврон идёт сразу за текстом, как в макете, а не уезжает к правому краю.
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor)
         ])
 
         chevron.contentMode = .scaleAspectFit

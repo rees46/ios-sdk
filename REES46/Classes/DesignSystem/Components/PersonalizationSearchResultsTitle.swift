@@ -114,6 +114,7 @@ import UIKit
         resultsRow.spacing = PersonalizationSpacing.lg  // 12
         resultsRow.addArrangedSubview(controls)
         resultsRow.addArrangedSubview(found)
+        resultsRow.addArrangedSubview(PersonalizationFlexibleSpace())
         resultsRow.isHidden = true
         column.addArrangedSubview(resultsRow)
     }
@@ -155,6 +156,7 @@ import UIKit
             )
             filtersRow.addArrangedSubview(tag)
         }
+        filtersRow.addArrangedSubview(PersonalizationFlexibleSpace())
     }
 
     private func found(_ string: String, emphasized: Bool) -> NSAttributedString {

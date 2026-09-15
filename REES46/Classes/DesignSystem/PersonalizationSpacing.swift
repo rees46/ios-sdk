@@ -36,3 +36,19 @@ import CoreGraphics
     public static let xl5: CGFloat = 64
 
 }
+
+/// Распорка для горизонтальных стеков, лежащих в колонках с `alignment = .fill`:
+/// такая колонка растягивает строку на всю ширину, а строка — первый попавшийся
+/// лейбл, и «4,7 (128)» разъезжается по краям. Распорка забирает лишнюю ширину
+/// на себя, остальные элементы остаются своего размера.
+final class PersonalizationFlexibleSpace: UIView {
+    init() {
+        super.init(frame: .zero)
+        setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
+        setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+}

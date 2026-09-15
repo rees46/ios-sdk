@@ -28,6 +28,7 @@ import UIKit
 
     public var products: [PersonalizationProduct] = [] {
         didSet {
+            itemHeightCache = nil
             collectionView.reloadData()
             invalidateIntrinsicContentSize()
         }
@@ -76,6 +77,7 @@ import UIKit
     }
 
     private func applyLayout() {
+        itemHeightCache = nil
         let gap = PersonalizationSpacing.xl  // 16
         flow.minimumLineSpacing = gap
         flow.minimumInteritemSpacing = gap
@@ -87,17 +89,70 @@ import UIKit
         invalidateIntrinsicContentSize()
     }
 
+    /// Высота считается от ширины, а ширину блок узнаёт только в первом layout:
+    /// пока её нет, содержимое сложено под ноль. Как только ширина меняется,
+    /// intrinsic-высота объявляется устаревшей — иначе стек хоста оставит блок
+    /// с высотой, посчитанной для нулевой ширины.
+    private var lastLaidOutWidth: CGFloat = -1
+
     public override func layoutSubviews() {
         super.layoutSubviews()
         flow.invalidateLayout()
+        if bounds.width != lastLaidOutWidth {
+            lastLaidOutWidth = bounds.width
+            invalidateIntrinsicContentSize()
+        }
     }
 
     /// Высота — по содержимому: карусель в одну строку карточек, плитка и список
     /// целиком, чтобы блок вставал в экран хоста без своего скролла.
+    ///
+    /// Считается по самой высокой карточке, а не по contentSize коллекции:
+    /// у горизонтальной раскладки contentSize берёт высоту из bounds, то есть из
+    /// нуля до первого layout — блок никогда бы не вырос.
     public override var intrinsicContentSize: CGSize {
-        collectionView.layoutIfNeeded()
-        let content = collectionView.collectionViewLayout.collectionViewContentSize
-        return CGSize(width: UIView.noIntrinsicMetric, height: content.height)
+        let count = products.count
+        guard count > 0 else { return CGSize(width: UIView.noIntrinsicMetric, height: 0) }
+        let gap = PersonalizationSpacing.xl
+        let rows: Int
+        switch layout {
+        case .carousel: rows = 1
+        case .grid: rows = (count + 1) / 2
+        case .list: rows = count
+        }
+        let height = CGFloat(rows) * itemHeight() + CGFloat(rows - 1) * gap
+        return CGSize(width: UIView.noIntrinsicMetric, height: height)
+    }
+
+    /// Единая высота ячейки: самая высокая карточка при текущей ширине.
+    /// Промер карточек не бесплатный, поэтому результат кэшируется по ширине;
+    /// смена товаров или раскладки сбрасывает кэш.
+    private var itemHeightCache: (width: CGFloat, height: CGFloat)?
+
+    private func itemHeight() -> CGFloat {
+        let width = cellWidth()
+        guard width > 0 else { return 0 }
+        if let cache = itemHeightCache, cache.width == width { return cache.height }
+        let height = products.map { cardHeight(for: $0, width: width) }.max() ?? 0
+        itemHeightCache = (width, height)
+        return height
+    }
+
+    private func cardHeight(for product: PersonalizationProduct, width: CGFloat) -> CGFloat {
+        let card = PersonalizationProductCard(type: layout.cardType)
+        card.brand = product.brand
+        card.name = product.name
+        card.price = product.price
+        card.oldPrice = product.oldPrice
+        card.discount = product.discount
+        card.actionText = product.actionText
+        if let rating = product.ratingValue { card.setRating(value: rating, reviews: product.reviews) }
+        let height = card.systemLayoutSizeFitting(
+            CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height
+        return ceil(height)
     }
 
     /// Ширина ячейки: карусель — 220 из макета, плитка — половина без зазора, список — вся.
@@ -105,8 +160,8 @@ import UIKit
         let width = collectionView.bounds.width
         switch layout {
         case .carousel: return 220
-        case .grid: return floor((width - PersonalizationSpacing.xl) / 2)
-        case .list: return width
+        case .grid: return max(0, floor((width - PersonalizationSpacing.xl) / 2))
+        case .list: return max(0, width)
         }
     }
 
@@ -118,9 +173,11 @@ import UIKit
             super.init(frame: frame)
             card.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(card)
+            // Все ячейки одной высоты (по самой высокой карточке), карточка прижата
+            // к верху и остаётся своей высоты — иначе стек внутри растянул бы картинку.
             NSLayoutConstraint.activate([
                 card.topAnchor.constraint(equalTo: contentView.topAnchor),
-                card.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                card.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
                 card.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
                 card.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
             ])
@@ -155,22 +212,7 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let width = cellWidth()
-        let card = PersonalizationProductCard(type: layout.cardType)
-        let product = products[indexPath.item]
-        card.brand = product.brand
-        card.name = product.name
-        card.price = product.price
-        card.oldPrice = product.oldPrice
-        card.discount = product.discount
-        card.actionText = product.actionText
-        if let rating = product.ratingValue { card.setRating(value: rating, reviews: product.reviews) }
-        let height = card.systemLayoutSizeFitting(
-            CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
-            withHorizontalFittingPriority: .required,
-            verticalFittingPriority: .fittingSizeLevel
-        ).height
-        return CGSize(width: width, height: ceil(height))
+        CGSize(width: cellWidth(), height: itemHeight())
     }
 
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {

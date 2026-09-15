@@ -47,7 +47,8 @@ import UIKit
             // В макете у строки есть нижний отступ 4.
             stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -PersonalizationSpacing.sm),
             stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor)
+            // Строка прижата к началу: если хост растянет компонент, числа не разъедутся.
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor)
         ])
 
         star.image = PersonalizationIcons.starFill

@@ -37,6 +37,11 @@ import UIKit
     private func setup() {
         backgroundColor = .clear
         isOpaque = false
+        // Квадрат 20 не растягивается: в стеке рядом с лейблом тянуться должен лейбл.
+        setContentHuggingPriority(.required, for: .horizontal)
+        setContentHuggingPriority(.required, for: .vertical)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+        setContentCompressionResistancePriority(.required, for: .vertical)
         addTarget(self, action: #selector(toggle), for: .touchUpInside)
     }
 

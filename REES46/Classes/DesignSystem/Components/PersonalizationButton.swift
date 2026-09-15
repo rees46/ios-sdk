@@ -197,11 +197,15 @@ import UIKit
         }
 
         NSLayoutConstraint.deactivate(stackInsets)
+        // Содержимое центрируется как группа: растянутая хостом кнопка держит иконку
+        // рядом с текстом посередине, а не прижимает её к краю. Своя ширина кнопки —
+        // по содержимому плюс поля, как и раньше.
         stackInsets = [
             stack.topAnchor.constraint(equalTo: topAnchor, constant: vertical),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -vertical),
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: leading),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -trailing)
+            stack.centerXAnchor.constraint(equalTo: centerXAnchor, constant: (leading - trailing) / 2),
+            stack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: leading),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -trailing)
         ]
         NSLayoutConstraint.activate(stackInsets)
 
@@ -220,6 +224,11 @@ import UIKit
         }
         var attributes = size.textStyle.attributes
         attributes[.foregroundColor] = foreground
+        // Стиль абзаца из типографики перекрывает textAlignment лейбла, поэтому
+        // центрирование задаётся в нём — иначе растянутая кнопка прижмёт текст к иконке.
+        let paragraph = (size.textStyle.paragraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        attributes[.paragraphStyle] = paragraph
         label.attributedText = NSAttributedString(string: text, attributes: attributes)
     }
 

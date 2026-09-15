@@ -145,7 +145,7 @@ import UIKit
         ]
         NSLayoutConstraint.activate(badgeConstraints)
 
-        let priceRow = UIStackView(arrangedSubviews: [priceLabel, oldPriceLabel])
+        let priceRow = UIStackView(arrangedSubviews: [priceLabel, oldPriceLabel, PersonalizationFlexibleSpace()])
         priceRow.axis = .horizontal
         priceRow.alignment = .lastBaseline
         priceRow.spacing = PersonalizationSpacing.md  // 8
