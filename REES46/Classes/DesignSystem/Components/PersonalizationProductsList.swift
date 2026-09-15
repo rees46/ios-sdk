@@ -38,6 +38,15 @@ import UIKit
     public var imageLoader: ((UIImageView, PersonalizationProduct) -> Void)?
     public var onProductAction: ((PersonalizationProduct) -> Void)?
 
+    /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
+    public var imageAspect: PersonalizationProductImage.Aspect = .square {
+        didSet {
+            itemHeightCache = nil
+            collectionView.reloadData()
+            invalidateIntrinsicContentSize()
+        }
+    }
+
     /// Индекс первой видимой карточки: по нему Recommender-блок двигает точки.
     public var onFirstVisibleChanged: ((Int) -> Void)?
 
@@ -140,6 +149,7 @@ import UIKit
 
     private func cardHeight(for product: PersonalizationProduct, width: CGFloat) -> CGFloat {
         let card = PersonalizationProductCard(type: layout.cardType)
+        card.imageAspect = imageAspect
         card.brand = product.brand
         card.name = product.name
         card.price = product.price
@@ -198,6 +208,7 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
         let product = products[indexPath.item]
         let card = cell.card
         card.type = layout.cardType
+        card.imageAspect = imageAspect
         card.brand = product.brand
         card.name = product.name
         card.price = product.price

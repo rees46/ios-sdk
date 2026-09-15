@@ -3,9 +3,13 @@ import UIKit
 /// Карточка товара.
 ///
 /// Источник: Figma Mobile SDK UI Kit, секция Card, фрейм Product (126:2263):
-/// Carousel — колонка 220 с картинкой 1:1, Grid — колонка 161 с картинкой во всю
-/// ширину, List — строка с картинкой 120 и ценой с кнопкой внизу справа.
-/// У трёх типов разная типографика цены и названия, поэтому она задана на типе.
+/// Carousel — колонка 220, Grid — колонка 161 с картинкой во всю ширину, List — строка
+/// с картинкой шириной 120 и ценой с кнопкой внизу справа. Пропорция картинки —
+/// `imageAspect`: на странице ProductCard (88:69) карточка нарисована с 4:3, 1:1 и 3:4,
+/// и её высота идёт за картинкой.
+/// У трёх типов разная типографика названия, цены и старой цены, поэтому она задана
+/// на типе. Старая цена карусели — 16/24 по страницам ProductCard и Product Carousel;
+/// мастер-компонент Product там же даёт 14/20 — расхождение в макете, взяты страницы.
 ///
 /// Собрана из готовых блоков: `PersonalizationProductImage`, `PersonalizationRating`,
 /// `PersonalizationBadge` (скидка, вид danger), `PersonalizationButton`.
@@ -27,6 +31,13 @@ import UIKit
             case .carousel: return PersonalizationTypography.xlEmphasized
             case .grid: return PersonalizationTypography.lgEmphasized
             case .list: return PersonalizationTypography.baseEmphasized
+            }
+        }
+
+        var oldPriceStyle: PersonalizationTextStyle {
+            switch self {
+            case .carousel: return PersonalizationTypography.baseDefault
+            case .grid, .list: return PersonalizationTypography.smDefault
             }
         }
     }
@@ -67,6 +78,12 @@ import UIKit
     /// Изображение: хост грузит картинку в `image.imageView`.
     public let image = PersonalizationProductImage()
 
+    /// Пропорция картинки; высота карточки идёт за ней.
+    public var imageAspect: PersonalizationProductImage.Aspect {
+        get { image.aspect }
+        set { image.aspect = newValue }
+    }
+
     private let imageContainer = UIView()
     private let imageBadge = PersonalizationBadge(size: .sm, view: .danger)
     private let brandLabel = UILabel()
@@ -79,6 +96,7 @@ import UIKit
 
     private var root: UIStackView?
     private var badgeConstraints: [NSLayoutConstraint] = []
+    private var listImageWidth: NSLayoutConstraint?
 
     public init(type: CardType = .carousel) {
         super.init(frame: .zero)
@@ -122,6 +140,8 @@ import UIKit
 
     private func rebuild() {
         root?.removeFromSuperview()
+        listImageWidth?.isActive = false
+        listImageWidth = nil
         let stack = type == .list ? buildList() : buildColumn()
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
@@ -161,14 +181,13 @@ import UIKit
         return column
     }
 
-    /// List: картинка 120 слева, справа колонка — название с рейтингом сверху, цена с кнопкой снизу.
+    /// List: картинка шириной 120 слева, справа колонка — название с рейтингом сверху,
+    /// цена с кнопкой снизу. Высоту строки задаёт картинка по своей пропорции.
     private func buildList() -> UIStackView {
         NSLayoutConstraint.deactivate(badgeConstraints)
         badgeConstraints = []
-        NSLayoutConstraint.activate([
-            imageContainer.widthAnchor.constraint(equalToConstant: Self.listImageSide),
-            imageContainer.heightAnchor.constraint(equalToConstant: Self.listImageSide)
-        ])
+        listImageWidth = imageContainer.widthAnchor.constraint(equalToConstant: Self.listImageSide)
+        listImageWidth?.isActive = true
 
         let top = UIStackView(arrangedSubviews: [nameBlock(spacing: PersonalizationSpacing.xs), rating])
         top.axis = .vertical
@@ -194,10 +213,13 @@ import UIKit
         column.alignment = .fill
         column.distribution = .equalSpacing
 
+        // Высота строки — большее из картинки и текста: колонка тянется до картинки
+        // (цена с кнопкой уходят вниз), а низкая картинка её не сжимает.
         let row = UIStackView(arrangedSubviews: [imageContainer, column])
         row.axis = .horizontal
-        row.alignment = .fill
+        row.alignment = .top
         row.spacing = PersonalizationSpacing.lg  // 12
+        column.heightAnchor.constraint(greaterThanOrEqualTo: imageContainer.heightAnchor).isActive = true
         return row
     }
 
@@ -216,7 +238,7 @@ import UIKit
         priceLabel.attributedText = attributed(price, type.priceStyle, PersonalizationColor.textPrimary)
 
         oldPriceLabel.isHidden = (oldPrice ?? "").isEmpty
-        var strike = PersonalizationTypography.smDefault.attributes
+        var strike = type.oldPriceStyle.attributes
         strike[.foregroundColor] = PersonalizationColor.textHint
         strike[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
         oldPriceLabel.attributedText = oldPrice.map { NSAttributedString(string: $0, attributes: strike) }

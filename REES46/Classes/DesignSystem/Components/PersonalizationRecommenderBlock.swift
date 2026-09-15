@@ -53,6 +53,12 @@ import UIKit
         set { list.onProductAction = newValue }
     }
 
+    /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
+    public var imageAspect: PersonalizationProductImage.Aspect {
+        get { list.imageAspect }
+        set { list.imageAspect = newValue }
+    }
+
     private let stack = UIStackView()
     private let title = PersonalizationTitle()
     private let showAllButton = PersonalizationButton(size: .sm, view: .ghost)

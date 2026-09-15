@@ -199,13 +199,17 @@ import UIKit
         NSLayoutConstraint.deactivate(stackInsets)
         // Содержимое центрируется как группа: растянутая хостом кнопка держит иконку
         // рядом с текстом посередине, а не прижимает её к краю. Своя ширина кнопки —
-        // по содержимому плюс поля, как и раньше.
+        // по содержимому плюс поля: это ограничение с приоритетом ниже обязательного,
+        // чтобы стек с .fill мог растянуть кнопку, а стек с .equalSpacing — нет.
+        let hug = stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: leading)
+        hug.priority = .defaultHigh
         stackInsets = [
             stack.topAnchor.constraint(equalTo: topAnchor, constant: vertical),
             stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -vertical),
             stack.centerXAnchor.constraint(equalTo: centerXAnchor, constant: (leading - trailing) / 2),
             stack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: leading),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -trailing)
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -trailing),
+            hug
         ]
         NSLayoutConstraint.activate(stackInsets)
 

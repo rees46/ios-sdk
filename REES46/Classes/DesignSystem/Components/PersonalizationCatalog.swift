@@ -41,6 +41,12 @@ import UIKit
         set { list.onProductAction = newValue }
     }
 
+    /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
+    public var imageAspect: PersonalizationProductImage.Aspect {
+        get { list.imageAspect }
+        set { list.imageAspect = newValue }
+    }
+
     public var isLoading: Bool = false {
         didSet { loaderRow.isHidden = !isLoading }
     }
