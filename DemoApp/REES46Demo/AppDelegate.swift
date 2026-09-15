@@ -51,8 +51,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     /// Wraps the storyboard screen into a tab bar: the existing screen keeps demoing the SDK
-    /// methods, while the stories UI moves into a SwiftUI tab and a UIKit one so both
-    /// integration styles can be compared.
+    /// methods, "UI Kit" shows the design system (with the SwiftUI stories block as one of its
+    /// segments) and "Legacy UI" the UIKit stories view, so both integration styles can be compared.
     ///
     /// Runs before `sdkInitialization()`, which passes the root controller to the SDK.
     private func installTabBar() {
@@ -70,7 +70,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     private func makeUIKitTab() -> UIViewController {
-        let controller = UIHostingController(rootView: SwiftUIStoriesScreen())
+        let controller = UIKitShowcaseViewController()
         controller.tabBarItem = UITabBarItem(
             title: "UI Kit",
             image: tabImage(systemName: "square.grid.2x2"),

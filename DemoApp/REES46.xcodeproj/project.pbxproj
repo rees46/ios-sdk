@@ -10,6 +10,7 @@
 		0169B35A9F893F6D8D22820A /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */; };
 		020434BEE53FB36FF675571D /* KeychainInitStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD265D9DC0347C2031552262 /* KeychainInitStoreTests.swift */; };
 		447EFA0789368C931564CA42 /* MultiInstanceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */; };
+		A0F21AD28C82FEA34F9699F1 /* UIKitShowcaseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF22871FA2731A5EF23265A /* UIKitShowcaseViewController.swift */; };
 		593033DF60A44FEA08C3FAAF /* LocalStateRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F59CB601E63A49FB18F815 /* LocalStateRepositoryTests.swift */; };
 		607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD51AFB9204008FA782 /* AppDelegate.swift */; };
 		607FACD81AFB9204008FA782 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACD71AFB9204008FA782 /* MainViewController.swift */; };
@@ -138,6 +139,7 @@
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6493F884A898C533B4817F97 /* SdkRegistryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SdkRegistryTests.swift; sourceTree = "<group>"; };
 		661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiInstanceViewController.swift; sourceTree = "<group>"; };
+		BBF22871FA2731A5EF23265A /* UIKitShowcaseViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UIKitShowcaseViewController.swift; sourceTree = "<group>"; };
 		6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Demo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StorageMigrationTests.swift; sourceTree = "<group>"; };
 		732B3CD050F3471973F52C74 /* HandlePushRoutingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HandlePushRoutingTests.swift; sourceTree = "<group>"; };
@@ -306,6 +308,7 @@
 				9AFB9EE328044E4D001462AC /* PushPresent */,
 				607FACD31AFB9204008FA782 /* Supporting Files */,
 				661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */,
+				BBF22871FA2731A5EF23265A /* UIKitShowcaseViewController.swift */,
 			);
 			name = Rees46Demo;
 			path = REES46Demo;
@@ -759,6 +762,7 @@
 				607FACD61AFB9204008FA782 /* AppDelegate.swift in Sources */,
 				758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */,
 				447EFA0789368C931564CA42 /* MultiInstanceViewController.swift in Sources */,
+				A0F21AD28C82FEA34F9699F1 /* UIKitShowcaseViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
