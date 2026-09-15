@@ -8,7 +8,7 @@ import UIKit
 /// Каждая ступень — две наложенные тени, а `CALayer` рисует только одну.
 /// Поэтому `layers` отдаёт обе, а `apply(to:)` ставит верхнюю: для точного
 /// совпадения с макетом нужен отдельный подслой под вторую тень.
-public struct PersonalizationShadow {
+@_spi(PersonalizationUI) public struct PersonalizationShadow {
 
     public let offsetY: CGFloat
     /// Радиус размытия CoreAnimation: половина CSS-размытия из макета.
@@ -30,7 +30,7 @@ public struct PersonalizationShadow {
     }
 }
 
-public enum PersonalizationElevation {
+@_spi(PersonalizationUI) public enum PersonalizationElevation {
 
     /// None — без тени.
     public static let none: [PersonalizationShadow] = []

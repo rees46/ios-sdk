@@ -4,7 +4,7 @@ import UIKit
 ///
 /// Источник: Figma Mobile SDK UI Kit, секция Tag (243:10993).
 /// В макете только размер MD, поэтому размера в API нет.
-public final class PersonalizationTag: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationTag: UIView {
 
     public enum View {
         case primary, secondary

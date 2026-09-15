@@ -9,7 +9,7 @@ import UIKit
 /// переключателем вида. Поэтому заголовок здесь — слот, а не вариант.
 /// Три нижних элемента в макете скрываемые (showLoader, showCount, showLoadMore).
 /// Шаг блока 12.
-public final class PersonalizationCatalog: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationCatalog: UIView {
 
     /// Заголовок над товарами: выдача или категория. `nil` — убрать.
     public var header: UIView? {

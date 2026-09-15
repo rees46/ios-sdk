@@ -5,7 +5,7 @@ import UIKit
 /// Источник: Figma Mobile SDK UI Kit, секция Navigation (90:660), символ Count (301:6810).
 /// Слова — параметры, а не константы: локализация остаётся за интегратором.
 /// В макете это «Showed 6 from 569».
-public final class PersonalizationCount: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationCount: UIView {
 
     private let stack = UIStackView()
     private let prefixLabel = UILabel()

@@ -7,7 +7,7 @@ import UIKit
 ///
 /// Состояния из макета не задаются снаружи, а выводятся из самого поля:
 /// Default — пусто, Filled — есть текст, Focus — поле в фокусе, Disabled — `isEnabled`.
-public final class PersonalizationInputField: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationInputField: UIView {
 
     public enum Size {
         case lg, md, sm

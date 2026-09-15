@@ -3,7 +3,7 @@ import UIKit
 /// Метка «в избранном»: звезда в круге цвета Semantic/Warning, 24x24.
 ///
 /// Источник: Figma Mobile SDK UI Kit, секция Badge, символ Favorites (391:17117).
-public final class PersonalizationFavoritesBadge: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationFavoritesBadge: UIView {
 
     /// Звезда 16 плюс поле 4 с каждой стороны.
     public static let side: CGFloat = 24

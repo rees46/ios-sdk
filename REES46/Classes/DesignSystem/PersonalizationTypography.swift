@@ -7,7 +7,7 @@ import UIKit
 ///
 /// Inter в SDK не поставляется — по умолчанию системный шрифт с нужным весом.
 /// Чтобы перейти на Inter, хост задаёт `PersonalizationTheme.current.font`.
-public struct PersonalizationTextStyle {
+@_spi(PersonalizationUI) public struct PersonalizationTextStyle {
 
     public let size: CGFloat
     public let lineHeight: CGFloat
@@ -51,7 +51,7 @@ public struct PersonalizationTextStyle {
     }
 }
 
-public enum PersonalizationTypography {
+@_spi(PersonalizationUI) public enum PersonalizationTypography {
 
     /// XS/Default — 12/16, трекинг 0.05.
     public static let xsDefault = PersonalizationTextStyle(

@@ -8,7 +8,7 @@ import UIKit
 /// В макете нарисован только случай на два сегмента (Grid/List) в размере MD,
 /// сегмент же есть и в MD, и в SM — поэтому размер вынесен в API,
 /// а число сегментов не ограничено.
-public final class PersonalizationButtonGroup: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationButtonGroup: UIView {
 
     public enum Size {
         case md, sm

@@ -8,7 +8,7 @@ import UIKit
 /// Recommender block (157:5176) — кнопка «Show all», Category (167:3812) — группа кнопок,
 /// Filters (204:8340) — кнопка-крестик, Search results (167:3807) — кнопка «назад» и группа.
 /// Поэтому края здесь — произвольные вью, а не фиксированные варианты.
-public final class PersonalizationTitle: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationTitle: UIView {
 
     public var text: String? {
         didSet { applyText() }

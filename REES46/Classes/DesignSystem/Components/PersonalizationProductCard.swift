@@ -10,7 +10,7 @@ import UIKit
 /// Собрана из готовых блоков: `PersonalizationProductImage`, `PersonalizationRating`,
 /// `PersonalizationBadge` (скидка, вид danger), `PersonalizationButton`.
 /// Изображение хост грузит сам в `image.imageView`.
-public final class PersonalizationProductCard: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationProductCard: UIView {
 
     public enum CardType {
         case carousel, grid, list

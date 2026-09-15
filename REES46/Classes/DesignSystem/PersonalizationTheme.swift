@@ -1,5 +1,13 @@
 import UIKit
 
+// Весь UI-кит (тема, токены, компоненты) помечен `@_spi(PersonalizationUI)`: он ещё собирается
+// и ничем в SDK не используется, поэтому до релиза остаётся вне публичной поверхности модуля.
+// Обычный `import REES46` его не видит; демо-приложение подключает кит напрямую:
+//
+//     @_spi(PersonalizationUI) import REES46
+//
+// Перед релизом атрибут снимается, и кит становится обычным публичным API.
+
 /// Тема дизайн-системы: то, что хост может подменить под свой бренд.
 ///
 /// Задаётся один раз на старте:
@@ -22,7 +30,7 @@ import UIKit
 /// в UIKit нет дерева контекста, через которое её можно передать на поддерево.
 /// Если разным магазинам понадобится разный брендинг в одном приложении,
 /// тему придётся протаскивать в компоненты явным свойством.
-public struct PersonalizationTheme {
+@_spi(PersonalizationUI) public struct PersonalizationTheme {
 
     public var colors: PersonalizationColorSet
     public var radius: PersonalizationRadiusScale
@@ -47,7 +55,7 @@ public struct PersonalizationTheme {
 }
 
 /// Цвета темы. Значения по умолчанию сняты со страницы Colors, обе схемы.
-public struct PersonalizationColorSet {
+@_spi(PersonalizationUI) public struct PersonalizationColorSet {
 
     public var brandPrimary: UIColor
     public var semanticWarning: UIColor
@@ -292,7 +300,7 @@ public struct PersonalizationColorSet {
 }
 
 /// Радиусы темы. `rounded` — pill: значение заведомо больше любой стороны.
-public struct PersonalizationRadiusScale {
+@_spi(PersonalizationUI) public struct PersonalizationRadiusScale {
 
     public var xs: CGFloat
     public var sm: CGFloat

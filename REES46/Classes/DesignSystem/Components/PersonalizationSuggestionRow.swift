@@ -10,7 +10,7 @@ import UIKit
 ///
 /// `highlight` выделяет совпадение с запросом полужирным, как в макете подсказок.
 /// Картинку хост грузит в `imageView`.
-public final class PersonalizationSuggestionRow: UIControl {
+@_spi(PersonalizationUI) public final class PersonalizationSuggestionRow: UIControl {
 
     public enum Kind {
         case product, category

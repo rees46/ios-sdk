@@ -11,7 +11,7 @@ import UIKit
 ///
 /// Строки — `PersonalizationSuggestionRow`, теги — `PersonalizationTag`.
 /// Картинки хост грузит через `imageLoader`.
-public final class PersonalizationSearchSuggestions: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationSearchSuggestions: UIView {
 
     public struct Suggestion {
         public let id: String

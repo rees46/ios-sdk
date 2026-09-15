@@ -8,7 +8,7 @@ import UIKit
 ///
 /// Текст не зашит: в макете стоит «No results for your request.», но строку
 /// подставляет потребитель — локализация остаётся на его стороне.
-public final class PersonalizationEmptyState: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationEmptyState: UIView {
 
     public var message: String? {
         didSet { applyText() }

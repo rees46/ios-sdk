@@ -9,7 +9,7 @@ import UIKit
 /// в который хост кладёт изображение своим загрузчиком. До загрузки виден
 /// плейсхолдер цвета Background/Card — в макете заливка плейсхолдера
 /// к переменной не привязана, взят ближайший токен.
-public final class PersonalizationProductImage: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationProductImage: UIView {
 
     public enum Aspect {
         case square, landscape, portrait

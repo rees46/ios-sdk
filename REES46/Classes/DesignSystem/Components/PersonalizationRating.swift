@@ -10,7 +10,7 @@ import UIKit
 ///
 /// Цвет заполненной звезды в макете не привязан к переменной, взят ближайший
 /// существующий токен Semantic/Warning — его стоит подтвердить у дизайнера.
-public final class PersonalizationRating: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationRating: UIView {
 
     private let stack = UIStackView()
     private let star = UIImageView()

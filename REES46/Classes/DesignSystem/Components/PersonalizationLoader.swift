@@ -10,7 +10,7 @@ import UIKit
 /// `Gradient/Loader` приходит пустым. Рисуется коническим `CAGradientLayer`
 /// (доступен с iOS 12) с маской-кольцом, а не картинкой — чтобы не зависеть
 /// от плотности экрана.
-public final class PersonalizationLoader: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationLoader: UIView {
 
     /// Слот лоадера из макета: кольцо 26 лежит в квадрате 32 с полем 3.
     public static let defaultSide: CGFloat = 32

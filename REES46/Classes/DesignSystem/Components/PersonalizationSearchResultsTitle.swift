@@ -10,7 +10,7 @@ import UIKit
 ///
 /// Собран из готовых компонентов: `PersonalizationTitle`, `PersonalizationButton`,
 /// `PersonalizationButtonGroup`, `PersonalizationTag`.
-public final class PersonalizationSearchResultsTitle: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationSearchResultsTitle: UIView {
 
     /// Тег применённого фильтра: подпись и снятие по крестику.
     public struct Filter {

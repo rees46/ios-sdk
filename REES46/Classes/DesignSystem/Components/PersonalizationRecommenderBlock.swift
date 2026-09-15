@@ -9,7 +9,7 @@ import UIKit
 ///
 /// Собран из `PersonalizationTitle`, `PersonalizationButton`,
 /// `PersonalizationProductsList`, `PersonalizationDots`.
-public final class PersonalizationRecommenderBlock: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationRecommenderBlock: UIView {
 
     public var layout: PersonalizationProductsList.Layout = .carousel {
         didSet { applyLayout() }

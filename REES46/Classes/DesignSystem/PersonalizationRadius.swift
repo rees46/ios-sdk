@@ -8,7 +8,7 @@ import UIKit
 ///
 /// `rounded` — pill: значение заведомо больше любой стороны, платформа
 /// ограничит его половиной меньшей стороны сама.
-public enum PersonalizationRadius {
+@_spi(PersonalizationUI) public enum PersonalizationRadius {
 
     /// XS — 2pt.
     public static var xs: CGFloat { PersonalizationTheme.current.radius.xs }

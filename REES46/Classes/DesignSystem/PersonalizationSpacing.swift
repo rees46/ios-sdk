@@ -6,7 +6,7 @@ import CoreGraphics
 /// Сгенерировано скриптом; правки вносить в источник, не здесь.
 ///
 /// Шкала независима от типографической: здесь MD вместо Base и нет 6XL.
-public enum PersonalizationSpacing {
+@_spi(PersonalizationUI) public enum PersonalizationSpacing {
 
     /// XS — 2pt.
     public static let xs: CGFloat = 2

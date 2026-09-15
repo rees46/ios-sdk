@@ -5,7 +5,7 @@ import UIKit
 /// Источник: Figma Mobile SDK UI Kit, фрейм Checkbox with Label (205:10151).
 /// Зазор 8, подпись 16/20 обычного начертания; в disabled подпись уходит
 /// в Text/Hint.
-public final class PersonalizationCheckboxWithLabel: UIControl {
+@_spi(PersonalizationUI) public final class PersonalizationCheckboxWithLabel: UIControl {
 
     public var text: String? {
         didSet { applyText() }

@@ -7,7 +7,7 @@ import UIKit
 ///
 /// Ассеты векторные (PDF с сохранённым вектором) и помечены как
 /// шаблонные, поэтому красятся через `tintColor` у `UIImageView`.
-public enum PersonalizationIcons {
+@_spi(PersonalizationUI) public enum PersonalizationIcons {
 
     /// Нужен только чтобы найти бандл фреймворка через `Bundle(for:)`.
     private final class BundleMarker {}

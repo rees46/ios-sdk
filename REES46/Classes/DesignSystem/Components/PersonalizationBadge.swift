@@ -7,7 +7,7 @@ import UIKit
 /// Внимание: типографика бейджа не совпадает со ступенями `PersonalizationTypography` —
 /// кегль берётся с одной ступени, интерлиньяж с другой (20/24, 16/20, 14/16).
 /// Поэтому стиль собирается здесь явно, а не переиспользуется.
-public final class PersonalizationBadge: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationBadge: UIView {
 
     public enum Size {
         case sm, md, lg

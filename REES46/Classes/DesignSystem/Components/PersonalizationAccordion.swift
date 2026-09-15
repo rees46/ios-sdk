@@ -9,7 +9,7 @@ import UIKit
 /// зовёт `onToggle`. Отдельно выставлять `expanded` из колбэка не нужно —
 /// в React Native и Flutter тот же компонент, наоборот, ничего не хранит
 /// и ждёт перерисовки сверху.
-public final class PersonalizationAccordion: UIControl {
+@_spi(PersonalizationUI) public final class PersonalizationAccordion: UIControl {
 
     public var text: String? {
         didSet { applyText() }

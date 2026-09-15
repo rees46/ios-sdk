@@ -6,7 +6,7 @@ import UIKit
 /// форматирование и локализация остаются за интегратором.
 /// Изображение по `imageUrl` компонент не грузит: раскладки отдают хосту
 /// `UIImageView` через свой `imageLoader`.
-public struct PersonalizationProduct {
+@_spi(PersonalizationUI) public struct PersonalizationProduct {
     public let id: String
     public let name: String
     public let price: String

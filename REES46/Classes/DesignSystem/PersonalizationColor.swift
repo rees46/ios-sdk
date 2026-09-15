@@ -9,7 +9,7 @@ import UIKit
 /// `PersonalizationTheme.current.colors` — и подмена дойдёт до уже созданных вью.
 /// Значения по умолчанию и разбор `userInterfaceStyle` живут в
 /// `PersonalizationColorSet`.
-public enum PersonalizationColor {
+@_spi(PersonalizationUI) public enum PersonalizationColor {
 
 
 

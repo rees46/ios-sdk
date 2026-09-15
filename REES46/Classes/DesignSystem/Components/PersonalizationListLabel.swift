@@ -7,7 +7,7 @@ import UIKit
 /// Inter в SDK не поставляется, так что на отрисовку это пока не влияет.
 ///
 /// Текст переводится в верхний регистр самим компонентом — так задано в макете.
-public final class PersonalizationListLabel: UIView {
+@_spi(PersonalizationUI) public final class PersonalizationListLabel: UIView {
 
     public var text: String? {
         didSet { applyText() }

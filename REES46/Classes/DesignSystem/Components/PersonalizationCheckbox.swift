@@ -7,7 +7,7 @@ import UIKit
 ///
 /// Галка и черта рисуются штрихом по геометрии из макета:
 /// `M5 10 L8.75 13.75 L15 7.5` и `M5 10 H15`, толщина 2, круглые концы.
-public final class PersonalizationCheckbox: UIControl {
+@_spi(PersonalizationUI) public final class PersonalizationCheckbox: UIControl {
 
     public enum State {
         case unchecked, checked, indeterminate

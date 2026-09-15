@@ -7,7 +7,7 @@ import UIKit
 ///
 /// Состояние Focus из макета — это нажатие, оно приходит из `isHighlighted`.
 /// Disabled — обычный `isEnabled` у `UIControl`.
-public final class PersonalizationButton: UIControl {
+@_spi(PersonalizationUI) public final class PersonalizationButton: UIControl {
 
     public enum Size {
         case lg, md, sm
