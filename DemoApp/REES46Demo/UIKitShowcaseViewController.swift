@@ -6,15 +6,17 @@ import UIKit
 ///
 /// "Components" walks through the primitives in every size, view and state the design file
 /// defines; "Blocks" shows the compositions built from them (product cards, recommender layouts,
-/// instant search, the catalogue, the filters screen). "Stories" keeps the stories block through the SDK's SwiftUI
-/// wrapper, the counterpart of the "Legacy UI" tab.
+/// instant search, the catalogue, the filters screen). "Search" runs the two data-bound search widgets
+/// against the demo shop: the instant search field, and the results screen it opens on submit.
+/// "Stories" keeps the stories block through the SDK's SwiftUI wrapper, the counterpart of the
+/// "Legacy UI" tab.
 ///
 /// The kit is SPI until its release, hence the `@_spi(PersonalizationUI)` import. Product data is
 /// static: the kit does not fetch or format anything itself, and images are loaded by the host —
 /// `DemoImageLoader` here, through the components' `imageLoader` slot.
 final class UIKitShowcaseViewController: UIViewController {
 
-    private let segments = UISegmentedControl(items: ["Components", "Blocks", "Stories"])
+    private let segments = UISegmentedControl(items: ["Components", "Blocks", "Search", "Stories"])
     private let container = UIView()
     private var current: UIViewController?
 
@@ -49,6 +51,7 @@ final class UIKitShowcaseViewController: UIViewController {
         switch segment {
         case 0: next = ShowcaseViewController(exhibits: Exhibits.components())
         case 1: next = ShowcaseViewController(exhibits: Exhibits.blocks())
+        case 2: next = SearchFlowViewController(shopId: AppEnvironments.shopId)
         default: next = UIHostingController(rootView: SwiftUIStoriesScreen())
         }
 
@@ -67,6 +70,102 @@ final class UIKitShowcaseViewController: UIViewController {
         ])
         next.didMove(toParent: self)
         current = next
+    }
+}
+
+// MARK: - Search flow
+
+/// The search flow as a host would wire it: the instant search field resolves the SDK by shopId and
+/// searches on its own; submitting a phrase swaps it for the results screen, whose back button
+/// returns. Taps on products and categories only show an alert here — navigation is the host's.
+private final class SearchFlowViewController: UIViewController {
+
+    private let shopId: String
+    private var currentView: UIView?
+
+    init(shopId: String) {
+        self.shopId = shopId
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = PersonalizationColor.backgroundGeneric
+        showField()
+    }
+
+    private func showField() {
+        let field = PersonalizationInstantSearchField()
+        field.shopId = shopId
+        field.placeholder = "Search"
+        field.cancelText = "Cancel"
+        field.recentLabel = "Recent searches"
+        field.clearText = "Clear"
+        field.moreText = "more"
+        field.categoriesLabel = "Categories"
+        field.productsLabel = "Products"
+        field.showImages = true
+        field.onSubmit = { [weak self] query in self?.showResults(query) }
+        field.onCancel = { field.query = nil }
+        field.onProductTap = { [weak self] product in self?.alert("Product: \(product.name)") }
+        field.onCategoryTap = { [weak self] category in self?.alert("Category: \(category.name)") }
+        field.onError = { [weak self] error in self?.alert("Search error: \(error)") }
+
+        let scroll = UIScrollView()
+        scroll.alwaysBounceVertical = true
+        scroll.keyboardDismissMode = .onDrag
+        field.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(field)
+        NSLayoutConstraint.activate([
+            field.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 16),
+            field.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -16),
+            field.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 16),
+            field.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -16),
+            field.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -32)
+        ])
+        swap(to: scroll)
+    }
+
+    private func showResults(_ query: String) {
+        let screen = PersonalizationSearchResultsScreen()
+        screen.shopId = shopId
+        screen.productActionText = "Add to cart"
+        screen.onBack = { [weak self] in self?.showField() }
+        screen.onProductTap = { [weak self] product in self?.alert("Product: \(product.name)") }
+        screen.onProductAction = { [weak self] product in self?.alert("Add to cart: \(product.name)") }
+        // No sort picker in the design file: cycle relevance → price ↑ → price ↓ on tap.
+        screen.onSortTap = { [weak screen] in
+            guard let screen else { return }
+            switch (screen.sortBy, screen.sortDir) {
+            case (nil, _): screen.sortBy = "price"; screen.sortDir = "asc"
+            case ("price", "asc"): screen.sortDir = "desc"
+            default: screen.sortBy = nil; screen.sortDir = nil
+            }
+        }
+        screen.onError = { [weak self] error in self?.alert("Search error: \(error)") }
+        screen.query = query
+        swap(to: screen)
+    }
+
+    private func swap(to next: UIView) {
+        currentView?.removeFromSuperview()
+        next.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(next)
+        NSLayoutConstraint.activate([
+            next.topAnchor.constraint(equalTo: view.topAnchor),
+            next.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            next.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            next.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        currentView = next
+    }
+
+    private func alert(_ message: String) {
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
