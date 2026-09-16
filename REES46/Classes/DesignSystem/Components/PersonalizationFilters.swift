@@ -168,7 +168,10 @@ import UIKit
         let fromField = rangeField(id: id, value: from, select: select, isFrom: true)
         let toField = rangeField(id: id, value: to, select: select, isFrom: false)
         let notify: (String) -> Void = { [weak self, weak fromField, weak toField] _ in
-            self?.onRangeChanged?(id, fromField?.text ?? "", toField?.text ?? "")
+            let from = fromField?.text ?? ""
+            let to = toField?.text ?? ""
+            self?.updateRange(sectionId: id, from: from, to: to)
+            self?.onRangeChanged?(id, from, to)
         }
         fromField.onTextChange = notify
         toField.onTextChange = notify
@@ -222,6 +225,13 @@ import UIKit
             column.addArrangedSubview(accordion)
         }
         return column
+    }
+
+    private func updateRange(sectionId: String, from: String, to: String) {
+        sections = sections.map { section in
+            guard case let .range(id, title, fromLabel, toLabel, _, _, select) = section, id == sectionId else { return section }
+            return .range(id: id, title: title, fromLabel: fromLabel, toLabel: toLabel, from: from, to: to, select: select)
+        }
     }
 
     private func updateOption(sectionId: String, optionId: String, checked: Bool) {

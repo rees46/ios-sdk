@@ -155,6 +155,11 @@ import UIKit
         iconStartView.contentMode = .scaleAspectFit
         iconEndView.contentMode = .scaleAspectFit
         label.textAlignment = .center
+        // В тесном ряду (цена + бейдж + кнопка в списочной карточке) уступает подпись
+        // кнопки — с многоточием, а не наезжая на соседей.
+        label.numberOfLines = 1
+        label.lineBreakMode = .byTruncatingTail
+        label.setContentCompressionResistancePriority(UILayoutPriority(rawValue: 749), for: .horizontal)
 
         stack.addArrangedSubview(iconStartView)
         stack.addArrangedSubview(label)
@@ -232,6 +237,7 @@ import UIKit
         // центрирование задаётся в нём — иначе растянутая кнопка прижмёт текст к иконке.
         let paragraph = (size.textStyle.paragraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
         paragraph.alignment = .center
+        paragraph.lineBreakMode = .byTruncatingTail
         attributes[.paragraphStyle] = paragraph
         label.attributedText = NSAttributedString(string: text, attributes: attributes)
     }

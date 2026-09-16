@@ -99,9 +99,16 @@ import UIKit
         }
     }
 
-    /// Показывать ли картинки у строк: в макете есть оба варианта.
+    /// Показывать ли картинки у строк: в макете есть оба варианта. Строка без картинки идёт без плейсхолдера.
     public var showImages: Bool = false {
-        didSet { rows.forEach { $0.showImage = showImages } }
+        didSet {
+            for row in categories.arrangedSubviews.compactMap({ $0 as? PersonalizationSuggestionRow }) {
+                row.showImage = showImages && categoryItems.indices.contains(row.tag) && categoryItems[row.tag].imageUrl != nil
+            }
+            for row in products.arrangedSubviews.compactMap({ $0 as? PersonalizationSuggestionRow }) {
+                row.showImage = showImages && productItems.indices.contains(row.tag) && productItems[row.tag].imageUrl != nil
+            }
+        }
     }
 
     public var imageLoader: ((UIImageView, Suggestion) -> Void)?
@@ -280,10 +287,11 @@ import UIKit
             row.tag = index
             row.title = item.title
             row.subtitle = item.subtitle
-            row.showImage = showImages
+            let withImage = showImages && item.imageUrl != nil
+            row.showImage = withImage
             row.highlight = input.text ?? ""
             row.addTarget(self, action: action, for: .touchUpInside)
-            if showImages { imageLoader?(row.imageView, item) }
+            if withImage { imageLoader?(row.imageView, item) }
             column.addArrangedSubview(row)
         }
     }

@@ -38,6 +38,9 @@ import UIKit
     public var imageLoader: ((UIImageView, PersonalizationProduct) -> Void)?
     public var onProductAction: ((PersonalizationProduct) -> Void)?
 
+    /// Нажатие на карточку — открыть товар.
+    public var onProductTap: ((PersonalizationProduct) -> Void)?
+
     /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
     public var imageAspect: PersonalizationProductImage.Aspect = .square {
         didSet {
@@ -156,7 +159,7 @@ import UIKit
         card.oldPrice = product.oldPrice
         card.discount = product.discount
         card.actionText = product.actionText
-        if let rating = product.ratingValue { card.setRating(value: rating, reviews: product.reviews) }
+        card.setRating(value: product.ratingValue, reviews: product.reviews)
         let height = card.systemLayoutSizeFitting(
             CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
@@ -215,8 +218,9 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
         card.oldPrice = product.oldPrice
         card.discount = product.discount
         card.actionText = product.actionText
-        if let rating = product.ratingValue { card.setRating(value: rating, reviews: product.reviews) }
+        card.setRating(value: product.ratingValue, reviews: product.reviews)
         card.onAction = { [weak self] in self?.onProductAction?(product) }
+        card.onTap = { [weak self] in self?.onProductTap?(product) }
         card.image.imageView.image = nil
         imageLoader?(card.image.imageView, product)
         return cell

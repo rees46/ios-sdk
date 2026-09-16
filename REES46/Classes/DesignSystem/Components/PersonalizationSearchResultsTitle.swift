@@ -39,6 +39,15 @@ import UIKit
     public var onFilters: (() -> Void)?
     public var onSort: (() -> Void)?
 
+    /// Кнопки фильтров и сортировки; в макете они есть всегда, но виджет может их убрать.
+    public var showFiltersButton: Bool = true {
+        didSet { filtersButton.isHidden = !showFiltersButton }
+    }
+
+    public var showSortButton: Bool = true {
+        didSet { sortButton.isHidden = !showSortButton }
+    }
+
     private let column = UIStackView()
     private let titleRow = PersonalizationTitle()
     private let backButton = PersonalizationButton(size: .md, view: .ghost)

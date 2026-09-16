@@ -75,6 +75,9 @@ import UIKit
 
     public var onAction: (() -> Void)?
 
+    /// Нажатие на карточку целиком (не на кнопку) — открыть товар.
+    public var onTap: (() -> Void)?
+
     /// Изображение: хост грузит картинку в `image.imageView`.
     public let image = PersonalizationProductImage()
 
@@ -109,9 +112,11 @@ import UIKit
         setup()
     }
 
-    /// - Parameter value: уже отформатированная оценка: в макете «4,7» с запятой.
-    public func setRating(value: String, reviews: Int) {
-        rating.set(value: value, reviews: reviews)
+    /// - Parameter value: уже отформатированная оценка: в макете «4,7» с запятой;
+    ///   `nil` — товар без оценки, ряд рейтинга прячется.
+    public func setRating(value: String?, reviews: Int) {
+        rating.isHidden = value == nil
+        if let value { rating.set(value: value, reviews: reviews) }
     }
 
     private func setup() {
@@ -130,12 +135,17 @@ import UIKit
         nameLabel.numberOfLines = 2
         oldPriceLabel.numberOfLines = 1
         button.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cardTapped)))
 
         rebuild()
     }
 
     @objc private func actionTapped() {
         onAction?()
+    }
+
+    @objc private func cardTapped() {
+        onTap?()
     }
 
     private func rebuild() {
@@ -206,7 +216,15 @@ import UIKit
         let bottom = UIStackView(arrangedSubviews: [priceBlock, button])
         bottom.axis = .horizontal
         bottom.alignment = .center
-        bottom.distribution = .equalSpacing
+        bottom.distribution = .fill
+        bottom.spacing = PersonalizationSpacing.md  // 8
+        // Цена и бейдж не сжимаются, свободное место достаётся блоку цены, кнопка держит
+        // свою ширину; когда не хватает и её — укорачивается её подпись.
+        for view in [priceLabel, priceBadge] {
+            view.setContentCompressionResistancePriority(.required, for: .horizontal)
+        }
+        priceBlock.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentHuggingPriority(.required, for: .horizontal)
 
         let column = UIStackView(arrangedSubviews: [top, bottom])
         column.axis = .vertical

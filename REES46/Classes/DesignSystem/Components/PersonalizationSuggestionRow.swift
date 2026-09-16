@@ -84,11 +84,22 @@ import UIKit
         column.alignment = .fill
         column.addArrangedSubview(titleLabel)
         column.addArrangedSubview(subtitleLabel)
+        // Длинное название переносится на вторую строку и обрезается, а не выталкивает шеврон за край.
+        titleLabel.numberOfLines = 2
+        titleLabel.lineBreakMode = .byTruncatingTail
+        subtitleLabel.numberOfLines = 1
+        subtitleLabel.lineBreakMode = .byTruncatingTail
+        for label in [titleLabel, subtitleLabel] {
+            label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        }
 
         chevron.image = PersonalizationIcons.angleLargeRight
         chevron.tintColor = PersonalizationColor.textHint
         chevron.contentMode = .scaleAspectFit
         chevron.translatesAutoresizingMaskIntoConstraints = false
+        chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+        imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
         NSLayoutConstraint.activate([
             chevron.widthAnchor.constraint(equalToConstant: 24),
             chevron.heightAnchor.constraint(equalToConstant: 24)

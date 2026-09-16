@@ -56,6 +56,12 @@ import UIKit
         set { list.onProductAction = newValue }
     }
 
+    /// Нажатие на карточку — открыть товар.
+    public var onProductTap: ((PersonalizationProduct) -> Void)? {
+        get { list.onProductTap }
+        set { list.onProductTap = newValue }
+    }
+
     /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
     public var imageAspect: PersonalizationProductImage.Aspect {
         get { list.imageAspect }
