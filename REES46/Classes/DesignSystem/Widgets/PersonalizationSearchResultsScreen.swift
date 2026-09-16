@@ -424,9 +424,12 @@ import UIKit
         let source = facetSource
         var sections: [PersonalizationFilters.Section] = []
         if source?.priceRange != nil || applied.priceMin != nil || applied.priceMax != nil {
+            // Границы диапазона — подсказками: в запрос уходит только то, что ввёл пользователь.
             sections.append(.range(
                 id: SectionId.price, title: priceTitle, fromLabel: fromLabel, toLabel: toLabel,
-                from: applied.priceMin, to: applied.priceMax
+                from: applied.priceMin, to: applied.priceMax,
+                fromPlaceholder: source?.priceRange.map { bound($0.min) },
+                toPlaceholder: source?.priceRange.map { bound($0.max) }
             ))
         }
         let brands = source?.brands ?? []
@@ -464,11 +467,16 @@ import UIKit
         return sections
     }
 
+    /// Граница цены без хвоста «.0»: сервер отдаёт число, форматированной строки у него нет.
+    private func bound(_ value: Double) -> String {
+        value == value.rounded(.down) ? String(Int64(value)) : String(value)
+    }
+
     private func fromSections(_ sections: [PersonalizationFilters.Section]) -> Applied {
         var next = Applied()
         for section in sections {
             switch section {
-            case let .range(id, _, _, _, from, to, _):
+            case let .range(id, _, _, _, from, to, _, _, _):
                 guard id == SectionId.price else { continue }
                 next.priceMin = from.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }
                 next.priceMax = to.flatMap { $0.trimmingCharacters(in: .whitespaces).isEmpty ? nil : $0 }

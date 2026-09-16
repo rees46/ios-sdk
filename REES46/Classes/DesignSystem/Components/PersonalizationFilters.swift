@@ -17,13 +17,14 @@ import UIKit
 
     public enum Section {
         /// Два поля «от — до». `select` — поля типа Select, список открывает хост.
-        case range(id: String, title: String, fromLabel: String, toLabel: String, from: String? = nil, to: String? = nil, select: Bool = false)
+        /// `fromPlaceholder` / `toPlaceholder` — подсказки в пустых полях, например границы диапазона.
+        case range(id: String, title: String, fromLabel: String, toLabel: String, from: String? = nil, to: String? = nil, select: Bool = false, fromPlaceholder: String? = nil, toPlaceholder: String? = nil)
         /// Список чекбоксов; сверх `collapsedCount` прячется за аккордеон.
         case options(id: String, title: String, options: [Option], collapsedCount: Int = 5, showMoreText: String? = nil, showLessText: String? = nil)
 
         public var id: String {
             switch self {
-            case let .range(id, _, _, _, _, _, _): return id
+            case let .range(id, _, _, _, _, _, _, _, _): return id
             case let .options(id, _, _, _, _, _): return id
             }
         }
@@ -141,9 +142,12 @@ import UIKit
         column.alignment = .fill
         column.spacing = PersonalizationSpacing.lg  // 12
         switch section {
-        case let .range(id, title, fromLabel, toLabel, from, to, select):
+        case let .range(id, title, fromLabel, toLabel, from, to, select, fromPlaceholder, toPlaceholder):
             column.addArrangedSubview(heading(title))
-            column.addArrangedSubview(buildRange(id: id, fromLabel: fromLabel, toLabel: toLabel, from: from, to: to, select: select))
+            column.addArrangedSubview(buildRange(
+                id: id, fromLabel: fromLabel, toLabel: toLabel, from: from, to: to, select: select,
+                fromPlaceholder: fromPlaceholder, toPlaceholder: toPlaceholder
+            ))
         case let .options(id, title, options, collapsedCount, showMoreText, showLessText):
             column.addArrangedSubview(heading(title))
             column.addArrangedSubview(buildOptions(id: id, options: options, collapsedCount: collapsedCount, showMoreText: showMoreText, showLessText: showLessText))
@@ -164,9 +168,12 @@ import UIKit
         return label
     }
 
-    private func buildRange(id: String, fromLabel: String, toLabel: String, from: String?, to: String?, select: Bool) -> UIStackView {
-        let fromField = rangeField(id: id, value: from, select: select, isFrom: true)
-        let toField = rangeField(id: id, value: to, select: select, isFrom: false)
+    private func buildRange(
+        id: String, fromLabel: String, toLabel: String, from: String?, to: String?, select: Bool,
+        fromPlaceholder: String?, toPlaceholder: String?
+    ) -> UIStackView {
+        let fromField = rangeField(id: id, value: from, placeholder: fromPlaceholder, select: select, isFrom: true)
+        let toField = rangeField(id: id, value: to, placeholder: toPlaceholder, select: select, isFrom: false)
         let notify: (String) -> Void = { [weak self, weak fromField, weak toField] _ in
             let from = fromField?.text ?? ""
             let to = toField?.text ?? ""
@@ -190,8 +197,8 @@ import UIKit
         return row
     }
 
-    private func rangeField(id: String, value: String?, select: Bool, isFrom: Bool) -> PersonalizationInputField {
-        let field = PersonalizationInputField(size: .md, type: select ? .select : .input)
+    private func rangeField(id: String, value: String?, placeholder: String?, select: Bool, isFrom: Bool) -> PersonalizationInputField {
+        let field = PersonalizationInputField(size: .md, type: select ? .select : .input, placeholder: placeholder)
         field.text = value
         field.onSelectTap = { [weak self] in self?.onRangeSelectTap?(id, isFrom) }
         return field
@@ -229,8 +236,11 @@ import UIKit
 
     private func updateRange(sectionId: String, from: String, to: String) {
         sections = sections.map { section in
-            guard case let .range(id, title, fromLabel, toLabel, _, _, select) = section, id == sectionId else { return section }
-            return .range(id: id, title: title, fromLabel: fromLabel, toLabel: toLabel, from: from, to: to, select: select)
+            guard case let .range(id, title, fromLabel, toLabel, _, _, select, fromPlaceholder, toPlaceholder) = section, id == sectionId else { return section }
+            return .range(
+                id: id, title: title, fromLabel: fromLabel, toLabel: toLabel, from: from, to: to, select: select,
+                fromPlaceholder: fromPlaceholder, toPlaceholder: toPlaceholder
+            )
         }
     }
 
