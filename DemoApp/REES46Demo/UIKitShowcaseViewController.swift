@@ -278,6 +278,7 @@ private enum Exhibits {
             ("Instant Search — typing, matches in bold", { instantSearch(typing: true, images: false) }),
             ("Instant Search — with images", { instantSearch(typing: false, images: true) }),
             ("Catalog — header, grid ⇄ list, count, load more", { catalog() }),
+            ("Catalog — empty state", { catalogEmpty() }),
             ("Filters — range, checkbox lists with show more, reset / apply", { filters() })
         ]
     }
@@ -344,10 +345,10 @@ private enum Exhibits {
         return view
     }
 
-    private static func searchResultsTitle() -> PersonalizationSearchResultsTitle {
+    private static func searchResultsTitle(count: Int = 128) -> PersonalizationSearchResultsTitle {
         let title = PersonalizationSearchResultsTitle()
         title.text = "Sneakers"
-        title.setResults(prefix: "Found", count: 128, suffix: "products")
+        title.setResults(prefix: "Found", count: count, suffix: "products")
         title.setFilters([
             .init(label: "Nike", onRemove: {}),
             .init(label: "Size 42", onRemove: {})
@@ -477,6 +478,15 @@ private enum Exhibits {
             }
         }
         render()
+        return catalog
+    }
+
+    /// Empty results: the same header, the empty state in place of the grid, nothing below.
+    private static func catalogEmpty() -> PersonalizationCatalog {
+        let catalog = PersonalizationCatalog()
+        catalog.header = searchResultsTitle(count: 0)
+        catalog.emptyText = "No results for your request."
+        catalog.products = []
         return catalog
     }
 }
