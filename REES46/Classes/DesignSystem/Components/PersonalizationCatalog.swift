@@ -9,6 +9,10 @@ import UIKit
 /// переключателем вида. Поэтому заголовок здесь — слот, а не вариант.
 /// Три нижних элемента в макете скрываемые (showLoader, showCount, showLoadMore).
 /// Шаг блока 12.
+///
+/// Пустая выдача — страница SearchResultsScreen, Search Results/Empty State (319:7743):
+/// заголовок тот же, вместо плитки `PersonalizationEmptyState`. Показывается, когда
+/// задан `emptyText` и товаров нет.
 @_spi(PersonalizationUI) public final class PersonalizationCatalog: UIView {
 
     /// Заголовок над товарами: выдача или категория. `nil` — убрать.
@@ -28,7 +32,18 @@ import UIKit
 
     public var products: [PersonalizationProduct] {
         get { list.products }
-        set { list.products = newValue }
+        set {
+            list.products = newValue
+            applyEmpty()
+        }
+    }
+
+    /// Текст пустой выдачи. `nil` — без пустого состояния, плитка остаётся на месте.
+    public var emptyText: String? {
+        didSet {
+            emptyState.message = emptyText
+            applyEmpty()
+        }
     }
 
     public var imageLoader: ((UIImageView, PersonalizationProduct) -> Void)? {
@@ -62,6 +77,7 @@ import UIKit
     public var onLoadMore: (() -> Void)?
 
     private let stack = UIStackView()
+    private let emptyState = PersonalizationEmptyState()
     private let loaderRow = UIView()
     private let loader = PersonalizationLoader()
     private let count = PersonalizationCount()
@@ -106,7 +122,10 @@ import UIKit
         loadMoreButton.isHidden = true
         loadMoreButton.addTarget(self, action: #selector(loadMoreTapped), for: .touchUpInside)
 
+        emptyState.isHidden = true
+
         stack.addArrangedSubview(list)
+        stack.addArrangedSubview(emptyState)
         stack.addArrangedSubview(loaderRow)
         stack.addArrangedSubview(count)
         stack.addArrangedSubview(loadMoreButton)
@@ -114,6 +133,12 @@ import UIKit
 
     @objc private func loadMoreTapped() {
         onLoadMore?()
+    }
+
+    private func applyEmpty() {
+        let empty = list.products.isEmpty && !(emptyText ?? "").isEmpty
+        emptyState.isHidden = !empty
+        list.isHidden = empty
     }
 
     /// Счётчик «показано N из M». Слова — параметры. `prefix == nil` — скрыть.
