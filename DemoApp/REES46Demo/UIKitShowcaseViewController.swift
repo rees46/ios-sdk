@@ -518,9 +518,11 @@ private enum Exhibits {
             search.moreText = "more"
             search.setRecentSearches(["mens winter boots", "kids shoes", "bag", "accessories", "black boots"])
             search.setCategories([
-                PersonalizationInstantSearch.Suggestion(id: "c1", title: "Running shoes", subtitle: "Shoes", imageUrl: DemoProducts.all[0].imageUrl),
-                PersonalizationInstantSearch.Suggestion(id: "c2", title: "Running apparel", subtitle: "Clothing", imageUrl: DemoProducts.all[1].imageUrl),
-                PersonalizationInstantSearch.Suggestion(id: "c3", title: "Trail gear", subtitle: "Outdoor", imageUrl: DemoProducts.all[2].imageUrl)
+                // Categories come without pictures: the search API returns none for them, so the
+                // "with images" state only illustrates product rows.
+                PersonalizationInstantSearch.Suggestion(id: "c1", title: "Running shoes", subtitle: "Shoes"),
+                PersonalizationInstantSearch.Suggestion(id: "c2", title: "Running apparel", subtitle: "Clothing"),
+                PersonalizationInstantSearch.Suggestion(id: "c3", title: "Trail gear", subtitle: "Outdoor")
             ])
             search.setProducts(DemoProducts.all.prefix(images ? 3 : 5).map {
                 PersonalizationInstantSearch.Suggestion(id: $0.id, title: $0.name, subtitle: $0.price, imageUrl: $0.imageUrl)
@@ -553,12 +555,18 @@ private enum Exhibits {
         return filters
     }
 
+    /// The catalogue as a host would wire it: the category title (title + view switch, as on the
+    /// CatalogGrid page) sits in the header slot and drives the grid/list switch, "load more"
+    /// appends a page after a short simulated delay. The search results title with back, filters
+    /// and sort belongs to the search flow — see the Search segment.
     private static func catalog() -> PersonalizationCatalog {
         let catalog = PersonalizationCatalog()
-        let header = searchResultsTitle()
-        header.onViewChanged = { [weak catalog] index in
+        let header = PersonalizationTitle(text: "Sneakers")
+        let views = buttonGroup(size: .md)
+        views.onSelected = { [weak catalog] index in
             catalog?.layout = index == 0 ? .grid : .list
         }
+        header.trailing = views
         var shown = Array(DemoProducts.all.prefix(4))
         func render() {
             catalog.products = shown
@@ -611,7 +619,8 @@ private enum DemoProducts {
         DemoImageLoader.shared.load(product.imageUrl, into: view)
     }
 
-    private static func image(_ seed: String) -> String { "https://picsum.photos/seed/\(seed)/600/600" }
+    /// Photos ship with the app (asset catalogue): the showcase must not depend on the network.
+    private static func image(_ seed: String) -> String { "asset://uikit-\(seed)" }
 
     static let all: [PersonalizationProduct] = [
         PersonalizationProduct(id: "1", name: "Air Zoom Pegasus 41 running shoes", price: "$140", imageUrl: image("pegasus"), brand: "Nike", ratingValue: "4.7", reviews: 128, oldPrice: "$165", discount: "-15%", actionText: "Add to cart"),
@@ -647,6 +656,12 @@ final class DemoImageLoader {
         imageView.image = nil
         guard let urlString, let url = URL(string: urlString) else {
             pending[ObjectIdentifier(imageView)] = nil
+            return
+        }
+        // Bundled photos: `asset://<name>` resolves in the asset catalogue, no request.
+        if url.scheme == "asset", let host = url.host {
+            pending[ObjectIdentifier(imageView)] = nil
+            imageView.image = UIImage(named: host)
             return
         }
         if let cached = cache.object(forKey: urlString as NSString) {
