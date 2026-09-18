@@ -186,11 +186,12 @@ import UIKit
             super.init(frame: frame)
             card.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview(card)
-            // Все ячейки одной высоты (по самой высокой карточке), карточка прижата
-            // к верху и остаётся своей высоты — иначе стек внутри растянул бы картинку.
+            // Все ячейки одной высоты (по самой высокой карточке); карточка занимает
+            // ячейку целиком, а лишнюю высоту забирает её распорка между верхом и
+            // низом — цена и кнопка соседей остаются на одной линии.
             NSLayoutConstraint.activate([
                 card.topAnchor.constraint(equalTo: contentView.topAnchor),
-                card.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
+                card.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
                 card.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
                 card.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
             ])

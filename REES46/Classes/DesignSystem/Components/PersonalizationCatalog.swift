@@ -68,17 +68,24 @@ import UIKit
         set { list.imageAspect = newValue }
     }
 
+    /// Во фреймах с лоадером (296:3544, 299:6606) счётчика и кнопки нет — на время
+    /// загрузки лоадер встаёт на их место.
     public var isLoading: Bool = false {
-        didSet { loaderRow.isHidden = !isLoading }
+        didSet {
+            loaderRow.isHidden = !isLoading
+            applyFooter()
+        }
     }
 
     /// Подпись кнопки «загрузить ещё». `nil` — без кнопки.
     public var loadMoreText: String? {
         didSet {
             loadMoreButton.text = loadMoreText
-            loadMoreButton.isHidden = (loadMoreText ?? "").isEmpty
+            applyFooter()
         }
     }
+
+    private var hasCount = false
 
     public var onLoadMore: (() -> Void)?
 
@@ -149,7 +156,13 @@ import UIKit
 
     /// Счётчик «показано N из M». Слова — параметры. `prefix == nil` — скрыть.
     public func setCount(prefix: String?, shown: Int, separator: String, total: Int) {
-        count.isHidden = prefix == nil
+        hasCount = prefix != nil
         if let prefix { count.set(prefix: prefix, shown: shown, separator: separator, total: total) }
+        applyFooter()
+    }
+
+    private func applyFooter() {
+        count.isHidden = !hasCount || isLoading
+        loadMoreButton.isHidden = (loadMoreText ?? "").isEmpty || isLoading
     }
 }

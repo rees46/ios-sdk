@@ -41,11 +41,21 @@ import CoreGraphics
 /// такая колонка растягивает строку на всю ширину, а строка — первый попавшийся
 /// лейбл, и «4,7 (128)» разъезжается по краям. Распорка забирает лишнюю ширину
 /// на себя, остальные элементы остаются своего размера.
+///
+/// `axis: .vertical` — та же распорка для колонки: забирает лишнюю высоту, когда
+/// ячейка выше содержимого карточки. `minimum` — её высота без растяжения, то есть
+/// обычный шаг между соседями (стек вокруг неё идёт без spacing, иначе шаг удвоится).
 final class PersonalizationFlexibleSpace: UIView {
-    init() {
+    init(axis: NSLayoutConstraint.Axis = .horizontal, minimum: CGFloat = 0) {
         super.init(frame: .zero)
-        setContentHuggingPriority(UILayoutPriority(1), for: .horizontal)
-        setContentCompressionResistancePriority(UILayoutPriority(1), for: .horizontal)
+        setContentHuggingPriority(UILayoutPriority(1), for: axis)
+        setContentCompressionResistancePriority(UILayoutPriority(1), for: axis)
+        if axis == .vertical {
+            heightAnchor.constraint(greaterThanOrEqualToConstant: minimum).isActive = true
+            let rest = heightAnchor.constraint(equalToConstant: minimum)
+            rest.priority = UILayoutPriority(1)
+            rest.isActive = true
+        }
     }
 
     required init?(coder: NSCoder) {

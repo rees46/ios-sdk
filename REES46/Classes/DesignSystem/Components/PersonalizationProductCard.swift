@@ -166,6 +166,12 @@ import UIKit
     }
 
     /// Carousel и Grid: картинка, название, рейтинг, цена, кнопка — колонкой с шагом 8.
+    ///
+    /// Колонка из двух групп: верх (картинка, название, рейтинг) и низ (цена, кнопка)
+    /// с распоркой между ними. Ячейки списка одной высоты (по самой высокой карточке),
+    /// лишнее уходит в распорку — цена с кнопкой у соседей остаются на одной линии,
+    /// даже когда название ушло на две строки. В макете такой случай не нарисован:
+    /// там названия в одну строку. Сама по себе колонка остаётся по содержимому.
     private func buildColumn() -> UIStackView {
         let inset = type == .grid ? PersonalizationSpacing.sm : PersonalizationSpacing.md
         NSLayoutConstraint.deactivate(badgeConstraints)
@@ -180,10 +186,20 @@ import UIKit
         priceRow.alignment = .lastBaseline
         priceRow.spacing = PersonalizationSpacing.md  // 8
 
-        let column = UIStackView(arrangedSubviews: [imageContainer, nameBlock(spacing: PersonalizationSpacing.xs), rating, priceRow, button])
+        let top = UIStackView(arrangedSubviews: [imageContainer, nameBlock(spacing: PersonalizationSpacing.xs), rating])
+        top.axis = .vertical
+        top.alignment = .fill
+        top.spacing = PersonalizationSpacing.md  // 8
+
+        let bottom = UIStackView(arrangedSubviews: [priceRow, button])
+        bottom.axis = .vertical
+        bottom.alignment = .fill
+        bottom.spacing = PersonalizationSpacing.md  // 8
+
+        // Шаг между группами задаёт распорка, у самой колонки spacing нет.
+        let column = UIStackView(arrangedSubviews: [top, PersonalizationFlexibleSpace(axis: .vertical, minimum: PersonalizationSpacing.md), bottom])
         column.axis = .vertical
         column.alignment = .fill
-        column.spacing = PersonalizationSpacing.md  // 8
 
         if type == .carousel {
             column.widthAnchor.constraint(equalToConstant: Self.carouselWidth).isActive = true
