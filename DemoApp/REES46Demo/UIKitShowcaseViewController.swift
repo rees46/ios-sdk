@@ -258,7 +258,6 @@ private final class ShowcaseViewController: UIViewController {
             section.spacing = 8
             stack.addArrangedSubview(section)
         }
-
     }
 }
 
@@ -424,7 +423,13 @@ private enum Exhibits {
             }),
             ("In App Popup — icon, no buttons (cross only)", {
                 inAppPopup(.icon, actionText: nil)
-            })
+            }),
+            ("In App Popup, fullscreen — image", { inAppPopup(.image, fullscreen: true) }),
+            ("In App Popup, fullscreen — image background, both buttons", {
+                inAppPopup(.imageBackground, closeText: "Not now", fullscreen: true)
+            }),
+            ("In App Popup, fullscreen — text only", { inAppPopup(.text, fullscreen: true) }),
+            ("In App Popup, fullscreen — icon", { inAppPopup(.icon, fullscreen: true) })
         ]
     }
 
@@ -434,9 +439,11 @@ private enum Exhibits {
     private static func inAppPopup(
         _ view: PersonalizationInAppPopup.ContentView,
         actionText: String? = "Action",
-        closeText: String? = nil
+        closeText: String? = nil,
+        fullscreen: Bool = false
     ) -> UIView {
         let popup = PersonalizationInAppPopup()
+        popup.presentation = fullscreen ? .fullscreen : .modal
         popup.contentView = view
         popup.title = "Pizza ipsum dolor meat lovers"
         popup.text = "Cheese ranch Philly roll pepperoni hand thin garlic bacon."
@@ -445,7 +452,8 @@ private enum Exhibits {
         popup.icon = UIImage(systemName: "checkmark.shield.fill")
         popup.imageLoader = { image in DemoImageLoader.shared.load(DemoProducts.popupImage, into: image) }
         popup.translatesAutoresizingMaskIntoConstraints = false
-        popup.heightAnchor.constraint(equalToConstant: 460).isActive = true
+        // Полноэкранному нужно больше места: отступы и кегли там на ступень крупнее.
+        popup.heightAnchor.constraint(equalToConstant: fullscreen ? 620 : 460).isActive = true
         return popup
     }
 
