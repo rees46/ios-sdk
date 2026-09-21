@@ -96,6 +96,13 @@ import UIKit
         didSet { applyStyle() }
     }
 
+    /// Кнопка стоит поверх тёмного (картинки-фона). В макете такие контролы берут
+    /// инвертированную палитру: заливка Secondary белая 5%, подпись и иконка светлые.
+    /// На `.primary` не влияет — она и так светлая по тексту.
+    public var onDark: Bool = false {
+        didSet { applyStyle() }
+    }
+
     /// Иконка перед текстом. Без текста кнопка становится кнопкой-иконкой.
     public var iconStart: UIImage? {
         didSet { applyContent() }
@@ -260,17 +267,18 @@ import UIKit
         switch view {
         // Кнопка привязана к Brand/Primary, а не к Button/Primary — так в макете.
         case .primary: return PersonalizationColor.brandPrimary
-        case .secondary: return PersonalizationColor.buttonSecondary
+        case .secondary:
+            return onDark ? PersonalizationColor.buttonSecondaryOnDark
+                          : PersonalizationColor.buttonSecondary
         case .ghost: return PersonalizationColor.backgroundTransparent
         }
     }
 
     private func foregroundColorForState() -> UIColor {
-        switch (view, isEnabled) {
-        case (.primary, true): return PersonalizationColor.textLightPrimary
-        case (.primary, false): return PersonalizationColor.textLightHint
-        case (_, true): return PersonalizationColor.textPrimary
-        case (_, false): return PersonalizationColor.textHint
+        if view == .primary || onDark {
+            return isEnabled ? PersonalizationColor.textLightPrimary
+                             : PersonalizationColor.textLightHint
         }
+        return isEnabled ? PersonalizationColor.textPrimary : PersonalizationColor.textHint
     }
 }

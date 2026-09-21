@@ -63,12 +63,15 @@ import UIKit
     public var backgroundPrimary: UIColor
     public var backgroundGeneric: UIColor
     public var backgroundCard: UIColor
+    public var backgroundFloat: UIColor
+    public var backgroundModal: UIColor
     public var backgroundInput: UIColor
     public var backgroundTransparent: UIColor
     public var backgroundInputDisabled: UIColor
     public var buttonPrimary: UIColor
     public var buttonPrimaryFocus: UIColor
     public var buttonSecondary: UIColor
+    public var buttonSecondaryOnDark: UIColor
     public var buttonSecondaryFocus: UIColor
     public var buttonPrimaryDisabled: UIColor
     public var buttonSecondaryDisabled: UIColor
@@ -119,6 +122,15 @@ import UIKit
             light: PersonalizationColorSet.rgba(0xF2F2F2, 1),
             dark: PersonalizationColorSet.rgba(0x0D0D0D, 1)
         ),
+        // Поверхности поверх карточки. В светлой все белые, различаются только в тёмной.
+        backgroundFloat: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0xFFFFFF, 1),
+            dark: PersonalizationColorSet.rgba(0x262626, 1)
+        ),
+        backgroundModal: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0xFFFFFF, 1),
+            dark: PersonalizationColorSet.rgba(0x333333, 1)
+        ),
         backgroundInput: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF2F2F2, 1),
             dark: PersonalizationColorSet.rgba(0x141414, 1)
@@ -141,6 +153,11 @@ import UIKit
         ),
         buttonSecondary: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0x000000, 0.05),
+            dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.05)
+        ),
+        // Secondary поверх тёмного (картинки-фона): белая 5%, как в тёмном режиме файла.
+        buttonSecondaryOnDark: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0xFFFFFF, 0.05),
             dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.05)
         ),
         buttonSecondaryFocus: UIColor = PersonalizationColorSet.dynamic(
@@ -246,12 +263,15 @@ import UIKit
         self.backgroundPrimary = backgroundPrimary
         self.backgroundGeneric = backgroundGeneric
         self.backgroundCard = backgroundCard
+        self.backgroundFloat = backgroundFloat
+        self.backgroundModal = backgroundModal
         self.backgroundInput = backgroundInput
         self.backgroundTransparent = backgroundTransparent
         self.backgroundInputDisabled = backgroundInputDisabled
         self.buttonPrimary = buttonPrimary
         self.buttonPrimaryFocus = buttonPrimaryFocus
         self.buttonSecondary = buttonSecondary
+        self.buttonSecondaryOnDark = buttonSecondaryOnDark
         self.buttonSecondaryFocus = buttonSecondaryFocus
         self.buttonPrimaryDisabled = buttonPrimaryDisabled
         self.buttonSecondaryDisabled = buttonSecondaryDisabled

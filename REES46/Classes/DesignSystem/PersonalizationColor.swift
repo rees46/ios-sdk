@@ -30,6 +30,10 @@ import UIKit
 
     public static var backgroundCard: UIColor { PersonalizationTheme.current.colors.backgroundCard }
 
+    public static var backgroundFloat: UIColor { PersonalizationTheme.current.colors.backgroundFloat }
+
+    public static var backgroundModal: UIColor { PersonalizationTheme.current.colors.backgroundModal }
+
     public static var backgroundInput: UIColor { PersonalizationTheme.current.colors.backgroundInput }
 
     public static var backgroundTransparent: UIColor { PersonalizationTheme.current.colors.backgroundTransparent }
@@ -43,6 +47,8 @@ import UIKit
     public static var buttonPrimaryFocus: UIColor { PersonalizationTheme.current.colors.buttonPrimaryFocus }
 
     public static var buttonSecondary: UIColor { PersonalizationTheme.current.colors.buttonSecondary }
+
+    public static var buttonSecondaryOnDark: UIColor { PersonalizationTheme.current.colors.buttonSecondaryOnDark }
 
     public static var buttonSecondaryFocus: UIColor { PersonalizationTheme.current.colors.buttonSecondaryFocus }
 
