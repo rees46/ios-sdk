@@ -258,6 +258,7 @@ private final class ShowcaseViewController: UIViewController {
             section.spacing = 8
             stack.addArrangedSubview(section)
         }
+
     }
 }
 
@@ -413,8 +414,39 @@ private enum Exhibits {
             ("Instant Search — with images", { instantSearch(typing: false, images: true) }),
             ("Catalog — header, grid ⇄ list, count, load more", { catalog() }),
             ("Catalog — empty state", { catalogEmpty() }),
-            ("Filters — range, checkbox lists with show more, reset / apply", { filters() })
+            ("Filters — range, checkbox lists with show more, reset / apply", { filters() }),
+            ("In App Popup — image, one button", { inAppPopup(.image) }),
+            ("In App Popup — image background, both buttons", {
+                inAppPopup(.imageBackground, closeText: "Not now")
+            }),
+            ("In App Popup — text only, close button with text", {
+                inAppPopup(.text, closeText: "Maybe later")
+            }),
+            ("In App Popup — icon, no buttons (cross only)", {
+                inAppPopup(.icon, actionText: nil)
+            })
         ]
+    }
+
+    /// The popup as the SDK will hand it over: the host loads the image and wires the two
+    /// callbacks. Fixed height here only because the showcase is a scrolling column — on screen
+    /// the popup is sized by whoever presents it.
+    private static func inAppPopup(
+        _ view: PersonalizationInAppPopup.ContentView,
+        actionText: String? = "Action",
+        closeText: String? = nil
+    ) -> UIView {
+        let popup = PersonalizationInAppPopup()
+        popup.contentView = view
+        popup.title = "Pizza ipsum dolor meat lovers"
+        popup.text = "Cheese ranch Philly roll pepperoni hand thin garlic bacon."
+        popup.actionText = actionText
+        popup.closeText = closeText
+        popup.icon = UIImage(systemName: "checkmark.shield.fill")
+        popup.imageLoader = { image in DemoImageLoader.shared.load(DemoProducts.popupImage, into: image) }
+        popup.translatesAutoresizingMaskIntoConstraints = false
+        popup.heightAnchor.constraint(equalToConstant: 460).isActive = true
+        return popup
     }
 
     // MARK: Layout helpers
@@ -656,6 +688,9 @@ private enum DemoProducts {
 
     /// Photos ship with the app (asset catalogue): the showcase must not depend on the network.
     private static func image(_ seed: String) -> String { "asset://uikit-\(seed)" }
+
+    /// Stand-in artwork for the in-app popup exhibits.
+    static let popupImage = image("jacket")
 
     static let all: [PersonalizationProduct] = [
         PersonalizationProduct(id: "1", name: "Air Zoom Pegasus 41 running shoes", price: "$140", imageUrl: image("pegasus"), brand: "Nike", ratingValue: "4.7", reviews: 128, oldPrice: "$165", discount: "-15%", actionText: "Add to cart"),
