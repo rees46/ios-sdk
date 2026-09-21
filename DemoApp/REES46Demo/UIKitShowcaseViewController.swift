@@ -18,7 +18,11 @@ final class UIKitShowcaseViewController: UIViewController {
 
     private let segments = UISegmentedControl(items: ["Components", "Blocks", "Search", "Stories"])
     private let container = UIView()
+    private let appearanceButton = UIButton(type: .system)
     private var current: UIViewController?
+
+    /// Colour scheme forced on the app by the switch; `.unspecified` hands control back to the device.
+    private var appearance: UIUserInterfaceStyle = .unspecified
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,11 +31,17 @@ final class UIKitShowcaseViewController: UIViewController {
         segments.selectedSegmentIndex = 0
         segments.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
         segments.translatesAutoresizingMaskIntoConstraints = false
+        appearanceButton.addTarget(self, action: #selector(appearanceTapped), for: .touchUpInside)
+        appearanceButton.translatesAutoresizingMaskIntoConstraints = false
+        renderAppearanceTitle()
         container.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(appearanceButton)
         view.addSubview(segments)
         view.addSubview(container)
         NSLayoutConstraint.activate([
-            segments.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            appearanceButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            appearanceButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            segments.topAnchor.constraint(equalTo: appearanceButton.bottomAnchor, constant: 4),
             segments.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
             segments.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             container.topAnchor.constraint(equalTo: segments.bottomAnchor, constant: 8),
@@ -40,6 +50,31 @@ final class UIKitShowcaseViewController: UIViewController {
             container.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         show(segment: 0)
+    }
+
+    /// Appearance switch: cycles the app between following the device, light and dark, so the kit's
+    /// dark set can be checked without leaving for Settings. The override goes on the window rather
+    /// than on this controller, so presented screens — the filters overlay, alerts — follow too; the
+    /// kit's colours are dynamic `UIColor`s and repaint on the trait change by themselves.
+    @objc private func appearanceTapped() {
+        switch appearance {
+        case .unspecified: appearance = .light
+        case .light: appearance = .dark
+        default: appearance = .unspecified
+        }
+        view.window?.overrideUserInterfaceStyle = appearance
+        renderAppearanceTitle()
+    }
+
+    /// Title of the switch: the mode it is in now, not the one it would go to.
+    private func renderAppearanceTitle() {
+        let title: String
+        switch appearance {
+        case .light: title = "Light"
+        case .dark: title = "Dark"
+        default: title = "Auto"
+        }
+        appearanceButton.setTitle(title, for: .normal)
     }
 
     @objc private func segmentChanged() {
