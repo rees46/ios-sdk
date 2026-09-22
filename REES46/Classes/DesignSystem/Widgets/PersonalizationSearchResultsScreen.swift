@@ -57,7 +57,7 @@ import UIKit
     public var query: String? {
         didSet {
             title.text = titleText ?? query
-            if oldValue != query { reload() }
+            if oldValue != query { scheduleReload() }
         }
     }
 
@@ -70,12 +70,12 @@ import UIKit
 
     /// `popular`, `price`, `discount`, `sales_rate`, `date`; `nil` — релевантность.
     public var sortBy: String? {
-        didSet { if oldValue != sortBy { reload() } }
+        didSet { if oldValue != sortBy { scheduleReload() } }
     }
 
     /// `asc` / `desc`.
     public var sortDir: String? {
-        didSet { if oldValue != sortDir { reload() } }
+        didSet { if oldValue != sortDir { scheduleReload() } }
     }
 
     /// Список id локаций через запятую.
@@ -129,7 +129,7 @@ import UIKit
 
     /// Значения фильтров; смена перезапрашивает первую страницу.
     public var applied = Applied() {
-        didSet { if oldValue != applied { reload() } }
+        didSet { if oldValue != applied { scheduleReload() } }
     }
 
     // MARK: - Тексты; локализация за хостом
@@ -142,7 +142,7 @@ import UIKit
         didSet { applyLoadMore() }
     }
     public var emptyText: String? = "No results for your request." {
-        didSet { catalog.emptyText = emptyText }
+        didSet { applyEmpty() }
     }
     public var filtersTitle: String? = "Filters"
     public var resetText: String? = "Reset"
@@ -171,6 +171,9 @@ import UIKit
     private var loading = false
     private var facetSource: SearchResponse?
     private var requestSeq = 0
+    /// Первая страница пришла и пуста — только тогда показывается пустое состояние.
+    private var noResults = false
+    private var pendingReload: DispatchWorkItem?
 
     public init() {
         super.init(frame: .zero)
@@ -187,7 +190,6 @@ import UIKit
         let padding = PersonalizationSpacing.xl
 
         catalog.header = title
-        catalog.emptyText = emptyText
         catalog.imageLoader = { [weak self] imageView, product in self?.loadImage(imageView, url: product.imageUrl) }
         catalog.onProductTap = { [weak self] card in
             guard let self, let product = self.products.first(where: { $0.id == card.id }) else { return }
@@ -278,20 +280,35 @@ import UIKit
         filtersScroll.isHidden = true
     }
 
-    /// Первая страница заново.
+    /// Первая страница заново — сразу; отложенный перезапрос от смены свойств снимается.
     public func reload() {
+        pendingReload?.cancel()
+        pendingReload = nil
         guard let sdk else { return }
         let text = (query ?? "").trimmingCharacters(in: .whitespaces)
+        // Запрос в полёте отменяется всегда, и его флаги сбрасываются здесь же: ответ
+        // отбросится по seq и сам их уже не снимет — лоадер крутился бы вечно,
+        // а loadMore остался бы заблокирован.
+        requestSeq += 1
+        loading = false
+        catalog.isLoading = false
+        noResults = false
         products = []
         total = 0
         page = 0
         renderProducts()
-        guard !text.isEmpty else {
-            requestSeq += 1
-            return
-        }
+        guard !text.isEmpty else { return }
         sdk.tracking.search(query: text)
         request(sdk, text: text, nextPage: 1)
+    }
+
+    /// Смена свойств перезапрашивает на следующем витке главного цикла: несколько смен
+    /// подряд (сортировка и направление, обе границы цены) — один запрос и одно событие `search`.
+    private func scheduleReload() {
+        guard pendingReload == nil else { return }
+        let work = DispatchWorkItem { [weak self] in self?.reload() }
+        pendingReload = work
+        DispatchQueue.main.async(execute: work)
     }
 
     /// Следующая страница, если она есть и запрос не в полёте.
@@ -331,7 +348,10 @@ import UIKit
                     self.page = nextPage
                     self.total = response.productsTotal
                     self.products = nextPage == 1 ? response.products : self.products + response.products
-                    if nextPage == 1 { self.facetSource = response }
+                    if nextPage == 1 {
+                        self.facetSource = response
+                        self.noResults = response.products.isEmpty
+                    }
                     self.renderProducts()
                 case .failure(let error):
                     self.onError?(error)
@@ -350,8 +370,15 @@ import UIKit
         } else {
             catalog.setCount(prefix: countPrefix, shown: products.count, separator: countSeparator, total: total)
         }
+        applyEmpty()
         applyLoadMore()
         renderAppliedTags()
+    }
+
+    /// «Ничего не найдено» — только после успешной пустой первой страницы: не на время
+    /// загрузки, не для пустой фразы (запроса нет) и не после ошибки.
+    private func applyEmpty() {
+        catalog.emptyText = noResults ? emptyText : nil
     }
 
     private func applyLoadMore() {
@@ -369,8 +396,12 @@ import UIKit
         if !priceMin.isEmpty || !priceMax.isEmpty {
             let label = [priceMin, priceMax].filter { !$0.isEmpty }.joined(separator: " – ")
             tags.append(.init(label: "\(priceTitle) \(label)") { [weak self] in
-                self?.applied.priceMin = nil
-                self?.applied.priceMax = nil
+                guard let self else { return }
+                // Обе границы одним присваиванием — одна смена `applied`.
+                var next = self.applied
+                next.priceMin = nil
+                next.priceMax = nil
+                self.applied = next
             })
         }
         for color in applied.colors.sorted() {
