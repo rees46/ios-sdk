@@ -185,7 +185,9 @@ import UIKit
         switch type {
         case .search:
             textField.text = ""
-            applyStateStyle()
+            // Программная смена текста `.editingChanged` не шлёт — шлём сами, чтобы очистка
+            // дошла до `onTextChange` тем же путём, что и ввод.
+            textField.sendActions(for: .editingChanged)
             onClear?()
         case .select:
             onSelectTap?()
