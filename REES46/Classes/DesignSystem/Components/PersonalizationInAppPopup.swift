@@ -49,18 +49,12 @@ import UIKit
 
     /// Подпись кнопки действия. Пусто — кнопки нет.
     public var actionText: String? {
-        didSet {
-            actionButton.text = actionText
-            actionButton.isHidden = (actionText ?? "").isEmpty
-        }
+        didSet { applyButtons() }
     }
 
     /// Подпись кнопки закрытия. Пусто — остаётся только крестик.
     public var closeText: String? {
-        didSet {
-            closeButton.text = closeText
-            closeButton.isHidden = (closeText ?? "").isEmpty
-        }
+        didSet { applyButtons() }
     }
 
     /// Иконка вида `.icon`.
@@ -144,6 +138,17 @@ import UIKit
         }
         closeIcon.translatesAutoresizingMaskIntoConstraints = false
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
+        // didSet на init не срабатывает: без этого попап без текстов показал бы пустые кнопки.
+        applyButtons()
+    }
+
+    private func applyButtons() {
+        actionButton.text = actionText
+        actionButton.isHidden = (actionText ?? "").isEmpty
+        closeButton.text = closeText
+        closeButton.isHidden = (closeText ?? "").isEmpty
+        // Пустой ряд кнопок стек не схлопывает: между ним и текстом остался бы отступ.
+        buttons.isHidden = actionButton.isHidden && closeButton.isHidden
     }
 
     @objc private func actionTapped() { onAction?() }
