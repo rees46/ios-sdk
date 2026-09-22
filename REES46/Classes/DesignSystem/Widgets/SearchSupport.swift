@@ -59,17 +59,37 @@ final class RecentSearches {
     }
 }
 
+private var searchImageLoadKey: UInt8 = 0
+
 /// Загрузчик картинок по умолчанию: URLSession с кэшем в памяти. Картинка ставится,
 /// только если `imageView` всё ещё ждёт этот же URL — ячейки переиспользуются.
 final class SearchImages {
     static let shared = SearchImages()
 
     private let cache = NSCache<NSString, UIImage>()
-    private var pending: [ObjectIdentifier: String] = [:]
+
+    /// Чего ждёт конкретный `imageView`. Живёт на самом view, а не в общем словаре:
+    /// уходит вместе с ним и снимает недокачанную загрузку.
+    private final class Load {
+        var url: String?
+        var task: URLSessionDataTask?
+
+        deinit { task?.cancel() }
+    }
+
+    private func state(of imageView: UIImageView) -> Load {
+        if let load = objc_getAssociatedObject(imageView, &searchImageLoadKey) as? Load { return load }
+        let load = Load()
+        objc_setAssociatedObject(imageView, &searchImageLoadKey, load, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return load
+    }
 
     func load(_ imageView: UIImageView, url: String?) {
-        let key = ObjectIdentifier(imageView)
-        pending[key] = url
+        let load = state(of: imageView)
+        // Прошлая загрузка этому view больше не нужна.
+        load.task?.cancel()
+        load.task = nil
+        load.url = url
         guard let url, !url.isEmpty, let link = URL(string: url) else {
             imageView.image = nil
             return
@@ -79,14 +99,17 @@ final class SearchImages {
             return
         }
         imageView.image = nil
-        URLSession.shared.dataTask(with: link) { [weak self, weak imageView] data, _, _ in
+        // Замыкание не держит `load`: иначе он не ушёл бы вместе с view до конца загрузки.
+        let task = URLSession.shared.dataTask(with: link) { [weak self, weak imageView] data, _, _ in
             guard let self, let data, let image = UIImage(data: data) else { return }
             self.cache.setObject(image, forKey: url as NSString)
             DispatchQueue.main.async {
-                guard let imageView, self.pending[key] == url else { return }
+                guard let imageView, self.state(of: imageView).url == url else { return }
                 imageView.image = image
             }
-        }.resume()
+        }
+        load.task = task
+        task.resume()
     }
 }
 
