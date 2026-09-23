@@ -162,7 +162,6 @@ import UIKit
         return spaced.prefix(1).uppercased() + String(spaced.dropFirst())
     }
 
-    private let scroll = UIScrollView()
     private let filtersScroll = UIScrollView()
     private var sdk: PersonalizationSDK?
     private var instanceHandle: Cancellable?
@@ -200,8 +199,21 @@ import UIKit
             self.onProductAction?(product)
         }
         catalog.onLoadMore = { [weak self] in self?.loadMore() }
-        embed(catalog, in: scroll, padding: padding)
-        scroll.delegate = self
+        catalog.onNearEnd = { [weak self] in
+            guard let self, self.infiniteScroll else { return }
+            self.loadMore()
+        }
+        // Каталог прокручивается сам, а не во внешнем скролле: там его лента раскладывалась бы
+        // целиком, и каждая догруженная страница оставалась бы в памяти всеми карточками.
+        catalog.contentInset = UIEdgeInsets(top: padding, left: padding, bottom: padding, right: padding)
+        catalog.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(catalog)
+        NSLayoutConstraint.activate([
+            catalog.topAnchor.constraint(equalTo: topAnchor),
+            catalog.bottomAnchor.constraint(equalTo: bottomAnchor),
+            catalog.leadingAnchor.constraint(equalTo: leadingAnchor),
+            catalog.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
 
         title.onBack = { [weak self] in self?.onBack?() }
         title.onViewChanged = { [weak self] index in self?.catalog.layout = index == 0 ? .grid : .list }
@@ -297,6 +309,8 @@ import UIKit
         total = 0
         page = 0
         renderProducts()
+        // Новая выдача — с начала ленты, а не с места, где пользователь бросил прошлую.
+        catalog.scrollToTop()
         guard !text.isEmpty else { return }
         sdk.tracking.search(query: text)
         request(sdk, text: text, nextPage: 1)
@@ -525,13 +539,5 @@ import UIKit
             }
         }
         return next
-    }
-}
-
-extension PersonalizationSearchResultsScreen: UIScrollViewDelegate {
-    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard infiniteScroll, scrollView === scroll else { return }
-        let bottom = scrollView.contentOffset.y + scrollView.bounds.height
-        if bottom >= scrollView.contentSize.height - scrollView.bounds.height / 2 { loadMore() }
     }
 }

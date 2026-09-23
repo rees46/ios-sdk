@@ -153,13 +153,7 @@ import UIKit
     private func cardHeight(for product: PersonalizationProduct, width: CGFloat) -> CGFloat {
         let card = PersonalizationProductCard(type: layout.cardType)
         card.imageAspect = imageAspect
-        card.brand = product.brand
-        card.name = product.name
-        card.price = product.price
-        card.oldPrice = product.oldPrice
-        card.discount = product.discount
-        card.actionText = product.actionText
-        card.setRating(value: product.ratingValue, reviews: product.reviews)
+        card.show(product)
         let height = card.systemLayoutSizeFitting(
             CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
             withHorizontalFittingPriority: .required,
@@ -213,13 +207,7 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
         let card = cell.card
         card.type = layout.cardType
         card.imageAspect = imageAspect
-        card.brand = product.brand
-        card.name = product.name
-        card.price = product.price
-        card.oldPrice = product.oldPrice
-        card.discount = product.discount
-        card.actionText = product.actionText
-        card.setRating(value: product.ratingValue, reviews: product.reviews)
+        card.show(product)
         card.onAction = { [weak self] in self?.onProductAction?(product) }
         card.onTap = { [weak self] in self?.onProductTap?(product) }
         card.image.imageView.image = nil

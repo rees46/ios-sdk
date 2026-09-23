@@ -33,6 +33,7 @@
 		A1B2C3D40000000000000009 /* StoriesLinkOptOutContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000A /* StoriesLinkOptOutContractTests.swift */; };
 		A1B2C3D4000000000000000B /* StoriesLinkOptOutBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000C /* StoriesLinkOptOutBridgeTests.swift */; };
 		A1B2C3D40000000000000011 /* StoriesEmptyBlockCollapseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000012 /* StoriesEmptyBlockCollapseTests.swift */; };
+		A1B2C3D40000000000000013 /* PersonalizationCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000014 /* PersonalizationCatalogTests.swift */; };
 		A1B2C3D40000000000000015 /* PersonalizationInAppPopupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000016 /* PersonalizationInAppPopupTests.swift */; };
 		A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
@@ -157,6 +158,7 @@
 		A1B2C3D4000000000000000A /* StoriesLinkOptOutContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesLinkOptOutContractTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000000000000C /* StoriesLinkOptOutBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesLinkOptOutBridgeTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000012 /* StoriesEmptyBlockCollapseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesEmptyBlockCollapseTests.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000014 /* PersonalizationCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationCatalogTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000016 /* PersonalizationInAppPopupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationInAppPopupTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationWidgetPositionTests.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
@@ -405,6 +407,7 @@
 				A1B2C3D4000000000000000A /* StoriesLinkOptOutContractTests.swift */,
 				A1B2C3D4000000000000000C /* StoriesLinkOptOutBridgeTests.swift */,
 				A1B2C3D40000000000000012 /* StoriesEmptyBlockCollapseTests.swift */,
+				A1B2C3D40000000000000014 /* PersonalizationCatalogTests.swift */,
 				A1B2C3D40000000000000016 /* PersonalizationInAppPopupTests.swift */,
 				A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */,
 				D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */,
@@ -789,6 +792,7 @@
 				A1B2C3D40000000000000009 /* StoriesLinkOptOutContractTests.swift in Sources */,
 				A1B2C3D4000000000000000B /* StoriesLinkOptOutBridgeTests.swift in Sources */,
 				A1B2C3D40000000000000011 /* StoriesEmptyBlockCollapseTests.swift in Sources */,
+				A1B2C3D40000000000000013 /* PersonalizationCatalogTests.swift in Sources */,
 				A1B2C3D40000000000000015 /* PersonalizationInAppPopupTests.swift in Sources */,
 				A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */,
 				D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */,

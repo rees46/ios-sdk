@@ -119,6 +119,17 @@ import UIKit
         if let value { rating.set(value: value, reviews: reviews) }
     }
 
+    /// Тексты карточки из данных товара. Обработчики и картинку раскладка ставит сама.
+    func show(_ product: PersonalizationProduct) {
+        brand = product.brand
+        name = product.name
+        price = product.price
+        oldPrice = product.oldPrice
+        discount = product.discount
+        actionText = product.actionText
+        setRating(value: product.ratingValue, reviews: product.reviews)
+    }
+
     private func setup() {
         image.translatesAutoresizingMaskIntoConstraints = false
         imageBadge.translatesAutoresizingMaskIntoConstraints = false
