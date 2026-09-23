@@ -13,12 +13,16 @@ import UIKit
 ///
 /// Крестик стоит **всегда** и принадлежит самому попапу, а не контейнеру картинки:
 /// в макете виды «только текст» и «иконка» картинки не имеют, но крестик у них нарисован.
+/// Он круглый (компонент Close: кнопка MD с радиусом Rounded) и во всех видах лежит поверх
+/// содержимого в углу, на отступе попапа; над фотографией — в тёмном варианте.
 /// Текстовая кнопка закрытия (`closeText`) в макете не нарисована — её даёт админка
 /// отдельным тумблером рядом с кнопкой действия, поэтому она здесь вторичной кнопкой
 /// под основной. Пустой текст — кнопки нет, остаётся один крестик.
 ///
 /// Поля и зазор между блоками — семантические отступы Padding/Gap Modal (20) и
-/// Padding/Gap Full Screen (24), скругление модалки — радиус Modal, фон — Background/Card.
+/// Padding/Gap Full Screen (24), скругление модалки — радиус Modal, фон — Background/Card,
+/// тень модалки — Elevation 3. Скругление и обрезка живут на внутренней карточке,
+/// а тень — на самом попапе: обрезка на одном слое с тенью срезала бы её.
 @_spi(PersonalizationUI) public final class PersonalizationInAppPopup: UIView {
 
     /// Вид попапа: чем занято место над текстом.
@@ -79,6 +83,11 @@ import UIKit
     private let closeButton = PersonalizationButton()
     private let closeIcon = PersonalizationButton()
 
+    /// Карточка: фон, скругление и обрезка; всё содержимое лежит в ней.
+    private let surface = UIView()
+    /// Второй слой тени Elevation 3: `CALayer` рисует одну тень, первую несёт слой попапа.
+    private let secondShadow = CALayer()
+
     private let column = UIStackView()
     private let card = UIStackView()
     private let textStack = UIStackView()
@@ -102,7 +111,16 @@ import UIKit
     }
 
     private func setup() {
-        clipsToBounds = true
+        surface.clipsToBounds = true
+        surface.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(surface)
+        NSLayoutConstraint.activate([
+            surface.topAnchor.constraint(equalTo: topAnchor),
+            surface.leadingAnchor.constraint(equalTo: leadingAnchor),
+            surface.trailingAnchor.constraint(equalTo: trailingAnchor),
+            surface.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+        layer.insertSublayer(secondShadow, below: surface.layer)
 
         for view in [backgroundImageView, topImageView] {
             view.contentMode = .scaleAspectFill
@@ -123,6 +141,7 @@ import UIKit
 
         closeIcon.size = .md
         closeIcon.view = .secondary
+        closeIcon.rounded = true
         closeIcon.iconStart = PersonalizationIcons.crossLarge
         closeIcon.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
 
@@ -131,7 +150,6 @@ import UIKit
         textStack.axis = .vertical
         textStack.spacing = PersonalizationSpacing.md
         buttons.axis = .vertical
-        buttons.spacing = PersonalizationSpacing.md
 
         for stack in [column, card, textStack, buttons] {
             stack.translatesAutoresizingMaskIntoConstraints = false
@@ -156,7 +174,7 @@ import UIKit
     @objc private func closeTapped() { onClose?() }
 
     private func rebuild() {
-        subviews.forEach { $0.removeFromSuperview() }
+        surface.subviews.forEach { $0.removeFromSuperview() }
         [column, card, textStack, buttons].forEach { stack in
             stack.arrangedSubviews.forEach { stack.removeArrangedSubview($0); $0.removeFromSuperview() }
         }
@@ -170,11 +188,16 @@ import UIKit
 
         applyShape(modal: modal)
         applyText()
-        closeIcon.onDark = overImage
+        // Поверх картинки контролы берут инвертированную палитру, иначе тёмная подпись
+        // вторичной кнопки тонет в фотографии. Крестик над фотографией и у вида с картинкой
+        // сверху: в макете у него там тёмный режим.
+        closeIcon.onDark = overImage || contentView == .image
         closeButton.onDark = overImage
 
         textStack.addArrangedSubview(titleLabel)
         textStack.addArrangedSubview(textLabel)
+        // Между кнопками: 12 у модалки, 16 у полноэкранного.
+        buttons.spacing = modal ? PersonalizationSpacing.lg : PersonalizationSpacing.xl
         buttons.addArrangedSubview(actionButton)
         buttons.addArrangedSubview(closeButton)
 
@@ -193,30 +216,22 @@ import UIKit
             topImageView.setContentCompressionResistancePriority(UILayoutPriority(1), for: .vertical)
 
         case .imageBackground:
-            addSubview(backgroundImageView)
+            surface.addSubview(backgroundImageView)
             NSLayoutConstraint.activate([
-                backgroundImageView.topAnchor.constraint(equalTo: topAnchor),
-                backgroundImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                backgroundImageView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                backgroundImageView.bottomAnchor.constraint(equalTo: bottomAnchor)
+                backgroundImageView.topAnchor.constraint(equalTo: surface.topAnchor),
+                backgroundImageView.leadingAnchor.constraint(equalTo: surface.leadingAnchor),
+                backgroundImageView.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
+                backgroundImageView.bottomAnchor.constraint(equalTo: surface.bottomAnchor)
             ])
             column.spacing = gapSection
             column.isLayoutMarginsRelativeArrangement = true
             column.directionalLayoutMargins = .init(top: pad, leading: pad, bottom: pad, trailing: pad)
-            // Здесь крестик не накладкой, а первой строкой: в макете он занимает свою
-            // строку, иначе заголовок заезжает под него.
-            let closeRow = UIView()
-            closeRow.addSubview(closeIcon)
-            NSLayoutConstraint.activate([
-                closeIcon.topAnchor.constraint(equalTo: closeRow.topAnchor),
-                closeIcon.bottomAnchor.constraint(equalTo: closeRow.bottomAnchor),
-                closeIcon.trailingAnchor.constraint(equalTo: closeRow.trailingAnchor)
-            ])
-            column.addArrangedSubview(closeRow)
-            // Текст прижат к низу: распорка съедает свободное место сверху.
+            // Текст прижат к низу: распорка съедает свободное место сверху. Шага после
+            // неё нет — высокий текст начинается сразу на отступе попапа.
             let spacer = UIView()
             spacer.setContentHuggingPriority(UILayoutPriority(1), for: .vertical)
             column.addArrangedSubview(spacer)
+            column.setCustomSpacing(0, after: spacer)
             column.addArrangedSubview(textStack)
             column.addArrangedSubview(buttons)
 
@@ -258,26 +273,45 @@ import UIKit
             ])
         }
 
-        addSubview(column)
+        surface.addSubview(column)
         NSLayoutConstraint.activate([
-            column.topAnchor.constraint(equalTo: topAnchor),
-            column.leadingAnchor.constraint(equalTo: leadingAnchor),
-            column.trailingAnchor.constraint(equalTo: trailingAnchor),
-            column.bottomAnchor.constraint(equalTo: bottomAnchor)
+            column.topAnchor.constraint(equalTo: surface.topAnchor),
+            column.leadingAnchor.constraint(equalTo: surface.leadingAnchor),
+            column.trailingAnchor.constraint(equalTo: surface.trailingAnchor),
+            column.bottomAnchor.constraint(equalTo: surface.bottomAnchor)
         ])
 
-        // Крестик всегда на месте — у видов без картинки тоже. У фона-картинки он уже
-        // стоит в колонке, здесь накладкой поверх содержимого.
-        if !overImage {
-            addSubview(closeIcon)
-            closeIconConstraints = [
-                closeIcon.topAnchor.constraint(equalTo: topAnchor, constant: pad),
-                closeIcon.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -pad)
-            ]
-            NSLayoutConstraint.activate(closeIconConstraints)
-        }
+        // Крестик всегда на месте — у видов без картинки тоже, накладкой поверх содержимого.
+        surface.addSubview(closeIcon)
+        closeIconConstraints = [
+            closeIcon.topAnchor.constraint(equalTo: surface.topAnchor, constant: pad),
+            closeIcon.trailingAnchor.constraint(equalTo: surface.trailingAnchor, constant: -pad)
+        ]
+        NSLayoutConstraint.activate(closeIconConstraints)
 
         imageLoader?(imageTarget)
+    }
+
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        // Форма тени задана явно: без shadowPath слой вычислял бы её по альфе содержимого
+        // на каждом кадре. Подслой второй тени — не view, его рамку двигаем сами.
+        let path = UIBezierPath(
+            roundedRect: CGRect(origin: .zero, size: bounds.size),
+            cornerRadius: surface.layer.cornerRadius
+        ).cgPath
+        layer.shadowPath = path
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        secondShadow.frame = bounds
+        secondShadow.shadowPath = path
+        CATransaction.commit()
+    }
+
+    public override func traitCollectionDidChange(_ previous: UITraitCollection?) {
+        super.traitCollectionDidChange(previous)
+        // cgColor тени не переключается на смену темы сам.
+        applyShadow()
     }
 
     private func applyText() {
@@ -329,8 +363,23 @@ import UIKit
     }
 
     private func applyShape(modal: Bool) {
-        backgroundColor = PersonalizationColor.backgroundCard
-        layer.cornerRadius = modal ? PersonalizationRadius.modal : 0
+        surface.backgroundColor = PersonalizationColor.backgroundCard
+        surface.layer.cornerRadius = modal ? PersonalizationRadius.modal : 0
         card.backgroundColor = PersonalizationColor.backgroundCard
+        applyShadow()
+        setNeedsLayout()
+    }
+
+    /// Тень Elevation 3 у модалки, у полноэкранного тени нет. Два слоя макета: первый
+    /// на слое попапа, второй на подслое под карточкой.
+    private func applyShadow() {
+        let shadows = presentation == .modal ? PersonalizationElevation.e3 : PersonalizationElevation.none
+        for (index, target) in [layer, secondShadow].enumerated() {
+            if index < shadows.count {
+                shadows[index].apply(to: target)
+            } else {
+                target.shadowOpacity = 0
+            }
+        }
     }
 }

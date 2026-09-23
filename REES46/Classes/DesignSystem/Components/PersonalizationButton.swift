@@ -103,6 +103,13 @@ import UIKit
         didSet { applyStyle() }
     }
 
+    /// Скругление Rounded вместо радиуса размера: кнопка-иконка становится кругом.
+    /// Так в макете устроен крестик Close (секция Button) — кнопка MD Secondary,
+    /// у которой радиус переопределён на Rounded.
+    public var rounded: Bool = false {
+        didSet { applyContent() }
+    }
+
     /// Иконка перед текстом. Без текста кнопка становится кнопкой-иконкой.
     public var iconStart: UIImage? {
         didSet { applyContent() }
@@ -183,7 +190,7 @@ import UIKit
         iconStartView.image = iconStart
         iconEndView.image = iconEnd
 
-        layer.cornerRadius = size.cornerRadius
+        applyCornerRadius()
 
         NSLayoutConstraint.deactivate(iconConstraints)
         iconConstraints = [
@@ -226,6 +233,19 @@ import UIKit
         NSLayoutConstraint.activate(stackInsets)
 
         applyStyle()
+    }
+
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        if rounded { applyCornerRadius() }
+    }
+
+    /// Rounded — «pill» 999: слою он отдаётся не как есть, а половиной меньшей стороны,
+    /// поэтому пересчитывается, когда размер уже известен.
+    private func applyCornerRadius() {
+        layer.cornerRadius = rounded
+            ? min(PersonalizationRadius.rounded, min(bounds.width, bounds.height) / 2)
+            : size.cornerRadius
     }
 
     private func applyStyle() {
