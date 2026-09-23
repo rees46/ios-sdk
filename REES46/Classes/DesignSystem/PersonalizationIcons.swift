@@ -3,7 +3,8 @@ import UIKit
 /// Иконки дизайн-системы, 32x32.
 ///
 /// Источник: Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6),
-/// страница Icons, секция 157:5185.
+/// страница Icons, секция 157:5185. `rosette` и `checkRosetteFill` — штампы
+/// карты лояльности, набор Wallet/Stamps (570:10384).
 ///
 /// Ассеты векторные (PDF с сохранённым вектором) и помечены как
 /// шаблонные, поэтому красятся через `tintColor` у `UIImageView`.
@@ -31,6 +32,7 @@ import UIKit
     public static var arrowLeft: UIImage? { image("personalization_arrow_left") }
     public static var arrowRotateCw: UIImage? { image("personalization_arrow_rotate_cw") }
     public static var arrowsUpDown: UIImage? { image("personalization_arrows_up_down") }
+    public static var checkRosetteFill: UIImage? { image("personalization_check_rosette_fill") }
     public static var copy: UIImage? { image("personalization_copy") }
     public static var crossLarge: UIImage? { image("personalization_cross_large") }
     public static var cross: UIImage? { image("personalization_cross") }
@@ -40,6 +42,7 @@ import UIKit
     public static var listFill: UIImage? { image("personalization_list_fill") }
     public static var list: UIImage? { image("personalization_list") }
     public static var magnifier: UIImage? { image("personalization_magnifier") }
+    public static var rosette: UIImage? { image("personalization_rosette") }
     public static var spacingMd: UIImage? { image("personalization_spacing_md") }
     public static var starFill: UIImage? { image("personalization_star_fill") }
 }
