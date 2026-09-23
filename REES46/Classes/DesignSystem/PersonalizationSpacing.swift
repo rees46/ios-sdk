@@ -2,10 +2,9 @@ import CoreGraphics
 
 /// Отступы дизайн-системы.
 ///
-/// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), страница Typography.
-/// Сгенерировано скриптом; правки вносить в источник, не здесь.
+/// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), коллекция переменных Spacings.
 ///
-/// Шкала независима от типографической: здесь MD вместо Base и нет 6XL.
+/// Шкала независима от типографической: здесь MD вместо Base, ступеней 11 — до 7XL.
 @_spi(PersonalizationUI) public enum PersonalizationSpacing {
 
     /// XS — 2pt.
@@ -23,17 +22,49 @@ import CoreGraphics
     /// XL — 16pt.
     public static let xl: CGFloat = 16
 
-    /// 2XL — 24pt.
-    public static let xl2: CGFloat = 24
+    /// 2XL — 20pt.
+    public static let xl2: CGFloat = 20
 
-    /// 3XL — 32pt.
-    public static let xl3: CGFloat = 32
+    /// 3XL — 24pt.
+    public static let xl3: CGFloat = 24
 
-    /// 4XL — 48pt.
-    public static let xl4: CGFloat = 48
+    /// 4XL — 32pt.
+    public static let xl4: CGFloat = 32
 
-    /// 5XL — 64pt.
-    public static let xl5: CGFloat = 64
+    /// 5XL — 48pt.
+    public static let xl5: CGFloat = 48
+
+    /// 6XL — 56pt.
+    public static let xl6: CGFloat = 56
+
+    /// 7XL — 64pt.
+    public static let xl7: CGFloat = 64
+
+    // Семантические отступы: поля и зазоры блоков, модалки и полноэкранного окна.
+
+    /// Padding X — 16pt.
+    public static let paddingX: CGFloat = 16
+
+    /// Padding Y — 16pt.
+    public static let paddingY: CGFloat = 16
+
+    /// Gap X — 16pt.
+    public static let gapX: CGFloat = 16
+
+    /// Gap Y — 16pt.
+    public static let gapY: CGFloat = 16
+
+    /// Padding Modal — 20pt.
+    public static let paddingModal: CGFloat = 20
+
+    /// Gap Modal — 20pt.
+    public static let gapModal: CGFloat = 20
+
+    /// Padding Full Screen — 24pt.
+    public static let paddingFullScreen: CGFloat = 24
+
+    /// Gap Full Screen — 24pt.
+    public static let gapFullScreen: CGFloat = 24
 
 }
 

@@ -45,7 +45,9 @@ import UIKit
 
     private func setup() {
         clipsToBounds = true
-        backgroundColor = PersonalizationColor.backgroundCard
+        // Заглушка до загрузки. В макете она нетокенный серый, здесь — Neutral 50:
+        // полупрозрачная, поэтому видна и на карточке, и прямо на фоне экрана.
+        backgroundColor = PersonalizationColor.neutral50
         imageView.contentMode = .scaleAspectFill
         imageView.translatesAutoresizingMaskIntoConstraints = false
         addSubview(imageView)

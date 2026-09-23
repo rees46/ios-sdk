@@ -54,13 +54,15 @@ import UIKit
     public static var current = PersonalizationTheme()
 }
 
-/// Цвета темы. Значения по умолчанию сняты со страницы Colors, обе схемы.
+/// Цвета темы. Значения по умолчанию — коллекция переменных Color, режимы Light и Dark
+/// (сверено 2026-09-23).
 @_spi(PersonalizationUI) public struct PersonalizationColorSet {
 
     public var brandPrimary: UIColor
+    /// Neutral 50: полупрозрачная ступень, одинаково заметна на любом фоне — заглушки картинок.
+    public var neutral50: UIColor
     public var semanticWarning: UIColor
     public var semanticDanger: UIColor
-    public var backgroundPrimary: UIColor
     public var backgroundGeneric: UIColor
     public var backgroundCard: UIColor
     public var backgroundFloat: UIColor
@@ -96,11 +98,17 @@ import UIKit
     public var textBrand: UIColor
     public var textLink: UIColor
     public var textLinkVisited: UIColor
+    /// Shadow/Heavy: цвет тени вместе с её прозрачностью — 8% в светлой, 50% в тёмной.
+    public var shadowHeavy: UIColor
 
     public init(
         brandPrimary: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0x007DF2, 1),
             dark: PersonalizationColorSet.rgba(0x007DF2, 1)
+        ),
+        neutral50: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0x000000, 0.05),
+            dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.05)
         ),
         semanticWarning: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF37A17, 1),
@@ -110,17 +118,13 @@ import UIKit
             light: PersonalizationColorSet.rgba(0xE51919, 1),
             dark: PersonalizationColorSet.rgba(0xE51919, 1)
         ),
-        backgroundPrimary: UIColor = PersonalizationColorSet.dynamic(
-            light: PersonalizationColorSet.rgba(0x007DF2, 1),
-            dark: PersonalizationColorSet.rgba(0x007DF2, 1)
-        ),
         backgroundGeneric: UIColor = PersonalizationColorSet.dynamic(
-            light: PersonalizationColorSet.rgba(0xFAFAFA, 1),
-            dark: PersonalizationColorSet.rgba(0x141414, 1)
-        ),
-        backgroundCard: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF2F2F2, 1),
             dark: PersonalizationColorSet.rgba(0x0D0D0D, 1)
+        ),
+        backgroundCard: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0xFFFFFF, 1),
+            dark: PersonalizationColorSet.rgba(0x1A1A1A, 1)
         ),
         // Поверхности поверх карточки. В светлой все белые, различаются только в тёмной.
         backgroundFloat: UIColor = PersonalizationColorSet.dynamic(
@@ -133,7 +137,7 @@ import UIKit
         ),
         backgroundInput: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF2F2F2, 1),
-            dark: PersonalizationColorSet.rgba(0x141414, 1)
+            dark: PersonalizationColorSet.rgba(0x0D0D0D, 1)
         ),
         backgroundTransparent: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xFFFFFF, 0),
@@ -164,9 +168,10 @@ import UIKit
             light: PersonalizationColorSet.rgba(0x000000, 0.1),
             dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.1)
         ),
+        // Brand/Primary с прозрачностью 65%.
         buttonPrimaryDisabled: UIColor = PersonalizationColorSet.dynamic(
-            light: PersonalizationColorSet.rgba(0x32AFFF, 1),
-            dark: PersonalizationColorSet.rgba(0x32AFFF, 1)
+            light: PersonalizationColorSet.rgba(0x007DF2, 0.65),
+            dark: PersonalizationColorSet.rgba(0x007DF2, 0.65)
         ),
         buttonSecondaryDisabled: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0x000000, 0.05),
@@ -255,12 +260,16 @@ import UIKit
         textLinkVisited: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0x4D00F2, 1),
             dark: PersonalizationColorSet.rgba(0x4D00F2, 1)
+        ),
+        shadowHeavy: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0x000000, 0.08),
+            dark: PersonalizationColorSet.rgba(0x000000, 0.5)
         )
     ) {
         self.brandPrimary = brandPrimary
+        self.neutral50 = neutral50
         self.semanticWarning = semanticWarning
         self.semanticDanger = semanticDanger
-        self.backgroundPrimary = backgroundPrimary
         self.backgroundGeneric = backgroundGeneric
         self.backgroundCard = backgroundCard
         self.backgroundFloat = backgroundFloat
@@ -296,6 +305,7 @@ import UIKit
         self.textBrand = textBrand
         self.textLink = textLink
         self.textLinkVisited = textLinkVisited
+        self.shadowHeavy = shadowHeavy
     }
 
     /// Цвет из hex и прозрачности. Публичный: используется в значениях по умолчанию
@@ -332,17 +342,21 @@ import UIKit
     public var xl4: CGFloat
     public var xl5: CGFloat
     public var xl6: CGFloat
+    public var xl7: CGFloat
     public var rounded: CGFloat
 
-    /// Семантические радиусы: переменные Button LG/MD/SM и Segmented Button MD/SM
-    /// из Figma. К ним привязаны Button, Input, Badge, Tag и Button Group —
-    /// дизайнер меняет их отдельно от шкалы, поэтому и здесь они отдельно.
-    /// Segmented SM в макете не снят, выведен по шагу остальных (+2).
+    /// Семантические радиусы из коллекции Radius. К Button LG/MD/SM привязаны Button,
+    /// Input, Badge, Tag, к Segmented Button — Button Group, к Modal — попап.
+    /// Дизайнер меняет их отдельно от шкалы, поэтому и здесь они отдельно.
     public var buttonLg: CGFloat
     public var buttonMd: CGFloat
     public var buttonSm: CGFloat
+    public var segmentedLg: CGFloat
     public var segmentedMd: CGFloat
     public var segmentedSm: CGFloat
+    public var card: CGFloat
+    public var toast: CGFloat
+    public var modal: CGFloat
 
     public init(
         xs: CGFloat = 2,
@@ -355,12 +369,17 @@ import UIKit
         xl4: CGFloat = 16,
         xl5: CGFloat = 20,
         xl6: CGFloat = 24,
+        xl7: CGFloat = 32,
         rounded: CGFloat = 999,
         buttonLg: CGFloat = 12,
         buttonMd: CGFloat = 10,
         buttonSm: CGFloat = 8,
+        segmentedLg: CGFloat = 10,
         segmentedMd: CGFloat = 8,
-        segmentedSm: CGFloat = 6
+        segmentedSm: CGFloat = 6,
+        card: CGFloat = 16,
+        toast: CGFloat = 999,
+        modal: CGFloat = 24
     ) {
         self.xs = xs
         self.sm = sm
@@ -372,11 +391,16 @@ import UIKit
         self.xl4 = xl4
         self.xl5 = xl5
         self.xl6 = xl6
+        self.xl7 = xl7
         self.rounded = rounded
         self.buttonLg = buttonLg
         self.buttonMd = buttonMd
         self.buttonSm = buttonSm
+        self.segmentedLg = segmentedLg
         self.segmentedMd = segmentedMd
         self.segmentedSm = segmentedSm
+        self.card = card
+        self.toast = toast
+        self.modal = modal
     }
 }

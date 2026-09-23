@@ -17,8 +17,8 @@ import UIKit
 /// отдельным тумблером рядом с кнопкой действия, поэтому она здесь вторичной кнопкой
 /// под основной. Пустой текст — кнопки нет, остаётся один крестик.
 ///
-/// Отступ 20 у модалки и интерлиньяж 48 у полноэкранного заголовка вне шкал кита —
-/// взяты из макета как есть.
+/// Поля и зазор между блоками — семантические отступы Padding/Gap Modal (20) и
+/// Padding/Gap Full Screen (24), скругление модалки — радиус Modal, фон — Background/Card.
 @_spi(PersonalizationUI) public final class PersonalizationInAppPopup: UIView {
 
     /// Вид попапа: чем занято место над текстом.
@@ -164,8 +164,8 @@ import UIKit
         closeIconConstraints = []
 
         let modal = presentation == .modal
-        let pad: CGFloat = modal ? 20 : PersonalizationSpacing.xl2
-        let gapSection: CGFloat = modal ? 20 : PersonalizationSpacing.xl2
+        let pad = modal ? PersonalizationSpacing.paddingModal : PersonalizationSpacing.paddingFullScreen
+        let gapSection = modal ? PersonalizationSpacing.gapModal : PersonalizationSpacing.gapFullScreen
         let overImage = contentView == .imageBackground
 
         applyShape(modal: modal)
@@ -182,7 +182,7 @@ import UIKit
         case .image:
             column.spacing = 0
             column.addArrangedSubview(topImageView)
-            card.spacing = modal ? PersonalizationSpacing.xl : PersonalizationSpacing.xl2
+            card.spacing = modal ? PersonalizationSpacing.xl : PersonalizationSpacing.xl3
             card.isLayoutMarginsRelativeArrangement = true
             card.directionalLayoutMargins = .init(top: pad, leading: pad, bottom: pad, trailing: pad)
             card.addArrangedSubview(textStack)
@@ -228,7 +228,7 @@ import UIKit
             centre.axis = .vertical
             centre.alignment = .center
             if contentView == .icon {
-                centre.spacing = PersonalizationSpacing.xl2
+                centre.spacing = PersonalizationSpacing.xl3
                 let side: CGFloat = modal ? 100 : 120
                 iconView.translatesAutoresizingMaskIntoConstraints = false
                 NSLayoutConstraint.activate([
@@ -286,11 +286,9 @@ import UIKit
         let centred = contentView == .text || contentView == .icon
         let overImage = contentView == .imageBackground
 
-        // Полноэкранный заголовок в макете 36/48, а ступень 4XL кита — 36/52:
-        // кегль с одной ступени, интерлиньяж с другой, как и в остальном файле.
         let titleStyle = modal
             ? PersonalizationTypography.xl3Emphasized
-            : PersonalizationTextStyle(size: 36, lineHeight: 48, tracking: -0.5, weight: .semibold)
+            : PersonalizationTypography.xl4Emphasized
         let textStyle = modal ? PersonalizationTypography.lgDefault : PersonalizationTypography.xl2Default
 
         render(
@@ -331,11 +329,8 @@ import UIKit
     }
 
     private func applyShape(modal: Bool) {
-        // Background/Modal, а не Card: в светлой они совпадают (белый), в тёмной у модалки
-        // своя ступень. В Figma компонент привязан к Card, но значение Card в ките отстало
-        // от файла (там уже белый) — ресинк цветов отдельной задачей.
-        backgroundColor = PersonalizationColor.backgroundModal
-        layer.cornerRadius = modal ? PersonalizationRadius.xl6 : 0
-        card.backgroundColor = PersonalizationColor.backgroundModal
+        backgroundColor = PersonalizationColor.backgroundCard
+        layer.cornerRadius = modal ? PersonalizationRadius.modal : 0
+        card.backgroundColor = PersonalizationColor.backgroundCard
     }
 }

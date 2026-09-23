@@ -56,7 +56,7 @@ import UIKit
         /// Горизонтальный отступ со стороны без иконки.
         var paddingWide: CGFloat {
             switch self {
-            case .lg: return PersonalizationSpacing.xl2 // 24
+            case .lg: return PersonalizationSpacing.xl3 // 24
             case .md: return PersonalizationSpacing.xl  // 16
             case .sm: return PersonalizationSpacing.lg  // 12
             }

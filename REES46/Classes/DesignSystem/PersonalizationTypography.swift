@@ -125,32 +125,32 @@ import UIKit
 
     /// 4XL/Default — 36/52, трекинг -0.5.
     public static let xl4Default = PersonalizationTextStyle(
-        size: 36, lineHeight: 52, tracking: -0.5, weight: .regular
+        size: 36, lineHeight: 48, tracking: -0.5, weight: .regular
     )
 
     /// 4XL/Emphasized — 36/52, трекинг -0.5.
     public static let xl4Emphasized = PersonalizationTextStyle(
-        size: 36, lineHeight: 52, tracking: -0.5, weight: .semibold
+        size: 36, lineHeight: 48, tracking: -0.5, weight: .semibold
     )
 
     /// 5XL/Default — 48/64, трекинг -0.5.
     public static let xl5Default = PersonalizationTextStyle(
-        size: 48, lineHeight: 64, tracking: -0.5, weight: .regular
+        size: 48, lineHeight: 56, tracking: -0.5, weight: .regular
     )
 
     /// 5XL/Emphasized — 48/64, трекинг -0.5.
     public static let xl5Emphasized = PersonalizationTextStyle(
-        size: 48, lineHeight: 64, tracking: -0.5, weight: .semibold
+        size: 48, lineHeight: 56, tracking: -0.5, weight: .semibold
     )
 
     /// 6XL/Default — 60/72, трекинг -0.5.
     public static let xl6Default = PersonalizationTextStyle(
-        size: 60, lineHeight: 72, tracking: -0.5, weight: .regular
+        size: 60, lineHeight: 64, tracking: -0.5, weight: .regular
     )
 
     /// 6XL/Emphasized — 60/72, трекинг -0.5.
     public static let xl6Emphasized = PersonalizationTextStyle(
-        size: 60, lineHeight: 72, tracking: -0.5, weight: .semibold
+        size: 60, lineHeight: 64, tracking: -0.5, weight: .semibold
     )
 
 }

@@ -73,7 +73,7 @@ import UIKit
 
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
-        imageView.backgroundColor = PersonalizationColor.backgroundCard
+        imageView.backgroundColor = PersonalizationColor.neutral50
         imageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             imageView.widthAnchor.constraint(equalToConstant: Self.imageSide),

@@ -2,8 +2,8 @@ import UIKit
 
 /// Цвета дизайн-системы.
 ///
-/// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), страница Colors,
-/// фреймы 57:141 (Light) и 187:362 (Dark). Снято 2026-09-09.
+/// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), коллекция переменных Color,
+/// режимы Light и Dark. Сверено 2026-09-23.
 ///
 /// Читает действующую тему, поэтому хост может подменить любой цвет через
 /// `PersonalizationTheme.current.colors` — и подмена дойдёт до уже созданных вью.
@@ -17,14 +17,17 @@ import UIKit
 
     public static var brandPrimary: UIColor { PersonalizationTheme.current.colors.brandPrimary }
 
+    // MARK: neutral
+
+    /// Neutral 50 — полупрозрачная ступень, заглушки картинок.
+    public static var neutral50: UIColor { PersonalizationTheme.current.colors.neutral50 }
+
     // MARK: semantic
 
     public static var semanticWarning: UIColor { PersonalizationTheme.current.colors.semanticWarning }
     public static var semanticDanger: UIColor { PersonalizationTheme.current.colors.semanticDanger }
 
     // MARK: background
-
-    public static var backgroundPrimary: UIColor { PersonalizationTheme.current.colors.backgroundPrimary }
 
     public static var backgroundGeneric: UIColor { PersonalizationTheme.current.colors.backgroundGeneric }
 
@@ -101,5 +104,10 @@ import UIKit
     public static var textLink: UIColor { PersonalizationTheme.current.colors.textLink }
 
     public static var textLinkVisited: UIColor { PersonalizationTheme.current.colors.textLinkVisited }
+
+    // MARK: shadow
+
+    /// Shadow/Heavy — цвет тени вместе с прозрачностью.
+    public static var shadowHeavy: UIColor { PersonalizationTheme.current.colors.shadowHeavy }
 
 }
