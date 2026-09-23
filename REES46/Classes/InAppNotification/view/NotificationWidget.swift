@@ -21,7 +21,8 @@ public class NotificationWidget: InAppNotificationProtocol {
     }
     
     private func showPopup(_ popup: Popup) {
-        let position: Popup.Position = Popup.Position(rawValue: popup.position) ?? .centered
+        // No position, or one this SDK does not know, comes out fullscreen, as on Android.
+        let position: Popup.Position? = Popup.Position(rawValue: popup.position)
         let baseTitle: String = NSLocalizedString("alert_dialog_title", comment:  "")
         let baseSubTitle: String = NSLocalizedString("alert_dialog_message", comment:  "")
         
@@ -81,6 +82,15 @@ public class NotificationWidget: InAppNotificationProtocol {
                     )
                 case .top:
                     showTopDialog(
+                        titleText: title ?? baseTitle,
+                        messageText: subTitle ?? baseSubTitle,
+                        imageUrl: imageUrl ?? "",
+                        confirmButtonText: confirmText,
+                        dismissButtonText: buttonDismissText,
+                        onConfirmButtonClick: confirmAction
+                    )
+                case nil:
+                    showFullScreenDialog(
                         titleText: title ?? baseTitle,
                         messageText: subTitle ?? baseSubTitle,
                         imageUrl: imageUrl ?? "",
@@ -153,6 +163,28 @@ public class NotificationWidget: InAppNotificationProtocol {
             onDismiss: onDismiss
         )
         let dialog = TopDialog(viewModel: viewModel)
+        dialog.modalPresentationStyle = .overFullScreen
+        parentViewController.present(dialog, animated: true, completion: nil)
+    }
+    
+    private func showFullScreenDialog(
+        titleText: String,
+        messageText: String,
+        imageUrl: String,
+        confirmButtonText: String?,
+        dismissButtonText: String?,
+        onConfirmButtonClick: (() -> Void)?
+    ) {
+        let viewModel = DialogViewModel(
+            titleText: titleText,
+            messageText: messageText,
+            imageUrl: imageUrl,
+            confirmButtonText: confirmButtonText,
+            dismissButtonText: dismissButtonText,
+            onConfirmButtonClick: onConfirmButtonClick,
+            onDismiss: onDismiss
+        )
+        let dialog = FullScreenDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
         parentViewController.present(dialog, animated: true, completion: nil)
     }
