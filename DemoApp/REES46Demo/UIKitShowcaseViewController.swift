@@ -6,8 +6,9 @@ import UIKit
 ///
 /// "Components" walks through the primitives in every size, view and state the design file
 /// defines; "Blocks" shows the compositions built from them (product cards, recommender layouts,
-/// instant search, the catalogue, the filters screen). "Search" runs the two data-bound search widgets
-/// against the demo shop: the instant search field, and the results screen it opens on submit.
+/// instant search, the catalogue, the filters screen, in-app popups, the toast, the loyalty card).
+/// "Search" runs the two data-bound search widgets against the demo shop: the instant search
+/// field, and the results screen it opens on submit.
 /// "Stories" keeps the stories block through the SDK's SwiftUI wrapper, the counterpart of the
 /// "Legacy UI" tab.
 ///
@@ -369,6 +370,7 @@ private enum Exhibits {
                 ])
             }),
             ("Empty State", { PersonalizationEmptyState(message: "No results for your request.") }),
+            ("Barcode — Code 128", { row([barcodeBox(DemoLoyalty.code)]) }),
             ("Icons — the full set, 24 pt", {
                 scrollableRow(DemoIcons.all.map(icon))
             })
@@ -429,8 +431,59 @@ private enum Exhibits {
                 inAppPopup(.imageBackground, closeText: "Not now", fullscreen: true)
             }),
             ("In App Popup, fullscreen — text only", { inAppPopup(.text, fullscreen: true) }),
-            ("In App Popup, fullscreen — icon", { inAppPopup(.icon, fullscreen: true) })
+            ("In App Popup, fullscreen — icon", { inAppPopup(.icon, fullscreen: true) }),
+            ("Toast — top and bottom", { ToastExhibit() }),
+            ("Loyalty Card — light, stamps 0 of 5", { loyaltyCard(stamps: 0) }),
+            ("Loyalty Card — brand colour, stamps 4 of 5", { loyaltyCard(stamps: 4, brand: true) })
         ]
+    }
+
+    /// The loyalty card as a host fills it: the SDK's loyalty status carries no balance, stamps
+    /// or card number, so everything on the card comes from the host, images included.
+    /// The brand variant is the dark example of the design file: Semantic/Info blue, white text.
+    private static func loyaltyCard(stamps: Int, brand: Bool = false) -> PersonalizationLoyaltyCard {
+        let card = PersonalizationLoyaltyCard()
+        if brand {
+            card.cardColor = DemoLoyalty.brandBlue
+            card.contentColor = .white
+        }
+        // The kit leaves the host's logo untouched; this one is black artwork, so the demo
+        // draws it as a template in the card's content colour.
+        let logoTint = brand ? UIColor.white : PersonalizationColor.textPrimary
+        card.logoLoader = { view in
+            view.image = UIImage(named: DemoLoyalty.logo)?.withRenderingMode(.alwaysTemplate)
+            view.tintColor = logoTint
+        }
+        card.stripeLoader = { view in DemoImageLoader.shared.load(DemoLoyalty.stripe, into: view) }
+        card.emblemLoader = { view in DemoImageLoader.shared.load(DemoLoyalty.emblem, into: view) }
+        card.balanceLabel = "Бонусы"
+        card.balanceValue = "50 550"
+        card.fields = [
+            .init(label: "Владелец", value: "Олег"),
+            .init(label: "Уровень", value: "Базовый")
+        ]
+        card.stampsTotal = 5
+        card.stamps = stamps
+        card.code = DemoLoyalty.code
+        return card
+    }
+
+    /// The barcode has no background of its own — scanners need white in both themes, so it sits
+    /// on a white box here, the way the loyalty card places it.
+    private static func barcodeBox(_ code: String) -> UIView {
+        let barcode = PersonalizationBarcode(code: code)
+        barcode.translatesAutoresizingMaskIntoConstraints = false
+        let box = UIView()
+        box.backgroundColor = .white
+        box.layer.cornerRadius = PersonalizationRadius.lg
+        box.addSubview(barcode)
+        NSLayoutConstraint.activate([
+            barcode.topAnchor.constraint(equalTo: box.topAnchor, constant: 20),
+            barcode.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -20),
+            barcode.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 20),
+            barcode.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -20)
+        ])
+        return box
     }
 
     /// The popup as the SDK will hand it over: the host loads the image and wires the two
@@ -682,11 +735,55 @@ private enum DemoIcons {
     static let all: [UIImage?] = [
         PersonalizationIcons.angleDown, PersonalizationIcons.angleLargeRight, PersonalizationIcons.angleUp,
         PersonalizationIcons.arrowLeft, PersonalizationIcons.arrowRotateCw, PersonalizationIcons.arrowsUpDown,
-        PersonalizationIcons.copy, PersonalizationIcons.crossLarge, PersonalizationIcons.cross,
-        PersonalizationIcons.equalizerHorizontal, PersonalizationIcons.grid2x2Fill, PersonalizationIcons.grid2x2,
-        PersonalizationIcons.listFill, PersonalizationIcons.list, PersonalizationIcons.magnifier,
-        PersonalizationIcons.spacingMd, PersonalizationIcons.starFill
+        PersonalizationIcons.checkRosetteFill, PersonalizationIcons.copy, PersonalizationIcons.crossLarge,
+        PersonalizationIcons.cross, PersonalizationIcons.equalizerHorizontal, PersonalizationIcons.grid2x2Fill,
+        PersonalizationIcons.grid2x2, PersonalizationIcons.listFill, PersonalizationIcons.list,
+        PersonalizationIcons.magnifier, PersonalizationIcons.rosette, PersonalizationIcons.spacingMd,
+        PersonalizationIcons.starFill
     ]
+}
+
+/// Loyalty card fixtures. The artwork is the demo's own (asset catalogue): brand art does not
+/// ship in the SDK.
+private enum DemoLoyalty {
+    static let logo = "uikit-loyalty-logo"
+    static let stripe = "asset://uikit-loyalty-stripe"
+    static let emblem = "asset://uikit-loyalty-emblem"
+    static let code = "2000012345678"
+    /// #0087E8 — Semantic/Info in the design file; the kit has no such token, the host passes it.
+    static let brandBlue = UIColor(red: 0, green: 0x87 / 255.0, blue: 0xE8 / 255.0, alpha: 1)
+}
+
+/// The toast exhibit: the pill as the design file draws it, and two buttons that run the
+/// presenter over the whole screen — at the bottom and at the top edge.
+private final class ToastExhibit: UIStackView {
+
+    init() {
+        super.init(frame: .zero)
+        axis = .vertical
+        alignment = .leading
+        spacing = 12
+
+        let bottom = PersonalizationButton(text: "Show at the bottom", size: .md, view: .secondary)
+        bottom.addTarget(self, action: #selector(showBottom), for: .touchUpInside)
+        let top = PersonalizationButton(text: "Show at the top", size: .md, view: .secondary)
+        top.addTarget(self, action: #selector(showTop), for: .touchUpInside)
+        let buttons = UIStackView(arrangedSubviews: [bottom, top])
+        buttons.spacing = 8
+
+        addArrangedSubview(PersonalizationToast(text: "Copied"))
+        addArrangedSubview(buttons)
+    }
+
+    required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    @objc private func showBottom() {
+        PersonalizationToast.show("Copied")
+    }
+
+    @objc private func showTop() {
+        PersonalizationToast.show("Code copied to clipboard", position: .top)
+    }
 }
 
 /// Static products for the exhibits. Strings arrive formatted — that is the kit's contract.
