@@ -633,9 +633,11 @@ private enum Exhibits {
     /// The catalogue as a host would wire it: the category title (title + view switch, as on the
     /// CatalogGrid page) sits in the header slot and drives the grid/list switch, "load more"
     /// appends a page after a short simulated delay. The search results title with back, filters
-    /// and sort belongs to the search flow — see the Search segment.
+    /// and sort belongs to the search flow — see the Search segment. The catalogue normally
+    /// scrolls itself; inside the showcase's scrolling column it is switched off and lays out whole.
     private static func catalog() -> PersonalizationCatalog {
         let catalog = PersonalizationCatalog()
+        catalog.isScrollEnabled = false
         let header = PersonalizationTitle(text: "Sneakers")
         let views = buttonGroup(size: .md)
         views.onSelected = { [weak catalog] index in
@@ -666,6 +668,7 @@ private enum Exhibits {
     /// Empty results: the same header, the empty state in place of the grid, nothing below.
     private static func catalogEmpty() -> PersonalizationCatalog {
         let catalog = PersonalizationCatalog()
+        catalog.isScrollEnabled = false
         catalog.header = searchResultsTitle(count: 0)
         catalog.emptyText = "No results for your request."
         catalog.products = []
