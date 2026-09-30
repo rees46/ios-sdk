@@ -1,4 +1,4 @@
-import CoreGraphics
+import UIKit
 
 /// Отступы дизайн-системы.
 ///
