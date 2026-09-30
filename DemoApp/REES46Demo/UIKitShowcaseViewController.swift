@@ -646,11 +646,11 @@ private enum Exhibits {
             search.moreText = "more"
             search.setRecentSearches(["mens winter boots", "kids shoes", "bag", "accessories", "black boots"])
             search.setCategories([
-                // Categories come without pictures: the search API returns none for them, so the
-                // "with images" state only illustrates product rows.
-                PersonalizationInstantSearch.Suggestion(id: "c1", title: "Running shoes", subtitle: "Shoes"),
-                PersonalizationInstantSearch.Suggestion(id: "c2", title: "Running apparel", subtitle: "Clothing"),
-                PersonalizationInstantSearch.Suggestion(id: "c3", title: "Trail gear", subtitle: "Outdoor")
+                // The design gives categories pictures too. Photos other than the three products
+                // below, so the two sections do not repeat each other.
+                PersonalizationInstantSearch.Suggestion(id: "c1", title: "Running shoes", subtitle: "Shoes", imageUrl: DemoProducts.image("sneakers")),
+                PersonalizationInstantSearch.Suggestion(id: "c2", title: "Running apparel", subtitle: "Clothing", imageUrl: DemoProducts.image("jacket")),
+                PersonalizationInstantSearch.Suggestion(id: "c3", title: "Trail gear", subtitle: "Outdoor", imageUrl: DemoProducts.image("watch"))
             ])
             search.setProducts(DemoProducts.all.prefix(images ? 3 : 5).map {
                 PersonalizationInstantSearch.Suggestion(id: $0.id, title: $0.name, subtitle: $0.price, imageUrl: $0.imageUrl)
@@ -795,7 +795,7 @@ private enum DemoProducts {
     }
 
     /// Photos ship with the app (asset catalogue): the showcase must not depend on the network.
-    private static func image(_ seed: String) -> String { "asset://uikit-\(seed)" }
+    static func image(_ seed: String) -> String { "asset://uikit-\(seed)" }
 
     /// Stand-in artwork for the in-app popup exhibits.
     static let popupImage = image("jacket")
