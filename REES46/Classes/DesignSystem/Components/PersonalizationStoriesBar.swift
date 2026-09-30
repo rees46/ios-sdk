@@ -73,7 +73,10 @@ import UIKit
     }
 
     /// Хост кладёт аватар сторис в `UIImageView` своим загрузчиком.
-    public var imageLoader: ((UIImageView, Item) -> Void)?
+    public var imageLoader: ((UIImageView, Item) -> Void)? {
+        // Загрузчик, заданный после `items`, подгружает уже показанные обложки.
+        didSet { reloadImages() }
+    }
 
     /// Нажатие на превью: сторис и её индекс в `items`.
     public var onItemTap: ((Item, Int) -> Void)?
@@ -179,6 +182,13 @@ import UIKit
             stack.addArrangedSubview(preview)
             previews.append(preview)
             imageLoader?(preview.cover.imageView, item)
+        }
+    }
+
+    private func reloadImages() {
+        guard !isLoading, previews.count == items.count else { return }
+        for (index, item) in items.enumerated() {
+            imageLoader?(previews[index].cover.imageView, item)
         }
     }
 
