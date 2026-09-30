@@ -127,6 +127,23 @@ import AVFoundation
         if stories.isEmpty { close() }
     }
 
+    public override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        applySafeInsets()
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        applySafeInsets()
+    }
+
+    /// Безопасная зона экрана — страницам явно: они лежат в прокрутке `UIPageViewController`,
+    /// и своя безопасная зона до них не доходит. Пересчитывается при повороте и смене зоны.
+    private func applySafeInsets() {
+        let insets = view.safeAreaInsets
+        pages.values.forEach { $0.safeInsets = insets }
+    }
+
     /// Закрывает просмотрщик; `completion` — после закрытия (или сразу, если он не показан).
     public func close(completion: (() -> Void)? = nil) {
         guard !isClosing else { return }
@@ -152,6 +169,7 @@ import AVFoundation
         let requested = startSlide?(story) ?? story.startPosition
         let start = min(max(requested, 0), story.slides.count - 1)
         let page = PersonalizationStoryPageViewController(story: story, storyIndex: index, startSlide: start, viewer: self)
+        if isViewLoaded { page.safeInsets = view.safeAreaInsets }
         pages[index] = page
         return page
     }
@@ -295,6 +313,15 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
     let storyIndex: Int
     private(set) var slideIndex: Int
 
+    /// Безопасная зона экрана от просмотрщика: шапка — на 16 ниже её верха, содержимое
+    /// слайда — внутри неё. Фон слайда при этом от края до края.
+    var safeInsets: UIEdgeInsets = .zero {
+        didSet {
+            guard oldValue != safeInsets else { return }
+            applySafeInsets()
+        }
+    }
+
     private weak var viewer: PersonalizationStoriesViewController?
     private let content = UIView()
     private let navigation = PersonalizationStoryNavigation()
@@ -308,6 +335,9 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
     /// Слайд доигран и отдан просмотрщику: при возврате на страницу он начнётся заново.
     private var finished = false
     private var pauses = Set<PauseReason>()
+    private var navigationTop: NSLayoutConstraint?
+    private var navigationLeading: NSLayoutConstraint?
+    private var navigationTrailing: NSLayoutConstraint?
 
     /// Сколько ждать фон, прежде чем пустить слайд по таймеру.
     private static let readyTimeout: TimeInterval = 10
@@ -339,18 +369,20 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         navigation.onClose = { [weak self] in self?.viewer?.close() }
         content.addSubview(navigation)
 
-        let side = PersonalizationSpacing.xl  // 16
+        let top = navigation.topAnchor.constraint(equalTo: content.topAnchor)
+        let leading = navigation.leadingAnchor.constraint(equalTo: content.leadingAnchor)
+        let trailing = navigation.trailingAnchor.constraint(equalTo: content.trailingAnchor)
         NSLayoutConstraint.activate([
             content.topAnchor.constraint(equalTo: view.topAnchor),
             content.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             content.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             content.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            // Под вырезом — 8 от безопасной зоны; на экранах без выреза — 16 от края, как в макете.
-            navigation.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: PersonalizationSpacing.md).withPriority(.defaultHigh),
-            navigation.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor, constant: side),
-            navigation.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: side),
-            navigation.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -side)
+            top, leading, trailing
         ])
+        navigationTop = top
+        navigationLeading = leading
+        navigationTrailing = trailing
+        applySafeInsets()
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
         tap.delegate = self
@@ -425,6 +457,15 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         slideView?.setMuted(muted)
     }
 
+    /// Шапка на 16 от краёв безопасной зоны, слайду — та же зона.
+    private func applySafeInsets() {
+        let side = PersonalizationSpacing.xl  // 16
+        navigationTop?.constant = safeInsets.top + side
+        navigationLeading?.constant = safeInsets.left + side
+        navigationTrailing?.constant = -(safeInsets.right + side)
+        slideView?.safeInsets = safeInsets
+    }
+
     // MARK: - Слайды
 
     func show(_ index: Int) {
@@ -461,6 +502,7 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         next.onProductsToggle = { [weak self] expanded in self?.setPaused(expanded, reason: .products) }
         next.onMuteToggle = { [weak self] muted in self?.viewer?.setMuted(muted) }
         next.onVideoEnd = { [weak self] in self?.next() }
+        next.safeInsets = safeInsets
 
         next.translatesAutoresizingMaskIntoConstraints = false
         content.insertSubview(next, belowSubview: navigation)

@@ -391,6 +391,7 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
             offer: PersonalizationStorySlide.Offer(id: "1", brand: "Apple", name: "MacBook Pro 16", price: "1 190 900 ₽", discountPercent: 10)
         )
         let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+        view.safeInsets = Self.islandInsets
         view.frame = host.bounds
         host.addSubview(view)
         host.layoutIfNeeded()
@@ -401,7 +402,8 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(card.frame.width, card.frame.height, accuracy: 0.5, "square")
         XCTAssertEqual(card.frame.width, 370, accuracy: 0.5, "full content width on a tall screen")
         XCTAssertLessThanOrEqual(card.frame.maxY, price.frame.minY - 16 + 0.5)
-        XCTAssertEqual(price.frame.maxY, 874 - view.safeAreaInsets.bottom - 16, accuracy: 0.5, "16 above the safe area")
+        XCTAssertEqual(price.frame.maxY, 874 - 34 - 16, accuracy: 0.5, "16 above the safe area")
+        XCTAssertEqual(view.contentGuide.layoutFrame.minY, 62 + 16, accuracy: 0.5, "16 below the Dynamic Island")
     }
 
     func testOnAShortScreenTheCardShrinksInsteadOfOverlapping() {
@@ -430,6 +432,7 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
             textBlocks: [.init(text: "Sale", style: .large, fill: .green, yOffset: 50)]
         )
         let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+        view.safeInsets = Self.islandInsets
         view.frame = host.bounds
         host.addSubview(view)
         host.layoutIfNeeded()
@@ -440,7 +443,9 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(block?.frame.minY ?? 0, 437, accuracy: 0.5, "50% of 874")
         XCTAssertEqual(block?.frame.width ?? 0, 370, accuracy: 0.5)
         XCTAssertEqual(used?.frame.height ?? 0, 64, accuracy: 0.5, "collapsed: the row only")
-        XCTAssertEqual(bottom?.frame.maxY ?? 0, 874 - view.safeAreaInsets.bottom, accuracy: 0.5, "on the safe area: the row has its own 16")
+        XCTAssertEqual(bottom?.frame.maxY ?? 0, 874 - 34, accuracy: 0.5, "on the safe area: the row has its own 16")
+        let background = view.subviews.first { $0 is UIImageView }
+        XCTAssertEqual(background?.frame, view.bounds, "the background still goes edge to edge")
         view.stop()
     }
 
@@ -467,6 +472,7 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         ])
         let viewer = PersonalizationStoriesViewController(stories: [story])
         let page = PersonalizationStoryPageViewController(story: story, storyIndex: 0, startSlide: 0, viewer: viewer)
+        page.safeInsets = Self.islandInsets
         page.view.frame = host.bounds
         host.addSubview(page.view)
         host.layoutIfNeeded()
@@ -479,9 +485,33 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         let navigationFrame = navigation.convert(navigation.bounds, to: page.view)
         XCTAssertEqual(navigationFrame.height, 46, accuracy: 0.5, "2 + 12 + 32")
         XCTAssertEqual(navigationFrame.width, 402 - 32, accuracy: 0.5)
-        XCTAssertGreaterThanOrEqual(navigationFrame.minY, 16)
+        XCTAssertEqual(navigationFrame.minY, 62 + 16, accuracy: 0.5, "16 below the Dynamic Island, not under it")
         XCTAssertEqual(slide.contentGuide.layoutFrame.minY, navigationFrame.maxY + 16, accuracy: 0.5)
+        XCTAssertEqual(slide.safeInsets, Self.islandInsets, "the slide gets the page's safe area")
+
+        // A new safe area (rotation, a call bar) moves the controls, not the background.
+        page.safeInsets = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        host.layoutIfNeeded()
+        XCTAssertEqual(navigation.convert(navigation.bounds, to: page.view).minY, 36, accuracy: 0.5)
+        XCTAssertEqual(slide.frame, page.view.bounds)
     }
+
+    func testTheViewerHandsItsSafeAreaToThePages() {
+        let story = PersonalizationStory(id: "s", name: "S", slides: [PersonalizationStorySlide(id: "1", kind: .content)])
+        let viewer = PersonalizationStoriesViewController(stories: [story])
+        viewer.view.frame = host.bounds
+        host.addSubview(viewer.view)
+        host.layoutIfNeeded()
+        viewer.view.layoutIfNeeded()
+
+        let pager = viewer.children.compactMap { $0 as? UIPageViewController }.first
+        let page = pager?.viewControllers?.first as? PersonalizationStoryPageViewController
+        XCTAssertNotNil(page)
+        XCTAssertEqual(page?.safeInsets, viewer.view.safeAreaInsets)
+    }
+
+    /// Safe area of a Dynamic Island phone in portrait.
+    private static let islandInsets = UIEdgeInsets(top: 62, left: 0, bottom: 34, right: 0)
 
     // MARK: - Viewer
 

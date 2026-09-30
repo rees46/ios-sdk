@@ -36,6 +36,17 @@ final class PersonalizationStorySlideView: UIView {
     /// просмотрщик — к низу шапки; без него — 16 от верха безопасной зоны.
     let contentGuide = UILayoutGuide()
 
+    /// Безопасная зона экрана. Задаётся снаружи: слайд лежит в прокрутке
+    /// `UIPageViewController`, и своя безопасная зона до него не доходит — шапка и кнопки
+    /// уезжали под Dynamic Island и полоску «домой». Фон и затемнения идут от края до края,
+    /// органы управления — внутри зоны.
+    var safeInsets: UIEdgeInsets = .zero {
+        didSet {
+            guard oldValue != safeInsets else { return }
+            applySafeInsets()
+        }
+    }
+
     var onButton: ((PersonalizationStorySlide.Button) -> Void)?
     var onProduct: ((PersonalizationStorySlide.Offer) -> Void)?
     var onPromoCopied: ((String) -> Void)?
@@ -60,6 +71,11 @@ final class PersonalizationStorySlideView: UIView {
     private var statusObservation: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var soundButton: PersonalizationStorySoundButton?
+    private var guideTop: NSLayoutConstraint?
+    private var guideBottom: NSLayoutConstraint?
+    private var guideLeading: NSLayoutConstraint?
+    private var guideTrailing: NSLayoutConstraint?
+    private var bottomRowBottom: NSLayoutConstraint?
 
     private static let brandStyle = PersonalizationTextStyle(size: 20, lineHeight: 28, tracking: 0, weight: .semibold)
     private static let nameStyle = PersonalizationTextStyle(size: 16, lineHeight: 22, tracking: 0, weight: .semibold)
@@ -109,14 +125,17 @@ final class PersonalizationStorySlideView: UIView {
         }
 
         addLayoutGuide(contentGuide)
-        let side = PersonalizationSpacing.xl  // 16
-        NSLayoutConstraint.activate([
-            contentGuide.leadingAnchor.constraint(equalTo: leadingAnchor, constant: side),
-            contentGuide.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -side),
-            contentGuide.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor, constant: -side),
-            // Уступает только привязке просмотрщика к шапке; квадрату карточки (700) не уступает.
-            contentGuide.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: side).withPriority(UILayoutPriority(999))
-        ])
+        let leading = contentGuide.leadingAnchor.constraint(equalTo: leadingAnchor)
+        let trailing = contentGuide.trailingAnchor.constraint(equalTo: trailingAnchor)
+        let bottom = contentGuide.bottomAnchor.constraint(equalTo: bottomAnchor)
+        // Уступает только привязке просмотрщика к шапке; квадрату карточки (700) не уступает.
+        let top = contentGuide.topAnchor.constraint(equalTo: topAnchor).withPriority(UILayoutPriority(999))
+        NSLayoutConstraint.activate([leading, trailing, bottom, top])
+        guideLeading = leading
+        guideTrailing = trailing
+        guideBottom = bottom
+        guideTop = top
+        applySafeInsets()
 
         if slide.kind == .video {
             let button = PersonalizationStorySoundButton(isMuted: isMuted)
@@ -417,12 +436,26 @@ final class PersonalizationStorySlideView: UIView {
         guard !bottom.arrangedSubviews.isEmpty else { return }
         bottom.translatesAutoresizingMaskIntoConstraints = false
         addSubview(bottom)
+        // Низ ряда — край безопасной зоны: у ряда товаров свои поля 16.
+        let rowBottom = bottom.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -safeInsets.bottom)
         NSLayoutConstraint.activate([
             bottom.leadingAnchor.constraint(equalTo: leadingAnchor),
             bottom.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bottom.bottomAnchor.constraint(equalTo: safeAreaLayoutGuide.bottomAnchor),
+            rowBottom,
             bottom.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor)
         ])
+        bottomRowBottom = rowBottom
+    }
+
+    /// Поля содержимого от краёв безопасной зоны: 16 по бокам, сверху и снизу;
+    /// нижний ряд (кнопки над ним, товары, звук) стоит прямо на её нижнем крае.
+    private func applySafeInsets() {
+        let side = PersonalizationSpacing.xl  // 16
+        guideTop?.constant = safeInsets.top + side
+        guideBottom?.constant = -(safeInsets.bottom + side)
+        guideLeading?.constant = safeInsets.left + side
+        guideTrailing?.constant = -(safeInsets.right + side)
+        bottomRowBottom?.constant = -safeInsets.bottom
     }
 
     @objc private func overlayButtonTapped(_ sender: UIControl) {
