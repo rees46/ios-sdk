@@ -95,7 +95,8 @@ enum StoriesV2Exhibits {
                 id: story.id,
                 title: story.name,
                 imageUrl: story.avatarUrl,
-                state: story.viewed ? .viewed : (story.pinned ? .pinned : .default),
+                // A pinned story stays pinned once viewed; only the others turn grey.
+                state: story.pinned ? .pinned : (story.viewed ? .viewed : .default),
                 segments: story.slides.count,
                 seen: index == 1 ? 1 : 0
             )

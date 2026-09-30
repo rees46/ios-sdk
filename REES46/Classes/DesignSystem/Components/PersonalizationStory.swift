@@ -40,8 +40,8 @@ import UIKit
 ///
 /// `image` и `video` — медиа-слайды: фон на весь экран, поверх — текстовые блоки, кнопки
 /// и товары; они всегда в тёмной теме кита. `content` — слайд без медиа (в API тип `""`):
-/// с товаром это карточка товара (Card/Story View = Product / Promo / Discount), в теме
-/// приложения.
+/// с товаром это карточка товара (Card/Story View = Product / Promo / Discount) на фоне
+/// Background/Card, в теме приложения.
 @_spi(PersonalizationUI) public struct PersonalizationStorySlide {
 
     public enum Kind {
@@ -233,8 +233,8 @@ import UIKit
     }
 
     /// Тема слайда. Медиа и слайд с картинкой фона — тёмная тема кита: светлая шапка
-    /// и текст поверх фото. Слайд с цветом фона — по яркости цвета. Остальные — тема
-    /// приложения (`unspecified`).
+    /// и текст поверх фото. Слайд, для которого сервер прислал цвет фона, — по яркости
+    /// этого цвета. Остальные — тема приложения (`unspecified`) на Background/Card.
     @available(iOS 12.0, *)
     public var interfaceStyle: UIUserInterfaceStyle {
         if isMedia || !(background ?? "").isEmpty { return .dark }

@@ -187,19 +187,21 @@ struct StoriesSeenState {
         state.setViewedSlides(ids, storyId: story.id)
     }
 
-    /// Превью ленты: просмотренная (сервером или все слайды локально) — серое кольцо;
-    /// иначе закреплённая или обычная, с просмотренными сегментами.
+    /// Превью ленты. Закреплённая остаётся закреплённой и после просмотра — кольцо
+    /// Semantic/Warning и звезда, как на остальных платформах и у старых сторис;
+    /// досмотренную закреплённую сегменты не осветляют. Незакреплённая просмотренная
+    /// (сервером или все слайды локально) — серая; начатая — с осветлёнными сегментами.
     func barItem(_ story: PersonalizationStory) -> PersonalizationStoriesBar.Item {
         let seenCount = seen(story).count
         let viewed = story.viewed || seenCount >= story.slides.count
-        let state: PersonalizationStoryCover.State = viewed ? .viewed : (story.pinned ? .pinned : .default)
+        let state: PersonalizationStoryCover.State = story.pinned ? .pinned : (viewed ? .viewed : .default)
         return PersonalizationStoriesBar.Item(
             id: story.id,
             title: story.name,
             imageUrl: story.avatarUrl,
             state: state,
             segments: story.slides.count,
-            seen: seenCount
+            seen: viewed ? 0 : seenCount
         )
     }
 

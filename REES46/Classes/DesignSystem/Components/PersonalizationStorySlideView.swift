@@ -7,7 +7,8 @@ import AVFoundation
 /// Promo, Discount, Slide, Action, Text. Собирает его `PersonalizationStoriesViewController`,
 /// шапку (прогресс и крестик) кладёт поверх он же.
 ///
-/// Фон — картинка или видео слайда по заполнению, под ним цвет слайда. Поверх — затемнения
+/// Фон — картинка или видео слайда по заполнению, под ним цвет слайда; у слайда без медиа
+/// и без своего цвета — Background/Card. Поверх — затемнения
 /// сверху и снизу: чёрный 30% (50% у медиа) до нуля на 21% и от 86% высоты.
 ///
 /// Слайд с товаром: заголовок (бренд SemiBold 20 и название SemiBold 16, интерлиньяж 140%,
@@ -87,9 +88,10 @@ final class PersonalizationStorySlideView: UIView {
 
     private func setup(isMuted: Bool) {
         clipsToBounds = true
-        // Слайд без медиа и без своего цвета — фон приложения; медиа до загрузки — чёрный.
+        // Слайд без медиа и без своего цвета — Background/Card в теме приложения
+        // (белый в светлой, #1A1A1A в тёмной); медиа до загрузки — чёрный.
         backgroundColor = slide.backgroundColor
-            ?? (slide.isMedia ? .black : PersonalizationColor.backgroundGeneric)
+            ?? (slide.isMedia ? .black : PersonalizationColor.backgroundCard)
 
         backgroundImage.contentMode = .scaleAspectFill
         backgroundImage.clipsToBounds = true

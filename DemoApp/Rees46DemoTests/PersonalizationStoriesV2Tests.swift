@@ -159,6 +159,40 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(PersonalizationStorySlide(id: "1", kind: .image, duration: 0).duration, 5)
     }
 
+    func testAPinnedStoryStaysPinnedOnceViewedOthersTurnGrey() {
+        let slides = [PersonalizationStorySlide(id: "1", kind: .content), PersonalizationStorySlide(id: "2", kind: .content)]
+        let state = StoriesSeenState(sdk: nil)
+
+        let pinned = state.barItem(PersonalizationStory(id: "p", name: "P", pinned: true, viewed: true, slides: slides))
+        XCTAssertEqual(pinned.state, .pinned, "Semantic/Warning ring and the star")
+        XCTAssertEqual(pinned.seen, 0, "a finished pinned ring is not lightened")
+
+        let plain = state.barItem(PersonalizationStory(id: "v", name: "V", viewed: true, slides: slides))
+        XCTAssertEqual(plain.state, .viewed)
+
+        let fresh = state.barItem(PersonalizationStory(id: "d", name: "D", slides: slides))
+        XCTAssertEqual(fresh.state, .default)
+        XCTAssertEqual(fresh.segments, 2)
+    }
+
+    func testAProductSlideWithoutItsOwnColourSitsOnBackgroundCard() {
+        let offer = PersonalizationStorySlide.Offer(id: "1", name: "MacBook", price: "1 190 900 ₽")
+        let plain = PersonalizationStorySlideView(
+            slide: PersonalizationStorySlide(id: "1", kind: .content, offer: offer),
+            texts: .init(), isMuted: true, imageLoader: { _, _ in }
+        )
+        XCTAssertEqual(plain.backgroundColor, PersonalizationColor.backgroundCard)
+        XCTAssertEqual(plain.slide.interfaceStyle, .unspecified, "follows the app")
+
+        let blue = UIColor(red: 0, green: 0x80 / 255.0, blue: 0xF0 / 255.0, alpha: 1)
+        let coloured = PersonalizationStorySlideView(
+            slide: PersonalizationStorySlide(id: "2", kind: .content, backgroundColor: blue, offer: offer),
+            texts: .init(), isMuted: true, imageLoader: { _, _ in }
+        )
+        XCTAssertEqual(coloured.backgroundColor, blue, "the server's background_color")
+        XCTAssertEqual(coloured.slide.interfaceStyle, .dark, "by the colour's brightness")
+    }
+
     // MARK: - Timer
 
     func testTimerSplitsTheRestIntoDaysHoursMinutesSeconds() {
@@ -169,6 +203,11 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
     func testTimerPadsAllButDaysAndRoundsSecondsDown() {
         XCTAssertEqual(PersonalizationStoryTimer.texts(remaining: 3_725.9), ["0", "01", "02", "05"])
         XCTAssertEqual(PersonalizationStoryTimer.texts(remaining: 100 * 86_400), ["100", "00", "00", "00"])
+    }
+
+    func testTimerKeepsTwoDigitsForHoursMinutesSeconds() {
+        let rest: TimeInterval = ((2 * 24 + 8) * 60 + 3) * 60 + 4
+        XCTAssertEqual(PersonalizationStoryTimer.texts(remaining: rest), ["2", "08", "03", "04"], "2d 08h 03m 04s")
     }
 
     func testTimerStopsAtZero() {
@@ -310,6 +349,10 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         let split = columns(long)
         XCTAssertGreaterThan(split.right.frame.width, split.left.frame.width)
         XCTAssertEqual(split.left.frame.width + split.right.frame.width, 370, accuracy: 0.5)
+    }
+
+    func testThePromoCodeZoomsTo103PercentUnderTheFinger() {
+        XCTAssertEqual(PersonalizationStoryPrice.pressedScale, 1.03)
     }
 
     func testTheDiscountBlockHugsItsTextAndThePriceTakesTheRest() {
