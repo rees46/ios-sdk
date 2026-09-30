@@ -366,9 +366,9 @@ private enum DemoStories {
         ]),
         PersonalizationStory(id: "text", name: "Text blocks", avatarUrl: image("jacket"), slides: [
             PersonalizationStorySlide(id: "text-solid", kind: .image, background: image("jacket"), textBlocks: [
-                .init(text: "Open eat dear winding belonging.", style: .large, fill: PersonalizationColor.semanticInfo, yOffset: 10),
-                .init(text: "Open eat dear winding belonging though differed stand left.", style: .medium, alignment: .center, fill: PersonalizationColor.semanticWarning, yOffset: 32),
-                .init(text: "Open eat dear winding belonging though differed stand left.", style: .small, alignment: .right, fill: PersonalizationColor.brandPrimary, yOffset: 50)
+                .init(text: "Open eat dear winding belonging.", style: .large, fill: PersonalizationColor.semanticInfo, yOffset: 2),
+                .init(text: "Open eat dear winding belonging though differed stand left.", style: .medium, alignment: .center, fill: PersonalizationColor.semanticWarning, yOffset: 38),
+                .init(text: "Open eat dear winding belonging though differed stand left.", style: .small, alignment: .right, fill: PersonalizationColor.brandPrimary, yOffset: 62)
             ]),
             PersonalizationStorySlide(id: "text-transparent", kind: .image, background: image("backpack"), textBlocks: [
                 .init(text: "Open eat dear winding belonging.", style: .large, yOffset: 12),
