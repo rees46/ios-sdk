@@ -22,10 +22,17 @@ import UIKit
     /// Neutral 50 — полупрозрачная ступень, заглушки картинок.
     public static var neutral50: UIColor { PersonalizationTheme.current.colors.neutral50 }
 
+    /// Neutral 100 — подложка таймера сторис.
+    public static var neutral100: UIColor { PersonalizationTheme.current.colors.neutral100 }
+
+    /// Semantic/Neutral Subtle — кольцо просмотренной сторис.
+    public static var neutralSubtle: UIColor { PersonalizationTheme.current.colors.neutralSubtle }
+
     // MARK: semantic
 
     public static var semanticWarning: UIColor { PersonalizationTheme.current.colors.semanticWarning }
     public static var semanticDanger: UIColor { PersonalizationTheme.current.colors.semanticDanger }
+    public static var semanticInfo: UIColor { PersonalizationTheme.current.colors.semanticInfo }
 
     // MARK: background
 

@@ -4,7 +4,9 @@ import UIKit
 ///
 /// Источник: Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6),
 /// страница Icons, секция 157:5185. `rosette` и `checkRosetteFill` — штампы
-/// карты лояльности, набор Wallet/Stamps (570:10384).
+/// карты лояльности, набор Wallet/Stamps (570:10384). `speaker` и `speakerOff` —
+/// кнопка звука видео-слайда сторис, страница Stories (1:32): волны у `speaker`,
+/// крестик двумя штрихами 2pt со скруглёнными концами у `speakerOff`.
 ///
 /// Ассеты векторные (PDF с сохранённым вектором) и помечены как
 /// шаблонные, поэтому красятся через `tintColor` у `UIImageView`.
@@ -44,5 +46,7 @@ import UIKit
     public static var magnifier: UIImage? { image("personalization_magnifier") }
     public static var rosette: UIImage? { image("personalization_rosette") }
     public static var spacingMd: UIImage? { image("personalization_spacing_md") }
+    public static var speaker: UIImage? { image("personalization_speaker") }
+    public static var speakerOff: UIImage? { image("personalization_speaker_off") }
     public static var starFill: UIImage? { image("personalization_star_fill") }
 }

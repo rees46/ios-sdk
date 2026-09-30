@@ -61,8 +61,14 @@ import UIKit
     public var brandPrimary: UIColor
     /// Neutral 50: полупрозрачная ступень, одинаково заметна на любом фоне — заглушки картинок.
     public var neutral50: UIColor
+    /// Neutral 100: вдвое плотнее Neutral 50 — подложка таймера сторис.
+    public var neutral100: UIColor
+    /// Semantic/Neutral Subtle: кольцо просмотренной сторис.
+    public var neutralSubtle: UIColor
     public var semanticWarning: UIColor
     public var semanticDanger: UIColor
+    /// Semantic/Info: заливка текстового блока сторис в пресетах кита.
+    public var semanticInfo: UIColor
     public var backgroundGeneric: UIColor
     public var backgroundCard: UIColor
     public var backgroundFloat: UIColor
@@ -110,6 +116,14 @@ import UIKit
             light: PersonalizationColorSet.rgba(0x000000, 0.05),
             dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.05)
         ),
+        neutral100: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0x000000, 0.1),
+            dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.1)
+        ),
+        neutralSubtle: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0xCCCCCC, 1),
+            dark: PersonalizationColorSet.rgba(0x262626, 1)
+        ),
         semanticWarning: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF37A17, 1),
             dark: PersonalizationColorSet.rgba(0xF37A17, 1)
@@ -117,6 +131,10 @@ import UIKit
         semanticDanger: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xE51919, 1),
             dark: PersonalizationColorSet.rgba(0xE51919, 1)
+        ),
+        semanticInfo: UIColor = PersonalizationColorSet.dynamic(
+            light: PersonalizationColorSet.rgba(0x0087E8, 1),
+            dark: PersonalizationColorSet.rgba(0x0087E8, 1)
         ),
         backgroundGeneric: UIColor = PersonalizationColorSet.dynamic(
             light: PersonalizationColorSet.rgba(0xF2F2F2, 1),
@@ -268,8 +286,11 @@ import UIKit
     ) {
         self.brandPrimary = brandPrimary
         self.neutral50 = neutral50
+        self.neutral100 = neutral100
+        self.neutralSubtle = neutralSubtle
         self.semanticWarning = semanticWarning
         self.semanticDanger = semanticDanger
+        self.semanticInfo = semanticInfo
         self.backgroundGeneric = backgroundGeneric
         self.backgroundCard = backgroundCard
         self.backgroundFloat = backgroundFloat
