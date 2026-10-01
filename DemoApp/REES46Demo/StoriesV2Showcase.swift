@@ -34,7 +34,7 @@ enum StoriesV2Exhibits {
                 scrollableRow([PersonalizationStoryCover.State.default, .pinned, .viewed].map { state in
                     let cover = PersonalizationStoryCover(state: state)
                     cover.segments = 5
-                    cover.seen = 2
+                    cover.seen = [0, 2]
                     DemoImageLoader.shared.load(DemoStories.image("jacket"), into: cover.imageView)
                     return cover
                 })
@@ -98,7 +98,7 @@ enum StoriesV2Exhibits {
                 // A pinned story stays pinned once viewed; only the others turn grey.
                 state: story.pinned ? .pinned : (story.viewed ? .viewed : .default),
                 segments: story.slides.count,
-                seen: index == 1 ? 1 : 0
+                seen: index == 1 ? [0] : []
             )
         }
         bar.imageLoader = { view, item in DemoImageLoader.shared.load(item.imageUrl, into: view) }
@@ -152,7 +152,7 @@ enum StoriesV2Exhibits {
             PersonalizationProduct(
                 id: String(index), name: offer.name, price: offer.price, imageUrl: offer.imageUrl,
                 brand: offer.brand, oldPrice: offer.oldPrice,
-                discount: offer.discountPercent > 0 ? "-\(offer.discountPercent)%" : nil
+                discount: offer.discountPercent > 0 ? "-" + PersonalizationStorySlide.Offer.percentText(offer.discountPercent) : nil
             )
         }
         used.imageLoader = { view, product in DemoImageLoader.shared.load(product.imageUrl, into: view) }
@@ -389,7 +389,7 @@ private enum DemoStories {
         ])
     ]
 
-    private static func offer(_ base: PersonalizationStorySlide.Offer, promo: String? = nil, discount: Int = 0) -> PersonalizationStorySlide.Offer {
+    private static func offer(_ base: PersonalizationStorySlide.Offer, promo: String? = nil, discount: Double = 0) -> PersonalizationStorySlide.Offer {
         PersonalizationStorySlide.Offer(
             id: base.id, brand: base.brand, name: base.name, imageUrl: base.imageUrl, price: base.price,
             oldPrice: base.oldPrice, discountPercent: discount, promoCode: promo,

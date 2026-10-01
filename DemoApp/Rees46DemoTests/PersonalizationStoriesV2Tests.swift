@@ -39,8 +39,8 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
                 ["type": "product", "item": item]
             ]
         ]
-        let content = StoryContent(json: ["id": 1, "stories": [["id": 39, "name": "Test", "slides": [slide]]]])
-        return PersonalizationStory.list(from: content).first?.slides.first?.offer
+        let json: [String: Any] = ["id": 1, "stories": [["id": 39, "name": "Test", "slides": [slide]]]]
+        return PersonalizationStory.list(json: json).first?.slides.first?.offer
     }
 
     private let base: [String: Any] = [
@@ -88,6 +88,89 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(offer?.link, "https://shop.example/p", "deeplink_ios before url")
     }
 
+    func testFractionalPricesAreComparedAsDecimals() {
+        // 19 990.50 is less than 19 990.90: an Int parse would make them equal and drop the old price.
+        let offer = product(merged([
+            "price": 19990.5, "price_formatted": "19 990,50 ₽", "oldprice": "19990.90", "oldprice_formatted": "19 990,90 ₽",
+            "discount_percent": 12.5
+        ]))
+        XCTAssertEqual(offer?.oldPrice, "19 990,90 ₽")
+        XCTAssertEqual(offer?.discountPercent, 12.5)
+        XCTAssertEqual(offer?.priceKind, .discount("12.5%"), "the fraction stays")
+
+        let cheaper = product(merged(["price": "100.5", "oldprice": 100.25, "oldprice_formatted": "100,25 ₽"]))
+        XCTAssertNil(cheaper?.oldPrice, "an old price below the price is not shown")
+    }
+
+    func testAPromoCodeWithoutAnOldPriceCrossesOutTheRegularPrice() {
+        let offer = product(merged([
+            "oldprice": NSNull(), "oldprice_formatted": "", "promocode": "SALE", "price_with_promocode_formatted": "17 990 ₽"
+        ]))
+        XCTAssertEqual(offer?.displayedPrice, "17 990 ₽")
+        XCTAssertEqual(offer?.crossedOutPrice, "19 990 ₽", "the regular price, crossed out")
+
+        let same = product(merged(["oldprice": 0, "promocode": "SALE", "price_with_promocode_formatted": "19 990 ₽"]))
+        XCTAssertNil(same?.crossedOutPrice, "nothing to cross out when the code does not change the price")
+
+        let withOld = product(merged(["promocode": "SALE", "price_with_promocode_formatted": "17 990 ₽"]))
+        XCTAssertEqual(withOld?.crossedOutPrice, "27 990 ₽", "the old price wins when there is one")
+    }
+
+    func testThePromoCaptionIsTheAdminTitle() {
+        let element: [String: Any] = ["type": "product", "title": "Your code", "item": merged(["promocode": "SALE"])]
+        XCTAssertEqual(PersonalizationStorySlide.Offer(element: element)?.promoCaption, "Your code")
+        XCTAssertNil(product(merged(["promocode": "SALE"]))?.promoCaption, "no title: the host text")
+    }
+
+    func testAProductSlideButtonOpensItsOwnLinkElseTheProduct() {
+        let item = merged([:])
+        let slide: [String: Any] = [
+            "id": 7, "type": "", "elements": [
+                ["type": "button", "title": "Own", "link": "https://shop.example/web", "link_ios": "https://shop.example/ios"],
+                ["type": "button", "title": "Web only", "link": "https://shop.example/web"],
+                ["type": "button", "title": "No link"],
+                ["type": "product", "item": item]
+            ]
+        ]
+        let json: [String: Any] = ["stories": [["id": 1, "slides": [slide]]]]
+        guard let mapped = PersonalizationStory.list(json: json).first?.slides.first else { return XCTFail("no slide") }
+        XCTAssertEqual(mapped.buttons.map { mapped.link(of: $0) }, [
+            "https://shop.example/ios", "https://shop.example/web", "https://shop.example/p"
+        ])
+        XCTAssertNotNil(mapped.buttons.first?.element, "the element goes to the communication delegate")
+        if case .product(let element)? = mapped.offer?.source {
+            XCTAssertEqual(element.product?.promocode, "")
+        } else {
+            XCTFail("the product element is kept for the delegate")
+        }
+    }
+
+    func testTextBlocksTakeThePresetLineHeightAndTheirPromoCode() {
+        let slide: [String: Any] = [
+            "id": 1, "type": "image", "background": "https://img.example/a.jpg", "elements": [
+                ["type": "text_block", "text_input": "Large", "font_size": 48],
+                ["type": "text_block", "text_input": "Medium", "font_size": "30", "text_align": "end"],
+                ["type": "text_block", "text_input": "Spaced", "font_size": "20", "text_line_spacing": "1.5"],
+                ["type": "text_block", "text_input": "Code", "promocode": "TEXT10", "text_align": "start"],
+                ["type": "text_block", "text_input": "   "]
+            ]
+        ]
+        let json: [String: Any] = ["stories": [["id": 1, "slides": [slide]]]]
+        let blocks = PersonalizationStory.list(json: json).first?.slides.first?.textBlocks ?? []
+        XCTAssertEqual(blocks.map(\.style), [
+            .large, .medium, PersonalizationStoryTextBlock.Style(size: 20, lineHeight: 30), .small
+        ], "no line spacing: the preset of the size; a blank block is skipped")
+        XCTAssertEqual(blocks[1].alignment, .right)
+        XCTAssertEqual(blocks[3].alignment, .natural)
+        XCTAssertEqual(blocks[3].promoCode, "TEXT10")
+        XCTAssertEqual(PersonalizationStoryTextBlock.Style.presetLineHeight(for: 25), 30, "the small preset's ratio")
+    }
+
+    func testDynamicSlideIdsAndNumericIdsAreKept() {
+        let json: [String: Any] = ["stories": [["id": "39", "slides": [["id": "39_0", "type": ""], ["id": 12, "type": "image"]]]]]
+        XCTAssertEqual(PersonalizationStory.list(json: json).first?.slides.map(\.id), ["39_0", "12"])
+    }
+
     // MARK: - Server data
 
     func testSlidesMapKindButtonsCarouselAndTextBlocks() {
@@ -111,12 +194,12 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
             ]
         ]
         let empty: [String: Any] = ["id": 41, "name": "Empty", "slides": [[String: Any]]()]
-        let content = StoryContent(json: ["id": 1, "stories": [
+        let json: [String: Any] = ["id": 1, "stories": [
             ["id": 40, "name": "Gaming", "avatar": "https://img.example/a.jpg", "pinned": true, "start_position": 0, "slides": [slide]],
             empty
-        ]])
+        ]]
 
-        let stories = PersonalizationStory.list(from: content)
+        let stories = PersonalizationStory.list(json: json)
         XCTAssertEqual(stories.map(\.id), ["40"], "a story without slides is dropped")
         guard let mapped = stories.first?.slides.first else { return XCTFail("no slide") }
 
@@ -138,25 +221,29 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertTrue(block.bold)
         XCTAssertEqual(block.yOffset, 25)
         XCTAssertEqual(block.fill?.cgColor.alpha ?? 0, 0.5, accuracy: 0.001)
-        XCTAssertEqual(mapped.interfaceStyle, .dark, "a black background colour")
+        XCTAssertEqual(mapped.interfaceStyle, .unspecified, "no media: the app theme, whatever the background colour")
     }
 
     func testSlideKindFollowsTheServerType() {
-        XCTAssertEqual(PersonalizationStorySlide.kind(of: .image), .image)
-        XCTAssertEqual(PersonalizationStorySlide.kind(of: .video), .video)
-        XCTAssertEqual(PersonalizationStorySlide.kind(of: .unknown), .content)
+        XCTAssertEqual(PersonalizationStorySlide.kind(of: "image"), .image)
+        XCTAssertEqual(PersonalizationStorySlide.kind(of: "video"), .video)
+        XCTAssertEqual(PersonalizationStorySlide.kind(of: ""), .content)
     }
 
-    func testMediaSlidesAreDarkProductSlidesFollowTheApp() {
-        XCTAssertEqual(PersonalizationStorySlide(id: "1", kind: .image).interfaceStyle, .dark)
-        XCTAssertEqual(PersonalizationStorySlide(id: "2", kind: .video).interfaceStyle, .dark)
+    func testMediaSlidesAreDarkOthersFollowTheApp() {
+        XCTAssertEqual(PersonalizationStorySlide(id: "1", kind: .image, background: "https://img.example/a.jpg").interfaceStyle, .dark)
+        XCTAssertEqual(PersonalizationStorySlide(id: "2", kind: .video, background: "https://video.example/a.mp4").interfaceStyle, .dark)
         XCTAssertEqual(PersonalizationStorySlide(id: "3", kind: .content).interfaceStyle, .unspecified)
-        XCTAssertEqual(PersonalizationStorySlide(id: "4", kind: .content, backgroundColor: .white).interfaceStyle, .light)
-        XCTAssertEqual(PersonalizationStorySlide(id: "5", kind: .content, background: "https://img.example/bg.jpg").interfaceStyle, .dark)
+        XCTAssertEqual(PersonalizationStorySlide(id: "4", kind: .content, backgroundColor: .black).interfaceStyle, .unspecified,
+                       "background_color only paints the letterbox")
+        XCTAssertEqual(PersonalizationStorySlide(id: "5", kind: .content, background: "https://img.example/bg.jpg").interfaceStyle, .dark,
+                       "a photo behind a content slide is media too")
     }
 
-    func testAMissingDurationFallsBackToFiveSeconds() {
-        XCTAssertEqual(PersonalizationStorySlide(id: "1", kind: .image, duration: 0).duration, 5)
+    func testAMissingDurationFallsBackToTenSeconds() {
+        XCTAssertEqual(PersonalizationStorySlide(id: "1", kind: .image, duration: 0).duration, 10)
+        let json: [String: Any] = ["stories": [["id": 1, "slides": [["id": 2, "type": "image", "background": "https://img.example/a.jpg"]]]]]
+        XCTAssertEqual(PersonalizationStory.list(json: json).first?.slides.first?.duration, 10)
     }
 
     func testAPinnedStoryStaysPinnedOnceViewedOthersTurnGrey() {
@@ -165,17 +252,62 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
 
         let pinned = state.barItem(PersonalizationStory(id: "p", name: "P", pinned: true, viewed: true, slides: slides))
         XCTAssertEqual(pinned.state, .pinned, "Semantic/Warning ring and the star")
-        XCTAssertEqual(pinned.seen, 0, "a finished pinned ring is not lightened")
+        XCTAssertEqual(pinned.seen, [], "a finished pinned ring is not lightened")
+        XCTAssertEqual(pinned.segments, 0, "a plain warning ring")
 
         let plain = state.barItem(PersonalizationStory(id: "v", name: "V", viewed: true, slides: slides))
         XCTAssertEqual(plain.state, .viewed)
+        XCTAssertEqual(plain.segments, 0, "a viewed ring is solid")
 
         let fresh = state.barItem(PersonalizationStory(id: "d", name: "D", slides: slides))
         XCTAssertEqual(fresh.state, .default)
         XCTAssertEqual(fresh.segments, 2)
     }
 
-    func testAProductSlideWithoutItsOwnColourSitsOnBackgroundCard() {
+    func testTheRingLightsSeenSlidesByIndex() {
+        let slides = (1...4).map { PersonalizationStorySlide(id: String($0), kind: .content) }
+        let story = PersonalizationStory(id: "s", name: "S", slides: slides)
+
+        let item = StoriesSeenState.barItem(story, seen: ["2", "4"])
+        XCTAssertEqual(item.state, .default)
+        XCTAssertEqual(item.segments, 4)
+        XCTAssertEqual(item.seen, [1, 3], "segment i is lit iff slide i is seen")
+
+        let done = StoriesSeenState.barItem(story, seen: ["1", "2", "3", "4"])
+        XCTAssertEqual(done.state, .viewed, "every slide seen is viewed")
+        XCTAssertEqual(done.segments, 0)
+
+        let pinned = StoriesSeenState.barItem(PersonalizationStory(id: "p", name: "P", pinned: true, slides: slides), seen: ["3"])
+        XCTAssertEqual(pinned.state, .pinned)
+        XCTAssertEqual(pinned.seen, [2])
+    }
+
+    func testAViewedCoverDrawsASolidRingWhateverItsSegments() {
+        let cover = PersonalizationStoryCover(state: .viewed)
+        cover.segments = 5
+        cover.seen = [0, 1]
+        XCTAssertEqual(cover.arcCount, 1)
+        cover.state = .default
+        XCTAssertEqual(cover.arcCount, 5)
+        XCTAssertEqual(cover.color(ofSegment: 1), PersonalizationColor.buttonPrimaryDisabled)
+        XCTAssertEqual(cover.color(ofSegment: 2), PersonalizationColor.buttonPrimary)
+    }
+
+    func testTheStartSlideFollowsWhatWasSeen() {
+        let slides = (1...4).map { PersonalizationStorySlide(id: String($0), kind: .content) }
+        let story = PersonalizationStory(id: "s", name: "S", startPosition: 2, slides: slides)
+        XCTAssertEqual(StoriesSeenState.startSlide(story, seen: []), 2, "untouched: the server start position")
+        XCTAssertEqual(StoriesSeenState.startSlide(story, seen: ["1", "3"]), 1, "started: the first unseen in order")
+        XCTAssertEqual(StoriesSeenState.startSlide(story, seen: ["1", "2", "3", "4"]), 0, "viewed: from the start")
+
+        let viewed = PersonalizationStory(id: "v", name: "V", viewed: true, startPosition: 2, slides: slides)
+        XCTAssertEqual(StoriesSeenState.startSlide(viewed, seen: []), 0, "viewed by the server: from the start")
+
+        let far = PersonalizationStory(id: "f", name: "F", startPosition: 9, slides: slides)
+        XCTAssertEqual(StoriesSeenState.startSlide(far, seen: []), 3, "clamped to the story")
+    }
+
+    func testASlideWithoutMediaSitsOnBackgroundCardWhateverItsColour() {
         let offer = PersonalizationStorySlide.Offer(id: "1", name: "MacBook", price: "1 190 900 ₽")
         let plain = PersonalizationStorySlideView(
             slide: PersonalizationStorySlide(id: "1", kind: .content, offer: offer),
@@ -189,8 +321,14 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
             slide: PersonalizationStorySlide(id: "2", kind: .content, backgroundColor: blue, offer: offer),
             texts: .init(), isMuted: true, imageLoader: { _, _ in }
         )
-        XCTAssertEqual(coloured.backgroundColor, blue, "the server's background_color")
-        XCTAssertEqual(coloured.slide.interfaceStyle, .dark, "by the colour's brightness")
+        XCTAssertEqual(coloured.backgroundColor, PersonalizationColor.backgroundCard, "background_color is for the letterbox only")
+        XCTAssertEqual(coloured.slide.interfaceStyle, .unspecified)
+
+        let photo = PersonalizationStorySlideView(
+            slide: PersonalizationStorySlide(id: "3", kind: .image, background: "https://img.example/a.jpg", backgroundColor: blue),
+            texts: .init(), isMuted: true, imageLoader: { _, _ in }
+        )
+        XCTAssertEqual(photo.backgroundColor, blue, "the letterbox around the fitted photo")
     }
 
     // MARK: - Timer

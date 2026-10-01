@@ -138,12 +138,12 @@ import UIKit
         let seq = requestSeq
         setCollapsed(false)
         bar.isLoading = true
-        sdk.getStories(code: code) { [weak self] result in
+        StoriesBlockLoader.load(sdk: sdk, code: code) { [weak self] result in
             MainThread.run {
                 guard let self, seq == self.requestSeq else { return }
                 switch result {
-                case .success(let content):
-                    self.stories = PersonalizationStory.list(from: content)
+                case .success(let stories):
+                    self.stories = stories
                     // Превью собираются один раз — когда уходят заглушки.
                     self.renderBar()
                     self.bar.isLoading = false

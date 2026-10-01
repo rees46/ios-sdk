@@ -104,10 +104,9 @@ final class PersonalizationStorySlideView: UIView {
 
     private func setup(isMuted: Bool) {
         clipsToBounds = true
-        // Слайд без медиа и без своего цвета — Background/Card в теме приложения
-        // (белый в светлой, #1A1A1A в тёмной); медиа до загрузки — чёрный.
-        backgroundColor = slide.backgroundColor
-            ?? (slide.isMedia ? .black : PersonalizationColor.backgroundCard)
+        // Слайд без медиа — всегда Background/Card в теме приложения (белый в светлой,
+        // #1A1A1A в тёмной); у медиа фон — поля вокруг вписанного кадра.
+        backgroundColor = slide.isMedia ? slide.letterboxColor : PersonalizationColor.backgroundCard
 
         backgroundImage.contentMode = .scaleAspectFill
         backgroundImage.clipsToBounds = true
@@ -309,8 +308,8 @@ final class PersonalizationStorySlideView: UIView {
         card.accessibilityTraits = .button
         load(image, offer.imageUrl)
 
-        let price = PersonalizationStoryPrice(price: offer.displayedPrice, oldPrice: offer.oldPrice, kind: offer.priceKind)
-        price.promoCaption = texts.promoCaption
+        let price = PersonalizationStoryPrice(price: offer.displayedPrice, oldPrice: offer.crossedOutPrice, kind: offer.priceKind)
+        price.promoCaption = offer.promoCaption ?? texts.promoCaption
         price.copiedText = texts.promoCopied
         price.onPromoCopied = { [weak self] code in self?.onPromoCopied?(code) }
 
@@ -364,7 +363,7 @@ final class PersonalizationStorySlideView: UIView {
     // MARK: - Медиа и прочие слайды
 
     private func buildOverlay() {
-        for block in slide.textBlocks where !block.text.isEmpty {
+        for block in slide.visibleTextBlocks {
             let view = PersonalizationStoryTextBlock()
             view.apply(block)
             view.translatesAutoresizingMaskIntoConstraints = false

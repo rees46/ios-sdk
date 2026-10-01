@@ -28,6 +28,14 @@ import UIKit
         public static let medium = Style(size: 30, lineHeight: 36)
         /// Small — 20/24.
         public static let small = Style(size: 20, lineHeight: 24)
+
+        /// Интерлиньяж по пресету для кегля, когда админка его не задала: у кегля пресета —
+        /// интерлиньяж пресета, у прочих — та же пропорция, что у ближайшего по кеглю.
+        public static func presetLineHeight(for size: CGFloat) -> CGFloat {
+            let presets = [Style.small, .medium, .large]
+            let nearest = presets.min { abs($0.size - size) < abs($1.size - size) } ?? .small
+            return (size * nearest.lineHeight / nearest.size).rounded()
+        }
     }
 
     /// Гарнитура из админки. `default` — шрифт темы кита.

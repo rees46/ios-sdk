@@ -20,8 +20,8 @@ import UIKit
         public var state: PersonalizationStoryCover.State
         /// Число слайдов: столько сегментов у кольца. 0 — сплошное.
         public var segments: Int
-        /// Сколько слайдов с начала уже просмотрено.
-        public var seen: Int
+        /// Номера просмотренных слайдов: эти сегменты подсвечены.
+        public var seen: Set<Int>
 
         public init(
             id: String,
@@ -29,7 +29,7 @@ import UIKit
             imageUrl: String? = nil,
             state: PersonalizationStoryCover.State = .default,
             segments: Int = 0,
-            seen: Int = 0
+            seen: Set<Int> = []
         ) {
             self.id = id
             self.title = title

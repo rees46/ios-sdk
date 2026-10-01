@@ -11,9 +11,9 @@ import UIKit
 /// `skeleton` — кольцо и круг картинки переливаются заглушкой.
 ///
 /// Сегменты: при `segments > 1` кольцо делится на столько дуг с небольшими зазорами —
-/// по дуге на слайд. Первые `seen` дуг, уже просмотренные слайды, красятся
+/// по дуге на слайд. Дуги просмотренных слайдов (`seen` — их номера) красятся
 /// Button/Primary Disabled (Brand/Primary 65%), остальные — цветом состояния.
-/// У просмотренной сторис все дуги Neutral Subtle.
+/// Просмотренная сторис (`viewed`) — всегда сплошное кольцо Neutral Subtle, без сегментов.
 ///
 /// Картинку компонент не грузит: хост кладёт её в `imageView`.
 /// Кольцо рисуют слои `CAShapeLayer`, а их `cgColor` за сменой темы не следит —
@@ -44,8 +44,8 @@ import UIKit
         didSet { setNeedsLayout() }
     }
 
-    /// Сколько сегментов с начала уже просмотрено.
-    public var seen: Int = 0 {
+    /// Номера просмотренных слайдов: их сегменты подсвечены.
+    public var seen: Set<Int> = [] {
         didSet { setNeedsLayout() }
     }
 
@@ -133,9 +133,14 @@ import UIKit
         drawArcs()
     }
 
+    /// Сегментов на кольце: у просмотренной сторис кольцо сплошное.
+    var arcCount: Int {
+        state == .viewed ? 1 : max(1, segments)
+    }
+
     /// Дуги кольца: одна сплошная или по сегменту на слайд, от верхней точки по часовой.
     private func drawArcs() {
-        let count = max(1, segments)
+        let count = arcCount
         while arcs.count < count {
             let arc = CAShapeLayer()
             arc.fillColor = UIColor.clear.cgColor
@@ -180,9 +185,9 @@ import UIKit
         }
     }
 
-    private func color(ofSegment index: Int) -> UIColor {
+    func color(ofSegment index: Int) -> UIColor {
         // Сплошное кольцо просмотренность слайдов не показывает.
-        let isSeen = segments > 1 && index < seen
+        let isSeen = arcCount > 1 && seen.contains(index)
         switch state {
         case .viewed: return PersonalizationColor.neutralSubtle
         case .skeleton: return .clear

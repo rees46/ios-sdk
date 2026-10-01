@@ -1,114 +1,197 @@
 import UIKit
 
-// Сборка моделей кита из ответа `getStories`. Разбор JSON остаётся за SDK (`StoryContent`,
-// общий со старыми сторис) — здесь только перекладка в `PersonalizationStory`.
+// Данные Stories V2: блок `stories/{code}` разбирается здесь, прямо из JSON. Модели старых
+// сторис (`StoryContent` → `Slide`) при создании сами качают все картинки и ролики блока,
+// поэтому V2 их не строит — иначе каждый файл качался бы дважды. Типы элементов старых сторис
+// (`StoriesElement`, `StoriesProduct`, `StoriesPromoCodeElement`) побочных эффектов не имеют —
+// они собираются из тех же словарей и уходят делегату, как у старых сторис.
+
+/// Значения JSON ответа: числа и строки сервер присылает вперемешку.
+enum StoriesJSON {
+
+    /// Непустая строка без пробелов по краям; число — его запись.
+    static func string(_ value: Any?) -> String? {
+        let raw: String?
+        switch value {
+        case let text as String: raw = text
+        case let number as NSNumber where !(number === kCFBooleanTrue || number === kCFBooleanFalse): raw = number.stringValue
+        default: raw = nil
+        }
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+
+    /// Число с дробной частью: из числа или строки (`"19990.5"`, `"12,5"`), никогда не обрезается до целого.
+    static func number(_ value: Any?) -> Double? {
+        switch value {
+        case let number as NSNumber where !(number === kCFBooleanTrue || number === kCFBooleanFalse):
+            return number.doubleValue
+        case let text as String:
+            let cleaned = text
+                .replacingOccurrences(of: ",", with: ".")
+                .components(separatedBy: .whitespacesAndNewlines).joined()
+            return Double(cleaned)
+        default:
+            return nil
+        }
+    }
+
+    static func bool(_ value: Any?) -> Bool? {
+        switch value {
+        case let flag as Bool: return flag
+        case let number as NSNumber: return number.boolValue
+        case let text as String: return ["true", "1"].contains(text.lowercased()) ? true : (["false", "0"].contains(text.lowercased()) ? false : nil)
+        default: return nil
+        }
+    }
+
+    static func object(_ value: Any?) -> [String: Any]? {
+        value as? [String: Any]
+    }
+
+    static func objects(_ value: Any?) -> [[String: Any]] {
+        value as? [[String: Any]] ?? []
+    }
+}
 
 extension PersonalizationStory {
 
     /// Сторис блока. Сторис без слайдов показывать нечем — они отбрасываются.
-    static func list(from content: StoryContent) -> [PersonalizationStory] {
-        content.stories.map { PersonalizationStory(story: $0) }.filter { !$0.slides.isEmpty }
+    static func list(json: [String: Any]) -> [PersonalizationStory] {
+        StoriesJSON.objects(json["stories"]).compactMap { PersonalizationStory(json: $0) }.filter { !$0.slides.isEmpty }
     }
 
-    init(story: Story) {
+    init?(json: [String: Any]) {
+        guard let id = StoriesJSON.string(json["id"]) else { return nil }
+        let start = StoriesJSON.number(json["start_position"]).map { Int($0) } ?? 0
         self.init(
-            id: story.id,
-            name: story.name,
-            avatarUrl: story.avatar.isEmpty ? nil : story.avatar,
-            pinned: story.pinned,
-            viewed: story.viewed,
-            startPosition: story.startPosition,
-            slides: story.slides.map { PersonalizationStorySlide(slide: $0) }
+            id: id,
+            name: StoriesJSON.string(json["name"]) ?? "",
+            avatarUrl: StoriesJSON.string(json["avatar"]),
+            pinned: StoriesJSON.bool(json["pinned"]) ?? false,
+            viewed: StoriesJSON.bool(json["viewed"]) ?? false,
+            startPosition: start,
+            slides: StoriesJSON.objects(json["slides"]).compactMap { PersonalizationStorySlide(json: $0) }
         )
     }
 }
 
 extension PersonalizationStorySlide {
 
-    init(slide: Slide) {
-        let elements = slide.elements
+    init?(json: [String: Any]) {
+        guard let id = StoriesJSON.string(json["id"]) else { return nil }
+        let elements = StoriesJSON.objects(json["elements"])
+        func of(_ type: String) -> [[String: Any]] {
+            elements.filter { StoriesJSON.string($0["type"]) == type }
+        }
         self.init(
-            id: slide.id,
-            kind: Self.kind(of: slide.type),
-            background: slide.background.nonEmpty,
-            backgroundColor: PersonalizationStoryColors.parse(slide.backgroundColor),
-            preview: slide.preview?.nonEmpty,
-            duration: TimeInterval(slide.duration),
-            buttons: elements.filter { $0.type == .button }.compactMap { Button(element: $0) },
-            offer: elements.first { $0.type == .product }?.product.flatMap { Offer(item: $0) },
-            products: elements.first { $0.type == .products }.flatMap { Products(element: $0) },
-            textBlocks: elements.filter { $0.type == .textBlock }.compactMap { TextBlock(element: $0) }
+            id: id,
+            kind: Self.kind(of: StoriesJSON.string(json["type"]) ?? ""),
+            background: StoriesJSON.string(json["background"]),
+            backgroundColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["background_color"])),
+            preview: StoriesJSON.string(json["preview"]),
+            duration: StoriesJSON.number(json["duration"]) ?? Self.defaultDuration,
+            buttons: of("button").compactMap { Button(json: $0) },
+            offer: of("product").lazy.compactMap { Offer(element: $0) }.first,
+            products: of("products").lazy.compactMap { Products(json: $0) }.first,
+            textBlocks: of("text_block").compactMap { TextBlock(json: $0) }
         )
     }
 
     /// Тип слайда API: `image`, `video`, всё прочее (`""`) — слайд без медиа.
-    static func kind(of type: SlideType) -> Kind {
+    static func kind(of type: String) -> Kind {
         switch type {
-        case .image: return .image
-        case .video: return .video
-        case .unknown: return .content
+        case "image": return .image
+        case "video": return .video
+        default: return .content
         }
     }
 }
 
 extension PersonalizationStorySlide.Button {
 
-    /// Кнопка без подписи не рисуется.
-    init?(element: StoriesElement) {
-        guard let title = element.title?.nonEmpty else { return nil }
-        self.init(title: title, link: element.linkIos?.nonEmpty ?? element.link?.nonEmpty)
+    /// Кнопка без подписи не рисуется. Ссылка — `link_ios`, иначе `link`.
+    init?(json: [String: Any]) {
+        guard let title = StoriesJSON.string(json["title"]) else { return nil }
+        self.init(
+            title: title,
+            link: StoriesJSON.string(json["link_ios"]) ?? StoriesJSON.string(json["link"]),
+            element: StoriesElement(json: json)
+        )
     }
 }
 
 extension PersonalizationStorySlide.Offer {
 
-    /// Товар элемента `product`. Без названия товара нет.
-    init?(item: StoriesPromoCodeElement) {
-        guard !item.name.isEmpty else { return nil }
-        let resized = item.image_url_resized?.image_url_resized520.nonEmpty
+    /// Товар элемента `product`. Без названия товара нет. Подпись промокода — `title` элемента.
+    init?(element json: [String: Any]) {
+        guard let item = StoriesJSON.object(json["item"]), let name = StoriesJSON.string(item["name"]) else { return nil }
+        let resized = StoriesJSON.object(item["image_url_resized"]).flatMap { StoriesJSON.string($0["520"]) }
         self.init(
-            id: item.id,
-            brand: item.brand.nonEmpty,
-            name: item.name,
-            imageUrl: resized ?? item.image_url.nonEmpty ?? item.picture.nonEmpty,
-            price: item.price_formatted.nonEmpty ?? "\(item.price) \(item.currency)",
-            oldPrice: item.oldprice > item.price ? item.oldprice_formatted.nonEmpty : nil,
-            discountPercent: item.discount_percent,
-            promoCode: item.promocode.nonEmpty,
-            priceWithPromoCode: item.price_with_promocode_formatted.nonEmpty,
-            link: item.deeplinkIos.nonEmpty ?? item.url.nonEmpty
+            id: StoriesJSON.string(item["id"]) ?? "",
+            brand: StoriesJSON.string(item["brand"]),
+            name: name,
+            imageUrl: resized ?? StoriesJSON.string(item["image_url"]) ?? StoriesJSON.string(item["picture"]),
+            price: Self.price(item),
+            oldPrice: Self.oldPrice(item),
+            discountPercent: max(0, StoriesJSON.number(item["discount_percent"]) ?? 0),
+            promoCode: StoriesJSON.string(item["promocode"]),
+            priceWithPromoCode: StoriesJSON.string(item["price_with_promocode_formatted"]),
+            promoCaption: StoriesJSON.string(json["title"]),
+            link: StoriesJSON.string(item["deeplink_ios"]) ?? StoriesJSON.string(item["url"]),
+            source: .product(StoriesElement(json: json))
         )
     }
 
-    /// Товар карусели `products`. Своего id в ответе нет — им служит ссылка;
-    /// процент скидки считается по ценам.
-    init?(carousel item: StoriesProduct, index: Int) {
-        guard !item.name.isEmpty else { return nil }
-        let old = item.oldprice ?? 0
-        let hasOldPrice = old > item.price && !item.oldprice_formatted.isEmpty
-        let percent = hasOldPrice ? Int((Double(old - item.price) / Double(old) * 100).rounded()) : 0
+    /// Товар карусели `products`. Скидка — `discount_percent`, а без неё считается по ценам.
+    init?(carousel item: [String: Any], index: Int) {
+        guard let name = StoriesJSON.string(item["name"]) else { return nil }
+        let oldPrice = Self.oldPrice(item)
+        var percent = StoriesJSON.number(item["discount_percent"]) ?? 0
+        if percent <= 0, oldPrice != nil,
+           let price = StoriesJSON.number(item["price"]), let old = StoriesJSON.number(item["oldprice"]), old > 0 {
+            percent = ((old - price) / old * 100).rounded()
+        }
         self.init(
-            id: item.url.nonEmpty ?? String(index),
-            name: item.name,
-            imageUrl: item.picture.nonEmpty,
-            price: item.price_formatted.nonEmpty ?? "\(item.price) \(item.currency)",
-            oldPrice: hasOldPrice ? item.oldprice_formatted : nil,
-            discountPercent: percent,
-            link: item.deeplinkIos.nonEmpty ?? item.url.nonEmpty
+            id: StoriesJSON.string(item["id"]) ?? StoriesJSON.string(item["url"]) ?? String(index),
+            brand: StoriesJSON.string(item["brand"]),
+            name: name,
+            imageUrl: StoriesJSON.string(item["picture"]) ?? StoriesJSON.string(item["image_url"]),
+            price: Self.price(item),
+            oldPrice: oldPrice,
+            discountPercent: max(0, percent),
+            link: StoriesJSON.string(item["deeplink_ios"]) ?? StoriesJSON.string(item["url"]),
+            source: .carousel(StoriesProduct(json: item))
         )
+    }
+
+    /// Цена строкой сервера; без неё — число и валюта.
+    private static func price(_ item: [String: Any]) -> String {
+        if let formatted = StoriesJSON.string(item["price_formatted"]) { return formatted }
+        guard let number = StoriesJSON.string(item["price"]) else { return "" }
+        return [number, StoriesJSON.string(item["currency"])].compactMap { $0 }.joined(separator: " ")
+    }
+
+    /// Старая цена — только если она численно больше цены; числа сравниваются с дробной частью.
+    private static func oldPrice(_ item: [String: Any]) -> String? {
+        guard let old = StoriesJSON.number(item["oldprice"]),
+              let price = StoriesJSON.number(item["price"]),
+              old > price else { return nil }
+        return StoriesJSON.string(item["oldprice_formatted"])
     }
 }
 
 extension PersonalizationStorySlide.Products {
 
-    init?(element: StoriesElement) {
-        let items = (element.products ?? []).enumerated().compactMap {
+    init?(json: [String: Any]) {
+        let items = StoriesJSON.objects(json["products"]).enumerated().compactMap {
             PersonalizationStorySlide.Offer(carousel: $0.element, index: $0.offset)
         }
         guard !items.isEmpty else { return nil }
+        let labels = StoriesJSON.object(json["labels"])
         self.init(
-            showLabel: element.labels?.showCarousel.nonEmpty,
-            hideLabel: element.labels?.hideCarousel.nonEmpty,
+            showLabel: StoriesJSON.string(labels?["show_carousel"]),
+            hideLabel: StoriesJSON.string(labels?["hide_carousel"]),
             items: items
         )
     }
@@ -116,22 +199,29 @@ extension PersonalizationStorySlide.Products {
 
 extension PersonalizationStorySlide.TextBlock {
 
-    /// Кегль по умолчанию — Small; интерлиньяж в админке — множитель кегля.
-    init?(element: StoriesElement) {
-        guard let text = element.textInput?.nonEmpty else { return nil }
-        let size = CGFloat(element.fontSize ?? Double(PersonalizationStoryTextBlock.Style.small.size))
-        let spacing = CGFloat(element.textLineSpacing ?? 0)
-        let multiple = spacing > 0 ? spacing : 1.2
+    /// Пустой блок пропускается. Кегль по умолчанию — Small; интерлиньяж в админке —
+    /// множитель кегля, без него — интерлиньяж пресета для этого кегля.
+    init?(json: [String: Any]) {
+        guard let text = StoriesJSON.string(json["text_input"]) else { return nil }
+        let size = CGFloat(StoriesJSON.number(json["font_size"]) ?? Double(PersonalizationStoryTextBlock.Style.small.size))
+        let spacing = CGFloat(StoriesJSON.number(json["text_line_spacing"]) ?? 0)
+        let lineHeight = spacing > 0
+            ? (size * spacing).rounded()
+            : PersonalizationStoryTextBlock.Style.presetLineHeight(for: size)
         self.init(
             text: text,
-            style: PersonalizationStoryTextBlock.Style(size: size, lineHeight: (size * multiple).rounded()),
-            fontFamily: Self.family(element.fontType),
-            bold: element.textBold ?? false,
-            italic: element.textItalic ?? false,
-            alignment: Self.alignment(element.textAlignment),
-            textColor: PersonalizationStoryColors.parse(element.textColor),
-            fill: Self.fill(color: element.textBackgroundColor, opacity: element.textBackgroundColorOpacity),
-            yOffset: CGFloat(element.yOffset ?? 0)
+            style: PersonalizationStoryTextBlock.Style(size: size, lineHeight: lineHeight),
+            fontFamily: Self.family(StoriesJSON.string(json["font_type"])),
+            bold: StoriesJSON.bool(json["text_bold"]) ?? StoriesJSON.bool(json["bold"]) ?? false,
+            italic: StoriesJSON.bool(json["italic"]) ?? StoriesJSON.bool(json["text_italic"]) ?? false,
+            alignment: Self.alignment(StoriesJSON.string(json["text_align"])),
+            textColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["text_color"])),
+            fill: Self.fill(
+                color: StoriesJSON.string(json["text_background_color"]),
+                opacity: StoriesJSON.string(json["text_background_color_opacity"])
+            ),
+            yOffset: CGFloat(StoriesJSON.number(json["y_offset"]) ?? 0),
+            promoCode: StoriesJSON.string(json["promocode"])
         )
     }
 
@@ -142,35 +232,33 @@ extension PersonalizationStorySlide.TextBlock {
         return base.withAlphaComponent(PersonalizationStoryColors.opacity(opacity) ?? 1)
     }
 
-    private static func family(_ type: FontType?) -> PersonalizationStoryTextBlock.FontFamily {
+    private static func family(_ type: String?) -> PersonalizationStoryTextBlock.FontFamily {
         switch type {
-        case .monospaced: return .monospaced
-        case .serif: return .serif
-        case .sansSerif: return .sansSerif
-        case .unknown, .none: return .default
+        case "monospaced": return .monospaced
+        case "serif": return .serif
+        case "sans-serif": return .sansSerif
+        default: return .default
         }
     }
 
-    private static func alignment(_ value: TextAlignment?) -> NSTextAlignment {
-        switch value {
-        case .left: return .left
-        case .right: return .right
-        case .center: return .center
-        case .none: return .natural
+    /// `left`/`start`, `center`, `right`/`end`; `start` и `end` — по направлению письма.
+    static func alignment(_ value: String?) -> NSTextAlignment {
+        let rightToLeft = UIView.userInterfaceLayoutDirection(for: .unspecified) == .rightToLeft
+        switch value?.lowercased() {
+        case "left": return .left
+        case "right": return .right
+        case "center": return .center
+        case "end": return rightToLeft ? .left : .right
+        default: return .natural
         }
     }
 }
 
-private extension String {
-    /// Пустая строка из ответа — то же, что её отсутствие.
-    var nonEmpty: String? {
-        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
-    }
-}
+// MARK: - Просмотренность
 
 /// Просмотренные слайды сторис — общее хранилище SDK по магазину (`localState`), то же,
-/// что у старых сторис: кольца обеих лент сходятся.
+/// что у старых сторис: кольца обеих лент сходятся. Слайд просмотрен, как только стал
+/// текущим на остановившейся странице.
 struct StoriesSeenState {
     let sdk: PersonalizationSDK?
 
@@ -187,32 +275,66 @@ struct StoriesSeenState {
         state.setViewedSlides(ids, storyId: story.id)
     }
 
-    /// Превью ленты. Закреплённая остаётся закреплённой и после просмотра — кольцо
-    /// Semantic/Warning и звезда, как на остальных платформах и у старых сторис;
-    /// досмотренную закреплённую сегменты не осветляют. Незакреплённая просмотренная
-    /// (сервером или все слайды локально) — серая; начатая — с осветлёнными сегментами.
     func barItem(_ story: PersonalizationStory) -> PersonalizationStoriesBar.Item {
-        let seenCount = seen(story).count
-        let viewed = story.viewed || seenCount >= story.slides.count
+        Self.barItem(story, seen: seen(story))
+    }
+
+    func startSlide(_ story: PersonalizationStory) -> Int {
+        Self.startSlide(story, seen: seen(story))
+    }
+
+    /// Сторис просмотрена: так сказал сервер или просмотрены все её слайды.
+    static func isViewed(_ story: PersonalizationStory, seen: Set<String>) -> Bool {
+        story.viewed || (!story.slides.isEmpty && story.slides.allSatisfy { seen.contains($0.id) })
+    }
+
+    /// Превью ленты. Просмотренная незакреплённая — сплошное кольцо Neutral Subtle без сегментов.
+    /// Закреплённая всегда остаётся закреплённой (кольцо Semantic/Warning и звезда), досмотренная
+    /// закреплённая — тоже сплошное кольцо. Начатая — сегменты по слайдам, просмотренные
+    /// подсвечены по своему номеру, а не по счёту.
+    static func barItem(_ story: PersonalizationStory, seen: Set<String>) -> PersonalizationStoriesBar.Item {
+        let viewed = isViewed(story, seen: seen)
         let state: PersonalizationStoryCover.State = story.pinned ? .pinned : (viewed ? .viewed : .default)
+        let lit = Set(story.slides.indices.filter { seen.contains(story.slides[$0].id) })
         return PersonalizationStoriesBar.Item(
             id: story.id,
             title: story.name,
             imageUrl: story.avatarUrl,
             state: state,
-            segments: story.slides.count,
-            seen: viewed ? 0 : seenCount
+            segments: viewed ? 0 : story.slides.count,
+            seen: viewed ? [] : lit
         )
     }
 
-    /// Откуда открыть сторис: начатую — с первого непросмотренного слайда, как старые сторис;
-    /// нетронутую или досмотренную — с `startPosition`.
-    func startSlide(_ story: PersonalizationStory) -> Int {
-        let seenIds = seen(story)
-        if !seenIds.isEmpty, seenIds.count < story.slides.count,
-           let first = story.slides.firstIndex(where: { !seenIds.contains($0.id) }) {
+    /// С какого слайда открыть сторис: просмотренную — с начала; начатую — с первого
+    /// непросмотренного по порядку; нетронутую — с `startPosition` сервера в пределах сторис.
+    static func startSlide(_ story: PersonalizationStory, seen: Set<String>) -> Int {
+        guard !story.slides.isEmpty else { return 0 }
+        if isViewed(story, seen: seen) { return 0 }
+        if let first = story.slides.firstIndex(where: { !seen.contains($0.id) }), !seen.isEmpty {
             return first
         }
-        return story.startPosition
+        return min(max(story.startPosition, 0), story.slides.count - 1)
+    }
+}
+
+// MARK: - Загрузка блока
+
+/// Блок сторис с сервера: тот же запрос, что у старых сторис (`stories/{code}`), но без их
+/// разбора с загрузкой медиа и без смены сессии SDK. Ответ приходит на главную очередь.
+enum StoriesBlockLoader {
+
+    static func load(
+        sdk: PersonalizationSDK,
+        code: String,
+        completion: @escaping (Result<[PersonalizationStory], SdkError>) -> Void
+    ) {
+        sdk.sessionQueue.addOperation {
+            let params = [SdkConstants.shopId: sdk.shopId, SdkConstants.did: sdk.deviceId]
+            sdk.getRequest(path: "stories/\(code)", params: params, false) { result in
+                let mapped = result.map { PersonalizationStory.list(json: $0) }
+                MainThread.run { completion(mapped) }
+            }
+        }
     }
 }
