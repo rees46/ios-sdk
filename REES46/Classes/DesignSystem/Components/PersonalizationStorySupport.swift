@@ -174,18 +174,37 @@ extension NSLayoutConstraint {
 /// (звук слышен и в беззвучном режиме). Кнопка громкости вверх, нажатая при открытом
 /// просмотрщике, включает звук. Закрытие возвращает категорию, что была до открытия,
 /// и отпускает сессию, давая другим приложениям продолжить.
+///
+/// Звук может забрать и система: выдернули наушники, прервал звонок, Siri или чужое
+/// приложение. Тогда текущий показ идёт дальше без звука (`isSilenced`), а выбор
+/// пользователя не меняется: следующее открытие — снова как он выбрал. Звук возвращает
+/// кнопка, громкость вверх или конец прерывания, после которого система разрешает играть.
 final class PersonalizationStoryAudio: NSObject {
 
     static let shared = PersonalizationStoryAudio()
 
-    /// Звук сменился: `object` — `PersonalizationStoryAudio`, читать `isMuted`.
+    /// Звук сменился: `object` — `PersonalizationStoryAudio`, читать `isPlaybackMuted`.
+    /// Приходит и после вмешательства системы — просмотрщик заново запускает ролик.
     static let didChange = Notification.Name("personalization.stories.muteChanged")
 
+    /// Выбор пользователя: звук выключен. Система его не меняет.
     private(set) var isMuted = true
+
+    /// Звук забрала система — до конца текущего показа или пока пользователь не включит.
+    private(set) var isSilenced = false
+
+    /// Что слышно сейчас: без звука по выбору пользователя или по воле системы.
+    var isPlaybackMuted: Bool { isMuted || isSilenced }
 
     private var viewers = 0
     private var saved: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)?
     private var volumeObservation: NSKeyValueObservation?
+    private var sessionObservers: [NSObjectProtocol] = []
+    /// Тишину включило прерывание: его конец может вернуть звук.
+    private var silencedByInterruption = false
+    /// Выход звука при прошлом замере громкости: громкость меняется и при смене выхода,
+    /// это не нажатие кнопки.
+    private var volumeRoute: [String] = []
 
     /// Просмотрщик открылся.
     func begin() {
@@ -194,10 +213,21 @@ final class PersonalizationStoryAudio: NSObject {
         let session = AVAudioSession.sharedInstance()
         saved = (session.category, session.mode, session.categoryOptions)
         applyCategory()
-        volumeObservation = session.observe(\.outputVolume, options: [.old, .new]) { [weak self] _, change in
-            guard let old = change.oldValue, let new = change.newValue, new > old else { return }
-            MainThread.run { self?.setMuted(false) }
+        volumeRoute = Self.outputs(of: session)
+        volumeObservation = session.observe(\.outputVolume, options: [.old, .new]) { [weak self] session, change in
+            guard let old = change.oldValue, let new = change.newValue else { return }
+            let route = Self.outputs(of: session)
+            MainThread.run { self?.volumeChanged(from: old, to: new, route: route) }
         }
+        let center = NotificationCenter.default
+        sessionObservers = [
+            center.addObserver(forName: AVAudioSession.interruptionNotification, object: session, queue: .main) { [weak self] note in
+                self?.interrupted(note)
+            },
+            center.addObserver(forName: AVAudioSession.routeChangeNotification, object: session, queue: .main) { [weak self] note in
+                self?.routeChanged(note)
+            }
+        ]
     }
 
     /// Просмотрщик закрылся: последний возвращает сессию как было.
@@ -207,6 +237,10 @@ final class PersonalizationStoryAudio: NSObject {
         guard viewers == 0 else { return }
         volumeObservation?.invalidate()
         volumeObservation = nil
+        sessionObservers.forEach { NotificationCenter.default.removeObserver($0) }
+        sessionObservers = []
+        isSilenced = false
+        silencedByInterruption = false
         let session = AVAudioSession.sharedInstance()
         if let saved {
             try? session.setCategory(saved.category, mode: saved.mode, options: saved.options)
@@ -215,17 +249,93 @@ final class PersonalizationStoryAudio: NSObject {
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
     }
 
+    /// Выбор пользователя — кнопкой или громкостью вверх. Снимает и тишину от системы.
     func setMuted(_ muted: Bool) {
-        guard muted != isMuted else { return }
+        guard muted != isMuted || isSilenced else { return }
         isMuted = muted
+        isSilenced = false
+        silencedByInterruption = false
         if viewers > 0 { applyCategory() }
+        notify()
+    }
+
+    /// Плеер остановила система, а не просмотрщик: звук она забрала — дальше без него.
+    func playbackStoppedBySystem() {
+        silence(byInterruption: false)
+        notify()
+    }
+
+    private func notify() {
         NotificationCenter.default.post(name: Self.didChange, object: self)
+    }
+
+    /// Тишина на текущий показ; выбор пользователя прежний.
+    private func silence(byInterruption: Bool) {
+        guard viewers > 0, !isMuted, !isSilenced else { return }
+        isSilenced = true
+        silencedByInterruption = byInterruption
+        applyCategory()
+    }
+
+    /// Прерывание: на время — тишина; по концу сессия снова активна, а звук возвращается,
+    /// только если система разрешила (`shouldResume`) и забирало его само прерывание.
+    private func interrupted(_ note: Notification) {
+        guard viewers > 0,
+              let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+        switch type {
+        case .began:
+            // Прерывание, случившееся, пока приложение спало, уже кончилось.
+            guard !Self.wasSuspended(note) else { return }
+            silence(byInterruption: true)
+        case .ended:
+            let options = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
+            if options.contains(.shouldResume), silencedByInterruption {
+                isSilenced = false
+                silencedByInterruption = false
+            }
+            applyCategory()
+        @unknown default:
+            return
+        }
+        notify()
+    }
+
+    private static func wasSuspended(_ note: Notification) -> Bool {
+        if #available(iOS 14.5, *) {
+            let reason = note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt
+            return reason == AVAudioSession.InterruptionReason.appWasSuspended.rawValue
+        }
+        return note.userInfo?[AVAudioSessionInterruptionWasSuspendedKey] as? Bool ?? false
+    }
+
+    /// Пропал выход звука (выдернули наушники, отключилась колонка): дальше без звука,
+    /// чтобы ролик не заговорил в динамик.
+    private func routeChanged(_ note: Notification) {
+        guard viewers > 0,
+              let raw = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              AVAudioSession.RouteChangeReason(rawValue: raw) == .oldDeviceUnavailable else { return }
+        silence(byInterruption: false)
+        notify()
+    }
+
+    /// Громкость вверх на том же выходе — включить звук. Скачок громкости при смене выхода
+    /// (у наушников и динамика своя громкость) — не нажатие.
+    func volumeChanged(from old: Float, to new: Float, route: [String]) {
+        let sameRoute = route == volumeRoute
+        volumeRoute = route
+        guard viewers > 0, sameRoute, new > old else { return }
+        setMuted(false)
+    }
+
+    private static func outputs(of session: AVAudioSession) -> [String] {
+        session.currentRoute.outputs.map(\.uid)
     }
 
     /// Без звука — `.ambient`, смешивается с чужим звуком; со звуком — `.playback`.
     private func applyCategory() {
         let session = AVAudioSession.sharedInstance()
-        if isMuted {
+        if isPlaybackMuted {
             try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
         } else {
             try? session.setCategory(.playback, mode: .default, options: [])
@@ -238,6 +348,7 @@ final class PersonalizationStoryAudio: NSObject {
     func resetForTesting() {
         while viewers > 0 { end() }
         isMuted = true
+        isSilenced = false
     }
 }
 

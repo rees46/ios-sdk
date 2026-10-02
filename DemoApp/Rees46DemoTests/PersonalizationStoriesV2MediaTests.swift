@@ -120,4 +120,96 @@ final class PersonalizationStoriesV2MediaTests: XCTestCase {
         audio.end()
         audio.resetForTesting()
     }
+
+    // MARK: - Sound taken by the system
+
+    private func routeChange(_ reason: AVAudioSession.RouteChangeReason) {
+        NotificationCenter.default.post(name: AVAudioSession.routeChangeNotification, object: AVAudioSession.sharedInstance(),
+                                        userInfo: [AVAudioSessionRouteChangeReasonKey: reason.rawValue])
+    }
+
+    private func interruption(_ type: AVAudioSession.InterruptionType, options: AVAudioSession.InterruptionOptions = []) {
+        var info: [AnyHashable: Any] = [AVAudioSessionInterruptionTypeKey: type.rawValue]
+        if type == .ended { info[AVAudioSessionInterruptionOptionKey] = options.rawValue }
+        NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(), userInfo: info)
+    }
+
+    func testUnpluggedHeadphonesSilenceThisViewingButKeepTheChoice() {
+        let audio = PersonalizationStoryAudio.shared
+        audio.resetForTesting()
+        audio.begin()
+        audio.setMuted(false)
+        XCTAssertFalse(audio.isPlaybackMuted)
+
+        routeChange(.oldDeviceUnavailable)
+        XCTAssertTrue(audio.isPlaybackMuted, "the video goes on without sound")
+        XCTAssertFalse(audio.isMuted, "the kept choice stays unmuted")
+        XCTAssertEqual(AVAudioSession.sharedInstance().category, .ambient, "no longer holds other apps' audio")
+        routeChange(.newDeviceAvailable)
+        XCTAssertTrue(audio.isPlaybackMuted, "plugging back in does not turn the sound on")
+
+        audio.end()
+        audio.begin()
+        XCTAssertFalse(audio.isPlaybackMuted, "the next open follows the kept choice")
+        audio.end()
+        audio.resetForTesting()
+    }
+
+    func testAnInterruptionGivesTheSoundBackOnlyWhenTheSystemSaysResume() {
+        let audio = PersonalizationStoryAudio.shared
+        audio.resetForTesting()
+        audio.begin()
+        audio.setMuted(false)
+
+        interruption(.began)
+        XCTAssertTrue(audio.isPlaybackMuted)
+        XCTAssertFalse(audio.isMuted)
+        interruption(.ended, options: .shouldResume)
+        XCTAssertFalse(audio.isPlaybackMuted, "the system gave the sound back")
+
+        interruption(.began)
+        interruption(.ended)
+        XCTAssertTrue(audio.isPlaybackMuted, "without shouldResume the sound stays off")
+        audio.setMuted(false)
+        XCTAssertFalse(audio.isPlaybackMuted, "the user turns it back on")
+        audio.end()
+        audio.resetForTesting()
+    }
+
+    func testAVideoStoppedByTheSystemGoesOnWithoutSound() {
+        let audio = PersonalizationStoryAudio.shared
+        audio.resetForTesting()
+        audio.begin()
+        var changes = 0
+        let observer = NotificationCenter.default.addObserver(forName: PersonalizationStoryAudio.didChange, object: nil, queue: nil) { _ in
+            changes += 1
+        }
+        defer { NotificationCenter.default.removeObserver(observer) }
+
+        audio.playbackStoppedBySystem()
+        XCTAssertFalse(audio.isSilenced, "already muted: nothing to take")
+        XCTAssertEqual(changes, 1, "viewers still resync their players")
+
+        audio.setMuted(false)
+        audio.playbackStoppedBySystem()
+        XCTAssertTrue(audio.isSilenced)
+        XCTAssertFalse(audio.isMuted)
+        XCTAssertEqual(changes, 3)
+        audio.end()
+        audio.resetForTesting()
+    }
+
+    func testOnlyVolumeUpOnTheSameOutputTurnsTheSoundOn() {
+        let audio = PersonalizationStoryAudio.shared
+        audio.resetForTesting()
+        audio.begin()
+        audio.volumeChanged(from: 0.3, to: 0.8, route: ["headphones-gone"])
+        XCTAssertTrue(audio.isMuted, "a jump between outputs is not a key press")
+        audio.volumeChanged(from: 0.8, to: 0.7, route: ["headphones-gone"])
+        XCTAssertTrue(audio.isMuted, "volume down keeps it muted")
+        audio.volumeChanged(from: 0.7, to: 0.8, route: ["headphones-gone"])
+        XCTAssertFalse(audio.isMuted, "volume up unmutes")
+        audio.end()
+        audio.resetForTesting()
+    }
 }

@@ -110,8 +110,9 @@ import UIKit
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
 
-    /// Звук видео — общий на весь запуск.
-    public var isMuted: Bool { PersonalizationStoryAudio.shared.isMuted }
+    /// Видео сейчас без звука: так выбрал пользователь (выбор общий на весь запуск) или звук
+    /// забрала система — выдернули наушники, прервал звонок.
+    public var isMuted: Bool { PersonalizationStoryAudio.shared.isPlaybackMuted }
 
     var state: PersonalizationStoriesViewerState
     let pager = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
@@ -542,6 +543,12 @@ extension PersonalizationStoriesViewController {
         apply(state.next())
     }
 
+    /// Ролик остановила система, а не состояние: звук забран — ролик идёт дальше без него.
+    func playbackStoppedBySystem(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, !state.isClosing else { return }
+        PersonalizationStoryAudio.shared.playbackStoppedBySystem()
+    }
+
     func productsToggled(_ expanded: Bool, on page: PersonalizationStoryPageViewController) {
         guard page === activePage else { return }
         state.setSheetOpen(expanded)
@@ -567,6 +574,7 @@ extension PersonalizationStoriesViewController {
 
     /// Пауза при уходе приложения в фон, неактивной сцене (центр управления, звонок,
     /// погасший экран) и снова ход при возвращении; звук меняется у всех страниц сразу.
+    /// Звук, отобранный системой, ролик не останавливает: он идёт дальше без звука.
     func observeSystem() {
         let center = NotificationCenter.default
         let pause: (Notification) -> Void = { [weak self] _ in self?.setPaused(.background, true) }
@@ -591,8 +599,12 @@ extension PersonalizationStoriesViewController {
             ]
         }
         observers.append(center.addObserver(forName: PersonalizationStoryAudio.didChange, object: nil, queue: .main) { [weak self] _ in
-            let muted = PersonalizationStoryAudio.shared.isMuted
-            self?.pages.values.forEach { $0.slideView?.setMuted(muted) }
+            guard let self else { return }
+            let muted = PersonalizationStoryAudio.shared.isPlaybackMuted
+            self.pages.values.forEach { $0.slideView?.setMuted(muted) }
+            // Система могла остановить ролик сама (наушники, прерывание): плеер снова
+            // делает то, что велит состояние, и прогресс не расходится с видео.
+            self.sync()
         })
     }
 
@@ -785,7 +797,7 @@ extension PersonalizationStoryPageViewController {
         let next = PersonalizationStorySlideView(
             slide: slide,
             texts: viewer?.texts.slideTexts ?? PersonalizationStorySlideView.Texts(),
-            isMuted: PersonalizationStoryAudio.shared.isMuted,
+            isMuted: PersonalizationStoryAudio.shared.isPlaybackMuted,
             imageLoader: viewer?.imageLoader
         )
         let story = self.story
@@ -797,6 +809,10 @@ extension PersonalizationStoryPageViewController {
             self.viewer?.productsToggled(expanded, on: self)
         }
         next.onMuteToggle = { muted in PersonalizationStoryAudio.shared.setMuted(muted) }
+        next.onSystemStop = { [weak self] in
+            guard let self else { return }
+            self.viewer?.playbackStoppedBySystem(on: self)
+        }
         next.onVideoEnd = { [weak self] in
             guard let self else { return }
             self.viewer?.videoEnded(on: self)

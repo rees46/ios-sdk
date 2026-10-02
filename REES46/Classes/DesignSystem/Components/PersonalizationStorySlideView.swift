@@ -64,6 +64,9 @@ final class PersonalizationStorySlideView: UIView {
     var onMediaFailed: (() -> Void)?
     /// Нажата «Повторить».
     var onRetry: (() -> Void)?
+    /// Ролик встал сам, хотя просмотрщик велел играть: звук забрала система (наушники,
+    /// прерывание). Сообщается раз, пока ролик снова не пойдёт.
+    var onSystemStop: (() -> Void)?
 
     /// Медиа готово: у слайда без медиа — сразу.
     private(set) var isMediaReady = false
@@ -80,6 +83,9 @@ final class PersonalizationStorySlideView: UIView {
     var videoObservers: [NSObjectProtocol] = []
     var soundButton: PersonalizationStorySoundButton?
     var usedProducts: PersonalizationStoryUsedProducts?
+    /// Просмотрщик велел играть и не велел остановиться.
+    private(set) var wantsPlayback = false
+    private var reportedSystemStop = false
     private var guideTop: NSLayoutConstraint?
     private var guideBottom: NSLayoutConstraint?
     private var guideLeading: NSLayoutConstraint?
@@ -275,7 +281,7 @@ extension PersonalizationStorySlideView {
         videoLoader = source.loader
         let item = AVPlayerItem(asset: source.asset)
         let player = AVPlayer(playerItem: item)
-        player.isMuted = PersonalizationStoryAudio.shared.isMuted
+        player.isMuted = PersonalizationStoryAudio.shared.isPlaybackMuted
         player.actionAtItemEnd = .pause
         videoView.playerLayer.player = player
         self.player = player
@@ -290,6 +296,10 @@ extension PersonalizationStorySlideView {
                 default: break
                 }
             }
+        }, player.observe(\.timeControlStatus, options: [.new]) { [weak self] player, _ in
+            // Не сразу: сначала доходят свои уведомления (ошибка ролика, смена выхода звука),
+            // и ответ просмотрщика трогает плеер уже не внутри уведомления.
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.systemStopDelay) { self?.playbackStatusChanged(player) }
         }]
         let center = NotificationCenter.default
         videoObservers = [
@@ -310,8 +320,34 @@ extension PersonalizationStorySlideView {
 
     private func markFailed() {
         isMediaReady = false
+        wantsPlayback = false
         player?.pause()
         onMediaFailed?()
+    }
+
+    /// Сколько ждать, прежде чем счесть паузу плеера делом системы.
+    static let systemStopDelay: TimeInterval = 0.3
+
+    /// Пауза, которой просмотрщик не просил, у готового ролика и не в конце — дело системы.
+    func playbackStatusChanged(_ player: AVPlayer) {
+        guard player === self.player else { return }
+        switch player.timeControlStatus {
+        case .playing:
+            reportedSystemStop = false
+        case .paused:
+            guard wantsPlayback, isMediaReady, !reportedSystemStop,
+                  player.currentItem?.status == .readyToPlay, !Self.isAtEnd(player) else { return }
+            reportedSystemStop = true
+            onSystemStop?()
+        default:
+            break
+        }
+    }
+
+    /// Ролик дошёл до конца (или длина неизвестна — тогда не гадаем).
+    static func isAtEnd(_ player: AVPlayer) -> Bool {
+        guard let item = player.currentItem, item.duration.isNumeric else { return true }
+        return item.currentTime().seconds >= item.duration.seconds - 0.25
     }
 
     /// «Повторить» по центру слайда.
@@ -321,10 +357,12 @@ extension PersonalizationStorySlideView {
 
     func play() {
         guard isMediaReady else { return }
+        wantsPlayback = true
         player?.play()
     }
 
     func pause() {
+        wantsPlayback = false
         player?.pause()
     }
 
@@ -344,6 +382,8 @@ extension PersonalizationStorySlideView {
     }
 
     private func stopVideo() {
+        wantsPlayback = false
+        reportedSystemStop = false
         videoObservations.forEach { $0.invalidate() }
         videoObservations = []
         videoObservers.forEach { NotificationCenter.default.removeObserver($0) }
