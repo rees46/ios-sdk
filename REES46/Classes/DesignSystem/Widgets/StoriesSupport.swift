@@ -56,9 +56,13 @@ enum StoriesJSON {
 
 extension PersonalizationStory {
 
-    /// Сторис блока. Сторис без слайдов показывать нечем — они отбрасываются.
+    /// Сторис блока. Сторис без слайдов показывать нечем — они отбрасываются. Повтор id тоже:
+    /// сервер иногда отдаёт одну сторис дважды; остаётся первая, иначе просмотренность склеивается.
     static func list(json: [String: Any]) -> [PersonalizationStory] {
-        StoriesJSON.objects(json["stories"]).compactMap { PersonalizationStory(json: $0) }.filter { !$0.slides.isEmpty }
+        var ids = Set<String>()
+        return StoriesJSON.objects(json["stories"])
+            .compactMap { PersonalizationStory(json: $0) }
+            .filter { !$0.slides.isEmpty && ids.insert($0.id).inserted }
     }
 
     init?(json: [String: Any]) {

@@ -211,11 +211,13 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         let empty: [String: Any] = ["id": 41, "name": "Empty", "slides": [[String: Any]]()]
         let json: [String: Any] = ["id": 1, "stories": [
             ["id": 40, "name": "Gaming", "avatar": "https://img.example/a.jpg", "pinned": true, "start_position": 0, "slides": [slide]],
-            empty
+            empty,
+            ["id": "40", "name": "Gaming again", "slides": [slide]]
         ]]
 
         let stories = PersonalizationStory.list(json: json)
-        XCTAssertEqual(stories.map(\.id), ["40"], "a story without slides is dropped")
+        XCTAssertEqual(stories.map(\.id), ["40"], "a story without slides and a repeated id are dropped")
+        XCTAssertEqual(stories.first?.name, "Gaming", "the first of the repeated ids stays")
         guard let mapped = stories.first?.slides.first else { return XCTFail("no slide") }
 
         XCTAssertEqual(mapped.id, "37")
