@@ -204,6 +204,15 @@ extension PersonalizationStoriesViewController {
         if !state.isClosing { setPaused(.hidden, true) }
     }
 
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Хост убрал просмотрщик сам, а не через `close()`: звук всё равно возвращается.
+        guard isBeingDismissed, state.close() else { return }
+        wrapUp()
+        isDismissed = true
+        runCloseCompletions()
+    }
+
     public override func viewSafeAreaInsetsDidChange() {
         super.viewSafeAreaInsetsDidChange()
         applySafeInsets()
@@ -274,10 +283,7 @@ extension PersonalizationStoriesViewController {
             if isDismissed { runCloseCompletions() }
             return
         }
-        stopClock()
-        activePage?.slideView?.pause()
-        if hasAppeared { PersonalizationStoryAudio.shared.end() }
-        onClose?()
+        wrapUp()
         guard presentingViewController != nil else {
             isDismissed = true
             runCloseCompletions()
@@ -287,6 +293,14 @@ extension PersonalizationStoriesViewController {
             self?.isDismissed = true
             self?.runCloseCompletions()
         }
+    }
+
+    /// Просмотр кончился: часы, видео и звук отпускаются, хост узнаёт о закрытии.
+    private func wrapUp() {
+        stopClock()
+        activePage?.slideView?.pause()
+        if hasAppeared { PersonalizationStoryAudio.shared.end() }
+        onClose?()
     }
 
     private func runCloseCompletions() {
