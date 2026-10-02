@@ -1,4 +1,5 @@
 import UIKit
+import AVFoundation
 
 /// Переливающаяся заглушка сторис: обложка и подпись в состоянии skeleton.
 ///
@@ -161,5 +162,80 @@ extension NSLayoutConstraint {
     func withPriority(_ priority: UILayoutPriority) -> NSLayoutConstraint {
         self.priority = priority
         return self
+    }
+}
+
+/// Звук сторис на весь запуск приложения.
+///
+/// При первом открытии звук выключен; выбор пользователя помнится до конца процесса и
+/// применяется к следующим открытиям. Пока звук выключен, аудиосессия — `.ambient`:
+/// ролики не прерывают музыку других приложений. Включение переводит её в `.playback`
+/// (звук слышен и в беззвучном режиме). Кнопка громкости вверх, нажатая при открытом
+/// просмотрщике, включает звук. Закрытие возвращает категорию, что была до открытия,
+/// и отпускает сессию, давая другим приложениям продолжить.
+final class PersonalizationStoryAudio: NSObject {
+
+    static let shared = PersonalizationStoryAudio()
+
+    /// Звук сменился: `object` — `PersonalizationStoryAudio`, читать `isMuted`.
+    static let didChange = Notification.Name("personalization.stories.muteChanged")
+
+    private(set) var isMuted = true
+
+    private var viewers = 0
+    private var saved: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)?
+    private var volumeObservation: NSKeyValueObservation?
+
+    /// Просмотрщик открылся.
+    func begin() {
+        viewers += 1
+        guard viewers == 1 else { return }
+        let session = AVAudioSession.sharedInstance()
+        saved = (session.category, session.mode, session.categoryOptions)
+        applyCategory()
+        volumeObservation = session.observe(\.outputVolume, options: [.old, .new]) { [weak self] _, change in
+            guard let old = change.oldValue, let new = change.newValue, new > old else { return }
+            MainThread.run { self?.setMuted(false) }
+        }
+    }
+
+    /// Просмотрщик закрылся: последний возвращает сессию как было.
+    func end() {
+        guard viewers > 0 else { return }
+        viewers -= 1
+        guard viewers == 0 else { return }
+        volumeObservation?.invalidate()
+        volumeObservation = nil
+        let session = AVAudioSession.sharedInstance()
+        if let saved {
+            try? session.setCategory(saved.category, mode: saved.mode, options: saved.options)
+        }
+        saved = nil
+        try? session.setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    func setMuted(_ muted: Bool) {
+        guard muted != isMuted else { return }
+        isMuted = muted
+        if viewers > 0 { applyCategory() }
+        NotificationCenter.default.post(name: Self.didChange, object: self)
+    }
+
+    /// Без звука — `.ambient`, смешивается с чужим звуком; со звуком — `.playback`.
+    private func applyCategory() {
+        let session = AVAudioSession.sharedInstance()
+        if isMuted {
+            try? session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+        } else {
+            try? session.setCategory(.playback, mode: .default, options: [])
+        }
+        // Активная сессия нужна, чтобы слышать кнопки громкости; `.ambient` никого не прерывает.
+        try? session.setActive(true)
+    }
+
+    /// Только для тестов: как при новом запуске.
+    func resetForTesting() {
+        while viewers > 0 { end() }
+        isMuted = true
     }
 }

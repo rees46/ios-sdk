@@ -1,4 +1,5 @@
 import XCTest
+import AVFoundation
 @_spi(PersonalizationUI) @testable import REES46
 
 /// Stories V2 media: the disk cache names files by a stable key, keeps the newest files within its
@@ -93,5 +94,30 @@ final class PersonalizationStoriesV2MediaTests: XCTestCase {
         XCTAssertEqual(streamed?.asset.url.scheme, PersonalizationStoryVideos.scheme, "read through the loader")
         XCTAssertNotNil(streamed?.loader)
         XCTAssertNil(videos.asset(for: "not a url"))
+    }
+
+    // MARK: - Sound
+
+    func testMutedStoriesMixWithOtherAudioAndClosingRestoresTheSession() throws {
+        let audio = PersonalizationStoryAudio.shared
+        audio.resetForTesting()
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.soloAmbient, mode: .default, options: [])
+
+        audio.begin()
+        XCTAssertTrue(audio.isMuted, "muted on the first open")
+        XCTAssertEqual(session.category, .ambient, "does not interrupt other apps")
+
+        audio.setMuted(false)
+        XCTAssertEqual(session.category, .playback)
+
+        audio.end()
+        XCTAssertEqual(session.category, .soloAmbient, "the host's category is back")
+
+        audio.begin()
+        XCTAssertFalse(audio.isMuted, "the choice is kept for the process")
+        XCTAssertEqual(session.category, .playback)
+        audio.end()
+        audio.resetForTesting()
     }
 }
