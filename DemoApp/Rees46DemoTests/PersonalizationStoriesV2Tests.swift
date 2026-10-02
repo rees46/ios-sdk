@@ -515,12 +515,16 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
 
     func testCoverAndPreviewKeepTheirSize() {
         let preview = laidOut(PersonalizationStoryPreview(title: "A very long story name", state: .pinned), width: 88)
-        XCTAssertEqual(preview.frame.height, 88 + 8 + 16, accuracy: 0.5)
+        XCTAssertEqual(preview.frame.height, 88 + 8 + 32, accuracy: 0.5, "room for two label lines")
+        let label = preview.subviews.flatMap(\.subviews).flatMap(\.subviews).compactMap { $0 as? UILabel }.first
+        XCTAssertEqual(label?.numberOfLines, 2)
+        XCTAssertEqual(label?.lineBreakMode, .byTruncatingTail)
+        XCTAssertGreaterThan(label?.frame.height ?? 0, 20, "a long name wraps to a second line")
         XCTAssertEqual(preview.cover.frame.size, CGSize(width: 88, height: 88))
         XCTAssertEqual(preview.cover.imageView.frame, CGRect(x: 6, y: 6, width: 76, height: 76))
 
         let bar = laidOut(PersonalizationStoriesBar(), width: 402)
-        XCTAssertEqual(bar.frame.height, 16 + 112 + 16, accuracy: 0.5)
+        XCTAssertEqual(bar.frame.height, 16 + 128 + 16, accuracy: 0.5)
     }
 
     func testTheProductSlideFitsTheSquareCardBetweenTheHeaderAndThePrice() {

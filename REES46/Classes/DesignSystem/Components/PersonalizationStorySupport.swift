@@ -4,24 +4,16 @@ import AVFoundation
 /// Переливающаяся заглушка сторис: обложка и подпись в состоянии skeleton.
 ///
 /// Источник: Figma Mobile SDK UI Kit, страница Stories (1:32), Story/Cover и Story/Preview
-/// в состоянии Skeleton: градиент чёрный 5% → 30% → 5%. В тёмной теме тот же градиент белый —
-/// чёрный на тёмном фоне не виден, а в макете тёмная заглушка светлее фона.
+/// в состоянии Skeleton: градиент 5% → 30% → 5%. Цвет — Text/Primary, как у остальных
+/// заглушек кита: чёрный в светлой теме, белый в тёмной, и подмена темы хостом доходит и сюда.
 /// Блик бежит по диагонали слева направо, пока вью в окне.
 ///
 /// Форму задаёт владелец — маской слоя или скруглением.
 final class PersonalizationStoryShimmer: UIView {
 
-    /// Края градиента: 5%.
-    static let edgeColor = PersonalizationColorSet.dynamic(
-        light: PersonalizationColorSet.rgba(0x000000, 0.05),
-        dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.05)
-    )
-
-    /// Середина градиента: 30%.
-    static let peakColor = PersonalizationColorSet.dynamic(
-        light: PersonalizationColorSet.rgba(0x000000, 0.3),
-        dark: PersonalizationColorSet.rgba(0xFFFFFF, 0.3)
-    )
+    /// Прозрачность краёв и середины градиента.
+    static let edgeAlpha: CGFloat = 0.05
+    static let peakAlpha: CGFloat = 0.3
 
     private static let animationKey = "personalization.story.shimmer"
 
@@ -81,8 +73,9 @@ final class PersonalizationStoryShimmer: UIView {
     }
 
     private func applyColors() {
-        let edge = PersonalizationStoryColors.cgColor(Self.edgeColor, in: self)
-        let peak = PersonalizationStoryColors.cgColor(Self.peakColor, in: self)
+        let base = PersonalizationStoryColors.cgColor(PersonalizationColor.textPrimary, in: self)
+        let edge = base.copy(alpha: base.alpha * Self.edgeAlpha) ?? base
+        let peak = base.copy(alpha: base.alpha * Self.peakAlpha) ?? base
         gradient.colors = [edge, peak, edge]
     }
 

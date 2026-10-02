@@ -4,16 +4,19 @@ import UIKit
 ///
 /// Источник: Figma Mobile SDK UI Kit, страница Stories (1:32), компонент Story/Preview.
 /// Колонка шириной 88 с шагом 8: `PersonalizationStoryCover` и подпись Regular 12/16
-/// с трекингом 0.05, по центру, Text/Primary, одна строка с многоточием.
+/// с трекингом 0.05, по центру, Text/Primary, до двух строк шириной в обложку, с многоточием
+/// в конце.
 /// В состоянии skeleton вместо подписи — переливающаяся плашка 64x8 со скруглением 5.
 @_spi(PersonalizationUI) public final class PersonalizationStoryPreview: UIView {
 
     /// Ширина превью — ширина обложки.
     public static let width: CGFloat = PersonalizationStoryCover.side
-    /// Высота превью: обложка, шаг и строка подписи.
+    /// Высота превью: обложка, шаг и две строки подписи.
     public static let height: CGFloat = PersonalizationStoryCover.side + PersonalizationSpacing.md + labelHeight
 
-    private static let labelHeight: CGFloat = 16
+    /// Две строки по 16.
+    private static let labelHeight: CGFloat = 32
+    private static let labelLines = 2
     private static let skeletonSize = CGSize(width: 64, height: 8)
     private static let skeletonRadius: CGFloat = 5
 
@@ -51,7 +54,8 @@ import UIKit
     }
 
     private func setup() {
-        label.numberOfLines = 1
+        label.numberOfLines = Self.labelLines
+        label.lineBreakMode = .byTruncatingTail
         label.translatesAutoresizingMaskIntoConstraints = false
         labelSlot.addSubview(label)
 
@@ -76,14 +80,15 @@ import UIKit
             column.trailingAnchor.constraint(equalTo: trailingAnchor),
             labelSlot.widthAnchor.constraint(equalToConstant: Self.width),
             labelSlot.heightAnchor.constraint(equalToConstant: Self.labelHeight),
+            // Одна строка стоит у верха места под подпись, вторая ложится под неё.
             label.topAnchor.constraint(equalTo: labelSlot.topAnchor),
-            label.bottomAnchor.constraint(equalTo: labelSlot.bottomAnchor),
+            label.bottomAnchor.constraint(lessThanOrEqualTo: labelSlot.bottomAnchor),
             label.leadingAnchor.constraint(equalTo: labelSlot.leadingAnchor),
             label.trailingAnchor.constraint(equalTo: labelSlot.trailingAnchor),
             labelSkeleton.widthAnchor.constraint(equalToConstant: Self.skeletonSize.width),
             labelSkeleton.heightAnchor.constraint(equalToConstant: Self.skeletonSize.height),
             labelSkeleton.centerXAnchor.constraint(equalTo: labelSlot.centerXAnchor),
-            labelSkeleton.centerYAnchor.constraint(equalTo: labelSlot.centerYAnchor)
+            labelSkeleton.centerYAnchor.constraint(equalTo: labelSlot.topAnchor, constant: 8)
         ])
 
         addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
@@ -118,8 +123,11 @@ import UIKit
         // Выравнивание и перенос живут в параграфе стиля: он перекрывает настройки лейбла.
         let paragraph = (style.paragraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
         paragraph.alignment = .center
-        paragraph.lineBreakMode = .byTruncatingTail
+        // Перенос по словам в параграфе, многоточие — у лейбла: усечение в параграфе
+        // оставило бы одну строку.
+        paragraph.lineBreakMode = .byWordWrapping
         attributes[.paragraphStyle] = paragraph
         label.attributedText = NSAttributedString(string: title, attributes: attributes)
+        label.lineBreakMode = .byTruncatingTail
     }
 }
