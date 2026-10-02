@@ -148,11 +148,28 @@ import UIKit
         }
 
         /// Зачёркнутая цена. Старая цена, если она есть; с промокодом без старой цены —
-        /// обычная цена, когда она отличается от цены с промокодом.
+        /// обычная цена, когда она выше цены с промокодом (F10: меньшую не зачёркиваем).
+        /// Без чисел в строках решает их неравенство.
         public var crossedOutPrice: String? {
             if let oldPrice { return oldPrice }
             guard hasPromoCode, displayedPrice != price else { return nil }
+            if let regular = Self.amount(price), let promo = Self.amount(displayedPrice) {
+                return regular > promo ? price : nil
+            }
             return price
+        }
+
+        /// Число из отформатированной цены: «1 190 900 ₽» → 1190900, «12,99 €» → 12.99.
+        static func amount(_ text: String) -> Double? {
+            var digits = text.filter { $0.isNumber || $0 == "," || $0 == "." }
+            guard !digits.isEmpty else { return nil }
+            // Последний разделитель с 1–2 цифрами после него — дробная часть, остальные — группы.
+            if let last = digits.lastIndex(where: { $0 == "," || $0 == "." }) {
+                let fraction = digits[digits.index(after: last)...]
+                let whole = digits[..<last].filter(\.isNumber)
+                digits = (1...2).contains(fraction.count) ? whole + "." + fraction : whole + fraction
+            }
+            return Double(digits)
         }
 
         /// Процент без лишних нулей: 10 → «10%», 12.5 → «12.5%».

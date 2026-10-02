@@ -112,6 +112,10 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         let same = product(merged(["oldprice": 0, "promocode": "SALE", "price_with_promocode_formatted": "19 990 ₽"]))
         XCTAssertNil(same?.crossedOutPrice, "nothing to cross out when the code does not change the price")
 
+        let dearer = product(merged(["oldprice": 0, "promocode": "SALE", "price_with_promocode_formatted": "21 990 ₽"]))
+        XCTAssertNil(dearer?.crossedOutPrice, "a regular price below the promo price is not crossed out")
+        XCTAssertEqual(PersonalizationStorySlide.Offer.amount("1 190 900,50 ₽"), 1_190_900.5)
+
         let withOld = product(merged(["promocode": "SALE", "price_with_promocode_formatted": "17 990 ₽"]))
         XCTAssertEqual(withOld?.crossedOutPrice, "27 990 ₽", "the old price wins when there is one")
     }
