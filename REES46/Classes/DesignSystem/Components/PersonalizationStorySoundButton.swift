@@ -7,6 +7,8 @@ import UIKit
 /// в левом нижнем углу — в ряду Used Products или одна.
 ///
 /// Нажатие переключает `isMuted`, шлёт `.valueChanged` и зовёт `onToggle` с новым значением.
+/// VoiceOver называет текущее состояние звука, а не действие: кнопка — переключатель,
+/// включённый звук отмечен признаком `.selected` (на iOS 17+ ещё и `.toggleButton`).
 @_spi(PersonalizationUI) public final class PersonalizationStorySoundButton: UIControl {
 
     public static let side: CGFloat = 32
@@ -19,7 +21,8 @@ import UIKit
     /// Нажатие: новое значение `isMuted`.
     public var onToggle: ((Bool) -> Void)?
 
-    /// Подписи для VoiceOver: что сделает нажатие — включит звук или выключит.
+    /// Подписи для VoiceOver — текущее состояние: звук включён — `soundOnLabel`,
+    /// выключен — `soundOffLabel`.
     public var soundOnLabel: String? = "Sound on" {
         didSet { apply() }
     }
@@ -65,7 +68,6 @@ import UIKit
         ])
         addTarget(self, action: #selector(tapped), for: .touchUpInside)
         isAccessibilityElement = true
-        accessibilityTraits = .button
         apply()
     }
 
@@ -77,6 +79,10 @@ import UIKit
 
     private func apply() {
         icon.image = isMuted ? PersonalizationIcons.speakerOff : PersonalizationIcons.speaker
-        accessibilityLabel = isMuted ? soundOnLabel : soundOffLabel
+        accessibilityLabel = isMuted ? soundOffLabel : soundOnLabel
+        var traits: UIAccessibilityTraits = .button
+        if #available(iOS 17.0, *) { traits.insert(.toggleButton) }
+        if !isMuted { traits.insert(.selected) }
+        accessibilityTraits = traits
     }
 }
