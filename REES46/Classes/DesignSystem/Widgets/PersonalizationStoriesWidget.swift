@@ -5,20 +5,32 @@ import SwiftUI
 
 /// Управление сторис, которые хост не держит сам, — например, из SwiftUI: открыть сторис,
 /// поставить на паузу, продолжить, перезагрузить. Привязывается к виджету при показе.
+/// Открытие до привязки ждёт виджет, а тот — загрузки блока; пауза и продолжение без
+/// открытого просмотрщика ничего не делают.
 @_spi(PersonalizationUI) public final class PersonalizationStoriesController {
 
-    fileprivate weak var stories: PersonalizationStories?
+    weak var stories: PersonalizationStories? {
+        didSet {
+            guard let stories, let open = pendingOpen else { return }
+            pendingOpen = nil
+            open(stories)
+        }
+    }
+    /// Открытие, пришедшее до привязки к виджету.
+    private var pendingOpen: ((PersonalizationStories) -> Void)?
 
     public init() {}
 
     /// Открыть сторис по индексу в ленте.
     public func open(at index: Int) {
-        stories?.open(at: index)
+        guard let stories else { return pendingOpen = { $0.open(at: index) } }
+        stories.open(at: index)
     }
 
     /// Открыть сторис по id.
     public func open(storyId: String) {
-        stories?.open(storyId: storyId)
+        guard let stories else { return pendingOpen = { $0.open(storyId: storyId) } }
+        stories.open(storyId: storyId)
     }
 
     public func pause() {

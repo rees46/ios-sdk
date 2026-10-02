@@ -72,7 +72,7 @@ import UIKit
     private var collapsed: NSLayoutConstraint!
     private weak var viewer: PersonalizationStoriesViewController?
     /// Открыть сторис, когда блок загрузится.
-    private var pendingOpen: ((PersonalizationStories) -> Void)?
+    var pendingOpen: ((PersonalizationStories) -> Void)?
 
     /// - Parameters:
     ///   - code: код блока сторис.
@@ -216,19 +216,24 @@ extension PersonalizationStories {
             guard let self, seq == self.requestSeq else { return }
             switch result {
             case .success(let stories):
-                self.giveUp?.cancel()
-                self.stories = stories
-                self.renderBar()
-                self.bar.isLoading = false
-                self.setCollapsed(stories.isEmpty)
-                self.onLoaded?(stories.count)
-                let open = self.pendingOpen
-                self.pendingOpen = nil
-                open?(self)
+                self.loaded(stories)
             case .failure(let error):
                 self.fail(error)
             }
         }
+    }
+
+    /// Блок пришёл: лента, высота, `onLoaded` и отложенное открытие.
+    func loaded(_ stories: [PersonalizationStory]) {
+        giveUp?.cancel()
+        self.stories = stories
+        renderBar()
+        bar.isLoading = false
+        setCollapsed(stories.isEmpty)
+        onLoaded?(stories.count)
+        let open = pendingOpen
+        pendingOpen = nil
+        open?(self)
     }
 
     static var missingCode: SdkError { .custom(error: "Stories: the block code is empty") }
@@ -280,9 +285,9 @@ extension PersonalizationStories {
     /// Открыть сторис по индексу в ленте. До загрузки блока — откроется, когда он придёт;
     /// при открытом просмотрщике — перелистнёт на неё.
     public func open(at index: Int) {
-        guard !stories.isEmpty || !bar.isLoading else { return }
         guard !stories.isEmpty else {
-            pendingOpen = { $0.open(at: index) }
+            // Блок ещё грузится — откроется по приходу; не загрузился или пуст — нечего открывать.
+            if bar.isLoading { pendingOpen = { $0.open(at: index) } }
             return
         }
         guard stories.indices.contains(index) else { return }
@@ -311,7 +316,8 @@ extension PersonalizationStories {
         open(at: index)
     }
 
-    /// Пауза открытого просмотрщика: отсчёт и видео стоят до `resume()`.
+    /// Пауза открытого просмотрщика: отсчёт и видео стоят до `resume()`. Без открытого
+    /// просмотрщика `pause()` и `resume()` ничего не делают и на следующий показ не влияют.
     public func pause() {
         viewer?.pause()
     }

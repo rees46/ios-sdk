@@ -786,4 +786,71 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(button.accessibilityLabel, "Sound on")
         XCTAssertTrue(button.accessibilityTraits.contains(.selected), "sound on is the selected state")
     }
+
+    // MARK: - Host API lifecycle
+
+    /// Records what the widget presents instead of putting it on screen.
+    private final class CapturingHost: UIViewController {
+        var shown: [UIViewController] = []
+        override func present(_ controller: UIViewController, animated: Bool, completion: (() -> Void)? = nil) {
+            shown.append(controller)
+        }
+    }
+
+    private func blockStories() -> [PersonalizationStory] {
+        ["a", "b"].map { id in
+            PersonalizationStory(id: id, name: id.uppercased(), slides: [PersonalizationStorySlide(id: "1", kind: .content)])
+        }
+    }
+
+    func testOpenBeforeTheBlockLoadsRunsOnceItArrives() {
+        let host = CapturingHost()
+        let widget = PersonalizationStories(code: "block")
+        widget.hostViewController = host
+        widget.open(at: 1)
+        XCTAssertTrue(host.shown.isEmpty, "nothing to open before the block loads")
+        widget.loaded(blockStories())
+        let viewer = host.shown.first as? PersonalizationStoriesViewController
+        XCTAssertEqual(viewer?.currentIndex, 1, "the queued open runs after the load")
+
+        viewer?.loadViewIfNeeded()
+        widget.open(storyId: "a")
+        XCTAssertEqual(host.shown.count, 1, "an open viewer pages instead of presenting a second one")
+    }
+
+    func testAnEmptyBlockDropsTheQueuedOpenAndQueuesNothing() {
+        let widget = PersonalizationStories(code: "block")
+        widget.open(storyId: "a")
+        XCTAssertNotNil(widget.pendingOpen)
+        widget.loaded([])
+        XCTAssertNil(widget.pendingOpen)
+        widget.open(at: 0)
+        XCTAssertNil(widget.pendingOpen, "loaded and empty: nothing to wait for")
+    }
+
+    func testPauseAndResumeWithoutAViewerDoNothing() {
+        let host = CapturingHost()
+        let widget = PersonalizationStories(code: "block")
+        widget.hostViewController = host
+        widget.loaded(blockStories())
+        widget.pause()
+        widget.open(at: 0)
+        guard let viewer = host.shown.first as? PersonalizationStoriesViewController else { return XCTFail("no viewer") }
+        XCTAssertFalse(viewer.state.pauses.contains(.host), "a pause with no viewer is not carried over")
+        widget.pause()
+        XCTAssertTrue(viewer.state.pauses.contains(.host))
+        widget.resume()
+        XCTAssertFalse(viewer.state.pauses.contains(.host))
+    }
+
+    func testTheControllerKeepsAnOpenUntilItIsAttached() {
+        let controller = PersonalizationStoriesController()
+        controller.open(at: 1)
+        let host = CapturingHost()
+        let widget = PersonalizationStories(code: "block")
+        widget.hostViewController = host
+        controller.stories = widget
+        widget.loaded(blockStories())
+        XCTAssertEqual((host.shown.first as? PersonalizationStoriesViewController)?.currentIndex, 1)
+    }
 }
