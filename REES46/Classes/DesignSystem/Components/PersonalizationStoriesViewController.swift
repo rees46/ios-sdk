@@ -255,6 +255,14 @@ extension PersonalizationStoriesViewController {
         get { texts.closeLabel }
         set { texts.closeLabel = newValue }
     }
+    public var soundOnLabel: String? {
+        get { texts.soundOnLabel }
+        set { texts.soundOnLabel = newValue }
+    }
+    public var soundOffLabel: String? {
+        get { texts.soundOffLabel }
+        set { texts.soundOffLabel = newValue }
+    }
 
     // MARK: - Управление хостом
 
@@ -696,7 +704,7 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         content.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(content)
         navigation.translatesAutoresizingMaskIntoConstraints = false
-        navigation.closeAccessibilityLabel = viewer?.texts.closeLabel
+        navigation.closeLabel = viewer?.texts.closeLabel
         navigation.progress.count = story.slides.count
         navigation.onClose = { [weak self] in self?.viewer?.close() }
         content.addSubview(navigation)

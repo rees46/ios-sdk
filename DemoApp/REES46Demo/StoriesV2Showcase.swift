@@ -1,3 +1,4 @@
+import SwiftUI
 import UIKit
 @_spi(PersonalizationUI) import REES46
 
@@ -12,7 +13,8 @@ enum StoriesV2Exhibits {
     static func all() -> [ShowcaseViewController.Exhibit] {
         [
             ("Live — stories block of the demo shop (tap a story to open the viewer)", { LiveStoriesExhibit() }),
-            ("Viewer — sample stories: product, promo, discount, text blocks, media with products", {
+            ("SwiftUI — PersonalizationStoriesWidget with a controller", { SwiftUIStoriesExhibit() }),
+            ("Viewer — sample stories: product, product video with buttons + carousel + sound, text-block promo code, fitted media, Retry", {
                 ViewerExhibit()
             }),
             ("Stories Bar — sample stories (tap to open the viewer)", { sampleBar() }),
@@ -290,9 +292,77 @@ private final class LiveStoriesExhibit: UIStackView {
 
         addArrangedSubview(stories)
         addArrangedSubview(status)
+        addArrangedSubview(controls(for: stories))
     }
 
     required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    /// Programmatic control: open by index and by id, and the block without its bar. Pause and
+    /// resume act on an open viewer, so the demo pauses it 2 s after opening and resumes 3 s later.
+    private func controls(for stories: PersonalizationStories) -> UIView {
+        let second = PersonalizationButton(text: "Open #2", size: .sm, view: .secondary)
+        second.addAction { stories.open(at: 1) }
+        let byId = PersonalizationButton(text: "Open last by id", size: .sm, view: .secondary)
+        byId.addAction { if let id = stories.stories.last?.id { stories.open(storyId: id) } }
+        let paused = PersonalizationButton(text: "Open, pause, resume", size: .sm, view: .secondary)
+        paused.addAction {
+            stories.open(at: 0)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                stories.pause()
+                PersonalizationToast.show("Paused by the host", position: .top)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { stories.resume() }
+            }
+        }
+        let show = PersonalizationButton(text: "Show without bar", size: .sm, view: .secondary)
+        show.addAction { [weak self] in
+            PersonalizationStories.show(
+                code: AppEnvironments.storiesCode,
+                shopId: AppEnvironments.shopId,
+                startStoryId: stories.stories.last?.id,
+                from: self?.nearestViewController,
+                delegate: self,
+                onError: { error in PersonalizationToast.show("Stories: \(error)") }
+            )
+        }
+        let row = UIStackView(arrangedSubviews: [second, byId, paused, show])
+        row.axis = .horizontal
+        row.spacing = 8
+        let scroll = UIScrollView()
+        scroll.showsHorizontalScrollIndicator = false
+        row.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(row)
+        NSLayoutConstraint.activate([
+            row.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
+            row.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
+            row.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
+            scroll.heightAnchor.constraint(equalTo: row.heightAnchor)
+        ])
+        return scroll
+    }
+}
+
+private var demoActionKey: UInt8 = 0
+
+private extension UIControl {
+    /// A tap handler as a closure (`UIAction` needs iOS 14, the demo runs on 13).
+    func addAction(_ handler: @escaping () -> Void) {
+        let target = DemoAction(handler)
+        objc_setAssociatedObject(self, &demoActionKey, target, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        addTarget(target, action: #selector(DemoAction.fire), for: .touchUpInside)
+    }
+}
+
+private final class DemoAction: NSObject {
+    private let handler: () -> Void
+
+    init(_ handler: @escaping () -> Void) {
+        self.handler = handler
+    }
+
+    @objc func fire() {
+        handler()
+    }
 }
 
 /// The same delegate a legacy stories host implements: taps are reported, and links the demo
@@ -315,6 +385,66 @@ extension LiveStoriesExhibit: StoriesCommunicationProtocol {
 
     func shouldOpenLinkBySdk(url: String) -> Bool {
         !url.hasPrefix("demo://")
+    }
+}
+
+// MARK: - SwiftUI
+
+/// The SwiftUI wrapper in a hosting controller, the way a SwiftUI screen embeds it.
+private final class SwiftUIStoriesExhibit: UIView {
+
+    private let hosting = UIHostingController(rootView: SwiftUIStoriesV2())
+
+    init() {
+        super.init(frame: .zero)
+        hosting.view.backgroundColor = .clear
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hosting.view)
+        NSLayoutConstraint.activate([
+            hosting.view.topAnchor.constraint(equalTo: topAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: bottomAnchor),
+            hosting.view.leadingAnchor.constraint(equalTo: leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
+        if #available(iOS 16.0, *) {
+            hosting.sizingOptions = .intrinsicContentSize
+        } else {
+            hosting.view.heightAnchor.constraint(equalToConstant: 230).isActive = true
+        }
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard window != nil, hosting.parent == nil, let parent = nearestViewController else { return }
+        parent.addChild(hosting)
+        hosting.didMove(toParent: parent)
+    }
+}
+
+private struct SwiftUIStoriesV2: View {
+    @State private var controller = PersonalizationStoriesController()
+    @State private var status = "Loading block \(AppEnvironments.storiesCode)…"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            PersonalizationStoriesWidget(
+                code: AppEnvironments.storiesCode,
+                shopId: AppEnvironments.shopId,
+                controller: controller,
+                onError: { status = "Stories failed to load: \($0)" },
+                onLoaded: { status = "Stories loaded: \($0)" }
+            )
+            HStack(spacing: 16) {
+                Button("Open the first") { controller.open(at: 0) }
+                Button("Reload") { controller.reload() }
+            }
+            .font(.footnote)
+            Text(status)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
     }
 }
 
@@ -375,21 +505,36 @@ private enum DemoStories {
         .init(id: "3", brand: "Garmin", name: "GPS running watch", imageUrl: image("watch"), price: "44 900 ₽", oldPrice: "49 900 ₽", discountPercent: 10)
     ]
 
+    /// A real story video of the demo shop's block (and its poster).
+    static let video = "https://cdn.stories.rees46.ru/9f3065c8-82bc-4f4f-8fca-6b9ee4d4ae57.mp4"
+    static let poster = "https://cdn.stories.rees46.ru/69c1044a-0ba5-42a4-b8b8-2fae2dff9125.jpg"
+
     static let all: [PersonalizationStory] = [
         PersonalizationStory(id: "product", name: "Product", avatarUrl: image("headphones"), pinned: true, slides: [
             PersonalizationStorySlide(id: "price", kind: .content, offer: laptop),
             PersonalizationStorySlide(id: "promo", kind: .content, offer: offer(laptop, promo: "PROMO")),
             PersonalizationStorySlide(
                 id: "discount", kind: .content,
+                // Ignored without media: a product slide is always on Background/Card.
                 backgroundColor: UIColor(red: 0, green: 0x80 / 255.0, blue: 0xF0 / 255.0, alpha: 1),
                 buttons: [.init(title: "Buy", link: "https://example.com/laptop")],
-                offer: offer(laptop, discount: 10)
+                offer: offer(laptop, discount: 12.5)
             )
         ]),
-        PersonalizationStory(id: "text", name: "Text blocks", avatarUrl: image("jacket"), slides: [
+        // Every slide button, the carousel and the sound button on a product video slide.
+        PersonalizationStory(id: "product-video", name: "Product video with buttons and carousel", avatarUrl: image("pegasus"), slides: [
+            PersonalizationStorySlide(
+                id: "product-video", kind: .video, background: video, preview: poster,
+                buttons: [.init(title: "Buy now", link: "https://example.com/buy"), .init(title: "Add to wishlist")],
+                offer: offer(carousel[0], promo: "RUN10", withCode: "8 999 ₽"),
+                products: .init(showLabel: "Используемые товары", hideLabel: "Скрыть товары", items: carousel)
+            )
+        ]),
+        PersonalizationStory(id: "text", name: "Text blocks and a promo code", avatarUrl: image("jacket"), slides: [
             PersonalizationStorySlide(id: "text-solid", kind: .image, background: image("jacket"), textBlocks: [
                 .init(text: "Open eat dear winding belonging.", style: .large, fill: PersonalizationColor.semanticInfo, yOffset: 2),
-                .init(text: "Open eat dear winding belonging though differed stand left.", style: .medium, alignment: .center, fill: PersonalizationColor.semanticWarning, yOffset: 38),
+                .init(text: "Tap to copy STORIES10", style: .medium, alignment: .center,
+                      fill: PersonalizationColor.semanticWarning, yOffset: 38, promoCode: "STORIES10"),
                 .init(text: "Open eat dear winding belonging though differed stand left.", style: .small, alignment: .right, fill: PersonalizationColor.brandPrimary, yOffset: 62)
             ]),
             PersonalizationStorySlide(id: "text-transparent", kind: .image, background: image("backpack"), textBlocks: [
@@ -398,24 +543,37 @@ private enum DemoStories {
                 .init(text: "Open eat dear winding belonging though differed stand left.", style: .small, fontFamily: .monospaced, bold: true, yOffset: 62)
             ])
         ]),
-        PersonalizationStory(id: "media", name: "Media", avatarUrl: image("sneakers"), slides: [
+        // Photos are fitted whole: the letterbox is the slide's background_color, black without it.
+        PersonalizationStory(id: "media", name: "Fitted media", avatarUrl: image("sneakers"), slides: [
             PersonalizationStorySlide(
                 id: "action", kind: .image, background: image("sneakers"),
+                backgroundColor: UIColor(red: 0x1E / 255.0, green: 0x3A / 255.0, blue: 0x5F / 255.0, alpha: 1),
                 buttons: [.init(title: "Shop now", link: "https://example.com/sale")],
                 products: .init(showLabel: "Используемые товары", hideLabel: "Скрыть товары", items: carousel)
             ),
-            PersonalizationStorySlide(id: "plain", kind: .image, background: image("watch"), duration: 3)
+            PersonalizationStorySlide(id: "plain", kind: .image, background: image("watch"), duration: 3),
+            PersonalizationStorySlide(id: "video", kind: .video, background: video, preview: poster)
+        ]),
+        // Media that never arrives: Retry after 10 s; the broken video retries itself after 15 s.
+        PersonalizationStory(id: "retry", name: "Retry", avatarUrl: image("bottle"), slides: [
+            PersonalizationStorySlide(id: "missing-photo", kind: .image, background: "asset://uikit-missing"),
+            PersonalizationStorySlide(id: "broken-video", kind: .video, background: "https://invalid.example/clip.mp4")
         ]),
         PersonalizationStory(id: "viewed", name: "Viewed", avatarUrl: image("sunglasses"), viewed: true, slides: [
             PersonalizationStorySlide(id: "photo", kind: .image, background: image("sunglasses"))
         ])
     ]
 
-    private static func offer(_ base: PersonalizationStorySlide.Offer, promo: String? = nil, discount: Double = 0) -> PersonalizationStorySlide.Offer {
+    private static func offer(
+        _ base: PersonalizationStorySlide.Offer,
+        promo: String? = nil,
+        discount: Double = 0,
+        withCode: String = "1 090 900 ₽"
+    ) -> PersonalizationStorySlide.Offer {
         PersonalizationStorySlide.Offer(
             id: base.id, brand: base.brand, name: base.name, imageUrl: base.imageUrl, price: base.price,
             oldPrice: base.oldPrice, discountPercent: discount, promoCode: promo,
-            priceWithPromoCode: promo == nil ? nil : "1 090 900 ₽", link: base.link
+            priceWithPromoCode: promo == nil ? nil : withCode, link: base.link
         )
     }
 }

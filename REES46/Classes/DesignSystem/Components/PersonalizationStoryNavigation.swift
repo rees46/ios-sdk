@@ -23,8 +23,8 @@ import UIKit
     public var onClose: (() -> Void)?
 
     /// Подпись крестика для VoiceOver.
-    public var closeAccessibilityLabel: String? = "Close" {
-        didSet { closeButton.accessibilityLabel = closeAccessibilityLabel }
+    public var closeLabel: String? = "Close" {
+        didSet { closeButton.accessibilityLabel = closeLabel }
     }
 
     /// Шапка медиа-слайда: тёмные токены и на iOS 12, где тему поддерева не переопределить.
@@ -53,7 +53,7 @@ import UIKit
         closeButton.imageView?.contentMode = .scaleAspectFit
         closeButton.tintColor = PersonalizationColor.textSecondary
         closeButton.alpha = Self.closeOpacity
-        closeButton.accessibilityLabel = closeAccessibilityLabel
+        closeButton.accessibilityLabel = closeLabel
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
 
         progress.translatesAutoresizingMaskIntoConstraints = false
