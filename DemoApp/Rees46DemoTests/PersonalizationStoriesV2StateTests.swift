@@ -147,4 +147,71 @@ final class PersonalizationStoriesV2StateTests: XCTestCase {
         XCTAssertFalse(state.hasFailed, "leaving the slide cancels Retry")
         XCTAssertTrue(state.isRunning)
     }
+
+    // MARK: - Session: tracking ids, delegate and links
+
+    private final class Delegate: StoriesCommunicationProtocol {
+        var events: [String] = []
+        var allow = true
+        func receiveIosLink(text: String) { events.append("ios-link") }
+        func receiveSelectedProductData(products: StoriesElement) { events.append("element:\(products.link ?? "")") }
+        func receiveSelectedCarouselProductData(products: StoriesProduct) { events.append("carousel:\(products.url)") }
+        func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) {
+            events.append("promo:\(promoCodeSlide.promocode)")
+        }
+        func shouldOpenLinkBySdk(url: String) -> Bool { allow }
+    }
+
+    func testOnlyPositiveIntegerIdsAreTracked() {
+        XCTAssertTrue(StoriesSession.isTrackable("37"))
+        XCTAssertFalse(StoriesSession.isTrackable("39_0"), "dynamic product slides")
+        XCTAssertFalse(StoriesSession.isTrackable("0"))
+        XCTAssertFalse(StoriesSession.isTrackable("-4"))
+        XCTAssertFalse(StoriesSession.isTrackable(""))
+    }
+
+    func testAButtonNotifiesTheDelegateAndTheSdkOpensItsLinkUnlessDeclined() {
+        let delegate = Delegate()
+        let session = StoriesSession(sdk: nil, code: "block")
+        session.delegate = delegate
+        var opened: [String] = []
+        session.openURL = { opened.append($0.absoluteString) }
+        let element = StoriesElement(json: ["type": "button", "link": "https://shop.example/a"])
+        let button = PersonalizationStorySlide.Button(title: "Go", link: "https://shop.example/a", element: element)
+        let slide = PersonalizationStorySlide(id: "1", kind: .content, buttons: [button])
+        let story = PersonalizationStory(id: "1", name: "S", slides: [slide])
+
+        session.buttonTapped(story, slide, button, in: nil)
+        XCTAssertEqual(delegate.events, ["element:https://shop.example/a"])
+        XCTAssertEqual(opened, ["https://shop.example/a"])
+
+        delegate.allow = false
+        session.buttonTapped(story, slide, button, in: nil)
+        XCTAssertEqual(opened.count, 1, "the host routes it itself")
+        XCTAssertFalse(delegate.events.contains("ios-link"), "receiveIosLink stays uncalled, as in V1")
+    }
+
+    func testACarouselProductGoesToTheCarouselCallbackAndOpensTheProduct() {
+        let delegate = Delegate()
+        let session = StoriesSession(sdk: nil, code: "block")
+        session.delegate = delegate
+        var opened: [String] = []
+        session.openURL = { opened.append($0.absoluteString) }
+        let item: [String: Any] = ["name": "Mouse", "price": 10, "url": "https://shop.example/m", "deeplink_ios": "app://m"]
+        guard let offer = PersonalizationStorySlide.Offer(carousel: item, index: 0) else { return XCTFail("no offer") }
+        let slide = PersonalizationStorySlide(id: "1", kind: .content)
+        session.productTapped(PersonalizationStory(id: "1", name: "S", slides: [slide]), slide, offer, in: nil)
+        XCTAssertEqual(delegate.events, ["carousel:https://shop.example/m"])
+        XCTAssertEqual(opened, ["app://m"], "deeplink_ios first")
+    }
+
+    func testACopiedCodeReachesThePromoCallback() {
+        let delegate = Delegate()
+        let session = StoriesSession(sdk: nil, code: "block")
+        session.delegate = delegate
+        let slide = PersonalizationStorySlide(id: "1", kind: .image, background: "https://img.example/a.jpg",
+                                              textBlocks: [.init(text: "Code", promoCode: "TEXT10")])
+        session.promoCopied(PersonalizationStory(id: "1", name: "S", slides: [slide]), slide, "TEXT10")
+        XCTAssertEqual(delegate.events, ["promo:TEXT10"], "a text block code is wrapped for the V1 callback")
+    }
 }

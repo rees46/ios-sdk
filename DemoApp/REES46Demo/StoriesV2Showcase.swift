@@ -279,8 +279,7 @@ private final class LiveStoriesExhibit: UIStackView {
         let stories = PersonalizationStories(code: AppEnvironments.storiesCode, shopId: AppEnvironments.shopId)
         stories.bar.contentInsets = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         stories.promoCopiedText = "Code copied to clipboard"
-        stories.onLinkClick = { link in PersonalizationToast.show("Link: \(link)") }
-        stories.onProductClick = { offer in PersonalizationToast.show("Product: \(offer.name)") }
+        stories.communicationDelegate = self
         stories.onLoaded = { [weak self] count in self?.status.text = "Stories loaded: \(count)" }
         stories.onError = { [weak self] error in self?.status.text = "Stories failed to load: \(error)" }
 
@@ -294,6 +293,29 @@ private final class LiveStoriesExhibit: UIStackView {
     }
 
     required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+}
+
+/// The same delegate a legacy stories host implements: taps are reported, and links the demo
+/// routes itself (`demo://`) are kept from the SDK. Everything else the SDK opens after the
+/// viewer is gone.
+extension LiveStoriesExhibit: StoriesCommunicationProtocol {
+    func receiveIosLink(text: String) {}
+
+    func receiveSelectedProductData(products: StoriesElement) {
+        PersonalizationToast.show("Element: \(products.link ?? products.deeplinkIos ?? "no link")")
+    }
+
+    func receiveSelectedCarouselProductData(products: StoriesProduct) {
+        PersonalizationToast.show("Carousel product: \(products.url)")
+    }
+
+    func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) {
+        print("[stories v2] promo code copied")
+    }
+
+    func shouldOpenLinkBySdk(url: String) -> Bool {
+        !url.hasPrefix("demo://")
+    }
 }
 
 // MARK: - Viewer on sample data

@@ -240,3 +240,40 @@ final class PersonalizationStoryAudio: NSObject {
         isMuted = true
     }
 }
+
+extension UIResponder {
+    /// Ближайший контроллер по цепочке ответчиков — от него виджеты кита показывают экраны.
+    var personalizationNearestViewController: UIViewController? {
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let controller = current as? UIViewController { return controller }
+            responder = current.next
+        }
+        return nil
+    }
+}
+
+extension UIViewController {
+    /// Верхний показанный поверх этого контроллер: модальный экран показывается с него.
+    var personalizationTopmost: UIViewController {
+        var top = self
+        while let presented = top.presentedViewController, !presented.isBeingDismissed {
+            top = presented
+        }
+        return top
+    }
+
+    /// Корневой контроллер ключевого окна — когда показывать не от кого.
+    static var personalizationKeyRoot: UIViewController? {
+        let windows: [UIWindow]
+        if #available(iOS 13.0, *) {
+            windows = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .filter { $0.activationState == .foregroundActive }
+                .flatMap(\.windows)
+        } else {
+            windows = UIApplication.shared.windows
+        }
+        return (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController
+    }
+}

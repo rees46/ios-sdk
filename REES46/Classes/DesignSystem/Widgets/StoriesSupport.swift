@@ -338,3 +338,142 @@ enum StoriesBlockLoader {
         }
     }
 }
+
+// MARK: - Сессия просмотра
+
+/// Просмотрщик на данных SDK: трекинг, просмотренность, делегат и ссылки — общие у виджета
+/// и у `PersonalizationStories.show`. Просмотрщик держит сессию, пока открыт.
+///
+/// Трекинг (`track/stories`) — всегда с кодом своего блока и своим инстансом SDK: `view`,
+/// когда слайд стал текущим, `click` — на кнопку, товар (карточка, кнопка, карусель)
+/// и копирование промокода. Id не положительным целым (динамические слайды вида `39_0`)
+/// не трекаются. Источник `stories` для атрибуции ставит сам трекинг SDK.
+///
+/// Ссылки — как у старых сторис: делегат узнаёт о нажатии и решает в
+/// `shouldOpenLinkBySdk(url:)`, открыть ли ссылку SDK; просмотрщик закрывается до этого
+/// в любом случае. `receiveIosLink` не зовётся, как и у старых сторис.
+final class StoriesSession {
+
+    let sdk: PersonalizationSDK?
+    let code: String
+    weak var delegate: StoriesCommunicationProtocol?
+    var texts = PersonalizationStoriesTexts()
+    var imageLoader: ((UIImageView, String) -> Void)?
+    /// Слайд просмотрен — лента перерисовывает кольца.
+    var onSeen: (() -> Void)?
+    /// Открытие ссылки системой; подменяется в тестах.
+    var openURL: (URL) -> Void = { UIApplication.shared.open($0) }
+
+    init(sdk: PersonalizationSDK?, code: String) {
+        self.sdk = sdk
+        self.code = code
+    }
+
+    var seenState: StoriesSeenState {
+        StoriesSeenState(sdk: sdk)
+    }
+
+    /// Просмотрщик на сторис блока, связанный с этой сессией.
+    func makeViewer(stories: [PersonalizationStory], startIndex: Int) -> PersonalizationStoriesViewController {
+        let viewer = PersonalizationStoriesViewController(stories: stories, startIndex: startIndex)
+        viewer.texts = texts
+        viewer.imageLoader = imageLoader
+        let seen = seenState
+        viewer.startSlide = { seen.startSlide($0) }
+        viewer.onSlideView = { [self] story, slide in slideShown(story, slide) }
+        viewer.onButtonTap = { [self, weak viewer] story, slide, button in buttonTapped(story, slide, button, in: viewer) }
+        viewer.onProductTap = { [self, weak viewer] story, slide, offer in productTapped(story, slide, offer, in: viewer) }
+        viewer.onPromoCopied = { [self] story, slide, code in promoCopied(story, slide, code) }
+        return viewer
+    }
+
+    /// Трекаются только положительные целые id.
+    static func isTrackable(_ id: String) -> Bool {
+        Int(id).map { $0 > 0 } ?? false
+    }
+
+    func slideShown(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
+        if Self.isTrackable(story.id), Self.isTrackable(slide.id) {
+            sdk?.tracking.storyView(storyId: story.id, slideId: slide.id, code: code)
+        }
+        seenState.markSeen(slide, of: story)
+        onSeen?()
+    }
+
+    private func trackClick(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
+        guard Self.isTrackable(story.id), Self.isTrackable(slide.id) else { return }
+        sdk?.tracking.storyClick(storyId: story.id, slideId: slide.id, code: code)
+    }
+
+    /// Кнопка слайда: ссылка кнопки, у товарного слайда без неё — ссылка товара.
+    func buttonTapped(
+        _ story: PersonalizationStory,
+        _ slide: PersonalizationStorySlide,
+        _ button: PersonalizationStorySlide.Button,
+        in viewer: PersonalizationStoriesViewController?
+    ) {
+        trackClick(story, slide)
+        let element = button.element ?? slide.offer.flatMap { offer -> StoriesElement? in
+            if case .product(let element)? = offer.source { return element }
+            return nil
+        }
+        // Замыкания разовые и держат сессию сами: после `show` её больше никто не держит.
+        leave(viewer, link: slide.link(of: button)) { [self] in
+            if let element { delegate?.receiveSelectedProductData(products: element) }
+        }
+    }
+
+    /// Товар: карточка или кнопка товарного слайда, карточка карусели.
+    func productTapped(
+        _ story: PersonalizationStory,
+        _ slide: PersonalizationStorySlide,
+        _ offer: PersonalizationStorySlide.Offer,
+        in viewer: PersonalizationStoriesViewController?
+    ) {
+        trackClick(story, slide)
+        leave(viewer, link: offer.link) { [self] in
+            switch offer.source {
+            case .product(let element)?: delegate?.receiveSelectedProductData(products: element)
+            case .carousel(let product)?: delegate?.receiveSelectedCarouselProductData(products: product)
+            case nil: break
+            }
+        }
+    }
+
+    /// Промокод скопирован — из цены товара или из текстового блока.
+    func promoCopied(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide, _ code: String) {
+        trackClick(story, slide)
+        delegate?.receiveSelectedPromocodeProductData(promoCodeSlide: Self.promoElement(code, on: slide))
+    }
+
+    /// Промокод для делегата: товар слайда, если код его; иначе — элемент с одним кодом.
+    static func promoElement(_ code: String, on slide: PersonalizationStorySlide) -> StoriesPromoCodeElement {
+        if let offer = slide.offer, offer.promoCode == code, case .product(let element)? = offer.source, let item = element.product {
+            return item
+        }
+        return StoriesPromoCodeElement(json: ["promocode": code])
+    }
+
+    /// Со ссылкой — закрыть просмотрщик, потом сообщить делегату и открыть ссылку, если
+    /// он не против; без ссылки — только сообщить.
+    private func leave(_ viewer: PersonalizationStoriesViewController?, link: String?, notify: @escaping () -> Void) {
+        guard let link else {
+            notify()
+            return
+        }
+        let finish = { [self] in
+            notify()
+            open(link)
+        }
+        guard let viewer else {
+            finish()
+            return
+        }
+        viewer.close(completion: finish)
+    }
+
+    func open(_ link: String) {
+        guard let url = URL(string: link), delegate?.shouldOpenLinkBySdk(url: link) ?? true else { return }
+        openURL(url)
+    }
+}

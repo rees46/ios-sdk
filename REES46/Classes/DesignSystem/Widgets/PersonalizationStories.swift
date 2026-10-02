@@ -2,26 +2,26 @@ import UIKit
 
 /// Сторис с данными SDK: лента блока `code` и полноэкранный просмотрщик по нажатию.
 ///
-/// Паттерн Stories V2 из Figma (страница Stories, 1:32). Данные — `getStories(code:)`,
-/// разбор ответа общий со старыми сторис; визуальный слой — `PersonalizationStoriesBar`
-/// (доступен через `bar`) и `PersonalizationStoriesViewController`.
+/// Паттерн Stories V2 из Figma (страница Stories, 1:32). Данные — запрос `stories/{code}`,
+/// тот же, что у старых сторис; визуальный слой — `PersonalizationStoriesBar` (доступен
+/// через `bar`) и `PersonalizationStoriesViewController`. Без ленты сторис блока показывает
+/// `PersonalizationStories.show(...)`, в SwiftUI — `PersonalizationStoriesWidget`.
 ///
 /// Инстанс SDK: `shopId` выбирает магазин при нескольких зарегистрированных; без него
-/// берётся единственный. Резолвится при показе через `Rees46.awaitInstance`, явный —
-/// параметром `sdk` или через `attach(_:)`.
+/// берётся единственный. Резолвится при показе, явный — параметром `sdk` или `attach(_:)`.
 ///
-/// Пока блок грузится, в ленте заглушки; пустой блок или ошибка — виджет скрывается
-/// и схлопывается в ноль по высоте (ошибка ещё уходит в `onError`).
+/// Пока блок грузится, в ленте заглушки. Пустой блок, ошибка загрузки, пустой `code`
+/// или неоднозначный магазин (несколько зарегистрировано, `shopId` не задан) — виджет
+/// скрывается и схлопывается в ноль по высоте, ошибка уходит в `onError`. Загрузка,
+/// не уложившаяся в 15 секунд, тоже считается ошибкой — вечных заглушек нет.
 ///
-/// Просмотренные слайды хранятся в общем хранилище SDK по магазину — том же, что у старых
-/// сторис: кольцо превью делится на сегменты по слайдам, просмотренные сегменты светлее,
-/// досмотренная сторис серая, а закреплённая остаётся закреплённой (кольцо Semantic/Warning
-/// и звезда). Начатая сторис открывается с первого непросмотренного слайда.
+/// Просмотренные слайды хранятся по магазину в общем хранилище SDK — том же, что у старых
+/// сторис. Начатая сторис открывается с первого непросмотренного слайда, досмотренная —
+/// с начала; кольцо обложки подсвечивает просмотренные слайды по их номерам.
 ///
-/// Трекинг: `storyView` на каждый показанный слайд, `storyClick` на кнопку, товар
-/// и копирование промокода. Ссылки: кнопка и товар без `onProductClick` закрывают
-/// просмотрщик и отдают ссылку `onLinkClick`, а без него открывают её системой
-/// (`link_ios`, иначе `link`; у товара — `deeplink_ios`, иначе `url`).
+/// Нажатия на кнопки, товары и промокоды получает `communicationDelegate` — тот же
+/// `StoriesCommunicationProtocol`, что у старых сторис; ссылку SDK открывает, если делегат
+/// не вернул `false` из `shouldOpenLinkBySdk(url:)`, а просмотрщик закрывается до этого.
 @_spi(PersonalizationUI) public final class PersonalizationStories: UIView {
 
     /// Код блока сторис; смена перезагружает ленту.
@@ -32,33 +32,29 @@ import UIKit
     /// Магазин; `nil` — единственный зарегистрированный. Менять до показа.
     public var shopId: String?
 
+    /// Инстанс SDK — явный или найденный по `shopId`.
+    public private(set) var sdk: PersonalizationSDK?
+
     /// Лента: поля, шаг, заглушки.
     public let bar = PersonalizationStoriesBar()
 
-    /// Ссылка кнопки или товара. `nil` — ссылку открывает система.
-    public var onLinkClick: ((String) -> Void)?
+    /// Нажатия на кнопки, товары и промокоды; решает, открывать ли ссылку SDK.
+    public weak var communicationDelegate: StoriesCommunicationProtocol?
 
-    /// Нажатие на товар. `nil` — как ссылка, см. `onLinkClick`.
-    public var onProductClick: ((PersonalizationStorySlide.Offer) -> Void)?
-
+    /// Блок не загрузился, пустой `code` или неоднозначный магазин; виджет при этом скрыт.
     public var onError: ((SdkError) -> Void)?
 
     /// Блок загружен: сколько в нём сторис (0 — виджет скрыт).
     public var onLoaded: ((Int) -> Void)?
 
-    // MARK: - Тексты; локализация за хостом
+    /// Тексты кита; доходят до просмотрщика.
+    public var texts = PersonalizationStoriesTexts()
 
-    /// Тост после копирования промокода; `nil` — без тоста.
-    public var promoCopiedText: String? = "Copied"
-    public var promoCaption: String? = "Promo code"
-    /// Подпись кнопки слайда с товаром, если у слайда нет своей кнопки.
-    public var productButtonText = "More info"
-    /// Подписи переключателя товаров, если админка их не задала.
-    public var showProductsText = "Used products"
-    public var hideProductsText = "Hide products"
-
-    /// Загрузчик картинок; `nil` — встроенный.
-    public var imageLoader: ((UIImageView, String) -> Void)?
+    /// Загрузчик картинок: обложки, фоны, товары; `nil` — встроенный. Заданный после
+    /// загрузки, перегружает уже показанные обложки.
+    public var imageLoader: ((UIImageView, String) -> Void)? {
+        didSet { bar.imageLoader = barImageLoader }
+    }
 
     /// Кто показывает просмотрщик; `nil` — ближайший контроллер по цепочке ответчиков.
     public weak var hostViewController: UIViewController?
@@ -66,11 +62,17 @@ import UIKit
     /// Сторис загруженного блока.
     public private(set) var stories: [PersonalizationStory] = []
 
-    private var sdk: PersonalizationSDK?
+    /// Сколько ждать блок, прежде чем сдаться.
+    public static let loadTimeout: TimeInterval = 15
+
     private var instanceHandle: Cancellable?
     private var requestSeq = 0
+    private var giveUp: DispatchWorkItem?
+    private var isCollapsed = false
     private var collapsed: NSLayoutConstraint!
     private weak var viewer: PersonalizationStoriesViewController?
+    /// Открыть сторис, когда блок загрузится.
+    private var pendingOpen: ((PersonalizationStories) -> Void)?
 
     /// - Parameters:
     ///   - code: код блока сторис.
@@ -90,6 +92,11 @@ import UIKit
         setup()
     }
 
+    deinit {
+        giveUp?.cancel()
+        instanceHandle?.cancel()
+    }
+
     private func setup() {
         bar.translatesAutoresizingMaskIntoConstraints = false
         addSubview(bar)
@@ -101,12 +108,67 @@ import UIKit
             bar.trailingAnchor.constraint(equalTo: trailingAnchor),
             bar.bottomAnchor.constraint(equalTo: bottomAnchor).withPriority(UILayoutPriority(999))
         ])
-        bar.imageLoader = { [weak self] imageView, item in
-            self?.load(imageView, item.imageUrl)
-        }
+        setContentHuggingPriority(.required, for: .vertical)
+        setContentCompressionResistancePriority(.required, for: .vertical)
+        bar.imageLoader = barImageLoader
         bar.onItemTap = { [weak self] _, index in self?.open(at: index) }
         bar.isLoading = true
     }
+
+    private var barImageLoader: (UIImageView, PersonalizationStoriesBar.Item) -> Void {
+        { [weak self] imageView, item in
+            PersonalizationStoryImages.load(into: imageView, url: item.imageUrl, loader: self?.imageLoader)
+        }
+    }
+
+    /// Высота — лента, у схлопнутого — ноль: по ней виджет встаёт в стек и в SwiftUI.
+    public override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: isCollapsed ? 0 : bar.intrinsicContentSize.height)
+    }
+
+    // MARK: - Тексты по одному
+
+    public var promoCaption: String? {
+        get { texts.promoCaption }
+        set { texts.promoCaption = newValue }
+    }
+    public var promoCopiedText: String? {
+        get { texts.promoCopiedText }
+        set { texts.promoCopiedText = newValue }
+    }
+    public var productButtonText: String {
+        get { texts.productButtonText }
+        set { texts.productButtonText = newValue }
+    }
+    public var showProductsText: String {
+        get { texts.showProductsText }
+        set { texts.showProductsText = newValue }
+    }
+    public var hideProductsText: String {
+        get { texts.hideProductsText }
+        set { texts.hideProductsText = newValue }
+    }
+    public var retryText: String {
+        get { texts.retryText }
+        set { texts.retryText = newValue }
+    }
+    public var closeLabel: String? {
+        get { texts.closeLabel }
+        set { texts.closeLabel = newValue }
+    }
+    public var soundOnLabel: String? {
+        get { texts.soundOnLabel }
+        set { texts.soundOnLabel = newValue }
+    }
+    public var soundOffLabel: String? {
+        get { texts.soundOffLabel }
+        set { texts.soundOffLabel = newValue }
+    }
+}
+
+// MARK: - Загрузка
+
+extension PersonalizationStories {
 
     /// Явный инстанс вместо резолва по `shopId`.
     public func attach(_ sdk: PersonalizationSDK) {
@@ -124,136 +186,199 @@ import UIKit
             return
         }
         guard sdk == nil, instanceHandle == nil else { return }
-        // Неоднозначный запрос (несколько магазинов без shopId) awaitInstance молча роняет —
-        // лента остаётся в заглушках, а не валит экран.
-        instanceHandle = Rees46.awaitInstance(for: shopId) { [weak self] resolved in
-            MainThread.run { self?.attach(resolved) }
+        resolveSDK()
+    }
+
+    /// Инстанс по `shopId`: готовый — сразу, ещё не зарегистрированный — когда появится.
+    /// Несколько магазинов без `shopId` — ошибка, а не чужой магазин.
+    private func resolveSDK() {
+        guard !code.isEmpty else { return fail(Self.missingCode) }
+        do {
+            attach(try Rees46.instance(for: shopId))
+        } catch Rees46Error.ambiguousShop(let shops) {
+            fail(.custom(error: "Stories: several shops are registered (\(shops.joined(separator: ", "))), pass shopId"))
+        } catch {
+            beginLoading()
+            instanceHandle = Rees46.awaitInstance(for: shopId) { [weak self] resolved in
+                MainThread.run { self?.attach(resolved) }
+            }
         }
     }
 
     /// Загрузить блок заново.
     public func reload() {
-        guard let sdk, !code.isEmpty else { return }
+        guard let sdk else { return }
+        guard !code.isEmpty else { return fail(Self.missingCode) }
+        beginLoading()
+        let seq = requestSeq
+        let code = self.code
+        StoriesBlockLoader.load(sdk: sdk, code: code) { [weak self] result in
+            guard let self, seq == self.requestSeq else { return }
+            switch result {
+            case .success(let stories):
+                self.giveUp?.cancel()
+                self.stories = stories
+                self.renderBar()
+                self.bar.isLoading = false
+                self.setCollapsed(stories.isEmpty)
+                self.onLoaded?(stories.count)
+                let open = self.pendingOpen
+                self.pendingOpen = nil
+                open?(self)
+            case .failure(let error):
+                self.fail(error)
+            }
+        }
+    }
+
+    static var missingCode: SdkError { .custom(error: "Stories: the block code is empty") }
+
+    /// Заглушки в ленте и отсчёт до отказа: блок, не пришедший за 15 секунд, — ошибка.
+    private func beginLoading() {
         requestSeq += 1
         let seq = requestSeq
         setCollapsed(false)
         bar.isLoading = true
-        StoriesBlockLoader.load(sdk: sdk, code: code) { [weak self] result in
-            MainThread.run {
-                guard let self, seq == self.requestSeq else { return }
-                switch result {
-                case .success(let stories):
-                    self.stories = stories
-                    // Превью собираются один раз — когда уходят заглушки.
-                    self.renderBar()
-                    self.bar.isLoading = false
-                    self.setCollapsed(self.stories.isEmpty)
-                    self.onLoaded?(self.stories.count)
-                case .failure(let error):
-                    self.stories = []
-                    self.renderBar()
-                    self.bar.isLoading = false
-                    self.setCollapsed(true)
-                    self.onError?(error)
-                }
-            }
+        giveUp?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, seq == self.requestSeq, self.bar.isLoading else { return }
+            self.fail(.custom(error: "Stories: the block did not load in \(Int(Self.loadTimeout)) s"))
         }
+        giveUp = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.loadTimeout, execute: work)
+    }
+
+    /// Ошибка: виджет скрыт, поздний ответ игнорируется.
+    private func fail(_ error: SdkError) {
+        giveUp?.cancel()
+        requestSeq += 1
+        pendingOpen = nil
+        stories = []
+        renderBar()
+        bar.isLoading = false
+        setCollapsed(true)
+        onError?(error)
     }
 
     private func setCollapsed(_ value: Bool) {
+        isCollapsed = value
         isHidden = value
         collapsed.isActive = value
+        invalidateIntrinsicContentSize()
     }
 
-    private func renderBar() {
+    func renderBar() {
         let state = StoriesSeenState(sdk: sdk)
         bar.items = stories.map { state.barItem($0) }
     }
+}
 
-    // MARK: - Просмотрщик
+// MARK: - Просмотрщик
 
-    private func open(at index: Int) {
-        guard stories.indices.contains(index), viewer == nil,
-              let host = hostViewController ?? nearestViewController() else { return }
-        let state = StoriesSeenState(sdk: sdk)
-        let viewer = PersonalizationStoriesViewController(stories: stories, startIndex: index)
-        viewer.productButtonText = productButtonText
-        viewer.promoCaption = promoCaption
-        viewer.promoCopiedText = promoCopiedText
-        viewer.showProductsText = showProductsText
-        viewer.hideProductsText = hideProductsText
-        viewer.imageLoader = imageLoader
-        viewer.startSlide = { state.startSlide($0) }
-        viewer.onSlideView = { [weak self] story, slide in self?.slideShown(story, slide) }
-        viewer.onButtonTap = { [weak self, weak viewer] story, slide, button in
-            guard let self else { return }
-            self.trackClick(story, slide)
-            guard let link = button.link else { return }
-            self.leave(viewer) { self.openLink(link) }
+extension PersonalizationStories {
+
+    /// Открыть сторис по индексу в ленте. До загрузки блока — откроется, когда он придёт;
+    /// при открытом просмотрщике — перелистнёт на неё.
+    public func open(at index: Int) {
+        guard !stories.isEmpty || !bar.isLoading else { return }
+        guard !stories.isEmpty else {
+            pendingOpen = { $0.open(at: index) }
+            return
         }
-        viewer.onProductTap = { [weak self, weak viewer] story, slide, offer in
-            guard let self else { return }
-            self.trackClick(story, slide)
-            if let onProductClick = self.onProductClick {
-                self.leave(viewer) { onProductClick(offer) }
-            } else if let link = offer.link {
-                self.leave(viewer) { self.openLink(link) }
+        guard stories.indices.contains(index) else { return }
+        if let viewer {
+            viewer.open(at: index)
+            return
+        }
+        guard let host = hostViewController ?? personalizationNearestViewController else { return }
+        let session = StoriesSession(sdk: sdk, code: code)
+        session.delegate = communicationDelegate
+        session.texts = texts
+        session.imageLoader = imageLoader
+        session.onSeen = { [weak self] in self?.renderBar() }
+        let viewer = session.makeViewer(stories: stories, startIndex: index)
+        self.viewer = viewer
+        host.personalizationTopmost.present(viewer, animated: true)
+    }
+
+    /// Открыть сторис по id.
+    public func open(storyId: String) {
+        if stories.isEmpty, bar.isLoading {
+            pendingOpen = { $0.open(storyId: storyId) }
+            return
+        }
+        guard let index = stories.firstIndex(where: { $0.id == storyId }) else { return }
+        open(at: index)
+    }
+
+    /// Пауза открытого просмотрщика: отсчёт и видео стоят до `resume()`.
+    public func pause() {
+        viewer?.pause()
+    }
+
+    public func resume() {
+        viewer?.resume()
+    }
+
+    /// Сторис блока без ленты: загружает блок и показывает просмотрщик поверх `presenter`
+    /// (без него — поверх верхнего экрана ключевого окна), начиная со `startStoryId`.
+    ///
+    /// - Parameters:
+    ///   - code: код блока сторис.
+    ///   - sdk: явный инстанс; без него — по `shopId`, а без `shopId` — единственный.
+    ///   - shopId: магазин, когда их несколько.
+    ///   - startStoryId: с какой сторис начать; `nil` или неизвестный id — с первой.
+    ///   - presenter: кто показывает просмотрщик.
+    ///   - delegate: как `communicationDelegate` у виджета; держится слабо.
+    ///   - texts: тексты кита.
+    ///   - imageLoader: загрузчик картинок; `nil` — встроенный.
+    ///   - onError: блок не загрузился, пуст, нет инстанса или магазин неоднозначен.
+    public static func show(
+        code: String,
+        sdk: PersonalizationSDK? = nil,
+        shopId: String? = nil,
+        startStoryId: String? = nil,
+        from presenter: UIViewController? = nil,
+        delegate: StoriesCommunicationProtocol? = nil,
+        texts: PersonalizationStoriesTexts = PersonalizationStoriesTexts(),
+        imageLoader: ((UIImageView, String) -> Void)? = nil,
+        onError: ((SdkError) -> Void)? = nil
+    ) {
+        guard !code.isEmpty else { return MainThread.run { onError?(missingCode) } }
+        let resolved: PersonalizationSDK
+        do {
+            resolved = try sdk ?? Rees46.instance(for: shopId)
+        } catch {
+            return MainThread.run { onError?(.custom(error: "Stories: \(error)")) }
+        }
+        let session = StoriesSession(sdk: resolved, code: code)
+        session.delegate = delegate
+        session.texts = texts
+        session.imageLoader = imageLoader
+        var finished = false
+        let timeout = DispatchWorkItem {
+            guard !finished else { return }
+            finished = true
+            onError?(.custom(error: "Stories: the block did not load in \(Int(loadTimeout)) s"))
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + loadTimeout, execute: timeout)
+        StoriesBlockLoader.load(sdk: resolved, code: code) { result in
+            guard !finished else { return }
+            finished = true
+            timeout.cancel()
+            switch result {
+            case .failure(let error):
+                onError?(error)
+            case .success(let stories) where stories.isEmpty:
+                onError?(.custom(error: "Stories: the block \(code) has no stories"))
+            case .success(let stories):
+                guard let host = presenter ?? UIViewController.personalizationKeyRoot else {
+                    onError?(.custom(error: "Stories: nothing to present the viewer from"))
+                    return
+                }
+                let start = startStoryId.flatMap { id in stories.firstIndex { $0.id == id } } ?? 0
+                host.personalizationTopmost.present(session.makeViewer(stories: stories, startIndex: start), animated: true)
             }
         }
-        viewer.onPromoCopied = { [weak self] story, slide, _ in self?.trackClick(story, slide) }
-        self.viewer = viewer
-
-        var top = host
-        while let presented = top.presentedViewController { top = presented }
-        top.present(viewer, animated: true)
-    }
-
-    private func slideShown(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
-        sdk?.tracking.storyView(storyId: story.id, slideId: slide.id, code: code)
-        StoriesSeenState(sdk: sdk).markSeen(slide, of: story)
-        renderBar()
-    }
-
-    private func trackClick(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
-        sdk?.tracking.storyClick(storyId: story.id, slideId: slide.id, code: code)
-    }
-
-    /// Закрыть просмотрщик и потом перейти: хост навигирует уже со своего экрана.
-    private func leave(_ viewer: PersonalizationStoriesViewController?, then action: @escaping () -> Void) {
-        guard let viewer else {
-            action()
-            return
-        }
-        viewer.close(completion: action)
-    }
-
-    private func openLink(_ link: String) {
-        if let onLinkClick {
-            onLinkClick(link)
-            return
-        }
-        guard let url = URL(string: link) else { return }
-        UIApplication.shared.open(url)
-    }
-
-    private func load(_ imageView: UIImageView, _ url: String?) {
-        guard let url, !url.isEmpty else {
-            imageView.image = nil
-            return
-        }
-        if let imageLoader {
-            imageLoader(imageView, url)
-        } else {
-            SearchImages.shared.load(imageView, url: url)
-        }
-    }
-
-    private func nearestViewController() -> UIViewController? {
-        var responder: UIResponder? = self
-        while let current = responder {
-            if let controller = current as? UIViewController { return controller }
-            responder = current.next
-        }
-        return nil
     }
 }
