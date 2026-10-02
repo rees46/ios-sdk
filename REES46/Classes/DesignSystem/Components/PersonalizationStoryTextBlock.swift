@@ -34,8 +34,10 @@ import UIKit
 
         /// Интерлиньяж по пресету для кегля, когда админка его не задала: у кегля пресета —
         /// интерлиньяж пресета, у прочих — та же пропорция, что у ближайшего по кеглю.
+        /// При равном расстоянии берётся больший пресет (39 — Large, как на всех платформах).
         public static func presetLineHeight(for size: CGFloat) -> CGFloat {
-            let presets = [Style.small, .medium, .large]
+            // `min` отдаёт первый из равных, поэтому пресеты идут от большего к меньшему.
+            let presets = [Style.large, .medium, .small]
             let nearest = presets.min { abs($0.size - size) < abs($1.size - size) } ?? .small
             return (size * nearest.lineHeight / nearest.size).rounded()
         }
