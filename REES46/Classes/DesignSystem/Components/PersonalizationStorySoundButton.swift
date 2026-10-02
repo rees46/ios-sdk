@@ -19,12 +19,17 @@ import UIKit
     /// Нажатие: новое значение `isMuted`.
     public var onToggle: ((Bool) -> Void)?
 
-    /// Подписи для VoiceOver: что сделает нажатие.
-    public var unmuteAccessibilityLabel: String? = "Sound on" {
+    /// Подписи для VoiceOver: что сделает нажатие — включит звук или выключит.
+    public var soundOnLabel: String? = "Sound on" {
         didSet { apply() }
     }
-    public var muteAccessibilityLabel: String? = "Sound off" {
+    public var soundOffLabel: String? = "Sound off" {
         didSet { apply() }
+    }
+
+    /// Кнопка на медиа-слайде: тёмные токены и на iOS 12.
+    var forcesDarkTokens = false {
+        didSet { icon.tintColor = PersonalizationStoryColors.token(PersonalizationColor.textSecondary, forcingDark: forcesDarkTokens) }
     }
 
     public override var isHighlighted: Bool {
@@ -72,6 +77,6 @@ import UIKit
 
     private func apply() {
         icon.image = isMuted ? PersonalizationIcons.speakerOff : PersonalizationIcons.speaker
-        accessibilityLabel = isMuted ? unmuteAccessibilityLabel : muteAccessibilityLabel
+        accessibilityLabel = isMuted ? soundOnLabel : soundOffLabel
     }
 }

@@ -8,6 +8,8 @@ import UIKit
 //
 // Перед релизом атрибут снимается, и кит становится обычным публичным API.
 
+private var darkVariantKey: UInt8 = 0
+
 /// Тема дизайн-системы: то, что хост может подменить под свой бренд.
 ///
 /// Задаётся один раз на старте:
@@ -341,12 +343,26 @@ import UIKit
     }
 
     /// Динамические цвета требуют iOS 13, а SDK поддерживает 12 — проверка версии
-    /// живёт здесь, а не в каждом цвете. На iOS 12 отдаётся светлое значение.
+    /// живёт здесь, а не в каждом цвете. На iOS 12 отдаётся светлое значение, а тёмное
+    /// запоминается при нём: его берут места, которым тёмная тема нужна и там (медиа-слайды
+    /// сторис), — см. `darkVariant(of:)`.
     public static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
         if #available(iOS 13.0, *) {
             return UIColor { $0.userInterfaceStyle == .dark ? dark : light }
         }
-        return light
+        // Свой экземпляр: системные цвета вроде чёрного могут быть общими.
+        let tagged = UIColor(cgColor: light.cgColor.copy() ?? light.cgColor)
+        objc_setAssociatedObject(tagged, &darkVariantKey, dark, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return tagged
+    }
+
+    /// Тёмное значение цвета темы: с iOS 13 — цвет в тёмной теме, на iOS 12 — то, что
+    /// запомнил `dynamic`. Цвет не из темы остаётся как есть.
+    static func darkVariant(of color: UIColor) -> UIColor {
+        if #available(iOS 13.0, *) {
+            return color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        }
+        return objc_getAssociatedObject(color, &darkVariantKey) as? UIColor ?? color
     }
 }
 

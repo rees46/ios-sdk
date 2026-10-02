@@ -33,6 +33,11 @@ import UIKit
         didSet { setNeedsLayout() }
     }
 
+    /// Прогресс медиа-слайда: тёмные токены и на iOS 12.
+    var forcesDarkTokens = false {
+        didSet { applyColors() }
+    }
+
     private var tracks: [UIView] = []
     private var fills: [UIView] = []
 
@@ -56,17 +61,23 @@ import UIKit
         fills = []
         for _ in 0..<max(0, count) {
             let track = UIView()
-            track.backgroundColor = PersonalizationColor.lineGeneric
             track.layer.cornerRadius = Self.radius
             track.clipsToBounds = true
             let fill = UIView()
-            fill.backgroundColor = PersonalizationColor.textSecondary
             track.addSubview(fill)
             addSubview(track)
             tracks.append(track)
             fills.append(fill)
         }
+        applyColors()
         setNeedsLayout()
+    }
+
+    private func applyColors() {
+        let track = PersonalizationStoryColors.token(PersonalizationColor.lineGeneric, forcingDark: forcesDarkTokens)
+        let fill = PersonalizationStoryColors.token(PersonalizationColor.textSecondary, forcingDark: forcesDarkTokens)
+        tracks.forEach { $0.backgroundColor = track }
+        fills.forEach { $0.backgroundColor = fill }
     }
 
     public override func layoutSubviews() {
@@ -74,10 +85,14 @@ import UIKit
         let n = tracks.count
         guard n > 0 else { return }
         let width = max(0, (bounds.width - Self.gap * CGFloat(n - 1)) / CGFloat(n))
+        // В RTL полоски идут справа налево и заполняются справа.
+        let rightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
         for index in 0..<n {
+            let slot = rightToLeft ? n - 1 - index : index
             let track = tracks[index]
-            track.frame = CGRect(x: CGFloat(index) * (width + Self.gap), y: 0, width: width, height: bounds.height)
-            fills[index].frame = CGRect(x: 0, y: 0, width: width * fraction(of: index), height: bounds.height)
+            track.frame = CGRect(x: CGFloat(slot) * (width + Self.gap), y: 0, width: width, height: bounds.height)
+            let filled = width * fraction(of: index)
+            fills[index].frame = CGRect(x: rightToLeft ? width - filled : 0, y: 0, width: filled, height: bounds.height)
         }
     }
 

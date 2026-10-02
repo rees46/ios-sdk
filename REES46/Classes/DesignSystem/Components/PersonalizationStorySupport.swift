@@ -112,6 +112,14 @@ enum PersonalizationStoryColors {
         return color.cgColor
     }
 
+    /// Токен кита на медиа-слайде. С iOS 13 тёмную тему поддереву даёт
+    /// `overrideUserInterfaceStyle`, и токен остаётся динамическим; на iOS 12 переопределять
+    /// тему нечем — берётся тёмное значение токена напрямую.
+    static func token(_ color: UIColor, forcingDark: Bool) -> UIColor {
+        if #available(iOS 13.0, *) { return color }
+        return forcingDark ? PersonalizationColorSet.darkVariant(of: color) : color
+    }
+
     /// Цвет из hex админки: `#RGB`, `#RRGGBB` или `#RRGGBBAA`. Пусто или мусор — `nil`.
     static func parse(_ hex: String?) -> UIColor? {
         guard var value = hex?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }

@@ -221,3 +221,22 @@ final class PersonalizationStoryImages {
         return image
     }
 }
+
+extension PersonalizationStoryImages {
+
+    /// Картинка компонента сторис (аватар, товар, постер): загрузчиком хоста, иначе встроенным.
+    /// Пустой адрес встроенному тоже передаётся — он снимает недокачанную прошлую загрузку
+    /// этого `imageView`, и чужая картинка не появится в переиспользованной вью.
+    static func load(into imageView: UIImageView, url: String?, loader: ((UIImageView, String) -> Void)?) {
+        let link = url.flatMap { $0.isEmpty ? nil : $0 }
+        guard let loader else {
+            SearchImages.shared.load(imageView, url: link)
+            return
+        }
+        guard let link else {
+            imageView.image = nil
+            return
+        }
+        loader(imageView, link)
+    }
+}

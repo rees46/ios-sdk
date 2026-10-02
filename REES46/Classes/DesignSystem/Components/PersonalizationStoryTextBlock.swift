@@ -10,6 +10,9 @@ import UIKit
 /// Кегль, цвет, выравнивание, жирность, курсив и интерлиньяж приходят из элемента;
 /// для хоста есть пресеты `Style.large` 48/48, `medium` 30/36, `small` 20/24 (Regular).
 /// Цвет текста по умолчанию — Text/Light Primary на заливке и Text/Primary без неё.
+///
+/// С `promoCode` блок — кнопка: нажатие копирует код в буфер обмена, показывает тост
+/// `copiedText` сверху и зовёт `onPromoCopied`.
 @_spi(PersonalizationUI) public final class PersonalizationStoryTextBlock: UIView {
 
     /// Кегль и интерлиньяж.
@@ -77,6 +80,24 @@ import UIKit
         didSet { applyAll() }
     }
 
+    /// Промокод блока: нажатие копирует его. `nil` — блок не нажимается.
+    public var promoCode: String? {
+        didSet { applyPromo() }
+    }
+
+    /// Текст тоста после копирования. `nil` или пусто — без тоста.
+    public var copiedText: String? = "Copied"
+
+    /// Промокод скопирован в буфер обмена.
+    public var onPromoCopied: ((String) -> Void)?
+
+    /// Блок на медиа-слайде: тёмные токены и на iOS 12, где тему поддерева не переопределить.
+    var forcesDarkTokens = false {
+        didSet { applyText() }
+    }
+
+    private lazy var promoTap = UITapGestureRecognizer(target: self, action: #selector(promoTapped))
+
     /// Блок с заливкой: рамка кита — поля и скругление.
     public var isSolid: Bool {
         Self.isSolid(fill)
@@ -108,6 +129,26 @@ import UIKit
         alignment = block.alignment
         textColor = block.textColor
         fill = block.fill
+        promoCode = block.promoCode
+    }
+
+    private func applyPromo() {
+        let active = !(promoCode ?? "").isEmpty
+        if active, promoTap.view == nil {
+            addGestureRecognizer(promoTap)
+        } else if !active, promoTap.view != nil {
+            removeGestureRecognizer(promoTap)
+        }
+        accessibilityTraits = active ? .button : .staticText
+    }
+
+    @objc private func promoTapped() {
+        guard let promoCode, !promoCode.isEmpty else { return }
+        UIPasteboard.general.string = promoCode
+        if let copiedText, !copiedText.isEmpty {
+            PersonalizationToast.show(copiedText, in: window, position: .top)
+        }
+        onPromoCopied?(promoCode)
     }
 
     private func setup() {
@@ -161,7 +202,10 @@ import UIKit
         paragraph.minimumLineHeight = style.lineHeight
         paragraph.maximumLineHeight = style.lineHeight
         paragraph.alignment = alignment
-        let color = textColor ?? (isSolid ? PersonalizationColor.textLightPrimary : PersonalizationColor.textPrimary)
+        let color = textColor ?? PersonalizationStoryColors.token(
+            isSolid ? PersonalizationColor.textLightPrimary : PersonalizationColor.textPrimary,
+            forcingDark: forcesDarkTokens
+        )
         label.attributedText = NSAttributedString(string: text, attributes: [
             .font: font,
             .paragraphStyle: paragraph,

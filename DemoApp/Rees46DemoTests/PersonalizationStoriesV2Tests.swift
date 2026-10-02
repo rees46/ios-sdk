@@ -576,12 +576,12 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         host.layoutIfNeeded()
 
         let block = view.subviews.first { $0 is PersonalizationStoryTextBlock }
-        let bottom = view.subviews.compactMap { $0 as? UIStackView }.last
-        let used = bottom?.arrangedSubviews.first { $0 is PersonalizationStoryUsedProducts }
+        let used = view.subviews.first { $0 is PersonalizationStoryUsedProducts }
         XCTAssertEqual(block?.frame.minY ?? 0, 437, accuracy: 0.5, "50% of 874")
         XCTAssertEqual(block?.frame.width ?? 0, 370, accuracy: 0.5)
         XCTAssertEqual(used?.frame.height ?? 0, 64, accuracy: 0.5, "collapsed: the row only")
-        XCTAssertEqual(bottom?.frame.maxY ?? 0, 874 - 34, accuracy: 0.5, "on the safe area: the row has its own 16")
+        XCTAssertEqual(used?.frame.maxY ?? 0, 874 - 34, accuracy: 0.5, "on the safe area: the row has its own 16")
+        XCTAssertEqual(view.scrim.strength, 0.3, "a text block: the light scrim")
         let background = view.subviews.first { $0 is UIImageView }
         XCTAssertEqual(background?.frame, view.bounds, "the background still goes edge to edge")
         view.stop()
@@ -664,49 +664,94 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(viewer.modalPresentationStyle, .fullScreen)
     }
 
-    func testThePageWalksSlidesAndTheLastSlideOfTheLastStoryCloses() {
+    /// A viewer with its view loaded and its first page settled, as after `viewDidAppear`.
+    private func settledViewer(_ stories: [PersonalizationStory]) -> PersonalizationStoriesViewController {
+        let viewer = PersonalizationStoriesViewController(stories: stories)
+        viewer.view.frame = host.bounds
+        host.addSubview(viewer.view)
+        if let page = viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController {
+            viewer.settle(on: page)
+        }
+        return viewer
+    }
+
+    func testTheViewerWalksSlidesAndTheLastSlideOfTheLastStoryCloses() {
         let story = PersonalizationStory(id: "s", name: "S", startPosition: 1, slides: [
             PersonalizationStorySlide(id: "1", kind: .content),
             PersonalizationStorySlide(id: "2", kind: .content),
             PersonalizationStorySlide(id: "3", kind: .content)
         ])
-        let viewer = PersonalizationStoriesViewController(stories: [story])
         var closed = 0
+        let viewer = PersonalizationStoriesViewController(stories: [story])
         viewer.onClose = { closed += 1 }
-        let page = PersonalizationStoryPageViewController(story: story, storyIndex: 0, startSlide: 1, viewer: viewer)
-        page.loadViewIfNeeded()
+        viewer.view.frame = host.bounds
+        host.addSubview(viewer.view)
+        guard let page = viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController else { return XCTFail("no page") }
+        viewer.settle(on: page)
         XCTAssertEqual(page.slideIndex, 1, "starts at start_position")
 
-        page.previous()
+        viewer.apply(viewer.state.previous())
         XCTAssertEqual(page.slideIndex, 0)
-        page.previous()
+        viewer.apply(viewer.state.previous())
         XCTAssertEqual(page.slideIndex, 0, "no previous story: the first slide again")
 
-        page.next()
-        page.next()
+        viewer.apply(viewer.state.next())
+        viewer.apply(viewer.state.next())
         XCTAssertEqual(page.slideIndex, 2)
-        page.next()
+        viewer.apply(viewer.state.next())
         XCTAssertEqual(closed, 1, "past the last slide of the last story")
-        page.next()
+        viewer.apply(viewer.state.next())
+        viewer.close()
         XCTAssertEqual(closed, 1, "closes once")
     }
 
-    func testSlideViewsAreReportedOnlyWhileThePageIsActive() {
+    func testSlideViewsAreReportedWhenASlideBecomesCurrent() {
         let story = PersonalizationStory(id: "s", name: "S", slides: [
             PersonalizationStorySlide(id: "1", kind: .content),
             PersonalizationStorySlide(id: "2", kind: .content)
         ])
-        let viewer = PersonalizationStoriesViewController(stories: [story])
         var shown: [String] = []
+        let viewer = PersonalizationStoriesViewController(stories: [story])
         viewer.onSlideView = { _, slide in shown.append(slide.id) }
-        let page = PersonalizationStoryPageViewController(story: story, storyIndex: 0, startSlide: 0, viewer: viewer)
-        page.loadViewIfNeeded()
-        XCTAssertEqual(shown, [], "not on screen yet")
-
-        page.activate()
-        page.activate()
-        page.next()
-        page.deactivate()
+        viewer.view.frame = host.bounds
+        host.addSubview(viewer.view)
+        XCTAssertEqual(shown, [], "not settled yet")
+        guard let page = viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController else { return XCTFail("no page") }
+        viewer.settle(on: page)
+        viewer.settle(on: page)
+        viewer.apply(viewer.state.next())
         XCTAssertEqual(shown, ["1", "2"])
+    }
+
+    func testEveryCloseCompletionRunsAndTapsStopOnceClosing() {
+        let story = PersonalizationStory(id: "s", name: "S", slides: [
+            PersonalizationStorySlide(id: "1", kind: .content, buttons: [.init(title: "Go", link: "https://shop.example")])
+        ])
+        let viewer = settledViewer([story])
+        var taps = 0
+        viewer.onButtonTap = { _, _, _ in taps += 1 }
+        var completions: [Int] = []
+        viewer.close { completions.append(1) }
+        viewer.close { completions.append(2) }
+        XCTAssertEqual(completions, [1, 2], "a second close does not drop its completion")
+        viewer.buttonTapped(story, story.slides[0], story.slides[0].buttons[0])
+        XCTAssertEqual(taps, 0, "taps during dismissal are ignored")
+        viewer.close { completions.append(3) }
+        XCTAssertEqual(completions, [1, 2, 3], "already closed: runs at once")
+    }
+
+    func testAnOpenSheetBlocksSwipesUntilATapClosesIt() {
+        let story = PersonalizationStory(id: "s", name: "S", slides: [
+            PersonalizationStorySlide(id: "1", kind: .image, background: "https://img.example/a.jpg",
+                                      products: .init(items: [PersonalizationStorySlide.Offer(id: "1", name: "Mouse", price: "1 ₽")]))
+        ])
+        let viewer = settledViewer([story, story])
+        guard let page = viewer.activePage else { return XCTFail("no page") }
+        viewer.productsToggled(true, on: page)
+        XCTAssertEqual(viewer.pagerScrollView?.isScrollEnabled, false)
+        viewer.handleTap(at: 390, width: 402, from: page)
+        XCTAssertEqual(viewer.state.slide, 0, "the tap only closed the sheet")
+        XCTAssertFalse(viewer.state.isSheetOpen)
+        XCTAssertEqual(viewer.pagerScrollView?.isScrollEnabled, true)
     }
 }

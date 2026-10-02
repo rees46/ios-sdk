@@ -81,7 +81,9 @@ final class PersonalizationStoryVideoDownload {
         guard let http = response as? HTTPURLResponse else { return false }
         switch http.statusCode {
         case 206:
-            length = Self.total(fromContentRange: http.value(forHTTPHeaderField: "Content-Range")) ?? length
+            // `value(forHTTPHeaderField:)` только с iOS 13 — заголовок ищется без учёта регистра сам.
+            let range = http.allHeaderFields.first { ($0.key as? String)?.lowercased() == "content-range" }?.value as? String
+            length = Self.total(fromContentRange: range) ?? length
         case 200:
             // Сервер Range не понял — качаем заново с нуля.
             received = 0
