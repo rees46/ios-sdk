@@ -156,37 +156,6 @@ enum PersonalizationStoryColors {
     }
 }
 
-/// Картинки фона слайдов: URLSession и кэш в памяти. В отличие от загрузчика карточек,
-/// сообщает о готовности — по ней слайд запускает отсчёт.
-final class PersonalizationStoryImages {
-    static let shared = PersonalizationStoryImages()
-
-    private let cache = NSCache<NSString, UIImage>()
-
-    /// Отдаёт картинку или `nil`, если не загрузилась. Из кэша — сразу, иначе на главной очереди.
-    func load(_ url: String, completion: @escaping (UIImage?) -> Void) {
-        if let cached = cache.object(forKey: url as NSString) {
-            completion(cached)
-            return
-        }
-        guard let link = URL(string: url) else {
-            completion(nil)
-            return
-        }
-        URLSession.shared.dataTask(with: link) { [weak self] data, _, _ in
-            let image = data.flatMap { UIImage(data: $0) }
-            if let image { self?.cache.setObject(image, forKey: url as NSString) }
-            DispatchQueue.main.async { completion(image) }
-        }.resume()
-    }
-
-    /// Заранее кладёт картинку в кэш — следующий слайд откроется без ожидания.
-    func prefetch(_ url: String?) {
-        guard let url, !url.isEmpty, cache.object(forKey: url as NSString) == nil else { return }
-        load(url) { _ in }
-    }
-}
-
 extension NSLayoutConstraint {
     /// Приоритет прямо в списке `activate`.
     func withPriority(_ priority: UILayoutPriority) -> NSLayoutConstraint {
