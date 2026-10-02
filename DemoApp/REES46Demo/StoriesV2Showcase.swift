@@ -320,8 +320,9 @@ private final class LiveStoriesExhibit: UIStackView {
                 shopId: AppEnvironments.shopId,
                 startStoryId: stories.stories.last?.id,
                 from: self?.nearestViewController,
-                delegate: self,
-                onError: { error in PersonalizationToast.show("Stories: \(error)") }
+                communicationDelegate: self,
+                onError: { error in PersonalizationToast.show("Stories: \(error)") },
+                onClose: { PersonalizationToast.show("Stories closed", position: .top) }
             )
         }
         let row = UIStackView(arrangedSubviews: [second, byId, paused, show])

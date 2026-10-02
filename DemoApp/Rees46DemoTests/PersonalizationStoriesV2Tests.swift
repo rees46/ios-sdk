@@ -853,4 +853,12 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         widget.loaded(blockStories())
         XCTAssertEqual((host.shown.first as? PersonalizationStoriesViewController)?.currentIndex, 1)
     }
+
+    func testShowWithoutACodeEndsWithOnErrorOnly() {
+        var errors = 0
+        var closes = 0
+        PersonalizationStories.show(code: "", onError: { _ in errors += 1 }, onClose: { closes += 1 })
+        XCTAssertEqual(errors, 1)
+        XCTAssertEqual(closes, 0, "no viewer was shown, so it never closes")
+    }
 }

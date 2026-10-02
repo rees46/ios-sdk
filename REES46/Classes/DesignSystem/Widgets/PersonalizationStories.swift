@@ -328,6 +328,8 @@ extension PersonalizationStories {
 
     /// Сторис блока без ленты: загружает блок и показывает просмотрщик поверх `presenter`
     /// (без него — поверх верхнего экрана ключевого окна), начиная со `startStoryId`.
+    /// Вызов кончается ровно одним колбэком: `onError` — просмотрщик так и не показан,
+    /// `onClose` — показанный просмотрщик закрылся.
     ///
     /// - Parameters:
     ///   - code: код блока сторис.
@@ -335,20 +337,23 @@ extension PersonalizationStories {
     ///   - shopId: магазин, когда их несколько.
     ///   - startStoryId: с какой сторис начать; `nil` или неизвестный id — с первой.
     ///   - presenter: кто показывает просмотрщик.
-    ///   - delegate: как `communicationDelegate` у виджета; держится слабо.
+    ///   - communicationDelegate: как у виджета; держится слабо.
     ///   - texts: тексты кита.
     ///   - imageLoader: загрузчик картинок; `nil` — встроенный.
     ///   - onError: блок не загрузился, пуст, нет инстанса или магазин неоднозначен.
+    ///   - onClose: просмотрщик закрылся — крестиком, свайпом, после последнего слайда,
+    ///     перед переходом по ссылке или убранный хостом.
     public static func show(
         code: String,
         sdk: PersonalizationSDK? = nil,
         shopId: String? = nil,
         startStoryId: String? = nil,
         from presenter: UIViewController? = nil,
-        delegate: StoriesCommunicationProtocol? = nil,
+        communicationDelegate: StoriesCommunicationProtocol? = nil,
         texts: PersonalizationStoriesTexts = PersonalizationStoriesTexts(),
         imageLoader: ((UIImageView, String) -> Void)? = nil,
-        onError: ((SdkError) -> Void)? = nil
+        onError: ((SdkError) -> Void)? = nil,
+        onClose: (() -> Void)? = nil
     ) {
         guard !code.isEmpty else { return MainThread.run { onError?(missingCode) } }
         let resolved: PersonalizationSDK
@@ -358,7 +363,7 @@ extension PersonalizationStories {
             return MainThread.run { onError?(.custom(error: "Stories: \(error)")) }
         }
         let session = StoriesSession(sdk: resolved, code: code)
-        session.delegate = delegate
+        session.delegate = communicationDelegate
         session.texts = texts
         session.imageLoader = imageLoader
         var finished = false
@@ -383,7 +388,9 @@ extension PersonalizationStories {
                     return
                 }
                 let start = startStoryId.flatMap { id in stories.firstIndex { $0.id == id } } ?? 0
-                host.personalizationTopmost.present(session.makeViewer(stories: stories, startIndex: start), animated: true)
+                let viewer = session.makeViewer(stories: stories, startIndex: start)
+                viewer.onClose = onClose
+                host.personalizationTopmost.present(viewer, animated: true)
             }
         }
     }
