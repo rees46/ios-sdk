@@ -166,6 +166,17 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(PersonalizationStoryTextBlock.Style.presetLineHeight(for: 25), 30, "the small preset's ratio")
     }
 
+    func testMissingLineSpacingTieGoesToTheLargerPreset() {
+        let height = PersonalizationStoryTextBlock.Style.presetLineHeight
+        XCTAssertEqual(height(39), 39, "a tie between Medium and Large goes to Large (1.0)")
+        XCTAssertEqual(height(40), 40, "nearer to Large")
+        XCTAssertEqual(height(38), 46, "nearer to Medium: round(38 × 1.2)")
+        XCTAssertEqual(height(48), 48)
+        XCTAssertEqual(height(30), 36)
+        XCTAssertEqual(height(20), 24)
+        XCTAssertEqual(height(12), 14, "below Small: round(12 × 1.2)")
+    }
+
     func testDynamicSlideIdsAndNumericIdsAreKept() {
         let json: [String: Any] = ["stories": [["id": "39", "slides": [["id": "39_0", "type": ""], ["id": 12, "type": "image"]]]]]
         XCTAssertEqual(PersonalizationStory.list(json: json).first?.slides.map(\.id), ["39_0", "12"])
@@ -757,5 +768,22 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(viewer.state.slide, 0, "the tap only closed the sheet")
         XCTAssertFalse(viewer.state.isSheetOpen)
         XCTAssertEqual(viewer.pagerScrollView?.isScrollEnabled, true)
+    }
+
+    func testTheSoundButtonNamesTheCurrentSoundState() {
+        let button = PersonalizationStorySoundButton(isMuted: true)
+        button.soundOnLabel = "Sound on"
+        button.soundOffLabel = "Sound off"
+        XCTAssertEqual(button.accessibilityLabel, "Sound off", "muted: the label is the current state")
+        XCTAssertTrue(button.accessibilityTraits.contains(.button))
+        XCTAssertFalse(button.accessibilityTraits.contains(.selected))
+        if #available(iOS 17.0, *) {
+            XCTAssertTrue(button.accessibilityTraits.contains(.toggleButton))
+        }
+
+        button.sendActions(for: .touchUpInside)
+        XCTAssertFalse(button.isMuted)
+        XCTAssertEqual(button.accessibilityLabel, "Sound on")
+        XCTAssertTrue(button.accessibilityTraits.contains(.selected), "sound on is the selected state")
     }
 }
