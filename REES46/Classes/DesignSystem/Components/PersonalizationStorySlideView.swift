@@ -68,6 +68,8 @@ final class PersonalizationStorySlideView: UIView {
     private let videoView = VideoView()
     private let scrim = ScrimView()
     private var player: AVPlayer?
+    /// Держит чтение недокачанного ролика, пока жив плеер.
+    private var videoLoader: PersonalizationStoryVideoLoader?
     private var statusObservation: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var soundButton: PersonalizationStorySoundButton?
@@ -181,12 +183,13 @@ final class PersonalizationStorySlideView: UIView {
     }
 
     private func setupVideo(isMuted: Bool) {
-        guard let raw = slide.background, let url = URL(string: raw) else {
+        guard let raw = slide.background, let source = PersonalizationStoryVideos.shared.asset(for: raw) else {
             videoFailed = true
             markReady()
             return
         }
-        let item = AVPlayerItem(url: url)
+        videoLoader = source.loader
+        let item = AVPlayerItem(asset: source.asset)
         let player = AVPlayer(playerItem: item)
         player.isMuted = isMuted
         player.actionAtItemEnd = .pause
@@ -266,6 +269,7 @@ final class PersonalizationStorySlideView: UIView {
     func stop() {
         player?.pause()
         player?.replaceCurrentItem(with: nil)
+        videoLoader = nil
     }
 
     // MARK: - Слайд с товаром
