@@ -440,6 +440,12 @@ extension PersonalizationStorySlideView {
         let image = UIImageView()
         image.contentMode = .scaleAspectFit
         image.translatesAutoresizingMaskIntoConstraints = false
+        // Размер картинки не держит карточку: при нехватке высоты уменьшается квадрат,
+        // а не цена и кнопки под ним.
+        for axis in [NSLayoutConstraint.Axis.horizontal, .vertical] {
+            image.setContentCompressionResistancePriority(.defaultLow, for: axis)
+            image.setContentHuggingPriority(.defaultLow, for: axis)
+        }
         card.addSubview(image)
         let inset = PersonalizationSpacing.xl  // 16
         NSLayoutConstraint.activate([
