@@ -840,10 +840,11 @@ final class DemoImageLoader {
             pending[ObjectIdentifier(imageView)] = nil
             return
         }
-        // Bundled photos: `asset://<name>` resolves in the asset catalogue, no request.
+        // Bundled photos: `asset://<name>` resolves in the asset catalogue, no request. A data
+        // asset (the sample GIF) shows its first frame, as the kit does for every cover.
         if url.scheme == "asset", let host = url.host {
             pending[ObjectIdentifier(imageView)] = nil
-            imageView.image = UIImage(named: host)
+            imageView.image = UIImage(named: host) ?? NSDataAsset(name: host).flatMap { UIImage(data: $0.data) }
             return
         }
         if let cached = cache.object(forKey: urlString as NSString) {

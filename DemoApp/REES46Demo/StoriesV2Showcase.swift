@@ -7,14 +7,16 @@ import UIKit
 /// of the demo shop (`AppEnvironments.storiesCode`) that opens the same viewer on real data.
 ///
 /// The legacy stories stay in the "Stories" segment and the "Legacy UI" tab, untouched.
-/// Sample images ship with the app (`asset://uikit-…`) and load through `DemoImageLoader`.
+/// Sample images ship with the app (`asset://uikit-…`). Hand-built bars load them through
+/// `DemoImageLoader`; the sample viewer uses the kit's own loader, which reads them through
+/// `DemoAssetURLProtocol` — so it plays the animated GIF slide the way the SDK does on real data.
 enum StoriesV2Exhibits {
 
     static func all() -> [ShowcaseViewController.Exhibit] {
         [
             ("Live — stories block of the demo shop (tap a story to open the viewer)", { LiveStoriesExhibit() }),
             ("SwiftUI — PersonalizationStoriesWidget with a controller", { SwiftUIStoriesExhibit() }),
-            ("Viewer — sample stories: product, product video with buttons + carousel + sound, text-block promo code, fitted media, Retry", {
+            ("Viewer — sample stories: product, product video with buttons + carousel + sound, text-block promo code, fitted media, animated GIF, Retry", {
                 ViewerExhibit()
             }),
             ("Stories Bar — sample stories (tap to open the viewer)", { sampleBar() }),
@@ -477,8 +479,10 @@ private enum DemoStories {
     static func image(_ seed: String) -> String { "asset://uikit-\(seed)" }
 
     static func present(from host: UIViewController, startIndex: Int) {
+        // No host image loader: the kit's own one plays GIF backgrounds and measures their loop,
+        // a host loader would take that over (and the GIF slide would last its server duration).
+        DemoAssetURLProtocol.register()
         let viewer = PersonalizationStoriesViewController(stories: all, startIndex: startIndex)
-        viewer.imageLoader = { view, url in DemoImageLoader.shared.load(url, into: view) }
         viewer.promoCopiedText = "Code copied to clipboard"
         viewer.onSlideView = { story, slide in print("[stories v2] view \(story.id)/\(slide.id)") }
         viewer.onButtonTap = { [weak viewer] _, _, button in
@@ -555,7 +559,12 @@ private enum DemoStories {
             PersonalizationStorySlide(id: "plain", kind: .image, background: image("watch"), duration: 3),
             PersonalizationStorySlide(id: "video", kind: .video, background: video, preview: poster)
         ]),
-        // Media that never arrives: Retry after 10 s; the broken video retries itself after 15 s.
+        // An animated GIF: the server says 5 s, one loop of the clock is 8 s — the slide lasts 8 s,
+        // the hand stands still while the slide is held, the cover shows the first frame only.
+        PersonalizationStory(id: "gif", name: "GIF", avatarUrl: image("clock"), slides: [
+            PersonalizationStorySlide(id: "clock", kind: .image, background: image("clock"), duration: 5)
+        ]),
+        // Media that does not load: Retry; the broken video retries itself after 15 s.
         PersonalizationStory(id: "retry", name: "Retry", avatarUrl: image("bottle"), slides: [
             PersonalizationStorySlide(id: "missing-photo", kind: .image, background: "asset://uikit-missing"),
             PersonalizationStorySlide(id: "broken-video", kind: .video, background: "https://invalid.example/clip.mp4")
@@ -576,6 +585,43 @@ private enum DemoStories {
             oldPrice: base.oldPrice, discountPercent: discount, promoCode: promo,
             priceWithPromoCode: promo == nil ? nil : withCode, link: base.link
         )
+    }
+}
+
+/// Serves `asset://<name>` from the app bundle to `URLSession`, so the kit's built-in image loader
+/// reads the bundled samples like any URL: a data asset as is (the GIF), an image set as JPEG.
+/// An unknown name fails, and the slide shows Retry.
+final class DemoAssetURLProtocol: URLProtocol {
+
+    private static let registration: Void = { URLProtocol.registerClass(DemoAssetURLProtocol.self) }()
+
+    static func register() {
+        _ = registration
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        request.url?.scheme == "asset"
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        guard let url = request.url, let name = url.host, let data = Self.data(named: name) else {
+            client?.urlProtocol(self, didFailWithError: URLError(.fileDoesNotExist))
+            return
+        }
+        let response = URLResponse(url: url, mimeType: nil, expectedContentLength: data.count, textEncodingName: nil)
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+
+    private static func data(named name: String) -> Data? {
+        NSDataAsset(name: name)?.data ?? UIImage(named: name)?.jpegData(compressionQuality: 0.9)
     }
 }
 
