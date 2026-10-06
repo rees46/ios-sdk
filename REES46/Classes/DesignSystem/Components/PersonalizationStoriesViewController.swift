@@ -63,14 +63,16 @@ import UIKit
 /// Решения — куда идти, когда стоять — принимает `PersonalizationStoriesViewerState`.
 ///
 /// Поведение:
-/// - слайд идёт `duration` секунд, видео — свою длину по позиции воспроизведения; отсчёт
-///   стартует, когда медиа готово; не дождались за 10 с или не загрузилось — «Повторить»;
+/// - слайд идёт `duration` секунд, видео — свою длину по позиции воспроизведения, GIF фона —
+///   не меньше одного своего круга; отсчёт стартует, когда медиа готово (у GIF — первый кадр
+///   на экране); не дождались за 10 с или не загрузилось — «Повторить»;
 /// - нажатие в левой трети — назад, в правой — вперёд, в середине — ничего (в RTL края
 ///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала; вперёд после
 ///   последнего слайда последней сторис — закрыть;
 /// - удержание и свайп — пауза; свайп вниз закрывает, крестик тоже;
 /// - открытый лист товаров ставит паузу и не даёт листать, нажатие мимо него его закрывает;
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
+///   в паузе ролик и GIF стоят на текущем кадре;
 /// - медиа-слайды — в тёмной теме кита, остальные — в теме приложения;
 /// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь.
 ///
@@ -497,12 +499,14 @@ extension PersonalizationStoriesViewController {
         lastTimestamp = timestamp
         guard let page = activePage, let slideView = page.slideView else { return }
         slideView.pollReadiness()
-        // Ролик известной длины ведёт прогресс сам, остальное — по таймеру слайда.
+        // Ролик известной длины ведёт прогресс сам, остальное — по таймеру слайда
+        // (у GIF — не короче его круга).
         let videoClock = slideView.isVideo && slideView.videoDuration != nil
-        let command = state.tick(delta, duration: videoClock ? nil : slideView.slide.duration, isVideo: slideView.isVideo)
+        let duration = slideView.timerDuration
+        let command = state.tick(delta, duration: videoClock ? nil : duration, isVideo: slideView.isVideo)
         page.navigation.progress.progress = videoClock
             ? (slideView.videoProgress ?? 0)
-            : state.progress(duration: slideView.slide.duration)
+            : state.progress(duration: duration)
         apply(command)
     }
 
@@ -770,9 +774,10 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         slideView?.safeInsets = safeInsets
     }
 
-    /// Страница ушла с экрана: слайд стоит, лист товаров свёрнут.
+    /// Страница ушла с экрана: слайд стоит, GIF — на первом кадре, лист товаров свёрнут.
     func deactivate() {
         slideView?.pause()
+        slideView?.rewindAnimation()
         slideView?.collapseProducts()
     }
 

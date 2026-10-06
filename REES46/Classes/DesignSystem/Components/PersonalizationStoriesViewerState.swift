@@ -80,6 +80,14 @@ struct PersonalizationStoriesViewerState {
     /// Листать сторис свайпом можно, пока не открыт лист и просмотрщик не закрывается.
     var canSwipe: Bool { !isClosing && !isSheetOpen }
 
+    /// Длина слайда по таймеру. У GIF — не меньше одного круга анимации: короткий круг
+    /// повторяется до конца слайда, длинный слайд не обрывает. Круг неизвестен (загрузчик
+    /// хоста, GIF не прочитался) или это не GIF — `duration` с сервера.
+    static func timerDuration(_ duration: TimeInterval, gifLoop: TimeInterval?) -> TimeInterval {
+        guard let gifLoop, gifLoop > 0 else { return duration }
+        return max(duration, gifLoop)
+    }
+
     /// Доля прошедшего времени слайда по таймеру.
     func progress(duration: TimeInterval) -> CGFloat {
         guard duration > 0 else { return 0 }

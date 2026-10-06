@@ -140,19 +140,36 @@ final class PersonalizationStoryMediaCache {
     }
 }
 
+/// Картинка фона слайда от встроенного загрузчика: обычная — уже раскодированная, GIF —
+/// сырые байты с длинами кадров (кадры раскодирует проигрыватель слайда).
+enum PersonalizationStoryPicture {
+    case image(UIImage)
+    case gif(PersonalizationStoryGif)
+}
+
 /// Картинки слайдов: память, диск и одна загрузка на адрес. В отличие от загрузчика карточек,
 /// сообщает о готовности — по ней слайд запускает отсчёт. Картинка отдаётся уже
-/// раскодированной, чтобы первый кадр не декодировался на главном потоке.
+/// раскодированной, чтобы первый кадр не декодировался на главном потоке; GIF — сырыми
+/// байтами: в памяти и на диске лежит файл, а не кадры.
 final class PersonalizationStoryImages {
 
     static let shared = PersonalizationStoryImages()
 
+    /// Обёртка для `NSCache`: он хранит только классы.
+    private final class Entry {
+        let picture: PersonalizationStoryPicture
+
+        init(_ picture: PersonalizationStoryPicture) {
+            self.picture = picture
+        }
+    }
+
     private let cache: PersonalizationStoryMediaCache
     private let session: URLSession
-    private let memory = NSCache<NSString, UIImage>()
+    private let memory = NSCache<NSString, Entry>()
     private let queue = DispatchQueue(label: "personalization.stories.images", qos: .userInitiated)
     /// Кто ждёт адрес; трогается только на главном потоке.
-    private var waiting: [String: [(UIImage?) -> Void]] = [:]
+    private var waiting: [String: [(PersonalizationStoryPicture?) -> Void]] = [:]
 
     init(cache: PersonalizationStoryMediaCache = .shared, session: URLSession = .shared) {
         self.cache = cache
@@ -160,14 +177,14 @@ final class PersonalizationStoryImages {
     }
 
     /// Картинка из памяти, если она уже есть.
-    func cachedImage(_ url: String) -> UIImage? {
-        memory.object(forKey: url as NSString)
+    func cached(_ url: String) -> PersonalizationStoryPicture? {
+        memory.object(forKey: url as NSString)?.picture
     }
 
     /// Отдаёт картинку или `nil`, если она не загрузилась. Из памяти — сразу, иначе
     /// на главном потоке. Вызывать с главного потока.
-    func load(_ url: String, completion: @escaping (UIImage?) -> Void) {
-        if let cached = cachedImage(url) {
+    func load(_ url: String, completion: @escaping (PersonalizationStoryPicture?) -> Void) {
+        if let cached = cached(url) {
             completion(cached)
             return
         }
@@ -179,8 +196,8 @@ final class PersonalizationStoryImages {
         queue.async { [self] in
             if let file = cache.cachedFile(for: url),
                let data = try? Data(contentsOf: file),
-               let image = Self.decode(data) {
-                finish(url, image)
+               let picture = Self.decode(data) {
+                finish(url, picture)
                 return
             }
             guard let link = URL(string: url) else {
@@ -189,42 +206,48 @@ final class PersonalizationStoryImages {
             }
             session.dataTask(with: link) { [self] data, response, _ in
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 200
-                guard let data, (200..<300).contains(status), let image = Self.decode(data) else {
+                guard let data, (200..<300).contains(status), let picture = Self.decode(data) else {
                     finish(url, nil)
                     return
                 }
                 cache.store(data, for: url)
-                finish(url, image)
+                finish(url, picture)
             }.resume()
         }
     }
 
     /// Заранее кладёт картинку в кэш — следующий слайд откроется без ожидания.
+    /// У GIF — только байты и длины кадров: кадры раскодирует слайд, когда встанет.
     func prefetch(_ url: String?) {
-        guard let url, !url.isEmpty, cachedImage(url) == nil else { return }
+        guard let url, !url.isEmpty, cached(url) == nil else { return }
         MainThread.run { self.load(url) { _ in } }
     }
 
-    private func finish(_ url: String, _ image: UIImage?) {
-        if let image { memory.setObject(image, forKey: url as NSString) }
+    private func finish(_ url: String, _ picture: PersonalizationStoryPicture?) {
+        if let picture { memory.setObject(Entry(picture), forKey: url as NSString) }
         MainThread.run { [self] in
             let callbacks = waiting.removeValue(forKey: url) ?? []
-            callbacks.forEach { $0(image) }
+            callbacks.forEach { $0(picture) }
         }
     }
 
-    private static func decode(_ data: Data) -> UIImage? {
+    /// GIF узнаётся по сигнатуре; нечитаемый GIF — как битое фото, `nil`.
+    static func decode(_ data: Data) -> PersonalizationStoryPicture? {
+        if PersonalizationStoryGif.isGif(data) {
+            return PersonalizationStoryGif(data: data).map { .gif($0) }
+        }
         guard let image = UIImage(data: data) else { return nil }
         if #available(iOS 15.0, *) {
-            return image.preparingForDisplay() ?? image
+            return .image(image.preparingForDisplay() ?? image)
         }
-        return image
+        return .image(image)
     }
 }
 
 extension PersonalizationStoryImages {
 
     /// Картинка компонента сторис (аватар, товар, постер): загрузчиком хоста, иначе встроенным.
+    /// Встроенный показывает у GIF только первый кадр — анимируется лишь фон слайда.
     /// Пустой адрес встроенному тоже передаётся — он снимает недокачанную прошлую загрузку
     /// этого `imageView`, и чужая картинка не появится в переиспользованной вью.
     static func load(into imageView: UIImageView, url: String?, loader: ((UIImageView, String) -> Void)?) {

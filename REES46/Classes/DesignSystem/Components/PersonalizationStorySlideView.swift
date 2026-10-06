@@ -21,8 +21,12 @@ import AVFoundation
 /// без полей, кнопки Primary LG внизу. Ряд внизу — товары (`PersonalizationStoryUsedProducts`)
 /// и кнопка звука у видео — есть на любом слайде, где они нужны, и на товарном тоже.
 ///
-/// Медиа готово — картинка раскодирована или ролик готов к показу; не загрузилось —
-/// по центру кнопка «Повторить» (её показывает просмотрщик).
+/// Медиа готово — картинка раскодирована (у GIF — первый кадр на экране) или ролик готов
+/// к показу; не загрузилось — по центру кнопка «Повторить» (её показывает просмотрщик).
+///
+/// GIF фона (его загрузил встроенный загрузчик) играет по кругу со своими длинами кадров и
+/// стоит, пока стоит слайд; слайд с ним идёт не меньше одного круга. GIF от загрузчика хоста
+/// SDK не анимирует и не меряет.
 final class PersonalizationStorySlideView: UIView {
 
     /// Тексты кита, которые хост может заменить.
@@ -78,6 +82,8 @@ final class PersonalizationStorySlideView: UIView {
     let scrim = PersonalizationStoryScrimView()
     let retryButton: PersonalizationButton
     var player: AVPlayer?
+    /// Проигрыватель GIF фона.
+    var gifPlayer: PersonalizationStoryGifPlayer?
     var videoLoader: PersonalizationStoryVideoLoader?
     var videoObservations: [NSKeyValueObservation] = []
     var videoObservers: [NSObjectProtocol] = []
@@ -248,22 +254,57 @@ extension PersonalizationStorySlideView {
     }
 
     private func loadImage(_ url: String) {
+        stopGif()
         if let imageLoader {
             // Загрузчик хоста о готовности не сообщает — её видно по появившейся картинке.
+            // Его GIF SDK не анимирует и не меряет: слайд идёт `duration` с сервера.
             mediaImage.image = nil
             imageLoader(mediaImage, url)
             pollReadiness()
             return
         }
-        PersonalizationStoryImages.shared.load(url) { [weak self] image in
+        PersonalizationStoryImages.shared.load(url) { [weak self] picture in
             guard let self, self.slide.media == .image(url) else { return }
-            if let image {
+            switch picture {
+            case .image(let image)?:
                 self.mediaImage.image = image
                 self.markReady()
-            } else {
+            case .gif(let gif)?:
+                self.startGif(gif)
+            case nil:
                 self.markFailed()
             }
         }
+    }
+
+    /// GIF фона: готово, когда первый кадр на экране; первый кадр не раскодировался —
+    /// «Повторить», как у битого фото. Играть начнёт `play()`.
+    private func startGif(_ gif: PersonalizationStoryGif) {
+        stopGif()
+        let screen = window?.screen ?? UIScreen.main
+        // До раскладки слайд ещё без размера — он во весь экран.
+        let area = bounds.isEmpty ? screen.bounds.size : bounds.size
+        let player = PersonalizationStoryGifPlayer(gif: gif, maxPixelSize: gif.maxPixelSize(fitting: area, scale: screen.scale))
+        player.onFrame = { [weak self] image in self?.mediaImage.image = image }
+        player.onReady = { [weak self] in self?.markReady() }
+        player.onFailure = { [weak self] in self?.markFailed() }
+        gifPlayer = player
+        player.prepare()
+    }
+
+    private func stopGif() {
+        gifPlayer?.stop()
+        gifPlayer = nil
+    }
+
+    /// Один круг GIF фона, когда он известен: GIF загрузил встроенный загрузчик.
+    var gifLoopDuration: TimeInterval? {
+        gifPlayer?.gif.loopDuration
+    }
+
+    /// Длина слайда по таймеру: `duration` с сервера, у GIF — не меньше одного круга.
+    var timerDuration: TimeInterval {
+        PersonalizationStoriesViewerState.timerDuration(slide.duration, gifLoop: gifLoopDuration)
     }
 
     /// Готовность картинки загрузчика хоста: просмотрщик спрашивает на каждом кадре.
@@ -322,6 +363,7 @@ extension PersonalizationStorySlideView {
         isMediaReady = false
         wantsPlayback = false
         player?.pause()
+        gifPlayer?.pause()
         onMediaFailed?()
     }
 
@@ -359,16 +401,26 @@ extension PersonalizationStorySlideView {
         guard isMediaReady else { return }
         wantsPlayback = true
         player?.play()
+        gifPlayer?.resume()
     }
 
+    /// GIF встаёт на текущем кадре, `play()` продолжит с него.
     func pause() {
         wantsPlayback = false
         player?.pause()
+        gifPlayer?.pause()
     }
 
-    /// Тот же слайд с начала: ролик — с нулевой секунды.
+    /// Тот же слайд с начала: ролик — с нулевой секунды, GIF — с первого кадра без перезагрузки.
     func restart() {
         player?.seek(to: .zero)
+        gifPlayer?.restart()
+    }
+
+    /// Слайд ушёл с экрана, но остаётся на странице: GIF встаёт на первый кадр и отпускает
+    /// остальные — вернутся к слайду, он пойдёт с начала.
+    func rewindAnimation() {
+        gifPlayer?.rewind()
     }
 
     func setMuted(_ muted: Bool) {
@@ -376,9 +428,10 @@ extension PersonalizationStorySlideView {
         soundButton?.isMuted = muted
     }
 
-    /// Слайд уходит с экрана: плеер и загрузка ролика больше не нужны.
+    /// Слайд уходит с экрана: плеер и загрузка ролика, кадры GIF больше не нужны.
     func stop() {
         stopVideo()
+        stopGif()
     }
 
     private func stopVideo() {
