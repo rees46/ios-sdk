@@ -40,6 +40,7 @@
 		A1B2C3D4000000000000001B /* PersonalizationLoyaltyCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001C /* PersonalizationLoyaltyCardTests.swift */; };
 		A1B2C3D4000000000000001D /* PersonalizationToastTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001E /* PersonalizationToastTests.swift */; };
 		A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */; };
+		A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */; };
 		A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */; };
 		A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */; };
 		A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */; };
@@ -173,6 +174,7 @@
 		A1B2C3D4000000000000001C /* PersonalizationLoyaltyCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationLoyaltyCardTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000000000001E /* PersonalizationToastTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationToastTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2MediaTests.swift; sourceTree = "<group>"; };
+		A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2GifTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2StateTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2Tests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationWidgetPositionTests.swift; sourceTree = "<group>"; };
@@ -432,6 +434,7 @@
 				A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */,
 				A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */,
 				A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */,
+				A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */,
 				A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */,
 				D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */,
 				D1C0FFF02F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift */,
@@ -826,6 +829,7 @@
 				A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */,
 				A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */,
 				A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */,
+				A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */,
 				A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */,
 				D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */,
 				D1C0FFF12F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift in Sources */,
