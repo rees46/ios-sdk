@@ -172,6 +172,28 @@ import UIKit
             return Double(digits)
         }
 
+        /// Тот же товар с промокодом текстового блока слайда, если своего кода у товара нет (H2).
+        /// Цена с промокодом относится только к своему коду товара, поэтому крупно остаётся
+        /// обычная цена, а зачёркнута лишь старая — она уже выше обычной (H3). Промокод сильнее
+        /// скидки, как и у своего кода.
+        func withTextBlockPromoCode(_ code: String?) -> Offer {
+            guard !hasPromoCode, let code, !code.isEmpty else { return self }
+            return Offer(
+                id: id,
+                brand: brand,
+                name: name,
+                imageUrl: imageUrl,
+                price: price,
+                oldPrice: oldPrice,
+                discountPercent: discountPercent,
+                promoCode: code,
+                priceWithPromoCode: nil,
+                promoCaption: promoCaption,
+                link: link,
+                source: source
+            )
+        }
+
         /// Процент без лишних нулей: 10 → «10%», 12.5 → «12.5%».
         public static func percentText(_ value: Double) -> String {
             let formatter = NumberFormatter()
@@ -316,6 +338,20 @@ import UIKit
     /// карточка товара вместо текста.
     public var visibleTextBlocks: [TextBlock] {
         offer == nil ? textBlocks.filter { !$0.isBlank } : []
+    }
+
+    /// Промокод текстовых блоков слайда: первый непустой код, кроме строки «null» (H2).
+    /// На товарном слайде блоки не рисуются, и код уходит в блок цены карточки.
+    public var textBlockPromoCode: String? {
+        textBlocks.lazy
+            .compactMap { $0.promoCode?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .first { !$0.isEmpty && $0 != "null" }
+    }
+
+    /// Товар для карточки слайда: свой промокод товара, без него — промокод текстового блока
+    /// того же слайда (H2, H3).
+    public var cardOffer: Offer? {
+        offer?.withTextBlockPromoCode(textBlockPromoCode)
     }
 
     /// Затемнение сверху и снизу: 50% — у голого медиа (без товара и текстов), иначе 30%.

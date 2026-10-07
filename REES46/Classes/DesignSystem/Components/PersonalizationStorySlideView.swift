@@ -15,7 +15,8 @@ import AVFoundation
 /// Слайд с товаром: заголовок (бренд SemiBold 20 и название SemiBold 16, интерлиньяж 140%,
 /// шаг 8), белая карточка картинки (скругление 12, поле 16, квадрат во всю ширину, картинка
 /// вписана), внизу цена и все кнопки слайда Primary LG, шаг 16; без кнопок — одна
-/// `Texts.productButton`, ведущая на товар. Текстовые блоки на нём не рисуются.
+/// `Texts.productButton`, ведущая на товар. Текстовые блоки на нём не рисуются; промокод
+/// первого блока с кодом идёт в блок цены, если у товара своего кода нет.
 ///
 /// Остальные слайды: текстовые блоки на `yOffset` процентах высоты слайда во всю ширину
 /// без полей, кнопки Primary LG внизу. Ряд внизу — товары (`PersonalizationStoryUsedProducts`)
@@ -155,7 +156,8 @@ final class PersonalizationStorySlideView: UIView {
             soundButton = button
         }
 
-        if let offer = slide.offer {
+        // Текстовые блоки товарного слайда не рисуются, их промокод — в блоке цены карточки.
+        if let offer = slide.cardOffer {
             buildProduct(offer)
         } else {
             buildOverlay()

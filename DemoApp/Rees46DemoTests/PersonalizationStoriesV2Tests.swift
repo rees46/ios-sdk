@@ -126,6 +126,87 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertNil(product(merged(["promocode": "SALE"]))?.promoCaption, "no title: the host text")
     }
 
+    // MARK: - Price: promo code of a text block on a product slide
+
+    /// A product slide parsed from server JSON: the product element plus the given text blocks.
+    private func productSlide(_ item: [String: Any], blocks: [[String: Any]]) -> PersonalizationStorySlide? {
+        let product: [String: Any] = ["type": "product", "item": item]
+        let texts = blocks.map { $0.merging(["type": "text_block"]) { _, new in new } }
+        let slide: [String: Any] = ["id": "39_0", "type": "", "duration": 10, "background": "", "elements": [product] + texts]
+        let json: [String: Any] = ["stories": [["id": 39, "name": "Test", "slides": [slide]]]]
+        return PersonalizationStory.list(json: json).first?.slides.first
+    }
+
+    func testAProductWithoutAPromoShowsTheTextBlockPromoAtTheRegularPrice() {
+        // No own code; `price_with_promocode` belongs to the product's own code only, so it is ignored.
+        let slide = productSlide(merged([
+            "oldprice": NSNull(), "oldprice_formatted": "", "discount_percent": 28,
+            "price_with_promocode_formatted": "17 990 ₽"
+        ]), blocks: [
+            ["text_input": "Summer sale"],
+            ["text_input": "Your code SLIDE10", "promocode": "SLIDE10"],
+            ["text_input": "Another code", "promocode": "OTHER"]
+        ])
+
+        XCTAssertEqual(slide?.textBlockPromoCode, "SLIDE10", "the first text block with a code")
+        let offer = slide?.cardOffer
+        XCTAssertEqual(offer?.priceKind, .promoCode("SLIDE10"), "a promo beats the discount")
+        XCTAssertEqual(offer?.displayedPrice, "19 990 ₽", "the regular price")
+        XCTAssertNil(offer?.crossedOutPrice, "no old price: nothing crossed out")
+        XCTAssertNil(offer?.promoCaption, "no admin title: the host caption")
+        XCTAssertEqual(slide?.visibleTextBlocks.count, 0, "text blocks stay hidden on a product slide")
+        XCTAssertNil(slide?.offer?.promoCode, "the parsed product itself is untouched")
+    }
+
+    func testTheProductPromoWinsOverTheTextBlockPromo() {
+        let slide = productSlide(merged([
+            "promocode": "OWN", "price_with_promocode_formatted": "17 990 ₽"
+        ]), blocks: [["text_input": "Your code SLIDE10", "promocode": "SLIDE10"]])
+
+        let offer = slide?.cardOffer
+        XCTAssertEqual(offer?.priceKind, .promoCode("OWN"))
+        XCTAssertEqual(offer?.displayedPrice, "17 990 ₽", "the price with the product's own code")
+        XCTAssertEqual(offer?.crossedOutPrice, "27 990 ₽")
+    }
+
+    func testANullOrBlankTextBlockPromoIsNoPromo() {
+        let blocks: [[String: Any]] = [
+            ["text_input": "Literal null", "promocode": "null"],
+            ["text_input": "Blank", "promocode": "   "],
+            ["text_input": "Missing", "promocode": NSNull()]
+        ]
+        let discounted = productSlide(merged(["discount_percent": 28]), blocks: blocks)
+        XCTAssertNil(discounted?.textBlockPromoCode)
+        XCTAssertEqual(discounted?.cardOffer?.priceKind, .discount("28%"), "the discount stays")
+
+        let plain = productSlide(base, blocks: blocks)
+        XCTAssertEqual(plain?.cardOffer?.priceKind, .price)
+        XCTAssertEqual(plain?.cardOffer?.crossedOutPrice, "27 990 ₽", "the plain old price as before")
+
+        let hostBuilt = PersonalizationStorySlide(
+            id: "1", kind: .content,
+            offer: PersonalizationStorySlide.Offer(id: "1", name: "Mouse", price: "12 990 ₽"),
+            textBlocks: [.init(text: "a", promoCode: " null "), .init(text: "b", promoCode: "")]
+        )
+        XCTAssertEqual(hostBuilt.cardOffer?.priceKind, .price)
+    }
+
+    func testATextBlockPromoCrossesOutOnlyAnOldPriceAboveTheRegularPrice() {
+        let block: [[String: Any]] = [["text_input": "Your code SLIDE10", "promocode": "SLIDE10"]]
+
+        let higher = productSlide(base, blocks: block)?.cardOffer
+        XCTAssertEqual(higher?.priceKind, .promoCode("SLIDE10"))
+        XCTAssertEqual(higher?.displayedPrice, "19 990 ₽")
+        XCTAssertEqual(higher?.crossedOutPrice, "27 990 ₽", "an old price above the regular price is crossed out")
+
+        let equal = productSlide(merged(["oldprice": 19990, "oldprice_formatted": "19 990 ₽"]), blocks: block)?.cardOffer
+        XCTAssertNil(equal?.crossedOutPrice, "an old price equal to the price is not crossed out")
+
+        let lower = productSlide(merged(["oldprice": "15000.50", "oldprice_formatted": "15 000,50 ₽"]), blocks: block)?.cardOffer
+        XCTAssertNil(lower?.crossedOutPrice, "an old price below the price is not crossed out")
+        XCTAssertEqual(lower?.displayedPrice, "19 990 ₽")
+    }
+
     func testAProductSlideButtonOpensItsOwnLinkElseTheProduct() {
         let item = merged([:])
         let slide: [String: Any] = [
@@ -582,6 +663,41 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertLessThan(card.frame.width, 343)
         XCTAssertEqual(card.frame.width, card.frame.height, accuracy: 0.5)
         XCTAssertLessThanOrEqual(card.frame.maxY, price.frame.minY - 16 + 0.5)
+    }
+
+    /// Every view under `view`, depth first.
+    private func descendants(of view: UIView) -> [UIView] {
+        view.subviews.flatMap { [$0] + descendants(of: $0) }
+    }
+
+    func testAProductSlideShowsTheTextBlockPromoInTheCardAndDrawsNoTextBlock() {
+        let slide = PersonalizationStorySlide(
+            id: "1", kind: .content,
+            offer: PersonalizationStorySlide.Offer(id: "1", brand: "Apple", name: "MacBook Pro 16", price: "1 190 900 ₽", discountPercent: 10),
+            textBlocks: [.init(text: "Summer sale"), .init(text: "Your code SLIDE10", promoCode: "SLIDE10")]
+        )
+        var texts = PersonalizationStorySlideView.Texts()
+        texts.promoCaption = "Promo code"
+        let view = PersonalizationStorySlideView(slide: slide, texts: texts, isMuted: true, imageLoader: { _, _ in })
+        var copied: [String] = []
+        view.onPromoCopied = { copied.append($0) }
+        view.frame = host.bounds
+        host.addSubview(view)
+        host.layoutIfNeeded()
+
+        let all = descendants(of: view)
+        XCTAssertFalse(all.contains { $0 is PersonalizationStoryTextBlock }, "no text block on a product slide")
+        guard let price = all.compactMap({ $0 as? PersonalizationStoryPrice }).first else { return XCTFail("no price") }
+        XCTAssertEqual(price.kind, .promoCode("SLIDE10"))
+        XCTAssertEqual(price.price, "1 190 900 ₽", "the regular price")
+        XCTAssertNil(price.oldPrice)
+        XCTAssertEqual(price.promoCaption, "Promo code", "no admin title: the host caption")
+
+        // The promo block copies the code and reports it, the same path as a product's own code.
+        let promo = descendants(of: price).compactMap { $0 as? UIControl }.first { !$0.isHidden }
+        promo?.sendActions(for: .touchUpInside)
+        XCTAssertEqual(copied, ["SLIDE10"])
+        XCTAssertEqual(StoriesSession.promoElement("SLIDE10", on: slide).promocode, "SLIDE10")
     }
 
     func testAMediaSlidePutsProductsAtTheBottomAndTextBlocksAtTheirOffset() {
