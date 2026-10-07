@@ -103,7 +103,8 @@ import UIKit
     /// Нажата кнопка слайда.
     public var onButtonTap: ((PersonalizationStory, PersonalizationStorySlide, PersonalizationStorySlide.Button) -> Void)?
 
-    /// Нажат товар: карточка или кнопка товарного слайда без своих кнопок, карточка карусели.
+    /// Нажат товар: кнопка товарного слайда без своих кнопок, карточка карусели. Картинка
+    /// товара не нажимается — касание по ней листает слайд.
     public var onProductTap: ((PersonalizationStory, PersonalizationStorySlide, PersonalizationStorySlide.Offer) -> Void)?
 
     /// Промокод скопирован — из блока цены или из текстового блока.
@@ -872,7 +873,8 @@ extension PersonalizationStoryPageViewController {
         }
     }
 
-    /// Касания кнопок, цены, карточек, карусели и блока с промокодом — их, а не листания.
+    /// Касания кнопок, карточек карусели и блока с промокодом — их, а не листания. Картинка
+    /// товара, заголовок и цена без промокода касаний не забирают: по ним слайд листается.
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         var current = touch.view
         while let candidate = current, candidate !== view {

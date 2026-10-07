@@ -16,7 +16,9 @@ import AVFoundation
 /// шаг 8), белая карточка картинки (скругление 12, поле 16, квадрат во всю ширину, картинка
 /// вписана), внизу цена и все кнопки слайда Primary LG, шаг 16; без кнопок — одна
 /// `Texts.productButton`, ведущая на товар. Текстовые блоки на нём не рисуются; промокод
-/// первого блока с кодом идёт в блок цены, если у товара своего кода нет.
+/// первого блока с кодом идёт в блок цены, если у товара своего кода нет. Товар открывают
+/// только кнопки: картинка, заголовок и скидка не нажимаются, касание по ним — касание
+/// слайда (листание по третям, удержание — пауза).
 ///
 /// Остальные слайды: текстовые блоки на `yOffset` процентах высоты слайда во всю ширину
 /// без полей, кнопки Primary LG внизу. Ряд внизу — товары (`PersonalizationStoryUsedProducts`)
@@ -527,6 +529,7 @@ extension PersonalizationStorySlideView {
     }
 
     /// Белая карточка картинки в обеих темах: фото товара — на белом, как в макете.
+    /// Не нажимается: касание по ней листает слайд, как касание в любом месте слайда.
     private func productCard(_ offer: PersonalizationStorySlide.Offer) -> UIView {
         let card = UIView()
         card.backgroundColor = .white
@@ -549,17 +552,14 @@ extension PersonalizationStorySlideView {
             image.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: inset),
             image.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -inset)
         ])
-        card.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(offerTapped)))
+        // Касания проходят сквозь карточку к жестам страницы: нажатие по третям и удержание.
+        card.isUserInteractionEnabled = false
+        // Для VoiceOver — картинка с названием товара, без действия.
         card.isAccessibilityElement = true
         card.accessibilityLabel = offer.name
-        card.accessibilityTraits = .button
+        card.accessibilityTraits = .image
         PersonalizationStoryImages.load(into: image, url: offer.imageUrl, loader: imageLoader)
         return card
-    }
-
-    @objc private func offerTapped() {
-        guard let offer = slide.offer else { return }
-        onProduct?(offer)
     }
 
     @objc private func productButtonTapped() {

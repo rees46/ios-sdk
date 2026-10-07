@@ -892,6 +892,130 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(viewer.pagerScrollView?.isScrollEnabled, true)
     }
 
+    // MARK: - Product slide taps
+
+    /// A touch that UIKit delivered to `view`, to ask the page's recognizers about it.
+    private final class Touch: UITouch {
+        private let target: UIView?
+
+        init(on view: UIView?) {
+            target = view
+            super.init()
+        }
+
+        override var view: UIView? { target }
+    }
+
+    /// Records what the session hands to the host.
+    private final class HostDelegate: StoriesCommunicationProtocol {
+        var events: [String] = []
+        func receiveIosLink(text: String) { events.append("ios-link") }
+        func receiveSelectedProductData(products: StoriesElement) { events.append("product") }
+        func receiveSelectedCarouselProductData(products: StoriesProduct) { events.append("carousel") }
+        func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) { events.append("promo") }
+    }
+
+    /// A product slide without admin buttons: the kit adds "More info" that opens the product.
+    private func productSlide(_ id: String, discount: Double = 0) -> PersonalizationStorySlide {
+        PersonalizationStorySlide(
+            id: id, kind: .content,
+            offer: PersonalizationStorySlide.Offer(
+                id: id, brand: "Apple", name: "MacBook \(id)", price: "1 190 900 ₽", discountPercent: discount,
+                link: "https://shop.example/\(id)", source: .product(StoriesElement(json: ["type": "product"]))
+            )
+        )
+    }
+
+    /// Whether a touch at `point` of the page reaches both its tap and its hold, routed the way
+    /// UIKit routes it: hit-test first, then the recognizers' delegate.
+    private func reachesTheSlideGestures(_ point: CGPoint, on page: PersonalizationStoryPageViewController) -> Bool {
+        let touch = Touch(on: page.view.hitTest(point, with: nil))
+        let gestures = (page.view.gestureRecognizers ?? []).filter { $0.delegate === page }
+        return gestures.contains { $0 is UITapGestureRecognizer }
+            && gestures.contains { $0 is UILongPressGestureRecognizer }
+            && gestures.allSatisfy { page.gestureRecognizer($0, shouldReceive: touch) }
+    }
+
+    func testTheProductPictureIsAPictureNotAButton() {
+        let view = PersonalizationStorySlideView(slide: productSlide("1"), texts: .init(), isMuted: true, imageLoader: { _, _ in })
+        var opened = 0
+        view.onProduct = { _ in opened += 1 }
+        view.frame = host.bounds
+        host.addSubview(view)
+        host.layoutIfNeeded()
+
+        guard let card = view.subviews.first(where: { $0.backgroundColor == .white }) else { return XCTFail("no picture") }
+        let parts = [card] + descendants(of: card)
+        XCTAssertFalse(card.isUserInteractionEnabled, "touches go through to the slide")
+        XCTAssertFalse(parts.contains { $0 is UIControl })
+        XCTAssertTrue(parts.allSatisfy { ($0.gestureRecognizers ?? []).isEmpty }, "no tap handler")
+        XCTAssertFalse(parts.contains { $0.accessibilityTraits.contains(.button) }, "no button trait")
+        XCTAssertTrue(parts.allSatisfy { ($0.accessibilityCustomActions ?? []).isEmpty }, "no accessibility action")
+        XCTAssertEqual(card.accessibilityTraits, .image)
+        XCTAssertEqual(card.accessibilityLabel, "MacBook 1")
+        XCTAssertFalse(card.accessibilityActivate(), "nothing for VoiceOver to activate")
+        XCTAssertEqual(opened, 0)
+
+        // The product opens only from the slide's button.
+        let more = descendants(of: view).compactMap { $0 as? PersonalizationButton }.first { !$0.isHidden }
+        more?.sendActions(for: .touchUpInside)
+        XCTAssertEqual(opened, 1, "More info opens the product")
+    }
+
+    func testATapOnTheProductPicturePagesAndNeverOpensTheProduct() {
+        let story = PersonalizationStory(id: "1", name: "S", slides: [productSlide("1"), productSlide("2", discount: 10), productSlide("3")])
+        let delegate = HostDelegate()
+        let session = StoriesSession(sdk: nil, code: "block")
+        session.delegate = delegate
+        var opened: [String] = []
+        session.openURL = { opened.append($0.absoluteString) }
+        let viewer = session.makeViewer(stories: [story], startIndex: 0)
+        viewer.startSlide = { _ in 1 }
+        viewer.view.frame = host.bounds
+        host.addSubview(viewer.view)
+        guard let page = viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController else { return XCTFail("no page") }
+        viewer.settle(on: page)
+        XCTAssertEqual(page.slideIndex, 1)
+
+        /// Taps the current picture at `x` of its frame in the page; returns that point.
+        @discardableResult
+        func tapThePicture(at x: (CGRect) -> CGFloat) -> CGPoint? {
+            host.layoutIfNeeded()
+            guard let card = page.slideView?.subviews.first(where: { $0.backgroundColor == .white }) else { return nil }
+            let frame = card.convert(card.bounds, to: page.view)
+            let point = CGPoint(x: x(frame), y: frame.midY)
+            XCTAssertTrue(reachesTheSlideGestures(point, on: page), "the picture does not take the touch")
+            viewer.handleTap(at: point.x, width: page.view.bounds.width, from: page)
+            return point
+        }
+        let width = page.view.bounds.width
+
+        // The discount badge of the price (a disabled control) takes no touch either.
+        host.layoutIfNeeded()
+        let price = page.slideView.flatMap { descendants(of: $0).first { $0 is PersonalizationStoryPrice } }
+        if let badge = price.flatMap({ descendants(of: $0).first { $0 is UIControl && !$0.isHidden } }) {
+            let center = badge.convert(CGPoint(x: badge.bounds.midX, y: badge.bounds.midY), to: page.view)
+            XCTAssertTrue(reachesTheSlideGestures(center, on: page), "the discount is not a control")
+        } else {
+            XCTFail("no discount badge")
+        }
+
+        let right = tapThePicture { $0.maxX - 20 }
+        XCTAssertGreaterThan(right?.x ?? 0, width * 2 / 3, "the picture reaches into the right third")
+        XCTAssertEqual(page.slideIndex, 2, "right third of the picture: next slide")
+
+        let left = tapThePicture { $0.minX + 20 }
+        XCTAssertLessThan(left?.x ?? width, width / 3, "the picture reaches into the left third")
+        XCTAssertEqual(page.slideIndex, 1, "left third of the picture: previous slide")
+
+        tapThePicture { $0.midX }
+        XCTAssertEqual(page.slideIndex, 1, "centre of the picture: nothing")
+
+        XCTAssertEqual(delegate.events, [], "the host hears of no product")
+        XCTAssertEqual(opened, [], "no product link is opened")
+        XCTAssertFalse(viewer.state.isClosing, "the viewer stays open")
+    }
+
     func testTheSoundButtonNamesTheCurrentSoundState() {
         let button = PersonalizationStorySoundButton(isMuted: true)
         button.soundOnLabel = "Sound on"
