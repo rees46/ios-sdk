@@ -66,6 +66,7 @@
 		D0B99FA32DB16C960012E4F0 /* SubscribeForPriceDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDrop.swift */; };
 		D0B99FA52DB16D290012E4F0 /* UnsubscribePriceDrop.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDrop.swift */; };
 		D0B99FA72DB172940012E4F0 /* ManageSubscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */; };
+		D4538A022F0C000000000001 /* ManageSubscriptionParamsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4538A012F0C000000000001 /* ManageSubscriptionParamsTests.swift */; };
 		D0D6C4E39581EE6F13C7E601 /* PushPayloadParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AD555A428611EB01D95215 /* PushPayloadParserTests.swift */; };
 		D1C0FFEF2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */; };
 		D1C0FFF12F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C0FFF02F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift */; };
@@ -205,6 +206,7 @@
 		D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscribeForPriceDrop.swift; sourceTree = "<group>"; };
 		D0B99FA42DB16D1A0012E4F0 /* UnsubscribePriceDrop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnsubscribePriceDrop.swift; sourceTree = "<group>"; };
 		D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscription.swift; sourceTree = "<group>"; wrapsLines = 0; };
+		D4538A012F0C000000000001 /* ManageSubscriptionParamsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageSubscriptionParamsTests.swift; sourceTree = "<group>"; };
 		D1C0FFEE2F0A1B2C3D4E5F60 /* TrackEventCustomFieldsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackEventCustomFieldsTests.swift; sourceTree = "<group>"; };
 		D1C0FFF02F0A1B2C3D4E5F60 /* TrackingNamespaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingNamespaceTests.swift; sourceTree = "<group>"; };
 		D1C0FFF22F0A1B2C3D4E5F60 /* TrackingBackCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingBackCompatTests.swift; sourceTree = "<group>"; };
@@ -486,6 +488,7 @@
 			isa = PBXGroup;
 			children = (
 				D0B99FA62DB1728D0012E4F0 /* ManageSubscription.swift */,
+				D4538A012F0C000000000001 /* ManageSubscriptionParamsTests.swift */,
 				D0B99FA22DB16C820012E4F0 /* SubscribeForPriceDrop.swift */,
 				D0B99F832DB106640012E4F0 /* SubscribeForBackInStock.swift */,
 			);
@@ -793,6 +796,7 @@
 				D0B99FA32DB16C960012E4F0 /* SubscribeForPriceDrop.swift in Sources */,
 				D0B99FA52DB16D290012E4F0 /* UnsubscribePriceDrop.swift in Sources */,
 				D0B99FA72DB172940012E4F0 /* ManageSubscription.swift in Sources */,
+				D4538A022F0C000000000001 /* ManageSubscriptionParamsTests.swift in Sources */,
 				75E237902C334AA800119197 /* SdkTest.swift in Sources */,
 				A1B2C3D40000000000000001 /* GetLastOrderProductsTest.swift in Sources */,
 				A1B2C3D40000000000000003 /* GetUserOrdersTest.swift in Sources */,

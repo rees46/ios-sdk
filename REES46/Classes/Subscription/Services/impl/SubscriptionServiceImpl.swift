@@ -52,6 +52,16 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     static let mobilePushBulk = "mobile_push_bulk"
     static let mobilePushChain = "mobile_push_chain"
     static let mobilePushTransactional = "mobile_push_transactional"
+    static let telegramBulk = "telegram_bulk"
+    static let telegramChain = "telegram_chain"
+    static let telegramTransactional = "telegram_transactional"
+    static let whatsappBulk = "whatsapp_bulk"
+    static let whatsappChain = "whatsapp_chain"
+    static let whatsappTransactional = "whatsapp_transactional"
+    static let maxBulk = "max_bulk"
+    static let maxChain = "max_chain"
+    static let maxTransactional = "max_transactional"
+    static let walletBulk = "wallet_bulk"
   }
   
   private func handlePostRequest(
@@ -245,24 +255,23 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     mobilePushBulk: Bool? = nil,
     mobilePushChain: Bool? = nil,
     mobilePushTransactional: Bool? = nil,
+    telegramBulk: Bool? = nil,
+    telegramChain: Bool? = nil,
+    telegramTransactional: Bool? = nil,
+    whatsappBulk: Bool? = nil,
+    whatsappChain: Bool? = nil,
+    whatsappTransactional: Bool? = nil,
+    maxBulk: Bool? = nil,
+    maxChain: Bool? = nil,
+    maxTransactional: Bool? = nil,
+    walletBulk: Bool? = nil,
     completion: @escaping(Result<Void, SdkError>) -> Void
   ) {
     guard var params = prepareBasicParams() else {
       completion(.failure(.custom(error: "manageSubscription: SDK is not initialized")))
       return
     }
-    
-    validator.validate(email: email, phone: phone) { result in
-        switch result {
-            case .success(let validated):
-              params.merge(validated) { _, new in new }
-            case .failure(let error):
-              self.handleValidationFailure(error: error, actionName: "manageSubscription", completion: completion)
-                return 
-        }
-    }
 
-    
     if let userExternalId          = userExternalId             { params[Constants.externalId]                 = userExternalId }
     if let userLoyaltyId           = userLoyaltyId              { params[Constants.loyaltyId]                  = userLoyaltyId }
     if let telegramId              = telegramId                 { params[Constants.telegramId]                 = telegramId }
@@ -278,13 +287,30 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     if let mobilePushBulk          = mobilePushBulk             { params[Constants.mobilePushBulk]            = mobilePushBulk }
     if let mobilePushChain         = mobilePushChain            { params[Constants.mobilePushChain]           = mobilePushChain }
     if let mobilePushTransactional = mobilePushTransactional    { params[Constants.mobilePushTransactional]   = mobilePushTransactional }
-      
-    handlePostRequest(
-      path: Constants.manageSubscriptionPath,
-      params: params,
-      completion: completion
-    )
+    if let telegramBulk            = telegramBulk               { params[Constants.telegramBulk]               = telegramBulk }
+    if let telegramChain           = telegramChain              { params[Constants.telegramChain]              = telegramChain }
+    if let telegramTransactional   = telegramTransactional      { params[Constants.telegramTransactional]      = telegramTransactional }
+    if let whatsappBulk            = whatsappBulk               { params[Constants.whatsappBulk]               = whatsappBulk }
+    if let whatsappChain           = whatsappChain              { params[Constants.whatsappChain]              = whatsappChain }
+    if let whatsappTransactional   = whatsappTransactional      { params[Constants.whatsappTransactional]      = whatsappTransactional }
+    if let maxBulk                 = maxBulk                    { params[Constants.maxBulk]                    = maxBulk }
+    if let maxChain                = maxChain                   { params[Constants.maxChain]                   = maxChain }
+    if let maxTransactional        = maxTransactional           { params[Constants.maxTransactional]           = maxTransactional }
+    if let walletBulk              = walletBulk                 { params[Constants.walletBulk]                 = walletBulk }
 
+    validator.validate(email: email, phone: phone) { result in
+      switch result {
+      case .success(let validated):
+        params.merge(validated) { _, new in new }
+        self.handlePostRequest(
+          path: Constants.manageSubscriptionPath,
+          params: params,
+          completion: completion
+        )
+      case .failure(let error):
+        self.handleValidationFailure(error: error, actionName: "manageSubscription", completion: completion)
+      }
+    }
   }
     
     private func handleValidationFailure(

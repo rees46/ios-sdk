@@ -54,6 +54,16 @@ protocol SubscriptionServiceProtocol {
         mobilePushBulk: Bool?,
         mobilePushChain: Bool?,
         mobilePushTransactional: Bool?,
+        telegramBulk: Bool?,
+        telegramChain: Bool?,
+        telegramTransactional: Bool?,
+        whatsappBulk: Bool?,
+        whatsappChain: Bool?,
+        whatsappTransactional: Bool?,
+        maxBulk: Bool?,
+        maxChain: Bool?,
+        maxTransactional: Bool?,
+        walletBulk: Bool?,
         completion: @escaping (Result<Void, SdkError>) -> Void
     )
 }

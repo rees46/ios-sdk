@@ -287,7 +287,7 @@ final class MockPersonalizationSDK: PersonalizationSDK {
         fatalError("Not needed for these tests")
     }
     
-    func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+    func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, telegramBulk: Bool?, telegramChain: Bool?, telegramTransactional: Bool?, whatsappBulk: Bool?, whatsappChain: Bool?, whatsappTransactional: Bool?, maxBulk: Bool?, maxChain: Bool?, maxTransactional: Bool?, walletBulk: Bool?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         fatalError("Not needed for these tests")
     }
     

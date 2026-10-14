@@ -98,7 +98,36 @@ class ManageSubscription: XCTestCase {
                 expectation.fulfill()
             }
         )
-        
+
+        wait(for: [expectation], timeout: Constants.defaultTimeout)
+    }
+
+    func testManageSubscription_withTelegramWhatsappMaxAndWallet() {
+        let expectation = XCTestExpectation(description: "Manage subscription for Telegram, WhatsApp, Max and Wallet")
+
+        self.sdk.manageSubscription(
+            email: testEmail,
+            telegramBulk: true,
+            telegramChain: true,
+            telegramTransactional: false,
+            whatsappBulk: true,
+            whatsappChain: false,
+            whatsappTransactional: true,
+            maxBulk: false,
+            maxChain: true,
+            maxTransactional: true,
+            walletBulk: true,
+            completion: { result in
+                switch result {
+                    case .success:
+                        print("Manage subscription for Telegram, WhatsApp, Max and Wallet succeeded")
+                    case .failure(let error):
+                        XCTFail("Manage subscription for Telegram, WhatsApp, Max and Wallet failed: \(error.localizedDescription)")
+                }
+                expectation.fulfill()
+            }
+        )
+
         wait(for: [expectation], timeout: Constants.defaultTimeout)
     }
 }

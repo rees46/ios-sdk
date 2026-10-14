@@ -1103,6 +1103,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         mobilePushBulk: Bool? = nil,
         mobilePushChain: Bool? = nil,
         mobilePushTransactional: Bool? = nil,
+        telegramBulk: Bool? = nil,
+        telegramChain: Bool? = nil,
+        telegramTransactional: Bool? = nil,
+        whatsappBulk: Bool? = nil,
+        whatsappChain: Bool? = nil,
+        whatsappTransactional: Bool? = nil,
+        maxBulk: Bool? = nil,
+        maxChain: Bool? = nil,
+        maxTransactional: Bool? = nil,
+        walletBulk: Bool? = nil,
         completion: @escaping(Result<Void, SdkError>) -> Void
     ) {
         subscriptionService.manageSubscription(
@@ -1123,6 +1133,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             mobilePushBulk:mobilePushBulk,
             mobilePushChain:mobilePushChain,
             mobilePushTransactional:mobilePushTransactional,
+            telegramBulk:telegramBulk,
+            telegramChain:telegramChain,
+            telegramTransactional:telegramTransactional,
+            whatsappBulk:whatsappBulk,
+            whatsappChain:whatsappChain,
+            whatsappTransactional:whatsappTransactional,
+            maxBulk:maxBulk,
+            maxChain:maxChain,
+            maxTransactional:maxTransactional,
+            walletBulk:walletBulk,
             completion: completion
         )
     }
