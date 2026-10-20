@@ -14,7 +14,13 @@ import UIKit
 /// Крестик стоит **всегда** и принадлежит самому попапу, а не контейнеру картинки:
 /// в макете виды «только текст» и «иконка» картинки не имеют, но крестик у них нарисован.
 /// Он круглый (компонент Close: кнопка MD с радиусом Rounded) и во всех видах лежит поверх
-/// содержимого в углу, на отступе попапа; над фотографией — в тёмном варианте.
+/// содержимого в углу, на отступе попапа. Над фотографией макет рисует его в тёмном варианте
+/// (белая иконка на белой подложке 5%), но на светлом фото — а фото товара почти всегда на
+/// белом — такой крестик пропадает. Поэтому крестик везде обычный вторичный и лежит на круге
+/// цвета карточки: на любом фото виден либо круг, либо иконка.
+///
+/// Картинка сверху вписывается целиком, с полями цвета карточки: обрезка срезала бы сам
+/// товар. Картинка фоном заполняет попап и обрезается — на то она и фон.
 /// Текстовая кнопка закрытия (`closeText`) в макете не нарисована — её даёт админка
 /// отдельным тумблером рядом с кнопкой действия, поэтому она здесь вторичной кнопкой
 /// под основной. Пустой текст — кнопки нет, остаётся один крестик.
@@ -82,6 +88,8 @@ import UIKit
     private let actionButton = PersonalizationButton()
     private let closeButton = PersonalizationButton()
     private let closeIcon = PersonalizationButton()
+    /// Круг цвета карточки под полупрозрачным крестиком — чтобы тот был виден на любом фото.
+    private let closeBacking = CircleView()
 
     /// Карточка: фон, скругление и обрезка; всё содержимое лежит в ней.
     private let surface = UIView()
@@ -123,9 +131,10 @@ import UIKit
         layer.insertSublayer(secondShadow, below: surface.layer)
 
         for view in [backgroundImageView, topImageView] {
-            view.contentMode = .scaleAspectFill
             view.clipsToBounds = true
         }
+        backgroundImageView.contentMode = .scaleAspectFill
+        topImageView.contentMode = .scaleAspectFit
         iconView.contentMode = .scaleAspectFit
 
         titleLabel.numberOfLines = 0
@@ -155,6 +164,14 @@ import UIKit
             stack.translatesAutoresizingMaskIntoConstraints = false
         }
         closeIcon.translatesAutoresizingMaskIntoConstraints = false
+        closeBacking.translatesAutoresizingMaskIntoConstraints = false
+        closeBacking.addSubview(closeIcon)
+        NSLayoutConstraint.activate([
+            closeIcon.topAnchor.constraint(equalTo: closeBacking.topAnchor),
+            closeIcon.leadingAnchor.constraint(equalTo: closeBacking.leadingAnchor),
+            closeIcon.trailingAnchor.constraint(equalTo: closeBacking.trailingAnchor),
+            closeIcon.bottomAnchor.constraint(equalTo: closeBacking.bottomAnchor)
+        ])
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         // didSet на init не срабатывает: без этого попап без текстов показал бы пустые кнопки.
         applyButtons()
@@ -188,10 +205,8 @@ import UIKit
 
         applyShape(modal: modal)
         applyText()
-        // Поверх картинки контролы берут инвертированную палитру, иначе тёмная подпись
-        // вторичной кнопки тонет в фотографии. Крестик над фотографией и у вида с картинкой
-        // сверху: в макете у него там тёмный режим.
-        closeIcon.onDark = overImage || contentView == .image
+        // Поверх картинки текстовая кнопка закрытия берёт инвертированную палитру, иначе её
+        // тёмная подпись тонет в фотографии. Крестику хватает круга под ним.
         closeButton.onDark = overImage
 
         textStack.addArrangedSubview(titleLabel)
@@ -282,10 +297,10 @@ import UIKit
         ])
 
         // Крестик всегда на месте — у видов без картинки тоже, накладкой поверх содержимого.
-        surface.addSubview(closeIcon)
+        surface.addSubview(closeBacking)
         closeIconConstraints = [
-            closeIcon.topAnchor.constraint(equalTo: surface.topAnchor, constant: pad),
-            closeIcon.trailingAnchor.constraint(equalTo: surface.trailingAnchor, constant: -pad)
+            closeBacking.topAnchor.constraint(equalTo: surface.topAnchor, constant: pad),
+            closeBacking.trailingAnchor.constraint(equalTo: surface.trailingAnchor, constant: -pad)
         ]
         NSLayoutConstraint.activate(closeIconConstraints)
 
@@ -366,6 +381,7 @@ import UIKit
         surface.backgroundColor = PersonalizationColor.backgroundCard
         surface.layer.cornerRadius = modal ? PersonalizationRadius.modal : 0
         card.backgroundColor = PersonalizationColor.backgroundCard
+        closeBacking.backgroundColor = PersonalizationColor.backgroundCard
         applyShadow()
         setNeedsLayout()
     }
@@ -381,5 +397,14 @@ import UIKit
                 target.shadowOpacity = 0
             }
         }
+    }
+}
+
+/// Круг: скругляет себя сам, когда узнаёт свой размер. Родитель раскладывается раньше
+/// вложенных видов и их размера в своём `layoutSubviews` ещё не знает.
+private final class CircleView: UIView {
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = bounds.height / 2
     }
 }

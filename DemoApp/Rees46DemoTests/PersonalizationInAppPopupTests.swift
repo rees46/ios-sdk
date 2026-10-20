@@ -49,11 +49,30 @@ final class PersonalizationInAppPopupTests: XCTestCase {
         }
     }
 
-    func testTheCrossIsDarkOverAPhoto() {
-        XCTAssertTrue(cross(of: popup(.image))?.onDark == true)
-        XCTAssertTrue(cross(of: popup(.imageBackground))?.onDark == true)
-        XCTAssertTrue(cross(of: popup(.text))?.onDark == false)
-        XCTAssertTrue(cross(of: popup(.icon))?.onDark == false)
+    // The design's dark cross over a photo (white on white 5%) vanishes on the light product
+    // photos shops send; on a disc of the card colour either the disc or the icon shows.
+    func testTheCrossSitsOnACardColouredDiscOverAPhotoToo() {
+        for view in views {
+            guard let cross = cross(of: popup(view)), let disc = cross.superview else {
+                return XCTFail("\(view): no cross")
+            }
+            XCTAssertFalse(cross.onDark, "\(view)")
+            XCTAssertEqual(disc.backgroundColor, PersonalizationColor.backgroundCard, "\(view)")
+            XCTAssertEqual(disc.layer.cornerRadius, disc.bounds.height / 2, "\(view): a circle")
+        }
+    }
+
+    private func pictures(in view: UIView) -> [UIImageView] {
+        view.subviews.flatMap { subview -> [UIImageView] in
+            if subview is PersonalizationButton { return [] }
+            if let image = subview as? UIImageView { return [image] }
+            return pictures(in: subview)
+        }
+    }
+
+    func testTheTopPictureIsNeverCroppedABackgroundOneFills() {
+        XCTAssertEqual(pictures(in: popup(.image)).map(\.contentMode), [.scaleAspectFit])
+        XCTAssertEqual(pictures(in: popup(.imageBackground)).map(\.contentMode), [.scaleAspectFill])
     }
 
     func testButtonsAre12ApartInAModalAnd16InAFullscreenPopup() {
