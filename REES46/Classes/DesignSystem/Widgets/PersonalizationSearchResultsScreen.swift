@@ -22,6 +22,10 @@ import UIKit
 /// нарисован), выбранное хост кладёт в `sortBy` / `sortDir`. Каждый новый запрос
 /// трекается событием `search`; нажатие на карточку запоминает источник `full_search`
 /// и отдаёт товар хосту через `onProductTap`, кнопка карточки — через `onProductAction`.
+///
+/// Ошибка загрузки: если не пришла первая страница, вместо выдачи — `errorText` и кнопка
+/// `retryText`; если следующая — `retryText` встаёт на место «загрузить ещё». Нажатие
+/// повторяет ту же страницу, `onError` зовётся на каждую ошибку.
 @_spi(PersonalizationUI) public final class PersonalizationSearchResultsScreen: UIView {
 
     /// Значения фильтров, ушедшие в запрос.
@@ -149,6 +153,15 @@ import UIKit
     public var emptyText: String? = "No results for your request." {
         didSet { applyEmpty() }
     }
+    public var errorText: String? = "Something went wrong. Check your connection and try again." {
+        didSet { applyError() }
+    }
+    public var retryText: String? = "Retry" {
+        didSet {
+            applyError()
+            applyLoadMore()
+        }
+    }
     public var filtersTitle: String? = "Filters"
     public var resetText: String? = "Reset"
     public var applyText: String? = "Apply"
@@ -177,6 +190,9 @@ import UIKit
     private var requestSeq = 0
     /// Первая страница пришла и пуста — только тогда показывается пустое состояние.
     private var noResults = false
+    /// Страница, которая не загрузилась: первая — ошибка вместо выдачи, следующая —
+    /// «повторить» вместо «загрузить ещё». Снимается следующим запросом.
+    private var failedPage: Int?
     private var pendingReload: DispatchWorkItem?
 
     public init() {
@@ -206,9 +222,12 @@ import UIKit
         }
         catalog.onLoadMore = { [weak self] in self?.loadMore() }
         catalog.onNearEnd = { [weak self] in
-            guard let self, self.infiniteScroll else { return }
+            // После ошибки догрузка ждёт нажатия «повторить», а не повторяет запрос
+            // на каждом сдвиге ленты.
+            guard let self, self.infiniteScroll, self.failedPage == nil else { return }
             self.loadMore()
         }
+        catalog.onRetry = { [weak self] in self?.retryFailedPage() }
         // Каталог прокручивается сам, а не во внешнем скролле: там его лента раскладывалась бы
         // целиком, и каждая догруженная страница оставалась бы в памяти всеми карточками.
         catalog.contentInset = UIEdgeInsets(top: padding, left: padding, bottom: padding, right: padding)
@@ -311,6 +330,7 @@ import UIKit
         loading = false
         catalog.isLoading = false
         noResults = false
+        failedPage = nil
         products = []
         total = 0
         page = 0
@@ -339,11 +359,23 @@ import UIKit
         request(sdk, text: text, nextPage: page + 1)
     }
 
+    /// Первая страница заново после ошибки — без нового события `search`: запрос тот же.
+    /// Следующую страницу повторяет `loadMore`.
+    private func retryFailedPage() {
+        guard let sdk, failedPage == 1, !loading else { return }
+        let text = (query ?? "").trimmingCharacters(in: .whitespaces)
+        guard !text.isEmpty else { return }
+        request(sdk, text: text, nextPage: 1)
+    }
+
     private func request(_ sdk: PersonalizationSDK, text: String, nextPage: Int) {
         requestSeq += 1
         let seq = requestSeq
         loading = true
         catalog.isLoading = true
+        failedPage = nil
+        applyError()
+        applyLoadMore()
         let facetValues = applied.facets.filter { !$0.value.isEmpty }.mapValues { Array($0) }
         sdk.search(
             query: text,
@@ -374,6 +406,9 @@ import UIKit
                     }
                     self.renderProducts()
                 case .failure(let error):
+                    self.failedPage = nextPage
+                    self.applyError()
+                    self.applyLoadMore()
                     self.onError?(error)
                 }
             }
@@ -391,6 +426,7 @@ import UIKit
             catalog.setCount(prefix: countPrefix, shown: products.count, separator: countSeparator, total: total)
         }
         applyEmpty()
+        applyError()
         applyLoadMore()
         renderAppliedTags()
     }
@@ -401,7 +437,17 @@ import UIKit
         catalog.emptyText = noResults ? emptyText : nil
     }
 
+    private func applyError() {
+        catalog.errorText = failedPage == 1 ? errorText : nil
+        catalog.retryText = retryText
+    }
+
     private func applyLoadMore() {
+        if let failedPage, failedPage > 1 {
+            // Та же кнопка повторяет упавшую страницу — и при бесконечной прокрутке.
+            catalog.loadMoreText = retryText
+            return
+        }
         let hasMore = !products.isEmpty && products.count < total
         catalog.loadMoreText = hasMore && !infiniteScroll ? loadMoreText : nil
     }
