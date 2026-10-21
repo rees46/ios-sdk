@@ -96,12 +96,116 @@ final class PersonalizationSearchResultsScreenTests: XCTestCase {
         window.layoutIfNeeded()
         XCTAssertTrue(ratings().contains { !$0.isHidden })
     }
+
+    // MARK: - Error and retry
+
+    func testFirstPageError_showsErrorWithRetry_andRetryLoadsTheFirstPageAgain() {
+        sdk.searchResults = [.failure(.networkOfflineError)]
+        search("phone")
+
+        XCTAssertEqual(errors.count, 1)
+        XCTAssertEqual(screen.catalog.errorText, "Something went wrong. Check your connection and try again.")
+        XCTAssertEqual(screen.catalog.retryText, "Retry")
+        XCTAssertNil(screen.catalog.emptyText)
+        XCTAssertFalse(screen.catalog.isLoading)
+        let retry = buttons("Retry")
+        XCTAssertEqual(retry.count, 1)
+
+        sdk.searchResults = [page(total: 2, ids: 0..<2)]
+        retry.first?.sendActions(for: .touchUpInside)
+        window.layoutIfNeeded()
+
+        XCTAssertEqual(sdk.searchOffsets, [0, 0])
+        XCTAssertNil(screen.catalog.errorText)
+        XCTAssertEqual(screen.products.map(\.id), ["0", "1"])
+        XCTAssertTrue(buttons("Retry").isEmpty)
+        XCTAssertEqual(errors.count, 1)
+    }
+
+    func testFirstPageError_retryFailingAgain_keepsTheErrorAndReportsIt() {
+        sdk.searchResults = [.failure(.networkOfflineError), .failure(.responseError)]
+        search("phone")
+
+        screen.catalog.onRetry?()
+
+        XCTAssertEqual(sdk.searchOffsets, [0, 0])
+        XCTAssertEqual(errors.count, 2)
+        XCTAssertNotNil(screen.catalog.errorText)
+    }
+
+    func testNextPageError_turnsLoadMoreIntoRetry_thatLoadsThatPageAgain() {
+        screen.pageSize = 2
+        sdk.searchResults = [page(total: 4, ids: 0..<2), .failure(.networkOfflineError)]
+        search("phone")
+        XCTAssertEqual(screen.catalog.loadMoreText, "Load more")
+
+        screen.catalog.onLoadMore?()
+
+        XCTAssertEqual(errors.count, 1)
+        XCTAssertEqual(screen.catalog.loadMoreText, "Retry")
+        XCTAssertFalse(screen.catalog.isLoading)
+        XCTAssertNil(screen.catalog.errorText)
+        XCTAssertEqual(screen.products.count, 2)
+
+        sdk.searchResults = [page(total: 4, ids: 2..<4)]
+        screen.catalog.onLoadMore?()
+
+        XCTAssertEqual(sdk.searchOffsets, [0, 2, 2])
+        XCTAssertEqual(screen.products.map(\.id), ["0", "1", "2", "3"])
+        XCTAssertNil(screen.catalog.loadMoreText)
+        XCTAssertEqual(errors.count, 1)
+    }
+
+    func testNextPageError_withInfiniteScroll_waitsForTheRetryTap() {
+        // Off the window the list never scrolls, so the next page is asked only by the calls below.
+        screen.removeFromSuperview()
+        screen.pageSize = 2
+        screen.infiniteScroll = true
+        sdk.searchResults = [page(total: 4, ids: 0..<2), .failure(.networkOfflineError)]
+        search("phone")
+        XCTAssertNil(screen.catalog.loadMoreText)
+
+        screen.catalog.onNearEnd?()
+        XCTAssertEqual(screen.catalog.loadMoreText, "Retry")
+
+        // Scrolling near the end again does not hammer the failed page.
+        screen.catalog.onNearEnd?()
+        XCTAssertEqual(sdk.searchOffsets, [0, 2])
+
+        sdk.searchResults = [page(total: 4, ids: 2..<4)]
+        screen.catalog.onLoadMore?()
+        XCTAssertEqual(sdk.searchOffsets, [0, 2, 2])
+        XCTAssertNil(screen.catalog.loadMoreText)
+    }
+
+    func testErrorTexts_areParameters() {
+        screen.errorText = "Не удалось загрузить"
+        screen.retryText = "Повторить"
+        sdk.searchResults = [.failure(.networkOfflineError)]
+        search("phone")
+
+        XCTAssertEqual(screen.catalog.errorText, "Не удалось загрузить")
+        XCTAssertEqual(buttons("Повторить").count, 1)
+    }
+
+    func testNewQuery_clearsTheError() {
+        sdk.searchResults = [.failure(.networkOfflineError), page(total: 1, ids: 0..<1)]
+        search("phone")
+        XCTAssertNotNil(screen.catalog.errorText)
+
+        search("laptop")
+
+        XCTAssertNil(screen.catalog.errorText)
+        XCTAssertEqual(screen.products.count, 1)
+    }
 }
 
 private extension UIView {
+    /// Hidden itself or under a hidden ancestor. The test window is never shown, so the walk
+    /// stops below it.
     var isHiddenInHierarchy: Bool {
         var view: UIView? = self
-        while let current = view {
+        while let current = view, !(current is UIWindow) {
             if current.isHidden { return true }
             view = current.superview
         }
