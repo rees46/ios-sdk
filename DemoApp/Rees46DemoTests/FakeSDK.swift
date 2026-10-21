@@ -50,6 +50,10 @@ final class FakeSDK: PersonalizationSDK {
     /// `offset` of every `search` call, in order.
     private(set) var searchOffsets: [Int?] = []
 
+    /// Called with every `getRequest`, from whatever queue the caller is on, so tests can check
+    /// what an SDK service would send. The request itself never completes, as before.
+    var onGetRequest: ((_ path: String, _ params: [String: String]) -> Void)?
+
     /// Records notification-track calls so tests can assert push routing hit the right instance.
     private(set) var deliveredTracks: [(type: String, code: String)] = []
     private(set) var receivedTracks: [(type: String, code: String)] = []
@@ -60,7 +64,9 @@ final class FakeSDK: PersonalizationSDK {
     }
 
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {}
-    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {}
+    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        onGetRequest?(path, params)
+    }
     func configureURLSession(configuration: URLSessionConfiguration) {}
     func generateString(array: [String]) -> String { "" }
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void) {}

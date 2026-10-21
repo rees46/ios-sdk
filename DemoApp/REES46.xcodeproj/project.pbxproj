@@ -99,6 +99,7 @@
 		A672FDCD97891640D2F0A164 /* PersonalizationSearchResultsScreenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4103A93DA0DF4A4D28D0A89 /* PersonalizationSearchResultsScreenTests.swift */; };
 		0431E08C2982BB3FC55C992C /* ResponseCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5B8B1F69B8E5514A308A92 /* ResponseCacheTests.swift */; };
 		E67DEB10083ECEFDC25DDEDC /* LoadStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73D8545EB4DCD7F2713A2B71 /* LoadStateMachineTests.swift */; };
+		B945D7C85C149BFE197B6BF7 /* NotificationHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764BF10FC467ADD6B1B98F5F /* NotificationHistoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -249,6 +250,7 @@
 		E4103A93DA0DF4A4D28D0A89 /* PersonalizationSearchResultsScreenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationSearchResultsScreenTests.swift; sourceTree = "<group>"; };
 		AA5B8B1F69B8E5514A308A92 /* ResponseCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseCacheTests.swift; sourceTree = "<group>"; };
 		73D8545EB4DCD7F2713A2B71 /* LoadStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadStateMachineTests.swift; sourceTree = "<group>"; };
+		764BF10FC467ADD6B1B98F5F /* NotificationHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationHistoryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -400,6 +402,7 @@
 				E4103A93DA0DF4A4D28D0A89 /* PersonalizationSearchResultsScreenTests.swift */,
 				AA5B8B1F69B8E5514A308A92 /* ResponseCacheTests.swift */,
 				73D8545EB4DCD7F2713A2B71 /* LoadStateMachineTests.swift */,
+				764BF10FC467ADD6B1B98F5F /* NotificationHistoryTests.swift */,
 			);
 			path = Rees46DemoTests;
 			sourceTree = "<group>";
@@ -908,6 +911,7 @@
 				A672FDCD97891640D2F0A164 /* PersonalizationSearchResultsScreenTests.swift in Sources */,
 				0431E08C2982BB3FC55C992C /* ResponseCacheTests.swift in Sources */,
 				E67DEB10083ECEFDC25DDEDC /* LoadStateMachineTests.swift in Sources */,
+				B945D7C85C149BFE197B6BF7 /* NotificationHistoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
