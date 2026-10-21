@@ -115,6 +115,21 @@ import UIKit
         applyLayout()
     }
 
+    /// Высота блока при ширине `width` — без раскладки, по видимым рядам стека;
+    /// товары считает `PersonalizationProductsList.contentHeight(forWidth:)`.
+    func fittingHeight(forWidth width: CGFloat) -> CGFloat {
+        let rows = stack.arrangedSubviews.filter { !$0.isHidden }
+        let heights = rows.map { row -> CGFloat in
+            if row === list { return list.contentHeight(forWidth: width) }
+            return row.systemLayoutSizeFitting(
+                CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            ).height
+        }
+        return ceil(heights.reduce(0, +) + CGFloat(max(0, rows.count - 1)) * stack.spacing)
+    }
+
     @objc private func showAllTapped() {
         onShowAll?()
     }
