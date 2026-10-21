@@ -67,6 +67,11 @@ final class FakeSDK: PersonalizationSDK {
     /// script a filled, an empty and a failed block. Nothing left — the call never completes.
     var recommendResults: [Result<RecommenderResponse, SdkError>] = []
 
+    /// While on, `recommend` keeps its completion in `heldRecommend` instead of answering, so a
+    /// test can look at the block mid-load and answer by hand.
+    var holdsRecommend = false
+    private(set) var heldRecommend: [(Result<RecommenderResponse, SdkError>) -> Void] = []
+
     /// Arguments of every `recommend` call, in order.
     private(set) var recommendCalls: [(blockId: String, itemId: String?, categoryId: String?, locations: String?, extended: Bool)] = []
 
@@ -103,6 +108,7 @@ final class FakeSDK: PersonalizationSDK {
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?, timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void) {
         recommendCalls.append((blockId, currentProductId, currentCategoryId, locations, extended))
+        if holdsRecommend { return heldRecommend.append(completion) }
         guard !recommendResults.isEmpty else { return }
         completion(recommendResults.removeFirst())
     }
