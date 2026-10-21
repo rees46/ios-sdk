@@ -6,6 +6,9 @@ import UIKit
 /// форматирование и локализация остаются за интегратором.
 /// Изображение по `imageUrl` компонент не грузит: раскладки отдают хосту
 /// `UIImageView` через свой `imageLoader`.
+///
+/// `url` и `deeplink` карточка не рисует — они для хоста, который открывает товар
+/// по нажатию: страница на сайте или ссылка в приложение (`deeplink_ios` из ответа API).
 @_spi(PersonalizationUI) public struct PersonalizationProduct {
     public let id: String
     public let name: String
@@ -17,6 +20,8 @@ import UIKit
     public let oldPrice: String?
     public let discount: String?
     public let actionText: String?
+    public let url: String?
+    public let deeplink: String?
 
     public init(
         id: String,
@@ -28,7 +33,9 @@ import UIKit
         reviews: Int = 0,
         oldPrice: String? = nil,
         discount: String? = nil,
-        actionText: String? = nil
+        actionText: String? = nil,
+        url: String? = nil,
+        deeplink: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -40,5 +47,7 @@ import UIKit
         self.oldPrice = oldPrice
         self.discount = discount
         self.actionText = actionText
+        self.url = url
+        self.deeplink = deeplink
     }
 }
