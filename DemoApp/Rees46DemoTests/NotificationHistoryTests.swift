@@ -3,7 +3,8 @@ import XCTest
 
 /// `GET /notifications` is server-to-server: without `shop_secret` the API answers 400
 /// "Incorrect shop credentials". `getAllNotifications(shopSecret:…)` sends it, and conformers that
-/// predate the method (here `FakeSDK`, which does not implement it) get a working default.
+/// predate the method (here `FakeSDK`, which does not implement it) get a working default, while a
+/// conformer with its own implementation (`NotificationsMockSDK`) gets every call, short ones too.
 final class NotificationHistoryTests: XCTestCase {
 
     /// What `call` sends through the SDK's `getRequest`; the request runs on the session queue.
@@ -56,6 +57,35 @@ final class NotificationHistoryTests: XCTestCase {
         XCTAssertEqual(sent?.params["limit"], "10")
         XCTAssertEqual(sent?.params["page"], "2")
         XCTAssertEqual(sent?.params["date_from"], "2026-10-01")
+    }
+
+    func testShortCalls_reachTheConformersOwnImplementation() {
+        let mock = NotificationsMockSDK()
+        let sdk: PersonalizationSDK = mock
+
+        sdk.getAllNotifications(shopSecret: "secret-key", type: "email") { _ in }
+        sdk.getAllNotifications(shopSecret: "secret-key", type: "sms", limit: 10, page: 2) { _ in }
+        mock.getAllNotifications(shopSecret: "other-key", type: "push") { _ in }
+
+        XCTAssertEqual(mock.notificationCalls, [
+            NotificationsMockSDK.Call(shopSecret: "secret-key", type: "email", email: nil, limit: nil, page: nil),
+            NotificationsMockSDK.Call(shopSecret: "secret-key", type: "sms", email: nil, limit: 10, page: 2),
+            NotificationsMockSDK.Call(shopSecret: "other-key", type: "push", email: nil, limit: nil, page: nil)
+        ])
+    }
+
+    func testFullCall_reachesTheConformersOwnImplementation() {
+        let mock = NotificationsMockSDK()
+        let sdk: PersonalizationSDK = mock
+
+        sdk.getAllNotifications(
+            shopSecret: "secret-key", type: "email", phone: nil, email: "user@example.com",
+            userExternalId: nil, userLoyaltyId: nil, channel: nil, limit: 5, page: 1, dateFrom: nil
+        ) { _ in }
+
+        XCTAssertEqual(mock.notificationCalls, [
+            NotificationsMockSDK.Call(shopSecret: "secret-key", type: "email", email: "user@example.com", limit: 5, page: 1)
+        ])
     }
 
     func testService_withoutSecret_sendsNone() {

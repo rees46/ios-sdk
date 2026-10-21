@@ -149,9 +149,11 @@ public extension PersonalizationSDK {
     /// Notification history: `GET /notifications`. The endpoint is server-to-server and needs the shop
     /// secret — without it the API answers 400 "Incorrect shop credentials".
     ///
-    /// Also the default implementation of the requirement: it builds its own notification service,
-    /// so conformers that predate the method (mocks in apps) keep compiling and working.
-    func getAllNotifications(shopSecret: String, type: String, phone: String? = nil, email: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, channel: String? = nil, limit: Int? = nil, page: Int? = nil, dateFrom: String? = nil, completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void) {
+    /// Default implementation of the requirement: it builds its own notification service, so
+    /// conformers that predate the method (mocks in apps) keep compiling and working. Shorter calls
+    /// are the overloads below; they go through the requirement, so a conformer's own
+    /// implementation receives them too.
+    func getAllNotifications(shopSecret: String, type: String, phone: String?, email: String?, userExternalId: String?, userLoyaltyId: String?, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void) {
         NotificationHandlerServiceImpl(sdk: self).getAllNotifications(
             shopSecret: shopSecret,
             type: type,
@@ -165,6 +167,16 @@ public extension PersonalizationSDK {
             dateFrom: dateFrom,
             completion: completion
         )
+    }
+
+    /// Notification history of `type`, no filters.
+    func getAllNotifications(shopSecret: String, type: String, completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void) {
+        getAllNotifications(shopSecret: shopSecret, type: type, phone: nil, email: nil, userExternalId: nil, userLoyaltyId: nil, channel: nil, limit: nil, page: nil, dateFrom: nil, completion: completion)
+    }
+
+    /// One page of the notification history of `type`.
+    func getAllNotifications(shopSecret: String, type: String, limit: Int?, page: Int?, completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void) {
+        getAllNotifications(shopSecret: shopSecret, type: type, phone: nil, email: nil, userExternalId: nil, userLoyaltyId: nil, channel: nil, limit: limit, page: page, dateFrom: nil, completion: completion)
     }
 
     func joinLoyalty(phone: String, email: String? = nil, firstName: String? = nil, lastName: String? = nil, completion: @escaping(Result<LoyaltyJoinResponse, SdkError>) -> Void) {
