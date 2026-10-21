@@ -3,7 +3,8 @@ import XCTest
 
 /// The data widgets' in-memory response cache: keyed by shop, request kind and parameters,
 /// 10-minute TTL, at most 32 entries with the oldest evicted first, identical in-flight
-/// requests coalesced, errors never stored.
+/// requests coalesced, errors never stored. A request in flight cannot lock its key: after
+/// 30 seconds, after every caller unsubscribed, after `clear()` or with `force` a new load starts.
 final class ResponseCacheTests: XCTestCase {
 
     private var clock = Date(timeIntervalSince1970: 0)
@@ -29,10 +30,11 @@ final class ResponseCacheTests: XCTestCase {
     /// Fetches through a load that answers right away with `answer`.
     @discardableResult
     private func fetch(
-        _ cache: ResponseCache, _ key: ResponseCache.Key, answer: Result<String, SdkError> = .success("value")
+        _ cache: ResponseCache, _ key: ResponseCache.Key, force: Bool = false,
+        answer: Result<String, SdkError> = .success("value")
     ) -> Result<String, SdkError>? {
         var received: Result<String, SdkError>?
-        cache.fetch(key, load: { (done: @escaping (Result<String, SdkError>) -> Void) in
+        cache.fetch(key, force: force, load: { (done: @escaping (Result<String, SdkError>) -> Void) in
             self.loads += 1
             done(answer)
         }, completion: { received = $0 })
@@ -40,8 +42,12 @@ final class ResponseCacheTests: XCTestCase {
     }
 
     /// Fetches through a load that stays in flight until `pending` is completed.
-    private func fetchPending(_ cache: ResponseCache, _ key: ResponseCache.Key, into results: @escaping (Result<String, SdkError>) -> Void) {
-        cache.fetch(key, load: { (done: @escaping (Result<String, SdkError>) -> Void) in
+    @discardableResult
+    private func fetchPending(
+        _ cache: ResponseCache, _ key: ResponseCache.Key, force: Bool = false,
+        into results: @escaping (Result<String, SdkError>) -> Void
+    ) -> Cancellable {
+        cache.fetch(key, force: force, load: { (done: @escaping (Result<String, SdkError>) -> Void) in
             self.loads += 1
             self.pending.append(done)
         }, completion: results)
@@ -139,11 +145,103 @@ final class ResponseCacheTests: XCTestCase {
         XCTAssertEqual(loads, 2)
     }
 
-    func testRemoveAll_forgetsAnswers() {
+    func testClear_forgetsAnswers() {
         let cache = makeCache()
         fetch(cache, key())
-        cache.removeAll()
+        cache.clear()
         fetch(cache, key())
+        XCTAssertEqual(loads, 2)
+    }
+
+    // MARK: - A request in flight cannot lock its key
+
+    func testInFlight_unanswered30Seconds_nextCallLoadsAgain() {
+        let cache = makeCache()
+        var results: [String] = []
+        fetchPending(cache, key()) { results.append("old:" + ((try? $0.get()) ?? "error")) }
+        clock += 29
+        fetchPending(cache, key()) { results.append("joined:" + ((try? $0.get()) ?? "error")) }
+        XCTAssertEqual(loads, 1)
+
+        clock += 1
+        fetchPending(cache, key()) { results.append("new:" + ((try? $0.get()) ?? "error")) }
+        XCTAssertEqual(loads, 2)
+
+        pending[1](.success("fresh"))
+        pending[0](.success("stale"))
+
+        XCTAssertEqual(results, ["new:fresh", "old:stale", "joined:stale"])
+        // The old generation's late answer did not overwrite the newer one.
+        XCTAssertEqual(try fetch(cache, key())?.get(), "fresh")
+        XCTAssertEqual(loads, 2)
+    }
+
+    func testEveryCallerUnsubscribed_keyLoadsAgain_andTheCancelledAreNotCalled() {
+        let cache = makeCache()
+        var results: [String] = []
+        let first = fetchPending(cache, key()) { _ in results.append("first") }
+        let second = fetchPending(cache, key()) { _ in results.append("second") }
+        first.cancel()
+        second.cancel()
+
+        fetchPending(cache, key()) { _ in results.append("third") }
+        XCTAssertEqual(loads, 2)
+
+        pending[0](.success("value"))
+        pending[1](.success("value"))
+        XCTAssertEqual(results, ["third"])
+    }
+
+    func testCancelledCaller_isSkipped_theOthersStillGetTheAnswer() {
+        let cache = makeCache()
+        var results: [String] = []
+        let first = fetchPending(cache, key()) { _ in results.append("first") }
+        fetchPending(cache, key()) { _ in results.append("second") }
+        first.cancel()
+
+        pending[0](.success("value"))
+
+        XCTAssertEqual(loads, 1)
+        XCTAssertEqual(results, ["second"])
+    }
+
+    func testClear_duringFlight_answerReachesCallerButIsNotStored() {
+        let cache = makeCache()
+        var received: String?
+        fetchPending(cache, key()) { received = try? $0.get() }
+        cache.clear()
+
+        pending[0](.success("value"))
+
+        XCTAssertEqual(received, "value")
+        fetch(cache, key())
+        XCTAssertEqual(loads, 2)
+    }
+
+    func testClear_duringFlight_nextCallDoesNotJoinIt() {
+        let cache = makeCache()
+        fetchPending(cache, key()) { _ in }
+        cache.clear()
+        fetchPending(cache, key()) { _ in }
+        XCTAssertEqual(loads, 2)
+    }
+
+    func testForce_bypassesTheStoredAnswer_andStoresTheNewOne() {
+        let cache = makeCache()
+        fetch(cache, key(), answer: .success("first"))
+
+        let forced = fetch(cache, key(), force: true, answer: .success("second"))
+
+        XCTAssertEqual(try forced?.get(), "second")
+        XCTAssertEqual(loads, 2)
+        XCTAssertEqual(try fetch(cache, key())?.get(), "second")
+        XCTAssertEqual(loads, 2)
+    }
+
+    func testForce_doesNotJoinTheRequestInFlight() {
+        let cache = makeCache()
+        fetchPending(cache, key()) { _ in }
+        fetchPending(cache, key(), force: true) { _ in }
         XCTAssertEqual(loads, 2)
     }
 }
