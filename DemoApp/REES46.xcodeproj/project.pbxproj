@@ -95,6 +95,7 @@
 		2E131BFDAB7C6D54B561EE76 /* api_product_info.json in Resources */ = {isa = PBXBuildFile; fileRef = 3FD933AE43D8C46B68B2BAD8 /* api_product_info.json */; };
 		ED4C5E983AF5507C15DDD865 /* api_search_full.json in Resources */ = {isa = PBXBuildFile; fileRef = EE18F83D488D444A40F7A349 /* api_search_full.json */; };
 		0C1A72E140F21B922DDC847D /* api_recommend_extended.json in Resources */ = {isa = PBXBuildFile; fileRef = 33D0A45980973EAB12D80560 /* api_recommend_extended.json */; };
+		4E521BD567322ED3B04E9186 /* ProductMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EDF0298788D96BC3655500 /* ProductMapperTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -241,6 +242,7 @@
 		3FD933AE43D8C46B68B2BAD8 /* api_product_info.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = api_product_info.json; sourceTree = "<group>"; };
 		EE18F83D488D444A40F7A349 /* api_search_full.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = api_search_full.json; sourceTree = "<group>"; };
 		33D0A45980973EAB12D80560 /* api_recommend_extended.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = api_recommend_extended.json; sourceTree = "<group>"; };
+		24EDF0298788D96BC3655500 /* ProductMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductMapperTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -388,6 +390,7 @@
 				937448523E8899A7EABCFEDB /* ApiFixtures.swift */,
 				035DEBBBF56887CC74C803D6 /* ProductModelsParsingTests.swift */,
 				22C31BB010BB7196861A32AC /* Fixtures */,
+				24EDF0298788D96BC3655500 /* ProductMapperTests.swift */,
 			);
 			path = Rees46DemoTests;
 			sourceTree = "<group>";
@@ -892,6 +895,7 @@
 				EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */,
 				8393900BD24341614E7782A8 /* ApiFixtures.swift in Sources */,
 				B09272C49C5810A7C9505E5C /* ProductModelsParsingTests.swift in Sources */,
+				4E521BD567322ED3B04E9186 /* ProductMapperTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
