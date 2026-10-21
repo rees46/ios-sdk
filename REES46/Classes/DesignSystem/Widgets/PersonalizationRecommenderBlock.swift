@@ -18,11 +18,13 @@ import UIKit
 /// на следующем витке главной очереди: хост успевает задать их после `init`.
 ///
 /// Ответы идут через общий кэш виджетов: второй блок с теми же параметрами (лента пересоздала
-/// ячейку) показывает товары сразу, без запроса. `reload()` грузит мимо кэша, а показанные
-/// товары остаются на месте до ответа. Смена `source` — новая загрузка.
+/// ячейку) показывает товары сразу, без запроса и без проявления. `reload()` грузит мимо кэша,
+/// а показанный блок остаётся на месте до ответа; не пришёл ответ — блок скрыт, ошибка
+/// в `onError`. Смена `source` — новая загрузка, блок скрыт до ответа.
 ///
-/// Нажатие на товар блока рекомендаций запоминает источник `dynamic` с кодом блока
-/// (`tracking.setSource`) и отдаёт товар хосту; у коллекции источник не ставится.
+/// Нажатие на товар блока рекомендаций и на кнопку его карточки запоминает источник `dynamic`
+/// с кодом блока (`tracking.setSource`), потом отдаёт товар хосту; у коллекции источник
+/// не ставится.
 @_spi(PersonalizationUI) public final class PersonalizationRecommenderBlock: UIView {
 
     /// Откуда блок берёт товары.
@@ -238,7 +240,7 @@ import UIKit
             }
         }
         block.onProductTap = { [weak self] product in self?.productTapped(product) }
-        block.onProductAction = { [weak self] product in self?.onProductAction?(product) }
+        block.onProductAction = { [weak self] product in self?.productAction(product) }
     }
 
     /// Высота при ширине `width`, без раскладки: у скрытого — ноль. По ней блок встаёт
@@ -448,9 +450,20 @@ extension PersonalizationRecommenderBlock {
     }
 
     private func productTapped(_ product: PersonalizationProduct) {
-        if case .recommendations(let code, _, _, _) = source, let sdk {
-            sdk.tracking.setSource(TrackingSource(type: .dynamic, code: code))
-        }
+        trackSource()
         onProductTap?(product)
+    }
+
+    /// Кнопка карточки («в корзину» прямо из блока) — тот же источник, что у нажатия на товар.
+    private func productAction(_ product: PersonalizationProduct) {
+        trackSource()
+        onProductAction?(product)
+    }
+
+    /// Источник `dynamic` с кодом блока — до колбэка хосту, чтобы его событие уже шло
+    /// с источником. У коллекции источника нет.
+    private func trackSource() {
+        guard case .recommendations(let code, _, _, _) = source, let sdk else { return }
+        sdk.tracking.setSource(TrackingSource(type: .dynamic, code: code))
     }
 }
