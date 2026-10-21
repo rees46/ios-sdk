@@ -50,7 +50,7 @@ import UIKit
         }
     }
 
-    /// Индекс первой видимой карточки: по нему Recommender-блок двигает точки.
+    /// Индекс первой видимой карточки: по нему блок товаров двигает точки.
     public var onFirstVisibleChanged: ((Int) -> Void)?
 
     public let collectionView: UICollectionView

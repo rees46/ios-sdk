@@ -1,6 +1,6 @@
 import UIKit
 
-/// Блок рекомендаций: заголовок, товары, у карусели — точки.
+/// Блок товаров: заголовок, товары, у карусели — точки. Товары даёт хост.
 ///
 /// Источник: Figma Mobile SDK UI Kit, секция Card — Recommender/Carousel (90:655),
 /// Recommender/Grid (126:1944), Recommender/List (126:2551).
@@ -8,8 +8,9 @@ import UIKit
 /// у плитки и списка только заголовок, шаг 12.
 ///
 /// Собран из `PersonalizationTitle`, `PersonalizationButton`,
-/// `PersonalizationProductsList`, `PersonalizationDots`.
-@_spi(PersonalizationUI) public final class PersonalizationRecommenderBlock: UIView {
+/// `PersonalizationProductsList`, `PersonalizationDots`. Тот же блок с данными SDK —
+/// `PersonalizationRecommenderBlock`: он сам грузит рекомендации или коллекцию.
+@_spi(PersonalizationUI) public final class PersonalizationProductsBlock: UIView {
 
     public var layout: PersonalizationProductsList.Layout = .carousel {
         didSet { applyLayout() }

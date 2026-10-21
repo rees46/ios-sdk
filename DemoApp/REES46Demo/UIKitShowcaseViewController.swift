@@ -405,14 +405,14 @@ private enum Exhibits {
                 }
                 return column([scrollableRow(carousel)] + list)
             }),
-            ("Recommender Block — carousel", {
-                recommender(layout: .carousel, title: "Recommended for you", products: DemoProducts.all)
+            ("Products Block — carousel", {
+                productsBlock(layout: .carousel, title: "Recommended for you", products: DemoProducts.all)
             }),
-            ("Recommender Block — grid", {
-                recommender(layout: .grid, title: "Similar products", products: Array(DemoProducts.all.prefix(4)))
+            ("Products Block — grid", {
+                productsBlock(layout: .grid, title: "Similar products", products: Array(DemoProducts.all.prefix(4)))
             }),
-            ("Recommender Block — list", {
-                recommender(layout: .list, title: "Recently viewed", products: Array(DemoProducts.all.prefix(3)))
+            ("Products Block — list", {
+                productsBlock(layout: .list, title: "Recently viewed", products: Array(DemoProducts.all.prefix(3)))
             }),
             ("Instant Search — recent searches", { instantSearch(typing: false, images: false) }),
             ("Instant Search — typing, matches in bold", { instantSearch(typing: true, images: false) }),
@@ -607,8 +607,8 @@ private enum Exhibits {
         return card
     }
 
-    private static func recommender(layout: PersonalizationProductsList.Layout, title: String, products: [PersonalizationProduct]) -> PersonalizationRecommenderBlock {
-        let block = PersonalizationRecommenderBlock(layout: layout)
+    private static func productsBlock(layout: PersonalizationProductsList.Layout, title: String, products: [PersonalizationProduct]) -> PersonalizationProductsBlock {
+        let block = PersonalizationProductsBlock(layout: layout)
         block.text = title
         block.showAllText = "Show all"
         block.onShowAll = {}
