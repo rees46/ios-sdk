@@ -10,14 +10,15 @@ import UIKit
 /// "Search" runs the two data-bound search widgets against the demo shop: the instant search
 /// field, and the results screen it opens on submit.
 /// "Stories" keeps the stories block through the SDK's SwiftUI wrapper, the counterpart of the
-/// "Legacy UI" tab.
+/// "Legacy UI" tab. "Stories V2" is the kit's stories: every component of the Stories page, the
+/// viewer on sample stories, and the data-bound block of the demo shop (`StoriesV2Exhibits`).
 ///
 /// The kit is SPI until its release, hence the `@_spi(PersonalizationUI)` import. Product data is
 /// static: the kit does not fetch or format anything itself, and images are loaded by the host —
 /// `DemoImageLoader` here, through the components' `imageLoader` slot.
 final class UIKitShowcaseViewController: UIViewController {
 
-    private let segments = UISegmentedControl(items: ["Components", "Blocks", "Search", "Stories"])
+    private let segments = UISegmentedControl(items: ["Components", "Blocks", "Search", "Stories", "Stories V2"])
     private let container = UIView()
     private let appearanceButton = UIButton(type: .system)
     private var current: UIViewController?
@@ -30,6 +31,8 @@ final class UIKitShowcaseViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         segments.selectedSegmentIndex = 0
+        // Five titles do not fit equal widths on a phone; each segment takes what its title needs.
+        segments.apportionsSegmentWidthsByContent = true
         segments.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
         segments.translatesAutoresizingMaskIntoConstraints = false
         appearanceButton.addTarget(self, action: #selector(appearanceTapped), for: .touchUpInside)
@@ -88,7 +91,8 @@ final class UIKitShowcaseViewController: UIViewController {
         case 0: next = ShowcaseViewController(exhibits: Exhibits.components())
         case 1: next = ShowcaseViewController(exhibits: Exhibits.blocks())
         case 2: next = SearchFlowViewController(shopId: AppEnvironments.shopId)
-        default: next = UIHostingController(rootView: SwiftUIStoriesScreen())
+        case 3: next = UIHostingController(rootView: SwiftUIStoriesScreen())
+        default: next = ShowcaseViewController(exhibits: StoriesV2Exhibits.all())
         }
 
         current?.willMove(toParent: nil)
@@ -209,7 +213,7 @@ private final class SearchFlowViewController: UIViewController {
 
 /// A vertical list of captioned exhibits. Each exhibit is built once, on demand, so the views keep
 /// their own state (selected segment, expanded accordion) while the screen is scrolled.
-private final class ShowcaseViewController: UIViewController {
+final class ShowcaseViewController: UIViewController {
 
     typealias Exhibit = (title: String, build: () -> UIView)
 
@@ -836,10 +840,11 @@ final class DemoImageLoader {
             pending[ObjectIdentifier(imageView)] = nil
             return
         }
-        // Bundled photos: `asset://<name>` resolves in the asset catalogue, no request.
+        // Bundled photos: `asset://<name>` resolves in the asset catalogue, no request. A data
+        // asset (the sample GIF) shows its first frame, as the kit does for every cover.
         if url.scheme == "asset", let host = url.host {
             pending[ObjectIdentifier(imageView)] = nil
-            imageView.image = UIImage(named: host)
+            imageView.image = UIImage(named: host) ?? NSDataAsset(name: host).flatMap { UIImage(data: $0.data) }
             return
         }
         if let cached = cache.object(forKey: urlString as NSString) {
