@@ -16,9 +16,13 @@ import UIKit
         didSet { applyLayout() }
     }
 
+    /// Заголовок. `nil` или пустая строка без кнопки «показать все» — блок без строки заголовка.
     public var text: String? {
         get { title.text }
-        set { title.text = newValue }
+        set {
+            title.text = newValue
+            applyLayout()
+        }
     }
 
     /// Подпись кнопки «показать все» у карусели. `nil` — без кнопки.
@@ -64,6 +68,12 @@ import UIKit
     public var imageAspect: PersonalizationProductImage.Aspect {
         get { list.imageAspect }
         set { list.imageAspect = newValue }
+    }
+
+    /// Рейтинг на карточках, см. `PersonalizationProductCard.showRating`.
+    public var showRating: Bool {
+        get { list.showRating }
+        set { list.showRating = newValue }
     }
 
     private let stack = UIStackView()
@@ -114,6 +124,8 @@ import UIKit
         stack.spacing = carousel ? PersonalizationSpacing.xl : PersonalizationSpacing.lg  // 16 / 12
         list.layout = layout
         title.trailing = carousel && !(showAllText ?? "").isEmpty ? showAllButton : nil
+        // Пустой ряд заголовка всё равно занял бы шаг стека над товарами.
+        title.isHidden = (text ?? "").isEmpty && title.trailing == nil
         dots.isHidden = !(carousel && showDots)
     }
 }

@@ -50,6 +50,16 @@ import UIKit
         }
     }
 
+    /// Рейтинг на карточках, см. `PersonalizationProductCard.showRating`.
+    public var showRating = true {
+        didSet {
+            guard oldValue != showRating else { return }
+            itemHeightCache = nil
+            collectionView.reloadData()
+            invalidateIntrinsicContentSize()
+        }
+    }
+
     /// Индекс первой видимой карточки: по нему блок товаров двигает точки.
     public var onFirstVisibleChanged: ((Int) -> Void)?
 
@@ -153,6 +163,7 @@ import UIKit
     private func cardHeight(for product: PersonalizationProduct, width: CGFloat) -> CGFloat {
         let card = PersonalizationProductCard(type: layout.cardType)
         card.imageAspect = imageAspect
+        card.showRating = showRating
         card.show(product)
         let height = card.systemLayoutSizeFitting(
             CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
@@ -207,6 +218,7 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
         let card = cell.card
         card.type = layout.cardType
         card.imageAspect = imageAspect
+        card.showRating = showRating
         card.show(product)
         card.onAction = { [weak self] in self?.onProductAction?(product) }
         card.onTap = { [weak self] in self?.onProductTap?(product) }
