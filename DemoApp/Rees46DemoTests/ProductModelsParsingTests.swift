@@ -144,6 +144,57 @@ final class ProductModelsParsingTests: XCTestCase {
         XCTAssertNil(product.discountPercent)
     }
 
+    func testProductInfo_numbersAsStrings_andFalseDiscount_readAsNumbersAndNoDiscount() {
+        var json = ApiFixtures.json("product_info")
+        json["oldprice"] = "16990.0"
+        json["price_full"] = "14990"
+        let product = ProductInfo(json: json)
+
+        XCTAssertEqual(product.price, 14990)
+        XCTAssertEqual(product.priceFull, 14990)
+        XCTAssertEqual(product.oldPrice, 16990)
+        XCTAssertEqual(product.discount, 0)
+    }
+
+    func testOtherModels_readNumbersSentAsStrings_andFalseDiscountAsNone() {
+        let json: [String: Any] = [
+            "id": "1", "price": "90.5", "oldprice": "100", "discount": false, "discount_percent": "9"
+        ]
+        let category = CategoryProduct(json: json)
+        let search = Product(json: json)
+        let recommended = Recommended(json: json)
+
+        XCTAssertEqual(category.price, 90.5)
+        XCTAssertEqual(category.oldPrice, 100)
+        XCTAssertNil(category.discount)
+        XCTAssertEqual(category.discountPercent, 9)
+        XCTAssertEqual(search.price, 90.5)
+        XCTAssertEqual(search.oldPrice, 100)
+        XCTAssertEqual(search.discount, 0)
+        XCTAssertEqual(recommended.price, 90.5)
+        XCTAssertEqual(recommended.discount, 0)
+        XCTAssertEqual(recommended.discountPercent, 9)
+    }
+
+    func testJSONNumber_parsesNumbersAndNumericStrings_only() {
+        XCTAssertEqual(JSONNumber.double(14990), 14990)
+        XCTAssertEqual(JSONNumber.double(14990.5), 14990.5)
+        XCTAssertEqual(JSONNumber.double("14990.0"), 14990)
+        XCTAssertEqual(JSONNumber.double(" 7 "), 7)
+        XCTAssertNil(JSONNumber.double(false))
+        XCTAssertNil(JSONNumber.double(true))
+        XCTAssertNil(JSONNumber.double(""))
+        XCTAssertNil(JSONNumber.double("abc"))
+        XCTAssertNil(JSONNumber.double("nan"))
+        XCTAssertNil(JSONNumber.double("inf"))
+        XCTAssertNil(JSONNumber.double(NSNull()))
+        XCTAssertNil(JSONNumber.double(nil))
+        XCTAssertEqual(JSONNumber.int("6"), 6)
+        XCTAssertEqual(JSONNumber.int(6.9), 6)
+        XCTAssertNil(JSONNumber.int(false))
+        XCTAssertNil(JSONNumber.int("1e300"))
+    }
+
     func testProductInfo_discounted_keepsDiscountFields() {
         var json = ApiFixtures.product("products", id: ApiFixtures.discountedId)
         json["uniqid"] = json["id"]

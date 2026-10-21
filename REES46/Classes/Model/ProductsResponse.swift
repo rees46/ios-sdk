@@ -96,24 +96,23 @@ public struct ProductInfo {
         }
         categories = categoriesAll
         
-        // `products/get` sends the price as a string ("14990.0"), the other endpoints as a number.
-        price = json["price"] as? Double ?? (json["price"] as? String).flatMap(Double.init) ?? 0
+        price = JSONNumber.double(json["price"]) ?? 0
         priceFormatted = json["price_formatted"] as? String ?? ""
-        priceFull = json["price_full"] as? Double ?? 0
+        priceFull = JSONNumber.double(json["price_full"]) ?? 0
         priceFullFormatted = json["price_full_formatted"] as? String ?? ""
-        oldPrice = json["oldprice"] as? Double ?? 0
+        oldPrice = JSONNumber.double(json["oldprice"]) ?? 0
         oldPriceFormatted = json["oldprice_formatted"] as? String ?? ""
-        oldPriceFull = json["oldprice_full"] as? Double ?? 0
+        oldPriceFull = JSONNumber.double(json["oldprice_full"]) ?? 0
         oldPriceFullFormatted = json["oldprice_full_formatted"] as? String ?? ""
         currency = json["currency"] as? String ?? ""
         barcode = json["barcode"] as? String ?? ""
         isNew = json["is_new"] as? Bool
         params = json["params"] as? [[String: Any]]
         
-        discount = json["discount"] as? Int ?? 0
+        discount = JSONNumber.int(json["discount"]) ?? 0
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
         discountFormatted = json["discount_formatted"] as? String
-        discountPercent = json["discount_percent"] as? Int
+        discountPercent = JSONNumber.int(json["discount_percent"])
     }
 }

@@ -120,18 +120,18 @@ public struct Recommended {
         resizedImageUrl = json[Constants.JSONKeys.picture] as? String ?? ""
         url = json[Constants.JSONKeys.url] as? String ?? ""
         deeplinkIos = json[Constants.JSONKeys.deeplinkIos] as? String ?? ""
-        price = json[Constants.JSONKeys.price] as? Double ?? 0
+        price = JSONNumber.double(json[Constants.JSONKeys.price]) ?? 0
         priceFormatted = json[Constants.JSONKeys.priceFormatted] as? String
-        priceFull = json[Constants.JSONKeys.priceFull] as? Double ?? 0
+        priceFull = JSONNumber.double(json[Constants.JSONKeys.priceFull]) ?? 0
         priceFullFormatted = json[Constants.JSONKeys.priceFullFormatted] as? String
-        oldPrice = json[Constants.JSONKeys.oldPrice] as? Double ?? 0
+        oldPrice = JSONNumber.double(json[Constants.JSONKeys.oldPrice]) ?? 0
         oldPriceFormatted = json[Constants.JSONKeys.oldPriceFormatted] as? String
-        oldPriceFull = json[Constants.JSONKeys.oldPriceFull] as? Double ?? 0
+        oldPriceFull = JSONNumber.double(json[Constants.JSONKeys.oldPriceFull]) ?? 0
         oldPriceFullFormatted = json[Constants.JSONKeys.oldPriceFullFormatted] as? String
         currency = json[Constants.JSONKeys.currency] as? String ?? ""
         salesRate = json[Constants.JSONKeys.salesRate] as? Int ?? 0
         relativeSalesRate = json[Constants.JSONKeys.relativeSalesRate] as? Float ?? 0.0
-        discount = json[Constants.JSONKeys.discount] as? Int ?? 0
+        discount = JSONNumber.int(json[Constants.JSONKeys.discount]) ?? 0
         rating = json[Constants.JSONKeys.rating] as? Int ?? 0
         resizedImages = json[Constants.JSONKeys.image_url_resized] as? [String: String] ?? [:]
         
@@ -164,7 +164,7 @@ public struct Recommended {
         paramsRaw = json[Constants.JSONKeys.params] as? [[String: Any]]
 
         discountFormatted = json[Constants.JSONKeys.discountFormatted] as? String
-        discountPercent = json[Constants.JSONKeys.discountPercent] as? Int
+        discountPercent = JSONNumber.int(json[Constants.JSONKeys.discountPercent])
         isNew = json[Constants.JSONKeys.isNew] as? Bool
         
     }
