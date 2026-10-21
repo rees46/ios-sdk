@@ -73,6 +73,12 @@ import UIKit
         didSet { applyTexts() }
     }
 
+    /// Ряд рейтинга. `false` — не рисовать даже при заданной оценке: в API рейтинга нет,
+    /// и виджеты с данными SDK его выключают.
+    public var showRating = true {
+        didSet { applyRating() }
+    }
+
     public var onAction: (() -> Void)?
 
     /// Нажатие на карточку целиком (не на кнопку) — открыть товар.
@@ -97,6 +103,7 @@ import UIKit
     private let oldPriceLabel = UILabel()
     private let button = PersonalizationButton(size: .md, view: .primary)
 
+    private var ratingValue: String?
     private var root: UIStackView?
     private var badgeConstraints: [NSLayoutConstraint] = []
     private var listImageWidth: NSLayoutConstraint?
@@ -115,8 +122,13 @@ import UIKit
     /// - Parameter value: уже отформатированная оценка: в макете «4,7» с запятой;
     ///   `nil` — товар без оценки, ряд рейтинга прячется.
     public func setRating(value: String?, reviews: Int) {
-        rating.isHidden = value == nil
+        ratingValue = value
         if let value { rating.set(value: value, reviews: reviews) }
+        applyRating()
+    }
+
+    private func applyRating() {
+        rating.isHidden = !showRating || ratingValue == nil
     }
 
     /// Тексты карточки из данных товара. Обработчики и картинку раскладка ставит сама.

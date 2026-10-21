@@ -102,6 +102,11 @@ import UIKit
         didSet { renderProducts() }
     }
 
+    /// Рейтинг на карточках. В ответе поиска рейтинга нет, поэтому по умолчанию выключен.
+    public var showRating = false {
+        didSet { catalog.showRating = showRating }
+    }
+
     public var layout: PersonalizationProductsList.Layout {
         get { catalog.layout }
         set {
@@ -189,6 +194,7 @@ import UIKit
         let padding = PersonalizationSpacing.xl
 
         catalog.header = title
+        catalog.showRating = showRating
         catalog.imageLoader = { [weak self] imageView, product in self?.loadImage(imageView, url: product.imageUrl) }
         catalog.onProductTap = { [weak self] card in
             guard let self, let product = self.products.first(where: { $0.id == card.id }) else { return }

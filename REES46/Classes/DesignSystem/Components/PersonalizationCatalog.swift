@@ -75,6 +75,11 @@ import UIKit
         didSet { if oldValue != imageAspect { reload(.products) } }
     }
 
+    /// Рейтинг на карточках, см. `PersonalizationProductCard.showRating`.
+    public var showRating: Bool = true {
+        didSet { if oldValue != showRating { reload(.products) } }
+    }
+
     /// Во фреймах с лоадером (296:3544, 299:6606) счётчика и кнопки нет — на время
     /// загрузки лоадер встаёт на их место.
     public var isLoading: Bool = false {
@@ -311,6 +316,7 @@ import UIKit
         let card = cell.card
         if card.type != cardType { card.type = cardType }
         if card.imageAspect != imageAspect { card.imageAspect = imageAspect }
+        card.showRating = showRating
         card.show(product)
         card.onAction = { [weak self] in self?.onProductAction?(product) }
         card.onTap = { [weak self] in self?.onProductTap?(product) }
@@ -457,18 +463,19 @@ import UIKit
         let width: CGFloat
         let type: PersonalizationProductCard.CardType
         let aspect: PersonalizationProductImage.Aspect
+        let showRating: Bool
     }
 
     /// Промер карточки не бесплатный, поэтому высоты кэшируются по её содержимому:
-    /// догруженная страница меряет только новые товары, а смена ширины, вида или
-    /// пропорции сбрасывает кэш.
+    /// догруженная страница меряет только новые товары, а смена ширины, вида,
+    /// пропорции или видимости рейтинга сбрасывает кэш.
     private var heightCache: (scope: CardScope, heights: [CardContent: CGFloat])?
 
     /// Карточка для промера — одна на каталог, на экран она не попадает.
     private lazy var sizingCard = PersonalizationProductCard(type: cardType)
 
     private func cardHeights(width: CGFloat) -> [CGFloat] {
-        let scope = CardScope(width: width, type: cardType, aspect: imageAspect)
+        let scope = CardScope(width: width, type: cardType, aspect: imageAspect, showRating: showRating)
         let cached = heightCache.flatMap { $0.scope == scope ? $0.heights : nil } ?? [:]
         var heights: [CardContent: CGFloat] = [:]
         let result = products.map { product -> CGFloat in
@@ -486,6 +493,7 @@ import UIKit
         let card = sizingCard
         if card.type != cardType { card.type = cardType }
         if card.imageAspect != imageAspect { card.imageAspect = imageAspect }
+        card.showRating = showRating
         card.show(product)
         return measure(card, width: width)
     }
