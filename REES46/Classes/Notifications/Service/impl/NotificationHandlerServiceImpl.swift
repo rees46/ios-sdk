@@ -25,6 +25,8 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
         static let channel = "channel"
         static let limit = "limit"
         static let page = "page"
+        static let shopSecret = "shop_secret"
+        static let dateFrom = "date_from"
     }
     
     private func configureSession(timeOut: Double? = 1) {
@@ -64,6 +66,7 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
     
     private func createParams(
         type: String,
+        shopSecret: String? = nil,
         phone: String? = nil,
         email: String? = nil,
         userExternalId: String? = nil,
@@ -103,6 +106,12 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
         if let page = page {
             params[Constants.page] = String(page)
         }
+        if let dateFrom = dateFrom {
+            params[Constants.dateFrom] = dateFrom
+        }
+        if let shopSecret = shopSecret {
+            params[Constants.shopSecret] = shopSecret
+        }
         
         return params
     }
@@ -119,11 +128,68 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
         dateFrom: String? = nil,
         completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void
     ) {
-        guard let sdk = sdk else { return }
+        loadNotifications(
+            shopSecret: nil,
+            type: type,
+            phone: phone,
+            email: email,
+            userExternalId: userExternalId,
+            userLoyaltyId: userLoyaltyId,
+            channel: channel,
+            limit: limit,
+            page: page,
+            dateFrom: dateFrom,
+            completion: completion
+        )
+    }
+
+    func getAllNotifications(
+        shopSecret: String,
+        type: String,
+        phone: String? = nil,
+        email: String? = nil,
+        userExternalId: String? = nil,
+        userLoyaltyId: String? = nil,
+        channel: String? = nil,
+        limit: Int? = nil,
+        page: Int? = nil,
+        dateFrom: String? = nil,
+        completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void
+    ) {
+        loadNotifications(
+            shopSecret: shopSecret,
+            type: type,
+            phone: phone,
+            email: email,
+            userExternalId: userExternalId,
+            userLoyaltyId: userLoyaltyId,
+            channel: channel,
+            limit: limit,
+            page: page,
+            dateFrom: dateFrom,
+            completion: completion
+        )
+    }
+
+    private func loadNotifications(
+        shopSecret: String?,
+        type: String,
+        phone: String?,
+        email: String?,
+        userExternalId: String?,
+        userLoyaltyId: String?,
+        channel: String?,
+        limit: Int?,
+        page: Int?,
+        dateFrom: String?,
+        completion: @escaping(Result<UserPayloadResponse, SdkError>) -> Void
+    ) {
+        guard sdk != nil else { return }
         
         sessionQueue.addOperation {
             let params = self.createParams(
                 type: type,
+                shopSecret: shopSecret,
                 phone: phone,
                 email: email,
                 userExternalId: userExternalId,

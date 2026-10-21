@@ -301,6 +301,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    @available(*, deprecated, message: "GET /notifications requires the shop secret: use getAllNotifications(shopSecret:type:...).")
     func getAllNotifications(
         type: String,
         phone: String? = nil,
