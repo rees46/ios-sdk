@@ -2,7 +2,8 @@ import XCTest
 @testable import REES46
 
 /// The data widgets' load state: `idle → loading → content | empty | error`, retry after an error
-/// (forced past the cache), stale answers dropped, state changed only on the main queue.
+/// and reload in any state (both forced past the cache), stale answers dropped, state changed only
+/// on the main queue.
 final class LoadStateMachineTests: XCTestCase {
 
     private var fetches = 0
@@ -88,6 +89,35 @@ final class LoadStateMachineTests: XCTestCase {
         machine.retry()
         XCTAssertEqual(fetches, 1)
         XCTAssertEqual(state, "content(a)")
+    }
+
+    func testReload_loadsPastTheCache_fromAnyState() {
+        machine.reload()
+        XCTAssertEqual(state, "loading")
+        pending[0](.success(["a"]))
+
+        machine.reload()
+        XCTAssertEqual(state, "loading")
+        pending[1](.success([]))
+        XCTAssertEqual(state, "empty")
+
+        machine.reload()
+        pending[2](.failure(.networkOfflineError))
+        machine.reload()
+        pending[3](.success(["b"]))
+
+        XCTAssertEqual(state, "content(b)")
+        XCTAssertEqual(forces, [true, true, true, true])
+    }
+
+    func testReload_dropsTheAnswerOfTheLoadItReplaced() {
+        machine.load()
+        machine.reload()
+
+        pending[0](.success(["stale"]))
+        XCTAssertEqual(state, "loading")
+        pending[1](.success(["fresh"]))
+        XCTAssertEqual(state, "content(fresh)")
     }
 
     func testNewLoad_dropsTheStaleAnswer() {
