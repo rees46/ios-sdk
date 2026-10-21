@@ -389,4 +389,38 @@ final class PersonalizationRecommenderBlockTests: XCTestCase {
     func testRating_isOffByDefault() {
         XCTAssertFalse(PersonalizationRecommenderBlock(code: "block-1").showRating)
     }
+
+    // MARK: - Products block (presentational)
+
+    func testProductsBlock_dropsTheTitleRow_onlyWithoutTextAndShowAll() {
+        let block = PersonalizationProductsBlock(layout: .carousel)
+        let row = { self.views(PersonalizationTitle.self, in: block)[0] }
+        XCTAssertTrue(row().isHidden)
+
+        block.text = "Similar"
+        XCTAssertFalse(row().isHidden)
+        block.text = ""
+        XCTAssertTrue(row().isHidden)
+        block.showAllText = "Show all"
+        XCTAssertFalse(row().isHidden, "the row still holds the show-all button")
+    }
+
+    func testProductsBlock_passesTheRatingFlagToItsCards() {
+        // The carousel knows its card width before layout, so one pass lays the cells out.
+        let block = PersonalizationProductsBlock(layout: .carousel)
+        block.frame = CGRect(x: 0, y: 0, width: 390, height: 600)
+        window.addSubview(block)
+        block.products = [PersonalizationProduct(id: "1", name: "Rated", price: "$1", ratingValue: "4.5", reviews: 3)]
+        let ratings = { self.views(PersonalizationRating.self, in: block) }
+
+        block.showRating = false
+        window.layoutIfNeeded()
+        window.layoutIfNeeded()
+        XCTAssertFalse(ratings().isEmpty)
+        XCTAssertTrue(ratings().allSatisfy(\.isHidden))
+
+        block.showRating = true
+        window.layoutIfNeeded()
+        XCTAssertTrue(ratings().contains { !$0.isHidden })
+    }
 }
