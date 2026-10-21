@@ -112,23 +112,3 @@ final class SearchImages {
         task.resume()
     }
 }
-
-extension Product {
-    /// Товар ответа поиска → данные карточки кита. Строки берутся уже отформатированными
-    /// сервером (`price_formatted`, `oldprice_formatted`); картинка — `picture`
-    /// (уменьшенная копия), иначе оригинал.
-    func toCardProduct(actionText: String?) -> PersonalizationProduct {
-        let hasOldPrice = oldPrice > price && !oldPriceFormatted.isEmpty
-        let discountText = hasOldPrice && discount > 0 ? "-\(discount)%" : nil
-        return PersonalizationProduct(
-            id: id,
-            name: name,
-            price: priceFormatted.isEmpty ? "\(price) \(currency)" : priceFormatted,
-            imageUrl: resizedImageUrl.isEmpty ? (imageUrl.isEmpty ? nil : imageUrl) : resizedImageUrl,
-            brand: brand.isEmpty ? nil : brand,
-            oldPrice: hasOldPrice ? oldPriceFormatted : nil,
-            discount: discountText,
-            actionText: actionText
-        )
-    }
-}
