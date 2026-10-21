@@ -5,17 +5,19 @@ import UIKit
 /// "UI Kit" tab — the design system, one exhibit per component.
 ///
 /// "Components" walks through the primitives in every size, view and state the design file
-/// defines; "Blocks" shows the compositions built from them (product cards, recommender layouts,
-/// instant search, the catalogue, the filters screen, in-app popups, the toast, the loyalty card).
+/// defines; "Blocks" shows the compositions built from them (product cards, the products block,
+/// instant search, the catalogue, the filters screen, in-app popups, the toast, the loyalty card)
+/// and the data-bound recommender block of the demo shop (`RecommenderExhibits`).
 /// "Search" runs the two data-bound search widgets against the demo shop: the instant search
 /// field, and the results screen it opens on submit.
 /// "Stories" keeps the stories block through the SDK's SwiftUI wrapper, the counterpart of the
 /// "Legacy UI" tab. "Stories V2" is the kit's stories: every component of the Stories page, the
 /// viewer on sample stories, and the data-bound block of the demo shop (`StoriesV2Exhibits`).
 ///
-/// The kit is SPI until its release, hence the `@_spi(PersonalizationUI)` import. Product data is
-/// static: the kit does not fetch or format anything itself, and images are loaded by the host —
-/// `DemoImageLoader` here, through the components' `imageLoader` slot.
+/// The kit is SPI until its release, hence the `@_spi(PersonalizationUI)` import. Product data of
+/// the static exhibits is fixed: those components do not fetch or format anything themselves, and
+/// images are loaded by the host — `DemoImageLoader` here, through the components' `imageLoader`
+/// slot. The data-bound widgets fetch on their own and load images with the built-in loader.
 final class UIKitShowcaseViewController: UIViewController {
 
     private let segments = UISegmentedControl(items: ["Components", "Blocks", "Search", "Stories", "Stories V2"])
@@ -382,7 +384,7 @@ private enum Exhibits {
     }
 
     static func blocks() -> [ShowcaseViewController.Exhibit] {
-        [
+        let products: [ShowcaseViewController.Exhibit] = [
             ("Product Card — carousel, grid, list", {
                 let carousel = productCard(type: .carousel, product: DemoProducts.all[0])
                 carousel.widthAnchor.constraint(equalToConstant: 220).isActive = true
@@ -413,7 +415,9 @@ private enum Exhibits {
             }),
             ("Products Block — list", {
                 productsBlock(layout: .list, title: "Recently viewed", products: Array(DemoProducts.all.prefix(3)))
-            }),
+            })
+        ]
+        let others: [ShowcaseViewController.Exhibit] = [
             ("Instant Search — recent searches", { instantSearch(typing: false, images: false) }),
             ("Instant Search — typing, matches in bold", { instantSearch(typing: true, images: false) }),
             ("Instant Search — with images", { instantSearch(typing: false, images: true) }),
@@ -440,6 +444,8 @@ private enum Exhibits {
             ("Loyalty Card — light, stamps 0 of 5", { loyaltyCard(stamps: 0) }),
             ("Loyalty Card — brand colour, stamps 4 of 5", { loyaltyCard(stamps: 4, brand: true) })
         ]
+        // The data-bound recommender block of the demo shop goes right after its static exhibits.
+        return products + RecommenderExhibits.all() + others
     }
 
     /// The loyalty card as a host fills it: the SDK's loyalty status carries no balance, stamps
