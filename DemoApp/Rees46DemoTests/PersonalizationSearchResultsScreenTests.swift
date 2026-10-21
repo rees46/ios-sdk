@@ -188,6 +188,29 @@ final class PersonalizationSearchResultsScreenTests: XCTestCase {
         XCTAssertEqual(buttons("Повторить").count, 1)
     }
 
+    func testEmptyErrorTexts_fallBackToDefaults_soRetryStaysReachable() {
+        screen.errorText = nil
+        screen.retryText = ""
+        XCTAssertEqual(screen.errorText, "Something went wrong. Check your connection and try again.")
+        XCTAssertEqual(screen.retryText, "Retry")
+
+        sdk.searchResults = [.failure(.networkOfflineError)]
+        search("phone")
+        XCTAssertEqual(buttons("Retry").count, 1)
+
+        screen.retryText = nil
+        screen.errorText = ""
+        screen.pageSize = 2
+        screen.infiniteScroll = true
+        screen.removeFromSuperview()
+        sdk.searchResults = [page(total: 4, ids: 0..<2), .failure(.networkOfflineError)]
+        search("laptop")
+        screen.catalog.onNearEnd?()
+
+        XCTAssertEqual(screen.catalog.loadMoreText, "Retry")
+        XCTAssertEqual(screen.retryText, "Retry")
+    }
+
     func testNewQuery_clearsTheError() {
         sdk.searchResults = [.failure(.networkOfflineError), page(total: 1, ids: 0..<1)]
         search("phone")

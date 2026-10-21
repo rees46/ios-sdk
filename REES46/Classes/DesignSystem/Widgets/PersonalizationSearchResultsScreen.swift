@@ -153,15 +153,25 @@ import UIKit
     public var emptyText: String? = "No results for your request." {
         didSet { applyEmpty() }
     }
-    public var errorText: String? = "Something went wrong. Check your connection and try again." {
-        didSet { applyError() }
-    }
-    public var retryText: String? = "Retry" {
+    /// Текст ошибки первой страницы. `nil` или пустая строка — текст по умолчанию:
+    /// без него ошибка выглядела бы пустым экраном.
+    public var errorText: String? = PersonalizationSearchResultsScreen.defaultErrorText {
         didSet {
+            if (errorText ?? "").isEmpty { errorText = Self.defaultErrorText }
+            applyError()
+        }
+    }
+    /// Подпись кнопки повтора. `nil` или пустая строка — подпись по умолчанию: без кнопки
+    /// выдача после ошибки не восстановилась бы, бесконечная прокрутка ждёт именно её.
+    public var retryText: String? = PersonalizationSearchResultsScreen.defaultRetryText {
+        didSet {
+            if (retryText ?? "").isEmpty { retryText = Self.defaultRetryText }
             applyError()
             applyLoadMore()
         }
     }
+    private static let defaultErrorText = "Something went wrong. Check your connection and try again."
+    private static let defaultRetryText = "Retry"
     public var filtersTitle: String? = "Filters"
     public var resetText: String? = "Reset"
     public var applyText: String? = "Apply"
