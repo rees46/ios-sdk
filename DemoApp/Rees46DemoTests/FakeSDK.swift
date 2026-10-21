@@ -42,6 +42,14 @@ final class FakeSDK: PersonalizationSDK {
     /// from the caller's thread.
     private let storiesQueue = DispatchQueue(label: "FakeSDK.stories")
 
+    /// Answers `search` hands back in order, so the search results screen tests can fail a page
+    /// and serve it on retry. The answer comes synchronously; the screen hops to the main queue
+    /// on its own. Nothing left — the call never completes, as before.
+    var searchResults: [Result<SearchResponse, SdkError>] = []
+
+    /// `offset` of every `search` call, in order.
+    private(set) var searchOffsets: [Int?] = []
+
     /// Records notification-track calls so tests can assert push routing hit the right instance.
     private(set) var deliveredTracks: [(type: String, code: String)] = []
     private(set) var receivedTracks: [(type: String, code: String)] = []
@@ -83,7 +91,11 @@ final class FakeSDK: PersonalizationSDK {
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
     func searchBlank(completion: @escaping (Result<SearchBlankResponse, SdkError>) -> Void) {}
-    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {}
+    func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?, brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void) {
+        searchOffsets.append(offset)
+        guard !searchResults.isEmpty else { return }
+        completion(searchResults.removeFirst())
+    }
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
         clickedTracks.append((type, code))
     }
