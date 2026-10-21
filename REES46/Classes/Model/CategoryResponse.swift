@@ -9,11 +9,29 @@ public struct CategoryResponse {
     public var productsTotal: Int
     public var products: [CategoryProduct]
     public var brands: [CategoryBrand]
+    /// Store facets, as in `SearchResponse.filters`; `nil` when the response has none.
+    public var filters: [String: Filter]?
+    public var priceRange: PriceRange?
+    /// Subcategories with product counts, as in `SearchResponse.categories`.
+    public var categories: [Category] = []
 
     init(json: [String: Any]) {
         productsTotal = json["products_total"] as? Int ?? 0
         products = (json["products"] as? [[String: Any]] ?? []).map { CategoryProduct(json: $0) }
         brands = (json["brands"] as? [[String: Any]] ?? []).map { CategoryBrand(json: $0) }
+        if let filtersJSON = json["filters"] as? [String: Any] {
+            var filtersResult = [String: Filter]()
+            for item in filtersJSON {
+                if let dict = item.value as? [String: Any] {
+                    filtersResult[item.key] = Filter(json: dict)
+                }
+            }
+            filters = filtersResult
+        }
+        if let priceRangeJSON = json["price_range"] as? [String: Any] {
+            priceRange = PriceRange(json: priceRangeJSON)
+        }
+        categories = (json["categories"] as? [[String: Any]] ?? []).map { Category(json: $0) }
     }
 }
 
@@ -29,6 +47,16 @@ public struct CategoryProduct {
     public var imageUrl: String?
     public var url: String?
     public var picture: String?
+    public var oldPrice: Double?
+    public var oldPriceFormatted: String?
+    public var oldPriceFull: Double?
+    public var oldPriceFullFormatted: String?
+    public var discount: Int?
+    public var discountFormatted: String?
+    public var discountPercent: Int?
+    public var isNew: Bool?
+    public var deeplinkIos: String?
+    public var resizedImages: [String: String]?
 
     init(json: [String: Any]) {
         id = json["id"] as? String
@@ -42,6 +70,16 @@ public struct CategoryProduct {
         imageUrl = json["image_url"] as? String
         url = json["url"] as? String
         picture = json["picture"] as? String
+        oldPrice = json["oldprice"] as? Double
+        oldPriceFormatted = json["oldprice_formatted"] as? String
+        oldPriceFull = json["oldprice_full"] as? Double
+        oldPriceFullFormatted = json["oldprice_full_formatted"] as? String
+        discount = json["discount"] as? Int
+        discountFormatted = json["discount_formatted"] as? String
+        discountPercent = json["discount_percent"] as? Int
+        isNew = json["is_new"] as? Bool
+        deeplinkIos = json["deeplink_ios"] as? String
+        resizedImages = json["image_url_resized"] as? [String: String]
     }
 }
 

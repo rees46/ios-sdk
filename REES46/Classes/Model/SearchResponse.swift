@@ -238,6 +238,8 @@ public struct Product {
     public var relativeSalesRate: Float = 0.0
     public var isNew: Bool?
     public var params: [[String: Any]]?
+    public var discountFormatted: String?
+    public var discountPercent: Int?
     
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
@@ -267,6 +269,8 @@ public struct Product {
         discount = json["discount"] as? Int ?? 0
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
+        discountFormatted = json["discount_formatted"] as? String
+        discountPercent = json["discount_percent"] as? Int
     }
 }
 

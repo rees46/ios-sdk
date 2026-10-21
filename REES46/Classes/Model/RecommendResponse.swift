@@ -36,6 +36,9 @@ struct Constants {
         static let fashionSizes = "fashion_sizes"
         static let fashionColors = "fashion_colors"
         static let params = "params"
+        static let discountFormatted = "discount_formatted"
+        static let discountPercent = "discount_percent"
+        static let isNew = "is_new"
     }
     
     struct RecommendedBy {
@@ -102,6 +105,9 @@ public struct Recommended {
     public var fashionSizes: [String] = []
     public var fashionColors: [String] = []
     public var resizedImages: [String: String] = [:]
+    public var discountFormatted: String?
+    public var discountPercent: Int?
+    public var isNew: Bool?
     
     init(json: [String: Any]) {
         id = json[Constants.JSONKeys.id] as? String ?? ""
@@ -156,6 +162,10 @@ public struct Recommended {
         
         // TODO: convert to objects
         paramsRaw = json[Constants.JSONKeys.params] as? [[String: Any]]
+
+        discountFormatted = json[Constants.JSONKeys.discountFormatted] as? String
+        discountPercent = json[Constants.JSONKeys.discountPercent] as? Int
+        isNew = json[Constants.JSONKeys.isNew] as? Bool
         
     }
 }

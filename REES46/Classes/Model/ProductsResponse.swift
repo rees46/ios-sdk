@@ -73,6 +73,8 @@ public struct ProductInfo {
     public var barcode: String = ""
     public var isNew: Bool?
     public var params: [[String: Any]]?
+    public var discountFormatted: String?
+    public var discountPercent: Int?
     
     init(json: [String: Any]) {
         
@@ -110,5 +112,7 @@ public struct ProductInfo {
         discount = json["discount"] as? Int ?? 0
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
+        discountFormatted = json["discount_formatted"] as? String
+        discountPercent = json["discount_percent"] as? Int
     }
 }
