@@ -124,3 +124,15 @@ extension ProductInfo {
         ), actionText: actionText)
     }
 }
+
+extension PersonalizationProduct {
+    /// Тот же товар с другой подписью кнопки: кэш держит карточки без неё, а подпись — параметр
+    /// виджета. Новое поле товара надо перенести и сюда.
+    func with(actionText: String?) -> PersonalizationProduct {
+        PersonalizationProduct(
+            id: id, name: name, price: price, imageUrl: imageUrl, brand: brand,
+            ratingValue: ratingValue, reviews: reviews, oldPrice: oldPrice, discount: discount,
+            actionText: actionText, url: url, deeplink: deeplink
+        )
+    }
+}
