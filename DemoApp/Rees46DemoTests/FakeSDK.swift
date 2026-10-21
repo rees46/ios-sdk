@@ -29,6 +29,15 @@ final class FakeSDK: PersonalizationSDK {
     var enableAutoPopupPresentation: Bool = true
     lazy var popupPresenter: PopupPresenter = PopupPresenter(sdk: self)
 
+    /// Events the `tracking` namespace was asked to send, in order. Nothing goes out: `tracking`
+    /// runs over a recorder instead of the event service.
+    var trackedEvents: [Event] { trackRecorder.events }
+    private let trackRecorder = RecordingTrackService()
+
+    var tracking: TrackingAPI {
+        TrackingAPIImpl(trackService: trackRecorder, sourceService: TrackSourceServiceImpl(store: trackingSourceStore))
+    }
+
     /// Stories the fake hands back from `getStories`, so the stories block tests can drive an empty
     /// and a filled load. Left `nil` the call never completes, as before.
     var storiesResult: Result<StoryContent, SdkError>?
@@ -128,4 +137,21 @@ final class FakeSDK: PersonalizationSDK {
     func configuration() -> SdkConfiguration.Type { SdkConfiguration.self }
     func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void) {}
     func deleteUserCredentials() {}
+}
+
+/// Event service behind `FakeSDK.tracking`: records what would be sent and never completes,
+/// as the fake's own requests never do.
+final class RecordingTrackService: TrackEventServiceProtocol {
+    private(set) var events: [Event] = []
+
+    func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        events.append(event)
+    }
+    func track(event: Event, source: TrackingSourceWire?, details: TrackEventDetails, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        events.append(event)
+    }
+    func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
+    func trackPurchase(_ request: PurchaseTrackingRequest, source: TrackingSourceWire?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
+    func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
+    func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {}
 }

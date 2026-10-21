@@ -54,6 +54,11 @@ final class PersonalizationSearchResultsScreenTests: XCTestCase {
         }
     }
 
+    /// How many `search` events the screen tracked.
+    private var searchEvents: Int {
+        sdk.trackedEvents.filter { if case .search = $0 { return true } else { return false } }.count
+    }
+
     /// Visible buttons titled `text` anywhere on the screen.
     private func buttons(_ text: String) -> [PersonalizationButton] {
         views(PersonalizationButton.self, in: screen).filter { $0.text == text && !$0.isHiddenInHierarchy }
@@ -209,6 +214,32 @@ final class PersonalizationSearchResultsScreenTests: XCTestCase {
 
         XCTAssertEqual(screen.catalog.loadMoreText, "Retry")
         XCTAssertEqual(screen.retryText, "Retry")
+    }
+
+    func testRetry_ofTheFirstPage_doesNotTrackTheSearchAgain() {
+        sdk.searchResults = [.failure(.networkOfflineError), page(total: 1, ids: 0..<1)]
+        search("phone")
+        XCTAssertEqual(searchEvents, 1)
+
+        screen.catalog.onRetry?()
+
+        XCTAssertEqual(sdk.searchOffsets, [0, 0])
+        XCTAssertEqual(screen.products.count, 1)
+        XCTAssertEqual(searchEvents, 1)
+    }
+
+    func testRetry_ofTheNextPage_doesNotTrackTheSearchAgain() {
+        screen.pageSize = 2
+        sdk.searchResults = [page(total: 4, ids: 0..<2), .failure(.networkOfflineError), page(total: 4, ids: 2..<4)]
+        search("phone")
+        screen.catalog.onLoadMore?()
+        XCTAssertEqual(screen.catalog.loadMoreText, "Retry")
+
+        screen.catalog.onLoadMore?()
+
+        XCTAssertEqual(sdk.searchOffsets, [0, 2, 2])
+        XCTAssertEqual(screen.products.count, 4)
+        XCTAssertEqual(searchEvents, 1)
     }
 
     func testNewQuery_clearsTheError() {
