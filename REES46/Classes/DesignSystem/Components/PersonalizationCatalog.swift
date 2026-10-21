@@ -12,7 +12,8 @@ import UIKit
 ///
 /// Пустая выдача — страница SearchResultsScreen, Search Results/Empty State (319:7743):
 /// заголовок тот же, вместо плитки `PersonalizationEmptyState`. Показывается, когда
-/// задан `emptyText` и товаров нет.
+/// задан `emptyText` и товаров нет. Ошибка загрузки (`errorText`) в макете не нарисована:
+/// на том же месте тот же `PersonalizationEmptyState`, но с кнопкой повтора под текстом.
 ///
 /// Весь каталог — одна лента `UICollectionView`: заголовок, карточки и нижние элементы —
 /// её строки. Поэтому его не вкладывают в прокрутку, он прокручивается сам: карточки
@@ -59,6 +60,26 @@ import UIKit
             reload(.footer)
         }
     }
+
+    /// Текст ошибки загрузки — вместо пустого состояния, пока товаров нет; важнее
+    /// `emptyText`. `nil` — ошибки нет.
+    public var errorText: String? {
+        didSet {
+            errorState.message = errorText
+            reload(.footer)
+        }
+    }
+
+    /// Подпись кнопки повтора под ошибкой. `nil` — без кнопки.
+    public var retryText: String? {
+        didSet {
+            errorState.actionText = retryText
+            reload(.footer)
+        }
+    }
+
+    /// Нажатие на кнопку повтора под ошибкой.
+    public var onRetry: (() -> Void)?
 
     /// Хост кладёт изображение товара в `UIImageView` своим загрузчиком. View
     /// переиспользуются: загрузчик должен ставить картинку, только если view всё ещё
@@ -117,6 +138,7 @@ import UIKit
     }
 
     private let emptyState = PersonalizationEmptyState()
+    private let errorState = PersonalizationEmptyState()
     private let loaderRow = UIView()
     private let loader = PersonalizationLoader()
     private let count = PersonalizationCount()
@@ -169,8 +191,9 @@ import UIKit
 
         loadMoreButton.iconStart = PersonalizationIcons.arrowRotateCw
         loadMoreButton.addTarget(self, action: #selector(loadMoreTapped), for: .touchUpInside)
+        errorState.onAction = { [weak self] in self?.onRetry?() }
 
-        for row in [emptyState, loaderRow, count, loadMoreButton] {
+        for row in [emptyState, errorState, loaderRow, count, loadMoreButton] {
             row.translatesAutoresizingMaskIntoConstraints = false
         }
         applyScrolling()
@@ -245,7 +268,13 @@ import UIKit
     /// Нижние строки в порядке макета. У каждой одна view на весь каталог.
     private var footerRows: [UIView] {
         var rows: [UIView] = []
-        if products.isEmpty && !(emptyText ?? "").isEmpty { rows.append(emptyState) }
+        if products.isEmpty {
+            if !(errorText ?? "").isEmpty {
+                rows.append(errorState)
+            } else if !(emptyText ?? "").isEmpty {
+                rows.append(emptyState)
+            }
+        }
         if isLoading { rows.append(loaderRow) }
         if hasCount && !isLoading { rows.append(count) }
         if !(loadMoreText ?? "").isEmpty && !isLoading { rows.append(loadMoreButton) }
