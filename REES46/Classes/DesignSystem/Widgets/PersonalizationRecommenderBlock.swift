@@ -47,7 +47,11 @@ import UIKit
 
     public var layout: PersonalizationProductsList.Layout {
         get { block.layout }
-        set { if block.layout != newValue { block.layout = newValue } }
+        set {
+            guard block.layout != newValue else { return }
+            block.layout = newValue
+            invalidateIntrinsicContentSize()
+        }
     }
 
     /// Заголовок: `nil` — из ответа (у коллекции его нет), пустая строка — без строки заголовка.
@@ -68,7 +72,11 @@ import UIKit
     /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
     public var imageAspect: PersonalizationProductImage.Aspect {
         get { block.imageAspect }
-        set { if block.imageAspect != newValue { block.imageAspect = newValue } }
+        set {
+            guard block.imageAspect != newValue else { return }
+            block.imageAspect = newValue
+            invalidateIntrinsicContentSize()
+        }
     }
 
     /// Подпись кнопки на карточке; `nil` — без кнопки.
@@ -79,7 +87,11 @@ import UIKit
     /// Подпись кнопки «показать все» у карусели; `nil` — без кнопки.
     public var showAllText: String? {
         get { block.showAllText }
-        set { if block.showAllText != newValue { block.showAllText = newValue } }
+        set {
+            guard block.showAllText != newValue else { return }
+            block.showAllText = newValue
+            invalidateIntrinsicContentSize()
+        }
     }
 
     public var onShowAll: (() -> Void)? {
@@ -90,13 +102,21 @@ import UIKit
     /// Точки под каруселью.
     public var showDots: Bool {
         get { block.showDots }
-        set { if block.showDots != newValue { block.showDots = newValue } }
+        set {
+            guard block.showDots != newValue else { return }
+            block.showDots = newValue
+            invalidateIntrinsicContentSize()
+        }
     }
 
     /// Рейтинг на карточках. В ответах рейтинга нет, поэтому по умолчанию выключен.
     public var showRating: Bool {
         get { block.showRating }
-        set { block.showRating = newValue }
+        set {
+            guard block.showRating != newValue else { return }
+            block.showRating = newValue
+            invalidateIntrinsicContentSize()
+        }
     }
 
     /// Загрузчик картинок; `nil` — встроенный.
