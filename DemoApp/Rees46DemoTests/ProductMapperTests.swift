@@ -125,11 +125,46 @@ final class ProductMapperTests: XCTestCase {
     }
 
     func testDiscount_formattedWithMinus_isNotDoubled() {
+        let base: [String: Any] = ["price": 90.0, "oldprice": 100.0, "oldprice_formatted": "100 ₽", "discount": 10]
+
+        XCTAssertEqual(card(base.merging(["discount_formatted": "-10%"]) { $1 }).discount, "-10%")
+        XCTAssertEqual(card(base.merging(["discount_formatted": "--10%"]) { $1 }).discount, "-10%")
+        XCTAssertEqual(card(base.merging(["discount_formatted": "10%"]) { $1 }).discount, "-10%")
+    }
+
+    func testDiscount_zeroWithFormattedZero_hasNoBadge() {
         let mapped = card([
-            "price": 90.0, "oldprice": 100.0, "oldprice_formatted": "100 ₽", "discount_formatted": "-10%"
+            "price": 90.0, "oldprice": 100.0, "oldprice_formatted": "100 ₽", "discount": 0, "discount_formatted": "0%"
         ])
 
-        XCTAssertEqual(mapped.discount, "-10%")
+        XCTAssertEqual(mapped.oldPrice, "100 ₽")
+        XCTAssertNil(mapped.discount)
+    }
+
+    func testDiscount_true_hasNoBadge() {
+        let mapped = card(["price": 90.0, "oldprice": 100.0, "oldprice_formatted": "100 ₽", "discount": true])
+
+        XCTAssertEqual(mapped.oldPrice, "100 ₽")
+        XCTAssertNil(mapped.discount)
+    }
+
+    func testDiscount_onlyPercent_isPercentWithMinus() {
+        let mapped = card(["price": 95.0, "oldprice": 100.0, "oldprice_formatted": "100 ₽", "discount_percent": 5])
+
+        XCTAssertEqual(mapped.discount, "-5%")
+    }
+
+    func testDiscount_percentWithZeroDiscount_ignoresTheZeroFormatted() {
+        let mapped = card([
+            "price": 95.0, "oldprice": 100.0, "oldprice_formatted": "100 ₽",
+            "discount": 0, "discount_formatted": "0%", "discount_percent": "5"
+        ])
+
+        XCTAssertEqual(mapped.discount, "-5%")
+    }
+
+    func testDiscount_withoutOldPrice_hasNoBadge() {
+        XCTAssertNil(card(["price": 100.0, "discount": 10, "discount_formatted": "10%", "discount_percent": 10]).discount)
     }
 
     func testOldPrice_withoutDiscount_hasNoBadge() {
