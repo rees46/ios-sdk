@@ -15,9 +15,9 @@ enum LoadState<Content> {
 }
 
 /// Одна загрузка виджета: `load` ведёт `idle → loading → content | empty | error`,
-/// `retry` повторяет её после ошибки.
+/// `retry` повторяет её после ошибки, `reload` — в любом состоянии; оба мимо кэша.
 ///
-/// Ответ устаревшего запроса — после нового `load` или `reset` — отбрасывается.
+/// Ответ устаревшего запроса — после нового `load`, `reload` или `reset` — отбрасывается.
 /// Состояние меняется только на главной очереди: вызовы с другой очереди и ответы
 /// SDK (они приходят с фоновой) перекладываются на неё.
 final class LoadStateMachine<Content> {
@@ -56,6 +56,11 @@ final class LoadStateMachine<Content> {
             guard case .error = self.state else { return }
             self.start(force: true)
         }
+    }
+
+    /// Загрузка заново мимо кэша — в любом состоянии: так хост обновляет показанное.
+    func reload() {
+        MainThread.run { self.start(force: true) }
     }
 
     /// Назад в `idle`; ответ запроса в полёте отбросится.
