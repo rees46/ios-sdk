@@ -18,7 +18,8 @@ enum LoadState<Content> {
 /// `retry` повторяет её после ошибки.
 ///
 /// Ответ устаревшего запроса — после нового `load` или `reset` — отбрасывается.
-/// Колбэки SDK приходят с фоновой очереди, состояние меняется только на главной.
+/// Состояние меняется только на главной очереди: вызовы с другой очереди и ответы
+/// SDK (они приходят с фоновой) перекладываются на неё.
 final class LoadStateMachine<Content> {
 
     private(set) var state: LoadState<Content> = .idle {
@@ -27,15 +28,16 @@ final class LoadStateMachine<Content> {
 
     var onChange: ((LoadState<Content>) -> Void)?
 
-    private let fetch: (@escaping (Result<Content, SdkError>) -> Void) -> Void
+    private let fetch: (Bool, @escaping (Result<Content, SdkError>) -> Void) -> Void
     private let isEmpty: (Content) -> Bool
     private var generation = 0
 
     /// - Parameters:
-    ///   - fetch: сам запрос; его ответ может прийти с любой очереди.
+    ///   - fetch: сам запрос; его ответ может прийти с любой очереди. Первый аргумент —
+    ///     `force`: это повтор после ошибки, и готовый ответ кэша не годится.
     ///   - isEmpty: пришедший ответ, в котором нечего показать, — состояние `empty`.
     init(
-        fetch: @escaping (@escaping (Result<Content, SdkError>) -> Void) -> Void,
+        fetch: @escaping (Bool, @escaping (Result<Content, SdkError>) -> Void) -> Void,
         isEmpty: @escaping (Content) -> Bool
     ) {
         self.fetch = fetch
@@ -44,10 +46,31 @@ final class LoadStateMachine<Content> {
 
     /// Новая загрузка; запрос, который ещё в полёте, больше не нужен.
     func load() {
+        MainThread.run { self.start(force: false) }
+    }
+
+    /// Повтор после ошибки — мимо кэша. В других состояниях ничего не делает: идущая
+    /// загрузка или пришедший ответ повтора не требуют.
+    func retry() {
+        MainThread.run {
+            guard case .error = self.state else { return }
+            self.start(force: true)
+        }
+    }
+
+    /// Назад в `idle`; ответ запроса в полёте отбросится.
+    func reset() {
+        MainThread.run {
+            self.generation += 1
+            self.state = .idle
+        }
+    }
+
+    private func start(force: Bool) {
         generation += 1
         let current = generation
         state = .loading
-        fetch { [weak self] result in
+        fetch(force) { [weak self] result in
             MainThread.run {
                 guard let self, current == self.generation else { return }
                 switch result {
@@ -58,18 +81,5 @@ final class LoadStateMachine<Content> {
                 }
             }
         }
-    }
-
-    /// Повтор после ошибки. В других состояниях ничего не делает: идущая загрузка
-    /// или пришедший ответ повтора не требуют.
-    func retry() {
-        guard case .error = state else { return }
-        load()
-    }
-
-    /// Назад в `idle`; ответ запроса в полёте отбросится.
-    func reset() {
-        generation += 1
-        state = .idle
     }
 }

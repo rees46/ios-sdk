@@ -1,11 +1,13 @@
 import XCTest
 @testable import REES46
 
-/// The data widgets' load state: `idle → loading → content | empty | error`, retry after an error,
-/// stale answers dropped, state changed only on the main queue.
+/// The data widgets' load state: `idle → loading → content | empty | error`, retry after an error
+/// (forced past the cache), stale answers dropped, state changed only on the main queue.
 final class LoadStateMachineTests: XCTestCase {
 
     private var fetches = 0
+    /// `force` of every fetch, in order.
+    private var forces: [Bool] = []
     /// Completions of fetches still in flight, to finish them by hand.
     private var pending: [(Result<[String], SdkError>) -> Void] = []
     private var machine: LoadStateMachine<[String]>!
@@ -13,9 +15,11 @@ final class LoadStateMachineTests: XCTestCase {
     override func setUp() {
         super.setUp()
         fetches = 0
+        forces = []
         pending = []
-        machine = LoadStateMachine(fetch: { [unowned self] done in
+        machine = LoadStateMachine(fetch: { [unowned self] force, done in
             self.fetches += 1
+            self.forces.append(force)
             self.pending.append(done)
         }, isEmpty: { $0.isEmpty })
     }
@@ -69,6 +73,7 @@ final class LoadStateMachineTests: XCTestCase {
 
         pending[1](.success(["a"]))
         XCTAssertEqual(state, "content(a)")
+        XCTAssertEqual(forces, [false, true], "the retry skips the cached answer")
     }
 
     func testRetry_outsideError_doesNothing() {
@@ -117,5 +122,23 @@ final class LoadStateMachineTests: XCTestCase {
         DispatchQueue.global().async { done(.success(["a"])) }
 
         wait(for: [changed], timeout: 5)
+    }
+
+    func testLoadAndReset_fromBackground_changeStateOnMainQueue() {
+        let loading = expectation(description: "loading")
+        let idle = expectation(description: "idle")
+        machine.onChange = { [unowned self] _ in
+            XCTAssertTrue(Thread.isMainThread)
+            switch self.machine.state {
+            case .loading: loading.fulfill()
+            case .idle: idle.fulfill()
+            default: break
+            }
+        }
+
+        DispatchQueue.global().async { self.machine.load() }
+        wait(for: [loading], timeout: 5)
+        DispatchQueue.global().async { self.machine.reset() }
+        wait(for: [idle], timeout: 5)
     }
 }
