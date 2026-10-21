@@ -96,7 +96,8 @@ public struct ProductInfo {
         }
         categories = categoriesAll
         
-        price = json["price"] as? Double ?? 0
+        // `products/get` sends the price as a string ("14990.0"), the other endpoints as a number.
+        price = json["price"] as? Double ?? (json["price"] as? String).flatMap(Double.init) ?? 0
         priceFormatted = json["price_formatted"] as? String ?? ""
         priceFull = json["price_full"] as? Double ?? 0
         priceFullFormatted = json["price_full_formatted"] as? String ?? ""

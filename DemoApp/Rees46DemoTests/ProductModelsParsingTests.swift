@@ -134,6 +134,8 @@ final class ProductModelsParsingTests: XCTestCase {
         let product = ProductInfo(json: ApiFixtures.json("product_info"))
 
         XCTAssertEqual(product.id, "868")
+        // The price comes as a string here, unlike the other endpoints.
+        XCTAssertEqual(product.price, 14990)
         XCTAssertEqual(product.priceFormatted, "14 990 ₽")
         XCTAssertEqual(product.deeplinkIos, "https://www.technodom.kz/p/garnitura-nakladnaa-logitech-h-white-868")
         // `products/get` sends `"discount": false` for a product without a discount.
