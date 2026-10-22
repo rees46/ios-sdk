@@ -53,6 +53,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// Wraps the storyboard screen into a tab bar: the existing screen keeps demoing the SDK
     /// methods, "UI Kit" shows the design system (with the SwiftUI stories block as one of its
     /// segments) and "Legacy UI" the UIKit stories view, so both integration styles can be compared.
+    /// "Shop" is a small store built from the kit's widgets and the SDK's public methods.
     ///
     /// Runs before `sdkInitialization()`, which passes the root controller to the SDK.
     private func installTabBar() {
@@ -65,7 +66,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         )
 
         let tabBarController = UITabBarController()
-        tabBarController.viewControllers = [apiScreen, makeUIKitTab(), makeLegacyUITab()]
+        tabBarController.viewControllers = [apiScreen, makeUIKitTab(), makeLegacyUITab(), makeShopTab()]
         window?.rootViewController = tabBarController
     }
 
@@ -87,6 +88,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             tag: 2
         )
         return controller
+    }
+
+    /// The shop keeps its own navigation stack: Home → category → product, back with the bar.
+    private func makeShopTab() -> UIViewController {
+        let navigation = UINavigationController(rootViewController: ShopHomeViewController())
+        navigation.tabBarItem = UITabBarItem(
+            title: "Shop",
+            image: tabImage(systemName: "bag"),
+            tag: 3
+        )
+        return navigation
     }
 
     private func tabImage(systemName: String) -> UIImage? {
