@@ -105,6 +105,7 @@
 		68AC938DE362005433507745 /* NotificationsMockSDK.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6108F37E45D635C7350A811B /* NotificationsMockSDK.swift */; };
 		4190AA3745EF74A3AF7E2EF3 /* ShopSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40921B0C6E6B4BEDC0476F5D /* ShopSupport.swift */; };
 		6A59C7C622D006D3E6930B04 /* ShopProductMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9606423ECAAE7EDD5EB591 /* ShopProductMapper.swift */; };
+		4A35BD99FEA28483127196FA /* ShopProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19E831CE4D7E718978B2BE3 /* ShopProductViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -261,6 +262,7 @@
 		6108F37E45D635C7350A811B /* NotificationsMockSDK.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsMockSDK.swift; sourceTree = "<group>"; };
 		40921B0C6E6B4BEDC0476F5D /* ShopSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopSupport.swift; sourceTree = "<group>"; };
 		4C9606423ECAAE7EDD5EB591 /* ShopProductMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopProductMapper.swift; sourceTree = "<group>"; };
+		D19E831CE4D7E718978B2BE3 /* ShopProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopProductViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -592,6 +594,7 @@
 			children = (
 				40921B0C6E6B4BEDC0476F5D /* ShopSupport.swift */,
 				4C9606423ECAAE7EDD5EB591 /* ShopProductMapper.swift */,
+				D19E831CE4D7E718978B2BE3 /* ShopProductViewController.swift */,
 			);
 			path = Shop;
 			sourceTree = "<group>";
@@ -875,6 +878,7 @@
 				A0F21AD28C82FEA34F9699F1 /* UIKitShowcaseViewController.swift in Sources */,
 				4190AA3745EF74A3AF7E2EF3 /* ShopSupport.swift in Sources */,
 				6A59C7C622D006D3E6930B04 /* ShopProductMapper.swift in Sources */,
+				4A35BD99FEA28483127196FA /* ShopProductViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

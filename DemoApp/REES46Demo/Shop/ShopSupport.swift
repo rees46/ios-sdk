@@ -50,6 +50,17 @@ enum Shop {
     }
 }
 
+// MARK: - Navigation
+
+/// Every screen of the shop goes onto the tab's navigation stack.
+extension UIViewController {
+
+    func openShopProduct(_ id: String) {
+        guard !id.isEmpty else { return }
+        navigationController?.pushViewController(ShopProductViewController(productId: id), animated: true)
+    }
+}
+
 // MARK: - Layout
 
 extension UIView {
