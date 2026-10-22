@@ -59,6 +59,10 @@ extension UIViewController {
         guard !id.isEmpty else { return }
         navigationController?.pushViewController(ShopProductViewController(productId: id), animated: true)
     }
+
+    func openShopCategory(id: String, name: String) {
+        navigationController?.pushViewController(ShopCategoryViewController(categoryId: id, name: name), animated: true)
+    }
 }
 
 // MARK: - Layout
