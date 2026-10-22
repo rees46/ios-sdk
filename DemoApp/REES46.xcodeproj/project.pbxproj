@@ -107,6 +107,7 @@
 		6A59C7C622D006D3E6930B04 /* ShopProductMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C9606423ECAAE7EDD5EB591 /* ShopProductMapper.swift */; };
 		4A35BD99FEA28483127196FA /* ShopProductViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19E831CE4D7E718978B2BE3 /* ShopProductViewController.swift */; };
 		880A0D3CD36A3183B0548856 /* ShopCategoryViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6483F46F8A238633940FC5C4 /* ShopCategoryViewController.swift */; };
+		C6D1896209A8BF443D068908 /* ShopSearchViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C591096C334DD9C7A6635C9 /* ShopSearchViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -265,6 +266,7 @@
 		4C9606423ECAAE7EDD5EB591 /* ShopProductMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopProductMapper.swift; sourceTree = "<group>"; };
 		D19E831CE4D7E718978B2BE3 /* ShopProductViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopProductViewController.swift; sourceTree = "<group>"; };
 		6483F46F8A238633940FC5C4 /* ShopCategoryViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCategoryViewController.swift; sourceTree = "<group>"; };
+		5C591096C334DD9C7A6635C9 /* ShopSearchViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopSearchViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -598,6 +600,7 @@
 				4C9606423ECAAE7EDD5EB591 /* ShopProductMapper.swift */,
 				D19E831CE4D7E718978B2BE3 /* ShopProductViewController.swift */,
 				6483F46F8A238633940FC5C4 /* ShopCategoryViewController.swift */,
+				5C591096C334DD9C7A6635C9 /* ShopSearchViewController.swift */,
 			);
 			path = Shop;
 			sourceTree = "<group>";
@@ -883,6 +886,7 @@
 				6A59C7C622D006D3E6930B04 /* ShopProductMapper.swift in Sources */,
 				4A35BD99FEA28483127196FA /* ShopProductViewController.swift in Sources */,
 				880A0D3CD36A3183B0548856 /* ShopCategoryViewController.swift in Sources */,
+				C6D1896209A8BF443D068908 /* ShopSearchViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

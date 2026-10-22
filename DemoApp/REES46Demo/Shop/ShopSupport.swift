@@ -63,6 +63,10 @@ extension UIViewController {
     func openShopCategory(id: String, name: String) {
         navigationController?.pushViewController(ShopCategoryViewController(categoryId: id, name: name), animated: true)
     }
+
+    func openShopSearch(_ query: String) {
+        navigationController?.pushViewController(ShopSearchViewController(query: query), animated: true)
+    }
 }
 
 // MARK: - Layout
