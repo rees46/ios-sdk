@@ -29,4 +29,10 @@ enum KeychainPartition {
     static func legacyAccount(service: String) -> String {
         service
     }
+
+    /// The service an install linked through CocoaPods with `use_frameworks!` keeps its items under:
+    /// CocoaPods gives the SDK framework this bundle id. Linked through SwiftPM the SDK lives in the app
+    /// binary and `Bundle(for:)` answers with the app's bundle id instead, so an app that switches package
+    /// manager would lose its keychain backup — and with it the did — on the next reinstall.
+    static let cocoaPodsFrameworkService = "org.cocoapods.REES46"
 }
