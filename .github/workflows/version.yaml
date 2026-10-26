@@ -3,7 +3,7 @@ name: Bump version
 # Self-contained autobump: semantic-release runs in dry-run and only computes the
 # next version + notes from Conventional Commits. This workflow writes the version
 # into version.properties and commits `chore(release): <version>` to master.
-# deploy.yaml then tags v<version>, and that tag push triggers publish.yaml.
+# deploy.yaml then tags v<version>, and that tag is the release.
 #
 # The steps live here rather than in rees46/workflow so this pipeline can be
 # changed without touching every other SDK.

@@ -1,17 +1,19 @@
 name: Deploy
 
 # Tags whatever version currently sits in version.properties and opens a GitHub
-# release for it. Runs in this repository and in the personaclick mirror alike:
+# release for it. The tag is the publication: Swift Package Manager resolves
+# versions straight from this repository's tags, and CocoaPods users point their
+# Podfile at one. Runs in this repository and in the synchronized copy alike:
 # here it reacts to the `chore(release)` commit from version.yaml, there to the
 # merged synchronization PR that brings the new version.properties in. That is why
-# it carries no owner guard — the mirror needs exactly this job and nothing else.
+# it carries no owner guard — the copy needs exactly this job and nothing else.
 #
 # Tagging is idempotent. An existing tag is left alone, which is what stops a pair
-# of synchronization PRs carrying the same version from producing two tags and,
-# downstream, two competing publishes of one pod version.
+# of synchronization PRs carrying the same version from producing two tags.
 #
-# The tag is created with a GitHub App token on purpose: a ref pushed with
-# GITHUB_TOKEN does not trigger other workflows, and publish.yaml has to fire.
+# The tag is created with a GitHub App token rather than GITHUB_TOKEN: a ref
+# pushed with GITHUB_TOKEN does not trigger other workflows, so nothing reacting
+# to a new tag would ever see this one.
 
 on:
   push:
