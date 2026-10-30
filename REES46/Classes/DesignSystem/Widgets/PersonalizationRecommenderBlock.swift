@@ -101,7 +101,7 @@ import UIKit
         set { block.onShowAll = newValue }
     }
 
-    /// Точки под каруселью.
+    /// Точки под каруселью; по умолчанию выключены.
     public var showDots: Bool {
         get { block.showDots }
         set {

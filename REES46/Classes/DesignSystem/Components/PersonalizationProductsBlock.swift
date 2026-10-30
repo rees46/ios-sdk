@@ -35,8 +35,9 @@ import UIKit
 
     public var onShowAll: (() -> Void)?
 
-    /// У карусели точки под лентой; выключаются, как в макете (showDots).
-    public var showDots: Bool = true {
+    /// Точки под каруселью (showDots в макете). По умолчанию выключены: лента прокручивается
+    /// свободно, а не постранично, и точка на каждый товар индикатором не служит.
+    public var showDots: Bool = false {
         didSet { applyLayout() }
     }
 
