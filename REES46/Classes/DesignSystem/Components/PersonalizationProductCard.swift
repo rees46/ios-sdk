@@ -167,7 +167,9 @@ import UIKit
         nameLabel.numberOfLines = 2
         oldPriceLabel.numberOfLines = 1
         button.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
-        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cardTapped)))
+        let tap = UITapGestureRecognizer(target: self, action: #selector(cardTapped))
+        tap.delegate = self
+        addGestureRecognizer(tap)
 
         rebuild()
     }
@@ -423,3 +425,16 @@ import UIKit
     private static let listImageSide: CGFloat = 120
 }
 
+extension PersonalizationProductCard: UIGestureRecognizerDelegate {
+    /// Касание кнопки — её: нажатие на карточку тогда не начинается. Кнопка лежит в стеках
+    /// глубже прямого потомка, и иначе тап карточки забирал её касание — товар открывался
+    /// вместо «В корзину».
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var current = touch.view
+        while let view = current, view !== self {
+            if view is UIControl { return false }
+            current = view.superview
+        }
+        return true
+    }
+}
