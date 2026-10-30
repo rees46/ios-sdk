@@ -8,7 +8,7 @@ import UIKit
 /// the input at all times, so Home shows only the input until it is focused: then the panel opens
 /// and the rest of Home steps aside; "Cancel" closes it. A submitted phrase opens the results, a
 /// product its page, a category with an id the category.
-/// A product tapped in a story opens its page too: see `shouldOpenLinkBySdk(url:)`.
+/// A product tapped in a story opens its page by the id the stories callbacks carry.
 final class ShopHomeViewController: UIViewController {
 
     private let scroll = UIScrollView()
@@ -24,6 +24,8 @@ final class ShopHomeViewController: UIViewController {
     private let categories = ShopCategoriesSection()
     /// Rows hidden while the search panel is open.
     private var browseRows: [UIView] = []
+    /// The last story tap opened a product: its link stays with the shop, not the SDK.
+    private var storyProductOpened = false
     private var sdkHandle: Cancellable?
 
     deinit {
@@ -149,22 +151,32 @@ private extension ShopHomeViewController {
 
 // MARK: - Stories
 
-/// The stories callbacks of the SDK. The product ones carry the tapped element without the product
-/// id, so the shop routes on the link instead: the viewer is already closed when the SDK asks
-/// whether to open it, and a product page of the shop opens here rather than in the browser.
+/// The stories callbacks of the SDK: a tapped product comes with its id — the product element, the
+/// slide button of a product slide, a carousel card — and opens its page here. The viewer is closed
+/// by then; the SDK asks next whether to open the product's link itself, and the shop declines.
+/// Other links (a button to a web page) the SDK opens.
 extension ShopHomeViewController: StoriesCommunicationProtocol {
 
     func receiveIosLink(text: String) {}
 
-    func receiveSelectedProductData(products: StoriesElement) {}
+    func receiveSelectedProductData(products: StoriesElement) {
+        openStoryProduct(products.productId)
+    }
 
-    func receiveSelectedCarouselProductData(products: StoriesProduct) {}
+    func receiveSelectedCarouselProductData(products: StoriesProduct) {
+        openStoryProduct(products.id)
+    }
 
+    /// A copied promo code: nothing to open.
     func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) {}
 
     func shouldOpenLinkBySdk(url: String) -> Bool {
-        guard let id = Shop.productId(fromLink: url) else { return true }
-        openShopProduct(id)
-        return false
+        defer { storyProductOpened = false }
+        return !storyProductOpened
+    }
+
+    private func openStoryProduct(_ id: String?) {
+        storyProductOpened = !(id ?? "").isEmpty
+        if let id, storyProductOpened { openShopProduct(id) }
     }
 }

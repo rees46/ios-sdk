@@ -38,16 +38,6 @@ enum Shop {
         }
         PersonalizationToast.show("Added to cart")
     }
-
-    /// Product id from a link of the demo shop: its product pages end with the id —
-    /// `…/p/utyug-vitek-vt-1201-1276` is product 1276. Story callbacks carry links, not ids,
-    /// so this is how the shop routes a product tapped in a story; a real app maps its own links.
-    static func productId(fromLink link: String) -> String? {
-        guard let url = URL(string: link), url.path.contains("/p/") else { return nil }
-        guard let tail = url.lastPathComponent.split(separator: "-").last,
-              !tail.isEmpty, tail.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
-        return String(tail)
-    }
 }
 
 // MARK: - Navigation
