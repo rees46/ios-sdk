@@ -1,7 +1,7 @@
 import Foundation
 @_spi(PersonalizationUI) import REES46
 
-/// SDK product → kit card, for the screens that fetch products themselves (category, product page).
+/// SDK product → kit card, for the screen that fetches its product itself (the product page).
 ///
 /// The kit maps products inside its data-bound widgets, but that mapper is internal, so the demo
 /// keeps a small one with the same rules:
@@ -66,18 +66,6 @@ enum ShopProductMapper {
     private static func text(_ value: String?) -> String? {
         guard let value, !value.isEmpty else { return nil }
         return value
-    }
-}
-
-extension CategoryProduct {
-    /// A product of `getCategory` as a kit card.
-    var shopCard: PersonalizationProduct {
-        ShopProductMapper.card(ShopProductMapper.Fields(
-            id: id ?? "", name: name ?? "", price: price ?? 0, priceFormatted: priceFormatted, currency: currency,
-            oldPrice: oldPrice, oldPriceFormatted: oldPriceFormatted,
-            discount: discount, discountFormatted: discountFormatted, discountPercent: discountPercent,
-            picture: picture, imageUrl: imageUrl, brand: brand, url: url, deeplink: deeplinkIos
-        ))
     }
 }
 

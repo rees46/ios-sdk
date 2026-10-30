@@ -5,8 +5,8 @@ import UIKit
 ///
 /// The widget searches, pages, filters and tracks `search` on its own; the host only routes. Its
 /// title carries a back arrow, so the navigation bar steps aside on this screen, and back returns
-/// to Home. A tapped product opens its page, the card button adds it to the cart. The design has
-/// no sort picker, so the sort button is off.
+/// to Home. A tapped product opens its page, the card button adds it to the cart, the sort button
+/// opens the shop's sort picker. Facet titles and values of the demo feed are named in `ShopFacets`.
 final class ShopSearchViewController: UIViewController {
 
     private let screen = PersonalizationSearchResultsScreen()
@@ -24,7 +24,8 @@ final class ShopSearchViewController: UIViewController {
         view.backgroundColor = PersonalizationColor.backgroundGeneric
 
         screen.productActionText = Shop.actionText
-        screen.showSort = false
+        ShopSort.attach(to: screen, host: self)
+        ShopFacets.attach(to: screen)
         screen.onBack = { [weak self] in self?.navigationController?.popViewController(animated: true) }
         screen.onProductTap = { [weak self] product in self?.openShopProduct(product.id) }
         screen.onProductAction = { product in Shop.addToCart(productId: product.id, price: product.price) }

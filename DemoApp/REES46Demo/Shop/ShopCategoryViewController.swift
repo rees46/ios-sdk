@@ -1,129 +1,98 @@
 import UIKit
 @_spi(PersonalizationUI) import REES46
 
-/// Category: `getCategory(id, limit: 20, page)` page by page in the kit's catalogue — the category
-/// title with the grid/list switch, "Showing N of M", "Load more", the empty state, and the error
-/// with "Retry" when the first page fails; a failed next page turns "Load more" into "Retry".
-/// No filters or sorting in this iteration. Opening the category sends `categoryView`.
+/// Category: the kit's `PersonalizationCategoryScreen` under the shop's instant search.
+///
+/// The widget loads the category page by page, filters, sorts, tracks `categoryView` once and shows
+/// the empty state and the error with "Retry" on its own; the host only routes. Its title is the
+/// category name with a back arrow, so the navigation bar steps aside on this screen and back
+/// returns along the shop's stack. A tapped product opens its page, the card button adds it to the
+/// cart, the sort button opens the shop's sort picker. Facet titles and values of the demo feed are
+/// named in `ShopFacets`.
+///
+/// The search on top behaves as on Home: while its panel is open it takes the screen and the
+/// category steps aside.
 final class ShopCategoryViewController: UIViewController {
 
-    private static let pageSize = 20
-
-    private let categoryId: String
-    private let name: String
-    private var sdk: PersonalizationSDK?
-    private var sdkHandle: Cancellable?
-
-    private let catalog = PersonalizationCatalog()
-    private var products: [CategoryProduct] = []
-    private var total = 0
-    /// Last page that came in; pages are numbered from 1.
-    private var page = 0
-    private var loading = false
-    /// The page that failed: the first one shows the error instead of the grid, a later one turns
-    /// "Load more" into "Retry". Cleared by the next request.
-    private var failedPage: Int?
-    /// The first page came in empty — only then the empty state is shown.
-    private var noProducts = false
+    private let screen: PersonalizationCategoryScreen
+    private let searchBar = ShopSearchBar()
+    private let searchScroll = UIScrollView()
+    /// Browsing: the search area is as tall as the input.
+    private lazy var searchCollapsed = searchScroll.frameLayoutGuide.heightAnchor
+        .constraint(equalTo: searchScroll.contentLayoutGuide.heightAnchor)
+    /// Searching: the search area takes the whole screen and scrolls its panel.
+    private lazy var searchExpanded = searchScroll.bottomAnchor.constraint(equalTo: view.bottomAnchor)
 
     init(categoryId: String, name: String) {
-        self.categoryId = categoryId
-        self.name = name
+        let screen = PersonalizationCategoryScreen(categoryId: categoryId, shopId: AppEnvironments.shopId)
+        screen.titleText = name
+        self.screen = screen
         super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-    deinit {
-        sdkHandle?.cancel()
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = PersonalizationColor.backgroundGeneric
-        navigationItem.largeTitleDisplayMode = .never
-        setupCatalog()
-        catalog.shopPin(to: view)
-        catalog.isLoading = true
-        sdkHandle = Shop.withSDK { [weak self] sdk in
-            guard let self else { return }
-            self.sdk = sdk
-            sdk.tracking.categoryView(categoryId: self.categoryId)
-            self.request(page: 1)
+
+        screen.productActionText = Shop.actionText
+        screen.onBack = { [weak self] in self?.navigationController?.popViewController(animated: true) }
+        screen.onProductTap = { [weak self] product in self?.openShopProduct(product.id ?? "") }
+        screen.onProductAction = { product in
+            guard let id = product.id, !id.isEmpty else { return }
+            Shop.addToCart(productId: id, price: product.price)
         }
+        ShopSort.attach(to: screen, host: self)
+        ShopFacets.attach(to: screen)
+
+        searchBar.host = self
+        searchBar.onSearchingChanged = { [weak self] searching in self?.setSearching(searching) }
+        setupLayout()
     }
 
-    private func setupCatalog() {
-        let header = PersonalizationTitle(text: name)
-        let views = PersonalizationButtonGroup(items: [
-            .init(icon: PersonalizationIcons.grid2x2, activeIcon: PersonalizationIcons.grid2x2Fill),
-            .init(icon: PersonalizationIcons.list, activeIcon: PersonalizationIcons.listFill)
-        ], size: .md)
-        views.onSelected = { [weak self] index in self?.catalog.layout = index == 0 ? .grid : .list }
-        header.trailing = views
-        catalog.header = header
-
-        catalog.showRating = false
-        catalog.contentInset = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        catalog.imageLoader = { imageView, product in DemoImageLoader.shared.load(product.imageUrl, into: imageView) }
-        catalog.onProductTap = { [weak self] product in self?.openShopProduct(product.id) }
-        catalog.onProductAction = { [weak self] card in
-            let price = self?.products.first { $0.id == card.id }?.price
-            Shop.addToCart(productId: card.id, price: price)
-        }
-        catalog.onLoadMore = { [weak self] in self?.loadMore() }
-        catalog.retryText = Shop.retryText
-        catalog.onRetry = { [weak self] in self?.request(page: 1) }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
     }
 
-    /// The next page — or, after a failed one, the same page again.
-    private func loadMore() {
-        if let failedPage {
-            request(page: failedPage)
-        } else if products.count < total {
-            request(page: page + 1)
-        }
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
 
-    private func request(page next: Int) {
-        guard let sdk, !loading else { return }
-        loading = true
-        failedPage = nil
-        catalog.isLoading = true
-        renderFooter()
-        sdk.getCategory(category: categoryId, limit: Self.pageSize, page: next) { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.loading = false
-                self.catalog.isLoading = false
-                switch result {
-                case .success(let response):
-                    self.page = next
-                    self.products = next == 1 ? response.products : self.products + response.products
-                    // An empty page ends the list even if the total promised more.
-                    self.total = response.products.isEmpty ? self.products.count : response.productsTotal
-                    self.noProducts = next == 1 && response.products.isEmpty
-                    self.catalog.products = self.products.map(\.shopCard)
-                case .failure:
-                    self.failedPage = next
-                }
-                self.renderFooter()
-            }
-        }
+    private func setSearching(_ searching: Bool) {
+        // Deactivate first: the two disagree on the height of the search area.
+        NSLayoutConstraint.deactivate([searching ? searchCollapsed : searchExpanded])
+        NSLayoutConstraint.activate([searching ? searchExpanded : searchCollapsed])
+        screen.isHidden = searching
+        searchScroll.setContentOffset(CGPoint(x: 0, y: -searchScroll.adjustedContentInset.top), animated: false)
     }
 
-    private func renderFooter() {
-        if products.isEmpty {
-            catalog.setCount(prefix: nil, shown: 0, separator: "of", total: 0)
-        } else {
-            catalog.setCount(prefix: "Showing", shown: products.count, separator: "of", total: total)
-        }
-        catalog.emptyText = noProducts ? "No products in this category yet." : nil
-        catalog.errorText = failedPage == 1 ? Shop.errorText : nil
-        if let failedPage, failedPage > 1 {
-            catalog.loadMoreText = Shop.retryText
-        } else {
-            catalog.loadMoreText = !products.isEmpty && products.count < total ? "Load more" : nil
-        }
+    private func setupLayout() {
+        searchScroll.keyboardDismissMode = .onDrag
+        searchScroll.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(searchScroll)
+        let row = searchBar.shopInset()
+        row.translatesAutoresizingMaskIntoConstraints = false
+        searchScroll.addSubview(row)
+
+        screen.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(screen)
+        NSLayoutConstraint.activate([
+            searchScroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            searchScroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchScroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            searchCollapsed,
+            row.topAnchor.constraint(equalTo: searchScroll.contentLayoutGuide.topAnchor, constant: 8),
+            row.bottomAnchor.constraint(equalTo: searchScroll.contentLayoutGuide.bottomAnchor),
+            row.leadingAnchor.constraint(equalTo: searchScroll.contentLayoutGuide.leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: searchScroll.contentLayoutGuide.trailingAnchor),
+            row.widthAnchor.constraint(equalTo: searchScroll.frameLayoutGuide.widthAnchor),
+            screen.topAnchor.constraint(equalTo: searchScroll.bottomAnchor),
+            screen.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            screen.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            screen.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
 }
