@@ -39,6 +39,7 @@
 		A1B2C3D40000000000000015 /* PersonalizationInAppPopupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000016 /* PersonalizationInAppPopupTests.swift */; };
 		A1B2C3D40000000000000019 /* PersonalizationBarcodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001A /* PersonalizationBarcodeTests.swift */; };
 		A1B2C3D4000000000000001B /* PersonalizationLoyaltyCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001C /* PersonalizationLoyaltyCardTests.swift */; };
+		A1B2C3D40000000000000045 /* PersonalizationProductCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000046 /* PersonalizationProductCardTests.swift */; };
 		A1B2C3D4000000000000001D /* PersonalizationToastTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000001E /* PersonalizationToastTests.swift */; };
 		A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */; };
 		A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */; };
@@ -195,6 +196,7 @@
 		A1B2C3D40000000000000016 /* PersonalizationInAppPopupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationInAppPopupTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000000000001A /* PersonalizationBarcodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationBarcodeTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000000000001C /* PersonalizationLoyaltyCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationLoyaltyCardTests.swift; sourceTree = "<group>"; };
+		A1B2C3D40000000000000046 /* PersonalizationProductCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationProductCardTests.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000000000001E /* PersonalizationToastTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationToastTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2MediaTests.swift; sourceTree = "<group>"; };
 		A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2GifTests.swift; sourceTree = "<group>"; };
@@ -486,6 +488,7 @@
 				A1B2C3D40000000000000016 /* PersonalizationInAppPopupTests.swift */,
 				A1B2C3D4000000000000001A /* PersonalizationBarcodeTests.swift */,
 				A1B2C3D4000000000000001C /* PersonalizationLoyaltyCardTests.swift */,
+				A1B2C3D40000000000000046 /* PersonalizationProductCardTests.swift */,
 				A1B2C3D4000000000000001E /* PersonalizationToastTests.swift */,
 				A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */,
 				A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */,
@@ -920,6 +923,7 @@
 				A1B2C3D40000000000000015 /* PersonalizationInAppPopupTests.swift in Sources */,
 				A1B2C3D40000000000000019 /* PersonalizationBarcodeTests.swift in Sources */,
 				A1B2C3D4000000000000001B /* PersonalizationLoyaltyCardTests.swift in Sources */,
+				A1B2C3D40000000000000045 /* PersonalizationProductCardTests.swift in Sources */,
 				A1B2C3D4000000000000001D /* PersonalizationToastTests.swift in Sources */,
 				A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */,
 				A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */,
