@@ -2,9 +2,11 @@ import UIKit
 @_spi(PersonalizationUI) import REES46
 
 /// Product page: `getProductInfo` — image, brand, name, price with the old price and the discount,
-/// "Add to cart"; below it the demo shop's recommender block for this product, titled
-/// "Similar products". Opening the page sends `productView`. While the product loads the page
-/// shows the kit's loader; a failed request shows the error text with "Retry".
+/// "Add to cart"; below it recommender blocks for this product — similar, bought with it and
+/// popular, each titled by the server and hidden while it has no products. Opening the page sends
+/// `productView`. While the product loads the page shows the kit's loader; a failed request shows
+/// the error text with "Retry". The shop's instant search sits on top and behaves as on Home: while
+/// its panel is open the page steps aside.
 final class ShopProductViewController: UIViewController {
 
     private enum State {
@@ -19,6 +21,9 @@ final class ShopProductViewController: UIViewController {
     private var requestSeq = 0
 
     private let scroll = UIScrollView()
+    private let searchBar = ShopSearchBar()
+    /// Everything of the page under the search: hidden while the search panel is open.
+    private let page = UIStackView()
     private let loaderRow = UIView()
     private let loader = PersonalizationLoader()
     private let errorState = PersonalizationEmptyState(message: Shop.errorText)
@@ -30,11 +35,13 @@ final class ShopProductViewController: UIViewController {
     private let oldPriceLabel = UILabel()
     private let discountBadge = PersonalizationBadge(size: .md, view: .danger)
     private let cartButton = PersonalizationButton(text: Shop.actionText, size: .lg, view: .primary)
-    private let similar: PersonalizationRecommenderBlock
+    private let blocks: [PersonalizationRecommenderBlock]
 
     init(productId: String) {
         self.productId = productId
-        similar = PersonalizationRecommenderBlock(code: Shop.blockCode, itemId: productId, shopId: AppEnvironments.shopId)
+        blocks = [Shop.similarBlockCode, Shop.alsoBoughtBlockCode, Shop.blockCode].map {
+            PersonalizationRecommenderBlock(code: $0, itemId: productId, shopId: AppEnvironments.shopId)
+        }
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -136,6 +143,7 @@ private extension ShopProductViewController {
 
     func setupLayout() {
         scroll.alwaysBounceVertical = true
+        scroll.keyboardDismissMode = .onDrag
         scroll.shopPin(to: view)
 
         loader.translatesAutoresizingMaskIntoConstraints = false
@@ -163,17 +171,26 @@ private extension ShopProductViewController {
 
         content.axis = .vertical
         content.spacing = 16
-        for view in [image, titleBlock, priceRow, cartButton, similar] {
+        for view in [image, titleBlock, priceRow, cartButton] + blocks {
             content.addArrangedSubview(view)
         }
-        content.setCustomSpacing(32, after: cartButton)
+        // A block with no products is hidden, and the stack skips it along with its spacing.
+        for view in [cartButton] + blocks {
+            content.setCustomSpacing(32, after: view)
+        }
 
-        let column = UIStackView(arrangedSubviews: [loaderRow, errorState, content])
+        for view in [loaderRow, errorState, content] {
+            page.addArrangedSubview(view)
+        }
+        page.axis = .vertical
+
+        let column = UIStackView(arrangedSubviews: [searchBar, page])
         column.axis = .vertical
+        column.spacing = 16
         column.translatesAutoresizingMaskIntoConstraints = false
         scroll.addSubview(column)
         NSLayoutConstraint.activate([
-            column.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 16),
+            column.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 8),
             column.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -32),
             column.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 16),
             column.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -16),
@@ -182,14 +199,22 @@ private extension ShopProductViewController {
     }
 
     func setupActions() {
+        searchBar.host = self
+        searchBar.onSearchingChanged = { [weak self] searching in
+            guard let self else { return }
+            self.page.isHidden = searching
+            self.scroll.setContentOffset(CGPoint(x: 0, y: -self.scroll.adjustedContentInset.top), animated: false)
+        }
+
         errorState.actionText = Shop.retryText
         errorState.onAction = { [weak self] in self?.load() }
         cartButton.addTarget(self, action: #selector(cartTapped), for: .touchUpInside)
 
-        // The block loads on its own as soon as it is on screen, in parallel with the product.
-        similar.title = "Similar products"
-        similar.actionText = Shop.actionText
-        similar.onProductTap = { [weak self] product in self?.openShopProduct(product.id) }
-        similar.onProductAction = { product in Shop.addToCart(productId: product.id) }
+        // The blocks load on their own as soon as they are on screen, in parallel with the product.
+        for block in blocks {
+            block.actionText = Shop.actionText
+            block.onProductTap = { [weak self] product in self?.openShopProduct(product.id) }
+            block.onProductAction = { product in Shop.addToCart(productId: product.id) }
+        }
     }
 }

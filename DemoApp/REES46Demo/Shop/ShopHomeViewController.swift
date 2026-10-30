@@ -4,21 +4,12 @@ import UIKit
 /// Shop home: the instant search field on top, the stories bar, the recommender carousel and the
 /// top-level categories.
 ///
-/// The field renders its whole panel (recent searches, suggestions, categories, products) under
-/// the input at all times, so Home shows only the input until it is focused: then the panel opens
-/// and the rest of Home steps aside; "Cancel" closes it. A submitted phrase opens the results, a
-/// product its page, a category with an id the category.
+/// The search is the shop's `ShopSearchBar`: while its panel is open the rest of Home steps aside.
 /// A product tapped in a story opens its page by the id the stories callbacks carry.
 final class ShopHomeViewController: UIViewController {
 
     private let scroll = UIScrollView()
-    private let searchClip = UIView()
-    private let search = PersonalizationInstantSearchField()
-    /// Browsing: the clip ends under the input, the panel below it is cut off.
-    private lazy var searchCollapsed = searchClip.bottomAnchor.constraint(equalTo: search.view.input.bottomAnchor)
-    /// Searching: the clip takes the whole field.
-    private lazy var searchExpanded = searchClip.bottomAnchor.constraint(equalTo: search.bottomAnchor)
-    private var isSearching = false
+    private let searchBar = ShopSearchBar()
     private let stories = PersonalizationStories(code: AppEnvironments.storiesCode, shopId: AppEnvironments.shopId)
     private let recommender = PersonalizationRecommenderBlock(code: Shop.blockCode, shopId: AppEnvironments.shopId)
     private let categories = ShopCategoriesSection()
@@ -43,30 +34,12 @@ final class ShopHomeViewController: UIViewController {
     }
 
     private func setupSearch() {
-        search.shopId = AppEnvironments.shopId
-        search.placeholder = "Search"
-        search.recentLabel = "Recent searches"
-        search.clearText = "Clear"
-        search.moreText = "more"
-        search.categoriesLabel = "Categories"
-        search.productsLabel = "Products"
-        search.showImages = true
-        search.onSubmit = { [weak self] query in
-            self?.closeSearch()
-            self?.openShopSearch(query)
+        searchBar.host = self
+        searchBar.onSearchingChanged = { [weak self] searching in
+            guard let self else { return }
+            self.browseRows.forEach { $0.isHidden = searching }
+            self.scroll.setContentOffset(CGPoint(x: 0, y: -self.scroll.adjustedContentInset.top), animated: false)
         }
-        search.onCancel = { [weak self] in self?.closeSearch() }
-        search.onProductTap = { [weak self] product in
-            self?.view.endEditing(true)
-            self?.openShopProduct(product.id)
-        }
-        search.onCategoryTap = { [weak self] category in
-            // Popular categories of the empty state may come without an id — nothing to open them by.
-            guard let id = category.id, !id.isEmpty else { return }
-            self?.view.endEditing(true)
-            self?.openShopCategory(id: id, name: category.name)
-        }
-        search.view.input.textField.addTarget(self, action: #selector(searchFocused), for: .editingDidBegin)
     }
 
     private func setupBlocks() {
@@ -81,31 +54,6 @@ final class ShopHomeViewController: UIViewController {
 
         categories.onSelect = { [weak self] item in self?.openShopCategory(id: item.id, name: item.name) }
     }
-
-    @objc private func searchFocused() {
-        setSearching(true)
-    }
-
-    /// Back to Home: the field is emptied and drops its instant results.
-    private func closeSearch() {
-        search.query = nil
-        // Text set in code does not send `.editingChanged`; sent here, it takes the field back to
-        // its empty state the same way its own clear button does.
-        search.view.input.textField.sendActions(for: .editingChanged)
-        view.endEditing(true)
-        setSearching(false)
-    }
-
-    private func setSearching(_ searching: Bool) {
-        guard searching != isSearching else { return }
-        isSearching = searching
-        search.cancelText = searching ? "Cancel" : nil
-        // Deactivate first: both pin the bottom of the clip.
-        NSLayoutConstraint.deactivate([searching ? searchCollapsed : searchExpanded])
-        NSLayoutConstraint.activate([searching ? searchExpanded : searchCollapsed])
-        browseRows.forEach { $0.isHidden = searching }
-        scroll.setContentOffset(CGPoint(x: 0, y: -scroll.adjustedContentInset.top), animated: false)
-    }
 }
 
 // MARK: - Layout
@@ -117,16 +65,6 @@ private extension ShopHomeViewController {
         scroll.keyboardDismissMode = .onDrag
         scroll.shopPin(to: view)
 
-        searchClip.clipsToBounds = true
-        search.translatesAutoresizingMaskIntoConstraints = false
-        searchClip.addSubview(search)
-        NSLayoutConstraint.activate([
-            search.topAnchor.constraint(equalTo: searchClip.topAnchor),
-            search.leadingAnchor.constraint(equalTo: searchClip.leadingAnchor),
-            search.trailingAnchor.constraint(equalTo: searchClip.trailingAnchor),
-            searchCollapsed
-        ])
-
         // The widgets hide themselves when they have nothing to show; Home hides their rows
         // instead, so leaving the search never brings back a block that hid itself.
         let storiesRow = stories.shopInset(horizontal: 0)
@@ -134,7 +72,7 @@ private extension ShopHomeViewController {
         let categoriesRow = categories.shopInset()
         browseRows = [storiesRow, recommenderRow, categoriesRow]
 
-        let column = UIStackView(arrangedSubviews: [searchClip.shopInset()] + browseRows)
+        let column = UIStackView(arrangedSubviews: [searchBar.shopInset()] + browseRows)
         column.axis = .vertical
         column.spacing = 16
         column.translatesAutoresizingMaskIntoConstraints = false

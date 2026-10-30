@@ -9,8 +9,11 @@ import UIKit
 /// the host's — the widgets only hand products and categories over.
 enum Shop {
 
-    /// The demo shop's recommender block: the carousel on Home and "Similar products" on a product.
+    /// The demo shop's recommender block that has products: "Популярные" on Home and on a product.
     static let blockCode = "e6249bb15043644bf25b135006149962"
+    /// Product page blocks driven by the product (`item`): "Похожие" and "С этим товаром также покупают".
+    static let similarBlockCode = "007b87897f244b2a2a123567b3242a4b"
+    static let alsoBoughtBlockCode = "fa6e8cd83434273dd8d47293329e00dd"
 
     static let actionText = "Add to cart"
     static let errorText = "Something went wrong. Check your connection and try again."
