@@ -145,6 +145,9 @@ public struct SearchResponse {
     public var filters: [String: Filter]?
     public var industrialFilters: IndustrialFilters?
     public var brands: [String]?
+    /// How many found products each brand of `brands` has, by name; a brand the response gives no
+    /// count for is left out.
+    public var brandCounts: [String: Int]?
     public var priceRange: PriceRange?
     public var redirect: Redirect?
 
@@ -184,12 +187,15 @@ public struct SearchResponse {
         
         if let brandsJSON = json["brands"] as? [[String: Any]] {
             var brandsResult = [String]()
+            var countsResult = [String: Int]()
             for item in brandsJSON {
                 if let name = item["name"] as? String {
                     brandsResult.append(name)
+                    if let count = item["count"] as? Int { countsResult[name] = count }
                 }
             }
             self.brands = brandsResult
+            self.brandCounts = countsResult
         }
         
         if let locationsJSON = json["locations"] as? [[String: Any]] {

@@ -6,6 +6,9 @@ public struct ProductsListResponse {
     public var priceRange: PriceRange?
     public var products: [Product]
     public var productsTotal: Int
+    /// Categories of the listed products with product counts, as in `CategoryResponse.categories`;
+    /// top-level ones have no `parentId`.
+    public var categories: [Category] = []
 
     init(json: [String: Any]) {
         if let brandsJSON = json["brands"] as? [[String: Any]] {
@@ -40,6 +43,7 @@ public struct ProductsListResponse {
         products = prodsTemp
 
         productsTotal = (json["products_total"] as? Int) ?? 0
+        categories = (json["categories"] as? [[String: Any]] ?? []).map { Category(json: $0) }
     }
 }
 

@@ -89,6 +89,21 @@ final class ProductModelsParsingTests: XCTestCase {
         XCTAssertNil(fullPrice?.discountPercent)
     }
 
+    func testProductsList_keepsTopLevelCategories() {
+        let response = ProductsListResponse(json: ApiFixtures.json("products"))
+
+        XCTAssertEqual(response.categories.map(\.id), ["noutbuki-i-komp-jutery", "bytovaja-tehnika", "tehnika-dlja-kuhni"])
+        XCTAssertEqual(response.categories.first?.name, "Ноутбуки и компьютеры")
+        XCTAssertEqual(response.categories.first?.count, 3240)
+        XCTAssertTrue(response.categories.allSatisfy { $0.parentId == nil })
+    }
+
+    func testProductsList_withoutCategories_leavesThemEmpty() {
+        let response = ProductsListResponse(json: ["products_total": 0, "products": []])
+
+        XCTAssertTrue(response.categories.isEmpty)
+    }
+
     func testSearchProduct_keepsDeeplinkAndPicture() {
         let response = SearchResponse(json: ApiFixtures.json("search_full"))
         let product = response.products.first
