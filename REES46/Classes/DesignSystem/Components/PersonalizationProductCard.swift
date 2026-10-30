@@ -183,6 +183,20 @@ import UIKit
     }
 
     private func rebuild() {
+        // Каталог меряет плитку и переключает ту же карточку в список, поэтому части уходят из
+        // старых стеков аккуратно. Сначала они показываются, и стеки снимают с них ограничения
+        // скрытия: иначе спрятанная в плитке старая цена уезжала в список шириной ноль. Потом
+        // части снимаются по одной и только затем уходит корень: унесённые из уже отцепленного
+        // корня, они давали карточке, которую до этого мерили, нулевую высоту.
+        let parts: [UIView] = [imageContainer, brandLabel, nameLabel, rating, priceLabel, priceBadge, oldPriceLabel, button]
+        let hidden = parts.map(\.isHidden)
+        parts.forEach { $0.isHidden = false }
+        root?.updateConstraintsIfNeeded()
+        root?.layoutIfNeeded()
+        for (view, wasHidden) in zip(parts, hidden) {
+            view.removeFromSuperview()
+            view.isHidden = wasHidden
+        }
         root?.removeFromSuperview()
         listImageWidth?.isActive = false
         listImageWidth = nil
@@ -378,6 +392,8 @@ import UIKit
 
     private func fittingWidth(_ view: UIView) -> CGFloat {
         if view.isHidden { return 0 }
+        // Подпись — по своему тексту, без ограничений стека вокруг неё.
+        if let label = view as? UILabel { return label.intrinsicContentSize.width }
         return view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
     }
 

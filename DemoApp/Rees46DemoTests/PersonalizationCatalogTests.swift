@@ -172,6 +172,40 @@ final class PersonalizationCatalogTests: XCTestCase {
         XCTAssertEqual(frame(list, section: 1, item: 1).minY, row.maxY + 16)
     }
 
+    /// Switched from the grid, the list measures each card for its own product: a discounted one
+    /// after a plain one is as tall as it would be alone, its button under the price.
+    func testListCardsSwitchedFromTheGridAreMeasuredForTheirOwnProduct() {
+        let plain = PersonalizationProduct(id: "1", name: "Mouse", price: "14 990 ₽", actionText: "Add to cart")
+        let discounted = PersonalizationProduct(
+            id: "2", name: "Power supply 750W Ocypus Iota P750 ATX 3.1 80+Gold Full Modular", price: "48 990 ₽",
+            oldPrice: "62 990 ₽", discount: "-22%", actionText: "Add to cart"
+        )
+        let catalog = screenCatalog(products: 0)
+        catalog.products = [plain, discounted, plain]
+        settle()
+        let list = list(of: catalog)
+
+        catalog.layout = .list
+        settle()
+
+        let alone = PersonalizationProductCard(type: .list)
+        alone.showRating = false  // the product has no rating, so the catalogue's card shows none
+        alone.name = discounted.name
+        alone.price = discounted.price
+        alone.oldPrice = discounted.oldPrice
+        alone.discount = discounted.discount
+        alone.actionText = discounted.actionText
+        let width = frame(list, section: 1, item: 1).width
+        let expected = ceil(alone.systemLayoutSizeFitting(
+            CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        ).height)
+        XCTAssertGreaterThanOrEqual(frame(list, section: 1, item: 0).height, 120, "a card is as tall as its image")
+        XCTAssertEqual(frame(list, section: 1, item: 1).height, expected)
+        XCTAssertGreaterThan(expected, 120, "the two-line name and the button under the price")
+    }
+
     func testAGrowingHeaderMovesTheCardsDown() {
         let header = UILabel()
         header.numberOfLines = 0

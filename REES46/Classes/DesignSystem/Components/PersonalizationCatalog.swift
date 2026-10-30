@@ -500,9 +500,6 @@ import UIKit
     /// пропорции или видимости рейтинга сбрасывает кэш.
     private var heightCache: (scope: CardScope, heights: [CardContent: CGFloat])?
 
-    /// Карточка для промера — одна на каталог, на экран она не попадает.
-    private lazy var sizingCard = PersonalizationProductCard(type: cardType)
-
     private func cardHeights(width: CGFloat) -> [CGFloat] {
         let scope = CardScope(width: width, type: cardType, aspect: imageAspect, showRating: showRating)
         let cached = heightCache.flatMap { $0.scope == scope ? $0.heights : nil } ?? [:]
@@ -518,10 +515,12 @@ import UIKit
         return result
     }
 
+    /// Каждый товар меряется новой карточкой, на экран она не попадает. Одна карточка на все
+    /// замеры ошибалась: после смены товара (кнопка уходит под цену) и вида (плитка → список)
+    /// её стеки мерились по прежней раскладке.
     private func measureCard(_ product: PersonalizationProduct, width: CGFloat) -> CGFloat {
-        let card = sizingCard
-        if card.type != cardType { card.type = cardType }
-        if card.imageAspect != imageAspect { card.imageAspect = imageAspect }
+        let card = PersonalizationProductCard(type: cardType)
+        card.imageAspect = imageAspect
         card.showRating = showRating
         card.show(product)
         return measure(card, width: width)

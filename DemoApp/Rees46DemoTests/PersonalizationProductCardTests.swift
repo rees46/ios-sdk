@@ -39,6 +39,33 @@ final class PersonalizationProductCardTests: XCTestCase {
         XCTAssertGreaterThan(narrow, wide)
     }
 
+    func testAMeasuredGridCardSwitchedToTheListMeasuresAsAList() {
+        let card = gridCard()
+        _ = height(of: card, width: 171)
+
+        card.type = .list
+
+        XCTAssertGreaterThanOrEqual(height(of: card, width: 358), 120)
+    }
+
+    /// A cell's card switched from the grid to the list and given the next product: the old price
+    /// the grid hid shows again, and the button moves under the price.
+    func testAGridCardSwitchedToTheListShowsTheOldPriceTheGridHid() {
+        let card = PersonalizationProductCard(type: .grid)
+        card.show(PersonalizationProduct(id: "1", name: "Mouse", price: "14 990 ₽", actionText: "Add to cart"))
+        layOut(card, width: 171)
+
+        card.type = .list
+        card.show(PersonalizationProduct(
+            id: "2", name: "Power supply", price: "48 990 ₽", oldPrice: "62 990 ₽", discount: "-22%", actionText: "Add to cart"
+        ))
+        layOut(card, width: 358)
+
+        let old = label("62 990 ₽", in: card)
+        XCTAssertEqual(frame(of: old, in: card).width, old.intrinsicContentSize.width, accuracy: 0.5)
+        XCTAssertGreaterThanOrEqual(frame(of: buttonOf(card), in: card).minY, frame(of: old, in: card).maxY)
+    }
+
     func testLongGridPricesPutTheOldPriceAboveThePrice() {
         let card = gridCard()
         layOut(card, width: 160)
