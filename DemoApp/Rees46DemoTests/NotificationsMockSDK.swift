@@ -4,7 +4,9 @@ import UIKit
 
 /// A conformer like an app's own mock: it implements `getAllNotifications(shopSecret:…)` itself
 /// and records the calls. The notification tests check that the short overloads reach it instead
-/// of the protocol's default implementation. Everything else is a no-op.
+/// of the protocol's default implementation. It also predates `getCategory` with price and
+/// sorting: its own `getCategory` and `getRequest` record what reaches them, so the category tests
+/// can check where the protocol's default sends that call. Everything else is a no-op.
 final class NotificationsMockSDK: PersonalizationSDK {
 
     struct Call: Equatable {
@@ -16,6 +18,12 @@ final class NotificationsMockSDK: PersonalizationSDK {
     }
 
     private(set) var notificationCalls: [Call] = []
+
+    /// `category` and `page` of every call to this mock's own `getCategory`.
+    private(set) var categoryCalls: [(category: String, page: Int?)] = []
+
+    /// Every `getRequest`, in order. None completes.
+    private(set) var getRequests: [(path: String, params: [String: String])] = []
 
     func getAllNotifications(shopSecret: String, type: String, phone: String?, email: String?, userExternalId: String?, userLoyaltyId: String?, channel: String?, limit: Int?, page: Int?, dateFrom: String?, completion: @escaping (Result<UserPayloadResponse, SdkError>) -> Void) {
         notificationCalls.append(Call(shopSecret: shopSecret, type: type, email: email, limit: limit, page: page))
@@ -34,7 +42,9 @@ final class NotificationsMockSDK: PersonalizationSDK {
     lazy var popupPresenter: PopupPresenter = PopupPresenter(sdk: self)
 
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {}
-    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {}
+    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        getRequests.append((path, params))
+    }
     func configureURLSession(configuration: URLSessionConfiguration) {}
     func generateString(array: [String]) -> String { "" }
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
@@ -54,7 +64,9 @@ final class NotificationsMockSDK: PersonalizationSDK {
     func getLoyaltyStatus(identifier: String, completion: @escaping (Result<LoyaltyStatusResponse, SdkError>) -> Void) {}
     func getProfile(completion: @escaping (Result<GetProfileResponse, SdkError>) -> Void) {}
     func getProductCounters(item: String, completion: @escaping (Result<ProductCountersResponse, SdkError>) -> Void) {}
-    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {}
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
+        categoryCalls.append((category, page))
+    }
     func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping (Result<CollectionResponse, SdkError>) -> Void) {}
     func getDeviceId() -> String { deviceId }
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void) {}

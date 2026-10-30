@@ -62,6 +62,9 @@ public protocol PersonalizationSDK {
     func getProfile(completion: @escaping(Result<GetProfileResponse, SdkError>) -> Void)
     func getProductCounters(item: String, completion: @escaping(Result<ProductCountersResponse, SdkError>) -> Void)
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void)
+    /// Category page with a price range and sorting on top of brands and facets. Has a default
+    /// implementation below, so types that already conform keep compiling.
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void)
     func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping(Result<CollectionResponse, SdkError>) -> Void)
     func getDeviceId() -> String
     @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
@@ -185,6 +188,23 @@ public extension PersonalizationSDK {
 
     func getCategory(category: String, limit: Int? = nil, page: Int? = nil, brands: String? = nil, locations: String? = nil, filters: [String: Any]? = nil, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void) {
         getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
+    }
+
+    /// Category page (`GET /category/{category}`) with a price range (`price_min` / `price_max`) and
+    /// sorting (`sort_by`: `price`, `discount`, `popular`, …; `sort_dir`: `asc` / `desc`) on top of
+    /// brands (comma-separated) and facets (`filters`, name → values).
+    ///
+    /// Default implementation of the requirement, so conformers that predate it keep compiling and
+    /// working: with no price or sorting asked the call goes to their own `getCategory` above,
+    /// otherwise the request goes out through their `getRequest`.
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void) {
+        guard priceMin != nil || priceMax != nil || sortBy != nil || sortDir != nil else {
+            return getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
+        }
+        let params = categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
+        getRequest(path: "category/\(category)", params: params, false) { result in
+            completion(result.map { CategoryResponse(json: $0) })
+        }
     }
 
     func getCollection(collectionId: String, location: String? = nil, email: String? = nil, phone: String? = nil, externalId: String? = nil, loyaltyId: String? = nil, completion: @escaping(Result<CollectionResponse, SdkError>) -> Void) {
@@ -370,6 +390,35 @@ public extension PersonalizationSDK {
 
     func resetFavoritesProductStates() {
         localState?.clearFavoriteProducts()
+    }
+}
+
+extension PersonalizationSDK {
+
+    /// Query of `GET /category/{category}`: the session plus whatever was asked. Shared by the SDK's
+    /// own `getCategory` and the protocol's default one.
+    func categoryParams(limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?) -> [String: String] {
+        var params: [String: String] = [
+            "shop_id": shopId,
+            "did": deviceId,
+            "seance": userSeance,
+            "sid": userSeance
+        ]
+        if let limit = limit { params["limit"] = String(limit) }
+        if let page = page { params["page"] = String(page) }
+        if let brands = brands { params["brands"] = brands }
+        if let locations = locations { params["locations"] = locations }
+        if let filters = filters,
+           let data = try? JSONSerialization.data(withJSONObject: filters, options: []),
+           let text = String(data: data, encoding: .utf8) {
+            params["filters"] = text
+        }
+        // The same wire format as the search sends.
+        if let priceMin = priceMin { params[SdkConstants.priceMin] = String(describing: priceMin) }
+        if let priceMax = priceMax { params[SdkConstants.priceMax] = String(describing: priceMax) }
+        if let sortBy = sortBy { params[SdkConstants.sortBy] = sortBy }
+        if let sortDir = sortDir { params[SdkConstants.sortDir] = sortDir }
+        return params
     }
 }
 

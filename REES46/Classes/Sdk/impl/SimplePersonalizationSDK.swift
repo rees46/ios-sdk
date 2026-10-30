@@ -941,22 +941,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
+        getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: nil, priceMax: nil, sortBy: nil, sortDir: nil, completion: completion)
+    }
+
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
-            var params: [String: String] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance
-            ]
-            if let limit = limit { params["limit"] = String(limit) }
-            if let page = page { params["page"] = String(page) }
-            if let brands = brands { params["brands"] = brands }
-            if let locations = locations { params["locations"] = locations }
-            if let filters = filters,
-               let data = try? JSONSerialization.data(withJSONObject: filters, options: []),
-               let text = String(data: data, encoding: .utf8) {
-                params["filters"] = text
-            }
+            let params = self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
 
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1

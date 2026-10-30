@@ -63,6 +63,28 @@ final class FakeSDK: PersonalizationSDK {
     /// `offset` of every `search` call, in order.
     private(set) var searchOffsets: [Int?] = []
 
+    /// Answers `getCategory` (the one with price and sorting) hands back in order, synchronously,
+    /// so the category screen tests can fail a page and serve it on retry. Nothing left — the call
+    /// never completes.
+    var categoryResults: [Result<CategoryResponse, SdkError>] = []
+
+    /// Arguments of a `getCategory` call with price and sorting.
+    struct CategoryCall {
+        var category: String
+        var limit: Int?
+        var page: Int?
+        var brands: String?
+        var locations: String?
+        var filters: [String: [String]]?
+        var priceMin: Double?
+        var priceMax: Double?
+        var sortBy: String?
+        var sortDir: String?
+    }
+
+    /// Every `getCategory` call with price and sorting, in order.
+    private(set) var categoryCalls: [CategoryCall] = []
+
     /// Answers `recommend` hands back in order, synchronously, so the recommender block tests can
     /// script a filled, an empty and a failed block. Nothing left — the call never completes.
     var recommendResults: [Result<RecommenderResponse, SdkError>] = []
@@ -123,6 +145,14 @@ final class FakeSDK: PersonalizationSDK {
     func getProfile(completion: @escaping (Result<GetProfileResponse, SdkError>) -> Void) {}
     func getProductCounters(item: String, completion: @escaping (Result<ProductCountersResponse, SdkError>) -> Void) {}
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {}
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
+        categoryCalls.append(CategoryCall(
+            category: category, limit: limit, page: page, brands: brands, locations: locations,
+            filters: filters as? [String: [String]], priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir
+        ))
+        guard !categoryResults.isEmpty else { return }
+        completion(categoryResults.removeFirst())
+    }
     func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping (Result<CollectionResponse, SdkError>) -> Void) {
         collectionCalls.append(collectionId)
         guard !collectionResults.isEmpty else { return }
