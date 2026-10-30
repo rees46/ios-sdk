@@ -252,6 +252,115 @@ final class PersonalizationSearchResultsScreenTests: XCTestCase {
         XCTAssertNil(screen.catalog.errorText)
         XCTAssertEqual(screen.products.count, 1)
     }
+
+    // MARK: - Found count
+
+    /// Whether "Found N products" is on screen; the filter and sort buttons next to it stay either way.
+    private func foundShown() -> Bool {
+        let prefix = views(UILabel.self, in: screen).first { $0.attributedText?.string == "Found" }
+        return prefix.map { !($0.superview?.isHidden ?? true) } ?? false
+    }
+
+    func testFoundCount_staysHiddenUntilTheFirstPageOfEachRequestAnswers() {
+        search("phone")  // nothing scripted: the request stays pending
+        XCTAssertFalse(foundShown())
+
+        sdk.searchResults = [page(total: 2, ids: 0..<2)]
+        search("phone")
+        XCTAssertTrue(foundShown())
+
+        sdk.searchResults = [.failure(.networkOfflineError)]
+        search("tv")
+        XCTAssertFalse(foundShown())
+    }
+
+    // MARK: - Facets
+
+    /// `f01`…`f12` with two values each — the earlier, the more products have it — and a
+    /// single-valued facet that every product has.
+    private func pageWithFacets() -> Result<SearchResponse, SdkError> {
+        var filters: [String: Any] = ["single": ["count": 5000, "values": ["only": 5000]]]
+        for index in 1...12 {
+            filters[String(format: "f%02d", index)] = ["count": 1000 - index, "values": ["a": 1, "b": 2]]
+        }
+        let product: [String: Any] = ["id": "1", "name": "Product", "price": 10.0]
+        return .success(SearchResponse(json: ["products_total": 1, "products": [product], "filters": filters]))
+    }
+
+    private var facetSections: [String] {
+        screen.openFilters()
+        return screen.filters.sections.map(\.id).filter { $0.hasPrefix("facet:") }.map { String($0.dropFirst(6)) }
+    }
+
+    func testFacets_mostCommonFirst_atMostMaxFacets() {
+        sdk.searchResults = [pageWithFacets()]
+        search("samsung")
+
+        XCTAssertEqual(facetSections, (1...10).map { String(format: "f%02d", $0) })
+        screen.maxFacets = nil
+        XCTAssertEqual(facetSections.count, 12)
+    }
+
+    func testFilters_keepTheTitleAndButtonsOnScreen_whileSectionsScroll() {
+        sdk.searchResults = [pageWithFacets()]
+        search("samsung")
+        screen.maxFacets = nil
+        screen.openFilters()
+        window.layoutIfNeeded()
+
+        let apply = buttons("Apply")
+        XCTAssertEqual(apply.count, 1)
+        let frame = apply[0].convert(apply[0].bounds, to: screen)
+        XCTAssertLessThanOrEqual(frame.maxY, screen.bounds.maxY)
+        XCTAssertGreaterThan(frame.minY, screen.bounds.midY)
+    }
+
+    func testFacets_explicitList_winsInTheHostsOrder() {
+        sdk.searchResults = [pageWithFacets()]
+        search("samsung")
+
+        screen.facets = ["f12", "single", "f01"]
+
+        XCTAssertEqual(facetSections, ["f12", "single", "f01"])
+    }
+
+    // MARK: - Value counts
+
+    /// Labels of the options in the section `id`.
+    private func optionLabels(_ id: String) -> [String] {
+        screen.openFilters()
+        for case let .options(sectionId, _, options, _, _, _) in screen.filters.sections where sectionId == id {
+            return options.map(\.label)
+        }
+        return []
+    }
+
+    func testValueCounts_ofBrandsColorsAndSizes_whenTheResponseHasThem() {
+        let product: [String: Any] = ["id": "1", "name": "Product", "price": 10.0]
+        sdk.searchResults = [.success(SearchResponse(json: [
+            "products_total": 1,
+            "products": [product],
+            "brands": [["name": "Samsung", "count": 801], ["name": "NoCount"]],
+            "industrial_filters": [
+                "colors": [["color": "red", "count": 3]],
+                "fashion_sizes": [["size": "M", "count": 2], ["size": "L"]]
+            ]
+        ]))]
+        search("samsung")
+
+        XCTAssertEqual(optionLabels("brands"), ["Samsung (801)", "NoCount"])
+        XCTAssertEqual(optionLabels("colors"), ["red (3)"])
+        XCTAssertEqual(optionLabels("sizes"), ["M (2)", "L"])
+
+        // The tag of an applied value carries no count.
+        screen.applied.brands = ["Samsung"]
+        screen.reload()
+        XCTAssertEqual(views(PersonalizationTag.self, in: screen.title).compactMap(\.text), ["Samsung"])
+
+        screen.showValueCounts = false
+        XCTAssertEqual(optionLabels("brands"), ["Samsung", "NoCount"])
+        XCTAssertEqual(optionLabels("sizes"), ["M", "L"])
+    }
 }
 
 private extension UIView {
