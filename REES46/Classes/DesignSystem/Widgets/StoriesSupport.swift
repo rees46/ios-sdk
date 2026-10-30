@@ -88,6 +88,13 @@ extension PersonalizationStorySlide {
         func of(_ type: String) -> [[String: Any]] {
             elements.filter { StoriesJSON.string($0["type"]) == type }
         }
+        // Кнопка товарного слайда несёт товар слайда (`item`), если своего у неё нет: делегат
+        // получает элемент кнопки, и хост открывает товар по `productId`, а не разбирает ссылку.
+        let item = of("product").lazy.compactMap { StoriesJSON.object($0["item"]) }.first
+        let buttons = of("button").map { button -> [String: Any] in
+            guard let item, button["item"] == nil else { return button }
+            return button.merging(["item": item]) { own, _ in own }
+        }
         self.init(
             id: id,
             kind: Self.kind(of: StoriesJSON.string(json["type"]) ?? ""),
@@ -95,7 +102,7 @@ extension PersonalizationStorySlide {
             backgroundColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["background_color"])),
             preview: StoriesJSON.string(json["preview"]),
             duration: StoriesJSON.number(json["duration"]) ?? Self.defaultDuration,
-            buttons: of("button").compactMap { Button(json: $0) },
+            buttons: buttons.compactMap { Button(json: $0) },
             offer: of("product").lazy.compactMap { Offer(element: $0) }.first,
             products: of("products").lazy.compactMap { Products(json: $0) }.first,
             textBlocks: of("text_block").compactMap { TextBlock(json: $0) }

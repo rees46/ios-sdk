@@ -282,6 +282,14 @@ public class StoriesElement {
     let labels: Labels?
     let products: [StoriesProduct]?
     let product: StoriesPromoCodeElement?
+
+    /// Id of the product the element carries (`item.id`) — the product element of a product slide;
+    /// `nil` when it carries none. In the kit's stories a button of a product slide carries that
+    /// slide's product too, so a host can open the product by id from either tap.
+    public var productId: String? {
+        guard let id = product?.id, !id.isEmpty else { return nil }
+        return id
+    }
     
     public init(json: [String: Any]) {
         self.link = json["link"] as? String
@@ -317,7 +325,9 @@ public class StoriesElement {
 
 // MARK: - Promocodes
 public class StoriesPromoCodeElement {
-    let id, name, brand, price_full, price_formatted, price_full_formatted, image_url, picture, currency: String
+    /// Id of the product of a product slide (`item.id`); empty when the element wraps a bare code.
+    public let id: String
+    let name, brand, price_full, price_formatted, price_full_formatted, image_url, picture, currency: String
     let url: String
     let deeplinkIos: String
     let price: Int
@@ -356,6 +366,8 @@ public class StoriesPromoCodeElement {
 
 // MARK: - Carousel Product
 public class StoriesProduct {
+    /// Id of the carousel product; empty when the server sent none.
+    public let id: String
     let name: String
     let currency: String
     let price: Int
@@ -372,6 +384,7 @@ public class StoriesProduct {
     public var deeplinkIos: String
     
     public init(json: [String:Any]) {
+        self.id = json["id"] as? String ?? (json["id"] as? NSNumber)?.stringValue ?? ""
         self.name = json["name"] as? String ?? ""
         self.currency = json["currency"] as? String ?? ""
         self.price = json["price"] as? Int ?? 0

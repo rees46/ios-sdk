@@ -214,4 +214,49 @@ final class PersonalizationStoriesV2StateTests: XCTestCase {
         session.promoCopied(PersonalizationStory(id: "1", name: "S", slides: [slide]), slide, "TEXT10")
         XCTAssertEqual(delegate.events, ["promo:TEXT10"], "a text block code is wrapped for the V1 callback")
     }
+
+    // MARK: - Session: product ids for the host
+
+    private final class IdDelegate: StoriesCommunicationProtocol {
+        var ids: [String?] = []
+        func receiveIosLink(text: String) {}
+        func receiveSelectedProductData(products: StoriesElement) { ids.append(products.productId) }
+        func receiveSelectedCarouselProductData(products: StoriesProduct) { ids.append(products.id) }
+        func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) {}
+    }
+
+    func testTheStoriesModelsHandTheProductIdOver() {
+        XCTAssertEqual(StoriesProduct(json: ["id": "300201", "name": "Mouse"]).id, "300201")
+        XCTAssertEqual(StoriesProduct(json: ["id": 300197, "name": "Keyboard"]).id, "300197", "a numeric id")
+        XCTAssertEqual(StoriesProduct(json: ["name": "No id"]).id, "")
+
+        let element = StoriesElement(json: ["type": "product", "item": ["id": "52173", "name": "Fridge"]])
+        XCTAssertEqual(element.productId, "52173")
+        XCTAssertNil(StoriesElement(json: ["type": "button", "link": "https://shop.example/a"]).productId)
+        XCTAssertNil(StoriesElement(json: ["type": "product", "item": ["name": "No id"]]).productId)
+        XCTAssertEqual(StoriesPromoCodeElement(json: ["id": "52173", "promocode": "SALE"]).id, "52173")
+    }
+
+    func testEveryProductTapHandsTheHostTheProductId() {
+        let item: [String: Any] = ["id": "52173", "name": "Fridge", "price": 10, "url": "https://shop.example/p-52173"]
+        let json: [String: Any] = ["id": "39_0", "type": "", "elements": [
+            ["type": "button", "title": "Buy", "link_ios": "https://shop.example/p-52173"],
+            ["type": "product", "item": item]
+        ]]
+        let carouselItem: [String: Any] = ["id": "300201", "name": "Mouse", "url": "https://shop.example/m"]
+        guard let slide = PersonalizationStorySlide(json: json), let button = slide.buttons.first, let offer = slide.offer,
+              let carousel = PersonalizationStorySlide.Offer(carousel: carouselItem, index: 0) else {
+            return XCTFail("no product slide")
+        }
+        let story = PersonalizationStory(id: "39", name: "S", slides: [slide])
+        let delegate = IdDelegate()
+        let session = StoriesSession(sdk: nil, code: "block")
+        session.delegate = delegate
+        session.openURL = { _ in }
+
+        session.buttonTapped(story, slide, button, in: nil)
+        session.productTapped(story, slide, offer, in: nil)
+        session.productTapped(story, slide, carousel, in: nil)
+        XCTAssertEqual(delegate.ids, ["52173", "52173", "300201"], "the slide button, the product, the carousel")
+    }
 }

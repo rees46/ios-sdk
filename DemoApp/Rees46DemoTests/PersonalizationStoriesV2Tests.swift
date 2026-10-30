@@ -230,6 +230,26 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         }
     }
 
+    func testAProductSlideButtonCarriesTheSlideProductOnlyThere() {
+        let product: [String: Any] = [
+            "id": "39_0", "type": "", "elements": [
+                ["type": "button", "title": "Buy", "link_ios": "https://shop.example/p"],
+                ["type": "product", "item": merged([:])]
+            ]
+        ]
+        let plain: [String: Any] = [
+            "id": 2, "type": "", "elements": [["type": "button", "title": "Go", "link": "https://shop.example/web"]]
+        ]
+        let json: [String: Any] = ["stories": [["id": 1, "slides": [product, plain]]]]
+        let slides = PersonalizationStory.list(json: json).first?.slides ?? []
+        XCTAssertEqual(slides.count, 2)
+        let first = slides.first
+        let button = first?.buttons.first
+        XCTAssertEqual(button?.element?.productId, "216908")
+        XCTAssertEqual(button.flatMap { first?.link(of: $0) }, "https://shop.example/p", "the button keeps its own link")
+        XCTAssertNil(slides.last?.buttons.first?.element?.productId, "a slide without a product gives its button none")
+    }
+
     func testTextBlocksTakeThePresetLineHeightAndTheirPromoCode() {
         let slide: [String: Any] = [
             "id": 1, "type": "image", "background": "https://img.example/a.jpg", "elements": [
