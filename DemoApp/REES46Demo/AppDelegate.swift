@@ -8,7 +8,7 @@
 
 import Firebase
 import FirebaseMessaging
-import REES46
+@_spi(PersonalizationUI) import REES46
 import SwiftUI
 import UIKit
 import UserNotifications
@@ -225,13 +225,32 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
     }
     
+    /// Links of the `rees46` scheme, both on a cold start and into the running app (the demo has
+    /// no scene manifest, so `scene(_:openURLContexts:)` above never fires). A stories link —
+    /// any host and path with `r46_stories` — opens its campaign; the rest goes to the SDK's
+    /// deep links as before.
     func application(
-        _ application: UIApplication,
+        _ app: UIApplication,
         open url: URL,
-        sourceApplication: String?,
-        annotation: Any
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
+        let stories = openStoriesLink(url)
+        NSLog("REES46Demo: open url %@ (%@)", url.absoluteString, stories ? "stories" : "deep link")
+        if stories { return true }
         notificationService?.didReceiveDeepLink(url: url)
+        return true
+    }
+
+    private func openStoriesLink(_ url: URL) -> Bool {
+        // The presenter is passed explicitly. Without it the SDK shows over the window of the
+        // scene on screen, and on a cold start from a link it waits for that scene to activate.
+        guard DemoStoriesLinks.isStoriesLink(url), DemoStoriesLinks.open(url, from: window?.rootViewController) else { return false }
+        // A demo screen over the tabs (a push screen and the like) goes, so the stories open over
+        // the tabs, as from the "Open" button; an open stories viewer is the SDK's to close.
+        if let root = window?.rootViewController, var top = root.presentedViewController {
+            while let next = top.presentedViewController { top = next }
+            if !(top is PersonalizationStoriesViewController) { root.dismiss(animated: false) }
+        }
         return true
     }
     
