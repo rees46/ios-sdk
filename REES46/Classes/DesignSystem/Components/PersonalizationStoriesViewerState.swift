@@ -22,6 +22,8 @@ struct PersonalizationStoriesViewerState {
         case hidden
         /// Пауза от хоста (`pause()`).
         case host
+        /// Открыто окно «Поделиться».
+        case share
         /// Медиа слайда ещё не готово.
         case loading
         /// Медиа не загрузилось — на экране «Повторить».

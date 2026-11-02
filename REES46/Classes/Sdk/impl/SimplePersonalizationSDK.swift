@@ -160,9 +160,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
 
         // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
-        // reinstall keeps this shop's did. Injected (tests) is used verbatim.
+        // reinstall keeps this shop's did — also the one a CocoaPods build kept under the framework's
+        // bundle id, for an app now linking the SDK through SwiftPM. Injected (tests) is used verbatim.
         let keychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk"
-        self.keychainStore = keychainStore ?? KeychainInitStoreImpl(shopId: shopId, service: keychainService)
+        self.keychainStore = keychainStore ?? KeychainInitStoreImpl(
+            shopId: shopId,
+            service: keychainService,
+            previousServices: [KeychainPartition.cocoaPodsFrameworkService]
+        )
 
         // Session (aligned with Android/RN): a rolling 2h client session over the per-shop partition.
         self.sessionManager = sessionManager ?? SessionManagerImpl(identity: identity)

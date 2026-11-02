@@ -44,6 +44,7 @@
 		A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */; };
 		A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */; };
 		A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */; };
+		A1B2C3D400000000000000E1 /* PersonalizationStoriesShareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */; };
 		A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */; };
 		A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
@@ -205,6 +206,7 @@
 		A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2MediaTests.swift; sourceTree = "<group>"; };
 		A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2GifTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2StateTests.swift; sourceTree = "<group>"; };
+		A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesShareTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2Tests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationWidgetPositionTests.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
@@ -501,6 +503,7 @@
 				A1B2C3D4000000000000001E /* PersonalizationToastTests.swift */,
 				A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */,
 				A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */,
+				A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */,
 				A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */,
 				A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */,
 				A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */,
@@ -942,6 +945,7 @@
 				A1B2C3D4000000000000001D /* PersonalizationToastTests.swift in Sources */,
 				A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */,
 				A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */,
+				A1B2C3D400000000000000E1 /* PersonalizationStoriesShareTests.swift in Sources */,
 				A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */,
 				A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */,
 				A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */,

@@ -374,17 +374,19 @@ extension UIViewController {
         return top
     }
 
-    /// Корневой контроллер ключевого окна — когда показывать не от кого.
+    /// Корневой контроллер ключевого окна — когда показывать не от кого. Сцена на экране:
+    /// активная, а без неё — неактивная (центр управления, звонок, холодный старт по ссылке,
+    /// пока сцена не активировалась). Сцены на экране нет — `nil`.
     static var personalizationKeyRoot: UIViewController? {
-        let windows: [UIWindow]
         if #available(iOS 13.0, *) {
-            windows = UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .filter { $0.activationState == .foregroundActive }
-                .flatMap(\.windows)
-        } else {
-            windows = UIApplication.shared.windows
+            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            for state in [UIScene.ActivationState.foregroundActive, .foregroundInactive] {
+                let windows = scenes.filter { $0.activationState == state }.flatMap(\.windows)
+                if let root = (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController { return root }
+            }
+            return nil
         }
+        let windows = UIApplication.shared.windows
         return (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController
     }
 }

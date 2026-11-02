@@ -108,4 +108,40 @@ final class KeychainInitStoreTests: XCTestCase {
 
         XCTAssertEqual(reopened.readInitData(), blob("own-A"))
     }
+
+    func test_adopts_the_shop_item_left_under_a_previous_service_then_consumes_it() {
+        let service = uniqueService()
+        let previous = uniqueService()
+        // What a CocoaPods build leaves behind: the shop's item under the framework's bundle id.
+        try? InitService.upsertKeychainDidToken(
+            blob("pods-did"),
+            identifier: KeychainPartition.account(shopId: "A", service: previous),
+            instanceKeychainService: previous
+        )
+
+        let store = KeychainInitStoreImpl(shopId: "A", service: service, previousServices: [previous])
+
+        XCTAssertEqual(store.readInitData(), blob("pods-did"))
+        let source = try? InitService.getKeychainDidToken(
+            identifier: KeychainPartition.account(shopId: "A", service: previous),
+            instanceKeychainService: previous
+        )
+        XCTAssertNil(source)
+    }
+
+    func test_adopts_the_pre_partition_item_left_under_a_previous_service_once() {
+        let service = uniqueService()
+        let previous = uniqueService()
+        try? InitService.upsertKeychainDidToken(
+            blob("legacy-did"),
+            identifier: KeychainPartition.legacyAccount(service: previous),
+            instanceKeychainService: previous
+        )
+
+        let storeA = KeychainInitStoreImpl(shopId: "A", service: service, previousServices: [previous])
+        let storeB = KeychainInitStoreImpl(shopId: "B", service: service, previousServices: [previous])
+
+        XCTAssertEqual(storeA.readInitData(), blob("legacy-did"))
+        XCTAssertNil(storeB.readInitData(), "a second shop must not clone the identity")
+    }
 }

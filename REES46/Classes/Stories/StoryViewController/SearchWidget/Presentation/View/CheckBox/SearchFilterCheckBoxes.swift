@@ -163,7 +163,10 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     
     private func updateArrowImageView() {
         let arrowImageName = isExpanded ? "angleUpBlack" : "angleDownBlack"
-        let frameworkBundle = Bundle(for: type(of: self))
+        var frameworkBundle = Bundle(for: type(of: self))
+#if SWIFT_PACKAGE
+        frameworkBundle = Bundle.module
+#endif
         let arrowImage = UIImage(named: arrowImageName, in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(.alwaysTemplate)
         arrowImageView.image = arrowImage
         arrowImageView.tintColor = .clear
