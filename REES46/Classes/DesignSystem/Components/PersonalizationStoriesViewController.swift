@@ -14,10 +14,11 @@ import UIKit
     public var hideProductsText: String
     /// Кнопка повтора, когда медиа не загрузилось.
     public var retryText: String
-    /// VoiceOver: крестик, включение и выключение звука.
+    /// VoiceOver: крестик, включение и выключение звука, «Поделиться».
     public var closeLabel: String?
     public var soundOnLabel: String?
     public var soundOffLabel: String?
+    public var shareLabel: String?
 
     public init(
         promoCaption: String? = "Promo code",
@@ -28,7 +29,8 @@ import UIKit
         retryText: String = "Retry",
         closeLabel: String? = "Close",
         soundOnLabel: String? = "Sound on",
-        soundOffLabel: String? = "Sound off"
+        soundOffLabel: String? = "Sound off",
+        shareLabel: String? = "Share"
     ) {
         self.promoCaption = promoCaption
         self.promoCopiedText = promoCopiedText
@@ -39,6 +41,7 @@ import UIKit
         self.closeLabel = closeLabel
         self.soundOnLabel = soundOnLabel
         self.soundOffLabel = soundOffLabel
+        self.shareLabel = shareLabel
     }
 
     var slideTexts: PersonalizationStorySlideView.Texts {
@@ -74,7 +77,9 @@ import UIKit
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
 ///   в паузе ролик и GIF стоят на текущем кадре;
 /// - медиа-слайды — в тёмной теме кита, остальные — в теме приложения;
-/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь.
+/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь;
+/// - у слайда со ссылкой (`PersonalizationStory.shareUrl(of:)`) в шапке кнопка «Поделиться»:
+///   системное окно с одной ссылкой, слайд стоит, пока оно открыто.
 ///
 /// Сеть, трекинг и ссылки — не его дело: наружу отданы колбэки. Данные SDK подключает
 /// виджет `PersonalizationStories`; хост может показать просмотрщик и со своими данными.
@@ -109,6 +114,14 @@ import UIKit
 
     /// Промокод скопирован — из блока цены или из текстового блока.
     public var onPromoCopied: ((PersonalizationStory, PersonalizationStorySlide, String) -> Void)?
+
+    /// Нажата «Поделиться» — событие `share` для трекинга, сразу, до выбора в окне. Окно
+    /// «Поделиться» просмотрщик показывает сам.
+    public var onShare: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
+
+    /// Ссылка слайда прямо перед окном «Поделиться»: в окно уходит то, что вернёт, например
+    /// ссылка со схемой приложения. `nil` — ссылка как есть. Кнопку и событие `share` не меняет.
+    public var shareUrlTransform: ((String) -> String)?
 
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
@@ -275,6 +288,10 @@ extension PersonalizationStoriesViewController {
     public var soundOffLabel: String? {
         get { texts.soundOffLabel }
         set { texts.soundOffLabel = newValue }
+    }
+    public var shareLabel: String? {
+        get { texts.shareLabel }
+        set { texts.shareLabel = newValue }
     }
 
     // MARK: - Управление хостом
@@ -575,6 +592,34 @@ extension PersonalizationStoriesViewController {
         onPromoCopied?(story, slide, code)
     }
 
+    /// «Поделиться»: слайд встаёт на свою паузу, `onShare` — сразу, потом системное окно
+    /// с одной ссылкой; окно закрылось (поделились или нет) — пауза снимается.
+    func shareTapped(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, !state.isClosing, presentedViewController == nil,
+              let slide = page.currentSlide, let url = page.story.shareUrl(of: slide) else { return }
+        setPaused(.share, true)
+        onShare?(page.story, slide)
+        let sheet = UIActivityViewController(activityItems: [shareItem(for: url)], applicationActivities: nil)
+        // На iPad окно — поповер, и без источника оно падает: источник — сама кнопка.
+        if let popover = sheet.popoverPresentationController {
+            let anchor = page.navigation.shareAnchor
+            popover.sourceView = anchor
+            popover.sourceRect = anchor.bounds
+        }
+        sheet.completionWithItemsHandler = { [weak self] _, _, _, _ in
+            MainThread.run { self?.setPaused(.share, false) }
+        }
+        present(sheet, animated: true)
+    }
+
+    /// Что уходит в окно «Поделиться»: ссылка после `shareUrlTransform`; не разобравшаяся
+    /// как адрес — текстом.
+    func shareItem(for url: URL) -> Any {
+        guard let shareUrlTransform else { return url }
+        let link = shareUrlTransform(url.absoluteString)
+        return URL(string: link).map { $0 as Any } ?? link
+    }
+
     // MARK: Система
 
     /// Пауза при уходе приложения в фон, неактивной сцене (центр управления, звонок,
@@ -736,8 +781,13 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         view.addSubview(content)
         navigation.translatesAutoresizingMaskIntoConstraints = false
         navigation.closeLabel = viewer?.texts.closeLabel
+        navigation.shareLabel = viewer?.texts.shareLabel
         navigation.progress.count = story.slides.count
         navigation.onClose = { [weak self] in self?.viewer?.close() }
+        navigation.onShare = { [weak self] in
+            guard let self else { return }
+            self.viewer?.shareTapped(on: self)
+        }
         content.addSubview(navigation)
 
         let top = navigation.topAnchor.constraint(equalTo: content.topAnchor)
@@ -851,6 +901,7 @@ extension PersonalizationStoryPageViewController {
             content.overrideUserInterfaceStyle = slide.interfaceStyle
         }
         navigation.forcesDarkTokens = slide.isMedia
+        navigation.isShareVisible = story.shareUrl(of: slide) != nil
         navigation.progress.current = index
         navigation.progress.progress = 0
         slideView = next

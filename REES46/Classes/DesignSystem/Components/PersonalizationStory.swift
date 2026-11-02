@@ -3,8 +3,9 @@ import UIKit
 /// Сторис для просмотрщика кита: имя, аватар и слайды.
 ///
 /// Данные — от хоста или от виджета `PersonalizationStories`, который собирает их из ответа
-/// `stories/{code}`. Строки уже отформатированы сервером, картинки компоненты не грузят сами —
-/// загрузчик приходит от хоста (у виджета есть встроенный).
+/// `stories/{code}` (или ленты API v3, см. `PersonalizationStories.apiV3Domain`). Строки уже
+/// отформатированы сервером, картинки компоненты не грузят сами — загрузчик приходит от хоста
+/// (у виджета есть встроенный).
 @_spi(PersonalizationUI) public struct PersonalizationStory {
     public let id: String
     public let name: String
@@ -16,6 +17,10 @@ import UIKit
     /// С какого слайда открывать нетронутую сторис.
     public let startPosition: Int
     public let slides: [PersonalizationStorySlide]
+    /// Кампанией можно делиться (`shareable`); без поля в ответе — можно.
+    public let shareable: Bool
+    /// Ссылка кампании для «Поделиться» (`share_url`, API v3) — у слайдов без своей.
+    public let shareUrl: String?
 
     public init(
         id: String,
@@ -24,7 +29,9 @@ import UIKit
         pinned: Bool = false,
         viewed: Bool = false,
         startPosition: Int = 0,
-        slides: [PersonalizationStorySlide]
+        slides: [PersonalizationStorySlide],
+        shareable: Bool = true,
+        shareUrl: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -33,6 +40,18 @@ import UIKit
         self.viewed = viewed
         self.startPosition = startPosition
         self.slides = slides
+        self.shareable = shareable
+        self.shareUrl = shareUrl
+    }
+
+    /// Ссылка «Поделиться» слайда: своя ссылка слайда, без неё — кампании. Только `http(s)`;
+    /// кампания с `shareable: false`, слайд без ссылок или ссылка другой схемы — `nil`,
+    /// и кнопки на слайде нет.
+    public func shareUrl(of slide: PersonalizationStorySlide) -> URL? {
+        guard shareable, let link = slide.shareUrl ?? shareUrl else { return nil }
+        let lowercased = link.lowercased()
+        guard lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://") else { return nil }
+        return URL(string: link)
     }
 }
 
@@ -294,6 +313,8 @@ import UIKit
     public let offer: Offer?
     public let products: Products?
     public let textBlocks: [TextBlock]
+    /// Своя ссылка слайда для «Поделиться» (`share_url`, API v3); у товарных слайдов её нет.
+    public let shareUrl: String?
 
     public init(
         id: String,
@@ -305,7 +326,8 @@ import UIKit
         buttons: [Button] = [],
         offer: Offer? = nil,
         products: Products? = nil,
-        textBlocks: [TextBlock] = []
+        textBlocks: [TextBlock] = [],
+        shareUrl: String? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -317,6 +339,7 @@ import UIKit
         self.offer = offer
         self.products = products
         self.textBlocks = textBlocks
+        self.shareUrl = shareUrl
     }
 
     /// Длительность слайда, когда API её не прислал или прислал ноль — одна на всех платформах.

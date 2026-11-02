@@ -52,7 +52,13 @@ final class FakeSDK: PersonalizationSDK {
     }
 
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {}
-    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {}
+    /// Sees every `getRequest` path (called off the main queue), so a test can tell the old API's
+    /// requests from API v3's. The request itself still never completes.
+    var onGetRequest: ((String) -> Void)?
+
+    func getRequest(path: String, params: [String: String], _ isInit: Bool, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        onGetRequest?(path)
+    }
     func configureURLSession(configuration: URLSessionConfiguration) {}
     func generateString(array: [String]) -> String { "" }
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?, advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void) {}
