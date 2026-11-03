@@ -15,6 +15,9 @@ public struct InitResponse: Codable {
     var webPushSettings: WebPushSettings = WebPushSettings()
     var recone: Bool = false
     var popup: Popup? = nil
+    /// `popups_v3`: the shop has published popups of the new builder for this stream. Not part of
+    /// `CodingKeys` — an init response restored from an older cache simply has no flag.
+    var popupsV3: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case deviceId = "did"
@@ -50,6 +53,7 @@ public struct InitResponse: Codable {
         // "presented" on every init and kept the popup slot busy).
         popup = (json["popup"] as? [String: Any]).flatMap { $0.isEmpty ? nil : Popup(json: $0) }
         recone = json["recone"] as? Bool ?? false
+        popupsV3 = json["popups_v3"] as? Bool ?? false
     }
 
     init() {
@@ -67,6 +71,7 @@ public struct InitResponse: Codable {
         self.webPushSettings = WebPushSettings()
         self.popup = nil
         self.recone = false
+        self.popupsV3 = false
     }
 }
 

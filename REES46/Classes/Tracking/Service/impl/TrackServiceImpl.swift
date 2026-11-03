@@ -350,6 +350,8 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                         let status = resJSON[Constants.status] as? String ?? ""
                         if status == Constants.success {
                             self.showPopup(jsonResult: resJSON)
+                            // Popups v3: a purchase changes the audience — the list is fetched again.
+                            (sdk as? SimplePersonalizationSDK)?.popupsV3.purchased()
                             completion(.success(Void()))
                         } else {
                             completion(.failure(.responseError))
@@ -490,6 +492,8 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             completion(.failure(.custom(error: "trackEvent: SDK is not initialized")))
             return
         }
+        // Popups v3: a custom event may be a `track_event` trigger.
+        (sdk as? SimplePersonalizationSDK)?.popupsV3.trackEvent(event)
         
         sessionQueue.addOperation {
             

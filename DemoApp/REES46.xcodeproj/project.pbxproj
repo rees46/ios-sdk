@@ -7,6 +7,35 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C0DE5EED0000000000000002 /* PopupsV3ModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000001 /* PopupsV3ModelTests.swift */; };
+		C0DE5EED0000000000000004 /* PopupsV3EngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000003 /* PopupsV3EngineTests.swift */; };
+		C0DE5EED0000000000000006 /* PopupsV3ApiTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000005 /* PopupsV3ApiTests.swift */; };
+		C0DE5EED0000000000000008 /* PopupsV3RenderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000007 /* PopupsV3RenderTests.swift */; };
+		C0DE5EED000000000000000A /* popups_v3_breakpoints.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000009 /* popups_v3_breakpoints.json */; };
+		C0DE5EED000000000000000C /* popups_v3_element_box.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000000B /* popups_v3_element_box.json */; };
+		C0DE5EED000000000000000E /* popups_v3_element_button.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000000D /* popups_v3_element_button.json */; };
+		C0DE5EED0000000000000010 /* popups_v3_element_close.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000000F /* popups_v3_element_close.json */; };
+		C0DE5EED0000000000000012 /* popups_v3_element_email_collector.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000011 /* popups_v3_element_email_collector.json */; };
+		C0DE5EED0000000000000014 /* popups_v3_element_form.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000013 /* popups_v3_element_form.json */; };
+		C0DE5EED0000000000000016 /* popups_v3_element_image.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000015 /* popups_v3_element_image.json */; };
+		C0DE5EED0000000000000018 /* popups_v3_element_promo_code.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000017 /* popups_v3_element_promo_code.json */; };
+		C0DE5EED000000000000001A /* popups_v3_element_recommendation.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000019 /* popups_v3_element_recommendation.json */; };
+		C0DE5EED000000000000001C /* popups_v3_element_survey.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000001B /* popups_v3_element_survey.json */; };
+		C0DE5EED000000000000001E /* popups_v3_element_text.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000001D /* popups_v3_element_text.json */; };
+		C0DE5EED0000000000000020 /* popups_v3_empty_design.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000001F /* popups_v3_empty_design.json */; };
+		C0DE5EED0000000000000022 /* popups_v3_error_responses.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000021 /* popups_v3_error_responses.json */; };
+		C0DE5EED0000000000000024 /* popups_v3_grid.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000023 /* popups_v3_grid.json */; };
+		C0DE5EED0000000000000026 /* popups_v3_layouts.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000025 /* popups_v3_layouts.json */; };
+		C0DE5EED0000000000000028 /* popups_v3_legacy_free_elements.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000027 /* popups_v3_legacy_free_elements.json */; };
+		C0DE5EED000000000000002A /* popups_v3_list_response.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000029 /* popups_v3_list_response.json */; };
+		C0DE5EED000000000000002C /* popups_v3_live_list_181_182.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000002B /* popups_v3_live_list_181_182.json */; };
+		C0DE5EED000000000000002E /* popups_v3_markup.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000002D /* popups_v3_markup.json */; };
+		C0DE5EED0000000000000030 /* popups_v3_parsing.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED000000000000002F /* popups_v3_parsing.json */; };
+		C0DE5EED0000000000000032 /* popups_v3_popup_response.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000031 /* popups_v3_popup_response.json */; };
+		C0DE5EED0000000000000034 /* popups_v3_requests.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000033 /* popups_v3_requests.json */; };
+		C0DE5EED0000000000000036 /* popups_v3_scenarios.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000035 /* popups_v3_scenarios.json */; };
+		C0DE5EED0000000000000038 /* popups_v3_unknown_element.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000037 /* popups_v3_unknown_element.json */; };
+		C0DE5EED000000000000003A /* popups_v3_variables.json in Resources */ = {isa = PBXBuildFile; fileRef = C0DE5EED0000000000000039 /* popups_v3_variables.json */; };
 		0169B35A9F893F6D8D22820A /* Pods_REES46Demo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6F0B9704F35259B141245836 /* Pods_REES46Demo.framework */; };
 		020434BEE53FB36FF675571D /* KeychainInitStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD265D9DC0347C2031552262 /* KeychainInitStoreTests.swift */; };
 		447EFA0789368C931564CA42 /* MultiInstanceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661B8BEEE8EEBD5EA66BDEE8 /* MultiInstanceViewController.swift */; };
@@ -162,6 +191,35 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C0DE5EED0000000000000001 /* PopupsV3ModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupsV3ModelTests.swift; sourceTree = "<group>"; };
+		C0DE5EED0000000000000003 /* PopupsV3EngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupsV3EngineTests.swift; sourceTree = "<group>"; };
+		C0DE5EED0000000000000005 /* PopupsV3ApiTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupsV3ApiTests.swift; sourceTree = "<group>"; };
+		C0DE5EED0000000000000007 /* PopupsV3RenderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupsV3RenderTests.swift; sourceTree = "<group>"; };
+		C0DE5EED0000000000000009 /* popups_v3_breakpoints.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_breakpoints.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000000B /* popups_v3_element_box.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_box.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000000D /* popups_v3_element_button.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_button.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000000F /* popups_v3_element_close.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_close.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000011 /* popups_v3_element_email_collector.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_email_collector.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000013 /* popups_v3_element_form.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_form.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000015 /* popups_v3_element_image.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_image.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000017 /* popups_v3_element_promo_code.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_promo_code.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000019 /* popups_v3_element_recommendation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_recommendation.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000001B /* popups_v3_element_survey.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_survey.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000001D /* popups_v3_element_text.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_element_text.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000001F /* popups_v3_empty_design.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_empty_design.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000021 /* popups_v3_error_responses.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_error_responses.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000023 /* popups_v3_grid.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_grid.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000025 /* popups_v3_layouts.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_layouts.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000027 /* popups_v3_legacy_free_elements.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_legacy_free_elements.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000029 /* popups_v3_list_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_list_response.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000002B /* popups_v3_live_list_181_182.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_live_list_181_182.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000002D /* popups_v3_markup.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_markup.json; sourceTree = "<group>"; };
+		C0DE5EED000000000000002F /* popups_v3_parsing.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_parsing.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000031 /* popups_v3_popup_response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_popup_response.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000033 /* popups_v3_requests.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_requests.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000035 /* popups_v3_scenarios.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_scenarios.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000037 /* popups_v3_unknown_element.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_unknown_element.json; sourceTree = "<group>"; };
+		C0DE5EED0000000000000039 /* popups_v3_variables.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = popups_v3_variables.json; sourceTree = "<group>"; };
 		1C8B363210138CD2A84F29F3 /* Pods-REES46Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.debug.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		D081CDB9D079E492AE792A8F /* Pods-REES46Tests.shop.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.shop.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.shop.xcconfig"; sourceTree = "<group>"; };
 		2EE37E1F7C2A166E0C3DFE89 /* Rees46FacadeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Rees46FacadeTests.swift; sourceTree = "<group>"; };
@@ -519,6 +577,10 @@
 				A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */,
 				A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */,
 				B7C1D0A10000000000000006 /* StoriesPollsApiTests.swift */,
+				C0DE5EED0000000000000001 /* PopupsV3ModelTests.swift */,
+				C0DE5EED0000000000000003 /* PopupsV3EngineTests.swift */,
+				C0DE5EED0000000000000005 /* PopupsV3ApiTests.swift */,
+				C0DE5EED0000000000000007 /* PopupsV3RenderTests.swift */,
 				B7C1D0A10000000000000008 /* PersonalizationStoriesPollsTests.swift */,
 				A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */,
 				A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */,
@@ -624,6 +686,31 @@
 				3FD933AE43D8C46B68B2BAD8 /* api_product_info.json */,
 				EE18F83D488D444A40F7A349 /* api_search_full.json */,
 				33D0A45980973EAB12D80560 /* api_recommend_extended.json */,
+				C0DE5EED0000000000000009 /* popups_v3_breakpoints.json */,
+				C0DE5EED000000000000000B /* popups_v3_element_box.json */,
+				C0DE5EED000000000000000D /* popups_v3_element_button.json */,
+				C0DE5EED000000000000000F /* popups_v3_element_close.json */,
+				C0DE5EED0000000000000011 /* popups_v3_element_email_collector.json */,
+				C0DE5EED0000000000000013 /* popups_v3_element_form.json */,
+				C0DE5EED0000000000000015 /* popups_v3_element_image.json */,
+				C0DE5EED0000000000000017 /* popups_v3_element_promo_code.json */,
+				C0DE5EED0000000000000019 /* popups_v3_element_recommendation.json */,
+				C0DE5EED000000000000001B /* popups_v3_element_survey.json */,
+				C0DE5EED000000000000001D /* popups_v3_element_text.json */,
+				C0DE5EED000000000000001F /* popups_v3_empty_design.json */,
+				C0DE5EED0000000000000021 /* popups_v3_error_responses.json */,
+				C0DE5EED0000000000000023 /* popups_v3_grid.json */,
+				C0DE5EED0000000000000025 /* popups_v3_layouts.json */,
+				C0DE5EED0000000000000027 /* popups_v3_legacy_free_elements.json */,
+				C0DE5EED0000000000000029 /* popups_v3_list_response.json */,
+				C0DE5EED000000000000002B /* popups_v3_live_list_181_182.json */,
+				C0DE5EED000000000000002D /* popups_v3_markup.json */,
+				C0DE5EED000000000000002F /* popups_v3_parsing.json */,
+				C0DE5EED0000000000000031 /* popups_v3_popup_response.json */,
+				C0DE5EED0000000000000033 /* popups_v3_requests.json */,
+				C0DE5EED0000000000000035 /* popups_v3_scenarios.json */,
+				C0DE5EED0000000000000037 /* popups_v3_unknown_element.json */,
+				C0DE5EED0000000000000039 /* popups_v3_variables.json */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -802,6 +889,31 @@
 				2E131BFDAB7C6D54B561EE76 /* api_product_info.json in Resources */,
 				ED4C5E983AF5507C15DDD865 /* api_search_full.json in Resources */,
 				0C1A72E140F21B922DDC847D /* api_recommend_extended.json in Resources */,
+				C0DE5EED000000000000000A /* popups_v3_breakpoints.json in Resources */,
+				C0DE5EED000000000000000C /* popups_v3_element_box.json in Resources */,
+				C0DE5EED000000000000000E /* popups_v3_element_button.json in Resources */,
+				C0DE5EED0000000000000010 /* popups_v3_element_close.json in Resources */,
+				C0DE5EED0000000000000012 /* popups_v3_element_email_collector.json in Resources */,
+				C0DE5EED0000000000000014 /* popups_v3_element_form.json in Resources */,
+				C0DE5EED0000000000000016 /* popups_v3_element_image.json in Resources */,
+				C0DE5EED0000000000000018 /* popups_v3_element_promo_code.json in Resources */,
+				C0DE5EED000000000000001A /* popups_v3_element_recommendation.json in Resources */,
+				C0DE5EED000000000000001C /* popups_v3_element_survey.json in Resources */,
+				C0DE5EED000000000000001E /* popups_v3_element_text.json in Resources */,
+				C0DE5EED0000000000000020 /* popups_v3_empty_design.json in Resources */,
+				C0DE5EED0000000000000022 /* popups_v3_error_responses.json in Resources */,
+				C0DE5EED0000000000000024 /* popups_v3_grid.json in Resources */,
+				C0DE5EED0000000000000026 /* popups_v3_layouts.json in Resources */,
+				C0DE5EED0000000000000028 /* popups_v3_legacy_free_elements.json in Resources */,
+				C0DE5EED000000000000002A /* popups_v3_list_response.json in Resources */,
+				C0DE5EED000000000000002C /* popups_v3_live_list_181_182.json in Resources */,
+				C0DE5EED000000000000002E /* popups_v3_markup.json in Resources */,
+				C0DE5EED0000000000000030 /* popups_v3_parsing.json in Resources */,
+				C0DE5EED0000000000000032 /* popups_v3_popup_response.json in Resources */,
+				C0DE5EED0000000000000034 /* popups_v3_requests.json in Resources */,
+				C0DE5EED0000000000000036 /* popups_v3_scenarios.json in Resources */,
+				C0DE5EED0000000000000038 /* popups_v3_unknown_element.json in Resources */,
+				C0DE5EED000000000000003A /* popups_v3_variables.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -965,6 +1077,10 @@
 				A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */,
 				A1B2C3D400000000000000E1 /* PersonalizationStoriesShareTests.swift in Sources */,
 				B7C1D0A10000000000000005 /* StoriesPollsApiTests.swift in Sources */,
+				C0DE5EED0000000000000002 /* PopupsV3ModelTests.swift in Sources */,
+				C0DE5EED0000000000000004 /* PopupsV3EngineTests.swift in Sources */,
+				C0DE5EED0000000000000006 /* PopupsV3ApiTests.swift in Sources */,
+				C0DE5EED0000000000000008 /* PopupsV3RenderTests.swift in Sources */,
 				B7C1D0A10000000000000007 /* PersonalizationStoriesPollsTests.swift in Sources */,
 				A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */,
 				A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */,
