@@ -16,6 +16,11 @@ final class LegacyStoriesViewController: UIViewController {
 
     private var events: [String] = []
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        DemoScreen.opened(DemoScreen.legacyStories)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground

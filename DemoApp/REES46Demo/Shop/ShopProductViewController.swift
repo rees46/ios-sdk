@@ -67,6 +67,11 @@ final class ShopProductViewController: UIViewController {
         }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        DemoScreen.opened(DemoScreen.product)
+    }
+
     private func load() {
         guard let sdk else { return }
         requestSeq += 1

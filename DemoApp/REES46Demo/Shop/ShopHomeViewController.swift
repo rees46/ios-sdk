@@ -38,6 +38,11 @@ final class ShopHomeViewController: UIViewController {
         sdkHandle = Shop.withSDK { [weak self] sdk in self?.categories.load(with: sdk) }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        DemoScreen.opened(DemoScreen.home)
+    }
+
     private func setupSearch() {
         searchBar.host = self
         searchBar.onSearchingChanged = { [weak self] searching in

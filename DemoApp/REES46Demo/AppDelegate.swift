@@ -133,6 +133,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
             }
         )
+        enablePopupsV3()
+    }
+
+    /// Popups v3 of the new popup builder: the engine sleeps until the host turns it on. The demo
+    /// does not wait for the `popups_v3` flag of `/init` either, so popups work whatever the shop's
+    /// setting. Screens report themselves through `DemoScreen`.
+    private func enablePopupsV3() {
+        sdk.popups.appHost = "app.rees46.ru"
+        sdk.popups.ignoreInitFlag = true
+        sdk.popups.debug = true
+        // A product in a popup's recommender feed opens on the shop's stack, and the popup closes.
+        sdk.popups.productHandler = { [weak self] product in
+            Shop.openProduct(product.id, from: self?.window?.rootViewController)
+        }
+        sdk.popups.isEnabled = true
     }
     
     func initializationMessaging(){

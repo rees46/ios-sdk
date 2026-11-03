@@ -102,6 +102,7 @@ class MainViewController: UIViewController, UIScrollViewDelegate {
     override func viewDidAppear(_ animated: Bool) {
         requestTrackingAuthorization()
         super.viewDidAppear(animated)
+        DemoScreen.opened(DemoScreen.api)
     }
     
     func addSdkObservers() {

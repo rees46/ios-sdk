@@ -45,6 +45,48 @@ enum Shop {
     }
 }
 
+// MARK: - Popups v3 screens
+
+/// Screen names the demo reports to popups v3 (`sdk.popups.screenOpened`): a marketer puts them
+/// into a popup's `target_screens`.
+enum DemoScreen {
+    static let home = "home"
+    static let category = "category"
+    static let product = "product"
+    static let search = "search"
+    /// Tabs of the full demo.
+    static let api = "api"
+    static let uiKit = "ui_kit"
+    static let legacyStories = "legacy_stories"
+
+    static func opened(_ name: String) {
+        Shop.withSDK { sdk in sdk.popups.screenOpened(name) }
+    }
+}
+
+extension Shop {
+
+    /// A product tapped in a popup's recommender feed (`sdk.popups.productHandler`): its page goes
+    /// onto the shop's stack — in the full demo the "Shop" tab comes forward first, a demo screen
+    /// over the tabs goes. `false` — there is no shop stack, and the SDK opens the product's link.
+    static func openProduct(_ id: String, from root: UIViewController?) -> Bool {
+        guard !id.isEmpty, let root else { return false }
+        let stack: UINavigationController?
+        if let tabs = root as? UITabBarController {
+            stack = tabs.viewControllers?
+                .compactMap { $0 as? UINavigationController }
+                .first { $0.viewControllers.first is ShopHomeViewController }
+            if let stack { tabs.selectedViewController = stack }
+        } else {
+            stack = (root as? UINavigationController).flatMap { $0.viewControllers.first is ShopHomeViewController ? $0 : nil }
+        }
+        guard let stack else { return false }
+        if root.presentedViewController != nil { root.dismiss(animated: false) }
+        stack.pushViewController(ShopProductViewController(productId: id), animated: true)
+        return true
+    }
+}
+
 // MARK: - Navigation
 
 /// Every screen of the shop goes onto the tab's navigation stack.

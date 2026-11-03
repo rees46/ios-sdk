@@ -28,6 +28,11 @@ final class UIKitShowcaseViewController: UIViewController {
     /// Colour scheme forced on the app by the switch; `.unspecified` hands control back to the device.
     private var appearance: UIUserInterfaceStyle = .unspecified
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        DemoScreen.opened(DemoScreen.uiKit)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
