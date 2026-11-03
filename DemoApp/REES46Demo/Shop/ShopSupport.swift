@@ -14,6 +14,8 @@ enum Shop {
     /// Product page blocks driven by the product (`item`): "Похожие" and "С этим товаром также покупают".
     static let similarBlockCode = "007b87897f244b2a2a123567b3242a4b"
     static let alsoBoughtBlockCode = "fa6e8cd83434273dd8d47293329e00dd"
+    /// The stories block on Home (API v3): one campaign with a poll of every kind on its slides.
+    static let storiesCode = "272dd914ea13824a0abb6ef4e776ddaa"
 
     static let actionText = "Add to cart"
     static let errorText = "Something went wrong. Check your connection and try again."

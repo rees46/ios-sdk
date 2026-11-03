@@ -10,7 +10,12 @@ final class ShopHomeViewController: UIViewController {
 
     private let scroll = UIScrollView()
     private let searchBar = ShopSearchBar()
-    private let stories = PersonalizationStories(code: AppEnvironments.storiesCode, shopId: AppEnvironments.shopId)
+    /// On stories API v3: slides with a link get "Share", which hands out the demo's own scheme.
+    private let stories = PersonalizationStories(
+        code: Shop.storiesCode,
+        shopId: AppEnvironments.shopId,
+        apiV3Domain: DemoStoriesLinks.apiV3Domain
+    )
     private let recommender = PersonalizationRecommenderBlock(code: Shop.blockCode, shopId: AppEnvironments.shopId)
     private let categories = ShopCategoriesSection()
     /// Rows hidden while the search panel is open.
@@ -45,6 +50,7 @@ final class ShopHomeViewController: UIViewController {
     private func setupBlocks() {
         stories.bar.contentInsets = UIEdgeInsets(top: 4, left: 16, bottom: 4, right: 16)
         stories.promoCopiedText = "Code copied to clipboard"
+        stories.shareUrlTransform = DemoStoriesLinks.appSchemeLink
         stories.hostViewController = self
         stories.communicationDelegate = self
 

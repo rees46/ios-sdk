@@ -41,13 +41,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        
+
+        #if SHOP_ONLY
+        installShop()
+        #else
         installTabBar()
+        #endif
         initializationMessaging()
         sdkInitialization()
         registerPushNotification()
 
         return true
+    }
+
+    /// The shop-only demo (scheme `REES46Shop`, configuration `Shop` with the `SHOP_ONLY` flag):
+    /// the shop's own navigation — Home → category → product, search, stories — without the tabs
+    /// and the developer screens. Same SDK set-up as the full demo.
+    private func installShop() {
+        window?.rootViewController = UINavigationController(rootViewController: ShopHomeViewController())
+    }
+
+    /// The shop home when the shop is the whole app: a product tapped in a linked story opens there.
+    private var shopHome: ShopHomeViewController? {
+        (window?.rootViewController as? UINavigationController)?.viewControllers.first as? ShopHomeViewController
     }
 
     /// Wraps the storyboard screen into a tab bar: the existing screen keeps demoing the SDK
@@ -256,7 +272,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     private func openStoriesLink(_ url: URL) -> Bool {
         // The presenter is passed explicitly. Without it the SDK shows over the window of the
         // scene on screen, and on a cold start from a link it waits for that scene to activate.
-        guard DemoStoriesLinks.isStoriesLink(url), DemoStoriesLinks.open(url, from: window?.rootViewController) else { return false }
+        guard DemoStoriesLinks.isStoriesLink(url),
+              DemoStoriesLinks.open(url, from: window?.rootViewController, communicationDelegate: shopHome) else { return false }
         // A demo screen over the tabs (a push screen and the like) goes, so the stories open over
         // the tabs, as from the "Open" button; an open stories viewer is the SDK's to close.
         if let root = window?.rootViewController, var top = root.presentedViewController {

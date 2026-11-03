@@ -287,6 +287,8 @@ enum DemoStoriesLinks {
     static let apiV3Domain = "app.rees46.ru"
     /// The demo's URL scheme (Info.plist, `CFBundleURLSchemes`).
     static let scheme = "rees46"
+    /// A ready link to try: campaign 40 of the demo block, its second slide.
+    static let sampleLink = "\(scheme)://demo.rees46.ru/?r46_stories=\(AppEnvironments.storiesCode)&r46_story=40&r46_slide=37"
 
     /// `http(s)://host/path?…` → `rees46://host/path?…`; anything else as is.
     static func appSchemeLink(_ link: String) -> String {
@@ -391,7 +393,15 @@ private final class LiveStoriesExhibit: UIStackView {
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 8
-        let column = UIStackView(arrangedSubviews: [title, row])
+        // The field starts empty: a link shared from a slide is pasted as is; a ready one is here.
+        let sample = PersonalizationButton(text: "Sample link", size: .sm, view: .secondary)
+        sample.addAction { [weak self] in self?.linkField.text = DemoStoriesLinks.sampleLink }
+        title.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let header = UIStackView(arrangedSubviews: [title, sample])
+        header.axis = .horizontal
+        header.alignment = .center
+        header.spacing = 8
+        let column = UIStackView(arrangedSubviews: [header, row])
         column.axis = .vertical
         column.spacing = 4
         return column

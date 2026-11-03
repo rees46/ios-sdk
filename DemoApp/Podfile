@@ -1,6 +1,9 @@
 use_frameworks!
 platform :ios, '13.0'
 
+# Shop: the shop-only demo (scheme REES46Shop), built like Debug.
+project 'REES46', 'Shop' => :debug
+
 target 'REES46Demo' do
   pod 'REES46', :path => '../'
 
