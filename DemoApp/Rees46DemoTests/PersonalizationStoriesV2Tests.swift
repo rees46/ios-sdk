@@ -744,6 +744,51 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         view.stop()
     }
 
+    func testATextBlockStandsOnItsShareOfTheSlideInsideTheAreaBetweenTheHeaderAndTheButtons() throws {
+        // `y_offset` of the whole slide, then the block moves into the area under the header and
+        // over the buttons or the products — the poll card's rule.
+        func layout(
+            _ yOffset: Any,
+            buttons: [PersonalizationStorySlide.Button] = [],
+            products: PersonalizationStorySlide.Products? = nil
+        ) throws -> (slide: PersonalizationStorySlideView, block: UIView) {
+            let element: [String: Any] = ["type": "text_block", "text_input": "Sale", "font_size": "24", "y_offset": yOffset]
+            let parsed = try XCTUnwrap(PersonalizationStorySlide.TextBlock(json: element))
+            let slide = PersonalizationStorySlide(id: "1", kind: .content, buttons: buttons, products: products, textBlocks: [parsed])
+            let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+            view.safeInsets = Self.islandInsets
+            view.frame = host.bounds
+            host.addSubview(view)
+            host.layoutIfNeeded()
+            return (view, try XCTUnwrap(view.subviews.first { $0 is PersonalizationStoryTextBlock }))
+        }
+        let top: CGFloat = 62 + 16, bottom: CGFloat = 874 - 34 - 16
+
+        XCTAssertEqual(try layout(NSNull()).block.frame.minY, top, accuracy: 0.5, "null — 0: the top of the area")
+        XCTAssertEqual(try layout("high").block.frame.minY, top, accuracy: 0.5, "not a number — 0")
+        XCTAssertEqual(try layout(-20).block.frame.minY, top, accuracy: 0.5, "clamped to 0")
+        XCTAssertEqual(try layout(5).block.frame.minY, top, accuracy: 0.5, "5% (44) is under the header — moved down to the area")
+        let middle = try layout(50).block
+        XCTAssertEqual(middle.frame.minY, 874 * 0.5, accuracy: 0.5, "50% of the whole slide, not of the area")
+        XCTAssertEqual(try layout("50").block.frame.minY, 874 * 0.5, accuracy: 0.5)
+
+        let low = try layout(95).block
+        XCTAssertEqual(low.frame.maxY, bottom, accuracy: 0.5, "95% would hang off the slide — pressed to the bottom of the area")
+        XCTAssertEqual(low.frame.height, middle.frame.height, accuracy: 0.5, "moved, not squeezed")
+        XCTAssertEqual(try layout(150).block.frame.maxY, bottom, accuracy: 0.5, "clamped to 100, inside")
+
+        let withButton = try layout(95, buttons: [.init(title: "Buy")])
+        let buttons = try XCTUnwrap(withButton.slide.subviews.compactMap { $0 as? UIStackView }.first)
+        XCTAssertEqual(withButton.block.frame.maxY, buttons.frame.minY - 16, accuracy: 0.5, "above the buttons")
+        let items = PersonalizationStorySlide.Products(items: [PersonalizationStorySlide.Offer(id: "1", name: "Mouse", price: "12 990 ₽")])
+        let withProducts = try layout(95, products: items)
+        let row = try XCTUnwrap(withProducts.slide.subviews.first { $0 is PersonalizationStoryUsedProducts })
+        XCTAssertEqual(withProducts.block.frame.maxY, row.frame.minY, accuracy: 0.5, "over the products row, its own 16 inside")
+        XCTAssertLessThan(withProducts.slide.subviews.firstIndex(of: withProducts.block) ?? .max,
+                          withProducts.slide.subviews.firstIndex(of: row) ?? 0, "the opened products sheet covers it")
+        withProducts.slide.stop()
+    }
+
     func testExpandedUsedProductsShowTheCarouselOnTheCardSheet() {
         let used = PersonalizationStoryUsedProducts()
         used.products = (0..<3).map { PersonalizationProduct(id: String($0), name: "Product \($0)", price: "9 999 ₽") }

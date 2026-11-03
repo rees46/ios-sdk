@@ -866,6 +866,40 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(wide.frame.width, 420, "not wider than 420")
         XCTAssertEqual(wide.frame.midX, 500, accuracy: 0.5)
     }
+
+    func testATextBlockAndAPollWithOneOffsetStandAtOneHeight() throws {
+        // One rule for both, as `top: y%` of one slide container on the web.
+        func layout(_ yOffset: CGFloat, buttons: [PersonalizationStorySlide.Button] = []) throws
+            -> (block: CGRect, card: CGRect, buttons: CGRect?) {
+            let poll = miniPoll(.singleChoice, yOffset: yOffset)
+            let slide = PersonalizationStorySlideView(
+                slide: PersonalizationStorySlide(id: "1", kind: .content, buttons: buttons,
+                                                 textBlocks: [.init(text: "Sale", yOffset: yOffset)], poll: poll),
+                texts: .init(), isMuted: true, imageLoader: { _, _ in }
+            )
+            slide.safeInsets = UIEdgeInsets(top: 100, left: 0, bottom: 34, right: 0)
+            slide.attachPoll(mount(poll).card)
+            slide.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+            slide.layoutIfNeeded()
+            let block = try XCTUnwrap(slide.subviews.first { $0 is PersonalizationStoryTextBlock })
+            let card = try XCTUnwrap(slide.pollView)
+            return (block.frame, card.frame, slide.subviews.compactMap { $0 as? UIStackView }.first?.frame)
+        }
+        for offset: CGFloat in [0, 5, 11, 35, 50, 60] {
+            let both = try layout(offset)
+            XCTAssertEqual(both.block.minY, both.card.minY, accuracy: 0.5, "y_offset \(offset)")
+        }
+        XCTAssertEqual(try layout(5).block.minY, 116, accuracy: 0.5, "under the header — both at the top of the area")
+        XCTAssertEqual(try layout(50).card.minY, 437, accuracy: 0.5, "both on 50% of the whole slide")
+
+        let low = try layout(95)
+        XCTAssertEqual(low.block.maxY, 874 - 34 - 16, accuracy: 0.5, "too low — both pressed to the bottom of the area")
+        XCTAssertEqual(low.card.maxY, 874 - 34 - 16, accuracy: 0.5)
+        let withButton = try layout(95, buttons: [.init(title: "Buy")])
+        let buttons = try XCTUnwrap(withButton.buttons)
+        XCTAssertEqual(withButton.block.maxY, buttons.minY - 16, accuracy: 0.5, "both above the buttons")
+        XCTAssertEqual(withButton.card.maxY, buttons.minY - 16, accuracy: 0.5)
+    }
 }
 
 // MARK: - Keyboard
