@@ -84,8 +84,18 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         let story = PersonalizationStory(id: "5", name: "S", slides: [], shareUrl: campaign)
         let own = PersonalizationStorySlide(id: "1", kind: .content, shareUrl: "https://shop.test/?r46_slide=1")
         XCTAssertEqual(story.shareUrl(of: own)?.absoluteString, "https://shop.test/?r46_slide=1")
-        XCTAssertEqual(story.shareUrl(of: PersonalizationStorySlide(id: "5_0", kind: .content))?.absoluteString, campaign,
-                       "product slides have no link of their own")
+        XCTAssertEqual(story.shareUrl(of: PersonalizationStorySlide(id: "5_2", kind: .content))?.absoluteString, campaign + "&r46_slide=5_2",
+                       "a product slide has no link of its own: the campaign's, with the slide in it")
+        XCTAssertEqual(PersonalizationStory.link("https://shop.test/p?q=a%20b&r46_story=5#top", slideId: "5_2"),
+                       "https://shop.test/p?q=a%20b&r46_story=5&r46_slide=5_2#top", "the rest of the address stays as it was")
+        XCTAssertEqual(PersonalizationStory.link(campaign + "&r46_slide=7", slideId: "5_2"), campaign + "&r46_slide=7")
+        XCTAssertEqual(PersonalizationStory.link(campaign, slideId: "x"), campaign, "an id a link cannot carry is left out")
+        for id in ["12345678901", "5_12345", "5_", "_2", ""] {
+            XCTAssertEqual(PersonalizationStory.link(campaign, slideId: id), campaign, id)
+        }
+        XCTAssertEqual(PersonalizationStory.link(campaign, slideId: "1234567890_1234"), campaign + "&r46_slide=1234567890_1234")
+        XCTAssertEqual(PersonalizationStory.link("https://shop.test/", slideId: "37"), "https://shop.test/?r46_slide=37",
+                       "a campaign link without a query gets one")
         XCTAssertNotNil(story.shareUrl(of: PersonalizationStorySlide(id: "1", kind: .content, shareUrl: "HTTPS://SHOP.TEST/")),
                         "the scheme is matched in any case")
     }
@@ -131,7 +141,8 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         XCTAssertNil(product.media)
         XCTAssertNotNil(product.offer)
         XCTAssertNil(product.shareUrl)
-        XCTAssertEqual(stories[0].shareUrl(of: product)?.absoluteString, "https://demo.test/?r46_stories=b&r46_story=39")
+        XCTAssertEqual(stories[0].shareUrl(of: product)?.absoluteString, "https://demo.test/?r46_stories=b&r46_story=39&r46_slide=39_0",
+                       "the campaign's link with the product slide in it")
 
         let photos = stories[1]
         XCTAssertTrue(photos.shareable, "no field — sharing is allowed")
@@ -336,7 +347,6 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         XCTAssertEqual(requests().first?.url?.absoluteString,
                        "https://app.test/api/v3/storefront/stories/115bd0b67cf5989a1b60c841790b2af6/story/40?shop_id=shop&did=fake-device-id&slide_id=37")
         let viewer = try XCTUnwrap(host.shown.first as? PersonalizationStoriesViewController)
-        XCTAssertNil(viewer.startSlide, "the server's start_position, not the first unseen slide")
         XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[0]), 1, "a viewed campaign still opens on the link slide")
         XCTAssertEqual((viewer.shareItem(for: URL(string: "https://demo.test/?r46_story=40")!) as? URL)?.absoluteString,
                        "app://demo.test/?r46_story=40", "the link's viewer shares through the call's transform")
@@ -347,6 +357,56 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         XCTAssertTrue(PersonalizationStories.handleLink(demoLink, sdk: FakeSDK(shopId: "shop"), apiV3Domain: "app.test", from: host),
                       "the same link while it is open")
         XCTAssertEqual(host.shown.count, 1)
+        viewer.close()
+    }
+
+    func testAProductCampaignLinkOpensOnItsSlideThoughTheServerStartsAtTheFirst() throws {
+        // The server does not know virtual slides: `slide_id=39_2` still answers `start_position: 0`.
+        let story = """
+        {"status":"success","payload":{"id":7,"stories":[{"id":39,"name":"Products","start_position":0,
+          "share_url":"https://demo.test/?r46_story=39","slides":[
+            {"id":"39_0","type":""},{"id":"39_1","type":""},{"id":"39_2","type":""}]}]}}
+        """
+        let opened = expectation(description: "shared_open")
+        let requests = capture { request in
+            if self.body(request)["event"] as? String == "shared_open" { opened.fulfill() }
+            return (request.httpMethod == "GET" ? Data(story.utf8) : Data("{}".utf8), 200)
+        }
+        let host = PresentingHost()
+        let link = URL(string: "rees46://demo.test/?r46_stories=products&r46_story=39&r46_slide=39_2")!
+        XCTAssertTrue(PersonalizationStories.handleLink(link, sdk: FakeSDK(shopId: "shop"), apiV3Domain: "app.test", from: host))
+        wait(for: [opened], timeout: 5)
+
+        let viewer = try XCTUnwrap(host.shown.first as? PersonalizationStoriesViewController)
+        XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[0]), 2, "the slide that was shared, not the server's first")
+        let sharedOpen = requests().map(body).first { $0["event"] as? String == "shared_open" }
+        XCTAssertEqual(sharedOpen?["slide_id"] as? String, "39_2")
+        viewer.close()
+    }
+
+    func testALinkSlideMissingFromTheFirstCampaignLeavesTheServersStart() throws {
+        // Only the first campaign of the answer starts on the link slide; the rest keep `start_position`.
+        let story = """
+        {"status":"success","payload":{"id":7,"stories":[
+          {"id":40,"name":"Photos","start_position":1,"slides":[{"id":36,"type":""},{"id":37,"type":""}]},
+          {"id":41,"name":"More","start_position":0,"slides":[{"id":50,"type":""},{"id":99,"type":""}]}]}}
+        """
+        let opened = expectation(description: "shared_open")
+        let requests = capture { request in
+            if self.body(request)["event"] as? String == "shared_open" { opened.fulfill() }
+            return (request.httpMethod == "GET" ? Data(story.utf8) : Data("{}".utf8), 200)
+        }
+        let host = PresentingHost()
+        let link = URL(string: "rees46://demo.test/?r46_stories=gone&r46_story=40&r46_slide=99")!
+        XCTAssertTrue(PersonalizationStories.handleLink(link, sdk: FakeSDK(shopId: "shop"), apiV3Domain: "app.test", from: host))
+        wait(for: [opened], timeout: 5)
+
+        let viewer = try XCTUnwrap(host.shown.first as? PersonalizationStoriesViewController)
+        XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[0]), 1, "no such slide in the campaign — the server's start_position")
+        XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[1]), 0, "another campaign — its own start_position")
+        let sharedOpen = requests().map(body).first { $0["event"] as? String == "shared_open" }
+        XCTAssertEqual(sharedOpen?["story_id"] as? Int, 40)
+        XCTAssertEqual(sharedOpen?["slide_id"] as? String, "37", "the open is reported with the slide it started on")
         viewer.close()
     }
 

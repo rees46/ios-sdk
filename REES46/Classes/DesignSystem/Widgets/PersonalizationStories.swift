@@ -444,8 +444,8 @@ extension PersonalizationStories {
 
     /// Ссылка «Поделиться» сторис: `https://<сайт>/<путь>?r46_stories=<код>&r46_story=<id>[&r46_slide=<id>]`,
     /// прочие параметры не мешают. Загружает кампанию из API v3 и показывает просмотрщик, как
-    /// `show`: с первой сторис ответа и со слайда ссылки (`start_position` сервера, в обход
-    /// «первого непросмотренного»). Открытый просмотрщик сторис на данных SDK — ленты, `show`
+    /// `show`: с первой сторис ответа и со слайда ссылки — он сам, если есть в ответе, иначе
+    /// `start_position` сервера; в обход «первого непросмотренного». Открытый просмотрщик сторис на данных SDK — ленты, `show`
     /// или другой ссылки — закрывается перед показом. После показа уходит `shared_open`.
     ///
     /// Возвращает `true`, если это ссылка сторис и задан `apiV3Domain` (параметр, по умолчанию —
@@ -500,15 +500,20 @@ extension PersonalizationStories {
             session.pollTransport = pollTransport
             let other = StoriesSession.openViewer
             let viewer = session.makeViewer(stories: stories, startIndex: 0, fromLink: true)
+            // Слайд ссылки, если он есть в ответе: `start_position` сервер ставит только по
+            // своим слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
+            if let slideId = link.slideId, let first = stories.first,
+               let index = first.slides.firstIndex(where: { $0.id == slideId }) {
+                viewer.startSlide = { $0.id == first.id ? index : $0.startPosition }
+            }
             viewer.onClose = {
                 release()
                 onClose?()
             }
             let present = {
                 host.personalizationTopmost.present(viewer, animated: true) {
-                    guard let story = viewer.stories.first, let first = story.slides.first else { return }
-                    let start = story.startPosition
-                    session.sharedOpened(story, story.slides.indices.contains(start) ? story.slides[start] : first)
+                    guard let story = viewer.stories.first, !story.slides.isEmpty else { return }
+                    session.sharedOpened(story, story.slides[viewer.startSlideIndex(of: story)])
                 }
             }
             if let other, other !== viewer, other.presentingViewController != nil {

@@ -44,14 +44,35 @@ import UIKit
         self.shareUrl = shareUrl
     }
 
-    /// Ссылка «Поделиться» слайда: своя ссылка слайда, без неё — кампании. Только `http(s)`;
-    /// кампания с `shareable: false`, слайд без ссылок или ссылка другой схемы — `nil`,
-    /// и кнопки на слайде нет.
+    /// Ссылка «Поделиться» слайда: своя ссылка слайда, без неё — кампании с id слайда в
+    /// `r46_slide`. У слайдов товарных кампаний (`39_2`) своих ссылок нет, и без id слайда
+    /// ссылка открыла бы кампанию с начала, а не с того слайда, которым поделились. Только
+    /// `http(s)`; кампания с `shareable: false`, слайд без ссылок или ссылка другой схемы —
+    /// `nil`, и кнопки на слайде нет.
     public func shareUrl(of slide: PersonalizationStorySlide) -> URL? {
-        guard shareable, let link = slide.shareUrl ?? shareUrl else { return nil }
+        guard shareable else { return nil }
+        let link: String
+        if let own = slide.shareUrl, !own.isEmpty {
+            link = own
+        } else if let campaign = shareUrl, !campaign.isEmpty {
+            link = Self.link(campaign, slideId: slide.id)
+        } else {
+            return nil
+        }
         let lowercased = link.lowercased()
         guard lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://") else { return nil }
         return URL(string: link)
+    }
+
+    /// Ссылка кампании с `r46_slide` слайда; уже есть `r46_slide` или id не годится для
+    /// ссылки — как есть. Остальной адрес не перекодируется.
+    static func link(_ campaign: String, slideId: String) -> String {
+        guard StoriesShareLink.isSlideId(slideId), var components = URLComponents(string: campaign) else { return campaign }
+        var items = components.percentEncodedQueryItems ?? []
+        guard !items.contains(where: { $0.name == StoriesShareLink.slideParameter }) else { return campaign }
+        items.append(URLQueryItem(name: StoriesShareLink.slideParameter, value: slideId))
+        components.percentEncodedQueryItems = items
+        return components.string ?? campaign
     }
 }
 
