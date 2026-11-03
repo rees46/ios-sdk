@@ -445,7 +445,8 @@ extension PersonalizationStories {
     /// Ссылка «Поделиться» сторис: `https://<сайт>/<путь>?r46_stories=<код>&r46_story=<id>[&r46_slide=<id>]`,
     /// прочие параметры не мешают. Загружает кампанию из API v3 и показывает просмотрщик, как
     /// `show`: с первой сторис ответа и со слайда ссылки — он сам, если есть в ответе, иначе
-    /// `start_position` сервера; в обход «первого непросмотренного». Открытый просмотрщик сторис на данных SDK — ленты, `show`
+    /// `start_position` сервера, в обход «первого непросмотренного»; следующие сторис — с первого
+    /// непросмотренного, как в ленте. Открытый просмотрщик сторис на данных SDK — ленты, `show`
     /// или другой ссылки — закрывается перед показом. После показа уходит `shared_open`.
     ///
     /// Возвращает `true`, если это ссылка сторис и задан `apiV3Domain` (параметр, по умолчанию —
@@ -499,13 +500,7 @@ extension PersonalizationStories {
             session.shareUrlTransform = shareUrlTransform
             session.pollTransport = pollTransport
             let other = StoriesSession.openViewer
-            let viewer = session.makeViewer(stories: stories, startIndex: 0, fromLink: true)
-            // Слайд ссылки, если он есть в ответе: `start_position` сервер ставит только по
-            // своим слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
-            if let slideId = link.slideId, let first = stories.first,
-               let index = first.slides.firstIndex(where: { $0.id == slideId }) {
-                viewer.startSlide = { $0.id == first.id ? index : $0.startPosition }
-            }
+            let viewer = session.makeViewer(stories: stories, startIndex: 0, link: link)
             viewer.onClose = {
                 release()
                 onClose?()

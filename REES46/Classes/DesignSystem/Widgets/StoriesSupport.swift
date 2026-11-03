@@ -332,6 +332,14 @@ struct StoriesSeenState {
         }
         return min(max(story.startPosition, 0), story.slides.count - 1)
     }
+
+    /// С какого слайда открыть сторис, открытые по ссылке: первую сторис ответа (`shared`) — со
+    /// слайда ссылки, если он в ней есть, иначе со `startPosition` (в обход просмотренности);
+    /// остальные — как в ленте (`startSlide(_:seen:)`).
+    static func startSlide(_ story: PersonalizationStory, seen: Set<String>, shared: PersonalizationStory, linkSlide: String?) -> Int {
+        guard story.id == shared.id else { return startSlide(story, seen: seen) }
+        return linkSlide.flatMap { id in story.slides.firstIndex { $0.id == id } } ?? story.startPosition
+    }
 }
 
 // MARK: - Загрузка блока
@@ -409,9 +417,11 @@ final class StoriesSession {
         StoriesSeenState(sdk: sdk)
     }
 
-    /// Просмотрщик на сторис блока, связанный с этой сессией. `fromLink` — сторис открыты
-    /// по ссылке: слайд — `start_position` из ответа, в обход «первого непросмотренного».
-    func makeViewer(stories: [PersonalizationStory], startIndex: Int, fromLink: Bool = false) -> PersonalizationStoriesViewController {
+    /// Просмотрщик на сторис блока, связанный с этой сессией. Сторис открываются с первого
+    /// непросмотренного слайда (`StoriesSeenState.startSlide`). `link` — сторис открыты по
+    /// ссылке: первая сторис ответа — со слайда ссылки, если он в ней есть, иначе со
+    /// `start_position` ответа; остальные — как обычно.
+    func makeViewer(stories: [PersonalizationStory], startIndex: Int, link: StoriesShareLink? = nil) -> PersonalizationStoriesViewController {
         let viewer = PersonalizationStoriesViewController(stories: stories, startIndex: startIndex)
         viewer.texts = texts
         viewer.imageLoader = imageLoader
@@ -422,7 +432,15 @@ final class StoriesSession {
             viewer.pollShopId = sdk.shopId
         }
         let seen = seenState
-        viewer.startSlide = fromLink ? nil : { seen.startSlide($0) }
+        if let link, let shared = stories.first {
+            // Слайд ссылки, если он есть в ответе: `start_position` сервер ставит только по
+            // своим слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
+            viewer.startSlide = {
+                StoriesSeenState.startSlide($0, seen: seen.seen($0), shared: shared, linkSlide: link.slideId)
+            }
+        } else {
+            viewer.startSlide = { seen.startSlide($0) }
+        }
         viewer.onSlideView = { [self] story, slide in slideShown(story, slide) }
         viewer.onButtonTap = { [self, weak viewer] story, slide, button in buttonTapped(story, slide, button, in: viewer) }
         viewer.onProductTap = { [self, weak viewer] story, slide, offer in productTapped(story, slide, offer, in: viewer) }

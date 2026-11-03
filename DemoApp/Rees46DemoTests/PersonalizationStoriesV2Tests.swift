@@ -425,6 +425,21 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(StoriesSeenState.startSlide(far, seen: []), 3, "clamped to the story")
     }
 
+    func testStoriesOpenedByALinkStartTheSharedOneOnItsSlideAndTheRestAsInTheFeed() {
+        let slides = (1...4).map { PersonalizationStorySlide(id: String($0), kind: .content) }
+        let shared = PersonalizationStory(id: "s", name: "S", startPosition: 2, slides: slides)
+        let next = PersonalizationStory(id: "n", name: "N", startPosition: 3, slides: slides)
+        func start(_ story: PersonalizationStory, seen: Set<String>, link: String?) -> Int {
+            StoriesSeenState.startSlide(story, seen: seen, shared: shared, linkSlide: link)
+        }
+        XCTAssertEqual(start(shared, seen: ["1", "2"], link: "4"), 3, "the shared campaign: the link slide, whatever was seen")
+        XCTAssertEqual(start(shared, seen: ["1", "2", "3", "4"], link: "1"), 0, "a viewed one too")
+        XCTAssertEqual(start(shared, seen: ["1"], link: "9"), 2, "no such slide: the server start position")
+        XCTAssertEqual(start(shared, seen: [], link: nil), 2, "no slide in the link: the server start position")
+        XCTAssertEqual(start(next, seen: ["1", "2"], link: "4"), 2, "the next campaign: the first unseen, as in the feed")
+        XCTAssertEqual(start(next, seen: [], link: "4"), 3, "untouched: its own start position")
+    }
+
     func testASlideWithoutMediaSitsOnBackgroundCardWhateverItsColour() {
         let offer = PersonalizationStorySlide.Offer(id: "1", name: "MacBook", price: "1 190 900 ₽")
         let plain = PersonalizationStorySlideView(

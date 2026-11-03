@@ -385,7 +385,8 @@ final class PersonalizationStoriesShareTests: XCTestCase {
     }
 
     func testALinkSlideMissingFromTheFirstCampaignLeavesTheServersStart() throws {
-        // Only the first campaign of the answer starts on the link slide; the rest keep `start_position`.
+        // Only the first campaign of the answer starts on the link slide; the rest start as in the feed
+        // (no history here — their `start_position`).
         let story = """
         {"status":"success","payload":{"id":7,"stories":[
           {"id":40,"name":"Photos","start_position":1,"slides":[{"id":36,"type":""},{"id":37,"type":""}]},
@@ -403,7 +404,7 @@ final class PersonalizationStoriesShareTests: XCTestCase {
 
         let viewer = try XCTUnwrap(host.shown.first as? PersonalizationStoriesViewController)
         XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[0]), 1, "no such slide in the campaign — the server's start_position")
-        XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[1]), 0, "another campaign — its own start_position")
+        XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[1]), 0, "another campaign without history — its own start_position")
         let sharedOpen = requests().map(body).first { $0["event"] as? String == "shared_open" }
         XCTAssertEqual(sharedOpen?["story_id"] as? Int, 40)
         XCTAssertEqual(sharedOpen?["slide_id"] as? String, "37", "the open is reported with the slide it started on")
