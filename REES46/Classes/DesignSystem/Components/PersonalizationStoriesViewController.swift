@@ -19,6 +19,11 @@ import UIKit
     public var soundOnLabel: String?
     public var soundOffLabel: String?
     public var shareLabel: String?
+    /// Опросы на слайдах: ссылка «ответить заново», кнопка отправки без своей подписи, ошибка
+    /// отправки. Строки `labels` элемента из ленты важнее.
+    public var pollReanswerText: String
+    public var pollSubmitText: String
+    public var pollErrorText: String
 
     public init(
         promoCaption: String? = "Promo code",
@@ -30,7 +35,10 @@ import UIKit
         closeLabel: String? = "Close",
         soundOnLabel: String? = "Sound on",
         soundOffLabel: String? = "Sound off",
-        shareLabel: String? = "Share"
+        shareLabel: String? = "Share",
+        pollReanswerText: String = "Answer again",
+        pollSubmitText: String = "Send",
+        pollErrorText: String = "Failed to send the answer. Please try again"
     ) {
         self.promoCaption = promoCaption
         self.promoCopiedText = promoCopiedText
@@ -42,6 +50,9 @@ import UIKit
         self.soundOnLabel = soundOnLabel
         self.soundOffLabel = soundOffLabel
         self.shareLabel = shareLabel
+        self.pollReanswerText = pollReanswerText
+        self.pollSubmitText = pollSubmitText
+        self.pollErrorText = pollErrorText
     }
 
     var slideTexts: PersonalizationStorySlideView.Texts {
@@ -79,7 +90,10 @@ import UIKit
 /// - медиа-слайды — в тёмной теме кита, остальные — в теме приложения;
 /// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь;
 /// - у слайда со ссылкой (`PersonalizationStory.shareUrl(of:)`) в шапке кнопка «Поделиться»:
-///   системное окно с одной ссылкой, слайд стоит, пока оно открыто.
+///   системное окно с одной ссылкой, слайд стоит, пока оно открыто;
+/// - опрос слайда (`PersonalizationStorySlide.poll`) — карточкой, если есть `pollTransport`:
+///   слайд стоит, пока карточку трогают, в её поле курсор или ответ отправляется; касание с
+///   карточки не листает и не закрывает, тап мимо при клавиатуре только прячет её.
 ///
 /// Сеть, трекинг и ссылки — не его дело: наружу отданы колбэки. Данные SDK подключает
 /// виджет `PersonalizationStories`; хост может показать просмотрщик и со своими данными.
@@ -122,6 +136,13 @@ import UIKit
     /// Ссылка слайда прямо перед окном «Поделиться»: в окно уходит то, что вернёт, например
     /// ссылка со схемой приложения. `nil` — ссылка как есть. Кнопку и событие `share` не меняет.
     public var shareUrlTransform: ((String) -> String)?
+
+    /// Транспорт опросов слайдов; `nil` — опросы не рисуются. Виджет `PersonalizationStories`
+    /// ставит клиент API v3 своей ленты сам.
+    public var pollTransport: PersonalizationStoryPollTransport?
+
+    /// Магазин ответов опросов этого запуска (общих у всех просмотрщиков); виджет ставит свой.
+    public var pollShopId = ""
 
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
@@ -318,6 +339,7 @@ extension PersonalizationStoriesViewController {
 
     /// Просмотр кончился: часы, видео и звук отпускаются, хост узнаёт о закрытии.
     private func wrapUp() {
+        view.endEditing(true)
         stopClock()
         activePage?.slideView?.pause()
         if hasAppeared { PersonalizationStoryAudio.shared.end() }
@@ -487,7 +509,7 @@ extension PersonalizationStoriesViewController {
             slideView.pause()
         }
         slideView.setRetryVisible(state.hasFailed)
-        pagerScrollView?.isScrollEnabled = state.canSwipe && !isTransitioning
+        pagerScrollView?.isScrollEnabled = state.canSwipe && !isTransitioning && !isPollEditing
         if state.isRunning { lastTimestamp = nil }
     }
 }
@@ -532,6 +554,8 @@ extension PersonalizationStoriesViewController {
 
     func handleTap(at x: CGFloat, width: CGFloat, from page: PersonalizationStoryPageViewController) {
         guard page === activePage else { return }
+        // Открыта клавиатура опроса: тап мимо карточки только прячет её.
+        if page.slideView?.pollView?.dismissKeyboard() == true { return }
         let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
         apply(state.tap(x: x, width: width, rightToLeft: rightToLeft))
     }
@@ -612,6 +636,47 @@ extension PersonalizationStoriesViewController {
         present(sheet, animated: true)
     }
 
+    // MARK: Опрос
+
+    /// Карточка опроса слайда; без опроса или без транспорта — `nil`. Ответ этого запуска
+    /// (`StoryPollStore`) важнее ответа из ленты.
+    func makePollView(story: PersonalizationStory, slide: PersonalizationStorySlide) -> PersonalizationStoryPollView? {
+        guard let poll = slide.poll, let pollTransport else { return nil }
+        let controller = StoryPollController(
+            poll: poll,
+            storyId: story.id,
+            slideId: slide.id,
+            shopId: pollShopId,
+            texts: StoryPollTexts(host: texts, labels: poll.labels),
+            transport: pollTransport
+        )
+        return PersonalizationStoryPollView(controller: controller)
+    }
+
+    /// Карточку держат — слайд стоит на своей причине паузы. Ход вернётся, когда причин не
+    /// останется; при смене слайда причину снимает состояние.
+    func pollHeld(_ hold: Bool, on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, !state.isClosing else { return }
+        setPaused(.poll, hold)
+    }
+
+    /// Курсор в поле опроса: сторис не листаются, свайп вниз не закрывает.
+    func pollEditingChanged(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage else { return }
+        sync()
+    }
+
+    /// Палец на карточке при раскрытом листе товаров — лист сворачивается, как от тапа мимо.
+    func pollPressed(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, state.isSheetOpen else { return }
+        state.setSheetOpen(false)
+        apply(.closeSheet)
+    }
+
+    var isPollEditing: Bool {
+        activePage?.slideView?.pollView?.isEditing ?? false
+    }
+
     /// Что уходит в окно «Поделиться»: ссылка после `shareUrlTransform`; не разобравшаяся
     /// как адрес — текстом.
     func shareItem(for url: URL) -> Any {
@@ -630,6 +695,10 @@ extension PersonalizationStoriesViewController {
         let pause: (Notification) -> Void = { [weak self] _ in self?.setPaused(.background, true) }
         let resume: (Notification) -> Void = { [weak self] _ in self?.setPaused(.background, false) }
         observers += [
+            // Свёрнутое приложение возвращается без клавиатуры опроса.
+            center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.view.endEditing(true)
+            },
             center.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main, using: pause),
             center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main, using: pause),
             center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main, using: resume)
@@ -710,9 +779,20 @@ extension PersonalizationStoriesViewController: UIGestureRecognizerDelegate {
     /// Свайп закрытия — только вниз, заметно вертикальный и не при открытом листе товаров.
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let pan = gestureRecognizer as? UIPanGestureRecognizer, pan.view === view else { return true }
-        guard state.canSwipe else { return false }
+        guard state.canSwipe, !isPollEditing else { return false }
         let velocity = pan.velocity(in: view)
         return velocity.y > 0 && velocity.y > abs(velocity.x)
+    }
+
+    /// Касание с карточки опроса свайпом закрытия не становится.
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard gestureRecognizer.view === view else { return true }
+        var current = touch.view
+        while let candidate = current, candidate !== view {
+            if candidate is PersonalizationStoryPollView { return false }
+            current = candidate.superview
+        }
+        return true
     }
 }
 
@@ -886,6 +966,21 @@ extension PersonalizationStoryPageViewController {
             self.viewer?.retryTapped(on: self)
         }
         next.safeInsets = safeInsets
+        if let card = viewer?.makePollView(story: story, slide: slide) {
+            card.controller.onHold = { [weak self] hold in
+                guard let self else { return }
+                self.viewer?.pollHeld(hold, on: self)
+            }
+            card.onEditingChange = { [weak self] _ in
+                guard let self else { return }
+                self.viewer?.pollEditingChanged(on: self)
+            }
+            card.onPress = { [weak self] in
+                guard let self else { return }
+                self.viewer?.pollPressed(on: self)
+            }
+            next.attachPoll(card)
+        }
 
         next.translatesAutoresizingMaskIntoConstraints = false
         content.insertSubview(next, belowSubview: navigation)

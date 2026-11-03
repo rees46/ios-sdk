@@ -82,6 +82,10 @@ import UIKit
     /// `https`. `nil` — как есть. Событие `share` не меняется.
     public var shareUrlTransform: ((String) -> String)?
 
+    /// Транспорт опросов слайдов вместо клиента API v3 — для тестов и офлайн-демо; `nil` —
+    /// ответы уходят в API v3 на `apiV3Domain`. Без `apiV3Domain` опросов нет.
+    public var pollTransport: PersonalizationStoryPollTransport?
+
     /// Кто показывает просмотрщик; `nil` — ближайший контроллер по цепочке ответчиков.
     public weak var hostViewController: UIViewController?
 
@@ -343,6 +347,7 @@ extension PersonalizationStories {
         session.texts = texts
         session.imageLoader = imageLoader
         session.shareUrlTransform = shareUrlTransform
+        session.pollTransport = pollTransport
         session.onSeen = { [weak self] in self?.renderBar() }
         let viewer = session.makeViewer(stories: stories, startIndex: index)
         self.viewer = viewer
@@ -386,6 +391,7 @@ extension PersonalizationStories {
     ///   - texts: тексты кита.
     ///   - imageLoader: загрузчик картинок; `nil` — встроенный.
     ///   - shareUrlTransform: ссылка слайда перед окном «Поделиться»; `nil` — как есть.
+    ///   - pollTransport: транспорт опросов вместо клиента API v3; `nil` — API v3.
     ///   - onError: блок не загрузился, пуст, нет инстанса или магазин неоднозначен; за
     ///     `loadTimeout` так и не нашлось, откуда показать.
     ///   - onClose: просмотрщик закрылся — крестиком, свайпом, после последнего слайда,
@@ -401,6 +407,7 @@ extension PersonalizationStories {
         texts: PersonalizationStoriesTexts = PersonalizationStoriesTexts(),
         imageLoader: ((UIImageView, String) -> Void)? = nil,
         shareUrlTransform: ((String) -> String)? = nil,
+        pollTransport: PersonalizationStoryPollTransport? = nil,
         onError: ((SdkError) -> Void)? = nil,
         onClose: (() -> Void)? = nil
     ) {
@@ -424,6 +431,7 @@ extension PersonalizationStories {
             session.texts = texts
             session.imageLoader = imageLoader
             session.shareUrlTransform = shareUrlTransform
+            session.pollTransport = pollTransport
             let start = startStoryId.flatMap { id in stories.firstIndex { $0.id == id } } ?? 0
             let viewer = session.makeViewer(stories: stories, startIndex: start)
             viewer.onClose = onClose
@@ -458,6 +466,7 @@ extension PersonalizationStories {
         texts: PersonalizationStoriesTexts = PersonalizationStoriesTexts(),
         imageLoader: ((UIImageView, String) -> Void)? = nil,
         shareUrlTransform: ((String) -> String)? = nil,
+        pollTransport: PersonalizationStoryPollTransport? = nil,
         onError: ((SdkError) -> Void)? = nil,
         onClose: (() -> Void)? = nil
     ) -> Bool {
@@ -488,6 +497,7 @@ extension PersonalizationStories {
             session.texts = texts
             session.imageLoader = imageLoader
             session.shareUrlTransform = shareUrlTransform
+            session.pollTransport = pollTransport
             let other = StoriesSession.openViewer
             let viewer = session.makeViewer(stories: stories, startIndex: 0, fromLink: true)
             viewer.onClose = {

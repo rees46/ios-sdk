@@ -315,6 +315,8 @@ import UIKit
     public let textBlocks: [TextBlock]
     /// Своя ссылка слайда для «Поделиться» (`share_url`, API v3); у товарных слайдов её нет.
     public let shareUrl: String?
+    /// Опрос слайда (элемент `poll`, только API v3); рисуется и на товарном слайде.
+    public let poll: PersonalizationStoryPoll?
 
     public init(
         id: String,
@@ -327,7 +329,8 @@ import UIKit
         offer: Offer? = nil,
         products: Products? = nil,
         textBlocks: [TextBlock] = [],
-        shareUrl: String? = nil
+        shareUrl: String? = nil,
+        poll: PersonalizationStoryPoll? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -340,6 +343,7 @@ import UIKit
         self.products = products
         self.textBlocks = textBlocks
         self.shareUrl = shareUrl
+        self.poll = poll
     }
 
     /// Длительность слайда, когда API её не прислал или прислал ноль — одна на всех платформах.

@@ -122,19 +122,34 @@ struct StoriesApiV3 {
 
     // MARK: - Ответ
 
+    /// Ответ API v3 целиком — общий для GET ленты, событий и опросов. Ошибка: нет сети или
+    /// таймаут, HTTP не 2xx (400, 402, 404, 429, 5xx — с `message` сервера, если он есть), не
+    /// JSON-объект, `status` `fail` или `error`.
+    static func response(data: Data?, response: URLResponse?, error: Error?) -> Result<[String: Any], SdkError> {
+        if let error = error as? SdkError { return .failure(error) }
+        if let error { return .failure(.custom(error: "Stories v3: \(error.localizedDescription)")) }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+        let message = json.flatMap { StoriesJSON.string($0["message"]) }
+        guard (200..<300).contains(status) else {
+            return .failure(.custom(error: "Stories v3: HTTP \(status)" + (message.map { ": \($0)" } ?? "")))
+        }
+        guard let json else { return .failure(.decodeError) }
+        if let state = StoriesJSON.string(json["status"]), state == "fail" || state == "error" {
+            return .failure(.custom(error: "Stories v3: \(message ?? state)"))
+        }
+        return .success(json)
+    }
+
     /// Ответ GET: `{"status":"success","payload":{…}}` → `payload`. HTTP-ошибка, `status` не
     /// `success` (неизвестная кампания или блок — 404 JSON) и не JSON (404 HTML) — ошибка.
     static func payload(data: Data?, response: URLResponse?, error: Error?) -> Result<[String: Any], SdkError> {
-        if let error { return .failure(.custom(error: "Stories v3: \(error.localizedDescription)")) }
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(status) else { return .failure(.custom(error: "Stories v3: HTTP \(status)")) }
-        guard let data, let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            return .failure(.decodeError)
+        Self.response(data: data, response: response, error: error).flatMap { json in
+            guard StoriesJSON.string(json["status"]) == "success", let payload = StoriesJSON.object(json["payload"]) else {
+                return .failure(.custom(error: "Stories v3: \(StoriesJSON.string(json["message"]) ?? "unexpected response")"))
+            }
+            return .success(payload)
         }
-        guard StoriesJSON.string(json["status"]) == "success", let payload = StoriesJSON.object(json["payload"]) else {
-            return .failure(.custom(error: "Stories v3: \(StoriesJSON.string(json["message"]) ?? "unexpected response")"))
-        }
-        return .success(payload)
     }
 
     /// Кампания по ссылке: без массива `stories` в `payload` — ошибка, как у веба.
@@ -163,21 +178,39 @@ struct StoriesApiV3 {
 
     /// Событие `POST …/events`. Ответ не ждём: событие — не повод мешать просмотру.
     func track(sdk: PersonalizationSDK, code: String, event: Event, storyId: String, slideId: String) {
+        let body = { did in Self.eventBody(shopId: sdk.shopId, did: did, event: event, storyId: storyId, slideId: slideId) }
+        post(sdk: sdk, url: eventsURL(code: code), body: body) { _, response, error in
+            #if DEBUG
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            if error != nil || !(200..<300).contains(status) {
+                print("Stories v3: \(event.rawValue) event failed (\(error.map { "\($0)" } ?? "HTTP \(status)"))")
+            }
+            #endif
+        }
+    }
+
+    /// `POST` JSON на хост v3 в очереди сессии SDK, без cookies — общий для событий и опросов.
+    /// Тело собирает `body` с `did`; `did` не дождались или адреса нет — ошибка без запроса.
+    /// Ответ — как его отдал транспорт, на его очереди.
+    func post(
+        sdk: PersonalizationSDK,
+        url: URL?,
+        body: @escaping (String) -> [String: Any],
+        completion: @escaping (Data?, URLResponse?, Error?) -> Void
+    ) {
         sdk.sessionQueue.addOperation {
-            guard let did = Self.awaitDeviceId(sdk), let address = eventsURL(code: code) else { return }
-            var request = URLRequest(url: address, timeoutInterval: PersonalizationStories.loadTimeout)
+            guard let did = Self.awaitDeviceId(sdk) else {
+                return completion(nil, nil, SdkError.custom(error: "Stories v3: no did, the SDK is not initialized"))
+            }
+            guard let url else {
+                return completion(nil, nil, SdkError.custom(error: "Stories v3: bad address for the host \(domain)"))
+            }
+            var request = URLRequest(url: url, timeoutInterval: PersonalizationStories.loadTimeout)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            let body = Self.eventBody(shopId: sdk.shopId, did: did, event: event, storyId: storyId, slideId: slideId)
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-            Self.transport(request) { _, response, error in
-                #if DEBUG
-                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                if error != nil || !(200..<300).contains(status) {
-                    print("Stories v3: \(event.rawValue) event failed (\(error.map { "\($0)" } ?? "HTTP \(status)"))")
-                }
-                #endif
-            }
+            request.httpShouldHandleCookies = false
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body(did))
+            Self.transport(request, completion)
         }
     }
 

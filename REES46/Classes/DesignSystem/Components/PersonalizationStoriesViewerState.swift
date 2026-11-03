@@ -24,6 +24,8 @@ struct PersonalizationStoriesViewerState {
         case host
         /// Открыто окно «Поделиться».
         case share
+        /// Карточку опроса трогают, в её поле курсор или ответ отправляется.
+        case poll
         /// Медиа слайда ещё не готово.
         case loading
         /// Медиа не загрузилось — на экране «Повторить».
@@ -146,13 +148,14 @@ extension PersonalizationStoriesViewerState {
 
     // MARK: - Смена слайда
 
-    /// Слайд стал текущим: часы с нуля, лист закрыт, ожидание медиа — заново.
+    /// Слайд стал текущим: часы с нуля, лист закрыт, ожидание медиа — заново; опрос
+    /// прежнего слайда слайд больше не держит.
     mutating func enter(slide: Int, mediaReady: Bool) {
         self.slide = slide
         elapsed = 0
         waited = 0
         failedFor = 0
-        pauses.subtract([.sheet, .loading, .error])
+        pauses.subtract([.sheet, .loading, .error, .poll])
         if !mediaReady { pauses.insert(.loading) }
     }
 

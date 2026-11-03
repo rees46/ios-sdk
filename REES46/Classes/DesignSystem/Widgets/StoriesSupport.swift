@@ -109,7 +109,8 @@ extension PersonalizationStorySlide {
             offer: of("product").lazy.compactMap { Offer(element: $0) }.first,
             products: of("products").lazy.compactMap { Products(json: $0) }.first,
             textBlocks: of("text_block").compactMap { TextBlock(json: $0) },
-            shareUrl: StoriesJSON.string(json["share_url"])
+            shareUrl: StoriesJSON.string(json["share_url"]),
+            poll: of("poll").lazy.compactMap { PersonalizationStoryPoll(json: $0) }.first
         )
     }
 
@@ -387,6 +388,8 @@ final class StoriesSession {
     var imageLoader: ((UIImageView, String) -> Void)?
     /// Ссылка перед окном «Поделиться», как у просмотрщика.
     var shareUrlTransform: ((String) -> String)?
+    /// Транспорт опросов вместо клиента API v3 (тесты, офлайн-демо). Опросы есть только с v3.
+    var pollTransport: PersonalizationStoryPollTransport?
     /// Слайд просмотрен — лента перерисовывает кольца.
     var onSeen: (() -> Void)?
     /// Открытие ссылки системой; подменяется в тестах.
@@ -413,6 +416,11 @@ final class StoriesSession {
         viewer.texts = texts
         viewer.imageLoader = imageLoader
         viewer.shareUrlTransform = shareUrlTransform
+        // Опросы слайдов — только в ленте v3: ответы уходят на её хост.
+        if let v3, let sdk {
+            viewer.pollTransport = pollTransport ?? StoriesPollsApi(api: v3, sdk: sdk)
+            viewer.pollShopId = sdk.shopId
+        }
         let seen = seenState
         viewer.startSlide = fromLink ? nil : { seen.startSlide($0) }
         viewer.onSlideView = { [self] story, slide in slideShown(story, slide) }

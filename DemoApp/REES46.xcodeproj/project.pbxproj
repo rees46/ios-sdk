@@ -17,6 +17,7 @@
 		A1B2C3D4000000000000000F /* LegacyStoriesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000010 /* LegacyStoriesViewController.swift */; };
 		A1B2C3D4000000000000000D /* SwiftUIStoriesScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4000000000000000E /* SwiftUIStoriesScreen.swift */; };
 		A1B2C3D4000000000000001F /* StoriesV2Showcase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000020 /* StoriesV2Showcase.swift */; };
+		B7C1D0A10000000000000003 /* StoriesPollsFixture.json in Resources */ = {isa = PBXBuildFile; fileRef = B7C1D0A10000000000000004 /* StoriesPollsFixture.json */; };
 		868003DAE262CF760A6A2513 /* RecommenderExhibits.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC370B8A9085C654ADE8B2AB /* RecommenderExhibits.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
@@ -45,6 +46,8 @@
 		A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */; };
 		A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */; };
 		A1B2C3D400000000000000E1 /* PersonalizationStoriesShareTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */; };
+		B7C1D0A10000000000000005 /* StoriesPollsApiTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C1D0A10000000000000006 /* StoriesPollsApiTests.swift */; };
+		B7C1D0A10000000000000007 /* PersonalizationStoriesPollsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C1D0A10000000000000008 /* PersonalizationStoriesPollsTests.swift */; };
 		A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */; };
 		A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */; };
 		75E237932C334AD200119197 /* DeviceIdTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E237912C334AD200119197 /* DeviceIdTest.swift */; };
@@ -173,6 +176,7 @@
 		A1B2C3D40000000000000010 /* LegacyStoriesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyStoriesViewController.swift; sourceTree = "<group>"; };
 		A1B2C3D4000000000000000E /* SwiftUIStoriesScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIStoriesScreen.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000020 /* StoriesV2Showcase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesV2Showcase.swift; sourceTree = "<group>"; };
+		B7C1D0A10000000000000004 /* StoriesPollsFixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = StoriesPollsFixture.json; sourceTree = "<group>"; };
 		DC370B8A9085C654ADE8B2AB /* RecommenderExhibits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommenderExhibits.swift; sourceTree = "<group>"; };
 		607FACDA1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		607FACDC1AFB9204008FA782 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
@@ -207,6 +211,8 @@
 		A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2GifTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2StateTests.swift; sourceTree = "<group>"; };
 		A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesShareTests.swift; sourceTree = "<group>"; };
+		B7C1D0A10000000000000006 /* StoriesPollsApiTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesPollsApiTests.swift; sourceTree = "<group>"; };
+		B7C1D0A10000000000000008 /* PersonalizationStoriesPollsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesPollsTests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalizationStoriesV2Tests.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationWidgetPositionTests.swift; sourceTree = "<group>"; };
 		75E237912C334AD200119197 /* DeviceIdTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceIdTest.swift; sourceTree = "<group>"; };
@@ -383,6 +389,7 @@
 				A1B2C3D40000000000000010 /* LegacyStoriesViewController.swift */,
 				A1B2C3D4000000000000000E /* SwiftUIStoriesScreen.swift */,
 				A1B2C3D40000000000000020 /* StoriesV2Showcase.swift */,
+				B7C1D0A10000000000000004 /* StoriesPollsFixture.json */,
 				DC370B8A9085C654ADE8B2AB /* RecommenderExhibits.swift */,
 				E9CF44402B30809C000F53F1 /* SearchViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
@@ -504,6 +511,8 @@
 				A1B2C3D40000000000000022 /* PersonalizationStoriesV2Tests.swift */,
 				A1B2C3D40000000000000044 /* PersonalizationStoriesV2StateTests.swift */,
 				A1B2C3D400000000000000E2 /* PersonalizationStoriesShareTests.swift */,
+				B7C1D0A10000000000000006 /* StoriesPollsApiTests.swift */,
+				B7C1D0A10000000000000008 /* PersonalizationStoriesPollsTests.swift */,
 				A1B2C3D40000000000000042 /* PersonalizationStoriesV2MediaTests.swift */,
 				A1B2C3D400000000000000F2 /* PersonalizationStoriesV2GifTests.swift */,
 				A1B2C3D40000000000000018 /* NotificationWidgetPositionTests.swift */,
@@ -773,6 +782,7 @@
 				607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */,
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
 				75D1D5C12CA72BF200C8C564 /* Localizable.xcstrings in Resources */,
+				B7C1D0A10000000000000003 /* StoriesPollsFixture.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -946,6 +956,8 @@
 				A1B2C3D40000000000000021 /* PersonalizationStoriesV2Tests.swift in Sources */,
 				A1B2C3D40000000000000043 /* PersonalizationStoriesV2StateTests.swift in Sources */,
 				A1B2C3D400000000000000E1 /* PersonalizationStoriesShareTests.swift in Sources */,
+				B7C1D0A10000000000000005 /* StoriesPollsApiTests.swift in Sources */,
+				B7C1D0A10000000000000007 /* PersonalizationStoriesPollsTests.swift in Sources */,
 				A1B2C3D40000000000000041 /* PersonalizationStoriesV2MediaTests.swift in Sources */,
 				A1B2C3D400000000000000F1 /* PersonalizationStoriesV2GifTests.swift in Sources */,
 				A1B2C3D40000000000000017 /* NotificationWidgetPositionTests.swift in Sources */,

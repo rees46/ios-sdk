@@ -101,6 +101,13 @@ final class PersonalizationStorySlideView: UIView {
     private var guideTrailing: NSLayoutConstraint?
     var bottomRowBottom: NSLayoutConstraint?
     var productGroupBottom: NSLayoutConstraint?
+    /// Ряд товаров и звука: лист товаров накрывает карточку опроса.
+    var bottomRow: UIView?
+    /// Верх кнопок слайда (у товарного — цены с кнопками): ниже карточка опроса не опускается.
+    var pollLimit: NSLayoutYAxisAnchor?
+    var pollBottom: NSLayoutConstraint?
+    /// Карточка опроса слайда, см. `attachPoll`.
+    private(set) var pollView: PersonalizationStoryPollView?
 
     init(
         slide: PersonalizationStorySlide,
@@ -200,6 +207,7 @@ final class PersonalizationStorySlideView: UIView {
         guideTrailing?.constant = -(safeInsets.right + side)
         bottomRowBottom?.constant = -safeInsets.bottom
         productGroupBottom?.constant = -(safeInsets.bottom + productGroupInset)
+        pollBottom?.constant = -(safeInsets.bottom + productGroupInset)
     }
 
     /// Отступ низа товарного слайда от безопасной зоны: над рядом товаров и звука — его
@@ -509,6 +517,7 @@ extension PersonalizationStorySlideView {
         // Над рядом товаров и звука низ стоит на высоте ряда, иначе — на поле 16.
         let groupBottom = bottom.bottomAnchor.constraint(equalTo: bottomAnchor)
         productGroupBottom = groupBottom
+        pollLimit = bottom.topAnchor
         NSLayoutConstraint.activate([
             header.topAnchor.constraint(equalTo: contentGuide.topAnchor),
             header.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
@@ -611,6 +620,7 @@ extension PersonalizationStorySlideView {
         // Над рядом товаров и звука кнопки стоят на высоте ряда, иначе — на поле 16.
         let bottom = buttons.bottomAnchor.constraint(equalTo: bottomAnchor)
         productGroupBottom = bottom
+        pollLimit = buttons.topAnchor
         NSLayoutConstraint.activate([
             bottom,
             buttons.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
@@ -678,6 +688,7 @@ extension PersonalizationStorySlideView {
         }
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
+        bottomRow = row
         // Низ ряда — край безопасной зоны: у ряда товаров свои поля 16.
         let rowBottom = row.bottomAnchor.constraint(equalTo: bottomAnchor)
         bottomRowBottom = rowBottom
@@ -741,5 +752,47 @@ final class PersonalizationStoryScrimView: UIView {
         top.frame = CGRect(x: 0, y: 0, width: bounds.width, height: height * 0.21)
         bottom.frame = CGRect(x: 0, y: height * 0.86, width: bounds.width, height: height * 0.14)
         CATransaction.commit()
+    }
+}
+
+// MARK: - Опрос
+
+extension PersonalizationStorySlideView {
+
+    /// Карточка опроса: верх — `yOffset` процентов высоты слайда, как у текстовых блоков, но
+    /// целиком между шапкой и кнопками (без кнопок — рядом товаров и звука или полем 16):
+    /// не влезает ниже — поднимается, не влезает совсем — прокручивается внутри. По ширине —
+    /// поля 16, не шире 420, по центру. Лист товаров её накрывает, «Повторить» — над ней.
+    func attachPoll(_ card: PersonalizationStoryPollView) {
+        pollView?.removeFromSuperview()
+        pollView = card
+        pollBottom = nil
+        card.translatesAutoresizingMaskIntoConstraints = false
+        insertSubview(card, belowSubview: bottomRow ?? retryButton)
+        let offset = UILayoutGuide()
+        addLayoutGuide(offset)
+        let percent = min(max(card.controller.poll.yOffset ?? 0, 0), 100) / 100
+        let bottom: NSLayoutConstraint
+        if let pollLimit {
+            bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: pollLimit, constant: -PersonalizationSpacing.xl)
+        } else {
+            bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -(safeInsets.bottom + productGroupInset))
+            pollBottom = bottom
+        }
+        NSLayoutConstraint.activate([
+            offset.topAnchor.constraint(equalTo: topAnchor),
+            percent > 0
+                ? offset.heightAnchor.constraint(equalTo: heightAnchor, multiplier: percent)
+                : offset.heightAnchor.constraint(equalToConstant: 0),
+            // Слабее высоты карточки по содержимому (700): сначала сдвиг, потом прокрутка.
+            card.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(UILayoutPriority(600)),
+            // Под шапку и под кнопки карточка не заезжает.
+            card.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor),
+            bottom,
+            card.centerXAnchor.constraint(equalTo: contentGuide.centerXAnchor),
+            card.widthAnchor.constraint(lessThanOrEqualTo: contentGuide.widthAnchor),
+            card.widthAnchor.constraint(lessThanOrEqualToConstant: PersonalizationStoryPollView.Style.maxWidth),
+            card.widthAnchor.constraint(equalTo: contentGuide.widthAnchor).withPriority(UILayoutPriority(999))
+        ])
     }
 }
