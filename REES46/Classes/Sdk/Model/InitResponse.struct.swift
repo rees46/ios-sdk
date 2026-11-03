@@ -46,7 +46,9 @@ public struct InitResponse: Codable {
         snippets = json["snippets"] as? [String] ?? []
         search = Search(json: json["search"] as? [String: Any] ?? [:])
         webPushSettings = WebPushSettings(json: json["web_push_settings"] as? [String: Any] ?? [:])
-        popup = Popup(json: json["popup"] as? [String: Any] ?? [:])
+        // No popup in the response — none, as in the tracking responses (an empty one used to be
+        // "presented" on every init and kept the popup slot busy).
+        popup = (json["popup"] as? [String: Any]).flatMap { $0.isEmpty ? nil : Popup(json: $0) }
         recone = json["recone"] as? Bool ?? false
     }
 
