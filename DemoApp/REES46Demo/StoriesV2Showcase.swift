@@ -22,6 +22,9 @@ enum StoriesV2Exhibits {
             ("Stories V2 with Sharing — the same block on API v3 (Share on slides), a stories link", {
                 LiveStoriesExhibit(apiV3Domain: DemoStoriesLinks.apiV3Domain)
             }),
+            ("Stories V2 polls (offline) — every kind of poll on API v3 from a fixture feed, a fake transport", {
+                DemoStoriesPolls.exhibit()
+            }),
             ("SwiftUI — PersonalizationStoriesWidget with a controller", { SwiftUIStoriesExhibit() }),
             ("Viewer — sample stories: product, product video with buttons + carousel + sound, text-block promo code, fitted media, animated GIF, Retry", {
                 ViewerExhibit()
