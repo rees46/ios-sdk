@@ -1,60 +1,98 @@
 import UIKit
 
-// Элементы карточки опроса (`PersonalizationStoryPollView`): вариант, чип, ряд чипов, кнопка
-// отправки, ячейка шкалы, ссылка «ответить заново» и многострочное поле. Значения — `Style`
+// Элементы карточки опроса (`PersonalizationStoryPollView`): вариант с буквой, кнопка отправки,
+// ячейка шкалы, галочка, ссылка «ответить заново» и многострочное поле. Значения — `Style`
 // карточки; в ките многострочного поля нет, оно своё.
 
 private typealias Style = PersonalizationStoryPollView.Style
 
-/// Вариант ответа: в форме одного выбора — кнопка, в отвеченном — строка с долей
-/// (полоска растёт от нуля, процент у конца строки).
+/// Вариант ответа: квадрат с буквой (A, B, C…) и текст. В форме — кнопка (один выбор) или
+/// переключатель (несколько), в итогах — строка с долей: полоса растёт от начала строки,
+/// процент у конца. Выбранный — с рамкой акцента и галочкой вместо буквы; до отправки вся строка
+/// залита акцентом, мой ответ в итогах — обычная подложка и полоса акцента.
 final class PollOptionRow: UIControl {
 
     let id: Int
     /// Доля в процентах; `nil` — результатов нет, полоски и процента тоже.
     let percent: Int?
     let title = UILabel()
+    let letterLabel = UILabel()
     let percentLabel = UILabel()
+    private let badge = UIView()
+    private let check = PollCheckView()
     private let fill = UIView()
     private let interactive: Bool
     /// Видимая доля полоски: 0, пока не выросла.
     private(set) var shownFraction: CGFloat = 0
     private var didAnimate = false
 
-    init(option: PersonalizationStoryPoll.Option, percent: Int?, interactive: Bool) {
+    init(option: PersonalizationStoryPoll.Option, index: Int, percent: Int?, interactive: Bool) {
         self.id = option.id
         self.percent = percent
         self.interactive = interactive
         super.init(frame: .zero)
-        backgroundColor = Style.field
-        layer.cornerRadius = Style.controlRadius
-        layer.borderWidth = Style.borderWidth
+        layer.cornerRadius = Style.optionRadius
+        layer.borderColor = Style.accent.cgColor
         clipsToBounds = true
         fill.isUserInteractionEnabled = false
         addSubview(fill)
+
+        badge.isUserInteractionEnabled = false
+        badge.layer.cornerRadius = Style.letterRadius
+        letterLabel.text = Self.letter(index)
+        letterLabel.font = Style.letterFont
+        letterLabel.textColor = Style.textSecondary
+        letterLabel.textAlignment = .center
+        letterLabel.adjustsFontSizeToFitWidth = true
+        letterLabel.minimumScaleFactor = 0.6
+        for view in [letterLabel, check] as [UIView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            badge.addSubview(view)
+        }
+
         title.text = option.label
         title.font = Style.optionFont
         title.textColor = Style.text
-        title.numberOfLines = 0
+        title.textAlignment = .natural
+        title.numberOfLines = 2
+        title.lineBreakMode = .byTruncatingTail
         percentLabel.text = percent.map { "\($0)%" }
         percentLabel.font = Style.percentFont
         percentLabel.textColor = Style.text
         percentLabel.isHidden = percent == nil
         percentLabel.setContentHuggingPriority(.required, for: .horizontal)
         percentLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let insets = Style.optionInsets
-        for label in [title, percentLabel] {
-            label.translatesAutoresizingMaskIntoConstraints = false
-            addSubview(label)
+        for view in [badge, title, percentLabel] as [UIView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(view)
         }
+        check.color = Style.contrastingText(on: Style.accent)
+        let padding = Style.optionPadding
+        // Обычно 56; две строки текста — выше (сжатие текста 750 сильнее).
+        let rest = heightAnchor.constraint(equalToConstant: Style.optionHeight)
+        rest.priority = UILayoutPriority(749)
         NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: topAnchor, constant: insets.top),
-            title.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -insets.bottom),
-            title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: insets.left),
-            percentLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -insets.right),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: Style.optionHeight),
+            rest,
+            badge.widthAnchor.constraint(equalToConstant: Style.letterSize),
+            badge.heightAnchor.constraint(equalToConstant: Style.letterSize),
+            badge.leadingAnchor.constraint(equalTo: leadingAnchor, constant: padding),
+            badge.centerYAnchor.constraint(equalTo: centerYAnchor),
+            letterLabel.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
+            letterLabel.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
+            letterLabel.widthAnchor.constraint(lessThanOrEqualTo: badge.widthAnchor, constant: -PersonalizationSpacing.sm),
+            check.topAnchor.constraint(equalTo: badge.topAnchor),
+            check.bottomAnchor.constraint(equalTo: badge.bottomAnchor),
+            check.leadingAnchor.constraint(equalTo: badge.leadingAnchor),
+            check.trailingAnchor.constraint(equalTo: badge.trailingAnchor),
+            title.leadingAnchor.constraint(equalTo: badge.trailingAnchor, constant: Style.letterGap),
+            title.centerYAnchor.constraint(equalTo: centerYAnchor),
+            title.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: padding),
+            title.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -padding),
+            percentLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -padding),
             percentLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
             percent == nil
-                ? title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -insets.right)
+                ? title.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -padding)
                 : title.trailingAnchor.constraint(lessThanOrEqualTo: percentLabel.leadingAnchor, constant: -PersonalizationSpacing.md)
         ])
         isUserInteractionEnabled = interactive
@@ -65,6 +103,17 @@ final class PollOptionRow: UIControl {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
+    /// Буква варианта: A…Z, дальше AA, AB…
+    static func letter(_ index: Int) -> String {
+        let letters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        var value = max(0, index), result = ""
+        repeat {
+            result = String(letters[value % 26]) + result
+            value = value / 26 - 1
+        } while value >= 0
+        return result
+    }
+
     override var isSelected: Bool {
         didSet { applyState() }
     }
@@ -73,9 +122,16 @@ final class PollOptionRow: UIControl {
         didSet { applyState() }
     }
 
+    /// Вместо буквы галочка — вариант выбран.
+    var isCheckVisible: Bool { !check.isHidden }
+
     private func applyState() {
-        layer.borderColor = (isSelected ? Style.accent : Style.border).cgColor
-        fill.backgroundColor = isSelected ? Style.barSelected : Style.bar
+        backgroundColor = isSelected && interactive ? Style.selectedFill : Style.track
+        layer.borderWidth = isSelected ? Style.selectedBorder : 0
+        fill.backgroundColor = isSelected ? Style.barMine : Style.bar
+        badge.backgroundColor = isSelected ? Style.accent : Style.plate
+        letterLabel.isHidden = isSelected
+        check.isHidden = !isSelected
         var traits: UIAccessibilityTraits = interactive ? .button : .staticText
         if isSelected { traits.insert(.selected) }
         if interactive, !isEnabled { traits.insert(.notEnabled) }
@@ -100,7 +156,7 @@ final class PollOptionRow: UIControl {
         }
     }
 
-    /// Полоска — от начала строки: слева, в RTL справа.
+    /// Полоска — от начала строки: слева, в RTL справа; скругление обрезает её по строке.
     private func layoutFill() {
         let width = bounds.width * shownFraction
         let rightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
@@ -108,147 +164,73 @@ final class PollOptionRow: UIControl {
     }
 }
 
-/// Чип нескольких вариантов: переключатель.
-final class PollChip: UIControl {
+/// Галочка по центру своего квадрата: у выбранного варианта и отвеченного текста.
+final class PollCheckView: UIView {
 
-    let id: Int
-    let title = UILabel()
+    private let shape = CAShapeLayer()
 
-    init(option: PersonalizationStoryPoll.Option) {
-        self.id = option.id
-        super.init(frame: .zero)
-        layer.borderWidth = Style.borderWidth
-        title.text = option.label
-        title.font = Style.chipFont
-        title.lineBreakMode = .byTruncatingTail
-        title.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(title)
-        let insets = Style.chipInsets
-        NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: topAnchor, constant: insets.top),
-            title.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -insets.bottom),
-            title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: insets.left),
-            title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -insets.right)
-        ])
-        isAccessibilityElement = true
-        accessibilityLabel = option.label
-        applyState()
+    /// Цвет галочки — по контрасту с заливкой под ней.
+    var color: UIColor = .white {
+        didSet { shape.strokeColor = color.cgColor }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        backgroundColor = .clear
+        shape.fillColor = nil
+        shape.strokeColor = UIColor.white.cgColor
+        shape.lineWidth = 2
+        shape.lineCap = .round
+        shape.lineJoin = .round
+        layer.addSublayer(shape)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 
-    override var isSelected: Bool {
-        didSet { applyState() }
-    }
-
-    override var isEnabled: Bool {
-        didSet { applyState() }
-    }
-
-    private func applyState() {
-        backgroundColor = isSelected ? Style.chipSelected : Style.field
-        layer.borderColor = (isSelected ? Style.chipSelected : Style.border).cgColor
-        title.textColor = isSelected ? Style.chipSelectedText : Style.text
-        var traits: UIAccessibilityTraits = .button
-        if isSelected { traits.insert(.selected) }
-        if !isEnabled { traits.insert(.notEnabled) }
-        accessibilityTraits = traits
-    }
-
     override func layoutSubviews() {
         super.layoutSubviews()
-        layer.cornerRadius = min(Style.chipRadius, bounds.height / 2)
+        // Галочка 14 × 10 в квадрате 32 — доли стороны.
+        let side = min(bounds.width, bounds.height)
+        let origin = CGPoint(x: bounds.midX - side / 2, y: bounds.midY - side / 2)
+        func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: origin.x + x * side, y: origin.y + y * side) }
+        let path = UIBezierPath()
+        path.move(to: point(0.29, 0.5))
+        path.addLine(to: point(0.43, 0.64))
+        path.addLine(to: point(0.71, 0.36))
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        shape.frame = bounds
+        shape.path = path.cgPath
+        CATransaction.commit()
     }
 }
 
-/// Чипы с переносом: ряды по центру, шаг `gap` по обеим осям; в RTL порядок справа налево.
-final class PollChipsView: UIView {
-
-    private let gap: CGFloat
-    private var measuredHeight: CGFloat = 0
-
-    var items: [UIView] = [] {
-        didSet {
-            oldValue.forEach { $0.removeFromSuperview() }
-            items.forEach(addSubview)
-            invalidateIntrinsicContentSize()
-            setNeedsLayout()
-        }
-    }
-
-    init(gap: CGFloat) {
-        self.gap = gap
-        super.init(frame: .zero)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
-
-    override var intrinsicContentSize: CGSize {
-        // До раскладки ширины нет: прикидка по ширине экрана, после раскладки — точная.
-        let width = bounds.width > 0 ? bounds.width : UIScreen.main.bounds.width - 2 * (Style.margin + Style.padding)
-        return CGSize(width: UIView.noIntrinsicMetric, height: arrange(width: width, apply: false))
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let height = arrange(width: bounds.width, apply: true)
-        if height != measuredHeight {
-            measuredHeight = height
-            invalidateIntrinsicContentSize()
-        }
-    }
-
-    /// Раскладывает чипы рядами и возвращает высоту.
-    @discardableResult
-    func arrange(width: CGFloat, apply: Bool) -> CGFloat {
-        var lines: [[(view: UIView, size: CGSize)]] = [[]]
-        var lineWidth: CGFloat = 0
-        for view in items {
-            var size = view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
-            size.width = min(size.width, width)
-            if !lines[lines.count - 1].isEmpty, lineWidth + gap + size.width > width {
-                lines.append([])
-                lineWidth = 0
-            }
-            lineWidth += (lines[lines.count - 1].isEmpty ? 0 : gap) + size.width
-            lines[lines.count - 1].append((view, size))
-        }
-        let rightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
-        var y: CGFloat = 0
-        for (index, line) in lines.enumerated() where !line.isEmpty {
-            let total = line.reduce(0) { $0 + $1.size.width } + gap * CGFloat(line.count - 1)
-            let height = line.map(\.size.height).max() ?? 0
-            var x = max(0, (width - total) / 2)
-            for item in rightToLeft ? line.reversed() : line {
-                if apply {
-                    item.view.frame = CGRect(x: x, y: y + (height - item.size.height) / 2, width: item.size.width, height: item.size.height)
-                }
-                x += item.size.width + gap
-            }
-            y += height + (index < lines.count - 1 ? gap : 0)
-        }
-        return y
-    }
-}
-
-/// Кнопка отправки во всю ширину; выключенная — серая.
+/// Кнопка отправки во всю ширину, высота 52: активная — заливка акцента, текст белый или
+/// тёмный по контрасту с ней; неактивная — серая подложка.
 final class PollSubmitButton: UIControl {
 
     let title = UILabel()
 
     init(title text: String) {
         super.init(frame: .zero)
-        layer.cornerRadius = Style.controlRadius
+        layer.cornerRadius = Style.buttonRadius
         title.text = text
-        title.font = Style.submitFont
+        title.font = Style.buttonFont
         title.textAlignment = .center
         title.numberOfLines = 0
         title.translatesAutoresizingMaskIntoConstraints = false
         addSubview(title)
-        let inset = Style.submitPadding
+        let inset = Style.optionPadding
+        // Обычно 52; длинная подпись в две строки — выше (сжатие текста 750 сильнее).
+        let rest = heightAnchor.constraint(equalToConstant: Style.buttonHeight)
+        rest.priority = UILayoutPriority(749)
         NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: topAnchor, constant: inset),
-            title.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -inset),
+            heightAnchor.constraint(greaterThanOrEqualToConstant: Style.buttonHeight),
+            rest,
+            title.centerYAnchor.constraint(equalTo: centerYAnchor),
+            title.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: PersonalizationSpacing.md),
+            title.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -PersonalizationSpacing.md),
             title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: inset),
             title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -inset)
         ])
@@ -268,42 +250,42 @@ final class PollSubmitButton: UIControl {
     }
 
     private func applyState() {
-        backgroundColor = isEnabled ? Style.accent : Style.border
-        title.textColor = isEnabled ? Style.submitText : Style.muted
+        backgroundColor = isEnabled ? Style.accent : Style.track
+        title.textColor = isEnabled ? Style.contrastingText(on: Style.accent) : Style.textSecondary
         accessibilityTraits = isEnabled ? .button : [.button, .notEnabled]
     }
 }
 
-/// Ячейка шкалы: цвет по оценке, у выбранной — обводка с зазором 1.
+/// Цифра на дорожке шкалы; выбранная — в капсуле на всю высоту дорожки, цвета своей полосы,
+/// цифра белая или тёмная — что контрастнее.
 final class PollScaleCell: UIControl {
 
     let value: Int
     let title = UILabel()
-    private let ring = CALayer()
+    /// Заливка капсулы выбранной цифры.
+    let fillColor: UIColor
+    private let capsule = UIView()
 
-    init(value: Int, color: UIColor) {
+    init(value: Int, fill: UIColor) {
         self.value = value
+        self.fillColor = fill
         super.init(frame: .zero)
-        backgroundColor = color
-        layer.cornerRadius = Style.scaleRadius
+        capsule.isUserInteractionEnabled = false
+        capsule.backgroundColor = fill
+        capsule.isHidden = true
+        addSubview(capsule)
         title.text = String(value)
         title.font = Style.scaleFont
-        title.textColor = Style.text
         title.textAlignment = .center
         title.adjustsFontSizeToFitWidth = true
         title.minimumScaleFactor = 0.6
         title.translatesAutoresizingMaskIntoConstraints = false
         addSubview(title)
         NSLayoutConstraint.activate([
-            title.topAnchor.constraint(equalTo: topAnchor, constant: Style.scalePadding),
-            title.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Style.scalePadding),
-            title.leadingAnchor.constraint(equalTo: leadingAnchor),
-            title.trailingAnchor.constraint(equalTo: trailingAnchor)
+            title.centerYAnchor.constraint(equalTo: centerYAnchor),
+            title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PersonalizationSpacing.xs),
+            title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -PersonalizationSpacing.xs)
         ])
-        ring.borderColor = Style.text.cgColor
-        ring.borderWidth = Style.ringWidth
-        ring.isHidden = true
-        layer.addSublayer(ring)
         isAccessibilityElement = true
         accessibilityLabel = String(value)
         applyState()
@@ -319,11 +301,12 @@ final class PollScaleCell: UIControl {
         didSet { applyState() }
     }
 
-    /// Обводка выбранной ячейки видна.
-    var isRingVisible: Bool { !ring.isHidden }
+    /// Капсула выбранной цифры видна.
+    var isCapsuleVisible: Bool { !capsule.isHidden }
 
     private func applyState() {
-        ring.isHidden = !isSelected
+        capsule.isHidden = !isSelected
+        title.textColor = isSelected ? Style.contrastingText(on: fillColor) : Style.text
         var traits: UIAccessibilityTraits = .button
         if isSelected { traits.insert(.selected) }
         if !isEnabled { traits.insert(.notEnabled) }
@@ -332,16 +315,12 @@ final class PollScaleCell: UIControl {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let outset = Style.ringOffset + Style.ringWidth
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        ring.frame = bounds.insetBy(dx: -outset, dy: -outset)
-        ring.cornerRadius = Style.scaleRadius + outset
-        CATransaction.commit()
+        capsule.frame = bounds
+        capsule.layer.cornerRadius = min(bounds.width, bounds.height) / 2
     }
 }
 
-/// Ссылка «ответить заново»: подчёркнутый текст по центру.
+/// Ссылка «ответить заново»: подчёркнутый текст по левому краю.
 final class PollLink: UIControl {
 
     let title = UILabel()
@@ -350,18 +329,18 @@ final class PollLink: UIControl {
         super.init(frame: .zero)
         title.attributedText = NSAttributedString(string: text, attributes: [
             .font: Style.linkFont,
-            .foregroundColor: Style.link,
+            .foregroundColor: Style.text,
             .underlineStyle: NSUnderlineStyle.single.rawValue
         ])
-        title.textAlignment = .center
+        title.textAlignment = .natural
         title.numberOfLines = 0
         title.translatesAutoresizingMaskIntoConstraints = false
         addSubview(title)
         NSLayoutConstraint.activate([
             title.topAnchor.constraint(equalTo: topAnchor, constant: PersonalizationSpacing.xs),
             title.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -PersonalizationSpacing.xs),
-            title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PersonalizationSpacing.sm),
-            title.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -PersonalizationSpacing.sm)
+            title.leadingAnchor.constraint(equalTo: leadingAnchor),
+            title.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
         isAccessibilityElement = true
         accessibilityLabel = text
@@ -375,10 +354,13 @@ final class PollLink: UIControl {
     }
 }
 
-/// Многострочное поле текстового опроса с подсказкой; высота 72, длинный текст прокручивается.
+/// Многострочное поле текстового опроса с подсказкой: высота от 52 растёт с текстом до 120,
+/// дальше текст прокручивается.
 final class PollTextView: UITextView {
 
     private let placeholderLabel = UILabel()
+    /// Высота по тексту — собственный размер поля: стек карточки пересчитывается сам.
+    private var fittingHeight = Style.inputHeight
 
     var placeholder: String? {
         didSet {
@@ -389,28 +371,30 @@ final class PollTextView: UITextView {
     }
 
     override var text: String! {
-        didSet { updatePlaceholder() }
+        didSet {
+            updatePlaceholder()
+            updateHeight()
+        }
     }
 
     init() {
         super.init(frame: .zero, textContainer: nil)
         font = Style.inputFont
         textColor = Style.text
-        backgroundColor = Style.field
+        backgroundColor = Style.plate
         tintColor = Style.accent
-        layer.cornerRadius = Style.controlRadius
-        layer.borderWidth = Style.borderWidth
-        layer.borderColor = Style.border.cgColor
+        layer.cornerRadius = Style.inputRadius
         let inset = Style.inputPadding
         textContainerInset = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         textContainer.lineFragmentPadding = 0
         keyboardAppearance = .light
         placeholderLabel.font = Style.inputFont
-        placeholderLabel.textColor = Style.muted
+        placeholderLabel.textColor = Style.hint
         placeholderLabel.numberOfLines = 0
         placeholderLabel.isAccessibilityElement = false
         addSubview(placeholderLabel)
-        heightAnchor.constraint(equalToConstant: Style.inputHeight).isActive = true
+        setContentHuggingPriority(.required, for: .vertical)
+        setContentCompressionResistancePriority(.required, for: .vertical)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
@@ -421,11 +405,36 @@ final class PollTextView: UITextView {
         placeholderLabel.isHidden = !(text ?? "").isEmpty
     }
 
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: fittingHeight)
+    }
+
+    /// Высота по тексту в пределах 52...120; `true` — изменилась.
+    @discardableResult
+    func updateHeight() -> Bool {
+        guard let font, bounds.width > 0 else { return false }
+        let inset = textContainerInset
+        let width = max(0, bounds.width - inset.left - inset.right)
+        let lines = ((text ?? "") as NSString).boundingRect(
+            with: CGSize(width: width, height: .greatestFiniteMagnitude),
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font],
+            context: nil
+        ).height
+        let fitting = max(lines, font.lineHeight) + inset.top + inset.bottom
+        let value = min(max(Style.inputHeight, ceil(fitting)), Style.inputMaxHeight)
+        guard value != fittingHeight else { return false }
+        fittingHeight = value
+        invalidateIntrinsicContentSize()
+        return true
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
+        updateHeight()
         let inset = Style.inputPadding
         let width = max(0, bounds.width - 2 * inset)
-        let height = placeholderLabel.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
-        placeholderLabel.frame = CGRect(x: inset, y: inset, width: width, height: min(height, max(0, bounds.height - 2 * inset)))
+        let size = placeholderLabel.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude)).height
+        placeholderLabel.frame = CGRect(x: inset, y: inset, width: width, height: min(size, max(0, bounds.height - 2 * inset)))
     }
 }

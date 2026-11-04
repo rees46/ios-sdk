@@ -234,6 +234,16 @@ extension PersonalizationStoryPoll {
         return position < 0.34 ? "#FCA5A5" : (position < 0.68 ? "#FDE68A" : "#86EFAC")
     }
 
+    /// Заливка выбранной оценки: попала в одну из полос `bands` — цвет шкалы для этой оценки
+    /// (`scaleColor`: критики, нейтральные, довольные); без полос или мимо них — `nil`, карточка
+    /// берёт акцент.
+    func bandColor(of value: Int) -> String? {
+        let values = scaleValues
+        guard let scale, let low = values.first, let high = values.last,
+              bands.contains(where: { Double(value) >= $0.from && Double(value) <= $0.to }) else { return nil }
+        return Self.scaleColor(scale, value: value, min: low, max: high)
+    }
+
     /// Текст `success` первой полосы, в которую попала оценка; без оценки, мимо полос или у
     /// полосы нет текста — `nil`.
     public func bandText(rate: Double?) -> String? {
@@ -245,12 +255,26 @@ extension PersonalizationStoryPoll {
 
 /// Тексты карточки опроса: умолчания < тексты хоста (`PersonalizationStoriesTexts`) < `labels`
 /// элемента. Перекрывает только непустая строка.
+///
+/// Шапка и подвал итогов («Результаты», «Спасибо! Голос учтён», число голосов) — свои, по
+/// первому языку устройства: русские или английские.
 struct StoryPollTexts: Equatable {
+
+    enum Language: Equatable {
+        case ru, en
+
+        /// По первому языку устройства.
+        static var current: Language {
+            (Locale.preferredLanguages.first ?? "").lowercased().hasPrefix("ru") ? .ru : .en
+        }
+    }
+
     var reanswer: String
     var error: String
     var submit: String
+    let language: Language
 
-    init(host: PersonalizationStoriesTexts, labels: PersonalizationStoryPoll.Labels) {
+    init(host: PersonalizationStoriesTexts, labels: PersonalizationStoryPoll.Labels, language: Language = .current) {
         let defaults = PersonalizationStoriesTexts()
         func pick(_ own: String?, _ host: String, _ fallback: String) -> String {
             [own, host].lazy.compactMap { $0 }.first { !$0.isEmpty } ?? fallback
@@ -258,6 +282,41 @@ struct StoryPollTexts: Equatable {
         reanswer = pick(labels.reanswer, host.pollReanswerText, defaults.pollReanswerText)
         error = pick(labels.error, host.pollErrorText, defaults.pollErrorText)
         submit = pick(labels.submit, host.pollSubmitText, defaults.pollSubmitText)
+        self.language = language
+    }
+
+    /// Шапка итогов опроса с выбором (на карточке — прописными).
+    var results: String {
+        language == .ru ? "Результаты" : "Results"
+    }
+
+    /// Подвал итогов без своего `thanks_text`: «Спасибо!» и за ним «Голос учтён».
+    var thanks: String {
+        language == .ru ? "Спасибо!" : "Thank you!"
+    }
+
+    var voteCounted: String {
+        language == .ru ? "Голос учтён" : "Vote counted"
+    }
+
+    /// Число голосов с разрядами и склонением: «1 голос», «3 голоса», «1 248 голосов»;
+    /// «1 vote», «1,248 votes».
+    func votes(_ count: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = true
+        // Разделитель свой, а не из локали: у русского — неразрывный пробел на любой системе.
+        formatter.groupingSeparator = language == .ru ? "\u{00A0}" : ","
+        let number = formatter.string(from: NSNumber(value: count)) ?? String(count)
+        switch language {
+        case .ru:
+            let tens = count % 100, ones = count % 10
+            let word = ones == 1 && tens != 11 ? "голос"
+                : (2...4).contains(ones) && !(12...14).contains(tens) ? "голоса" : "голосов"
+            return "\(number) \(word)"
+        case .en:
+            return "\(number) \(count == 1 ? "vote" : "votes")"
+        }
     }
 }
 

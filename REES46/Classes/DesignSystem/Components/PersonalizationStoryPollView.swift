@@ -1,10 +1,11 @@
 import UIKit
 
-/// Карточка опроса на слайде сторис V2: вопрос и варианты, чипы с кнопкой, поле с кнопкой или
-/// шкала; после ответа — выбранное с долями, благодарность, «ответить заново».
+/// Карточка опроса на слайде сторис V2: вопрос и варианты с буквами, варианты с кнопкой, поле
+/// с кнопкой или шкала-дорожка; после ответа — итоги с долями и числом голосов, благодарность,
+/// «ответить заново».
 ///
-/// Логика — `StoryPollController`, здесь только вид и касания. Вид — значения JS SDK
-/// (`styles.ts`) один в один, макета нет: карточка светлая и в тёмной теме, как в вебе.
+/// Логика — `StoryPollController`, здесь только вид и касания. Карточка матовая: размытие
+/// слайда под ней со светлой подложкой; светлая и в тёмной теме. Весь текст — по левому краю.
 ///
 /// Касание, начатое на карточке, слайду не достаётся: распознаватель нажатия карточки
 /// срабатывает сразу, и жесты слайда, листание сторис и свайп закрытия ждут его провала.
@@ -15,67 +16,82 @@ final class PersonalizationStoryPollView: UIView {
     /// Значения карточки — в одном месте, чтобы дизайнер поменял разом. Совпавшие со
     /// значением токена кита — из токенов.
     enum Style {
-        static let card = rgb(0xFFFFFF)
-        static let text = rgb(0x0B1410)
-        static let border = rgb(0xE1E8E4)
-        static let field = rgb(0xF4F7F5)
-        static let bar = rgb(0xD9F99D)
+        /// Цвет выбора и успеха опроса.
         static let accent = rgb(0x22C55E)
-        static let barSelected = rgb(0x86EFAC)
-        static let chipSelected = rgb(0x0F3D2A)
-        static let chipSelectedText = rgb(0xD9F99D)
-        static let submitText = rgb(0x06210F)
-        static let muted = rgb(0x8A9A90)
-        static let doneText = rgb(0x5B6B62)
-        static let link = rgb(0x0F3D2A)
         static let error = rgb(0xDC2626)
+        static var text: UIColor { PersonalizationColor.textPrimary }
+        static var textSecondary: UIColor { PersonalizationColor.textSecondary }
+        static var hint: UIColor { PersonalizationColor.textHint }
+        /// Светлая подложка поверх размытия и тонкая светлая граница.
+        static let tint = UIColor(white: 1, alpha: 0.8)
+        static let cardBorder = UIColor(white: 1, alpha: 0.5)
+        /// Подложка вариантов, дорожки шкалы и неактивной кнопки.
+        static let track = UIColor(white: 0, alpha: 0.06)
+        /// Полоса доли в итогах; у своего ответа — акцент.
+        static let bar = UIColor(white: 0, alpha: 0.08)
+        static let barMine = accent.withAlphaComponent(0.25)
+        /// Заливка выбранного варианта до отправки; мой ответ в итогах — с обычной подложкой.
+        static let selectedFill = accent.withAlphaComponent(0.2)
+        /// Квадрат буквы и поле ввода.
+        static let plate = UIColor(white: 1, alpha: 0.85)
 
-        static var cardRadius: CGFloat { PersonalizationRadius.xl5 }  // 20
-        static let padding: CGFloat = 14
-        static let gap: CGFloat = 10
-        static let margin = PersonalizationSpacing.xl  // 16
+        /// От краёв слайда.
+        static let margin = PersonalizationSpacing.lg  // 12
+        static let padding = PersonalizationSpacing.xl2  // 20
+        static var cardRadius: CGFloat { PersonalizationRadius.xl6 }  // 24
+        static let cardBorderWidth: CGFloat = 1
         static let maxWidth: CGFloat = 420
-        static var controlRadius: CGFloat { PersonalizationRadius.xl2 }  // 12
-        static let borderWidth: CGFloat = 1.5
-        static let optionInsets = UIEdgeInsets(top: 10, left: PersonalizationSpacing.lg, bottom: 10, right: PersonalizationSpacing.lg)
+        static let dotSize: CGFloat = 6
+        static let dotGap = PersonalizationSpacing.md  // 8
+        /// Шапка итогов → вопрос.
+        static let headerGap = PersonalizationSpacing.lg  // 12
+        /// Вопрос → содержимое, содержимое → подвал или кнопка, дорожка → текст полосы.
+        static let blockGap = PersonalizationSpacing.xl  // 16
+        static let optionHeight: CGFloat = 56
+        static var optionRadius: CGFloat { PersonalizationRadius.xl5 }  // 20
+        static let optionPadding = PersonalizationSpacing.lg  // 12
         static let optionGap = PersonalizationSpacing.md  // 8
-        static let chipGap: CGFloat = 6
-        static let chipInsets = UIEdgeInsets(top: 7, left: 11, bottom: 7, right: 11)
-        static var chipRadius: CGFloat { PersonalizationRadius.rounded }
-        static let submitPadding: CGFloat = 11
-        static let inputHeight: CGFloat = 72
-        static let inputPadding: CGFloat = 10
-        /// Счётчик прижат к полю: 10 − 6.
+        static let letterSize: CGFloat = 32
+        static var letterRadius: CGFloat { PersonalizationRadius.lg }  // 8
+        static let letterGap = PersonalizationSpacing.lg  // 12
+        static let selectedBorder: CGFloat = 1.5
+        static let trackHeight: CGFloat = 52
+        static let trackPadding = PersonalizationSpacing.sm  // 4
+        static let inputHeight: CGFloat = 52
+        /// Выше поле не растёт, дальше текст прокручивается.
+        static let inputMaxHeight: CGFloat = 120
+        static var inputRadius: CGFloat { PersonalizationRadius.xl4 }  // 16
+        static let inputPadding = PersonalizationSpacing.xl  // 16
+        /// Поле → кнопка, итоги → «ответить заново», содержимое → ошибка.
+        static let fieldGap = PersonalizationSpacing.lg  // 12
         static let counterGap = PersonalizationSpacing.sm  // 4
-        static let scaleGap: CGFloat = 3
-        static var scaleRadius: CGFloat { PersonalizationRadius.md }  // 6
-        static let scalePadding = PersonalizationSpacing.md  // 8
-        static let ringWidth: CGFloat = 2
-        static let ringOffset: CGFloat = 1
-        static let doneSize: CGFloat = 38
-        static let doneGap: CGFloat = 6
+        static let buttonHeight: CGFloat = 52
+        static var buttonRadius: CGFloat { PersonalizationRadius.xl4 }  // 16
+        static let doneSize: CGFloat = 32
         static let answeredAlpha: CGFloat = 0.55
         static let sendingAlpha: CGFloat = 0.85
         static let keyboardGap = PersonalizationSpacing.xl  // 16
         static let fillDuration: TimeInterval = 0.6
 
-        static let shadowOpacity: Float = 0.35
-        static let shadowRadius: CGFloat = 15
-        static let shadowOffset = CGSize(width: 0, height: 12)
-        static let shadowSpread: CGFloat = -10
-
-        static var questionFont: UIFont { font(15, .bold) }
-        static var optionFont: UIFont { font(13, .semibold) }
-        static var chipFont: UIFont { font(PersonalizationTypography.xsEmphasized.size, .semibold) }  // 12
-        static var submitFont: UIFont { font(13, .bold) }
-        static var inputFont: UIFont { font(13, .medium) }
-        static var counterFont: UIFont { tabular(font(10.5, .regular)) }
-        static var percentFont: UIFont { tabular(font(13, .semibold)) }
-        static var scaleFont: UIFont { tabular(font(11.5, .bold)) }
-        static var doneIconFont: UIFont { font(18, .heavy) }
-        static var doneTextFont: UIFont { font(11.5, .regular) }
-        static var thanksFont: UIFont { font(13, .semibold) }
-        static var linkFont: UIFont { font(PersonalizationTypography.xsEmphasized.size, .semibold) }  // 12
+        /// Шапка итогов: прописные с разрядкой 0,08 em.
+        static var headerFont: UIFont { font(PersonalizationTypography.xsEmphasized.size, .semibold) }  // 12
+        static var headerTracking: CGFloat { 0.08 * PersonalizationTypography.xsEmphasized.size }
+        static var questionFont: UIFont { font(PersonalizationTypography.lgEmphasized.size, .semibold) }  // 18
+        static let questionLineHeight: CGFloat = 24
+        static var optionFont: UIFont { font(PersonalizationTypography.baseDefault.size, .regular) }  // 16
+        static var letterFont: UIFont { font(PersonalizationTypography.smEmphasized.size, .semibold) }  // 14
+        static var percentFont: UIFont { tabular(font(PersonalizationTypography.baseEmphasized.size, .semibold)) }  // 16
+        static var scaleFont: UIFont { tabular(font(PersonalizationTypography.baseEmphasized.size, .semibold)) }  // 16
+        static var buttonFont: UIFont { font(PersonalizationTypography.baseEmphasized.size, .semibold) }  // 16
+        static var inputFont: UIFont { font(PersonalizationTypography.baseDefault.size, .regular) }  // 16
+        static var counterFont: UIFont { tabular(font(PersonalizationTypography.xsDefault.size, .regular)) }  // 12
+        static var footerFont: UIFont { font(PersonalizationTypography.smDefault.size, .regular) }  // 14
+        static var footerBoldFont: UIFont { font(PersonalizationTypography.smEmphasized.size, .semibold) }  // 14
+        static var votesFont: UIFont { tabular(footerFont) }
+        static var bandFont: UIFont { font(PersonalizationTypography.smDefault.size, .regular) }  // 14
+        static var doneTitleFont: UIFont { font(PersonalizationTypography.baseEmphasized.size, .semibold) }  // 16
+        static var doneTextFont: UIFont { font(PersonalizationTypography.smDefault.size, .regular) }  // 14
+        static var linkFont: UIFont { font(PersonalizationTypography.smEmphasized.size, .semibold) }  // 14
         static var errorFont: UIFont { font(PersonalizationTypography.xsDefault.size, .regular) }  // 12
 
         /// Шрифт кита — как у текстов V2 (`PersonalizationTheme.current.font`).
@@ -92,6 +108,19 @@ final class PersonalizationStoryPollView: UIView {
                 setting = [.featureIdentifier: kNumberSpacingType, .typeIdentifier: kMonospacedNumbersSelector]
             }
             return UIFont(descriptor: font.fontDescriptor.addingAttributes([.featureSettings: [setting]]), size: font.pointSize)
+        }
+
+        /// Текст и значки на заливке (подпись основной кнопки, галочка, выбранная цифра шкалы) —
+        /// белые или тёмные, что контрастнее с заливкой (WCAG); одно правило для всех.
+        static func contrastingText(on color: UIColor) -> UIColor {
+            let dark = PersonalizationColor.textDarkPrimary
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            guard color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else { return dark }
+            func linear(_ value: CGFloat) -> CGFloat {
+                value <= 0.03928 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+            }
+            let luminance = 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+            return 1.05 / (luminance + 0.05) > (luminance + 0.05) / 0.05 ? .white : dark
         }
 
         static func rgb(_ value: UInt32) -> UIColor {
@@ -111,18 +140,25 @@ final class PersonalizationStoryPollView: UIView {
     /// Палец лёг на карточку.
     var onPress: (() -> Void)?
 
+    /// Размытие слайда под карточкой со светлой подложкой.
+    let backdrop = UIVisualEffectView(effect: PersonalizationStoryPollView.material)
     let scroll = UIScrollView()
     let stack = UIStackView()
     let press = UILongPressGestureRecognizer()
     private(set) var optionRows: [PollOptionRow] = []
-    private(set) var chips: [PollChip] = []
     private(set) var cells: [PollScaleCell] = []
     private(set) var submitButton: PollSubmitButton?
     private(set) var input: PollTextView?
     private(set) var counter: UILabel?
     private(set) var reanswerLink: PollLink?
     private(set) var errorLabel: UILabel?
+    /// Шапка итогов опроса с выбором.
+    private(set) var resultsLabel: UILabel?
+    private(set) var questionLabel: UILabel?
+    /// Благодарность: подвал итогов, текст полосы шкалы или строка отвеченного текста.
     private(set) var thanksLabel: UILabel?
+    /// Число голосов в подвале итогов.
+    private(set) var votesLabel: UILabel?
     private(set) var doneTextLabel: UILabel?
     /// Насколько карточка поднята над клавиатурой.
     private(set) var keyboardLift: CGFloat = 0
@@ -160,6 +196,12 @@ final class PersonalizationStoryPollView: UIView {
         input?.resignFirstResponder()
         return true
     }
+
+    /// Тонкий светлый материал; на iOS 12 — светлое размытие.
+    private static var material: UIBlurEffect {
+        if #available(iOS 13.0, *) { return UIBlurEffect(style: .systemThinMaterialLight) }
+        return UIBlurEffect(style: .light)
+    }
 }
 
 // MARK: - Карточка, касания, клавиатура
@@ -168,13 +210,19 @@ extension PersonalizationStoryPollView: UIGestureRecognizerDelegate {
 
     fileprivate func setup() {
         if #available(iOS 13.0, *) { overrideUserInterfaceStyle = .light }
-        backgroundColor = Style.card
+        backgroundColor = .clear
         layer.cornerRadius = Style.cardRadius
-        layer.shadowColor = UIColor.black.cgColor
-        layer.shadowOpacity = Style.shadowOpacity
-        layer.shadowRadius = Style.shadowRadius
-        layer.shadowOffset = Style.shadowOffset
+        // Граница слоя рисуется поверх подслоёв — и поверх размытия.
+        layer.borderWidth = Style.cardBorderWidth
+        layer.borderColor = Style.cardBorder.cgColor
         semanticContentAttribute = .unspecified
+
+        backdrop.isUserInteractionEnabled = false
+        backdrop.clipsToBounds = true
+        backdrop.layer.cornerRadius = Style.cardRadius
+        backdrop.contentView.backgroundColor = Style.tint
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(backdrop)
 
         // Не влезает между шапкой и кнопками — прокручивается внутри, а не обрезается.
         scroll.clipsToBounds = true
@@ -185,7 +233,6 @@ extension PersonalizationStoryPollView: UIGestureRecognizerDelegate {
         addSubview(scroll)
         stack.axis = .vertical
         stack.alignment = .fill
-        stack.spacing = Style.gap
         stack.translatesAutoresizingMaskIntoConstraints = false
         scroll.addSubview(stack)
         let content = scroll.contentLayoutGuide
@@ -195,6 +242,10 @@ extension PersonalizationStoryPollView: UIGestureRecognizerDelegate {
         let fit = heightAnchor.constraint(equalTo: stack.heightAnchor, constant: 2 * Style.padding)
         fit.priority = UILayoutPriority(700)
         NSLayoutConstraint.activate([
+            backdrop.topAnchor.constraint(equalTo: topAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: bottomAnchor),
+            backdrop.leadingAnchor.constraint(equalTo: leadingAnchor),
+            backdrop.trailingAnchor.constraint(equalTo: trailingAnchor),
             scroll.topAnchor.constraint(equalTo: topAnchor),
             scroll.bottomAnchor.constraint(equalTo: bottomAnchor),
             scroll.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -224,16 +275,6 @@ extension PersonalizationStoryPollView: UIGestureRecognizerDelegate {
                 self?.keyboardChanged($0, hiding: true)
             }
         ]
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        // Тень CSS `0 12px 30px -10px`: размытие 30 — радиус 15, отрицательный разлёт — путь меньше карточки.
-        let spread = -Style.shadowSpread
-        layer.shadowPath = UIBezierPath(
-            roundedRect: bounds.insetBy(dx: spread, dy: spread),
-            cornerRadius: max(0, Style.cardRadius - spread)
-        ).cgPath
     }
 
     /// На экране — карточка снова живая; ушла (сменили слайд, закрыли просмотр) — ни
@@ -312,55 +353,63 @@ extension PersonalizationStoryPollView {
 
     private var poll: PersonalizationStoryPoll { controller.poll }
 
-    /// Вид целиком: форма или отвеченное, по виду опроса.
+    /// Вид целиком: форма или отвеченное, по виду опроса. Сверху вниз: шапка итогов (опрос с
+    /// выбором после ответа), вопрос, содержимое, подвал или благодарность, «ответить заново»,
+    /// ошибка.
     func rebuild() {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         optionRows = []
-        chips = []
         cells = []
         submitButton = nil
         input = nil
         counter = nil
         reanswerLink = nil
+        resultsLabel = nil
+        questionLabel = nil
         thanksLabel = nil
+        votesLabel = nil
         doneTextLabel = nil
         let answered = controller.mode == .answered
+        let choice = poll.kind == .singleChoice || poll.kind == .multipleChoice
 
+        if answered, choice { buildResultsHeader() }
         if let question = poll.question {
-            stack.addArrangedSubview(Self.label(question, font: Style.questionFont, color: Style.text, alignment: .center))
+            let label = Self.label(question, font: Style.questionFont, color: Style.text, lineHeight: Style.questionLineHeight)
+            add(label)
+            questionLabel = label
         }
         switch (poll.kind, answered) {
         case (.singleChoice, false):
             buildOptions(interactive: true)
         case (.multipleChoice, false):
-            buildChips()
-            buildSubmit()
+            buildOptions(interactive: true)
+            buildSubmit(gap: Style.blockGap)
         case (.text, false):
             buildInput()
-            buildSubmit()
+            buildSubmit(gap: Style.fieldGap)
         case (.scale, false):
             buildScale(interactive: true)
         case (.text, true):
             buildDone()
         case (.scale, true):
             buildScale(interactive: false)
-            addThanks(poll.bandText(rate: controller.answer?.rate))
+            addBandText(poll.bandText(rate: controller.answer?.rate))
         case (_, true):
             buildOptions(interactive: false)
-            addThanks(poll.thanksText)
+            buildFooter()
         }
         if answered, poll.allowReanswer {
             let link = PollLink(title: controller.texts.reanswer)
             link.addTarget(self, action: #selector(reanswerTapped), for: .touchUpInside)
             let row = UIStackView(arrangedSubviews: [link])
             row.axis = .vertical
-            row.alignment = .center
-            stack.addArrangedSubview(row)
+            row.alignment = .leading
+            add(row, gap: Style.fieldGap)
             reanswerLink = link
         }
-        let error = Self.label(controller.texts.error, font: Style.errorFont, color: Style.error, alignment: .center)
+        let error = Self.label(controller.texts.error, font: Style.errorFont, color: Style.error)
         error.isHidden = true
-        stack.addArrangedSubview(error)
+        add(error, gap: Style.fieldGap)
         errorLabel = error
         update()
         if controller.takeFocusRequest() { input?.becomeFirstResponder() }
@@ -375,10 +424,6 @@ extension PersonalizationStoryPollView {
         optionRows.forEach {
             $0.isSelected = chosen.contains($0.id)
             $0.isEnabled = form && !sending
-        }
-        chips.forEach {
-            $0.isSelected = controller.selected.contains($0.id)
-            $0.isEnabled = !sending
         }
         let rate = form ? controller.pressedRate : controller.answer?.rate
         cells.forEach {
@@ -398,37 +443,65 @@ extension PersonalizationStoryPollView {
         }
     }
 
+    /// Следующий блок карточки: `gap` — зазор от предыдущего. По умолчанию после шапки итогов
+    /// 12, после остального 16.
+    private func add(_ view: UIView, gap: CGFloat? = nil) {
+        if let last = stack.arrangedSubviews.last {
+            stack.setCustomSpacing(gap ?? (last === resultsLabel?.superview ? Style.headerGap : Style.blockGap), after: last)
+        }
+        stack.addArrangedSubview(view)
+    }
+
     // MARK: Виды
 
+    /// Точка акцента и «РЕЗУЛЬТАТЫ».
+    private func buildResultsHeader() {
+        let dot = UIView()
+        dot.backgroundColor = Style.accent
+        dot.layer.cornerRadius = Style.dotSize / 2
+        dot.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            dot.widthAnchor.constraint(equalToConstant: Style.dotSize),
+            dot.heightAnchor.constraint(equalToConstant: Style.dotSize)
+        ])
+        let title = controller.texts.results
+        let label = UILabel()
+        label.attributedText = NSAttributedString(string: title.uppercased(), attributes: [
+            .font: Style.headerFont,
+            .foregroundColor: Style.textSecondary,
+            .kern: Style.headerTracking
+        ])
+        label.accessibilityLabel = title
+        label.accessibilityTraits = .header
+        let row = UIStackView(arrangedSubviews: [dot, label])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = Style.dotGap
+        add(row)
+        resultsLabel = label
+    }
+
+    /// Варианты с буквами: в форме одного выбора нажатие отправляет, в форме нескольких —
+    /// переключает; в итогах — доли.
     private func buildOptions(interactive: Bool) {
         let list = UIStackView()
         list.axis = .vertical
         list.spacing = Style.optionGap
         let results = interactive ? nil : controller.results
-        for option in poll.options {
-            let row = PollOptionRow(option: option, percent: results?.percent(of: option.id), interactive: interactive)
-            if interactive { row.addTarget(self, action: #selector(optionTapped(_:)), for: .touchUpInside) }
+        let action = poll.kind == .multipleChoice ? #selector(optionToggled(_:)) : #selector(optionTapped(_:))
+        for (index, option) in poll.options.enumerated() {
+            let row = PollOptionRow(option: option, index: index, percent: results?.percent(of: option.id), interactive: interactive)
+            if interactive { row.addTarget(self, action: action, for: .touchUpInside) }
             list.addArrangedSubview(row)
             optionRows.append(row)
         }
-        stack.addArrangedSubview(list)
+        add(list)
     }
 
-    private func buildChips() {
-        let flow = PollChipsView(gap: Style.chipGap)
-        chips = poll.options.map { option in
-            let chip = PollChip(option: option)
-            chip.addTarget(self, action: #selector(chipTapped(_:)), for: .touchUpInside)
-            return chip
-        }
-        flow.items = chips
-        stack.addArrangedSubview(flow)
-    }
-
-    private func buildSubmit() {
+    private func buildSubmit(gap: CGFloat) {
         let button = PollSubmitButton(title: poll.submitLabel ?? controller.texts.submit)
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
-        stack.addArrangedSubview(button)
+        add(button, gap: gap)
         submitButton = button
     }
 
@@ -437,84 +510,155 @@ extension PersonalizationStoryPollView {
         field.placeholder = poll.placeholder
         field.text = controller.text
         field.delegate = self
-        stack.addArrangedSubview(field)
+        add(field)
         input = field
         guard poll.maxLength != nil else { return }
         // Счётчик — у конца строки: справа, в RTL слева.
         let rightToLeft = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
-        let label = Self.label("", font: Style.counterFont, color: Style.muted, alignment: rightToLeft ? .left : .right)
-        stack.setCustomSpacing(Style.counterGap, after: field)
-        stack.addArrangedSubview(label)
+        let label = Self.label("", font: Style.counterFont, color: Style.textSecondary)
+        label.textAlignment = rightToLeft ? .left : .right
+        add(label, gap: Style.counterGap)
         counter = label
     }
 
+    /// Дорожка шкалы: цифры поровну, выбранная — в капсуле цвета своей полосы.
     private func buildScale(interactive: Bool) {
         let values = poll.scaleValues
-        guard let scale = poll.scale, let low = values.first, let high = values.last else { return }
+        guard !values.isEmpty else { return }
+        let track = UIView()
+        track.backgroundColor = Style.track
+        track.layer.cornerRadius = Style.trackHeight / 2
         let row = UIStackView()
         row.axis = .horizontal
         row.distribution = .fillEqually
-        row.spacing = Style.scaleGap
+        row.translatesAutoresizingMaskIntoConstraints = false
+        track.addSubview(row)
+        let inset = Style.trackPadding
+        NSLayoutConstraint.activate([
+            track.heightAnchor.constraint(equalToConstant: Style.trackHeight),
+            row.topAnchor.constraint(equalTo: track.topAnchor, constant: inset),
+            row.bottomAnchor.constraint(equalTo: track.bottomAnchor, constant: -inset),
+            row.leadingAnchor.constraint(equalTo: track.leadingAnchor, constant: inset),
+            row.trailingAnchor.constraint(equalTo: track.trailingAnchor, constant: -inset)
+        ])
         for value in values {
-            let cell = PollScaleCell(value: value, color: PersonalizationStoryColors.parse(
-                PersonalizationStoryPoll.scaleColor(scale, value: value, min: low, max: high)
-            ) ?? Style.field)
+            let fill = PersonalizationStoryColors.parse(poll.bandColor(of: value)) ?? Style.accent
+            let cell = PollScaleCell(value: value, fill: fill)
             if interactive { cell.addTarget(self, action: #selector(cellTapped(_:)), for: .touchUpInside) }
             row.addArrangedSubview(cell)
             cells.append(cell)
         }
-        stack.addArrangedSubview(row)
+        add(track)
     }
 
+    /// Отвеченный текст: кружок с галочкой, благодарность и сам ответ.
     private func buildDone() {
-        let icon = Self.label("✓", font: Style.doneIconFont, color: Style.link, alignment: .center)
-        icon.backgroundColor = Style.bar
+        let icon = UIView()
+        icon.backgroundColor = Style.accent
         icon.layer.cornerRadius = Style.doneSize / 2
-        icon.clipsToBounds = true
         icon.isAccessibilityElement = false
+        let check = PollCheckView()
+        check.color = Style.contrastingText(on: Style.accent)
+        check.translatesAutoresizingMaskIntoConstraints = false
+        icon.addSubview(check)
         icon.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             icon.widthAnchor.constraint(equalToConstant: Style.doneSize),
-            icon.heightAnchor.constraint(equalToConstant: Style.doneSize)
+            icon.heightAnchor.constraint(equalToConstant: Style.doneSize),
+            check.topAnchor.constraint(equalTo: icon.topAnchor),
+            check.bottomAnchor.constraint(equalTo: icon.bottomAnchor),
+            check.leadingAnchor.constraint(equalTo: icon.leadingAnchor),
+            check.trailingAnchor.constraint(equalTo: icon.trailingAnchor)
         ])
-        let done = UIStackView(arrangedSubviews: [icon])
-        done.axis = .vertical
-        done.alignment = .center
-        done.spacing = Style.doneGap
+        let texts = UIStackView()
+        texts.axis = .vertical
+        texts.spacing = PersonalizationSpacing.xs
         if let thanks = poll.thanksText {
-            let label = Self.label(thanks, font: Style.thanksFont, color: Style.text, alignment: .center)
-            done.addArrangedSubview(label)
+            let label = Self.label(thanks, font: Style.doneTitleFont, color: Style.text)
+            texts.addArrangedSubview(label)
             thanksLabel = label
         }
         if let text = controller.answer?.text, !text.isEmpty {
-            let label = Self.label(text, font: Style.doneTextFont, color: Style.doneText, alignment: .center)
-            done.addArrangedSubview(label)
+            let label = Self.label(text, font: Style.doneTextFont, color: Style.textSecondary)
+            texts.addArrangedSubview(label)
             doneTextLabel = label
         }
-        stack.addArrangedSubview(done)
+        let done = UIStackView(arrangedSubviews: [icon, texts])
+        done.axis = .horizontal
+        done.alignment = .center
+        done.spacing = Style.letterGap
+        add(done)
     }
 
-    private func addThanks(_ text: String?) {
+    /// Текст полосы под отвеченной шкалой.
+    private func addBandText(_ text: String?) {
         guard let text, !text.isEmpty else { return }
-        let label = Self.label(text, font: Style.thanksFont, color: Style.text, alignment: .center)
-        stack.addArrangedSubview(label)
+        let label = Self.label(text, font: Style.bandFont, color: Style.text)
+        add(label)
         thanksLabel = label
     }
 
-    static func label(_ text: String, font: UIFont, color: UIColor, alignment: NSTextAlignment) -> UILabel {
+    /// Подвал итогов: слева своя благодарность опроса или «Спасибо! Голос учтён», справа число
+    /// голосов (`results.total`; нет или 0 — справа пусто).
+    private func buildFooter() {
+        let thanks = UILabel()
+        thanks.numberOfLines = 0
+        thanks.textAlignment = .natural
+        if let own = poll.thanksText {
+            thanks.attributedText = NSAttributedString(string: own, attributes: [.font: Style.footerBoldFont, .foregroundColor: Style.text])
+        } else {
+            let text = NSMutableAttributedString(string: controller.texts.thanks, attributes: [
+                .font: Style.footerBoldFont, .foregroundColor: Style.text
+            ])
+            text.append(NSAttributedString(string: " " + controller.texts.voteCounted, attributes: [
+                .font: Style.footerFont, .foregroundColor: Style.textSecondary
+            ]))
+            thanks.attributedText = text
+        }
+        let row = UIStackView(arrangedSubviews: [thanks])
+        row.axis = .horizontal
+        row.alignment = .firstBaseline
+        row.spacing = Style.optionPadding
+        thanksLabel = thanks
+        if let total = controller.results?.total, total > 0 {
+            let votes = Self.label(controller.texts.votes(total), font: Style.votesFont, color: Style.textSecondary)
+            votes.numberOfLines = 1
+            votes.setContentHuggingPriority(.required, for: .horizontal)
+            votes.setContentCompressionResistancePriority(.required, for: .horizontal)
+            row.addArrangedSubview(votes)
+            votesLabel = votes
+        }
+        add(row)
+    }
+
+    /// Текст карточки — по левому краю (в RTL — по правому); `lineHeight` — свой межстрочный.
+    static func label(_ text: String, font: UIFont, color: UIColor, lineHeight: CGFloat? = nil) -> UILabel {
         let label = UILabel()
-        label.text = text
-        label.font = font
-        label.textColor = color
-        label.textAlignment = alignment
         label.numberOfLines = 0
+        label.textAlignment = .natural
+        if let lineHeight {
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.minimumLineHeight = lineHeight
+            paragraph.maximumLineHeight = lineHeight
+            label.attributedText = NSAttributedString(string: text, attributes: [
+                .font: font,
+                .foregroundColor: color,
+                .paragraphStyle: paragraph,
+                // Текст по центру строки, как у типографики кита.
+                .baselineOffset: (lineHeight - font.lineHeight) / 4
+            ])
+        } else {
+            label.text = text
+            label.font = font
+            label.textColor = color
+        }
         return label
     }
 
     // MARK: Нажатия
 
     @objc private func optionTapped(_ sender: PollOptionRow) { controller.tapOption(sender.id) }
-    @objc private func chipTapped(_ sender: PollChip) { controller.toggleChip(sender.id) }
+    @objc private func optionToggled(_ sender: PollOptionRow) { controller.toggleChip(sender.id) }
     @objc private func cellTapped(_ sender: PollScaleCell) { controller.tapRate(sender.value) }
     @objc private func reanswerTapped() { controller.reanswer() }
 
@@ -532,7 +676,19 @@ extension PersonalizationStoryPollView: UITextViewDelegate {
         // Пока набирается иероглиф (marked text), строку не режем.
         let value = controller.setText(textView.text ?? "")
         if textView.markedTextRange == nil, value != textView.text { textView.text = value }
-        (textView as? PollTextView)?.updatePlaceholder()
+        guard let field = textView as? PollTextView else { return }
+        field.updatePlaceholder()
+        field.updateHeight()
+        guard abs(field.bounds.height - field.intrinsicContentSize.height) > 0.5 else { return }
+        // Поле выросло или сжалось: карточка пересчитывается сразу, кнопка остаётся над клавиатурой.
+        [field.superview, stack, scroll, self].forEach { $0?.setNeedsLayout() }
+        if let superview {
+            superview.setNeedsLayout()
+            superview.layoutIfNeeded()
+        } else {
+            layoutIfNeeded()
+        }
+        if isEditing { updateLift(duration: 0) }
     }
 
     func textViewDidBeginEditing(_ textView: UITextView) {

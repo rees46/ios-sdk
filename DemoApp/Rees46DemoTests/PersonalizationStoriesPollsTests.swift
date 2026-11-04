@@ -120,6 +120,7 @@ final class PersonalizationStoriesPollsTests: XCTestCase {
     private func mount(
         _ poll: Poll,
         texts: PersonalizationStoriesTexts = .init(),
+        language: StoryPollTexts.Language = .en,
         slideId: String = "101"
     ) -> (card: PersonalizationStoryPollView, transport: FakePollTransport, events: Events) {
         let transport = FakePollTransport()
@@ -129,7 +130,7 @@ final class PersonalizationStoriesPollsTests: XCTestCase {
             storyId: "5",
             slideId: slideId,
             shopId: "shop",
-            texts: StoryPollTexts(host: texts, labels: poll.labels),
+            texts: StoryPollTexts(host: texts, labels: poll.labels, language: language),
             transport: transport
         )
         controller.onHold = { events.holds.append($0) }
@@ -165,7 +166,7 @@ final class PersonalizationStoriesPollsTests: XCTestCase {
     }
 
     private func question(_ card: PersonalizationStoryPollView) -> String? {
-        (card.stack.arrangedSubviews.first as? UILabel)?.text
+        card.questionLabel?.text
     }
 
     private func selectedRows(_ card: PersonalizationStoryPollView) -> [Int] {
@@ -205,6 +206,8 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(card.optionRows.map { $0.percentLabel.text }, ["40%", "60%", "0%"])
         XCTAssertEqual(card.optionRows[1].percent, 60)
         XCTAssertTrue(card.optionRows.allSatisfy { !$0.isUserInteractionEnabled }, "nothing to tap in the answer")
+        XCTAssertEqual(card.resultsLabel?.text, "RESULTS")
+        XCTAssertEqual(card.votesLabel?.text, "121 votes")
         XCTAssertNil(card.reanswerLink)
     }
 
@@ -289,32 +292,35 @@ extension PersonalizationStoriesPollsTests {
 
     func testMultipleChoiceSendsTheSelectedOptionsByTheButton() throws {
         let (card, transport, _) = mount(miniPoll(.multipleChoice))
-        XCTAssertEqual(card.chips.count, 3)
+        XCTAssertEqual(card.optionRows.map(\.letterLabel.text), ["A", "B", "C"], "rows with letters, like single choice")
         let submit = try XCTUnwrap(card.submitButton)
         XCTAssertEqual(submit.title.text, "Отправить")
         XCTAssertFalse(submit.isEnabled)
 
-        card.chips[2].sendActions(for: .touchUpInside)
-        card.chips[0].sendActions(for: .touchUpInside)
-        XCTAssertTrue(card.chips[0].isSelected)
-        XCTAssertTrue(card.chips[0].accessibilityTraits.contains(.selected))
+        card.optionRows[2].sendActions(for: .touchUpInside)
+        card.optionRows[0].sendActions(for: .touchUpInside)
+        XCTAssertTrue(card.optionRows[0].isSelected)
+        XCTAssertTrue(card.optionRows[0].isCheckVisible, "a check instead of the letter")
+        XCTAssertTrue(card.optionRows[0].accessibilityTraits.contains(.selected))
         XCTAssertTrue(submit.isEnabled)
-        XCTAssertTrue(transport.calls.isEmpty, "chips do not send")
+        XCTAssertTrue(transport.calls.isEmpty, "the options do not send")
 
-        card.chips[2].sendActions(for: .touchUpInside)
-        card.chips[2].sendActions(for: .touchUpInside)
+        card.optionRows[2].sendActions(for: .touchUpInside)
+        card.optionRows[2].sendActions(for: .touchUpInside)
         submit.sendActions(for: .touchUpInside)
         XCTAssertEqual(transport.json(0), #"{"option_ids":[1,3],"slide_id":"101","story_id":5}"#, "the order of the options")
 
         transport.resolve(0, .init(answer: .init(optionIds: [1, 3]), results: .init(total: 2, options: [.init(id: 1, percent: 50), .init(id: 3, percent: 50)])))
         XCTAssertEqual(selectedRows(card), [1, 3])
-        XCTAssertTrue(card.chips.isEmpty)
+        XCTAssertTrue(card.optionRows.allSatisfy { !$0.isUserInteractionEnabled }, "nothing to tap in the answer")
+        XCTAssertNil(card.submitButton)
+        XCTAssertEqual(card.votesLabel?.text, "2 votes")
     }
 
-    func testTheButtonStaysOffAfterEveryChipIsOffAgain() {
+    func testTheButtonStaysOffAfterEveryOptionIsOffAgain() {
         let (card, _, _) = mount(miniPoll(.multipleChoice))
-        card.chips[0].sendActions(for: .touchUpInside)
-        card.chips[0].sendActions(for: .touchUpInside)
+        card.optionRows[0].sendActions(for: .touchUpInside)
+        card.optionRows[0].sendActions(for: .touchUpInside)
         XCTAssertEqual(card.submitButton?.isEnabled, false)
     }
 
@@ -391,9 +397,10 @@ extension PersonalizationStoriesPollsTests {
     func testNpsZeroToTenSendsTheRateOnTap() {
         let (card, transport, _) = mount(scalePoll(.nps))
         XCTAssertEqual(card.cells.map { $0.title.text }, (0...10).map(String.init))
-        XCTAssertEqual(card.cells.map { $0.backgroundColor }, (0...10).map {
+        XCTAssertEqual(card.cells.map { $0.fillColor as UIColor? }, (0...10).map {
             PersonalizationStoryColors.parse(PersonalizationStoryPoll.scaleColor(.nps, value: $0, min: 0, max: 10))
-        })
+        }, "the capsule of a rate takes the color of its band")
+        XCTAssertFalse(card.cells.contains(where: \.isCapsuleVisible), "plain digits on the track until a pick")
 
         card.cells[9].sendActions(for: .touchUpInside)
         XCTAssertEqual(transport.calls[0].method, "review")
@@ -404,7 +411,8 @@ extension PersonalizationStoriesPollsTests {
 
         XCTAssertEqual(card.thanksLabel?.text, "Спасибо, рады стараться!", "the band of the sent rate")
         XCTAssertEqual(pressedCells(card), [9], "a review answer is the sent rate")
-        XCTAssertTrue(card.cells[9].isRingVisible)
+        XCTAssertTrue(card.cells[9].isCapsuleVisible)
+        XCTAssertEqual(card.cells.filter(\.isCapsuleVisible).count, 1)
         XCTAssertEqual(card.cells[0].alpha, 0.55, accuracy: 0.001, "the rest are muted")
         XCTAssertEqual(card.cells[9].alpha, 1)
     }
@@ -508,9 +516,9 @@ extension PersonalizationStoriesPollsTests {
     func testMultipleChoicePreselectsThePreviousAnswerOnReanswer() throws {
         let (card, transport, _) = mount(miniPoll(.multipleChoice, allowReanswer: true, answer: .init(optionIds: [1, 3])))
         try XCTUnwrap(card.reanswerLink).sendActions(for: .touchUpInside)
-        XCTAssertEqual(card.chips.map(\.isSelected), [true, false, true])
+        XCTAssertEqual(card.optionRows.map(\.isSelected), [true, false, true])
         XCTAssertEqual(card.submitButton?.isEnabled, true)
-        card.chips[0].sendActions(for: .touchUpInside)
+        card.optionRows[0].sendActions(for: .touchUpInside)
         card.submitButton?.sendActions(for: .touchUpInside)
         XCTAssertEqual(transport.json(0), #"{"option_ids":[3],"slide_id":"101","story_id":5}"#)
     }
@@ -566,6 +574,130 @@ extension PersonalizationStoriesPollsTests {
                                  texts: .init(pollReanswerText: "Answer again"))
         XCTAssertEqual(card.reanswerLink?.title.text, "Ещё раз")
         XCTAssertEqual(mount(miniPoll(.singleChoice, allowReanswer: true, answer: answered.answer)).card.reanswerLink?.title.text, "Answer again")
+    }
+}
+
+// MARK: - The look
+
+extension PersonalizationStoriesPollsTests {
+
+    typealias Style = PersonalizationStoryPollView.Style
+
+    func testTheCardIsFrostedWithALightBorder() {
+        let card = mount(miniPoll(.singleChoice)).card
+        XCTAssertTrue(card.backdrop.effect is UIBlurEffect, "the slide under the card is blurred")
+        XCTAssertEqual(card.backdrop.contentView.backgroundColor, Style.tint, "with a light plate")
+        XCTAssertEqual(card.layer.cornerRadius, 24)
+        XCTAssertEqual(card.layer.borderWidth, 1)
+        XCTAssertEqual(card.questionLabel?.font.pointSize, 18)
+        XCTAssertEqual(card.questionLabel?.textAlignment, .natural, "every text from the left edge")
+        XCTAssertNil(card.resultsLabel, "no results header in the form")
+    }
+
+    func testOptionsCarryLettersAndThePickIsChecked() {
+        let (card, transport, _) = mount(miniPoll(.singleChoice))
+        XCTAssertEqual(card.optionRows.map(\.letterLabel.text), ["A", "B", "C"])
+        XCTAssertFalse(card.optionRows.contains(where: \.isCheckVisible))
+        XCTAssertEqual(card.optionRows[0].backgroundColor, Style.track)
+        XCTAssertEqual(card.optionRows[0].layer.borderWidth, 0)
+
+        card.optionRows[1].sendActions(for: .touchUpInside)
+        XCTAssertTrue(card.optionRows[1].isCheckVisible, "the pick is checked at once")
+        XCTAssertEqual(card.optionRows[1].backgroundColor, Style.selectedFill, "the pick before the send is filled")
+        XCTAssertEqual(card.optionRows[1].layer.borderWidth, 1.5)
+        transport.resolve(0, .init(answer: .init(optionIds: [2]), results: .init(total: 3, options: [.init(id: 2, percent: 100)])))
+        XCTAssertEqual(card.optionRows.map(\.isCheckVisible), [false, true, false], "my answer in the results")
+        XCTAssertEqual(card.optionRows[1].backgroundColor, Style.track, "my answer: the usual plate, the accent border and bar")
+        XCTAssertEqual(card.optionRows[1].layer.borderWidth, 1.5)
+
+        XCTAssertEqual(PollOptionRow.letter(0), "A")
+        XCTAssertEqual(PollOptionRow.letter(25), "Z")
+        XCTAssertEqual(PollOptionRow.letter(26), "AA")
+        XCTAssertEqual(PollOptionRow.letter(27), "AB")
+    }
+
+    func testTheResultsHeaderAndFooterOfAnAnsweredChoice() {
+        let results = Poll.Results(total: 1248, options: [.init(id: 1, percent: 52), .init(id: 2, percent: 31), .init(id: 3, percent: 17)])
+        let ru = mount(miniPoll(.singleChoice, answer: .init(optionIds: [2]), results: results), language: .ru).card
+        XCTAssertEqual(ru.resultsLabel?.text, "РЕЗУЛЬТАТЫ")
+        XCTAssertEqual(ru.resultsLabel?.accessibilityLabel, "Результаты")
+        XCTAssertEqual(ru.thanksLabel?.text, "Спасибо!", "own thanks_text instead of the pair")
+        XCTAssertEqual(ru.votesLabel?.text, "1\u{00A0}248 голосов")
+
+        func plain(total: Int?) -> Poll {
+            Poll(kind: .multipleChoice, code: "c", question: "Q", options: [.init(id: 1, label: "A"), .init(id: 2, label: "B")],
+                 answer: .init(optionIds: [1]), results: total.map { .init(total: $0, options: [.init(id: 1, percent: 100)]) })
+        }
+        let pair = mount(plain(total: 1), language: .ru).card
+        XCTAssertEqual(pair.thanksLabel?.text, "Спасибо! Голос учтён", "no thanks_text — the pair")
+        XCTAssertEqual(pair.votesLabel?.text, "1 голос")
+        let english = mount(plain(total: 1)).card
+        XCTAssertEqual(english.resultsLabel?.text, "RESULTS")
+        XCTAssertEqual(english.thanksLabel?.text, "Thank you! Vote counted")
+        XCTAssertEqual(english.votesLabel?.text, "1 vote")
+
+        XCTAssertNil(mount(plain(total: 0)).card.votesLabel, "no votes — nothing on the right")
+        let noResults = mount(plain(total: nil)).card
+        XCTAssertNil(noResults.votesLabel)
+        XCTAssertNotNil(noResults.resultsLabel, "the header of a choice poll after the answer")
+        XCTAssertNil(mount(scalePoll(.nps, answer: .init(rate: 9))).card.resultsLabel, "not on scales")
+        XCTAssertNil(mount(miniPoll(.text, answer: .init(text: "Да"))).card.resultsLabel, "nor on text")
+    }
+
+    func testVotesAreDeclined() {
+        let ru = StoryPollTexts(host: .init(), labels: .init(), language: .ru)
+        XCTAssertEqual([0, 1, 2, 4, 5, 11, 12, 14, 21, 22, 25, 101, 111, 112, 1001].map(ru.votes), [
+            "0 голосов", "1 голос", "2 голоса", "4 голоса", "5 голосов", "11 голосов", "12 голосов", "14 голосов",
+            "21 голос", "22 голоса", "25 голосов", "101 голос", "111 голосов", "112 голосов", "1\u{00A0}001 голос"
+        ])
+        let en = StoryPollTexts(host: .init(), labels: .init(), language: .en)
+        XCTAssertEqual([0, 1, 2, 21, 1248].map(en.votes), ["0 votes", "1 vote", "2 votes", "21 votes", "1,248 votes"])
+    }
+
+    func testTheScaleIsATrackOfDigitsAndThePickIsACapsule() throws {
+        let (card, _, _) = mount(scalePoll(.nps))
+        card.cells[9].sendActions(for: .touchUpInside)
+        XCTAssertTrue(card.cells[9].isCapsuleVisible)
+        XCTAssertEqual(card.cells[9].title.textColor, PersonalizationColor.textDarkPrimary, "dark digit on the light green band")
+        XCTAssertEqual(card.cells[0].title.textColor, Style.text)
+
+        let noBands = mount(scalePoll(.csat, bands: [])).card
+        XCTAssertTrue(noBands.cells.allSatisfy { $0.fillColor == Style.accent }, "no bands — the accent")
+        let partial = mount(scalePoll(.nps, bands: [.init(from: 0, to: 6, success: nil)])).card
+        XCTAssertEqual(partial.cells[6].fillColor, PersonalizationStoryColors.parse("#FCD34D"))
+        XCTAssertEqual(partial.cells[7].fillColor, Style.accent, "outside every band — the accent")
+
+        XCTAssertEqual(Style.contrastingText(on: .black), .white)
+        XCTAssertEqual(Style.contrastingText(on: Style.rgb(0x1E3A8A)), .white)
+        XCTAssertEqual(Style.contrastingText(on: Style.rgb(0xFDE68A)), PersonalizationColor.textDarkPrimary)
+        let button = try XCTUnwrap(mount(miniPoll(.multipleChoice)).card.submitButton)
+        button.isEnabled = true
+        XCTAssertEqual(button.title.textColor, Style.contrastingText(on: Style.accent), "one rule for the button, the check and the digit")
+    }
+
+    func testTheFieldGrowsWithTheText() throws {
+        let card = mount(Poll(kind: .text, code: "t", question: "Q", options: [])).card
+        let input = try XCTUnwrap(card.input)
+        let host = UIView(frame: CGRect(x: 0, y: 0, width: 378, height: 800))
+        card.translatesAutoresizingMaskIntoConstraints = false
+        host.addSubview(card)
+        NSLayoutConstraint.activate([
+            card.leadingAnchor.constraint(equalTo: host.leadingAnchor),
+            card.trailingAnchor.constraint(equalTo: host.trailingAnchor),
+            card.topAnchor.constraint(equalTo: host.topAnchor)
+        ])
+        host.layoutIfNeeded()
+        XCTAssertEqual(input.frame.height, 52, accuracy: 0.5)
+        XCTAssertEqual(card.submitButton?.frame.height ?? 0, 52, accuracy: 0.5)
+        XCTAssertEqual((card.submitButton?.frame.minY ?? 0) - input.frame.maxY, 12, accuracy: 0.5, "the button 12 under the field")
+
+        input.text = String(repeating: "Очень длинный ответ ", count: 3)
+        card.textViewDidChange(input)
+        XCTAssertGreaterThan(input.frame.height, 52, "a second line — taller")
+        XCTAssertEqual(card.frame.height, card.stack.frame.height + 40, accuracy: 0.5, "and the card with it")
+        input.text = String(repeating: "Очень длинный ответ ", count: 30)
+        card.textViewDidChange(input)
+        XCTAssertEqual(input.frame.height, 120, accuracy: 0.5, "then it scrolls")
     }
 }
 
@@ -826,15 +958,15 @@ extension PersonalizationStoriesPollsTests {
         }
         let middle = layout(miniPoll(.singleChoice, yOffset: 35)).card
         XCTAssertEqual(middle.frame.minY, 874 * 0.35, accuracy: 0.5, "y_offset is a share of the slide, like text blocks")
-        XCTAssertEqual(middle.frame.minX, 16)
-        XCTAssertEqual(middle.frame.width, 402 - 32)
+        XCTAssertEqual(middle.frame.minX, 12, "12 from the edges of the slide")
+        XCTAssertEqual(middle.frame.width, 402 - 24)
 
         let low = layout(miniPoll(.singleChoice, yOffset: 90)).card
         XCTAssertEqual(low.frame.maxY, 874 - 16, accuracy: 0.5, "too low — it moves up, whole")
-        XCTAssertEqual(low.frame.height, low.stack.frame.height + 28, accuracy: 0.5, "not squeezed")
+        XCTAssertEqual(low.frame.height, low.stack.frame.height + 40, accuracy: 0.5, "not squeezed")
         let scale = layout(Poll(kind: .scale(.csat), code: "c", question: "Как вам наш магазин?", yOffset: 90)).card
         scale.superview?.layoutIfNeeded()
-        XCTAssertEqual(scale.frame.height, scale.stack.frame.height + 28, accuracy: 0.5, "a scale at the bottom keeps its question")
+        XCTAssertEqual(scale.frame.height, scale.stack.frame.height + 40, accuracy: 0.5, "a scale at the bottom keeps its question")
         XCTAssertGreaterThan(scale.stack.arrangedSubviews.first?.frame.height ?? 0, 10)
 
         let top = layout(miniPoll(.singleChoice, yOffset: 0)).card

@@ -804,8 +804,9 @@ extension PersonalizationStorySlideView {
 extension PersonalizationStorySlideView {
 
     /// Карточка опроса: на `yOffset`, как текстовые блоки (`place(_:yOffset:)`); не влезает
-    /// совсем — прокручивается внутри. По ширине — поля 16, не шире 420, по центру. Лист
-    /// товаров её накрывает, «Повторить» — над ней.
+    /// совсем — прокручивается внутри. По ширине — 12 от краёв слайда (на 4 шире поля
+    /// содержимого 16 с каждой стороны), не шире 420, по центру. Лист товаров её накрывает,
+    /// «Повторить» — над ней.
     func attachPoll(_ card: PersonalizationStoryPollView) {
         if let old = pollView {
             offsetBottoms.removeAll { $0.firstItem === old }
@@ -815,11 +816,12 @@ extension PersonalizationStorySlideView {
         card.translatesAutoresizingMaskIntoConstraints = false
         insertSubview(card, belowSubview: bottomRow ?? retryButton)
         place(card, yOffset: card.controller.poll.yOffset)
+        let outset = 2 * (PersonalizationSpacing.xl - PersonalizationStoryPollView.Style.margin)
         NSLayoutConstraint.activate([
             card.centerXAnchor.constraint(equalTo: contentGuide.centerXAnchor),
-            card.widthAnchor.constraint(lessThanOrEqualTo: contentGuide.widthAnchor),
+            card.widthAnchor.constraint(lessThanOrEqualTo: contentGuide.widthAnchor, constant: outset),
             card.widthAnchor.constraint(lessThanOrEqualToConstant: PersonalizationStoryPollView.Style.maxWidth),
-            card.widthAnchor.constraint(equalTo: contentGuide.widthAnchor).withPriority(UILayoutPriority(999))
+            card.widthAnchor.constraint(equalTo: contentGuide.widthAnchor, constant: outset).withPriority(UILayoutPriority(999))
         ])
     }
 }
