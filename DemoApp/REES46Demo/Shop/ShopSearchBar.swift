@@ -1,8 +1,7 @@
 import UIKit
 @_spi(PersonalizationUI) import REES46
 
-/// The shop's instant search on top of Home, a category and a product page — one behaviour on all
-/// three.
+/// The shop's instant search on Home, behind the search button of its header.
 ///
 /// The field renders its whole panel (recent searches, suggestions, categories, products) under
 /// the input at all times, so the bar shows only the input until it is focused: then the panel
@@ -71,6 +70,11 @@ final class ShopSearchBar: UIView {
 
     @objc private func focused() {
         setSearching(true)
+    }
+
+    /// Puts the cursor into the input: the keyboard comes up and the panel opens.
+    func focus() {
+        field.view.input.textField.becomeFirstResponder()
     }
 
     /// Back to browsing: the field is emptied and drops its instant results.

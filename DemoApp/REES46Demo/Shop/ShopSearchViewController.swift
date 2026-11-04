@@ -4,9 +4,9 @@ import UIKit
 /// Search results: the kit's `PersonalizationSearchResultsScreen` for the phrase submitted on Home.
 ///
 /// The widget searches, pages, filters and tracks `search` on its own; the host only routes. Its
-/// title carries a back arrow, so the navigation bar steps aside on this screen, and back returns
-/// to Home. A tapped product opens its page, the card button adds it to the cart, the sort button
-/// opens the shop's sort picker. Facet titles and values of the demo feed are named in `ShopFacets`.
+/// title carries a back arrow that returns to Home (the shop's stack has no bar). A tapped product
+/// opens its page, the card button adds it to the cart, the sort button opens the shop's sort
+/// sheet. Facet titles and values of the demo feed are named in `ShopFacets`.
 final class ShopSearchViewController: UIViewController {
 
     private let screen = PersonalizationSearchResultsScreen()
@@ -29,29 +29,11 @@ final class ShopSearchViewController: UIViewController {
         screen.onBack = { [weak self] in self?.navigationController?.popViewController(animated: true) }
         screen.onProductTap = { [weak self] product in self?.openShopProduct(product.id) }
         screen.onProductAction = { product in Shop.addToCart(productId: product.id, price: product.price) }
-
-        screen.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(screen)
-        NSLayoutConstraint.activate([
-            screen.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            screen.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            screen.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            screen.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
+        screen.shopPinScreen(to: view)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         DemoScreen.opened(DemoScreen.search)
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
 }

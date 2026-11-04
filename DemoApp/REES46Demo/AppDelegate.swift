@@ -58,7 +58,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// the shop's own navigation — Home → category → product, search, stories — without the tabs
     /// and the developer screens. Same SDK set-up as the full demo.
     private func installShop() {
-        window?.rootViewController = UINavigationController(rootViewController: ShopHomeViewController())
+        window?.rootViewController = ShopNavigationController(rootViewController: ShopHomeViewController())
     }
 
     /// The shop home when the shop is the whole app: a product tapped in a linked story opens there.
@@ -106,9 +106,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return controller
     }
 
-    /// The shop keeps its own navigation stack: Home → category → product, back with the bar.
+    /// The shop keeps its own navigation stack: Home → category → product, back with the screens'
+    /// own back buttons or the edge swipe.
     private func makeShopTab() -> UIViewController {
-        let navigation = UINavigationController(rootViewController: ShopHomeViewController())
+        let navigation = ShopNavigationController(rootViewController: ShopHomeViewController())
         navigation.tabBarItem = UITabBarItem(
             title: "Shop",
             image: tabImage(systemName: "bag"),

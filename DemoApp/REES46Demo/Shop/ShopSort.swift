@@ -2,7 +2,7 @@ import UIKit
 @_spi(PersonalizationUI) import REES46
 
 /// Sorting of the shop's results and categories. The kit's design has no sort picker, so the shop
-/// shows a plain action sheet from the screen's sort button; the choice goes to the screen's
+/// shows its own bottom sheet from the screen's sort button; the choice goes to the screen's
 /// `sortBy` / `sortDir`, and the screen loads the first page again.
 enum ShopSort: CaseIterable {
     case relevance, priceAscending, priceDescending, discount
@@ -26,23 +26,144 @@ enum ShopSort: CaseIterable {
         }
     }
 
-    /// The sort button of `screen` opens the picker over `host`.
+    /// The sort button of `screen` opens the sheet over `host`.
     static func attach<Item>(to screen: PersonalizationResultsScreen<Item>, host: UIViewController) {
         screen.onSortTap = { [weak screen, weak host] in
             guard let screen, let host else { return }
-            let sheet = UIAlertController(title: "Sort by", message: nil, preferredStyle: .actionSheet)
-            for option in allCases {
-                let selected = option.params == (screen.sortBy, screen.sortDir)
-                sheet.addAction(UIAlertAction(title: selected ? "✓ \(option.title)" : option.title, style: .default) { _ in
-                    screen.sortBy = option.params.sortBy
-                    screen.sortDir = option.params.sortDir
-                })
+            let current = allCases.first { $0.params == (screen.sortBy, screen.sortDir) } ?? .relevance
+            let sheet = ShopSortSheet(current: current) { [weak screen] option in
+                screen?.sortBy = option.params.sortBy
+                screen?.sortDir = option.params.sortDir
             }
-            sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-            // On iPad the sheet is a popover and needs an anchor: the screen's header.
-            sheet.popoverPresentationController?.sourceView = screen.title
-            sheet.popoverPresentationController?.sourceRect = screen.title.bounds
             host.present(sheet, animated: true)
         }
     }
+}
+
+/// The sort sheet: "Sort by" and the orders as rows, the current one with a check mark; a tap picks
+/// an order and closes the sheet. Kit text styles and colours on the modal surface with the modal
+/// radius; the sheet is as tall as its rows.
+private final class ShopSortSheet: UIViewController {
+
+    private let current: ShopSort
+    private let onPick: (ShopSort) -> Void
+    private let column = UIStackView()
+
+    init(current: ShopSort, onPick: @escaping (ShopSort) -> Void) {
+        self.current = current
+        self.onPick = onPick
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .pageSheet
+        guard #available(iOS 15.0, *), let sheet = sheetPresentationController else { return }
+        if #available(iOS 16.0, *) {
+            sheet.detents = [.custom { [weak self] _ in self?.contentHeight() }]
+        } else {
+            sheet.detents = [.medium()]
+        }
+        sheet.prefersGrabberVisible = true
+        sheet.preferredCornerRadius = PersonalizationRadius.modal
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = PersonalizationColor.backgroundModal
+
+        let title = UILabel()
+        var attributes = PersonalizationTypography.lgEmphasized.attributes
+        attributes[.foregroundColor] = PersonalizationColor.textPrimary
+        title.attributedText = NSAttributedString(string: "Sort by", attributes: attributes)
+        title.accessibilityTraits = .header
+        let titleRow = title.shopInset(horizontal: PersonalizationSpacing.paddingModal)
+
+        column.axis = .vertical
+        column.addArrangedSubview(titleRow)
+        column.setCustomSpacing(PersonalizationSpacing.md, after: titleRow)
+        for option in ShopSort.allCases {
+            let row = ShopSortRow(option: option, selected: option == current)
+            row.addTarget(self, action: #selector(rowTapped(_:)), for: .touchUpInside)
+            column.addArrangedSubview(row)
+        }
+        column.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(column)
+        NSLayoutConstraint.activate([
+            // Clear of the grabber.
+            column.topAnchor.constraint(equalTo: view.topAnchor, constant: PersonalizationSpacing.xl3),
+            column.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            column.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            column.bottomAnchor.constraint(
+                lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -PersonalizationSpacing.md
+            )
+        ])
+    }
+
+    /// The height of the sheet above the bottom safe area: the sheet adds the safe area itself.
+    private func contentHeight() -> CGFloat {
+        loadViewIfNeeded()
+        let width = presentingViewController?.view.bounds.width ?? view.bounds.width
+        let size = column.systemLayoutSizeFitting(
+            CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+            withHorizontalFittingPriority: .required,
+            verticalFittingPriority: .fittingSizeLevel
+        )
+        return PersonalizationSpacing.xl3 + size.height + PersonalizationSpacing.md
+    }
+
+    @objc private func rowTapped(_ row: ShopSortRow) {
+        onPick(row.option)
+        dismiss(animated: true)
+    }
+}
+
+/// An order in the sheet: its name and, for the current one, a check mark in the brand colour.
+private final class ShopSortRow: UIControl {
+
+    let option: ShopSort
+
+    override var isHighlighted: Bool {
+        didSet { backgroundColor = isHighlighted ? PersonalizationColor.backgroundGeneric : nil }
+    }
+
+    init(option: ShopSort, selected: Bool) {
+        self.option = option
+        super.init(frame: .zero)
+
+        let label = UILabel()
+        var attributes = PersonalizationTypography.baseDefault.attributes
+        attributes[.foregroundColor] = PersonalizationColor.textPrimary
+        label.attributedText = NSAttributedString(string: option.title, attributes: attributes)
+
+        let check = UIImageView(image: UIImage(systemName: "checkmark"))
+        check.tintColor = PersonalizationColor.brandPrimary
+        check.contentMode = .scaleAspectFit
+        check.isHidden = !selected
+        check.setContentHuggingPriority(.required, for: .horizontal)
+
+        let row = UIStackView(arrangedSubviews: [label, check])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = PersonalizationSpacing.lg
+        row.isUserInteractionEnabled = false
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            heightAnchor.constraint(greaterThanOrEqualToConstant: Self.minHeight),
+            row.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: PersonalizationSpacing.md),
+            row.centerYAnchor.constraint(equalTo: centerYAnchor),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: PersonalizationSpacing.paddingModal),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -PersonalizationSpacing.paddingModal)
+        ])
+        let height = heightAnchor.constraint(equalToConstant: Self.minHeight)
+        height.priority = .defaultLow
+        height.isActive = true
+
+        isAccessibilityElement = true
+        accessibilityLabel = option.title
+        accessibilityTraits = selected ? [.button, .selected] : .button
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    private static let minHeight: CGFloat = 52
 }

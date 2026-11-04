@@ -1359,7 +1359,7 @@
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -1384,7 +1384,7 @@
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -1410,7 +1410,7 @@
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -1516,7 +1516,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1549,7 +1549,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1582,7 +1582,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
@@ -1612,7 +1612,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1645,7 +1645,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1678,7 +1678,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 138;
+				CURRENT_PROJECT_VERSION = 140;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";

@@ -1,12 +1,15 @@
 import UIKit
 @_spi(PersonalizationUI) import REES46
 
-/// Product page: `getProductInfo` — image, brand, name, price with the old price and the discount,
-/// "Add to cart"; below it recommender blocks for this product — similar, bought with it and
-/// popular, each titled by the server and hidden while it has no products. Opening the page sends
-/// `productView`. While the product loads the page shows the kit's loader; a failed request shows
-/// the error text with "Retry". The shop's instant search sits on top and behaves as on Home: while
-/// its panel is open the page steps aside.
+/// Product page: `getProductInfo` — a card on top with the photo, brand, name, price with the old
+/// price and the discount; under it recommender blocks for this product — similar, bought with it
+/// and popular, each titled by the server and hidden while it has no products; and a bar pinned to
+/// the bottom with the price and "Add to cart". Opening the page sends `productView`.
+///
+/// The page has no navigation bar and no search: the card runs under the status bar, a round back
+/// button floats over it, the swipe back works too. While the product loads the page shows the
+/// kit's loader in the middle; a failed request — the kit's empty state with the error text and
+/// "Retry".
 final class ShopProductViewController: UIViewController {
 
     private enum State {
@@ -21,21 +24,27 @@ final class ShopProductViewController: UIViewController {
     private var requestSeq = 0
 
     private let scroll = UIScrollView()
-    private let searchBar = ShopSearchBar()
-    /// Everything of the page under the search: hidden while the search panel is open.
-    private let page = UIStackView()
-    private let loaderRow = UIView()
-    private let loader = PersonalizationLoader()
-    private let errorState = PersonalizationEmptyState(message: Shop.errorText)
-    private let content = UIStackView()
-    private let image = PersonalizationProductImage(aspect: .square)
+    /// The card on top: the photo and the product's texts, rounded at the bottom.
+    private let hero = UIView()
+    /// Fills the space above the card when the page is pulled down, so the card never shows its top.
+    private let heroBackdrop = UIView()
+    private let photo = UIImageView()
+    /// The photo starts under the status bar: the page scrolls under it and sets the gap itself.
+    private lazy var photoTop = photo.topAnchor.constraint(equalTo: hero.topAnchor)
     private let brandLabel = UILabel()
     private let nameLabel = UILabel()
     private let priceLabel = UILabel()
     private let oldPriceLabel = UILabel()
     private let discountBadge = PersonalizationBadge(size: .md, view: .danger)
-    private let cartButton = PersonalizationButton(text: Shop.actionText, size: .lg, view: .primary)
     private let blocks: [PersonalizationRecommenderBlock]
+    private let backButton = ShopRoundButton.back()
+    private let loader = PersonalizationLoader()
+    private let errorState = PersonalizationEmptyState(message: Shop.errorText)
+    /// The bar pinned to the bottom: price on the left, "Add to cart" on the rest of the width.
+    private let cartBar = UIView()
+    private let barPriceLabel = UILabel()
+    private let barOldPriceLabel = UILabel()
+    private let cartButton = PersonalizationButton(text: Shop.actionText, size: .lg, view: .primary)
 
     init(productId: String) {
         self.productId = productId
@@ -54,7 +63,6 @@ final class ShopProductViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = PersonalizationColor.backgroundGeneric
-        navigationItem.largeTitleDisplayMode = .never
         setupLayout()
         setupActions()
         render(.loading)
@@ -65,6 +73,12 @@ final class ShopProductViewController: UIViewController {
             sdk.tracking.productView(itemId: self.productId)
             self.load()
         }
+    }
+
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        photoTop.constant = view.safeAreaInsets.top + PersonalizationSpacing.md
+        scroll.verticalScrollIndicatorInsets.top = view.safeAreaInsets.top
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -91,25 +105,29 @@ final class ShopProductViewController: UIViewController {
     }
 
     private func render(_ state: State) {
-        loaderRow.isHidden = true
+        loader.isHidden = true
         errorState.isHidden = true
-        content.isHidden = true
+        scroll.isHidden = true
+        cartBar.isHidden = true
         switch state {
         case .loading:
-            loaderRow.isHidden = false
+            loader.isHidden = false
         case .failed:
             errorState.isHidden = false
         case .loaded(let product):
-            content.isHidden = false
+            scroll.isHidden = false
+            cartBar.isHidden = false
             fill(product)
         }
     }
 
-    /// The page shows the same strings a card of this product would: one mapper for both.
+    /// The page shows the same strings a card of this product would: one mapper for both. The photo
+    /// is the original — the page shows it large — and the resized copy only when there is none.
     private func fill(_ product: ProductInfo) {
         self.product = product
         let card = product.shopCard
-        DemoImageLoader.shared.load(card.imageUrl, into: image.imageView)
+        let photoUrl = [product.imageUrl, product.resizedImageUrl].first { !$0.isEmpty }
+        DemoImageLoader.shared.load(photoUrl, into: photo)
         brandLabel.isHidden = card.brand == nil
         brandLabel.attributedText = styled(card.brand, PersonalizationTypography.smDefault, PersonalizationColor.textSecondary)
         nameLabel.attributedText = styled(card.name, PersonalizationTypography.xlEmphasized, PersonalizationColor.textPrimary)
@@ -120,6 +138,12 @@ final class ShopProductViewController: UIViewController {
         )
         discountBadge.isHidden = card.discount == nil
         discountBadge.text = card.discount
+
+        barPriceLabel.attributedText = styled(card.price, PersonalizationTypography.lgEmphasized, PersonalizationColor.textPrimary)
+        barOldPriceLabel.isHidden = card.oldPrice == nil
+        barOldPriceLabel.attributedText = styled(
+            card.oldPrice, PersonalizationTypography.smDefault, PersonalizationColor.textSecondary, strikethrough: true
+        )
     }
 
     /// Kit text style with a colour: only an attributed string carries the line height.
@@ -140,6 +164,10 @@ final class ShopProductViewController: UIViewController {
         guard let product else { return }
         Shop.addToCart(productId: product.id, price: product.price)
     }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
 }
 
 // MARK: - Layout
@@ -147,70 +175,163 @@ final class ShopProductViewController: UIViewController {
 private extension ShopProductViewController {
 
     func setupLayout() {
+        setupCartBar()
+
+        // The card runs under the status bar, so the scroll does not shift its content by the
+        // safe area: the photo keeps the gap itself (`photoTop`).
+        scroll.contentInsetAdjustmentBehavior = .never
         scroll.alwaysBounceVertical = true
-        scroll.keyboardDismissMode = .onDrag
-        scroll.shopPin(to: view)
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scroll)
+
+        setupHero()
+
+        let blocksColumn = UIStackView(arrangedSubviews: blocks)
+        blocksColumn.axis = .vertical
+        // A block with no products is hidden, and the stack skips it along with its gap.
+        blocksColumn.spacing = PersonalizationSpacing.xl3
+        let blocksRow = blocksColumn.shopInset()
+
+        let column = UIStackView(arrangedSubviews: [hero, blocksRow])
+        column.axis = .vertical
+        column.spacing = PersonalizationSpacing.xl3
+        column.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(column)
+        heroBackdrop.backgroundColor = PersonalizationColor.backgroundCard
+        heroBackdrop.translatesAutoresizingMaskIntoConstraints = false
+        scroll.insertSubview(heroBackdrop, belowSubview: column)
+
+        NSLayoutConstraint.activate([
+            scroll.topAnchor.constraint(equalTo: view.topAnchor),
+            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            // The content ends 24 above the bar.
+            scroll.bottomAnchor.constraint(equalTo: cartBar.topAnchor),
+            column.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
+            column.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -PersonalizationSpacing.xl3),
+            column.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
+            column.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
+            column.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor),
+            heroBackdrop.leadingAnchor.constraint(equalTo: hero.leadingAnchor),
+            heroBackdrop.trailingAnchor.constraint(equalTo: hero.trailingAnchor),
+            heroBackdrop.bottomAnchor.constraint(equalTo: hero.topAnchor, constant: PersonalizationRadius.modal),
+            heroBackdrop.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor)
+        ])
 
         loader.translatesAutoresizingMaskIntoConstraints = false
-        loaderRow.addSubview(loader)
-        NSLayoutConstraint.activate([
-            loader.centerXAnchor.constraint(equalTo: loaderRow.centerXAnchor),
-            loader.topAnchor.constraint(equalTo: loaderRow.topAnchor, constant: 92),
-            loader.bottomAnchor.constraint(equalTo: loaderRow.bottomAnchor)
-        ])
+        view.addSubview(loader)
         loader.startAnimating()
+        errorState.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(errorState)
+        NSLayoutConstraint.activate([
+            loader.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loader.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            // The empty state centres its text and "Retry" in itself.
+            errorState.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            errorState.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            errorState.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            errorState.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
+        ])
+
+        // The card's colour: invisible over the card, a plain bar over the blocks scrolled under it.
+        shopCoverStatusBar(with: PersonalizationColor.backgroundCard)
+
+        // Over everything, in every state: the way back while the product loads or fails too.
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backButton)
+        NSLayoutConstraint.activate([
+            backButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            backButton.leadingAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: PersonalizationSpacing.paddingX
+            )
+        ])
+    }
+
+    /// The photo — a square two margins narrower than the screen, fitted — then brand, name and the
+    /// price row with the page's inner margin.
+    func setupHero() {
+        hero.backgroundColor = PersonalizationColor.backgroundCard
+        hero.layer.cornerRadius = PersonalizationRadius.modal
+        hero.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+
+        photo.contentMode = .scaleAspectFit
+        photo.clipsToBounds = true
+        photo.translatesAutoresizingMaskIntoConstraints = false
+        hero.addSubview(photo)
 
         brandLabel.numberOfLines = 0
         nameLabel.numberOfLines = 0
-        let titleBlock = UIStackView(arrangedSubviews: [brandLabel, nameLabel])
-        titleBlock.axis = .vertical
-        titleBlock.spacing = 4
-
         for view in [priceLabel, oldPriceLabel, discountBadge] {
             view.setContentHuggingPriority(.required, for: .horizontal)
         }
         let priceRow = UIStackView(arrangedSubviews: [priceLabel, oldPriceLabel, discountBadge, UIView()])
         priceRow.axis = .horizontal
         priceRow.alignment = .center
-        priceRow.spacing = 8
+        priceRow.spacing = PersonalizationSpacing.md
 
-        content.axis = .vertical
-        content.spacing = 16
-        for view in [image, titleBlock, priceRow, cartButton] + blocks {
-            content.addArrangedSubview(view)
-        }
-        // A block with no products is hidden, and the stack skips it along with its spacing.
-        for view in [cartButton] + blocks {
-            content.setCustomSpacing(32, after: view)
-        }
+        let texts = UIStackView(arrangedSubviews: [brandLabel, nameLabel, priceRow])
+        texts.axis = .vertical
+        texts.setCustomSpacing(PersonalizationSpacing.sm, after: brandLabel)  // 4
+        texts.setCustomSpacing(PersonalizationSpacing.lg, after: nameLabel)   // 12
+        texts.translatesAutoresizingMaskIntoConstraints = false
+        hero.addSubview(texts)
 
-        for view in [loaderRow, errorState, content] {
-            page.addArrangedSubview(view)
-        }
-        page.axis = .vertical
-
-        let column = UIStackView(arrangedSubviews: [searchBar, page])
-        column.axis = .vertical
-        column.spacing = 16
-        column.translatesAutoresizingMaskIntoConstraints = false
-        scroll.addSubview(column)
+        let inset = PersonalizationSpacing.xl2  // 20
         NSLayoutConstraint.activate([
-            column.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 8),
-            column.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -32),
-            column.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 16),
-            column.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -16),
-            column.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -32)
+            photoTop,
+            photo.centerXAnchor.constraint(equalTo: hero.centerXAnchor),
+            photo.widthAnchor.constraint(equalTo: hero.widthAnchor, constant: -2 * PersonalizationSpacing.xl4),
+            photo.heightAnchor.constraint(equalTo: photo.widthAnchor),
+            texts.topAnchor.constraint(equalTo: photo.bottomAnchor, constant: PersonalizationSpacing.md),
+            texts.leadingAnchor.constraint(equalTo: hero.leadingAnchor, constant: inset),
+            texts.trailingAnchor.constraint(equalTo: hero.trailingAnchor, constant: -inset),
+            texts.bottomAnchor.constraint(equalTo: hero.bottomAnchor, constant: -inset)
+        ])
+    }
+
+    /// Card surface with a hairline on top; its content stays above the home indicator and, in the
+    /// full demo, above the tabs, while the surface runs to the bottom edge.
+    func setupCartBar() {
+        cartBar.backgroundColor = PersonalizationColor.backgroundCard
+        cartBar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(cartBar)
+
+        let line = UIView()
+        line.backgroundColor = PersonalizationColor.lineGenericSubtle
+        line.translatesAutoresizingMaskIntoConstraints = false
+        cartBar.addSubview(line)
+
+        for label in [barPriceLabel, barOldPriceLabel] {
+            label.setContentHuggingPriority(.required, for: .horizontal)
+            label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        }
+        let prices = UIStackView(arrangedSubviews: [barPriceLabel, barOldPriceLabel])
+        prices.axis = .vertical
+        prices.setContentHuggingPriority(.required, for: .horizontal)
+        let row = UIStackView(arrangedSubviews: [prices, cartButton])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = PersonalizationSpacing.xl
+        row.translatesAutoresizingMaskIntoConstraints = false
+        cartBar.addSubview(row)
+
+        NSLayoutConstraint.activate([
+            cartBar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            cartBar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            cartBar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            line.topAnchor.constraint(equalTo: cartBar.topAnchor),
+            line.leadingAnchor.constraint(equalTo: cartBar.leadingAnchor),
+            line.trailingAnchor.constraint(equalTo: cartBar.trailingAnchor),
+            line.heightAnchor.constraint(equalToConstant: 1),
+            row.topAnchor.constraint(equalTo: cartBar.topAnchor, constant: PersonalizationSpacing.lg),
+            row.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -PersonalizationSpacing.lg),
+            row.leadingAnchor.constraint(equalTo: cartBar.safeAreaLayoutGuide.leadingAnchor, constant: PersonalizationSpacing.paddingX),
+            row.trailingAnchor.constraint(equalTo: cartBar.safeAreaLayoutGuide.trailingAnchor, constant: -PersonalizationSpacing.paddingX)
         ])
     }
 
     func setupActions() {
-        searchBar.host = self
-        searchBar.onSearchingChanged = { [weak self] searching in
-            guard let self else { return }
-            self.page.isHidden = searching
-            self.scroll.setContentOffset(CGPoint(x: 0, y: -self.scroll.adjustedContentInset.top), animated: false)
-        }
-
+        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         errorState.actionText = Shop.retryText
         errorState.onAction = { [weak self] in self?.load() }
         cartButton.addTarget(self, action: #selector(cartTapped), for: .touchUpInside)
