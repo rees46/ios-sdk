@@ -168,21 +168,29 @@ final class PopupV3SDKActions: PopupV3Actions {
 
     var sdk: PersonalizationSDK? { sdkObject as? PersonalizationSDK }
 
+    /// Ссылка, которую хост не взял, — системе.
+    var openSystem: (URL) -> Void = { UIApplication.shared.open($0) }
+
     static func url(_ link: String) -> URL? {
         URL(string: link) ?? link.addingPercentEncoding(withAllowedCharacters: .urlFragmentAllowed).flatMap(URL.init(string:))
     }
 
+    /// Ссылка элемента: хост открыл её сам — попап закрывается без `close`, как после перехода;
+    /// иначе она уходит системе, попап остаётся.
     func open(_ link: String) {
         guard let url = Self.url(link) else {
             PopupsV3Log.log("bad link \(link)")
             return
         }
-        if linkHandler?(url) == true { return }
-        UIApplication.shared.open(url)
+        if linkHandler?(url) == true {
+            controller?.close(sendingEvent: false)
+            return
+        }
+        openSystem(url)
     }
 
     /// Товар ленты: хост открыл его сам — попап закрывается без `close`, как после перехода; иначе
-    /// ссылка товара (`deeplink`, потом `url`) обычным путём, попап остаётся.
+    /// ссылка товара (`deeplink`, потом `url`) обычным путём ссылок.
     func product(_ product: PersonalizationProduct) {
         if productHandler?(product) == true {
             controller?.close(sendingEvent: false)

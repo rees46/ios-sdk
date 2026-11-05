@@ -20,7 +20,7 @@ struct PopupV3Profile: Equatable {
 /// Что элементам нужно от попапа и SDK. Колбэки — на главной очереди.
 protocol PopupV3Actions: AnyObject {
     var sdk: PersonalizationSDK? { get }
-    /// Открыть ссылку: сначала обработчик хоста, потом система. Попап остаётся открытым.
+    /// Открыть ссылку: сначала обработчик хоста (открыл сам — попап закрывается), потом система.
     func open(_ link: String)
     /// Товар ленты рекомендаций: сначала хук хоста (открыл сам — попап закрывается), иначе ссылка товара.
     func product(_ product: PersonalizationProduct)

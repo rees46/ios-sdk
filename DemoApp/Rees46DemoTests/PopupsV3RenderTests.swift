@@ -281,32 +281,39 @@ final class PopupsV3RenderTests: XCTestCase {
         XCTAssertEqual(events, ["close"], "the next one closes")
     }
 
+    private func waitUntil(_ done: @autoclosure () -> Bool) {
+        let deadline = Date().addingTimeInterval(2)
+        while !done(), Date() < deadline { RunLoop.main.run(until: Date().addingTimeInterval(0.05)) }
+    }
+
     func testAFeedProductGoesToTheHostThenToItsLink() throws {
         var events: [String] = []
         var products: [String] = []
         var links: [String] = []
+        var system: [String] = []
         var hostOpens = false
         var closed = false
         let controller = try makeController(
             ["id": 83, "layout": "modal", "trigger_type": "manual"], events: { events.append($0) },
             productHandler: { products.append($0.id); return hostOpens },
-            linkHandler: { links.append($0.absoluteString); return true }
+            linkHandler: { links.append($0.absoluteString); return false }
         )
         controller.onClosed = { closed = true }
         let actions = controller.actions
+        actions.openSystem = { system.append($0.absoluteString) }
         actions.product(PersonalizationProduct(id: "1", name: "A", price: "1", url: "https://demo.rees46.ru/p/1", deeplink: "rees46demo://product/1"))
         actions.product(PersonalizationProduct(id: "2", name: "B", price: "1", url: "https://demo.rees46.ru/p/2", deeplink: " "))
         actions.product(PersonalizationProduct(id: "3", name: "C", price: "1"))
         XCTAssertEqual(products, ["1", "2", "3"])
         XCTAssertEqual(links, ["rees46demo://product/1", "https://demo.rees46.ru/p/2"], "deeplink, then url; nothing without both")
-        XCTAssertFalse(controller.isClosing, "the popup stays after a link")
+        XCTAssertEqual(system, links, "the link hook left them to the system")
+        XCTAssertFalse(controller.isClosing, "the popup stays after a link the system opened")
 
         hostOpens = true
         actions.product(PersonalizationProduct(id: "4", name: "D", price: "1", url: "https://demo.rees46.ru/p/4"))
         XCTAssertEqual(links.count, 2, "the host opened it: no link")
         XCTAssertTrue(controller.isClosing, "the host opened it: the popup goes")
-        let deadline = Date().addingTimeInterval(2)
-        while !closed, Date() < deadline { RunLoop.main.run(until: Date().addingTimeInterval(0.05)) }
+        waitUntil(closed)
         XCTAssertTrue(closed)
         XCTAssertEqual(events, [], "no close after a transition")
 
@@ -314,6 +321,90 @@ final class PopupsV3RenderTests: XCTestCase {
         let bare = PopupV3SDKActions(sdk: nil, appHost: "app.rees46.ru", linkHandler: { opened.append($0.absoluteString); return true }, onEvent: { _, _ in })
         bare.product(PersonalizationProduct(id: "5", name: "E", price: "1", url: "https://demo.rees46.ru/p/5"))
         XCTAssertEqual(opened, ["https://demo.rees46.ru/p/5"], "without a hook the link opens")
+    }
+
+    func testAFeedProductWhoseLinkTheHostOpenedClosesThePopup() throws {
+        var events: [String] = []
+        var closed = false
+        let controller = try makeController(
+            ["id": 84, "layout": "modal", "trigger_type": "manual"], events: { events.append($0) },
+            productHandler: { _ in false }, linkHandler: { _ in true }
+        )
+        controller.onClosed = { closed = true }
+        controller.actions.openSystem = { XCTFail("the host opened \($0)") }
+        controller.actions.product(PersonalizationProduct(id: "1", name: "A", price: "1", url: "https://demo.rees46.ru/p/1"))
+        XCTAssertTrue(controller.isClosing, "the product's link goes the way of any link")
+        waitUntil(closed)
+        XCTAssertEqual(events, [])
+    }
+
+    // MARK: - Links the host opens itself
+
+    /// The link button of the button fixture in a controller of its design.
+    private func linkButton(in controller: PopupV3ViewController) throws -> PopupV3ButtonControl {
+        controller.loadViewIfNeeded()
+        let element = try XCTUnwrap(descendant(of: controller.frameView, identifier: "popupV3.el-btn-link"))
+        return try XCTUnwrap(descendant(PopupV3ButtonControl.self, in: element))
+    }
+
+    private func descendant(of view: UIView, identifier: String) -> UIView? {
+        if view.accessibilityIdentifier == identifier { return view }
+        return view.subviews.lazy.compactMap { self.descendant(of: $0, identifier: identifier) }.first
+    }
+
+    func testALinkTheHostOpenedClosesThePopupWithoutClose() throws {
+        var events: [String] = []
+        var links: [String] = []
+        var closed = false
+        let controller = try makeController(
+            ["id": 85, "layout": "modal", "trigger_type": "manual"], design: "element-button", events: { events.append($0) },
+            linkHandler: { links.append($0.absoluteString); return true }
+        )
+        controller.onClosed = { closed = true }
+        controller.actions.openSystem = { XCTFail("the host opened \($0)") }
+        try linkButton(in: controller).sendActions(for: .touchUpInside)
+        XCTAssertEqual(links, ["rees46demo://sale?from=ios"])
+        XCTAssertTrue(controller.isClosing, "the host opened the link: the popup goes")
+        waitUntil(closed)
+        XCTAssertTrue(closed)
+        XCTAssertEqual(events, ["click"], "click first; no close after a transition")
+    }
+
+    func testALinkTheHostLeftGoesToTheSystemAndThePopupStays() throws {
+        let hooks: [(name: String, hook: ((URL) -> Bool)?)] = [("no hook", nil), ("a hook that declines", { _ in false })]
+        for (name, hook) in hooks {
+            var events: [String] = []
+            var system: [String] = []
+            let controller = try makeController(
+                ["id": 86, "layout": "modal", "trigger_type": "manual"], design: "element-button", events: { events.append($0) },
+                linkHandler: hook
+            )
+            controller.actions.openSystem = { system.append($0.absoluteString) }
+            try linkButton(in: controller).sendActions(for: .touchUpInside)
+            XCTAssertEqual(system, ["rees46demo://sale?from=ios"], name)
+            XCTAssertFalse(controller.isClosing, name)
+            XCTAssertEqual(events, ["click"], name)
+        }
+    }
+
+    func testALinkedTextTheHostOpenedClosesThePopupToo() throws {
+        var events: [String] = []
+        var links: [String] = []
+        var closed = false
+        let controller = try makeController(
+            ["id": 87, "layout": "modal", "trigger_type": "manual"], events: { events.append($0) },
+            linkHandler: { links.append($0.absoluteString); return true }
+        )
+        controller.onClosed = { closed = true }
+        controller.actions.openSystem = { XCTFail("the host opened \($0)") }
+        controller.loadViewIfNeeded()
+        let text = try XCTUnwrap(descendant(of: controller.frameView, identifier: "popupV3.el-text-full"))
+        let tap = try XCTUnwrap(objc_getAssociatedObject(text, &PopupV3Tap.key) as? PopupV3Tap)
+        tap.perform(Selector(("fire")))
+        XCTAssertEqual(links, ["https://demo.rees46.ru/sale"])
+        XCTAssertTrue(controller.isClosing)
+        waitUntil(closed)
+        XCTAssertEqual(events, ["click"])
     }
 
     func testOneModalSlotSharedWithLegacyPopups() {

@@ -46,7 +46,9 @@ import UIKit
         set { state.appHost = newValue }
     }
 
-    /// Ссылки попапа сначала идут сюда; `true` — хост открыл сам, иначе — `UIApplication.open`.
+    /// Ссылки попапа (кнопка-ссылка, ссылка текста и картинки, ссылка применения промокода, ссылка
+    /// товара ленты) сначала идут сюда: `true` — хост открыл сам, попап закрывается (без события
+    /// `close`, как после перехода); иначе — `UIApplication.open`, попап остаётся.
     public var linkHandler: ((URL) -> Bool)? {
         get { state.linkHandler }
         set { state.linkHandler = newValue }
