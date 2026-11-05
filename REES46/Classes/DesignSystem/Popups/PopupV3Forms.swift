@@ -33,6 +33,17 @@ enum PopupV3FormKit {
         return stack
     }
 
+    /// Чекбокс кита в цветах формы: отмеченный — как кнопка, пустой — как поле. Попап рисуется по
+    /// дизайну, поэтому и чекбокс от темы системы не зависит.
+    static func checkbox(button: PopupV3ButtonStyle, input: PopupV3InputStyle) -> PersonalizationCheckbox {
+        let checkbox = PersonalizationCheckbox()
+        checkbox.checkedColor = button.background.uiColor
+        checkbox.checkmarkColor = button.textColor.uiColor
+        checkbox.uncheckedColor = input.background.uiColor
+        checkbox.uncheckedBorderColor = input.borderColor.uiColor
+        return checkbox
+    }
+
     /// Чекбокс кита с подписью; нажатие на подпись тоже переключает.
     static func consent(_ checkbox: PersonalizationCheckbox, label: PopupV3Label) -> UIView {
         let row = stack([checkbox, label], axis: .horizontal, spacing: 8, alignment: .top)
@@ -88,9 +99,9 @@ final class PopupV3EmailView: PopupV3BoxView, UITextFieldDelegate {
     private(set) var isBusy = false
 
     init(element: PopupV3Element, context: PopupV3RenderContext) {
-        let checkbox = PersonalizationCheckbox()
-        self.checkbox = checkbox
         let spec = PopupV3EmailSpec(element, texts: context.texts, runtime: context.runtime)
+        let checkbox = PopupV3FormKit.checkbox(button: spec.button, input: spec.input)
+        self.checkbox = checkbox
         let box = element.box
         self.spec = spec
         self.context = context
@@ -221,7 +232,7 @@ final class PopupV3FormView: PopupV3BoxView, UITextFieldDelegate {
     init(element: PopupV3Element, context: PopupV3RenderContext) {
         let spec = PopupV3FormSpec(element, texts: context.texts, runtime: context.runtime)
         let box = element.box
-        let checkbox = PersonalizationCheckbox()
+        let checkbox = PopupV3FormKit.checkbox(button: spec.button, input: spec.input)
         self.checkbox = checkbox
         self.spec = spec
         self.context = context

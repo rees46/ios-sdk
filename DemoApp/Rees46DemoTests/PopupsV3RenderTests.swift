@@ -451,6 +451,151 @@ final class PopupsV3RenderTests: XCTestCase {
         XCTAssertEqual(PopupV3FormView.wireDate(Date(timeIntervalSince1970: 639_921_600)), "1990-04-12")
     }
 
+    // MARK: - Consent checkbox
+
+    private static let themes = [UITraitCollection(userInterfaceStyle: .light), UITraitCollection(userInterfaceStyle: .dark)]
+
+    private func hex(_ color: UIColor) -> String {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        let channel = { (value: CGFloat) in Int((value * 255).rounded()) }
+        return String(format: "#%02x%02x%02x%02x", channel(red), channel(green), channel(blue), channel(alpha))
+    }
+
+    /// Empty: the field's fill and border; checked: the button's fill and text. The same in light and dark.
+    private func assertFormColors(_ checkbox: PersonalizationCheckbox, checked: String, checkmark: String, unchecked: String, border: String,
+                                  file: StaticString = #filePath, line: UInt = #line) {
+        let state = checkbox.checkState
+        defer { checkbox.checkState = state }
+        for traits in Self.themes {
+            checkbox.checkState = .unchecked
+            XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), unchecked, file: file, line: line)
+            XCTAssertEqual(hex(checkbox.borderColor.resolvedColor(with: traits)), border, file: file, line: line)
+            checkbox.checkState = .checked
+            XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), checked, file: file, line: line)
+            XCTAssertEqual(hex(checkbox.glyphColor.resolvedColor(with: traits)), checkmark, file: file, line: line)
+        }
+    }
+
+    func testTheConsentCheckboxTakesTheFormColorsInAnyTheme() throws {
+        // Nothing in the design: the defaults of the button and the field.
+        for checkbox in [try XCTUnwrap(make("element-email-collector", "el-email-bare") as? PopupV3EmailView).checkbox,
+                         try XCTUnwrap(make("element-form", "el-form-bare") as? PopupV3FormView).checkbox] {
+            assertFormColors(checkbox, checked: "#2563ebff", checkmark: "#ffffffff", unchecked: "#f8fafcff", border: "#cbd5e1ff")
+        }
+        let inline = try XCTUnwrap(make("element-email-collector", "el-email-inline") as? PopupV3EmailView)
+        assertFormColors(inline.checkbox, checked: "#2563ebff", checkmark: "#ffffffff", unchecked: "#ffffffff", border: "#cbd5e1ff")
+
+        let button: [String: Any] = ["buttonBgColor": "#16a34a", "buttonTextColor": "#111827"]
+        let email = try XCTUnwrap(PopupV3Elements.make(PopupV3Element(
+            id: "email", type: "emailCollector",
+            style: button.merging(["emailInputBg": "#fef3c7", "emailInputBorderColor": "#92400e"]) { $1 }
+        ), context: context) as? PopupV3EmailView)
+        assertFormColors(email.checkbox, checked: "#16a34aff", checkmark: "#111827ff", unchecked: "#fef3c7ff", border: "#92400eff")
+        let form = try XCTUnwrap(PopupV3Elements.make(PopupV3Element(
+            id: "form", type: "form",
+            style: button.merging(["formInputBg": "#1e293b", "formInputBorderColor": "#334155", "formConsentLabel": "Согласен"]) { $1 }
+        ), context: context) as? PopupV3FormView)
+        assertFormColors(form.checkbox, checked: "#16a34aff", checkmark: "#111827ff", unchecked: "#1e293bff", border: "#334155ff")
+    }
+
+    func testTheKitCheckboxWithoutColorsKeepsItsTokens() {
+        let checkbox = PersonalizationCheckbox()
+        XCTAssertNil(checkbox.checkedColor)
+        XCTAssertNil(checkbox.checkmarkColor)
+        XCTAssertNil(checkbox.uncheckedColor)
+        XCTAssertNil(checkbox.uncheckedBorderColor)
+        for traits in Self.themes {
+            checkbox.checkState = .unchecked
+            checkbox.isEnabled = true
+            XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), hex(PersonalizationColor.backgroundInput.resolvedColor(with: traits)))
+            XCTAssertEqual(hex(checkbox.borderColor.resolvedColor(with: traits)), hex(PersonalizationColor.lineInput.resolvedColor(with: traits)))
+            checkbox.isEnabled = false
+            XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), hex(PersonalizationColor.backgroundInputDisabled.resolvedColor(with: traits)))
+            checkbox.checkState = .checked
+            XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), hex(PersonalizationColor.buttonPrimaryDisabled.resolvedColor(with: traits)))
+            checkbox.isEnabled = true
+            XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), hex(PersonalizationColor.buttonPrimary.resolvedColor(with: traits)))
+            XCTAssertEqual(hex(checkbox.glyphColor.resolvedColor(with: traits)), hex(PersonalizationColor.textLightPrimary.resolvedColor(with: traits)))
+        }
+        // A disabled checkbox keeps the disabled tokens even with colors of its own.
+        checkbox.checkedColor = .red
+        checkbox.isEnabled = false
+        let traits = Self.themes[0]
+        XCTAssertEqual(hex(checkbox.fillColor.resolvedColor(with: traits)), hex(PersonalizationColor.buttonPrimaryDisabled.resolvedColor(with: traits)))
+    }
+
+    // MARK: - Kit components on the popup's background
+
+    /// `root` in a window of the app's theme `style`, laid out, for the time of `body`.
+    private func inWindow(_ style: UIUserInterfaceStyle, _ root: UIViewController, _ body: () throws -> Void) rethrows {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.overrideUserInterfaceStyle = style
+        window.rootViewController = root
+        window.isHidden = false
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+        root.view.layoutIfNeeded()
+        try body()
+    }
+
+    /// Popup 182 of the live list (a white modal with a recommender feed) under `frame`.
+    private func live182(frame: [String: Any] = [:]) throws -> PopupV3ViewController {
+        let list = PopupsV3List(payload: PopupsV3Fixtures.json("live-list-181-182")["payload"] as? [String: Any] ?? [:])
+        let popup = try XCTUnwrap(list.popups.first { $0.id == 182 })
+        var design = popup.design
+        design["frameStyle"] = (design["frameStyle"] as? [String: Any] ?? [:]).merging(frame) { $1 }
+        let presentation = PopupV3Presentation(popup: popup, design: PopupV3Design(json: design), runtime: [:], onEvent: { _, _ in }, onClose: {})
+        return PopupV3ViewController(
+            presentation: presentation,
+            actions: PopupV3SDKActions(sdk: nil, appHost: "app.rees46.ru", linkHandler: nil, onEvent: { _, _ in }),
+            hostStatusBar: nil
+        )
+    }
+
+    func testTheFeedOfAWhitePopupIsLightInTheDarkTheme() throws {
+        let controller = try live182()
+        try inWindow(.dark, controller) {
+            let block = try XCTUnwrap(descendant(PersonalizationRecommenderBlock.self, in: controller.frameView))
+            XCTAssertEqual(block.traitCollection.userInterfaceStyle, .light, "the kit's text stays dark on the white frame")
+            XCTAssertEqual(controller.frameView.traitCollection.userInterfaceStyle, .dark, "only the kit's view is set; the toast follows the app")
+        }
+        let light = try live182()
+        try inWindow(.light, light) {
+            let block = try XCTUnwrap(descendant(PersonalizationRecommenderBlock.self, in: light.frameView))
+            XCTAssertEqual(block.traitCollection.userInterfaceStyle, .light, "as before in the light theme")
+        }
+    }
+
+    func testTheFeedOnADarkBackgroundIsDark() throws {
+        let controller = try live182(frame: ["bgColor": "#111827"])
+        try inWindow(.light, controller) {
+            let block = try XCTUnwrap(descendant(PersonalizationRecommenderBlock.self, in: controller.frameView))
+            XCTAssertEqual(block.traitCollection.userInterfaceStyle, .dark, "a dark frame: the kit's light text")
+        }
+        let white = CSSColor.white, dark = try XCTUnwrap(CSSColor.parse("#0f172a"))
+        XCTAssertEqual(PopupV3KitTheme.background(element: dark, frame: white), dark, "an element's own background first")
+        XCTAssertEqual(PopupV3KitTheme.background(element: .transparent, frame: dark), dark, "then the frame's")
+        XCTAssertEqual(PopupV3KitTheme.background(element: .transparent, frame: .transparent), white, "then white, as the frame is drawn by default")
+        XCTAssertEqual(PopupV3KitTheme.style(on: dark), .dark)
+        XCTAssertEqual(PopupV3KitTheme.style(on: white), .light)
+        XCTAssertEqual(PopupV3KitTheme.style(on: try XCTUnwrap(CSSColor.parse("#fde68a"))), .light, "a pale brand color")
+        XCTAssertEqual(PopupV3KitTheme.style(on: try XCTUnwrap(CSSColor.parse("#1d4ed8"))), .dark, "a deep brand color")
+        XCTAssertEqual(CSSColor.black.contrast(with: .white), 21, accuracy: 0.01)
+    }
+
+    func testTheKitOutsidePopupsFollowsTheSystem() throws {
+        let screen = UIViewController()
+        let block = PersonalizationRecommenderBlock(code: "e4bceaa2a37cdc9f1d995b8862b4fe2a", layout: .carousel)
+        screen.view.addSubview(block)
+        try inWindow(.dark, screen) {
+            XCTAssertEqual(block.overrideUserInterfaceStyle, .unspecified)
+            XCTAssertEqual(block.traitCollection.userInterfaceStyle, .dark)
+        }
+    }
+
     func testPromoCodeCopiesThenOpensTheApplyLink() throws {
         let view = try XCTUnwrap(make("element-promo-code", "el-promo-personal", runtime: ["promo_code": "ABC123"]) as? PopupV3PromoView)
         XCTAssertEqual(view.codeLabel.attributedText?.string, "ABC123")

@@ -53,12 +53,15 @@ final class PopupV3RenderContext {
     let texts: PopupV3Texts
     /// Экран — для высоты картинок в vh и %.
     let screenSize: CGSize
+    /// Фон рамки из дизайна — для темы компонентов кита внутри попапа.
+    let background: CSSColor
     weak var actions: PopupV3Actions?
 
-    init(runtime: [String: String], texts: PopupV3Texts, screenSize: CGSize, actions: PopupV3Actions?) {
+    init(runtime: [String: String], texts: PopupV3Texts, screenSize: CGSize, background: CSSColor = .white, actions: PopupV3Actions?) {
         self.runtime = runtime
         self.texts = texts
         self.screenSize = screenSize
+        self.background = background
         self.actions = actions
     }
 }
@@ -198,6 +201,7 @@ enum PopupV3Elements {
         let view = PopupV3BoxView(box: element.box)
         let block = PersonalizationRecommenderBlock(code: code, sdk: context.actions?.sdk, layout: .carousel)
         block.translatesAutoresizingMaskIntoConstraints = false
+        PopupV3KitTheme.apply(to: block, element: element.box, context: context)
         view.content.addSubview(block)
         NSLayoutConstraint.activate([
             block.topAnchor.constraint(equalTo: view.content.topAnchor),

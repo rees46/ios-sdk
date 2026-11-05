@@ -203,6 +203,71 @@ class PopupV3BoxView: UIView {
     }
 }
 
+/// Тема компонентов кита внутри рамки (лента рекомендаций): попап рисуется цветами дизайна, поэтому
+/// светлая или тёмная тема кита берётся по фону попапа под элементом, а не по системе. Фон — свой
+/// фон элемента поверх фона рамки, рамка поверх белого: непрозрачный элемент — его цвет,
+/// прозрачный — рамка, прозрачная рамка — белый. Из двух тем — та, где основной текст кита
+/// (`textPrimary`) контрастнее с фоном (WCAG). Окна над приложением (тост) идут по теме приложения.
+enum PopupV3KitTheme {
+
+    /// Фон под элементом: всегда непрозрачный.
+    static func background(element: CSSColor, frame: CSSColor) -> CSSColor {
+        element.over(frame.over(.white))
+    }
+
+    /// Тема кита на фоне `background`; при равном контрасте — светлая.
+    @available(iOS 13.0, *)
+    static func style(on background: CSSColor, text: UIColor = PersonalizationColor.textPrimary) -> UIUserInterfaceStyle {
+        func contrast(_ style: UIUserInterfaceStyle) -> Double {
+            CSSColor(text.resolvedColor(with: UITraitCollection(userInterfaceStyle: style))).over(background).contrast(with: background)
+        }
+        return contrast(.dark) > contrast(.light) ? .dark : .light
+    }
+
+    /// Вью кита со всем поддеревом — в тему по фону под элементом `box`. До iOS 13 тема одна.
+    static func apply(to view: UIView, element box: PopupV3Box, context: PopupV3RenderContext) {
+        guard #available(iOS 13.0, *) else { return }
+        view.overrideUserInterfaceStyle = style(on: background(element: box.background, frame: context.background))
+    }
+}
+
+extension CSSColor {
+
+    /// Цвет UIKit в sRGB, каналы — до 8 бит.
+    init(_ color: UIColor) {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        self.init(
+            red: Self.channel(fraction: Double(red)), green: Self.channel(fraction: Double(green)),
+            blue: Self.channel(fraction: Double(blue)), alpha: Self.channel(fraction: Double(alpha))
+        )
+    }
+
+    /// Этот цвет поверх `base`, как его видно на экране; альфа `base` не учитывается.
+    func over(_ base: CSSColor) -> CSSColor {
+        let opacity = Double(alpha) / 255
+        func mix(_ top: UInt8, _ bottom: UInt8) -> UInt8 {
+            UInt8((Double(top) * opacity + Double(bottom) * (1 - opacity)).rounded())
+        }
+        return CSSColor(red: mix(red, base.red), green: mix(green, base.green), blue: mix(blue, base.blue), alpha: 255)
+    }
+
+    /// Относительная яркость WCAG; альфа не учитывается.
+    var luminance: Double {
+        func linear(_ value: UInt8) -> Double {
+            let channel = Double(value) / 255
+            return channel <= 0.03928 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+    }
+
+    /// Контраст WCAG с цветом `other`: от 1 до 21.
+    func contrast(with other: CSSColor) -> Double {
+        let (lighter, darker) = (max(luminance, other.luminance), min(luminance, other.luminance))
+        return (lighter + 0.05) / (darker + 0.05)
+    }
+}
+
 /// Кнопка по стилям дизайна: подпись с разметкой или картинка, фон, радиус, отступы.
 /// Нажатие — подсветка прозрачностью, двойные нажатия гасит сам элемент.
 final class PopupV3ButtonControl: UIControl {

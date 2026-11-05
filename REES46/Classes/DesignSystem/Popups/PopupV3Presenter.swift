@@ -302,7 +302,10 @@ final class PopupV3ViewController: UIViewController, UIGestureRecognizerDelegate
         self.presentation = presentation
         self.actions = actions
         self.hostStatusBar = hostStatusBar
-        let context = PopupV3RenderContext(runtime: presentation.runtime, texts: .current, screenSize: screenSize, actions: actions)
+        let context = PopupV3RenderContext(
+            runtime: presentation.runtime, texts: .current, screenSize: screenSize,
+            background: presentation.design.frame.background, actions: actions
+        )
         frameView = PopupV3FrameView(design: presentation.design, context: context)
         super.init(nibName: nil, bundle: nil)
         actions.controller = self
