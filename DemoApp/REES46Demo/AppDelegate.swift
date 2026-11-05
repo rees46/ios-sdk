@@ -148,6 +148,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         sdk.popups.productHandler = { [weak self] product in
             Shop.openProduct(product.id, from: self?.window?.rootViewController)
         }
+        // The game link of a popup's button opens the game here, and the popup closes, as after any
+        // link its host opened itself; other links go to the system, and the popup stays.
+        sdk.popups.linkHandler = { url in DemoGame.open(url) }
         sdk.popups.isEnabled = true
     }
     
@@ -270,14 +273,19 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     }
     
     /// Links of the `rees46` scheme, both on a cold start and into the running app (the demo has
-    /// no scene manifest, so `scene(_:openURLContexts:)` above never fires). A stories link —
-    /// any host and path with `r46_stories` — opens its campaign; the rest goes to the SDK's
-    /// deep links as before.
+    /// no scene manifest, so `scene(_:openURLContexts:)` above never fires). The game link
+    /// (`rees46://game`, see `DemoLinks`) opens the game over the app; a stories link — any host
+    /// and path with `r46_stories` — opens its campaign; the rest goes to the SDK's deep links as
+    /// before.
     func application(
         _ app: UIApplication,
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
+        if DemoGame.open(url) {
+            NSLog("REES46Demo: open url %@ (game)", url.absoluteString)
+            return true
+        }
         let stories = openStoriesLink(url)
         NSLog("REES46Demo: open url %@ (%@)", url.absoluteString, stories ? "stories" : "deep link")
         if stories { return true }
@@ -310,6 +318,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 extension AppDelegate: NotificationActionsProtocol {
     func openCustom(url: String) {
         print("Open custom url \(url)")
+        // A push with the game link opens the game, as the link from outside does.
+        if DemoGame.open(url) { return }
         openPushVC(title: "Custom push with url = \(url)")
     }
     

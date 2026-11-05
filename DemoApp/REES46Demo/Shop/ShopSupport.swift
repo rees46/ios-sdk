@@ -70,7 +70,8 @@ enum DemoScreen {
 enum DemoPopups {
     static let manual: [(id: Int, title: String)] = [
         (181, "#181 Banner · top"),
-        (182, "#182 Modal · center")
+        (182, "#182 Modal · center"),
+        (185, "#185 Fullscreen")
     ]
 
     static func show(_ id: Int) {

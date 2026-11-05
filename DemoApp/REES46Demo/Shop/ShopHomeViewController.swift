@@ -167,7 +167,8 @@ private extension ShopHomeViewController {
 /// The stories callbacks of the SDK: a tapped product comes with its id — the product element, the
 /// slide button of a product slide, a carousel card — and opens its page here. The viewer is closed
 /// by then; the SDK asks next whether to open the product's link itself, and the shop declines.
-/// Other links (a button to a web page) the SDK opens.
+/// The game link of a slide's button opens the game here too (see `DemoGame`). Other links (a button
+/// to a web page) the SDK opens.
 extension ShopHomeViewController: StoriesCommunicationProtocol {
 
     func receiveIosLink(text: String) {}
@@ -185,7 +186,8 @@ extension ShopHomeViewController: StoriesCommunicationProtocol {
 
     func shouldOpenLinkBySdk(url: String) -> Bool {
         defer { storyProductOpened = false }
-        return !storyProductOpened
+        if storyProductOpened { return false }
+        return !DemoGame.open(url)
     }
 
     private func openStoryProduct(_ id: String?) {

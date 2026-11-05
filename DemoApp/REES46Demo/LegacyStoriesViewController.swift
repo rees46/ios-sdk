@@ -171,4 +171,10 @@ extension LegacyStoriesViewController: StoriesCommunicationProtocol {
     func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) {
         log("receiveSelectedPromocodeProductData (StoriesPromoCodeElement exposes no public fields)")
     }
+
+    /// The game link of a slide's button opens the demo's game; every other link the SDK opens.
+    func shouldOpenLinkBySdk(url: String) -> Bool {
+        log("shouldOpenLinkBySdk: \(url)")
+        return !DemoGame.open(url)
+    }
 }

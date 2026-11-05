@@ -48,6 +48,11 @@
 		A1B2C3D4000000000000001F /* StoriesV2Showcase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000020 /* StoriesV2Showcase.swift */; };
 		B7C1D0A10000000000000001 /* StoriesPollsShowcase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7C1D0A10000000000000002 /* StoriesPollsShowcase.swift */; };
 		B7C1D0A10000000000000003 /* StoriesPollsFixture.json in Resources */ = {isa = PBXBuildFile; fileRef = B7C1D0A10000000000000004 /* StoriesPollsFixture.json */; };
+		DE3061A70000000000000001 /* DemoLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3061A70000000000000002 /* DemoLinks.swift */; };
+		DE3061A70000000000000003 /* DemoLinks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3061A70000000000000002 /* DemoLinks.swift */; };
+		DE3061A70000000000000004 /* DemoGameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3061A70000000000000005 /* DemoGameViewController.swift */; };
+		DE3061A70000000000000006 /* tic-tac-toe.html in Resources */ = {isa = PBXBuildFile; fileRef = DE3061A70000000000000007 /* tic-tac-toe.html */; };
+		DE3061A70000000000000008 /* DemoLinksTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3061A70000000000000009 /* DemoLinksTests.swift */; };
 		868003DAE262CF760A6A2513 /* RecommenderExhibits.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC370B8A9085C654ADE8B2AB /* RecommenderExhibits.swift */; };
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
@@ -238,6 +243,10 @@
 		A1B2C3D40000000000000020 /* StoriesV2Showcase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesV2Showcase.swift; sourceTree = "<group>"; };
 		B7C1D0A10000000000000002 /* StoriesPollsShowcase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoriesPollsShowcase.swift; sourceTree = "<group>"; };
 		B7C1D0A10000000000000004 /* StoriesPollsFixture.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = StoriesPollsFixture.json; sourceTree = "<group>"; };
+		DE3061A70000000000000002 /* DemoLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoLinks.swift; sourceTree = "<group>"; };
+		DE3061A70000000000000005 /* DemoGameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoGameViewController.swift; sourceTree = "<group>"; };
+		DE3061A70000000000000007 /* tic-tac-toe.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "tic-tac-toe.html"; sourceTree = "<group>"; };
+		DE3061A70000000000000009 /* DemoLinksTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoLinksTests.swift; sourceTree = "<group>"; };
 		DC370B8A9085C654ADE8B2AB /* RecommenderExhibits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommenderExhibits.swift; sourceTree = "<group>"; };
 		607FACDA1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		607FACDC1AFB9204008FA782 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
@@ -455,6 +464,9 @@
 				A1B2C3D40000000000000020 /* StoriesV2Showcase.swift */,
 				B7C1D0A10000000000000002 /* StoriesPollsShowcase.swift */,
 				B7C1D0A10000000000000004 /* StoriesPollsFixture.json */,
+				DE3061A70000000000000002 /* DemoLinks.swift */,
+				DE3061A70000000000000005 /* DemoGameViewController.swift */,
+				DE3061A70000000000000007 /* tic-tac-toe.html */,
 				DC370B8A9085C654ADE8B2AB /* RecommenderExhibits.swift */,
 				E9CF44402B30809C000F53F1 /* SearchViewController.swift */,
 				607FACD91AFB9204008FA782 /* Main.storyboard */,
@@ -486,6 +498,7 @@
 				75E2378B2C334A4200119197 /* services */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
 				AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */,
+				DE3061A70000000000000009 /* DemoLinksTests.swift */,
 				B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */,
 				6493F884A898C533B4817F97 /* SdkRegistryTests.swift */,
 				50CF8287AA77C0C1D6CD5046 /* StoragePartitionTests.swift */,
@@ -877,6 +890,7 @@
 				607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */,
 				75D1D5C12CA72BF200C8C564 /* Localizable.xcstrings in Resources */,
 				B7C1D0A10000000000000003 /* StoriesPollsFixture.json in Resources */,
+				DE3061A70000000000000006 /* tic-tac-toe.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1046,6 +1060,8 @@
 				A1B2C3D4000000000000004D /* ShopFacets.swift in Sources */,
 				5FAC842882F99C2D39D8E5BD /* ShopCategoriesSection.swift in Sources */,
 				6B3EAA93EDFC56F9210012D3 /* ShopHomeViewController.swift in Sources */,
+				DE3061A70000000000000001 /* DemoLinks.swift in Sources */,
+				DE3061A70000000000000004 /* DemoGameViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1120,6 +1136,8 @@
 				E67DEB10083ECEFDC25DDEDC /* LoadStateMachineTests.swift in Sources */,
 				B945D7C85C149BFE197B6BF7 /* NotificationHistoryTests.swift in Sources */,
 				68AC938DE362005433507745 /* NotificationsMockSDK.swift in Sources */,
+				DE3061A70000000000000003 /* DemoLinks.swift in Sources */,
+				DE3061A70000000000000008 /* DemoLinksTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1359,7 +1377,7 @@
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -1384,7 +1402,7 @@
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -1410,7 +1428,7 @@
 				CODE_SIGN_ENTITLEMENTS = REES46Demo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -1516,7 +1534,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1549,7 +1567,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1582,7 +1600,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationContentExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
@@ -1612,7 +1630,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1645,7 +1663,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -1678,7 +1696,7 @@
 				CODE_SIGN_ENTITLEMENTS = REESNotificationServiceExtension.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 140;
+				CURRENT_PROJECT_VERSION = 142;
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";

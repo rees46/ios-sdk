@@ -302,7 +302,7 @@ enum DemoStoriesLinks {
 
     /// A link with `r46_stories`, whatever its scheme, host and path.
     static func isStoriesLink(_ url: URL) -> Bool {
-        URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?.contains { $0.name == "r46_stories" } ?? false
+        DemoLinks.kind(of: url) == .stories
     }
 
     /// Opens the link's campaign on API v3; the viewer shares with the demo's scheme too.
@@ -489,8 +489,8 @@ private final class DemoAction: NSObject {
 }
 
 /// The same delegate a legacy stories host implements: taps are reported, and links the demo
-/// routes itself (`demo://`) are kept from the SDK. Everything else the SDK opens after the
-/// viewer is gone.
+/// routes itself (`demo://`, the game link) are kept from the SDK. Everything else the SDK opens
+/// after the viewer is gone.
 extension LiveStoriesExhibit: StoriesCommunicationProtocol {
     func receiveIosLink(text: String) {}
 
@@ -507,7 +507,8 @@ extension LiveStoriesExhibit: StoriesCommunicationProtocol {
     }
 
     func shouldOpenLinkBySdk(url: String) -> Bool {
-        !url.hasPrefix("demo://")
+        if DemoGame.open(url) { return false }
+        return !url.hasPrefix("demo://")
     }
 }
 
