@@ -12,7 +12,7 @@ import UIKit
 /// от длины кода. Если разметка дала меньше 232, модуль считается от того, что дали.
 ///
 /// Строку, которую Code 128 не несёт (пустую, не ASCII), не рисует — размер нулевой.
-@_spi(PersonalizationUI) public final class PersonalizationBarcode: UIView {
+public final class PersonalizationBarcode: UIView {
 
     /// Кодируемая строка — номер карты, промокод. Она же — подпись для VoiceOver.
     public var code: String? {

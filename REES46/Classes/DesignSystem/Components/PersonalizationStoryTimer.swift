@@ -12,7 +12,7 @@ import CoreText
 /// Тикает раз в секунду, пока вью в окне; на нуле останавливается и зовёт `onFinish`.
 /// Цифры моноширинные, чтобы строка не дёргалась каждую секунду.
 /// В API сторис таймера нет — компонент для хоста.
-@_spi(PersonalizationUI) public final class PersonalizationStoryTimer: UIView {
+public final class PersonalizationStoryTimer: UIView {
 
     public enum View {
         case merged, separate

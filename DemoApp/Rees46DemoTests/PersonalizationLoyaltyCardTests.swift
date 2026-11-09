@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// The loyalty card as the Wallet frames draw it: pass proportions of at least 370×560, sections
 /// that disappear when the host gives them nothing, stamps clamped to the total, the stripe at

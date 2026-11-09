@@ -7,7 +7,7 @@ import UIKit
 /// с трекингом 0.05, по центру, Text/Primary, до двух строк шириной в обложку, с многоточием
 /// в конце.
 /// В состоянии skeleton вместо подписи — переливающаяся плашка 64x8 со скруглением 5.
-@_spi(PersonalizationUI) public final class PersonalizationStoryPreview: UIView {
+public final class PersonalizationStoryPreview: UIView {
 
     /// Ширина превью — ширина обложки.
     public static let width: CGFloat = PersonalizationStoryCover.side

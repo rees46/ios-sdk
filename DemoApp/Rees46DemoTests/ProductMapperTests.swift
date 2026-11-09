@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// One mapper turns any API product into the kit card, whichever SDK model carried it:
 /// search and `products` (`Product`), recommendations (`Recommended`), category and collection

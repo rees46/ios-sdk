@@ -22,16 +22,16 @@ import UIKit
 /// Нажатия на кнопки, товары и промокоды получает `communicationDelegate` — тот же
 /// `StoriesCommunicationProtocol`, что у старых сторис; ссылку SDK открывает, если делегат
 /// не вернул `false` из `shouldOpenLinkBySdk(url:)`, а просмотрщик закрывается до этого.
-///
-/// С `apiV3Domain` лента, кампания по ссылке и события идут в API v3 на этом хосте: у слайдов
-/// со ссылкой есть кнопка «Поделиться», ссылку открывает `handleLink(_:)`.
-@_spi(PersonalizationUI) public final class PersonalizationStories: UIView {
+public final class PersonalizationStories: UIView {
 
     /// Хост API v3 по умолчанию — для виджетов, `show` и `handleLink`, которым свой не задан.
     /// Без схемы, как `apiDomain` SDK, например `app.rees46.ru`. `nil` — старый API
     /// (`stories/{code}`, `track/stories`): ни кнопки «Поделиться», ни ссылок. Берётся при
     /// создании виджета и при вызове `show` / `handleLink`.
-    public static var apiV3Domain: String?
+    ///
+    /// С API v3 лента, кампания по ссылке и события идут на этот хост: у слайдов со ссылкой
+    /// есть кнопка «Поделиться», ссылку открывает `handleLink(_:)`.
+    @_spi(PersonalizationV3) public static var apiV3Domain: String?
 
     /// Хост без пробелов; пустой — `nil`.
     static func v3Domain(_ domain: String?) -> String? {
@@ -42,7 +42,7 @@ import UIKit
     /// Хост API v3 этого виджета: лента и события его просмотрщика. По умолчанию — глобальный
     /// `PersonalizationStories.apiV3Domain` на момент создания; `nil` — старый API, даже если
     /// глобальный задан. Смена перезагружает ленту.
-    public var apiV3Domain: String? {
+    @_spi(PersonalizationV3) public var apiV3Domain: String? {
         didSet { if oldValue != apiV3Domain { reload() } }
     }
 
@@ -80,11 +80,11 @@ import UIKit
 
     /// Ссылка слайда прямо перед окном «Поделиться» — например, со схемой приложения вместо
     /// `https`. `nil` — как есть. Событие `share` не меняется.
-    public var shareUrlTransform: ((String) -> String)?
+    @_spi(PersonalizationV3) public var shareUrlTransform: ((String) -> String)?
 
     /// Транспорт опросов слайдов вместо клиента API v3 — для тестов и офлайн-демо; `nil` —
     /// ответы уходят в API v3 на `apiV3Domain`. Без `apiV3Domain` опросов нет.
-    public var pollTransport: PersonalizationStoryPollTransport?
+    @_spi(PersonalizationV3) public var pollTransport: PersonalizationStoryPollTransport?
 
     /// Кто показывает просмотрщик; `nil` — ближайший контроллер по цепочке ответчиков.
     public weak var hostViewController: UIViewController?
@@ -110,8 +110,14 @@ import UIKit
     ///   - code: код блока сторис.
     ///   - shopId: магазин; `nil` — единственный зарегистрированный.
     ///   - sdk: явный инстанс вместо резолва по `shopId`, то же, что `attach(_:)`.
-    ///   - apiV3Domain: хост API v3 виджета; по умолчанию — глобальный, `nil` — старый API.
-    public init(
+    public convenience init(code: String, shopId: String? = nil, sdk: PersonalizationSDK? = nil) {
+        self.init(code: code, shopId: shopId, sdk: sdk, apiV3Domain: Self.apiV3Domain)
+    }
+
+    /// То же на API v3.
+    ///
+    /// - Parameter apiV3Domain: хост API v3 виджета; по умолчанию — глобальный, `nil` — старый API.
+    @_spi(PersonalizationV3) public init(
         code: String,
         shopId: String? = nil,
         sdk: PersonalizationSDK? = nil,
@@ -196,7 +202,7 @@ import UIKit
         get { texts.closeLabel }
         set { texts.closeLabel = newValue }
     }
-    public var shareLabel: String? {
+    @_spi(PersonalizationV3) public var shareLabel: String? {
         get { texts.shareLabel }
         set { texts.shareLabel = newValue }
     }
@@ -384,19 +390,51 @@ extension PersonalizationStories {
     ///   - code: код блока сторис.
     ///   - sdk: явный инстанс; без него — по `shopId`, а без `shopId` — единственный.
     ///   - shopId: магазин, когда их несколько.
-    ///   - apiV3Domain: хост API v3 для ленты и событий; по умолчанию — глобальный, `nil` — старый API.
     ///   - startStoryId: с какой сторис начать; `nil` или неизвестный id — с первой.
     ///   - presenter: кто показывает просмотрщик.
     ///   - communicationDelegate: как у виджета; держится слабо.
     ///   - texts: тексты кита.
     ///   - imageLoader: загрузчик картинок; `nil` — встроенный.
-    ///   - shareUrlTransform: ссылка слайда перед окном «Поделиться»; `nil` — как есть.
-    ///   - pollTransport: транспорт опросов вместо клиента API v3; `nil` — API v3.
     ///   - onError: блок не загрузился, пуст, нет инстанса или магазин неоднозначен; за
     ///     `loadTimeout` так и не нашлось, откуда показать.
     ///   - onClose: просмотрщик закрылся — крестиком, свайпом, после последнего слайда,
     ///     перед переходом по ссылке или убранный хостом.
     public static func show(
+        code: String,
+        sdk: PersonalizationSDK? = nil,
+        shopId: String? = nil,
+        startStoryId: String? = nil,
+        from presenter: UIViewController? = nil,
+        communicationDelegate: StoriesCommunicationProtocol? = nil,
+        texts: PersonalizationStoriesTexts = PersonalizationStoriesTexts(),
+        imageLoader: ((UIImageView, String) -> Void)? = nil,
+        onError: ((SdkError) -> Void)? = nil,
+        onClose: (() -> Void)? = nil
+    ) {
+        show(
+            code: code,
+            sdk: sdk,
+            shopId: shopId,
+            apiV3Domain: Self.apiV3Domain,
+            startStoryId: startStoryId,
+            from: presenter,
+            communicationDelegate: communicationDelegate,
+            texts: texts,
+            imageLoader: imageLoader,
+            shareUrlTransform: nil,
+            pollTransport: nil,
+            onError: onError,
+            onClose: onClose
+        )
+    }
+
+    /// То же на API v3. Остальные параметры — как выше.
+    ///
+    /// - Parameters:
+    ///   - apiV3Domain: хост API v3 для ленты и событий; по умолчанию — глобальный, `nil` — старый API.
+    ///   - shareUrlTransform: ссылка слайда перед окном «Поделиться»; `nil` — как есть.
+    ///   - pollTransport: транспорт опросов вместо клиента API v3; `nil` — API v3.
+    @_spi(PersonalizationV3) public static func show(
         code: String,
         sdk: PersonalizationSDK? = nil,
         shopId: String? = nil,
@@ -455,9 +493,9 @@ extension PersonalizationStories {
     /// и ничего не происходит. Та же ссылка (код, кампания, слайд), пока грузится или открыта, —
     /// `true` без действий.
     ///
-    /// Параметры — как у `show`.
+    /// Параметры — как у `show` на API v3.
     @discardableResult
-    public static func handleLink(
+    @_spi(PersonalizationV3) public static func handleLink(
         _ url: URL,
         sdk: PersonalizationSDK? = nil,
         shopId: String? = nil,

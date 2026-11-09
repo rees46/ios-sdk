@@ -5,7 +5,7 @@ import UIKit
 /// Источник: Figma Mobile SDK UI Kit, секция Navigation (90:660),
 /// символы Dots (90:669) и Dot (90:685).
 /// В макете нарисовано пять точек, число вынесено в API.
-@_spi(PersonalizationUI) public final class PersonalizationDots: UIView {
+public final class PersonalizationDots: UIView {
 
     public var count: Int = 0 {
         didSet {

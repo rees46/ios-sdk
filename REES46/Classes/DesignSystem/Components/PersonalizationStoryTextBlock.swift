@@ -13,7 +13,7 @@ import UIKit
 ///
 /// С `promoCode` блок — кнопка: нажатие копирует код в буфер обмена, показывает тост
 /// `copiedText` сверху и зовёт `onPromoCopied`.
-@_spi(PersonalizationUI) public final class PersonalizationStoryTextBlock: UIView {
+public final class PersonalizationStoryTextBlock: UIView {
 
     /// Кегль и интерлиньяж.
     public struct Style: Equatable {

@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// The category screen driven by a fake SDK whose `getCategory` answers are scripted: what goes into
 /// the request, `categoryView` once per category, the filter sections from the category response,

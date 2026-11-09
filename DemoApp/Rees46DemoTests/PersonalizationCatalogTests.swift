@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// The catalogue is one recycling list: however many pages are loaded, only the cards on screen
 /// exist and they are reused while scrolling. Switched to `isScrollEnabled = false` for a host's

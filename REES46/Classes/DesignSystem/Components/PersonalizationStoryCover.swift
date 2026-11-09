@@ -18,7 +18,7 @@ import UIKit
 /// Картинку компонент не грузит: хост кладёт её в `imageView`.
 /// Кольцо рисуют слои `CAShapeLayer`, а их `cgColor` за сменой темы не следит —
 /// цвета переставляются из `traitCollectionDidChange`.
-@_spi(PersonalizationUI) public final class PersonalizationStoryCover: UIView {
+public final class PersonalizationStoryCover: UIView {
 
     public enum State {
         case `default`, pinned, viewed, skeleton

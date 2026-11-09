@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// "UI Kit" tab — the design system, one exhibit per component.
 ///
@@ -14,10 +14,11 @@ import UIKit
 /// "Legacy UI" tab. "Stories V2" is the kit's stories: every component of the Stories page, the
 /// viewer on sample stories, and the data-bound block of the demo shop (`StoriesV2Exhibits`).
 ///
-/// The kit is SPI until its release, hence the `@_spi(PersonalizationUI)` import. Product data of
-/// the static exhibits is fixed: those components do not fetch or format anything themselves, and
-/// images are loaded by the host — `DemoImageLoader` here, through the components' `imageLoader`
-/// slot. The data-bound widgets fetch on their own and load images with the built-in loader.
+/// v3 (popups v3, stories on API v3) is not public API yet: the files that use it import
+/// `@_spi(PersonalizationV3)`. Product data of the static exhibits is fixed: those components do
+/// not fetch or format anything themselves, and images are loaded by the host — `DemoImageLoader`
+/// here, through the components' `imageLoader` slot. The data-bound widgets fetch on their own and
+/// load images with the built-in loader.
 final class UIKitShowcaseViewController: UIViewController {
 
     private let segments = UISegmentedControl(items: ["Components", "Blocks", "Search", "Stories", "Stories V2"])

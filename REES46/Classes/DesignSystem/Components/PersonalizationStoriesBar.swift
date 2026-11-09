@@ -9,7 +9,7 @@ import UIKit
 /// Пока `isLoading`, вместо превью стоят `skeletonCount` заглушек (в макете четыре).
 /// Картинки грузит хост через `imageLoader`. Смена `items` с теми же id обновляет
 /// превью на месте — состояние кольца и сегменты — без перезагрузки картинок.
-@_spi(PersonalizationUI) public final class PersonalizationStoriesBar: UIView {
+public final class PersonalizationStoriesBar: UIView {
 
     /// Превью в ленте.
     public struct Item {

@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-@_spi(PersonalizationUI) import REES46
+@_spi(PersonalizationV3) import REES46
 
 /// "Stories V2" segment of the UI Kit tab: the kit's stories, one exhibit per component of the
 /// design file's Stories page, the fullscreen viewer on sample stories, and the data-bound block

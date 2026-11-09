@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// The list card in a narrow column (a 360 pt phone, a large font): the discount badge and the
 /// button move under the price instead of squeezing each other; a wide column keeps one line.

@@ -25,7 +25,7 @@ import UIKit
 /// Нажатие на товар блока рекомендаций и на кнопку его карточки запоминает источник `dynamic`
 /// с кодом блока (`tracking.setSource`), потом отдаёт товар хосту; у коллекции источник
 /// не ставится.
-@_spi(PersonalizationUI) public final class PersonalizationRecommenderBlock: UIView {
+public final class PersonalizationRecommenderBlock: UIView {
 
     /// Откуда блок берёт товары.
     public enum Source: Equatable {

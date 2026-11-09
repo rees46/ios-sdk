@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// Popups v3, the network: the requests of the shared `requests.json` (list, one popup, events,
 /// promo code, reviews) and the error rules of `error-responses.json` — through the API v3

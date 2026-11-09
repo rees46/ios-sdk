@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// Popups v3, the native render: the grid laid out at a fixed width, the element registry (unknown
 /// and hidden elements are skipped), the frame that scrolls, the window rules of the layouts, the

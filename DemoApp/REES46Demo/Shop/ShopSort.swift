@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// Sorting of the shop's results and categories. The kit's design has no sort picker, so the shop
 /// shows its own bottom sheet from the screen's sort button; the choice goes to the screen's

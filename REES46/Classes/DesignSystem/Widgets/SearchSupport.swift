@@ -2,7 +2,7 @@ import UIKit
 
 /// Категория, на которую можно перейти из поиска: из подсказок instant-поиска (есть id)
 /// или из популярных категорий пустого запроса (только имя и ссылка).
-@_spi(PersonalizationUI) public struct PersonalizationSearchCategory {
+public struct PersonalizationSearchCategory {
     public let id: String?
     public let name: String
     public let url: String?

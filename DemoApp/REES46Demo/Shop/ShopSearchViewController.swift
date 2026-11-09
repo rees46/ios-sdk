@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// Search results: the kit's `PersonalizationSearchResultsScreen` for the phrase submitted on Home.
 ///

@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Перезагрузка блока рекомендаций, который хост не держит сам, — например, из SwiftUI.
 /// Привязывается к блоку при показе; до привязки ничего не делает.
-@_spi(PersonalizationUI) public final class PersonalizationRecommenderBlockController {
+public final class PersonalizationRecommenderBlockController {
 
     weak var block: PersonalizationRecommenderBlock?
 
@@ -26,7 +26,7 @@ import SwiftUI
 /// PersonalizationRecommenderBlockWidget(collectionId: "42", layout: .grid)
 /// ```
 @available(iOS 13.0, *)
-@_spi(PersonalizationUI) public struct PersonalizationRecommenderBlockWidget: UIViewRepresentable {
+public struct PersonalizationRecommenderBlockWidget: UIViewRepresentable {
 
     public var source: PersonalizationRecommenderBlock.Source
     public var shopId: String?

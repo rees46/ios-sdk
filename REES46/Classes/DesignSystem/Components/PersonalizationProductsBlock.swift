@@ -10,7 +10,7 @@ import UIKit
 /// Собран из `PersonalizationTitle`, `PersonalizationButton`,
 /// `PersonalizationProductsList`, `PersonalizationDots`. Тот же блок с данными SDK —
 /// `PersonalizationRecommenderBlock`: он сам грузит рекомендации или коллекцию.
-@_spi(PersonalizationUI) public final class PersonalizationProductsBlock: UIView {
+public final class PersonalizationProductsBlock: UIView {
 
     public var layout: PersonalizationProductsList.Layout = .carousel {
         didSet { applyLayout() }

@@ -11,7 +11,7 @@ import UIKit
 ///
 /// Каждый новый запрос трекается событием `search`; нажатие на карточку запоминает источник
 /// `full_search` и отдаёт товар хосту через `onProductTap`.
-@_spi(PersonalizationUI) public final class PersonalizationSearchResultsScreen: PersonalizationResultsScreen<Product> {
+public final class PersonalizationSearchResultsScreen: PersonalizationResultsScreen<Product> {
 
     /// Поисковая фраза; смена перезапрашивает первую страницу.
     public var query: String? {

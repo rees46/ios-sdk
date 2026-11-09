@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// Product page: `getProductInfo` — a card on top with the photo, brand, name, price with the old
 /// price and the discount; under it recommender blocks for this product — similar, bought with it

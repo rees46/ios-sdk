@@ -9,7 +9,7 @@ import UIKit
 /// Нажатие переключает `isMuted`, шлёт `.valueChanged` и зовёт `onToggle` с новым значением.
 /// VoiceOver называет текущее состояние звука, а не действие: кнопка — переключатель,
 /// включённый звук отмечен признаком `.selected` (на iOS 17+ ещё и `.toggleButton`).
-@_spi(PersonalizationUI) public final class PersonalizationStorySoundButton: UIControl {
+public final class PersonalizationStorySoundButton: UIControl {
 
     public static let side: CGFloat = 32
 

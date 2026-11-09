@@ -8,7 +8,7 @@ import UIKit
 /// в две колонки с шагом 16 по обеим осям; список — карточки List столбиком с шагом 16.
 ///
 /// Карточки — `PersonalizationProductCard`. Картинки грузит хост через `imageLoader`.
-@_spi(PersonalizationUI) public final class PersonalizationProductsList: UIView {
+public final class PersonalizationProductsList: UIView {
 
     public enum Layout {
         case carousel, grid, list

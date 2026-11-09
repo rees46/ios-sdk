@@ -1,17 +1,27 @@
 import UIKit
 
+// Всё v3 — попапы v3 (`sdk.popups`, `PersonalizationPopups`) и сторис на API v3 (`apiV3Domain`,
+// ссылки «Поделиться» и `handleLink`, `shareUrlTransform`, опросы с их транспортом, типами и
+// текстами) — помечено `@_spi(PersonalizationV3)`: это не публичное API SDK. Член типа кита,
+// нужный только v3, несёт `@_spi(PersonalizationV3)` сам. Обычный `import REES46` v3 не видит;
+// демо-приложение подключает его там, где он нужен:
+//
+//     @_spi(PersonalizationV3) import REES46
+//
+// Шлюз снимается, только когда v3 станет публичным.
+
 /// Попапы v3 — нативный рендер документа design нового конструктора попапов.
 ///
 /// Спящий режим: движок не шлёт ни одного запроса, пока хост не включил его (`isEnabled`) и
 /// `/init` не прислал флаг `popups_v3` (или хост велел флаг не ждать — `ignoreInitFlag`).
 /// Хост сообщает об открытых экранах (`screenOpened`) именами, которые маркетолог пишет в
-/// `target_screens`. Всё — за шлюзом кита, публичное API SDK не меняется.
+/// `target_screens`. Всё — за шлюзом v3 (см. выше), публичное API SDK не меняется.
 ///
 ///     sdk.popups.appHost = "app.rees46.ru"
 ///     sdk.popups.isEnabled = true
 ///     sdk.popups.screenOpened("product")
 ///     sdk.popups.show(id: 512)
-@_spi(PersonalizationUI) public final class PersonalizationPopups {
+@_spi(PersonalizationV3) public final class PersonalizationPopups {
 
     /// Хост ЛК (API v3) по умолчанию.
     public static let defaultAppHost = "app.rees46.ru"
@@ -197,7 +207,7 @@ private final class PopupsV3OfflineBackend: PopupsV3Backend {
 extension PersonalizationSDK {
 
     /// Попапы v3 этого инстанса.
-    @_spi(PersonalizationUI) public var popups: PersonalizationPopups {
+    @_spi(PersonalizationV3) public var popups: PersonalizationPopups {
         (self as? SimplePersonalizationSDK)?.popupsV3 ?? PersonalizationPopups.detached
     }
 }

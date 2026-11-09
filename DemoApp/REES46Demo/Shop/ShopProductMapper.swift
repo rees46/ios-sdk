@@ -1,5 +1,5 @@
 import Foundation
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// SDK product → kit card, for the screen that fetches its product itself (the product page).
 ///

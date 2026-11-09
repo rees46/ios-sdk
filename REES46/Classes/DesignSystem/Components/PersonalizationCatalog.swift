@@ -21,7 +21,7 @@ import UIKit
 /// догрузилось. Внутри чужой вертикальной прокрутки свою выключают
 /// (`isScrollEnabled = false`): тогда высота каталога идёт по содержимому, и он
 /// раскладывается целиком, как обычный блок.
-@_spi(PersonalizationUI) public final class PersonalizationCatalog: UIView {
+public final class PersonalizationCatalog: UIView {
 
     /// Заголовок над товарами: выдача или категория. `nil` — убрать.
     public var header: UIView? {

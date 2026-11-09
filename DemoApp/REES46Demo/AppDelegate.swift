@@ -8,7 +8,7 @@
 
 import Firebase
 import FirebaseMessaging
-@_spi(PersonalizationUI) import REES46
+@_spi(PersonalizationV3) import REES46
 import SwiftUI
 import UIKit
 import UserNotifications

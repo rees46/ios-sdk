@@ -11,7 +11,7 @@ import UIKit
 ///
 /// Под текстом может стоять кнопка (`actionText`) — так собрана ошибка загрузки
 /// с «Retry». В макете ошибки нет: кнопка кита, вид secondary, шаг 16 от текста.
-@_spi(PersonalizationUI) public final class PersonalizationEmptyState: UIView {
+public final class PersonalizationEmptyState: UIView {
 
     public var message: String? {
         didSet { applyText() }

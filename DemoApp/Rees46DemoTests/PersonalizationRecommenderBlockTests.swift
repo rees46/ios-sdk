@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// The data-bound recommender block over a fake SDK whose `recommend` / `getCollection` answers are
 /// scripted: title, hidden states and callbacks, the shared cache and `reload()`, the client-side

@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// Category: the kit's `PersonalizationCategoryScreen` as the whole screen, under the status bar.
 ///

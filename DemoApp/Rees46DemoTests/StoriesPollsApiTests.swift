@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// Polls on Stories V2 slides, the network and data side (the web SDK's `polls.test.ts`): the
 /// `poll` element is parsed from the v3 feed tolerantly (numbers as strings, nulls, unknown

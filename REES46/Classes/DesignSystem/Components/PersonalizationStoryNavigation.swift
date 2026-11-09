@@ -12,7 +12,7 @@ import UIKit
 ///
 /// Цвета берутся из темы вью: на медиа-слайде просмотрщик включает тёмную тему,
 /// и шапка становится светлой сама.
-@_spi(PersonalizationUI) public final class PersonalizationStoryNavigation: UIView {
+public final class PersonalizationStoryNavigation: UIView {
 
     /// Высота шапки: полоски, шаг и строка крестика.
     public static let height: CGFloat = PersonalizationStoryProgress.height + PersonalizationSpacing.lg + closeSide

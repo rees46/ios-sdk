@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// Stories V2 "Share" and links (API v3, `PersonalizationStories.apiV3Domain`): the link is read
 /// the way the web SDK reads it, a slide shares its own link or the campaign's, the v3 answer is

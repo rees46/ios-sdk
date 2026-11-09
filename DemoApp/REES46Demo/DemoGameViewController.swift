@@ -1,6 +1,6 @@
 import UIKit
 import WebKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// The mini-game a game link opens (`rees46://game`, see `DemoLinks`) — from outside the app, or
 /// from a popup's or a slide's button, whose hooks give the link to the demo instead of the system.

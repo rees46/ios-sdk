@@ -11,7 +11,7 @@ import UIKit
 /// Цвет — токен Shadow/Heavy вместе с прозрачностью (8% в светлой, 50% в тёмной).
 /// `cgColor` динамический цвет не отслеживает: после смены темы `apply(to:)`
 /// надо позвать ещё раз, из `traitCollectionDidChange`.
-@_spi(PersonalizationUI) public struct PersonalizationShadow {
+public struct PersonalizationShadow {
 
     public let offsetY: CGFloat
     /// Радиус размытия CoreAnimation: половина CSS-размытия из макета.
@@ -32,7 +32,7 @@ import UIKit
     }
 }
 
-@_spi(PersonalizationUI) public enum PersonalizationElevation {
+public enum PersonalizationElevation {
 
     /// None — без тени.
     public static let none: [PersonalizationShadow] = []

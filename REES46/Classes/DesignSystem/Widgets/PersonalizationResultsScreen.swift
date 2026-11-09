@@ -1,7 +1,7 @@
 import UIKit
 
 /// Значения фильтров экрана выдачи, ушедшие в запрос.
-@_spi(PersonalizationUI) public struct PersonalizationAppliedFilters: Equatable {
+public struct PersonalizationAppliedFilters: Equatable {
     public var brands: Set<String> = []
     public var priceMin: String?
     public var priceMax: String?
@@ -119,7 +119,7 @@ private enum SectionId {
 /// Ошибка загрузки: если не пришла первая страница, вместо выдачи — `errorText` и кнопка
 /// `retryText`; если следующая — `retryText` встаёт на место «загрузить ещё». Нажатие
 /// повторяет ту же страницу, `onError` зовётся на каждую ошибку.
-@_spi(PersonalizationUI) public class PersonalizationResultsScreen<Item>: UIView {
+public class PersonalizationResultsScreen<Item>: UIView {
 
     /// Значения фильтров, ушедшие в запрос.
     public typealias Applied = PersonalizationAppliedFilters

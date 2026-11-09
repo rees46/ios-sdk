@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+@_spi(PersonalizationV3) import REES46
 
 /// Shop home: the header ("Shop", a popups menu and a search button), the stories bar, the
 /// recommender carousel and the top-level categories, one column under the status bar. The popups

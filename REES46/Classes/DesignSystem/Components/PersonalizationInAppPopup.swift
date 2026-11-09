@@ -29,7 +29,7 @@ import UIKit
 /// Padding/Gap Full Screen (24), скругление модалки — радиус Modal, фон — Background/Card,
 /// тень модалки — Elevation 3. Скругление и обрезка живут на внутренней карточке,
 /// а тень — на самом попапе: обрезка на одном слое с тенью срезала бы её.
-@_spi(PersonalizationUI) public final class PersonalizationInAppPopup: UIView {
+public final class PersonalizationInAppPopup: UIView {
 
     /// Вид попапа: чем занято место над текстом.
     public enum ContentView {

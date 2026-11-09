@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// Transport with manual control of every request, like the web tests' `transport()`.
 final class FakePollTransport: PersonalizationStoryPollTransport {

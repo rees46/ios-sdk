@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// Popups v3, the engine: the 18 scenarios of the shared `scenarios.json` (triggers, screens,
 /// background, frequency, cooldown, test mode, the modal slot, promo codes, context changes) on

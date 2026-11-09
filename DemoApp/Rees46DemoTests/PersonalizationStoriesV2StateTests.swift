@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// The Stories V2 viewer logic without UI: tap zones by thirds (mirrored in RTL), slide and story
 /// navigation, pause reasons, the products sheet, media readiness with Retry, and the clock.

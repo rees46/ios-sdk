@@ -13,7 +13,7 @@ import UIKit
 ///
 /// Состояние чекбоксов и раскрытия секций живёт здесь; хост получает изменения
 /// через `onOptionToggle` и `onRangeChanged` и на «Apply» читает `sections`.
-@_spi(PersonalizationUI) public final class PersonalizationFilters: UIView {
+public final class PersonalizationFilters: UIView {
 
     public enum Section {
         /// Два поля «от — до». `select` — поля типа Select, список открывает хост.

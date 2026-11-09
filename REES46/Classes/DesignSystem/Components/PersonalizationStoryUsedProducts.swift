@@ -12,7 +12,7 @@ import UIKit
 ///
 /// В начале ряда хост может поставить свою вью — просмотрщик кладёт туда кнопку звука
 /// видео-слайда (`leadingView`). Картинки карточек грузит хост через `imageLoader`.
-@_spi(PersonalizationUI) public final class PersonalizationStoryUsedProducts: UIView {
+public final class PersonalizationStoryUsedProducts: UIView {
 
     /// Высота ряда с переключателем.
     public static let rowHeight: CGFloat = 64

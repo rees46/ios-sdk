@@ -2,7 +2,7 @@ import UIKit
 
 /// Тексты сторис, которые хост может заменить; локализация — за хостом. Одни и те же
 /// у виджета, просмотрщика и `PersonalizationStories.show`.
-@_spi(PersonalizationUI) public struct PersonalizationStoriesTexts {
+public struct PersonalizationStoriesTexts {
     /// Подпись над промокодом, если админка не задала свою.
     public var promoCaption: String?
     /// Тост после копирования промокода; `nil` — без тоста.
@@ -14,18 +14,45 @@ import UIKit
     public var hideProductsText: String
     /// Кнопка повтора, когда медиа не загрузилось.
     public var retryText: String
-    /// VoiceOver: крестик, включение и выключение звука, «Поделиться».
+    /// VoiceOver: крестик, включение и выключение звука.
     public var closeLabel: String?
     public var soundOnLabel: String?
     public var soundOffLabel: String?
-    public var shareLabel: String?
-    /// Опросы на слайдах: ссылка «ответить заново», кнопка отправки без своей подписи, ошибка
-    /// отправки. Строки `labels` элемента из ленты важнее.
-    public var pollReanswerText: String
-    public var pollSubmitText: String
-    public var pollErrorText: String
+    /// VoiceOver: «Поделиться» (API v3).
+    @_spi(PersonalizationV3) public var shareLabel: String?
+    /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи,
+    /// ошибка отправки. Строки `labels` элемента из ленты важнее.
+    @_spi(PersonalizationV3) public var pollReanswerText: String
+    @_spi(PersonalizationV3) public var pollSubmitText: String
+    @_spi(PersonalizationV3) public var pollErrorText: String
 
     public init(
+        promoCaption: String? = "Promo code",
+        promoCopiedText: String? = "Copied",
+        productButtonText: String = "More info",
+        showProductsText: String = "Used products",
+        hideProductsText: String = "Hide products",
+        retryText: String = "Retry",
+        closeLabel: String? = "Close",
+        soundOnLabel: String? = "Sound on",
+        soundOffLabel: String? = "Sound off"
+    ) {
+        self.init(
+            promoCaption: promoCaption,
+            promoCopiedText: promoCopiedText,
+            productButtonText: productButtonText,
+            showProductsText: showProductsText,
+            hideProductsText: hideProductsText,
+            retryText: retryText,
+            closeLabel: closeLabel,
+            soundOnLabel: soundOnLabel,
+            soundOffLabel: soundOffLabel,
+            shareLabel: "Share"
+        )
+    }
+
+    /// То же с текстами «Поделиться» и опросов API v3.
+    @_spi(PersonalizationV3) public init(
         promoCaption: String? = "Promo code",
         promoCopiedText: String? = "Copied",
         productButtonText: String = "More info",
@@ -88,16 +115,11 @@ import UIKit
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
 ///   в паузе ролик и GIF стоят на текущем кадре;
 /// - медиа-слайды — в тёмной теме кита, остальные — в теме приложения;
-/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь;
-/// - у слайда со ссылкой (`PersonalizationStory.shareUrl(of:)`) в шапке кнопка «Поделиться»:
-///   системное окно с одной ссылкой, слайд стоит, пока оно открыто;
-/// - опрос слайда (`PersonalizationStorySlide.poll`) — карточкой, если есть `pollTransport`:
-///   слайд стоит, пока карточку трогают, в её поле курсор или ответ отправляется; касание с
-///   карточки не листает и не закрывает, тап мимо при клавиатуре только прячет её.
+/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь.
 ///
 /// Сеть, трекинг и ссылки — не его дело: наружу отданы колбэки. Данные SDK подключает
 /// виджет `PersonalizationStories`; хост может показать просмотрщик и со своими данными.
-@_spi(PersonalizationUI) public final class PersonalizationStoriesViewController: UIViewController {
+public final class PersonalizationStoriesViewController: UIViewController {
 
     /// Сторис со слайдами: пустые отбрасываются при создании.
     public let stories: [PersonalizationStory]
@@ -130,19 +152,25 @@ import UIKit
     public var onPromoCopied: ((PersonalizationStory, PersonalizationStorySlide, String) -> Void)?
 
     /// Нажата «Поделиться» — событие `share` для трекинга, сразу, до выбора в окне. Окно
-    /// «Поделиться» просмотрщик показывает сам.
-    public var onShare: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
+    /// «Поделиться» просмотрщик показывает сам: у слайда со ссылкой API v3
+    /// (`PersonalizationStory.shareUrl(of:)`) в шапке кнопка «Поделиться» — системное окно с
+    /// одной ссылкой, слайд стоит, пока оно открыто.
+    @_spi(PersonalizationV3) public var onShare: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
 
     /// Ссылка слайда прямо перед окном «Поделиться»: в окно уходит то, что вернёт, например
     /// ссылка со схемой приложения. `nil` — ссылка как есть. Кнопку и событие `share` не меняет.
-    public var shareUrlTransform: ((String) -> String)?
+    @_spi(PersonalizationV3) public var shareUrlTransform: ((String) -> String)?
 
     /// Транспорт опросов слайдов; `nil` — опросы не рисуются. Виджет `PersonalizationStories`
     /// ставит клиент API v3 своей ленты сам.
-    public var pollTransport: PersonalizationStoryPollTransport?
+    ///
+    /// Опрос слайда (`PersonalizationStorySlide.poll`) — карточкой: слайд стоит, пока карточку
+    /// трогают, в её поле курсор или ответ отправляется; касание с карточки не листает и не
+    /// закрывает, тап мимо при клавиатуре только прячет её.
+    @_spi(PersonalizationV3) public var pollTransport: PersonalizationStoryPollTransport?
 
     /// Магазин ответов опросов этого запуска (общих у всех просмотрщиков); виджет ставит свой.
-    public var pollShopId = ""
+    @_spi(PersonalizationV3) public var pollShopId = ""
 
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
@@ -310,7 +338,7 @@ extension PersonalizationStoriesViewController {
         get { texts.soundOffLabel }
         set { texts.soundOffLabel = newValue }
     }
-    public var shareLabel: String? {
+    @_spi(PersonalizationV3) public var shareLabel: String? {
         get { texts.shareLabel }
         set { texts.shareLabel = newValue }
     }

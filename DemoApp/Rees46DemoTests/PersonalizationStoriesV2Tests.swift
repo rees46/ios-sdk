@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// Stories V2 of the kit: the price splits the currency off the server's formatted string and
 /// picks its kind from the product (promo code, then discount, then plain price), the timer

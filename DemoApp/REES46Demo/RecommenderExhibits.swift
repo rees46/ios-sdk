@@ -1,6 +1,6 @@
 import SwiftUI
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// The data-bound recommender block in the "Blocks" segment: the demo shop's block as a carousel,
 /// the same block as a grid, and the SwiftUI wrapper. Under each block — what `onLoaded` or

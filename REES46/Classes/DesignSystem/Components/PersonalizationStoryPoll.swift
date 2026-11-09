@@ -6,7 +6,7 @@ import UIKit
 /// Поведение и вид — как у JS SDK (`createPoll`): один вариант и шкала уходят по нажатию,
 /// несколько вариантов и текст — кнопкой. Рисует его просмотрщик, если у него есть транспорт
 /// опросов (`PersonalizationStoriesViewController.pollTransport`); без транспорта опроса нет.
-@_spi(PersonalizationUI) public struct PersonalizationStoryPoll {
+@_spi(PersonalizationV3) public struct PersonalizationStoryPoll {
 
     /// Шкала оценки.
     public enum Scale: String, CaseIterable {
@@ -332,7 +332,7 @@ struct StoryPollTexts: Equatable {
 /// - шкала: `{channel, category (NPS) | campaign (CSAT, CES), rate}`.
 ///
 /// `completion` — один раз, на любой очереди: успех с `answer` / `results` из `payload` или ошибка.
-@_spi(PersonalizationUI) public protocol PersonalizationStoryPollTransport {
+@_spi(PersonalizationV3) public protocol PersonalizationStoryPollTransport {
     func answerMiniPoll(
         code: String,
         body: [String: Any],

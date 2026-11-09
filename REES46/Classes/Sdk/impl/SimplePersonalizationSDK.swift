@@ -120,7 +120,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return PopupPresenter(sdk: self)
     }()
 
-    /// Popups v3 of this instance (behind the UI kit gate, see `PersonalizationSDK.popups`). Created
+    /// Popups v3 of this instance (behind the v3 gate, see `PersonalizationSDK.popups`). Created
     /// at the end of `init`, so it never races between the session queue and the host.
     lazy var popupsV3: PersonalizationPopups = {
         return PersonalizationPopups(sdk: self)

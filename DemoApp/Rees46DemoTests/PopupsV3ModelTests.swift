@@ -1,6 +1,6 @@
 import XCTest
 import UIKit
-@_spi(PersonalizationUI) @testable import REES46
+@_spi(PersonalizationV3) @testable import REES46
 
 /// The shared popups v3 fixtures (`Fixtures/popups_v3_*.json`, copied from the spec as they are):
 /// what the API sends plus `_fixture` with the expectations every platform checks.

@@ -9,7 +9,7 @@ import UIKit
 ///
 /// `url` и `deeplink` карточка не рисует — они для хоста, который открывает товар
 /// по нажатию: страница на сайте или ссылка в приложение (`deeplink_ios` из ответа API).
-@_spi(PersonalizationUI) public struct PersonalizationProduct {
+public struct PersonalizationProduct {
     public let id: String
     public let name: String
     public let price: String

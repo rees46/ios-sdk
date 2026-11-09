@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// The toast as the Stories frames place it: a 50-high pill 16 above the bottom (or below the top)
 /// of the safe area, centred and no wider than the screen less 16 a side; one at a time, gone after

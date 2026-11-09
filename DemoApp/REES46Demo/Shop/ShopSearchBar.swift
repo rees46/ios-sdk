@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// The shop's instant search on Home, behind the search button of its header.
 ///

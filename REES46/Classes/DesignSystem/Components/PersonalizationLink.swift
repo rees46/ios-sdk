@@ -6,7 +6,7 @@ import UIKit
 /// (страница InstantSearchField, 151:3976 и 310:9829): кегль base 16/24,
 /// начертание 600, цвет Text/Link, без подложки и отступов. Нажатого состояния
 /// в макете нет, поэтому ссылка только слегка гаснет под пальцем.
-@_spi(PersonalizationUI) public final class PersonalizationLink: UIControl {
+public final class PersonalizationLink: UIControl {
 
     public var text: String? {
         didSet { applyText() }

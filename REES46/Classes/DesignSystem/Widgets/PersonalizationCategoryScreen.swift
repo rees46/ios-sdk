@@ -13,7 +13,7 @@ import UIKit
 ///
 /// Трекинг: `categoryView` — один раз на категорию, а не на страницы, фильтры, сортировку
 /// и повтор после ошибки. Источник трекинга при нажатии на товар не ставится.
-@_spi(PersonalizationUI) public final class PersonalizationCategoryScreen: PersonalizationResultsScreen<CategoryProduct> {
+public final class PersonalizationCategoryScreen: PersonalizationResultsScreen<CategoryProduct> {
 
     /// Id категории; смена перезапрашивает первую страницу.
     public var categoryId: String {

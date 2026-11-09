@@ -3,10 +3,9 @@ import UIKit
 /// Сторис для просмотрщика кита: имя, аватар и слайды.
 ///
 /// Данные — от хоста или от виджета `PersonalizationStories`, который собирает их из ответа
-/// `stories/{code}` (или ленты API v3, см. `PersonalizationStories.apiV3Domain`). Строки уже
-/// отформатированы сервером, картинки компоненты не грузят сами — загрузчик приходит от хоста
-/// (у виджета есть встроенный).
-@_spi(PersonalizationUI) public struct PersonalizationStory {
+/// `stories/{code}`. Строки уже отформатированы сервером, картинки компоненты не грузят сами —
+/// загрузчик приходит от хоста (у виджета есть встроенный).
+public struct PersonalizationStory {
     public let id: String
     public let name: String
     public let avatarUrl: String?
@@ -18,11 +17,27 @@ import UIKit
     public let startPosition: Int
     public let slides: [PersonalizationStorySlide]
     /// Кампанией можно делиться (`shareable`); без поля в ответе — можно.
-    public let shareable: Bool
+    @_spi(PersonalizationV3) public let shareable: Bool
     /// Ссылка кампании для «Поделиться» (`share_url`, API v3) — у слайдов без своей.
-    public let shareUrl: String?
+    @_spi(PersonalizationV3) public let shareUrl: String?
 
     public init(
+        id: String,
+        name: String,
+        avatarUrl: String? = nil,
+        pinned: Bool = false,
+        viewed: Bool = false,
+        startPosition: Int = 0,
+        slides: [PersonalizationStorySlide]
+    ) {
+        self.init(
+            id: id, name: name, avatarUrl: avatarUrl, pinned: pinned, viewed: viewed,
+            startPosition: startPosition, slides: slides, shareable: true, shareUrl: nil
+        )
+    }
+
+    /// То же со ссылками «Поделиться» API v3.
+    @_spi(PersonalizationV3) public init(
         id: String,
         name: String,
         avatarUrl: String? = nil,
@@ -49,7 +64,7 @@ import UIKit
     /// ссылка открыла бы кампанию с начала, а не с того слайда, которым поделились. Только
     /// `http(s)`; кампания с `shareable: false`, слайд без ссылок или ссылка другой схемы —
     /// `nil`, и кнопки на слайде нет.
-    public func shareUrl(of slide: PersonalizationStorySlide) -> URL? {
+    @_spi(PersonalizationV3) public func shareUrl(of slide: PersonalizationStorySlide) -> URL? {
         guard shareable else { return nil }
         let link: String
         if let own = slide.shareUrl, !own.isEmpty {
@@ -82,7 +97,7 @@ import UIKit
 /// `backgroundColor` (без него чёрные); поверх — текстовые блоки, кнопки и товары; они всегда
 /// в тёмной теме кита. `content` — слайд без медиа (в API тип `""`): с товаром это карточка
 /// товара (Card/Story View = Product / Promo / Discount) на Background/Card в теме приложения.
-@_spi(PersonalizationUI) public struct PersonalizationStorySlide {
+public struct PersonalizationStorySlide {
 
     public enum Kind {
         case image, video, content
@@ -335,11 +350,31 @@ import UIKit
     public let products: Products?
     public let textBlocks: [TextBlock]
     /// Своя ссылка слайда для «Поделиться» (`share_url`, API v3); у товарных слайдов её нет.
-    public let shareUrl: String?
+    @_spi(PersonalizationV3) public let shareUrl: String?
     /// Опрос слайда (элемент `poll`, только API v3); рисуется и на товарном слайде.
-    public let poll: PersonalizationStoryPoll?
+    @_spi(PersonalizationV3) public let poll: PersonalizationStoryPoll?
 
     public init(
+        id: String,
+        kind: Kind,
+        background: String? = nil,
+        backgroundColor: UIColor? = nil,
+        preview: String? = nil,
+        duration: TimeInterval = PersonalizationStorySlide.defaultDuration,
+        buttons: [Button] = [],
+        offer: Offer? = nil,
+        products: Products? = nil,
+        textBlocks: [TextBlock] = []
+    ) {
+        self.init(
+            id: id, kind: kind, background: background, backgroundColor: backgroundColor, preview: preview,
+            duration: duration, buttons: buttons, offer: offer, products: products, textBlocks: textBlocks,
+            shareUrl: nil, poll: nil
+        )
+    }
+
+    /// То же со ссылкой «Поделиться» и опросом API v3.
+    @_spi(PersonalizationV3) public init(
         id: String,
         kind: Kind,
         background: String? = nil,

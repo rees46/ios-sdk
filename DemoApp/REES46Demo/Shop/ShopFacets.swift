@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// What the demo shop's feed calls its facets, the way an integrator would set it up for their own
 /// feed: the kit knows only the format of the response, not what a shop's facets mean. Facets left

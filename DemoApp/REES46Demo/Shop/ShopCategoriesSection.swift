@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// "Categories" on Home: the top-level categories of the shop under the kit's title — the same
 /// title the recommender block has — as kit rows with a chevron in one rounded group.

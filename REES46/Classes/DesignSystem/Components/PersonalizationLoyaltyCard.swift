@@ -25,7 +25,7 @@ import UIKit
 /// Картинки (логотип, лента, эмблема уровня) грузит хост — кит не тянет сеть. Карта отдаёт
 /// загрузчику `UIImageView` и сама замечает, когда в нём появилась картинка: от неё
 /// зависят видимость секций и ширина логотипа.
-@_spi(PersonalizationUI) public final class PersonalizationLoyaltyCard: UIView {
+public final class PersonalizationLoyaltyCard: UIView {
 
     /// Поле секции Info: подпись и значение — «Владелец» / «Олег».
     public struct Field: Equatable {

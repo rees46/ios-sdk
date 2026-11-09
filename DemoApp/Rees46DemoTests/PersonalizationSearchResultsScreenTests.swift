@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// The search results screen driven by a fake SDK whose `search` answers are scripted:
 /// rating visibility on the cards, and the error state with retry for the first and the next page.

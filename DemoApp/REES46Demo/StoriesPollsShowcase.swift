@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+@_spi(PersonalizationV3) import REES46
 
 /// "Stories V2 polls (offline)": every kind of poll on Stories V2 slides without a set-up shop.
 ///

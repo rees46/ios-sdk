@@ -1,6 +1,6 @@
 import XCTest
 import AVFoundation
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// Stories V2 media: the disk cache names files by a stable key, keeps the newest files within its
 /// limit and never trims a file in use; the video loader reads the total length off a ranged response

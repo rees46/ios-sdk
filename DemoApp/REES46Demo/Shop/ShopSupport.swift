@@ -1,5 +1,5 @@
 import UIKit
-@_spi(PersonalizationUI) import REES46
+@_spi(PersonalizationV3) import REES46
 
 /// The "Shop" tab — a small store built from the kit's widgets and the SDK's public methods, the
 /// way a host app would wire them: Home (instant search, stories, a recommender block, categories),
