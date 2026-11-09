@@ -16,9 +16,30 @@ public class PopupPresenter {
     private var popupQueue: [Popup] = []
     private let serialQueue = DispatchQueue(label: "com.rees46.popup.presenter")
     private var popupShownFlags: [Int: Date] = [:]
-    
+
+    /// Open legacy popups across every SDK instance (main thread). Popups v3 share the modal slot
+    /// with them: a v3 modal does not open over a legacy popup and vice versa.
+    private(set) static var presentingCount = 0
+
+    /// Whether any SDK instance is showing a legacy popup now.
+    static var isAnyPresenting: Bool { presentingCount > 0 }
+
     public init(sdk: AnyObject) {
         self.sdk = sdk
+        // A v3 modal closed: a legacy popup waiting for the slot can show now.
+        NotificationCenter.default.addObserver(forName: .personalizationPopupsV3SlotFreed, object: nil, queue: nil) { [weak self] _ in
+            self?.resumeQueue()
+        }
+    }
+
+    /// Shows the next queued popup if nothing occupies the slot.
+    private func resumeQueue() {
+        serialQueue.async { [weak self] in
+            guard let self = self, self.currentPopup == nil, !PopupV3Slots.isModalOpen,
+                  let nextPopup = self.popupQueue.first else { return }
+            self.popupQueue.removeFirst()
+            self.showPopupNow(nextPopup)
+        }
     }
     
     // MARK: - Public Interface
@@ -28,8 +49,8 @@ public class PopupPresenter {
         serialQueue.async { [weak self] in
             guard let self = self else { return }
             
-            if self.currentPopup != nil {
-                // Queue popup if one is already showing
+            if self.currentPopup != nil || PopupV3Slots.isModalOpen {
+                // Queue popup if one is already showing (a popups v3 modal included)
                 self.popupQueue.append(popup)
             } else {
                 self.showPopupNow(popup)
@@ -41,11 +62,15 @@ public class PopupPresenter {
     public func dismissCurrentPopup() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.currentPopup = nil
+            if self.currentPopup != nil {
+                self.currentPopup = nil
+                PopupPresenter.presentingCount = max(0, PopupPresenter.presentingCount - 1)
+                NotificationCenter.default.post(name: .personalizationLegacyPopupClosed, object: nil)
+            }
             
             // Present next queued popup if any
             self.serialQueue.async {
-                if let nextPopup = self.popupQueue.first {
+                if !PopupV3Slots.isModalOpen, let nextPopup = self.popupQueue.first {
                     self.popupQueue.removeFirst()
                     self.showPopupNow(nextPopup)
                 }
@@ -70,13 +95,20 @@ public class PopupPresenter {
         
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.currentPopup = NotificationWidget(
+            let widget = NotificationWidget(
                 parentViewController: presentingVC,
                 popup: popup,
                 onDismiss: { [weak self] in
                     self?.dismissCurrentPopup()
                 }
             )
+            // A popup with nothing to draw never calls `onDismiss`: it must not hold the slot.
+            if widget.isShowingPopup {
+                if self.currentPopup == nil { PopupPresenter.presentingCount += 1 }
+                self.currentPopup = widget
+            } else {
+                self.resumeQueue()
+            }
             
             // Store popup shown flag in memory for 60 seconds
             self.popupShownFlags[popup.id] = Date()

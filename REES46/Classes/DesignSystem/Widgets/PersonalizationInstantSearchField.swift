@@ -21,7 +21,7 @@ import UIKit
 /// и отдаёт объект хосту — навигация и `productView` за ним. Отправка (кнопка поиска
 /// клавиатуры, тег истории или подсказки) кладёт фразу в историю и вызывает `onSubmit` —
 /// экран полной выдачи открывает хост, событие `search` трекает `PersonalizationSearchResultsScreen`.
-@_spi(PersonalizationUI) public final class PersonalizationInstantSearchField: UIView {
+public final class PersonalizationInstantSearchField: UIView {
 
     /// Визуальный слой.
     public let view = PersonalizationInstantSearch()

@@ -16,7 +16,7 @@ import UIKit
 /// Внимание: шаг колонки в макете 13 — такого значения в шкале нет, взят LG (12).
 /// Разделитель в макете чёрный 4%, ближайший токен Line/Generic Subtle (5%).
 /// Картинки хост грузит через `imageLoader`.
-@_spi(PersonalizationUI) public final class PersonalizationInstantSearch: UIView {
+public final class PersonalizationInstantSearch: UIView {
 
     public struct Suggestion {
         public let id: String

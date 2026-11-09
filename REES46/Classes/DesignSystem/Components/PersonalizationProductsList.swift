@@ -8,7 +8,7 @@ import UIKit
 /// в две колонки с шагом 16 по обеим осям; список — карточки List столбиком с шагом 16.
 ///
 /// Карточки — `PersonalizationProductCard`. Картинки грузит хост через `imageLoader`.
-@_spi(PersonalizationUI) public final class PersonalizationProductsList: UIView {
+public final class PersonalizationProductsList: UIView {
 
     public enum Layout {
         case carousel, grid, list
@@ -50,7 +50,17 @@ import UIKit
         }
     }
 
-    /// Индекс первой видимой карточки: по нему Recommender-блок двигает точки.
+    /// Рейтинг на карточках, см. `PersonalizationProductCard.showRating`.
+    public var showRating = true {
+        didSet {
+            guard oldValue != showRating else { return }
+            itemHeightCache = nil
+            collectionView.reloadData()
+            invalidateIntrinsicContentSize()
+        }
+    }
+
+    /// Индекс первой видимой карточки: по нему блок товаров двигает точки.
     public var onFirstVisibleChanged: ((Int) -> Void)?
 
     public let collectionView: UICollectionView
@@ -123,8 +133,14 @@ import UIKit
     /// у горизонтальной раскладки contentSize берёт высоту из bounds, то есть из
     /// нуля до первого layout — блок никогда бы не вырос.
     public override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: contentHeight(forWidth: collectionView.bounds.width))
+    }
+
+    /// Высота содержимого при ширине ленты `width` — без раскладки: так блок с данными
+    /// отдаёт SwiftUI свою высоту раньше, чем его разложат.
+    func contentHeight(forWidth width: CGFloat) -> CGFloat {
         let count = products.count
-        guard count > 0 else { return CGSize(width: UIView.noIntrinsicMetric, height: 0) }
+        guard count > 0 else { return 0 }
         let gap = PersonalizationSpacing.xl
         let rows: Int
         switch layout {
@@ -132,8 +148,7 @@ import UIKit
         case .grid: rows = (count + 1) / 2
         case .list: rows = count
         }
-        let height = CGFloat(rows) * itemHeight() + CGFloat(rows - 1) * gap
-        return CGSize(width: UIView.noIntrinsicMetric, height: height)
+        return CGFloat(rows) * itemHeight(cellWidth: cellWidth(forWidth: width)) + CGFloat(rows - 1) * gap
     }
 
     /// Единая высота ячейки: самая высокая карточка при текущей ширине.
@@ -141,8 +156,7 @@ import UIKit
     /// смена товаров или раскладки сбрасывает кэш.
     private var itemHeightCache: (width: CGFloat, height: CGFloat)?
 
-    private func itemHeight() -> CGFloat {
-        let width = cellWidth()
+    private func itemHeight(cellWidth width: CGFloat) -> CGFloat {
         guard width > 0 else { return 0 }
         if let cache = itemHeightCache, cache.width == width { return cache.height }
         let height = products.map { cardHeight(for: $0, width: width) }.max() ?? 0
@@ -153,6 +167,7 @@ import UIKit
     private func cardHeight(for product: PersonalizationProduct, width: CGFloat) -> CGFloat {
         let card = PersonalizationProductCard(type: layout.cardType)
         card.imageAspect = imageAspect
+        card.showRating = showRating
         card.show(product)
         let height = card.systemLayoutSizeFitting(
             CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
@@ -163,8 +178,7 @@ import UIKit
     }
 
     /// Ширина ячейки: карусель — 220 из макета, плитка — половина без зазора, список — вся.
-    private func cellWidth() -> CGFloat {
-        let width = collectionView.bounds.width
+    private func cellWidth(forWidth width: CGFloat) -> CGFloat {
         switch layout {
         case .carousel: return 220
         case .grid: return max(0, floor((width - PersonalizationSpacing.xl) / 2))
@@ -207,6 +221,7 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
         let card = cell.card
         card.type = layout.cardType
         card.imageAspect = imageAspect
+        card.showRating = showRating
         card.show(product)
         card.onAction = { [weak self] in self?.onProductAction?(product) }
         card.onTap = { [weak self] in self?.onProductTap?(product) }
@@ -216,7 +231,8 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
     }
 
     public func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        CGSize(width: cellWidth(), height: itemHeight())
+        let width = cellWidth(forWidth: collectionView.bounds.width)
+        return CGSize(width: width, height: itemHeight(cellWidth: width))
     }
 
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {

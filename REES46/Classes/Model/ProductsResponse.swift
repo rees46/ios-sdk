@@ -6,6 +6,9 @@ public struct ProductsListResponse {
     public var priceRange: PriceRange?
     public var products: [Product]
     public var productsTotal: Int
+    /// Categories of the listed products with product counts, as in `CategoryResponse.categories`;
+    /// top-level ones have no `parentId`.
+    public var categories: [Category] = []
 
     init(json: [String: Any]) {
         if let brandsJSON = json["brands"] as? [[String: Any]] {
@@ -40,6 +43,7 @@ public struct ProductsListResponse {
         products = prodsTemp
 
         productsTotal = (json["products_total"] as? Int) ?? 0
+        categories = (json["categories"] as? [[String: Any]] ?? []).map { Category(json: $0) }
     }
 }
 
@@ -73,6 +77,8 @@ public struct ProductInfo {
     public var barcode: String = ""
     public var isNew: Bool?
     public var params: [[String: Any]]?
+    public var discountFormatted: String?
+    public var discountPercent: Int?
     
     init(json: [String: Any]) {
         
@@ -94,21 +100,23 @@ public struct ProductInfo {
         }
         categories = categoriesAll
         
-        price = json["price"] as? Double ?? 0
+        price = JSONNumber.double(json["price"]) ?? 0
         priceFormatted = json["price_formatted"] as? String ?? ""
-        priceFull = json["price_full"] as? Double ?? 0
+        priceFull = JSONNumber.double(json["price_full"]) ?? 0
         priceFullFormatted = json["price_full_formatted"] as? String ?? ""
-        oldPrice = json["oldprice"] as? Double ?? 0
+        oldPrice = JSONNumber.double(json["oldprice"]) ?? 0
         oldPriceFormatted = json["oldprice_formatted"] as? String ?? ""
-        oldPriceFull = json["oldprice_full"] as? Double ?? 0
+        oldPriceFull = JSONNumber.double(json["oldprice_full"]) ?? 0
         oldPriceFullFormatted = json["oldprice_full_formatted"] as? String ?? ""
         currency = json["currency"] as? String ?? ""
         barcode = json["barcode"] as? String ?? ""
         isNew = json["is_new"] as? Bool
         params = json["params"] as? [[String: Any]]
         
-        discount = json["discount"] as? Int ?? 0
+        discount = JSONNumber.int(json["discount"]) ?? 0
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
+        discountFormatted = json["discount_formatted"] as? String
+        discountPercent = JSONNumber.int(json["discount_percent"])
     }
 }

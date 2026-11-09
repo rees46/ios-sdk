@@ -13,7 +13,7 @@ import UIKit
 ///
 /// Состояние чекбоксов и раскрытия секций живёт здесь; хост получает изменения
 /// через `onOptionToggle` и `onRangeChanged` и на «Apply» читает `sections`.
-@_spi(PersonalizationUI) public final class PersonalizationFilters: UIView {
+public final class PersonalizationFilters: UIView {
 
     public enum Section {
         /// Два поля «от — до». `select` — поля типа Select, список открывает хост.
@@ -78,6 +78,7 @@ import UIKit
     private let title = PersonalizationTitle()
     private let closeButton = PersonalizationButton(size: .md, view: .ghost, iconStart: PersonalizationIcons.crossLarge)
     private let sectionsColumn = UIStackView()
+    private let sectionsScroll = UIScrollView()
     private let resetButton = PersonalizationButton(size: .md, view: .secondary)
     private let applyButton = PersonalizationButton(size: .md, view: .primary)
     // Какой секции и варианту принадлежит строка чекбокса; цель iOS 12, UIAction недоступен.
@@ -116,7 +117,25 @@ import UIKit
         sectionsColumn.axis = .vertical
         sectionsColumn.alignment = .fill
         sectionsColumn.spacing = sectionGap
-        stack.addArrangedSubview(sectionsColumn)
+        // Заголовок и кнопки закреплены, прокручиваются только секции: фасетов бывает десятки,
+        // и до «Apply» не надо листать весь список. Высоту, которую дал хост, секции забирают
+        // целиком; без заданной высоты (экран в общей прокрутке хоста) — по содержимому:
+        // равенство высоте содержимого — слабое, его рвёт нехватка места.
+        sectionsColumn.translatesAutoresizingMaskIntoConstraints = false
+        sectionsScroll.showsVerticalScrollIndicator = false
+        sectionsScroll.keyboardDismissMode = .interactive
+        sectionsScroll.addSubview(sectionsColumn)
+        let fitsContent = sectionsScroll.heightAnchor.constraint(equalTo: sectionsColumn.heightAnchor)
+        fitsContent.priority = .defaultLow
+        NSLayoutConstraint.activate([
+            sectionsColumn.topAnchor.constraint(equalTo: sectionsScroll.contentLayoutGuide.topAnchor),
+            sectionsColumn.bottomAnchor.constraint(equalTo: sectionsScroll.contentLayoutGuide.bottomAnchor),
+            sectionsColumn.leadingAnchor.constraint(equalTo: sectionsScroll.contentLayoutGuide.leadingAnchor),
+            sectionsColumn.trailingAnchor.constraint(equalTo: sectionsScroll.contentLayoutGuide.trailingAnchor),
+            sectionsColumn.widthAnchor.constraint(equalTo: sectionsScroll.frameLayoutGuide.widthAnchor),
+            fitsContent
+        ])
+        stack.addArrangedSubview(sectionsScroll)
 
         resetButton.addTarget(self, action: #selector(resetTapped), for: .touchUpInside)
         applyButton.addTarget(self, action: #selector(applyTapped), for: .touchUpInside)
@@ -127,6 +146,16 @@ import UIKit
         buttons.isLayoutMarginsRelativeArrangement = true
         buttons.layoutMargins = UIEdgeInsets(top: sectionGap, left: 0, bottom: 0, right: 0)
         stack.addArrangedSubview(buttons)
+        // Лишнюю высоту забирают секции, а не заголовок с кнопками: кнопки остаются внизу.
+        for view in [title, buttons] {
+            view.setContentHuggingPriority(.required, for: .vertical)
+            view.setContentCompressionResistancePriority(.required, for: .vertical)
+        }
+    }
+
+    /// Секции — к началу: экран фильтров открывается с первой секции, а не там, где его бросили.
+    public func scrollToTop() {
+        sectionsScroll.setContentOffset(.zero, animated: false)
     }
 
     public func setSections(_ items: [Section]) {

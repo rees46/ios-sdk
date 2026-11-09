@@ -5,7 +5,7 @@ import UIKit
 /// Figma Mobile SDK UI Kit (SSwS49L1fG1psWA7xbakV6), коллекция переменных Spacings.
 ///
 /// Шкала независима от типографической: здесь MD вместо Base, ступеней 11 — до 7XL.
-@_spi(PersonalizationUI) public enum PersonalizationSpacing {
+public enum PersonalizationSpacing {
 
     /// XS — 2pt.
     public static let xs: CGFloat = 2

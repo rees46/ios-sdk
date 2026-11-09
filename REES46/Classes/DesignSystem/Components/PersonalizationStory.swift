@@ -5,7 +5,7 @@ import UIKit
 /// Данные — от хоста или от виджета `PersonalizationStories`, который собирает их из ответа
 /// `stories/{code}`. Строки уже отформатированы сервером, картинки компоненты не грузят сами —
 /// загрузчик приходит от хоста (у виджета есть встроенный).
-@_spi(PersonalizationUI) public struct PersonalizationStory {
+public struct PersonalizationStory {
     public let id: String
     public let name: String
     public let avatarUrl: String?
@@ -16,6 +16,10 @@ import UIKit
     /// С какого слайда открывать нетронутую сторис.
     public let startPosition: Int
     public let slides: [PersonalizationStorySlide]
+    /// Кампанией можно делиться (`shareable`); без поля в ответе — можно.
+    @_spi(PersonalizationV3) public let shareable: Bool
+    /// Ссылка кампании для «Поделиться» (`share_url`, API v3) — у слайдов без своей.
+    @_spi(PersonalizationV3) public let shareUrl: String?
 
     public init(
         id: String,
@@ -26,6 +30,24 @@ import UIKit
         startPosition: Int = 0,
         slides: [PersonalizationStorySlide]
     ) {
+        self.init(
+            id: id, name: name, avatarUrl: avatarUrl, pinned: pinned, viewed: viewed,
+            startPosition: startPosition, slides: slides, shareable: true, shareUrl: nil
+        )
+    }
+
+    /// То же со ссылками «Поделиться» API v3.
+    @_spi(PersonalizationV3) public init(
+        id: String,
+        name: String,
+        avatarUrl: String? = nil,
+        pinned: Bool = false,
+        viewed: Bool = false,
+        startPosition: Int = 0,
+        slides: [PersonalizationStorySlide],
+        shareable: Bool = true,
+        shareUrl: String? = nil
+    ) {
         self.id = id
         self.name = name
         self.avatarUrl = avatarUrl
@@ -33,6 +55,39 @@ import UIKit
         self.viewed = viewed
         self.startPosition = startPosition
         self.slides = slides
+        self.shareable = shareable
+        self.shareUrl = shareUrl
+    }
+
+    /// Ссылка «Поделиться» слайда: своя ссылка слайда, без неё — кампании с id слайда в
+    /// `r46_slide`. У слайдов товарных кампаний (`39_2`) своих ссылок нет, и без id слайда
+    /// ссылка открыла бы кампанию с начала, а не с того слайда, которым поделились. Только
+    /// `http(s)`; кампания с `shareable: false`, слайд без ссылок или ссылка другой схемы —
+    /// `nil`, и кнопки на слайде нет.
+    @_spi(PersonalizationV3) public func shareUrl(of slide: PersonalizationStorySlide) -> URL? {
+        guard shareable else { return nil }
+        let link: String
+        if let own = slide.shareUrl, !own.isEmpty {
+            link = own
+        } else if let campaign = shareUrl, !campaign.isEmpty {
+            link = Self.link(campaign, slideId: slide.id)
+        } else {
+            return nil
+        }
+        let lowercased = link.lowercased()
+        guard lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://") else { return nil }
+        return URL(string: link)
+    }
+
+    /// Ссылка кампании с `r46_slide` слайда; уже есть `r46_slide` или id не годится для
+    /// ссылки — как есть. Остальной адрес не перекодируется.
+    static func link(_ campaign: String, slideId: String) -> String {
+        guard StoriesShareLink.isSlideId(slideId), var components = URLComponents(string: campaign) else { return campaign }
+        var items = components.percentEncodedQueryItems ?? []
+        guard !items.contains(where: { $0.name == StoriesShareLink.slideParameter }) else { return campaign }
+        items.append(URLQueryItem(name: StoriesShareLink.slideParameter, value: slideId))
+        components.percentEncodedQueryItems = items
+        return components.string ?? campaign
     }
 }
 
@@ -42,7 +97,7 @@ import UIKit
 /// `backgroundColor` (без него чёрные); поверх — текстовые блоки, кнопки и товары; они всегда
 /// в тёмной теме кита. `content` — слайд без медиа (в API тип `""`): с товаром это карточка
 /// товара (Card/Story View = Product / Promo / Discount) на Background/Card в теме приложения.
-@_spi(PersonalizationUI) public struct PersonalizationStorySlide {
+public struct PersonalizationStorySlide {
 
     public enum Kind {
         case image, video, content
@@ -294,6 +349,10 @@ import UIKit
     public let offer: Offer?
     public let products: Products?
     public let textBlocks: [TextBlock]
+    /// Своя ссылка слайда для «Поделиться» (`share_url`, API v3); у товарных слайдов её нет.
+    @_spi(PersonalizationV3) public let shareUrl: String?
+    /// Опрос слайда (элемент `poll`, только API v3); рисуется и на товарном слайде.
+    @_spi(PersonalizationV3) public let poll: PersonalizationStoryPoll?
 
     public init(
         id: String,
@@ -307,6 +366,28 @@ import UIKit
         products: Products? = nil,
         textBlocks: [TextBlock] = []
     ) {
+        self.init(
+            id: id, kind: kind, background: background, backgroundColor: backgroundColor, preview: preview,
+            duration: duration, buttons: buttons, offer: offer, products: products, textBlocks: textBlocks,
+            shareUrl: nil, poll: nil
+        )
+    }
+
+    /// То же со ссылкой «Поделиться» и опросом API v3.
+    @_spi(PersonalizationV3) public init(
+        id: String,
+        kind: Kind,
+        background: String? = nil,
+        backgroundColor: UIColor? = nil,
+        preview: String? = nil,
+        duration: TimeInterval = PersonalizationStorySlide.defaultDuration,
+        buttons: [Button] = [],
+        offer: Offer? = nil,
+        products: Products? = nil,
+        textBlocks: [TextBlock] = [],
+        shareUrl: String? = nil,
+        poll: PersonalizationStoryPoll? = nil
+    ) {
         self.id = id
         self.kind = kind
         self.background = background
@@ -317,6 +398,8 @@ import UIKit
         self.offer = offer
         self.products = products
         self.textBlocks = textBlocks
+        self.shareUrl = shareUrl
+        self.poll = poll
     }
 
     /// Длительность слайда, когда API её не прислал или прислал ноль — одна на всех платформах.

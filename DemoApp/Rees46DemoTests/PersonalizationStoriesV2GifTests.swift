@@ -1,6 +1,6 @@
 import XCTest
 import ImageIO
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// Animated GIF on Stories V2 slides (rules G1–G8): detection by signature, frame delays with the
 /// browser clamp, the slide length max(duration, one loop), the lazy player that holds its frame

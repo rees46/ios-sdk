@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// Code 128 as the kit draws it: code set C for digit strings (with a CODE B switch for an odd last
 /// digit), set B for everything else printable, nothing for text the symbology cannot carry. The

@@ -119,6 +119,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     lazy var popupPresenter: PopupPresenter = {
         return PopupPresenter(sdk: self)
     }()
+
+    /// Popups v3 of this instance (behind the v3 gate, see `PersonalizationSDK.popups`). Created
+    /// at the end of `init`, so it never races between the session queue and the host.
+    lazy var popupsV3: PersonalizationPopups = {
+        return PersonalizationPopups(sdk: self)
+    }()
     
     init(
         shopId: String,
@@ -194,6 +200,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Fetch user session (permanent user Id)
         deviceId = self.userIdentity.deviceId ?? ""
         urlSession = URLSession.shared
+        _ = popupsV3
         
         sessionQueue.addOperation {
             self.sendInitRequest { initResult in
@@ -207,6 +214,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     if let popup = response.popup {
                         self.popupPresenter.presentPopup(popup)
                     }
+                    self.popupsV3.initFinished(flag: response.popupsV3)
                     
                     // Handle push token if autoSendPushToken is true
                     if self.autoSendPushToken {
@@ -306,6 +314,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    @available(*, deprecated, message: "GET /notifications requires the shop secret: use getAllNotifications(shopSecret:type:...).")
     func getAllNotifications(
         type: String,
         phone: String? = nil,
@@ -448,6 +457,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         customProperties: [String: Any?]?,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
+        popupsV3.contextChanged("profile", signature: String(describing: [
+            userEmail, userPhone, userLoyaltyId, birthday.map { "\($0)" }, age.map(String.init), firstName, lastName, location,
+            gender?.rawValue, telegramId, loyaltyStatus, userId, customProperties.map { properties in
+                properties.keys.sorted().map { key in "\(key)=\(String(describing: properties[key] ?? nil))" }.joined(separator: ",")
+            }
+        ]))
         profileData.setProfileData(
             profileData:ProfileData(
                 userEmail:userEmail,
@@ -945,22 +960,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
+        getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: nil, priceMax: nil, sortBy: nil, sortDir: nil, completion: completion)
+    }
+
+    func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
-            var params: [String: String] = [
-                "shop_id": self.shopId,
-                "did": self.deviceId,
-                "seance": self.userSeance,
-                "sid": self.userSeance
-            ]
-            if let limit = limit { params["limit"] = String(limit) }
-            if let page = page { params["page"] = String(page) }
-            if let brands = brands { params["brands"] = brands }
-            if let locations = locations { params["locations"] = locations }
-            if let filters = filters,
-               let data = try? JSONSerialization.data(withJSONObject: filters, options: []),
-               let text = String(data: data, encoding: .utf8) {
-                params["filters"] = text
-            }
+            let params = self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
 
             let sessionConfig = URLSessionConfiguration.default
             sessionConfig.timeoutIntervalForRequest = 1
@@ -1120,6 +1125,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         walletBulk: Bool? = nil,
         completion: @escaping(Result<Void, SdkError>) -> Void
     ) {
+        popupsV3.contextChanged("subscription", signature: String(describing: [
+            email, phone, userExternalId, userLoyaltyId, telegramId
+        ]) + String(describing: [
+            emailBulk, emailChain, emailTransactional, smsBulk, smsChain, smsTransactional, webPushBulk, webPushChain,
+            webPushTransactional, mobilePushBulk, mobilePushChain, mobilePushTransactional, telegramBulk, telegramChain,
+            telegramTransactional, whatsappBulk, whatsappChain, whatsappTransactional, maxBulk, maxChain, maxTransactional, walletBulk
+        ]))
         subscriptionService.manageSubscription(
             email:email,
             phone:phone,
@@ -1153,6 +1165,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        popupsV3.contextChanged("segment", signature: String(describing: ["add", segmentId, email, phone]))
         sessionQueue.addOperation {
             let path = "segments/add"
             var params: [String: Any] = [
@@ -1185,6 +1198,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        popupsV3.contextChanged("segment", signature: String(describing: ["remove", segmentId, email, phone]))
         sessionQueue.addOperation {
             let path = "segments/remove"
             var params: [String: Any] = [
@@ -1273,6 +1287,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
         if let advId = userIdentity.advertisingId, advId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advId
+        }
+
+        // Popups v3 test mode: the flag also counts popups in the "Test" status.
+        if popupsV3.testMode {
+            params["testmode"] = "true"
         }
         
         return params

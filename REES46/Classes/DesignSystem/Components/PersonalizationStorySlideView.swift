@@ -21,8 +21,10 @@ import AVFoundation
 /// слайда (листание по третям, удержание — пауза).
 ///
 /// Остальные слайды: текстовые блоки на `yOffset` процентах высоты слайда во всю ширину
-/// без полей, кнопки Primary LG внизу. Ряд внизу — товары (`PersonalizationStoryUsedProducts`)
-/// и кнопка звука у видео — есть на любом слайде, где они нужны, и на товарном тоже.
+/// без полей, но целиком между шапкой и кнопками — по одному правилу с карточкой опроса
+/// (`place(_:yOffset:)`); кнопки Primary LG внизу. Ряд внизу — товары
+/// (`PersonalizationStoryUsedProducts`) и кнопка звука у видео — есть на любом слайде, где
+/// они нужны, и на товарном тоже.
 ///
 /// Медиа готово — картинка раскодирована (у GIF — первый кадр на экране) или ролик готов
 /// к показу; не загрузилось — по центру кнопка «Повторить» (её показывает просмотрщик).
@@ -101,6 +103,15 @@ final class PersonalizationStorySlideView: UIView {
     private var guideTrailing: NSLayoutConstraint?
     var bottomRowBottom: NSLayoutConstraint?
     var productGroupBottom: NSLayoutConstraint?
+    /// Ряд товаров и звука: лист товаров накрывает карточку опроса.
+    var bottomRow: UIView?
+    /// Верх кнопок слайда (у товарного — цены с кнопками): ниже текстовые блоки и карточка
+    /// опроса не опускаются, см. `place(_:yOffset:)`.
+    var offsetLimit: NSLayoutYAxisAnchor?
+    /// Низы элементов на `yOffset` у слайда без кнопок: идут за безопасной зоной.
+    var offsetBottoms: [NSLayoutConstraint] = []
+    /// Карточка опроса слайда, см. `attachPoll`.
+    private(set) var pollView: PersonalizationStoryPollView?
 
     init(
         slide: PersonalizationStorySlide,
@@ -200,6 +211,9 @@ final class PersonalizationStorySlideView: UIView {
         guideTrailing?.constant = -(safeInsets.right + side)
         bottomRowBottom?.constant = -safeInsets.bottom
         productGroupBottom?.constant = -(safeInsets.bottom + productGroupInset)
+        for bottom in offsetBottoms {
+            bottom.constant = -(safeInsets.bottom + productGroupInset)
+        }
     }
 
     /// Отступ низа товарного слайда от безопасной зоны: над рядом товаров и звука — его
@@ -509,6 +523,7 @@ extension PersonalizationStorySlideView {
         // Над рядом товаров и звука низ стоит на высоте ряда, иначе — на поле 16.
         let groupBottom = bottom.bottomAnchor.constraint(equalTo: bottomAnchor)
         productGroupBottom = groupBottom
+        offsetLimit = bottom.topAnchor
         NSLayoutConstraint.activate([
             header.topAnchor.constraint(equalTo: contentGuide.topAnchor),
             header.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
@@ -580,27 +595,24 @@ extension PersonalizationStorySlideView {
 extension PersonalizationStorySlideView {
 
     fileprivate func buildOverlay() {
-        for block in slide.visibleTextBlocks {
+        let blocks = slide.visibleTextBlocks.map { block -> (view: UIView, yOffset: CGFloat) in
             let view = textBlockView(block)
             view.translatesAutoresizingMaskIntoConstraints = false
             addSubview(view)
-            // Отступ сверху — доля высоты слайда: направляющая нужной высоты от верха.
-            let offset = UILayoutGuide()
-            addLayoutGuide(offset)
-            let percent = min(max(block.yOffset, 0), 100) / 100
+            return (view, block.yOffset)
+        }
+        // Кнопки лежат над блоками, а блоки стоят над кнопками: место блокам — после кнопок.
+        buildButtons()
+        for block in blocks {
+            place(block.view, yOffset: block.yOffset)
             NSLayoutConstraint.activate([
-                offset.topAnchor.constraint(equalTo: topAnchor),
-                percent > 0
-                    ? offset.heightAnchor.constraint(equalTo: heightAnchor, multiplier: percent)
-                    : offset.heightAnchor.constraint(equalToConstant: 0),
-                view.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(.defaultHigh),
-                // Под шапку блок не заезжает.
-                view.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor),
-                view.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
-                view.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor)
+                block.view.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
+                block.view.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor)
             ])
         }
+    }
 
+    private func buildButtons() {
         guard !slide.buttons.isEmpty else { return }
         let buttons = UIStackView(arrangedSubviews: slideButtons())
         buttons.axis = .vertical
@@ -611,6 +623,7 @@ extension PersonalizationStorySlideView {
         // Над рядом товаров и звука кнопки стоят на высоте ряда, иначе — на поле 16.
         let bottom = buttons.bottomAnchor.constraint(equalTo: bottomAnchor)
         productGroupBottom = bottom
+        offsetLimit = buttons.topAnchor
         NSLayoutConstraint.activate([
             bottom,
             buttons.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
@@ -678,6 +691,7 @@ extension PersonalizationStorySlideView {
         }
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
+        bottomRow = row
         // Низ ряда — край безопасной зоны: у ряда товаров свои поля 16.
         let rowBottom = row.bottomAnchor.constraint(equalTo: bottomAnchor)
         bottomRowBottom = rowBottom
@@ -741,5 +755,73 @@ final class PersonalizationStoryScrimView: UIView {
         top.frame = CGRect(x: 0, y: 0, width: bounds.width, height: height * 0.21)
         bottom.frame = CGRect(x: 0, y: height * 0.86, width: bounds.width, height: height * 0.14)
         CATransaction.commit()
+    }
+}
+
+// MARK: - Место по `y_offset`
+
+extension PersonalizationStorySlideView {
+
+    /// Место элемента на `yOffset` — одно правило у текстового блока и карточки опроса, как
+    /// `top: y%` у обоих в одном контейнере слайда в вебе: верх — `yOffset` процентов высоты
+    /// всего слайда (зажато в 0...100, `nil` — 0); потом элемент целиком сдвигается в область
+    /// между шапкой и кнопками (без кнопок — рядом товаров и звука или полем 16): ниже области —
+    /// поднимается, выше — встаёт к её верху. Ширина — у вызывающего.
+    func place(_ view: UIView, yOffset: CGFloat?) {
+        let offset = UILayoutGuide()
+        addLayoutGuide(offset)
+        let share = Self.offsetShare(yOffset)
+        let bottom: NSLayoutConstraint
+        if let offsetLimit {
+            bottom = view.bottomAnchor.constraint(lessThanOrEqualTo: offsetLimit, constant: -PersonalizationSpacing.xl)
+        } else {
+            bottom = view.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -(safeInsets.bottom + productGroupInset))
+            offsetBottoms.append(bottom)
+        }
+        NSLayoutConstraint.activate([
+            offset.topAnchor.constraint(equalTo: topAnchor),
+            share > 0
+                ? offset.heightAnchor.constraint(equalTo: heightAnchor, multiplier: share)
+                : offset.heightAnchor.constraint(equalToConstant: 0),
+            // Слабее высоты по содержимому (у карточки опроса — 700, у текста — 750): сначала
+            // сдвиг; карточку, не влезшую совсем, дальше прокрутка.
+            view.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(UILayoutPriority(600)),
+            // Под шапку и под кнопки элемент не заезжает.
+            view.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor),
+            bottom
+        ])
+    }
+
+    /// Доля высоты слайда для `y_offset`: проценты, зажатые в 0...100; `nil` и не число — 0.
+    static func offsetShare(_ yOffset: CGFloat?) -> CGFloat {
+        guard let yOffset, yOffset.isFinite else { return 0 }
+        return min(max(yOffset, 0), 100) / 100
+    }
+}
+
+// MARK: - Опрос
+
+extension PersonalizationStorySlideView {
+
+    /// Карточка опроса: на `yOffset`, как текстовые блоки (`place(_:yOffset:)`); не влезает
+    /// совсем — прокручивается внутри. По ширине — 12 от краёв слайда (на 4 шире поля
+    /// содержимого 16 с каждой стороны), не шире 420, по центру. Лист товаров её накрывает,
+    /// «Повторить» — над ней.
+    func attachPoll(_ card: PersonalizationStoryPollView) {
+        if let old = pollView {
+            offsetBottoms.removeAll { $0.firstItem === old }
+            old.removeFromSuperview()
+        }
+        pollView = card
+        card.translatesAutoresizingMaskIntoConstraints = false
+        insertSubview(card, belowSubview: bottomRow ?? retryButton)
+        place(card, yOffset: card.controller.poll.yOffset)
+        let outset = 2 * (PersonalizationSpacing.xl - PersonalizationStoryPollView.Style.margin)
+        NSLayoutConstraint.activate([
+            card.centerXAnchor.constraint(equalTo: contentGuide.centerXAnchor),
+            card.widthAnchor.constraint(lessThanOrEqualTo: contentGuide.widthAnchor, constant: outset),
+            card.widthAnchor.constraint(lessThanOrEqualToConstant: PersonalizationStoryPollView.Style.maxWidth),
+            card.widthAnchor.constraint(equalTo: contentGuide.widthAnchor, constant: outset).withPriority(UILayoutPriority(999))
+        ])
     }
 }

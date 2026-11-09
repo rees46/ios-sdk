@@ -12,7 +12,8 @@ import UIKit
 ///
 /// Пустая выдача — страница SearchResultsScreen, Search Results/Empty State (319:7743):
 /// заголовок тот же, вместо плитки `PersonalizationEmptyState`. Показывается, когда
-/// задан `emptyText` и товаров нет.
+/// задан `emptyText` и товаров нет. Ошибка загрузки (`errorText`) в макете не нарисована:
+/// на том же месте тот же `PersonalizationEmptyState`, но с кнопкой повтора под текстом.
 ///
 /// Весь каталог — одна лента `UICollectionView`: заголовок, карточки и нижние элементы —
 /// её строки. Поэтому его не вкладывают в прокрутку, он прокручивается сам: карточки
@@ -20,7 +21,7 @@ import UIKit
 /// догрузилось. Внутри чужой вертикальной прокрутки свою выключают
 /// (`isScrollEnabled = false`): тогда высота каталога идёт по содержимому, и он
 /// раскладывается целиком, как обычный блок.
-@_spi(PersonalizationUI) public final class PersonalizationCatalog: UIView {
+public final class PersonalizationCatalog: UIView {
 
     /// Заголовок над товарами: выдача или категория. `nil` — убрать.
     public var header: UIView? {
@@ -60,6 +61,26 @@ import UIKit
         }
     }
 
+    /// Текст ошибки загрузки — вместо пустого состояния, пока товаров нет; важнее
+    /// `emptyText`. `nil` — ошибки нет.
+    public var errorText: String? {
+        didSet {
+            errorState.message = errorText
+            reload(.footer)
+        }
+    }
+
+    /// Подпись кнопки повтора под ошибкой. `nil` — без кнопки.
+    public var retryText: String? {
+        didSet {
+            errorState.actionText = retryText
+            reload(.footer)
+        }
+    }
+
+    /// Нажатие на кнопку повтора под ошибкой.
+    public var onRetry: (() -> Void)?
+
     /// Хост кладёт изображение товара в `UIImageView` своим загрузчиком. View
     /// переиспользуются: загрузчик должен ставить картинку, только если view всё ещё
     /// ждёт этот товар (так делает встроенный загрузчик поиска).
@@ -73,6 +94,11 @@ import UIKit
     /// Пропорция картинок карточек, см. `PersonalizationProductCard.imageAspect`.
     public var imageAspect: PersonalizationProductImage.Aspect = .square {
         didSet { if oldValue != imageAspect { reload(.products) } }
+    }
+
+    /// Рейтинг на карточках, см. `PersonalizationProductCard.showRating`.
+    public var showRating: Bool = true {
+        didSet { if oldValue != showRating { reload(.products) } }
     }
 
     /// Во фреймах с лоадером (296:3544, 299:6606) счётчика и кнопки нет — на время
@@ -112,6 +138,7 @@ import UIKit
     }
 
     private let emptyState = PersonalizationEmptyState()
+    private let errorState = PersonalizationEmptyState()
     private let loaderRow = UIView()
     private let loader = PersonalizationLoader()
     private let count = PersonalizationCount()
@@ -164,8 +191,9 @@ import UIKit
 
         loadMoreButton.iconStart = PersonalizationIcons.arrowRotateCw
         loadMoreButton.addTarget(self, action: #selector(loadMoreTapped), for: .touchUpInside)
+        errorState.onAction = { [weak self] in self?.onRetry?() }
 
-        for row in [emptyState, loaderRow, count, loadMoreButton] {
+        for row in [emptyState, errorState, loaderRow, count, loadMoreButton] {
             row.translatesAutoresizingMaskIntoConstraints = false
         }
         applyScrolling()
@@ -240,7 +268,13 @@ import UIKit
     /// Нижние строки в порядке макета. У каждой одна view на весь каталог.
     private var footerRows: [UIView] {
         var rows: [UIView] = []
-        if products.isEmpty && !(emptyText ?? "").isEmpty { rows.append(emptyState) }
+        if products.isEmpty {
+            if !(errorText ?? "").isEmpty {
+                rows.append(errorState)
+            } else if !(emptyText ?? "").isEmpty {
+                rows.append(emptyState)
+            }
+        }
         if isLoading { rows.append(loaderRow) }
         if hasCount && !isLoading { rows.append(count) }
         if !(loadMoreText ?? "").isEmpty && !isLoading { rows.append(loadMoreButton) }
@@ -311,6 +345,7 @@ import UIKit
         let card = cell.card
         if card.type != cardType { card.type = cardType }
         if card.imageAspect != imageAspect { card.imageAspect = imageAspect }
+        card.showRating = showRating
         card.show(product)
         card.onAction = { [weak self] in self?.onProductAction?(product) }
         card.onTap = { [weak self] in self?.onProductTap?(product) }
@@ -457,18 +492,16 @@ import UIKit
         let width: CGFloat
         let type: PersonalizationProductCard.CardType
         let aspect: PersonalizationProductImage.Aspect
+        let showRating: Bool
     }
 
     /// Промер карточки не бесплатный, поэтому высоты кэшируются по её содержимому:
-    /// догруженная страница меряет только новые товары, а смена ширины, вида или
-    /// пропорции сбрасывает кэш.
+    /// догруженная страница меряет только новые товары, а смена ширины, вида,
+    /// пропорции или видимости рейтинга сбрасывает кэш.
     private var heightCache: (scope: CardScope, heights: [CardContent: CGFloat])?
 
-    /// Карточка для промера — одна на каталог, на экран она не попадает.
-    private lazy var sizingCard = PersonalizationProductCard(type: cardType)
-
     private func cardHeights(width: CGFloat) -> [CGFloat] {
-        let scope = CardScope(width: width, type: cardType, aspect: imageAspect)
+        let scope = CardScope(width: width, type: cardType, aspect: imageAspect, showRating: showRating)
         let cached = heightCache.flatMap { $0.scope == scope ? $0.heights : nil } ?? [:]
         var heights: [CardContent: CGFloat] = [:]
         let result = products.map { product -> CGFloat in
@@ -482,10 +515,13 @@ import UIKit
         return result
     }
 
+    /// Каждый товар меряется новой карточкой, на экран она не попадает. Одна карточка на все
+    /// замеры ошибалась: после смены товара (кнопка уходит под цену) и вида (плитка → список)
+    /// её стеки мерились по прежней раскладке.
     private func measureCard(_ product: PersonalizationProduct, width: CGFloat) -> CGFloat {
-        let card = sizingCard
-        if card.type != cardType { card.type = cardType }
-        if card.imageAspect != imageAspect { card.imageAspect = imageAspect }
+        let card = PersonalizationProductCard(type: cardType)
+        card.imageAspect = imageAspect
+        card.showRating = showRating
         card.show(product)
         return measure(card, width: width)
     }

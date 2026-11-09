@@ -13,7 +13,7 @@ import UIKit
 /// Саму плашку можно положить куда угодно как обычную вью, но обычно её показывает
 /// `show(_:in:position:duration:)`: поверх экрана, с появлением и исчезновением.
 /// Тень на самом тосте, фон и скругление — на внутренней подложке, как у инап-попапа.
-@_spi(PersonalizationUI) public final class PersonalizationToast: UIView {
+public final class PersonalizationToast: UIView {
 
     /// Край экрана, у которого стоит тост.
     public enum Position {

@@ -6,11 +6,12 @@ import UIKit
 /// страница Icons, секция 157:5185. `rosette` и `checkRosetteFill` — штампы
 /// карты лояльности, набор Wallet/Stamps (570:10384). `speaker` и `speakerOff` —
 /// кнопка звука видео-слайда сторис, страница Stories (1:32): волны у `speaker`,
-/// крестик двумя штрихами 2pt со скруглёнными концами у `speakerOff`.
+/// крестик двумя штрихами 2pt со скруглёнными концами у `speakerOff`. `share` —
+/// кнопка «Поделиться» сторис, глиф из веба (viewBox 24) по центру коробки 32, как у `cross`.
 ///
 /// Ассеты векторные (PDF с сохранённым вектором) и помечены как
 /// шаблонные, поэтому красятся через `tintColor` у `UIImageView`.
-@_spi(PersonalizationUI) public enum PersonalizationIcons {
+public enum PersonalizationIcons {
 
     /// Нужен только чтобы найти бандл фреймворка через `Bundle(for:)`.
     private final class BundleMarker {}
@@ -45,6 +46,7 @@ import UIKit
     public static var list: UIImage? { image("personalization_list") }
     public static var magnifier: UIImage? { image("personalization_magnifier") }
     public static var rosette: UIImage? { image("personalization_rosette") }
+    public static var share: UIImage? { image("personalization_share") }
     public static var spacingMd: UIImage? { image("personalization_spacing_md") }
     public static var speaker: UIImage? { image("personalization_speaker") }
     public static var speakerOff: UIImage? { image("personalization_speaker_off") }

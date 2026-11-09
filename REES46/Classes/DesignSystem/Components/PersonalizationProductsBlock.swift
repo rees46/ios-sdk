@@ -1,6 +1,6 @@
 import UIKit
 
-/// Блок рекомендаций: заголовок, товары, у карусели — точки.
+/// Блок товаров: заголовок, товары, у карусели — точки. Товары даёт хост.
 ///
 /// Источник: Figma Mobile SDK UI Kit, секция Card — Recommender/Carousel (90:655),
 /// Recommender/Grid (126:1944), Recommender/List (126:2551).
@@ -8,16 +8,21 @@ import UIKit
 /// у плитки и списка только заголовок, шаг 12.
 ///
 /// Собран из `PersonalizationTitle`, `PersonalizationButton`,
-/// `PersonalizationProductsList`, `PersonalizationDots`.
-@_spi(PersonalizationUI) public final class PersonalizationRecommenderBlock: UIView {
+/// `PersonalizationProductsList`, `PersonalizationDots`. Тот же блок с данными SDK —
+/// `PersonalizationRecommenderBlock`: он сам грузит рекомендации или коллекцию.
+public final class PersonalizationProductsBlock: UIView {
 
     public var layout: PersonalizationProductsList.Layout = .carousel {
         didSet { applyLayout() }
     }
 
+    /// Заголовок. `nil` или пустая строка без кнопки «показать все» — блок без строки заголовка.
     public var text: String? {
         get { title.text }
-        set { title.text = newValue }
+        set {
+            title.text = newValue
+            applyLayout()
+        }
     }
 
     /// Подпись кнопки «показать все» у карусели. `nil` — без кнопки.
@@ -30,8 +35,9 @@ import UIKit
 
     public var onShowAll: (() -> Void)?
 
-    /// У карусели точки под лентой; выключаются, как в макете (showDots).
-    public var showDots: Bool = true {
+    /// Точки под каруселью (showDots в макете). По умолчанию выключены: лента прокручивается
+    /// свободно, а не постранично, и точка на каждый товар индикатором не служит.
+    public var showDots: Bool = false {
         didSet { applyLayout() }
     }
 
@@ -63,6 +69,12 @@ import UIKit
     public var imageAspect: PersonalizationProductImage.Aspect {
         get { list.imageAspect }
         set { list.imageAspect = newValue }
+    }
+
+    /// Рейтинг на карточках, см. `PersonalizationProductCard.showRating`.
+    public var showRating: Bool {
+        get { list.showRating }
+        set { list.showRating = newValue }
     }
 
     private let stack = UIStackView()
@@ -104,6 +116,21 @@ import UIKit
         applyLayout()
     }
 
+    /// Высота блока при ширине `width` — без раскладки, по видимым рядам стека;
+    /// товары считает `PersonalizationProductsList.contentHeight(forWidth:)`.
+    func fittingHeight(forWidth width: CGFloat) -> CGFloat {
+        let rows = stack.arrangedSubviews.filter { !$0.isHidden }
+        let heights = rows.map { row -> CGFloat in
+            if row === list { return list.contentHeight(forWidth: width) }
+            return row.systemLayoutSizeFitting(
+                CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                withHorizontalFittingPriority: .required,
+                verticalFittingPriority: .fittingSizeLevel
+            ).height
+        }
+        return ceil(heights.reduce(0, +) + CGFloat(max(0, rows.count - 1)) * stack.spacing)
+    }
+
     @objc private func showAllTapped() {
         onShowAll?()
     }
@@ -113,6 +140,8 @@ import UIKit
         stack.spacing = carousel ? PersonalizationSpacing.xl : PersonalizationSpacing.lg  // 16 / 12
         list.layout = layout
         title.trailing = carousel && !(showAllText ?? "").isEmpty ? showAllButton : nil
+        // Пустой ряд заголовка всё равно занял бы шаг стека над товарами.
+        title.isHidden = (text ?? "").isEmpty && title.trailing == nil
         dots.isHidden = !(carousel && showDots)
     }
 }

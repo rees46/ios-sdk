@@ -8,13 +8,24 @@ import UIKit
 ///
 /// Текст не зашит: в макете стоит «No results for your request.», но строку
 /// подставляет потребитель — локализация остаётся на его стороне.
-@_spi(PersonalizationUI) public final class PersonalizationEmptyState: UIView {
+///
+/// Под текстом может стоять кнопка (`actionText`) — так собрана ошибка загрузки
+/// с «Retry». В макете ошибки нет: кнопка кита, вид secondary, шаг 16 от текста.
+public final class PersonalizationEmptyState: UIView {
 
     public var message: String? {
         didSet { applyText() }
     }
 
+    /// Подпись кнопки под текстом. `nil` — без кнопки.
+    public var actionText: String? {
+        didSet { applyAction() }
+    }
+
+    public var onAction: (() -> Void)?
+
     private let label = UILabel()
+    private let button = PersonalizationButton(size: .md, view: .secondary)
 
     public init(message: String? = nil) {
         super.init(frame: .zero)
@@ -30,19 +41,38 @@ import UIKit
     private func setup() {
         label.numberOfLines = 0
         label.textAlignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(label)
+        button.iconStart = PersonalizationIcons.arrowRotateCw
+        button.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
+
+        // Текст во всю ширину, кнопка под ним по центру; скрытая кнопка места не держит.
+        let content = UIStackView(arrangedSubviews: [label, button])
+        content.axis = .vertical
+        content.alignment = .center
+        content.spacing = PersonalizationSpacing.xl  // 16
+        content.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(content)
 
         NSLayoutConstraint.activate([
-            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            content.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            content.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
+            label.widthAnchor.constraint(equalTo: content.widthAnchor),
             // В макете текст отцентрован во фрейме, 92 — не позиция, а минимальное поле.
-            label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            label.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 92),
-            label.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -92)
+            content.centerYAnchor.constraint(equalTo: centerYAnchor),
+            content.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: 92),
+            content.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -92)
         ])
 
         applyText()
+        applyAction()
+    }
+
+    @objc private func actionTapped() {
+        onAction?()
+    }
+
+    private func applyAction() {
+        button.text = actionText
+        button.isHidden = (actionText ?? "").isEmpty
     }
 
     private func applyText() {

@@ -2,7 +2,7 @@ import UIKit
 
 /// Тексты сторис, которые хост может заменить; локализация — за хостом. Одни и те же
 /// у виджета, просмотрщика и `PersonalizationStories.show`.
-@_spi(PersonalizationUI) public struct PersonalizationStoriesTexts {
+public struct PersonalizationStoriesTexts {
     /// Подпись над промокодом, если админка не задала свою.
     public var promoCaption: String?
     /// Тост после копирования промокода; `nil` — без тоста.
@@ -18,6 +18,13 @@ import UIKit
     public var closeLabel: String?
     public var soundOnLabel: String?
     public var soundOffLabel: String?
+    /// VoiceOver: «Поделиться» (API v3).
+    @_spi(PersonalizationV3) public var shareLabel: String?
+    /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи,
+    /// ошибка отправки. Строки `labels` элемента из ленты важнее.
+    @_spi(PersonalizationV3) public var pollReanswerText: String
+    @_spi(PersonalizationV3) public var pollSubmitText: String
+    @_spi(PersonalizationV3) public var pollErrorText: String
 
     public init(
         promoCaption: String? = "Promo code",
@@ -30,6 +37,36 @@ import UIKit
         soundOnLabel: String? = "Sound on",
         soundOffLabel: String? = "Sound off"
     ) {
+        self.init(
+            promoCaption: promoCaption,
+            promoCopiedText: promoCopiedText,
+            productButtonText: productButtonText,
+            showProductsText: showProductsText,
+            hideProductsText: hideProductsText,
+            retryText: retryText,
+            closeLabel: closeLabel,
+            soundOnLabel: soundOnLabel,
+            soundOffLabel: soundOffLabel,
+            shareLabel: "Share"
+        )
+    }
+
+    /// То же с текстами «Поделиться» и опросов API v3.
+    @_spi(PersonalizationV3) public init(
+        promoCaption: String? = "Promo code",
+        promoCopiedText: String? = "Copied",
+        productButtonText: String = "More info",
+        showProductsText: String = "Used products",
+        hideProductsText: String = "Hide products",
+        retryText: String = "Retry",
+        closeLabel: String? = "Close",
+        soundOnLabel: String? = "Sound on",
+        soundOffLabel: String? = "Sound off",
+        shareLabel: String? = "Share",
+        pollReanswerText: String = "Answer again",
+        pollSubmitText: String = "Send",
+        pollErrorText: String = "Failed to send the answer. Please try again"
+    ) {
         self.promoCaption = promoCaption
         self.promoCopiedText = promoCopiedText
         self.productButtonText = productButtonText
@@ -39,6 +76,10 @@ import UIKit
         self.closeLabel = closeLabel
         self.soundOnLabel = soundOnLabel
         self.soundOffLabel = soundOffLabel
+        self.shareLabel = shareLabel
+        self.pollReanswerText = pollReanswerText
+        self.pollSubmitText = pollSubmitText
+        self.pollErrorText = pollErrorText
     }
 
     var slideTexts: PersonalizationStorySlideView.Texts {
@@ -78,7 +119,7 @@ import UIKit
 ///
 /// Сеть, трекинг и ссылки — не его дело: наружу отданы колбэки. Данные SDK подключает
 /// виджет `PersonalizationStories`; хост может показать просмотрщик и со своими данными.
-@_spi(PersonalizationUI) public final class PersonalizationStoriesViewController: UIViewController {
+public final class PersonalizationStoriesViewController: UIViewController {
 
     /// Сторис со слайдами: пустые отбрасываются при создании.
     public let stories: [PersonalizationStory]
@@ -109,6 +150,27 @@ import UIKit
 
     /// Промокод скопирован — из блока цены или из текстового блока.
     public var onPromoCopied: ((PersonalizationStory, PersonalizationStorySlide, String) -> Void)?
+
+    /// Нажата «Поделиться» — событие `share` для трекинга, сразу, до выбора в окне. Окно
+    /// «Поделиться» просмотрщик показывает сам: у слайда со ссылкой API v3
+    /// (`PersonalizationStory.shareUrl(of:)`) в шапке кнопка «Поделиться» — системное окно с
+    /// одной ссылкой, слайд стоит, пока оно открыто.
+    @_spi(PersonalizationV3) public var onShare: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
+
+    /// Ссылка слайда прямо перед окном «Поделиться»: в окно уходит то, что вернёт, например
+    /// ссылка со схемой приложения. `nil` — ссылка как есть. Кнопку и событие `share` не меняет.
+    @_spi(PersonalizationV3) public var shareUrlTransform: ((String) -> String)?
+
+    /// Транспорт опросов слайдов; `nil` — опросы не рисуются. Виджет `PersonalizationStories`
+    /// ставит клиент API v3 своей ленты сам.
+    ///
+    /// Опрос слайда (`PersonalizationStorySlide.poll`) — карточкой: слайд стоит, пока карточку
+    /// трогают, в её поле курсор или ответ отправляется; касание с карточки не листает и не
+    /// закрывает, тап мимо при клавиатуре только прячет её.
+    @_spi(PersonalizationV3) public var pollTransport: PersonalizationStoryPollTransport?
+
+    /// Магазин ответов опросов этого запуска (общих у всех просмотрщиков); виджет ставит свой.
+    @_spi(PersonalizationV3) public var pollShopId = ""
 
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
@@ -276,6 +338,10 @@ extension PersonalizationStoriesViewController {
         get { texts.soundOffLabel }
         set { texts.soundOffLabel = newValue }
     }
+    @_spi(PersonalizationV3) public var shareLabel: String? {
+        get { texts.shareLabel }
+        set { texts.shareLabel = newValue }
+    }
 
     // MARK: - Управление хостом
 
@@ -301,6 +367,7 @@ extension PersonalizationStoriesViewController {
 
     /// Просмотр кончился: часы, видео и звук отпускаются, хост узнаёт о закрытии.
     private func wrapUp() {
+        view.endEditing(true)
         stopClock()
         activePage?.slideView?.pause()
         if hasAppeared { PersonalizationStoryAudio.shared.end() }
@@ -470,7 +537,7 @@ extension PersonalizationStoriesViewController {
             slideView.pause()
         }
         slideView.setRetryVisible(state.hasFailed)
-        pagerScrollView?.isScrollEnabled = state.canSwipe && !isTransitioning
+        pagerScrollView?.isScrollEnabled = state.canSwipe && !isTransitioning && !isPollEditing
         if state.isRunning { lastTimestamp = nil }
     }
 }
@@ -515,6 +582,8 @@ extension PersonalizationStoriesViewController {
 
     func handleTap(at x: CGFloat, width: CGFloat, from page: PersonalizationStoryPageViewController) {
         guard page === activePage else { return }
+        // Открыта клавиатура опроса: тап мимо карточки только прячет её.
+        if page.slideView?.pollView?.dismissKeyboard() == true { return }
         let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
         apply(state.tap(x: x, width: width, rightToLeft: rightToLeft))
     }
@@ -575,6 +644,75 @@ extension PersonalizationStoriesViewController {
         onPromoCopied?(story, slide, code)
     }
 
+    /// «Поделиться»: слайд встаёт на свою паузу, `onShare` — сразу, потом системное окно
+    /// с одной ссылкой; окно закрылось (поделились или нет) — пауза снимается.
+    func shareTapped(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, !state.isClosing, presentedViewController == nil,
+              let slide = page.currentSlide, let url = page.story.shareUrl(of: slide) else { return }
+        setPaused(.share, true)
+        onShare?(page.story, slide)
+        let sheet = UIActivityViewController(activityItems: [shareItem(for: url)], applicationActivities: nil)
+        // На iPad окно — поповер, и без источника оно падает: источник — сама кнопка.
+        if let popover = sheet.popoverPresentationController {
+            let anchor = page.navigation.shareAnchor
+            popover.sourceView = anchor
+            popover.sourceRect = anchor.bounds
+        }
+        sheet.completionWithItemsHandler = { [weak self] _, _, _, _ in
+            MainThread.run { self?.setPaused(.share, false) }
+        }
+        present(sheet, animated: true)
+    }
+
+    // MARK: Опрос
+
+    /// Карточка опроса слайда; без опроса или без транспорта — `nil`. Ответ этого запуска
+    /// (`StoryPollStore`) важнее ответа из ленты.
+    func makePollView(story: PersonalizationStory, slide: PersonalizationStorySlide) -> PersonalizationStoryPollView? {
+        guard let poll = slide.poll, let pollTransport else { return nil }
+        let controller = StoryPollController(
+            poll: poll,
+            storyId: story.id,
+            slideId: slide.id,
+            shopId: pollShopId,
+            texts: StoryPollTexts(host: texts, labels: poll.labels),
+            transport: pollTransport
+        )
+        return PersonalizationStoryPollView(controller: controller)
+    }
+
+    /// Карточку держат — слайд стоит на своей причине паузы. Ход вернётся, когда причин не
+    /// останется; при смене слайда причину снимает состояние.
+    func pollHeld(_ hold: Bool, on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, !state.isClosing else { return }
+        setPaused(.poll, hold)
+    }
+
+    /// Курсор в поле опроса: сторис не листаются, свайп вниз не закрывает.
+    func pollEditingChanged(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage else { return }
+        sync()
+    }
+
+    /// Палец на карточке при раскрытом листе товаров — лист сворачивается, как от тапа мимо.
+    func pollPressed(on page: PersonalizationStoryPageViewController) {
+        guard page === activePage, state.isSheetOpen else { return }
+        state.setSheetOpen(false)
+        apply(.closeSheet)
+    }
+
+    var isPollEditing: Bool {
+        activePage?.slideView?.pollView?.isEditing ?? false
+    }
+
+    /// Что уходит в окно «Поделиться»: ссылка после `shareUrlTransform`; не разобравшаяся
+    /// как адрес — текстом.
+    func shareItem(for url: URL) -> Any {
+        guard let shareUrlTransform else { return url }
+        let link = shareUrlTransform(url.absoluteString)
+        return URL(string: link).map { $0 as Any } ?? link
+    }
+
     // MARK: Система
 
     /// Пауза при уходе приложения в фон, неактивной сцене (центр управления, звонок,
@@ -585,6 +723,10 @@ extension PersonalizationStoriesViewController {
         let pause: (Notification) -> Void = { [weak self] _ in self?.setPaused(.background, true) }
         let resume: (Notification) -> Void = { [weak self] _ in self?.setPaused(.background, false) }
         observers += [
+            // Свёрнутое приложение возвращается без клавиатуры опроса.
+            center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+                self?.view.endEditing(true)
+            },
             center.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main, using: pause),
             center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main, using: pause),
             center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main, using: resume)
@@ -665,9 +807,20 @@ extension PersonalizationStoriesViewController: UIGestureRecognizerDelegate {
     /// Свайп закрытия — только вниз, заметно вертикальный и не при открытом листе товаров.
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let pan = gestureRecognizer as? UIPanGestureRecognizer, pan.view === view else { return true }
-        guard state.canSwipe else { return false }
+        guard state.canSwipe, !isPollEditing else { return false }
         let velocity = pan.velocity(in: view)
         return velocity.y > 0 && velocity.y > abs(velocity.x)
+    }
+
+    /// Касание с карточки опроса свайпом закрытия не становится.
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        guard gestureRecognizer.view === view else { return true }
+        var current = touch.view
+        while let candidate = current, candidate !== view {
+            if candidate is PersonalizationStoryPollView { return false }
+            current = candidate.superview
+        }
+        return true
     }
 }
 
@@ -736,8 +889,13 @@ final class PersonalizationStoryPageViewController: UIViewController, UIGestureR
         view.addSubview(content)
         navigation.translatesAutoresizingMaskIntoConstraints = false
         navigation.closeLabel = viewer?.texts.closeLabel
+        navigation.shareLabel = viewer?.texts.shareLabel
         navigation.progress.count = story.slides.count
         navigation.onClose = { [weak self] in self?.viewer?.close() }
+        navigation.onShare = { [weak self] in
+            guard let self else { return }
+            self.viewer?.shareTapped(on: self)
+        }
         content.addSubview(navigation)
 
         let top = navigation.topAnchor.constraint(equalTo: content.topAnchor)
@@ -836,6 +994,21 @@ extension PersonalizationStoryPageViewController {
             self.viewer?.retryTapped(on: self)
         }
         next.safeInsets = safeInsets
+        if let card = viewer?.makePollView(story: story, slide: slide) {
+            card.controller.onHold = { [weak self] hold in
+                guard let self else { return }
+                self.viewer?.pollHeld(hold, on: self)
+            }
+            card.onEditingChange = { [weak self] _ in
+                guard let self else { return }
+                self.viewer?.pollEditingChanged(on: self)
+            }
+            card.onPress = { [weak self] in
+                guard let self else { return }
+                self.viewer?.pollPressed(on: self)
+            }
+            next.attachPoll(card)
+        }
 
         next.translatesAutoresizingMaskIntoConstraints = false
         content.insertSubview(next, belowSubview: navigation)
@@ -851,6 +1024,7 @@ extension PersonalizationStoryPageViewController {
             content.overrideUserInterfaceStyle = slide.interfaceStyle
         }
         navigation.forcesDarkTokens = slide.isMedia
+        navigation.isShareVisible = story.shareUrl(of: slide) != nil
         navigation.progress.current = index
         navigation.progress.progress = 0
         slideView = next

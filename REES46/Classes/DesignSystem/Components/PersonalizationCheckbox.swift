@@ -7,7 +7,7 @@ import UIKit
 ///
 /// Галка и черта рисуются штрихом по геометрии из макета:
 /// `M5 10 L8.75 13.75 L15 7.5` и `M5 10 H15`, толщина 2, круглые концы.
-@_spi(PersonalizationUI) public final class PersonalizationCheckbox: UIControl {
+public final class PersonalizationCheckbox: UIControl {
 
     public enum State {
         case unchecked, checked, indeterminate
@@ -20,6 +20,26 @@ import UIKit
     }
 
     public override var isEnabled: Bool {
+        didSet { setNeedsDisplay() }
+    }
+
+    /// Заливка отмеченного и частичного. `nil` — Button/Primary. Выключенный — всегда Button/Primary Disabled.
+    public var checkedColor: UIColor? {
+        didSet { setNeedsDisplay() }
+    }
+
+    /// Цвет галки и черты. `nil` — Text/Light Primary.
+    public var checkmarkColor: UIColor? {
+        didSet { setNeedsDisplay() }
+    }
+
+    /// Заливка пустого. `nil` — Background/Input. Выключенный — всегда Background/Input Disabled.
+    public var uncheckedColor: UIColor? {
+        didSet { setNeedsDisplay() }
+    }
+
+    /// Рамка пустого. `nil` — Line/Input.
+    public var uncheckedBorderColor: UIColor? {
         didSet { setNeedsDisplay() }
     }
 
@@ -65,17 +85,7 @@ import UIKit
         let box = UIBezierPath(roundedRect: rect, cornerRadius: radius)
         let filled = checkState != .unchecked
 
-        let fill: UIColor
-        if filled {
-            fill = isEnabled
-                ? PersonalizationColor.buttonPrimary
-                : PersonalizationColor.buttonPrimaryDisabled
-        } else {
-            fill = isEnabled
-                ? PersonalizationColor.backgroundInput
-                : PersonalizationColor.backgroundInputDisabled
-        }
-        ctx.setFillColor(fill.cgColor)
+        ctx.setFillColor(fillColor.cgColor)
         box.fill()
 
         if !filled {
@@ -83,7 +93,7 @@ import UIKit
             let inset = rect.insetBy(dx: 0.5 * scale, dy: 0.5 * scale)
             let border = UIBezierPath(roundedRect: inset, cornerRadius: radius)
             border.lineWidth = 1 * scale
-            PersonalizationColor.lineInput.setStroke()
+            borderColor.setStroke()
             border.stroke()
             return
         }
@@ -103,9 +113,27 @@ import UIKit
         glyph.lineWidth = 2 * scale
         glyph.lineCapStyle = .round
         glyph.lineJoinStyle = .round
-        PersonalizationColor.textLightPrimary.setStroke()
+        glyphColor.setStroke()
         glyph.stroke()
     }
+
+    /// Заливка в текущем состоянии: заданный цвет или токен.
+    var fillColor: UIColor {
+        if checkState != .unchecked {
+            return isEnabled
+                ? checkedColor ?? PersonalizationColor.buttonPrimary
+                : PersonalizationColor.buttonPrimaryDisabled
+        }
+        return isEnabled
+            ? uncheckedColor ?? PersonalizationColor.backgroundInput
+            : PersonalizationColor.backgroundInputDisabled
+    }
+
+    /// Рамка пустого: заданный цвет или токен.
+    var borderColor: UIColor { uncheckedBorderColor ?? PersonalizationColor.lineInput }
+
+    /// Галка и черта: заданный цвет или токен.
+    var glyphColor: UIColor { checkmarkColor ?? PersonalizationColor.textLightPrimary }
 
     public override func traitCollectionDidChange(_ previous: UITraitCollection?) {
         super.traitCollectionDidChange(previous)

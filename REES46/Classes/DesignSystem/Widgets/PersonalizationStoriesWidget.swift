@@ -7,7 +7,7 @@ import SwiftUI
 /// поставить на паузу, продолжить, перезагрузить. Привязывается к виджету при показе.
 /// Открытие до привязки ждёт виджет, а тот — загрузки блока; пауза и продолжение без
 /// открытого просмотрщика ничего не делают.
-@_spi(PersonalizationUI) public final class PersonalizationStoriesController {
+public final class PersonalizationStoriesController {
 
     weak var stories: PersonalizationStories? {
         didSet {
@@ -54,13 +54,17 @@ import SwiftUI
 /// PersonalizationStoriesWidget(code: "stories_code", communicationDelegate: router, controller: stories)
 /// ```
 @available(iOS 13.0, *)
-@_spi(PersonalizationUI) public struct PersonalizationStoriesWidget: UIViewRepresentable {
+public struct PersonalizationStoriesWidget: UIViewRepresentable {
 
     public var code: String
     public var shopId: String?
     public var sdk: PersonalizationSDK?
+    /// Хост API v3, как у `PersonalizationStories`; по умолчанию — глобальный, `nil` — старый API.
+    @_spi(PersonalizationV3) public var apiV3Domain: String?
     public var texts: PersonalizationStoriesTexts
     public var imageLoader: ((UIImageView, String) -> Void)?
+    /// Ссылка слайда перед окном «Поделиться»; `nil` — как есть.
+    @_spi(PersonalizationV3) public var shareUrlTransform: ((String) -> String)?
     public weak var communicationDelegate: StoriesCommunicationProtocol?
     public var controller: PersonalizationStoriesController?
     public var onError: ((SdkError) -> Void)?
@@ -77,11 +81,42 @@ import SwiftUI
         onError: ((SdkError) -> Void)? = nil,
         onLoaded: ((Int) -> Void)? = nil
     ) {
+        self.init(
+            code: code,
+            shopId: shopId,
+            sdk: sdk,
+            apiV3Domain: PersonalizationStories.apiV3Domain,
+            texts: texts,
+            imageLoader: imageLoader,
+            shareUrlTransform: nil,
+            communicationDelegate: communicationDelegate,
+            controller: controller,
+            onError: onError,
+            onLoaded: onLoaded
+        )
+    }
+
+    /// То же на API v3: `apiV3Domain` и `shareUrlTransform` — как у `PersonalizationStories`.
+    @_spi(PersonalizationV3) public init(
+        code: String,
+        shopId: String? = nil,
+        sdk: PersonalizationSDK? = nil,
+        apiV3Domain: String? = PersonalizationStories.apiV3Domain,
+        texts: PersonalizationStoriesTexts = PersonalizationStoriesTexts(),
+        imageLoader: ((UIImageView, String) -> Void)? = nil,
+        shareUrlTransform: ((String) -> String)? = nil,
+        communicationDelegate: StoriesCommunicationProtocol? = nil,
+        controller: PersonalizationStoriesController? = nil,
+        onError: ((SdkError) -> Void)? = nil,
+        onLoaded: ((Int) -> Void)? = nil
+    ) {
         self.code = code
         self.shopId = shopId
         self.sdk = sdk
+        self.apiV3Domain = apiV3Domain
         self.texts = texts
         self.imageLoader = imageLoader
+        self.shareUrlTransform = shareUrlTransform
         self.communicationDelegate = communicationDelegate
         self.controller = controller
         self.onError = onError
@@ -89,7 +124,7 @@ import SwiftUI
     }
 
     public func makeUIView(context: Context) -> PersonalizationStories {
-        let view = PersonalizationStories(code: code, shopId: shopId)
+        let view = PersonalizationStories(code: code, shopId: shopId, apiV3Domain: apiV3Domain)
         // Загрузчик — один раз: замыкания не сравнить, а новый перегружал бы обложки
         // на каждом обновлении SwiftUI.
         view.imageLoader = imageLoader
@@ -101,13 +136,15 @@ import SwiftUI
 
     public func updateUIView(_ uiView: PersonalizationStories, context: Context) {
         apply(to: uiView)
-        // Смена кода перезагружает ленту сама.
+        // Смена кода и хоста перезагружает ленту сама.
+        uiView.apiV3Domain = apiV3Domain
         uiView.code = code
     }
 
     private func apply(to view: PersonalizationStories) {
         view.shopId = shopId
         view.texts = texts
+        view.shareUrlTransform = shareUrlTransform
         view.communicationDelegate = communicationDelegate
         view.onError = onError
         view.onLoaded = onLoaded

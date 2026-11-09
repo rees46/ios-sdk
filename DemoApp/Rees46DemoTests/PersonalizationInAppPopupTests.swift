@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) import REES46
+import REES46
 
 /// The in-app popup as the finished InAppPopup page draws it: a round cross over the content in the
 /// corner of every view, the text buttons 12 apart in a modal and 16 in a fullscreen popup, and the

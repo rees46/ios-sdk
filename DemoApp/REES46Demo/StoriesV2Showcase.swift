@@ -1,10 +1,14 @@
 import SwiftUI
 import UIKit
-@_spi(PersonalizationUI) import REES46
+@_spi(PersonalizationV3) import REES46
 
 /// "Stories V2" segment of the UI Kit tab: the kit's stories, one exhibit per component of the
 /// design file's Stories page, the fullscreen viewer on sample stories, and the data-bound block
 /// of the demo shop (`AppEnvironments.storiesCode`) that opens the same viewer on real data.
+///
+/// The demo shop's block is shown twice: on the old API, and on stories API v3 through the
+/// widget's own `apiV3Domain` — there slides with a link get the "Share" button, and a pasted
+/// link opens its campaign. The global `PersonalizationStories.apiV3Domain` stays unset.
 ///
 /// The legacy stories stay in the "Stories" segment and the "Legacy UI" tab, untouched.
 /// Sample images ship with the app (`asset://uikit-…`). Hand-built bars load them through
@@ -14,7 +18,13 @@ enum StoriesV2Exhibits {
 
     static func all() -> [ShowcaseViewController.Exhibit] {
         [
-            ("Live — stories block of the demo shop (tap a story to open the viewer)", { LiveStoriesExhibit() }),
+            ("Stories V2 — the demo shop's block on the old API (tap a story to open the viewer)", { LiveStoriesExhibit() }),
+            ("Stories V2 with Sharing — the same block on API v3 (Share on slides), a stories link", {
+                LiveStoriesExhibit(apiV3Domain: DemoStoriesLinks.apiV3Domain)
+            }),
+            ("Stories V2 polls (offline) — every kind of poll on API v3 from a fixture feed, a fake transport", {
+                DemoStoriesPolls.exhibit()
+            }),
             ("SwiftUI — PersonalizationStoriesWidget with a controller", { SwiftUIStoriesExhibit() }),
             ("Viewer — sample stories: product, product video with buttons + carousel + sound, text-block promo code, fitted media, animated GIF, Retry", {
                 ViewerExhibit()
@@ -49,7 +59,7 @@ enum StoriesV2Exhibits {
                 progress.progress = 0.4
                 return padded(progress, background: nil)
             }),
-            ("Story Navigation — app theme and on a photo (dark)", {
+            ("Story Navigation — app theme and on a photo (dark), with Share", {
                 column([navigation(dark: false), navigation(dark: true)])
             }),
             ("Story Price — price, discount, promo code (tap to copy), long promo code", {
@@ -128,6 +138,8 @@ enum StoriesV2Exhibits {
         navigation.progress.current = 1
         navigation.progress.progress = 0.5
         navigation.onClose = { PersonalizationToast.show("Close") }
+        navigation.isShareVisible = true
+        navigation.onShare = { PersonalizationToast.show("Share") }
         return padded(navigation, background: dark ? DemoStories.image("jacket") : nil)
     }
 
@@ -267,22 +279,81 @@ enum StoriesV2Exhibits {
     }
 }
 
+// MARK: - Stories links
+
+/// Stories "Share" links in the demo. The demo shares them with its own scheme instead of
+/// `https` (`rees46://demo.rees46.ru/?r46_stories=…`), so a shared link opens the demo without
+/// Universal Links. Any host and path will do: only the `r46_*` parameters matter.
+enum DemoStoriesLinks {
+
+    /// Stories API v3 host of the "with Sharing" block and of the links.
+    static let apiV3Domain = "app.rees46.ru"
+    /// The demo's URL scheme (Info.plist, `CFBundleURLSchemes`).
+    static let scheme = "rees46"
+    /// A ready link to try: campaign 40 of the demo block, its second slide.
+    static let sampleLink = "\(scheme)://demo.rees46.ru/?r46_stories=\(AppEnvironments.storiesCode)&r46_story=40&r46_slide=37"
+
+    /// `http(s)://host/path?…` → `rees46://host/path?…`; anything else as is.
+    static func appSchemeLink(_ link: String) -> String {
+        guard let separator = link.range(of: "://"),
+              ["http", "https"].contains(link[..<separator.lowerBound].lowercased()) else { return link }
+        return scheme + link[separator.lowerBound...]
+    }
+
+    /// A link with `r46_stories`, whatever its scheme, host and path.
+    static func isStoriesLink(_ url: URL) -> Bool {
+        DemoLinks.kind(of: url) == .stories
+    }
+
+    /// Opens the link's campaign on API v3; the viewer shares with the demo's scheme too.
+    /// `false` — not a stories link.
+    static func open(
+        _ url: URL,
+        from presenter: UIViewController? = nil,
+        communicationDelegate: StoriesCommunicationProtocol? = nil
+    ) -> Bool {
+        PersonalizationStories.handleLink(
+            url,
+            shopId: AppEnvironments.shopId,
+            apiV3Domain: apiV3Domain,
+            from: presenter,
+            communicationDelegate: communicationDelegate,
+            shareUrlTransform: appSchemeLink,
+            onError: { error in
+                NSLog("REES46Demo: stories link %@ failed: %@", url.absoluteString, "\(error)")
+                PersonalizationToast.show("Stories link: \(error)")
+            },
+            onClose: { PersonalizationToast.show("Stories closed", position: .top) }
+        )
+    }
+}
+
 // MARK: - Live block
 
 /// The data-bound widget as a host drops it in: the block code and the shop, callbacks for links
 /// and products. Link and product taps only show a toast here — navigation is the host's.
+/// With `apiV3Domain` the widget goes to stories API v3 (the "Share" button) and a stories link
+/// field takes the place of the programmatic controls.
 private final class LiveStoriesExhibit: UIStackView {
 
     private let status = UILabel()
+    private let apiV3Domain: String?
 
-    init() {
+    init(apiV3Domain: String? = nil) {
+        self.apiV3Domain = apiV3Domain
         super.init(frame: .zero)
         axis = .vertical
         spacing = 4
 
-        let stories = PersonalizationStories(code: AppEnvironments.storiesCode, shopId: AppEnvironments.shopId)
+        let stories = PersonalizationStories(
+            code: AppEnvironments.storiesCode,
+            shopId: AppEnvironments.shopId,
+            apiV3Domain: apiV3Domain
+        )
         stories.bar.contentInsets = UIEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         stories.promoCopiedText = "Code copied to clipboard"
+        // "Share" hands out the demo's own scheme, which opens the demo (see `DemoStoriesLinks`).
+        if apiV3Domain != nil { stories.shareUrlTransform = DemoStoriesLinks.appSchemeLink }
         stories.communicationDelegate = self
         stories.onLoaded = { [weak self] count in self?.status.text = "Stories loaded: \(count)" }
         stories.onError = { [weak self] error in self?.status.text = "Stories failed to load: \(error)" }
@@ -294,10 +365,59 @@ private final class LiveStoriesExhibit: UIStackView {
 
         addArrangedSubview(stories)
         addArrangedSubview(status)
-        addArrangedSubview(controls(for: stories))
+        addArrangedSubview(apiV3Domain == nil ? controls(for: stories) : linkRow())
     }
 
     required init(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    private let linkField = UITextField()
+
+    /// A "Share" link of the stories, the way a host passes on a link that reached the app.
+    /// Universal Links are not set up in the demo, so the link is pasted here.
+    private func linkRow() -> UIView {
+        let title = UILabel()
+        title.text = "Stories link"
+        title.font = .preferredFont(forTextStyle: .caption1)
+        title.textColor = .secondaryLabel
+        linkField.borderStyle = .roundedRect
+        linkField.placeholder = "rees46://demo.rees46.ru/?r46_stories=…&r46_story=…"
+        linkField.font = .preferredFont(forTextStyle: .footnote)
+        linkField.keyboardType = .URL
+        linkField.autocapitalizationType = .none
+        linkField.autocorrectionType = .no
+        linkField.clearButtonMode = .whileEditing
+        linkField.accessibilityIdentifier = "stories-link-field"
+        // The long placeholder must not squeeze the button: the field gives way.
+        linkField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        linkField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        let open = PersonalizationButton(text: "Open", size: .sm, view: .primary)
+        open.addAction { [weak self] in self?.openLink() }
+        let row = UIStackView(arrangedSubviews: [linkField, open])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 8
+        // The field starts empty: a link shared from a slide is pasted as is; a ready one is here.
+        let sample = PersonalizationButton(text: "Sample link", size: .sm, view: .secondary)
+        sample.addAction { [weak self] in self?.linkField.text = DemoStoriesLinks.sampleLink }
+        title.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let header = UIStackView(arrangedSubviews: [title, sample])
+        header.axis = .horizontal
+        header.alignment = .center
+        header.spacing = 8
+        let column = UIStackView(arrangedSubviews: [header, row])
+        column.axis = .vertical
+        column.spacing = 4
+        return column
+    }
+
+    private func openLink() {
+        linkField.resignFirstResponder()
+        let text = (linkField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let handled = URL(string: text).map { url in
+            DemoStoriesLinks.open(url, from: nearestViewController, communicationDelegate: self)
+        } ?? false
+        if !handled { PersonalizationToast.show("Not a stories link") }
+    }
 
     /// Programmatic control: open by index and by id, and the block without its bar. Pause and
     /// resume act on an open viewer, so the demo pauses it 2 s after opening and resumes 3 s later.
@@ -369,8 +489,8 @@ private final class DemoAction: NSObject {
 }
 
 /// The same delegate a legacy stories host implements: taps are reported, and links the demo
-/// routes itself (`demo://`) are kept from the SDK. Everything else the SDK opens after the
-/// viewer is gone.
+/// routes itself (`demo://`, the game link) are kept from the SDK. Everything else the SDK opens
+/// after the viewer is gone.
 extension LiveStoriesExhibit: StoriesCommunicationProtocol {
     func receiveIosLink(text: String) {}
 
@@ -387,7 +507,8 @@ extension LiveStoriesExhibit: StoriesCommunicationProtocol {
     }
 
     func shouldOpenLinkBySdk(url: String) -> Bool {
-        !url.hasPrefix("demo://")
+        if DemoGame.open(url) { return false }
+        return !url.hasPrefix("demo://")
     }
 }
 

@@ -5,6 +5,9 @@ public class NotificationWidget: InAppNotificationProtocol {
     private var snackbar: UIView?
     private var popup: Popup?
     private var onDismiss: (() -> Void)?
+
+    /// Whether the popup had anything to draw (a title and a text) and is on screen.
+    private(set) var isShowingPopup = false
     
     public init(
         parentViewController: UIViewController,
@@ -45,6 +48,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         let subTitle = popup.components?.text ?? text
         
         if title != nil && subTitle != nil {
+            isShowingPopup = true
             
             let confirmAction: () -> Void
             let confirmText: String?

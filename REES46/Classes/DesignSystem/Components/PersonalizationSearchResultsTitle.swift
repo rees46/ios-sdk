@@ -1,6 +1,6 @@
 import UIKit
 
-/// Заголовок выдачи поиска.
+/// Заголовок выдачи поиска и категории.
 ///
 /// Источник: Figma Mobile SDK UI Kit, секция Title (167:3802), символ Search results (167:3807).
 /// Три ряда: заголовок с кнопкой «назад» и переключателем вида, строка с фильтром,
@@ -10,7 +10,7 @@ import UIKit
 ///
 /// Собран из готовых компонентов: `PersonalizationTitle`, `PersonalizationButton`,
 /// `PersonalizationButtonGroup`, `PersonalizationTag`.
-@_spi(PersonalizationUI) public final class PersonalizationSearchResultsTitle: UIView {
+public final class PersonalizationSearchResultsTitle: UIView {
 
     /// Тег применённого фильтра: подпись и снятие по крестику.
     public struct Filter {
@@ -58,6 +58,7 @@ import UIKit
     private let sortButton = PersonalizationButton(size: .md, view: .ghost)
     private let foundPrefix = UILabel()
     private let foundCount = UILabel()
+    private let foundGroup = UIStackView()
     private let foundSuffix = UILabel()
 
     private let filtersRow = UIStackView()
@@ -113,7 +114,8 @@ import UIKit
         controls.alignment = .center
         controls.spacing = PersonalizationSpacing.sm  // 4
 
-        let found = UIStackView(arrangedSubviews: [foundPrefix, foundCount, foundSuffix])
+        let found = foundGroup
+        [foundPrefix, foundCount, foundSuffix].forEach(found.addArrangedSubview)
         found.axis = .horizontal
         found.alignment = .center
         found.spacing = PersonalizationSpacing.sm  // 4
@@ -141,14 +143,18 @@ import UIKit
     @objc private func sortTapped() { onSort?() }
 
     /// Строка «найдено N товаров». Слова — параметры, локализация за интегратором.
-    /// Не задана — ряд скрыт.
-    public func setResults(prefix: String?, count: Int, suffix: String?) {
+    /// Не задана — ряд скрыт. `count` = `nil` — число ещё неизвестно (выдача грузится):
+    /// кнопки на месте, а «Найдено 0» не показывается.
+    public func setResults(prefix: String?, count: Int?, suffix: String?) {
         guard prefix != nil || suffix != nil else {
             resultsRow.isHidden = true
             return
         }
+        foundGroup.isHidden = count == nil
         foundPrefix.attributedText = found(prefix ?? "", emphasized: false)
-        foundCount.attributedText = found("\(count)", emphasized: true)
+        // Без приставки («N products» у категории) пустая подпись не оставляет отступа перед числом.
+        foundPrefix.isHidden = (prefix ?? "").isEmpty
+        foundCount.attributedText = found(count.map { "\($0)" } ?? "", emphasized: true)
         foundSuffix.attributedText = found(suffix ?? "", emphasized: true)
         resultsRow.isHidden = false
     }

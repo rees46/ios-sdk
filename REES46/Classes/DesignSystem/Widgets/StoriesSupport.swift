@@ -9,7 +9,8 @@ import UIKit
 /// Значения JSON ответа: числа и строки сервер присылает вперемешку.
 enum StoriesJSON {
 
-    /// Непустая строка без пробелов по краям; число — его запись.
+    /// Непустая строка без пробелов по краям; число — его запись. JSON `null` (в API v3 так
+    /// приходят `background` и `preview` товарных слайдов) — `nil`, а не строка `"null"`.
     static func string(_ value: Any?) -> String? {
         let raw: String?
         switch value {
@@ -75,7 +76,9 @@ extension PersonalizationStory {
             pinned: StoriesJSON.bool(json["pinned"]) ?? false,
             viewed: StoriesJSON.bool(json["viewed"]) ?? false,
             startPosition: start,
-            slides: StoriesJSON.objects(json["slides"]).compactMap { PersonalizationStorySlide(json: $0) }
+            slides: StoriesJSON.objects(json["slides"]).compactMap { PersonalizationStorySlide(json: $0) },
+            shareable: StoriesJSON.bool(json["shareable"]) ?? true,
+            shareUrl: StoriesJSON.string(json["share_url"])
         )
     }
 }
@@ -88,6 +91,13 @@ extension PersonalizationStorySlide {
         func of(_ type: String) -> [[String: Any]] {
             elements.filter { StoriesJSON.string($0["type"]) == type }
         }
+        // Кнопка товарного слайда несёт товар слайда (`item`), если своего у неё нет: делегат
+        // получает элемент кнопки, и хост открывает товар по `productId`, а не разбирает ссылку.
+        let item = of("product").lazy.compactMap { StoriesJSON.object($0["item"]) }.first
+        let buttons = of("button").map { button -> [String: Any] in
+            guard let item, button["item"] == nil else { return button }
+            return button.merging(["item": item]) { own, _ in own }
+        }
         self.init(
             id: id,
             kind: Self.kind(of: StoriesJSON.string(json["type"]) ?? ""),
@@ -95,10 +105,12 @@ extension PersonalizationStorySlide {
             backgroundColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["background_color"])),
             preview: StoriesJSON.string(json["preview"]),
             duration: StoriesJSON.number(json["duration"]) ?? Self.defaultDuration,
-            buttons: of("button").compactMap { Button(json: $0) },
+            buttons: buttons.compactMap { Button(json: $0) },
             offer: of("product").lazy.compactMap { Offer(element: $0) }.first,
             products: of("products").lazy.compactMap { Products(json: $0) }.first,
-            textBlocks: of("text_block").compactMap { TextBlock(json: $0) }
+            textBlocks: of("text_block").compactMap { TextBlock(json: $0) },
+            shareUrl: StoriesJSON.string(json["share_url"]),
+            poll: of("poll").lazy.compactMap { PersonalizationStoryPoll(json: $0) }.first
         )
     }
 
@@ -320,19 +332,32 @@ struct StoriesSeenState {
         }
         return min(max(story.startPosition, 0), story.slides.count - 1)
     }
+
+    /// С какого слайда открыть сторис, открытые по ссылке: первую сторис ответа (`shared`) — со
+    /// слайда ссылки, если он в ней есть, иначе со `startPosition` (в обход просмотренности);
+    /// остальные — как в ленте (`startSlide(_:seen:)`).
+    static func startSlide(_ story: PersonalizationStory, seen: Set<String>, shared: PersonalizationStory, linkSlide: String?) -> Int {
+        guard story.id == shared.id else { return startSlide(story, seen: seen) }
+        return linkSlide.flatMap { id in story.slides.firstIndex { $0.id == id } } ?? story.startPosition
+    }
 }
 
 // MARK: - Загрузка блока
 
 /// Блок сторис с сервера: тот же запрос, что у старых сторис (`stories/{code}`), но без их
-/// разбора с загрузкой медиа и без смены сессии SDK. Ответ приходит на главную очередь.
+/// разбора с загрузкой медиа и без смены сессии SDK; с `v3Domain` — лента API v3 на этом
+/// хосте. Ответ приходит на главную очередь.
 enum StoriesBlockLoader {
 
     static func load(
         sdk: PersonalizationSDK,
         code: String,
+        v3Domain: String?,
         completion: @escaping (Result<[PersonalizationStory], SdkError>) -> Void
     ) {
+        if let v3Domain {
+            return StoriesApiV3(domain: v3Domain).feed(sdk: sdk, code: code, completion: completion)
+        }
         sdk.sessionQueue.addOperation {
             let params = [SdkConstants.shopId: sdk.shopId, SdkConstants.did: sdk.deviceId]
             sdk.getRequest(path: "stories/\(code)", params: params, false) { result in
@@ -353,6 +378,10 @@ enum StoriesBlockLoader {
 /// и копирование промокода. Id не положительным целым (динамические слайды вида `39_0`)
 /// не трекаются. Источник `stories` для атрибуции ставит сам трекинг SDK.
 ///
+/// С `v3Domain` события уходят в API v3 (`…/events`), и для виртуальных слайдов товарных
+/// кампаний тоже, как у веба; к `view` и `click` добавляются `share` и `shared_open`.
+/// Источник для атрибуции на `view` и `click` ставится так же, как в старом трекинге.
+///
 /// Ссылки — как у старых сторис: делегат узнаёт о нажатии и решает в
 /// `shouldOpenLinkBySdk(url:)`, открыть ли ссылку SDK; просмотрщик закрывается до этого
 /// в любом случае. `receiveIosLink` не зовётся, как и у старых сторис.
@@ -360,53 +389,103 @@ final class StoriesSession {
 
     let sdk: PersonalizationSDK?
     let code: String
+    /// API v3, если лента пришла оттуда; `nil` — старый трекинг.
+    let v3: StoriesApiV3?
     weak var delegate: StoriesCommunicationProtocol?
     var texts = PersonalizationStoriesTexts()
     var imageLoader: ((UIImageView, String) -> Void)?
+    /// Ссылка перед окном «Поделиться», как у просмотрщика.
+    var shareUrlTransform: ((String) -> String)?
+    /// Транспорт опросов вместо клиента API v3 (тесты, офлайн-демо). Опросы есть только с v3.
+    var pollTransport: PersonalizationStoryPollTransport?
     /// Слайд просмотрен — лента перерисовывает кольца.
     var onSeen: (() -> Void)?
     /// Открытие ссылки системой; подменяется в тестах.
     var openURL: (URL) -> Void = { UIApplication.shared.open($0) }
 
-    init(sdk: PersonalizationSDK?, code: String) {
+    /// Последний просмотрщик на данных SDK — ленты, `show` или ссылки. Открытие по ссылке
+    /// закрывает его перед показом своего.
+    static weak var openViewer: PersonalizationStoriesViewController?
+
+    init(sdk: PersonalizationSDK?, code: String, v3Domain: String? = nil) {
         self.sdk = sdk
         self.code = code
+        self.v3 = v3Domain.map { StoriesApiV3(domain: $0) }
     }
 
     var seenState: StoriesSeenState {
         StoriesSeenState(sdk: sdk)
     }
 
-    /// Просмотрщик на сторис блока, связанный с этой сессией.
-    func makeViewer(stories: [PersonalizationStory], startIndex: Int) -> PersonalizationStoriesViewController {
+    /// Просмотрщик на сторис блока, связанный с этой сессией. Сторис открываются с первого
+    /// непросмотренного слайда (`StoriesSeenState.startSlide`). `link` — сторис открыты по
+    /// ссылке: первая сторис ответа — со слайда ссылки, если он в ней есть, иначе со
+    /// `start_position` ответа; остальные — как обычно.
+    func makeViewer(stories: [PersonalizationStory], startIndex: Int, link: StoriesShareLink? = nil) -> PersonalizationStoriesViewController {
         let viewer = PersonalizationStoriesViewController(stories: stories, startIndex: startIndex)
         viewer.texts = texts
         viewer.imageLoader = imageLoader
+        viewer.shareUrlTransform = shareUrlTransform
+        // Опросы слайдов — только в ленте v3: ответы уходят на её хост.
+        if let v3, let sdk {
+            viewer.pollTransport = pollTransport ?? StoriesPollsApi(api: v3, sdk: sdk)
+            viewer.pollShopId = sdk.shopId
+        }
         let seen = seenState
-        viewer.startSlide = { seen.startSlide($0) }
+        if let link, let shared = stories.first {
+            // Слайд ссылки, если он есть в ответе: `start_position` сервер ставит только по
+            // своим слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
+            viewer.startSlide = {
+                StoriesSeenState.startSlide($0, seen: seen.seen($0), shared: shared, linkSlide: link.slideId)
+            }
+        } else {
+            viewer.startSlide = { seen.startSlide($0) }
+        }
         viewer.onSlideView = { [self] story, slide in slideShown(story, slide) }
         viewer.onButtonTap = { [self, weak viewer] story, slide, button in buttonTapped(story, slide, button, in: viewer) }
         viewer.onProductTap = { [self, weak viewer] story, slide, offer in productTapped(story, slide, offer, in: viewer) }
         viewer.onPromoCopied = { [self] story, slide, code in promoCopied(story, slide, code) }
+        viewer.onShare = { [self] story, slide in track(.share, story, slide) }
+        Self.openViewer = viewer
         return viewer
     }
 
-    /// Трекаются только положительные целые id.
+    /// Старый трекинг шлёт только положительные целые id.
     static func isTrackable(_ id: String) -> Bool {
         Int(id).map { $0 > 0 } ?? false
     }
 
     func slideShown(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
-        if Self.isTrackable(story.id), Self.isTrackable(slide.id) {
-            sdk?.tracking.storyView(storyId: story.id, slideId: slide.id, code: code)
-        }
+        track(.view, story, slide)
         seenState.markSeen(slide, of: story)
         onSeen?()
     }
 
+    /// Кампания открыта по ссылке и показана: `shared_open` на слайд ссылки.
+    func sharedOpened(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
+        track(.sharedOpen, story, slide)
+    }
+
     private func trackClick(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
+        track(.click, story, slide)
+    }
+
+    /// Событие слайда: в API v3, если лента оттуда, иначе — `view` и `click` старым трекингом.
+    func track(_ event: StoriesApiV3.Event, _ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
+        guard let sdk else { return }
+        if let v3 {
+            if event == .view || event == .click, !code.isEmpty {
+                sdk.trackingSourceStore.store(type: TrackingSourceType.stories.rawValue, code: code)
+            }
+            v3.track(sdk: sdk, code: code, event: event, storyId: story.id, slideId: slide.id)
+            return
+        }
         guard Self.isTrackable(story.id), Self.isTrackable(slide.id) else { return }
-        sdk?.tracking.storyClick(storyId: story.id, slideId: slide.id, code: code)
+        switch event {
+        case .view: sdk.tracking.storyView(storyId: story.id, slideId: slide.id, code: code)
+        case .click: sdk.tracking.storyClick(storyId: story.id, slideId: slide.id, code: code)
+        case .share, .sharedOpen: break
+        }
     }
 
     /// Кнопка слайда: ссылка кнопки, у товарного слайда без неё — ссылка товара.

@@ -8,7 +8,7 @@
 
 import Firebase
 import FirebaseMessaging
-import REES46
+@_spi(PersonalizationV3) import REES46
 import SwiftUI
 import UIKit
 import UserNotifications
@@ -41,8 +41,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        
+
+        #if SHOP_ONLY
+        installShop()
+        #else
         installTabBar()
+        #endif
         initializationMessaging()
         sdkInitialization()
         registerPushNotification()
@@ -50,9 +54,22 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
+    /// The shop-only demo (scheme `REES46Shop`, configuration `Shop` with the `SHOP_ONLY` flag):
+    /// the shop's own navigation — Home → category → product, search, stories — without the tabs
+    /// and the developer screens. Same SDK set-up as the full demo.
+    private func installShop() {
+        window?.rootViewController = ShopNavigationController(rootViewController: ShopHomeViewController())
+    }
+
+    /// The shop home when the shop is the whole app: a product tapped in a linked story opens there.
+    private var shopHome: ShopHomeViewController? {
+        (window?.rootViewController as? UINavigationController)?.viewControllers.first as? ShopHomeViewController
+    }
+
     /// Wraps the storyboard screen into a tab bar: the existing screen keeps demoing the SDK
     /// methods, "UI Kit" shows the design system (with the SwiftUI stories block as one of its
     /// segments) and "Legacy UI" the UIKit stories view, so both integration styles can be compared.
+    /// "Shop" is a small store built from the kit's widgets and the SDK's public methods.
     ///
     /// Runs before `sdkInitialization()`, which passes the root controller to the SDK.
     private func installTabBar() {
@@ -65,7 +82,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         )
 
         let tabBarController = UITabBarController()
-        tabBarController.viewControllers = [apiScreen, makeUIKitTab(), makeLegacyUITab()]
+        tabBarController.viewControllers = [apiScreen, makeUIKitTab(), makeLegacyUITab(), makeShopTab()]
         window?.rootViewController = tabBarController
     }
 
@@ -89,6 +106,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return controller
     }
 
+    /// The shop keeps its own navigation stack: Home → category → product, back with the screens'
+    /// own back buttons or the edge swipe.
+    private func makeShopTab() -> UIViewController {
+        let navigation = ShopNavigationController(rootViewController: ShopHomeViewController())
+        navigation.tabBarItem = UITabBarItem(
+            title: "Shop",
+            image: tabImage(systemName: "bag"),
+            tag: 3
+        )
+        return navigation
+    }
+
     private func tabImage(systemName: String) -> UIImage? {
         UIImage(systemName: systemName)
     }
@@ -105,6 +134,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 NotificationCenter.default.post(name: globalSDKNotificationNameMainInit, object: nil)
             }
         )
+        enablePopupsV3()
+    }
+
+    /// Popups v3 of the new popup builder: the engine sleeps until the host turns it on. The demo
+    /// does not wait for the `popups_v3` flag of `/init` either, so popups work whatever the shop's
+    /// setting. Screens report themselves through `DemoScreen`.
+    private func enablePopupsV3() {
+        sdk.popups.appHost = "app.rees46.ru"
+        sdk.popups.ignoreInitFlag = true
+        sdk.popups.debug = true
+        // A product in a popup's recommender feed opens on the shop's stack, and the popup closes.
+        sdk.popups.productHandler = { [weak self] product in
+            Shop.openProduct(product.id, from: self?.window?.rootViewController)
+        }
+        // The game link of a popup's button opens the game here, and the popup closes, as after any
+        // link its host opened itself; other links go to the system, and the popup stays.
+        sdk.popups.linkHandler = { url in DemoGame.open(url) }
+        sdk.popups.isEnabled = true
     }
     
     func initializationMessaging(){
@@ -225,13 +272,38 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
     }
     
+    /// Links of the `rees46` scheme, both on a cold start and into the running app (the demo has
+    /// no scene manifest, so `scene(_:openURLContexts:)` above never fires). The game link
+    /// (`rees46://game`, see `DemoLinks`) opens the game over the app; a stories link — any host
+    /// and path with `r46_stories` — opens its campaign; the rest goes to the SDK's deep links as
+    /// before.
     func application(
-        _ application: UIApplication,
+        _ app: UIApplication,
         open url: URL,
-        sourceApplication: String?,
-        annotation: Any
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
+        if DemoGame.open(url) {
+            NSLog("REES46Demo: open url %@ (game)", url.absoluteString)
+            return true
+        }
+        let stories = openStoriesLink(url)
+        NSLog("REES46Demo: open url %@ (%@)", url.absoluteString, stories ? "stories" : "deep link")
+        if stories { return true }
         notificationService?.didReceiveDeepLink(url: url)
+        return true
+    }
+
+    private func openStoriesLink(_ url: URL) -> Bool {
+        // The presenter is passed explicitly. Without it the SDK shows over the window of the
+        // scene on screen, and on a cold start from a link it waits for that scene to activate.
+        guard DemoStoriesLinks.isStoriesLink(url),
+              DemoStoriesLinks.open(url, from: window?.rootViewController, communicationDelegate: shopHome) else { return false }
+        // A demo screen over the tabs (a push screen and the like) goes, so the stories open over
+        // the tabs, as from the "Open" button; an open stories viewer is the SDK's to close.
+        if let root = window?.rootViewController, var top = root.presentedViewController {
+            while let next = top.presentedViewController { top = next }
+            if !(top is PersonalizationStoriesViewController) { root.dismiss(animated: false) }
+        }
         return true
     }
     
@@ -246,6 +318,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
 extension AppDelegate: NotificationActionsProtocol {
     func openCustom(url: String) {
         print("Open custom url \(url)")
+        // A push with the game link opens the game, as the link from outside does.
+        if DemoGame.open(url) { return }
         openPushVC(title: "Custom push with url = \(url)")
     }
     

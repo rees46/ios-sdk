@@ -2,7 +2,7 @@ import UIKit
 
 /// Категория, на которую можно перейти из поиска: из подсказок instant-поиска (есть id)
 /// или из популярных категорий пустого запроса (только имя и ссылка).
-@_spi(PersonalizationUI) public struct PersonalizationSearchCategory {
+public struct PersonalizationSearchCategory {
     public let id: String?
     public let name: String
     public let url: String?
@@ -110,25 +110,5 @@ final class SearchImages {
         }
         load.task = task
         task.resume()
-    }
-}
-
-extension Product {
-    /// Товар ответа поиска → данные карточки кита. Строки берутся уже отформатированными
-    /// сервером (`price_formatted`, `oldprice_formatted`); картинка — `picture`
-    /// (уменьшенная копия), иначе оригинал.
-    func toCardProduct(actionText: String?) -> PersonalizationProduct {
-        let hasOldPrice = oldPrice > price && !oldPriceFormatted.isEmpty
-        let discountText = hasOldPrice && discount > 0 ? "-\(discount)%" : nil
-        return PersonalizationProduct(
-            id: id,
-            name: name,
-            price: priceFormatted.isEmpty ? "\(price) \(currency)" : priceFormatted,
-            imageUrl: resizedImageUrl.isEmpty ? (imageUrl.isEmpty ? nil : imageUrl) : resizedImageUrl,
-            brand: brand.isEmpty ? nil : brand,
-            oldPrice: hasOldPrice ? oldPriceFormatted : nil,
-            discount: discountText,
-            actionText: actionText
-        )
     }
 }

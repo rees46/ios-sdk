@@ -14,7 +14,7 @@ import UIKit
 /// Собрана из готовых блоков: `PersonalizationProductImage`, `PersonalizationRating`,
 /// `PersonalizationBadge` (скидка, вид danger), `PersonalizationButton`.
 /// Изображение хост грузит сам в `image.imageView`.
-@_spi(PersonalizationUI) public final class PersonalizationProductCard: UIView {
+public final class PersonalizationProductCard: UIView {
 
     public enum CardType {
         case carousel, grid, list
@@ -73,6 +73,12 @@ import UIKit
         didSet { applyTexts() }
     }
 
+    /// Ряд рейтинга. `false` — не рисовать даже при заданной оценке: в API рейтинга нет,
+    /// и виджеты с данными SDK его выключают.
+    public var showRating = true {
+        didSet { applyRating() }
+    }
+
     public var onAction: (() -> Void)?
 
     /// Нажатие на карточку целиком (не на кнопку) — открыть товар.
@@ -97,9 +103,19 @@ import UIKit
     private let oldPriceLabel = UILabel()
     private let button = PersonalizationButton(size: .md, view: .primary)
 
+    private var ratingValue: String?
     private var root: UIStackView?
     private var badgeConstraints: [NSLayoutConstraint] = []
     private var listImageWidth: NSLayoutConstraint?
+    private var listPriceLine: UIStackView?
+    private var listBottom: UIStackView?
+    private var listPriceBlockWidth: NSLayoutConstraint?
+    /// Перенесены ли бейдж и кнопка у list-карточки по последней ширине; `nil` — ещё не решено.
+    private var listWrap: (badge: Bool, button: Bool)?
+    private var columnPriceRow: UIStackView?
+    private var columnPriceSpacer: UIView?
+    /// Стоит ли старая цена у колонок своей строкой над ценой; `nil` — ещё не решено.
+    private var columnPriceWrap: Bool?
 
     public init(type: CardType = .carousel) {
         super.init(frame: .zero)
@@ -115,8 +131,13 @@ import UIKit
     /// - Parameter value: уже отформатированная оценка: в макете «4,7» с запятой;
     ///   `nil` — товар без оценки, ряд рейтинга прячется.
     public func setRating(value: String?, reviews: Int) {
-        rating.isHidden = value == nil
+        ratingValue = value
         if let value { rating.set(value: value, reviews: reviews) }
+        applyRating()
+    }
+
+    private func applyRating() {
+        rating.isHidden = !showRating || ratingValue == nil
     }
 
     /// Тексты карточки из данных товара. Обработчики и картинку раскладка ставит сама.
@@ -146,7 +167,9 @@ import UIKit
         nameLabel.numberOfLines = 2
         oldPriceLabel.numberOfLines = 1
         button.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
-        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cardTapped)))
+        let tap = UITapGestureRecognizer(target: self, action: #selector(cardTapped))
+        tap.delegate = self
+        addGestureRecognizer(tap)
 
         rebuild()
     }
@@ -160,9 +183,31 @@ import UIKit
     }
 
     private func rebuild() {
+        // Каталог меряет плитку и переключает ту же карточку в список, поэтому части уходят из
+        // старых стеков аккуратно. Сначала они показываются, и стеки снимают с них ограничения
+        // скрытия: иначе спрятанная в плитке старая цена уезжала в список шириной ноль. Потом
+        // части снимаются по одной и только затем уходит корень: унесённые из уже отцепленного
+        // корня, они давали карточке, которую до этого мерили, нулевую высоту.
+        let parts: [UIView] = [imageContainer, brandLabel, nameLabel, rating, priceLabel, priceBadge, oldPriceLabel, button]
+        let hidden = parts.map(\.isHidden)
+        parts.forEach { $0.isHidden = false }
+        root?.updateConstraintsIfNeeded()
+        root?.layoutIfNeeded()
+        for (view, wasHidden) in zip(parts, hidden) {
+            view.removeFromSuperview()
+            view.isHidden = wasHidden
+        }
         root?.removeFromSuperview()
         listImageWidth?.isActive = false
         listImageWidth = nil
+        listPriceBlockWidth?.isActive = false
+        listPriceBlockWidth = nil
+        listPriceLine = nil
+        listBottom = nil
+        listWrap = nil
+        columnPriceRow = nil
+        columnPriceSpacer = nil
+        columnPriceWrap = nil
         let stack = type == .list ? buildList() : buildColumn()
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
@@ -192,7 +237,10 @@ import UIKit
         ]
         NSLayoutConstraint.activate(badgeConstraints)
 
-        let priceRow = UIStackView(arrangedSubviews: [priceLabel, oldPriceLabel, PersonalizationFlexibleSpace()])
+        let priceSpacer = PersonalizationFlexibleSpace()
+        let priceRow = UIStackView(arrangedSubviews: [priceLabel, oldPriceLabel, priceSpacer])
+        columnPriceRow = priceRow
+        columnPriceSpacer = priceSpacer
         priceRow.axis = .horizontal
         priceRow.alignment = .lastBaseline
         priceRow.spacing = PersonalizationSpacing.md  // 8
@@ -219,7 +267,8 @@ import UIKit
     }
 
     /// List: картинка шириной 120 слева, справа колонка — название с рейтингом сверху,
-    /// цена с кнопкой снизу. Высоту строки задаёт картинка по своей пропорции.
+    /// цена с кнопкой снизу (в узкой колонке кнопка под ценой). Высоту строки задаёт картинка
+    /// по своей пропорции.
     private func buildList() -> UIStackView {
         NSLayoutConstraint.deactivate(badgeConstraints)
         badgeConstraints = []
@@ -246,12 +295,16 @@ import UIKit
         bottom.distribution = .fill
         bottom.spacing = PersonalizationSpacing.md  // 8
         // Цена и бейдж не сжимаются, свободное место достаётся блоку цены, кнопка держит
-        // свою ширину; когда не хватает и её — укорачивается её подпись.
+        // свою ширину. Не влезают в строку — бейдж и кнопка переносятся (applyListWrap);
+        // подпись кнопки укорачивается, только если кнопка шире всей колонки.
         for view in [priceLabel, priceBadge] {
             view.setContentCompressionResistancePriority(.required, for: .horizontal)
         }
         priceBlock.setContentHuggingPriority(.defaultLow, for: .horizontal)
         button.setContentHuggingPriority(.required, for: .horizontal)
+        listPriceLine = priceLine
+        listBottom = bottom
+        listPriceBlockWidth = priceBlock.widthAnchor.constraint(equalTo: bottom.widthAnchor)
 
         let column = UIStackView(arrangedSubviews: [top, bottom])
         column.axis = .vertical
@@ -266,6 +319,82 @@ import UIKit
         row.spacing = PersonalizationSpacing.lg  // 12
         column.heightAnchor.constraint(greaterThanOrEqualTo: imageContainer.heightAnchor).isActive = true
         return row
+    }
+
+    public override func layoutSubviews() {
+        applyWrap(forWidth: bounds.width)
+        super.layoutSubviews()
+    }
+
+    /// Списки меряют карточку по ширине ячейки: перенос решается до замера.
+    public override func systemLayoutSizeFitting(
+        _ targetSize: CGSize,
+        withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority,
+        verticalFittingPriority: UILayoutPriority
+    ) -> CGSize {
+        if horizontalFittingPriority == .required { applyWrap(forWidth: targetSize.width) }
+        return super.systemLayoutSizeFitting(
+            targetSize,
+            withHorizontalFittingPriority: horizontalFittingPriority,
+            verticalFittingPriority: verticalFittingPriority
+        )
+    }
+
+    /// Переносы в ценах решаются по ширине карточки: в layoutSubviews и до замера списком.
+    private func applyWrap(forWidth width: CGFloat) {
+        guard width > 0 else { return }
+        if type == .list { applyListWrap(forWidth: width) } else { applyColumnPriceWrap(forWidth: width) }
+    }
+
+    /// Длинные цены («799 990 ₽» и «1 574 990 ₽») в колонку плитки рядом не влезают: старая
+    /// цена встаёт строкой над ценой, и цена с кнопкой остаются на линии соседей (низ карточек
+    /// в списке выровнен распоркой). Иначе старая цена укорачивалась многоточием.
+    private func applyColumnPriceWrap(forWidth width: CGFloat) {
+        guard let priceRow = columnPriceRow, let spacer = columnPriceSpacer else { return }
+        let column = type == .carousel ? Self.carouselWidth : width
+        let old = fittingWidth(oldPriceLabel)
+        let wraps = old > 0 && fittingWidth(priceLabel) + PersonalizationSpacing.md + old > column
+        if columnPriceWrap == wraps { return }
+        columnPriceWrap = wraps
+        priceRow.axis = wraps ? .vertical : .horizontal
+        priceRow.alignment = wraps ? .leading : .lastBaseline
+        priceRow.spacing = wraps ? 0 : PersonalizationSpacing.md
+        priceRow.insertArrangedSubview(oldPriceLabel, at: wraps ? 0 : 1)
+        spacer.isHidden = wraps
+    }
+
+    /// В узкой колонке list-карточки (экран 360 pt, крупный шрифт) цена, бейдж и кнопка в строку
+    /// не влезают: бейдж встаёт под цену, а кнопка — под блок цены к правому краю. Иначе
+    /// укорачивалась подпись кнопки. Решение — по естественным ширинам, как у ряда с переносом
+    /// на Android.
+    private func applyListWrap(forWidth width: CGFloat) {
+        guard let priceLine = listPriceLine, let bottom = listBottom else { return }
+        let column = width - Self.listImageSide - PersonalizationSpacing.lg
+        let gap = PersonalizationSpacing.md
+        let price = fittingWidth(priceLabel)
+        let badge = fittingWidth(priceBadge)
+        let wrapsBadge = badge > 0 && price + gap + badge > column
+        let line = wrapsBadge ? max(price, badge) : price + (badge > 0 ? gap + badge : 0)
+        let block = max(line, fittingWidth(oldPriceLabel))
+        let action = fittingWidth(button)
+        let wrapsButton = action > 0 && block + gap + action > column
+        if let current = listWrap, current.badge == wrapsBadge, current.button == wrapsButton { return }
+        listWrap = (wrapsBadge, wrapsButton)
+
+        priceLine.axis = wrapsBadge ? .vertical : .horizontal
+        priceLine.alignment = wrapsBadge ? .leading : .center
+        priceLine.spacing = wrapsBadge ? PersonalizationSpacing.sm : PersonalizationSpacing.md
+        // Под ценой кнопка прижата вправо, а блок цены во всю ширину держит текст слева.
+        bottom.axis = wrapsButton ? .vertical : .horizontal
+        bottom.alignment = wrapsButton ? .trailing : .center
+        listPriceBlockWidth?.isActive = wrapsButton
+    }
+
+    private func fittingWidth(_ view: UIView) -> CGFloat {
+        if view.isHidden { return 0 }
+        // Подпись — по своему тексту, без ограничений стека вокруг неё.
+        if let label = view as? UILabel { return label.intrinsicContentSize.width }
+        return view.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
     }
 
     private func nameBlock(spacing: CGFloat) -> UIStackView {
@@ -297,6 +426,8 @@ import UIKit
 
         button.text = actionText
         button.isHidden = (actionText ?? "").isEmpty
+        // Другие тексты — другие ширины: перенос у list-карточки решается заново.
+        setNeedsLayout()
     }
 
     private func attributed(_ text: String?, _ style: PersonalizationTextStyle, _ color: UIColor) -> NSAttributedString? {
@@ -308,4 +439,18 @@ import UIKit
 
     private static let carouselWidth: CGFloat = 220
     private static let listImageSide: CGFloat = 120
+}
+
+extension PersonalizationProductCard: UIGestureRecognizerDelegate {
+    /// Касание кнопки — её: нажатие на карточку тогда не начинается. Кнопка лежит в стеках
+    /// глубже прямого потомка, и иначе тап карточки забирал её касание — товар открывался
+    /// вместо «В корзину».
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var current = touch.view
+        while let view = current, view !== self {
+            if view is UIControl { return false }
+            current = view.superview
+        }
+        return true
+    }
 }

@@ -1,5 +1,5 @@
 import XCTest
-@_spi(PersonalizationUI) @testable import REES46
+@testable import REES46
 
 /// Stories V2 of the kit: the price splits the currency off the server's formatted string and
 /// picks its kind from the product (promo code, then discount, then plain price), the timer
@@ -230,6 +230,26 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         }
     }
 
+    func testAProductSlideButtonCarriesTheSlideProductOnlyThere() {
+        let product: [String: Any] = [
+            "id": "39_0", "type": "", "elements": [
+                ["type": "button", "title": "Buy", "link_ios": "https://shop.example/p"],
+                ["type": "product", "item": merged([:])]
+            ]
+        ]
+        let plain: [String: Any] = [
+            "id": 2, "type": "", "elements": [["type": "button", "title": "Go", "link": "https://shop.example/web"]]
+        ]
+        let json: [String: Any] = ["stories": [["id": 1, "slides": [product, plain]]]]
+        let slides = PersonalizationStory.list(json: json).first?.slides ?? []
+        XCTAssertEqual(slides.count, 2)
+        let first = slides.first
+        let button = first?.buttons.first
+        XCTAssertEqual(button?.element?.productId, "216908")
+        XCTAssertEqual(button.flatMap { first?.link(of: $0) }, "https://shop.example/p", "the button keeps its own link")
+        XCTAssertNil(slides.last?.buttons.first?.element?.productId, "a slide without a product gives its button none")
+    }
+
     func testTextBlocksTakeThePresetLineHeightAndTheirPromoCode() {
         let slide: [String: Any] = [
             "id": 1, "type": "image", "background": "https://img.example/a.jpg", "elements": [
@@ -403,6 +423,21 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
 
         let far = PersonalizationStory(id: "f", name: "F", startPosition: 9, slides: slides)
         XCTAssertEqual(StoriesSeenState.startSlide(far, seen: []), 3, "clamped to the story")
+    }
+
+    func testStoriesOpenedByALinkStartTheSharedOneOnItsSlideAndTheRestAsInTheFeed() {
+        let slides = (1...4).map { PersonalizationStorySlide(id: String($0), kind: .content) }
+        let shared = PersonalizationStory(id: "s", name: "S", startPosition: 2, slides: slides)
+        let next = PersonalizationStory(id: "n", name: "N", startPosition: 3, slides: slides)
+        func start(_ story: PersonalizationStory, seen: Set<String>, link: String?) -> Int {
+            StoriesSeenState.startSlide(story, seen: seen, shared: shared, linkSlide: link)
+        }
+        XCTAssertEqual(start(shared, seen: ["1", "2"], link: "4"), 3, "the shared campaign: the link slide, whatever was seen")
+        XCTAssertEqual(start(shared, seen: ["1", "2", "3", "4"], link: "1"), 0, "a viewed one too")
+        XCTAssertEqual(start(shared, seen: ["1"], link: "9"), 2, "no such slide: the server start position")
+        XCTAssertEqual(start(shared, seen: [], link: nil), 2, "no slide in the link: the server start position")
+        XCTAssertEqual(start(next, seen: ["1", "2"], link: "4"), 2, "the next campaign: the first unseen, as in the feed")
+        XCTAssertEqual(start(next, seen: [], link: "4"), 3, "untouched: its own start position")
     }
 
     func testASlideWithoutMediaSitsOnBackgroundCardWhateverItsColour() {
@@ -722,6 +757,51 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         let background = view.subviews.first { $0 is UIImageView }
         XCTAssertEqual(background?.frame, view.bounds, "the background still goes edge to edge")
         view.stop()
+    }
+
+    func testATextBlockStandsOnItsShareOfTheSlideInsideTheAreaBetweenTheHeaderAndTheButtons() throws {
+        // `y_offset` of the whole slide, then the block moves into the area under the header and
+        // over the buttons or the products — the poll card's rule.
+        func layout(
+            _ yOffset: Any,
+            buttons: [PersonalizationStorySlide.Button] = [],
+            products: PersonalizationStorySlide.Products? = nil
+        ) throws -> (slide: PersonalizationStorySlideView, block: UIView) {
+            let element: [String: Any] = ["type": "text_block", "text_input": "Sale", "font_size": "24", "y_offset": yOffset]
+            let parsed = try XCTUnwrap(PersonalizationStorySlide.TextBlock(json: element))
+            let slide = PersonalizationStorySlide(id: "1", kind: .content, buttons: buttons, products: products, textBlocks: [parsed])
+            let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+            view.safeInsets = Self.islandInsets
+            view.frame = host.bounds
+            host.addSubview(view)
+            host.layoutIfNeeded()
+            return (view, try XCTUnwrap(view.subviews.first { $0 is PersonalizationStoryTextBlock }))
+        }
+        let top: CGFloat = 62 + 16, bottom: CGFloat = 874 - 34 - 16
+
+        XCTAssertEqual(try layout(NSNull()).block.frame.minY, top, accuracy: 0.5, "null — 0: the top of the area")
+        XCTAssertEqual(try layout("high").block.frame.minY, top, accuracy: 0.5, "not a number — 0")
+        XCTAssertEqual(try layout(-20).block.frame.minY, top, accuracy: 0.5, "clamped to 0")
+        XCTAssertEqual(try layout(5).block.frame.minY, top, accuracy: 0.5, "5% (44) is under the header — moved down to the area")
+        let middle = try layout(50).block
+        XCTAssertEqual(middle.frame.minY, 874 * 0.5, accuracy: 0.5, "50% of the whole slide, not of the area")
+        XCTAssertEqual(try layout("50").block.frame.minY, 874 * 0.5, accuracy: 0.5)
+
+        let low = try layout(95).block
+        XCTAssertEqual(low.frame.maxY, bottom, accuracy: 0.5, "95% would hang off the slide — pressed to the bottom of the area")
+        XCTAssertEqual(low.frame.height, middle.frame.height, accuracy: 0.5, "moved, not squeezed")
+        XCTAssertEqual(try layout(150).block.frame.maxY, bottom, accuracy: 0.5, "clamped to 100, inside")
+
+        let withButton = try layout(95, buttons: [.init(title: "Buy")])
+        let buttons = try XCTUnwrap(withButton.slide.subviews.compactMap { $0 as? UIStackView }.first)
+        XCTAssertEqual(withButton.block.frame.maxY, buttons.frame.minY - 16, accuracy: 0.5, "above the buttons")
+        let items = PersonalizationStorySlide.Products(items: [PersonalizationStorySlide.Offer(id: "1", name: "Mouse", price: "12 990 ₽")])
+        let withProducts = try layout(95, products: items)
+        let row = try XCTUnwrap(withProducts.slide.subviews.first { $0 is PersonalizationStoryUsedProducts })
+        XCTAssertEqual(withProducts.block.frame.maxY, row.frame.minY, accuracy: 0.5, "over the products row, its own 16 inside")
+        XCTAssertLessThan(withProducts.slide.subviews.firstIndex(of: withProducts.block) ?? .max,
+                          withProducts.slide.subviews.firstIndex(of: row) ?? 0, "the opened products sheet covers it")
+        withProducts.slide.stop()
     }
 
     func testExpandedUsedProductsShowTheCarouselOnTheCardSheet() {

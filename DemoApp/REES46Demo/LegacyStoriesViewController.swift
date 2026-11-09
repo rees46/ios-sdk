@@ -16,6 +16,11 @@ final class LegacyStoriesViewController: UIViewController {
 
     private var events: [String] = []
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        DemoScreen.opened(DemoScreen.legacyStories)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
@@ -165,5 +170,11 @@ extension LegacyStoriesViewController: StoriesCommunicationProtocol {
 
     func receiveSelectedPromocodeProductData(promoCodeSlide: StoriesPromoCodeElement) {
         log("receiveSelectedPromocodeProductData (StoriesPromoCodeElement exposes no public fields)")
+    }
+
+    /// The game link of a slide's button opens the demo's game; every other link the SDK opens.
+    func shouldOpenLinkBySdk(url: String) -> Bool {
+        log("shouldOpenLinkBySdk: \(url)")
+        return !DemoGame.open(url)
     }
 }

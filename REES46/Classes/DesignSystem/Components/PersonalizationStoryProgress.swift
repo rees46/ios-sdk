@@ -8,7 +8,7 @@ import UIKit
 /// на `progress` (0…1), следующие пусты.
 ///
 /// Цвета — динамические `UIColor` на фоне вью, поэтому тема переключается сама.
-@_spi(PersonalizationUI) public final class PersonalizationStoryProgress: UIView {
+public final class PersonalizationStoryProgress: UIView {
 
     /// Высота полосок.
     public static let height: CGFloat = 2

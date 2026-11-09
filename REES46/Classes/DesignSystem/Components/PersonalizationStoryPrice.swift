@@ -24,7 +24,7 @@ import UIKit
 /// в буфер обмена, показывается тост `copiedText` и зовётся `onPromoCopied`.
 /// Увеличенный блок выходит за края плашки — поэтому скругление и обрезка живут
 /// на подложке, а не на самом компоненте.
-@_spi(PersonalizationUI) public final class PersonalizationStoryPrice: UIView {
+public final class PersonalizationStoryPrice: UIView {
 
     /// Вид правого блока.
     public enum Kind: Equatable {
