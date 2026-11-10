@@ -18,7 +18,7 @@ import Foundation
  platforms share one mental model and one migration story.
 
  Only per-device state that is genuinely shop-scoped lives here: `device_id` (the did), the persisted
- `seance_id`, and the advertising id. The APNs/FCM **push token stays global** (`.standard`): one token
+ `seance_id`, the advertising id and the A/B segment. The APNs/FCM **push token stays global** (`.standard`): one token
  per app install, fanned out to every shop's backend — see the push-token path.
  */
 enum StoragePartition {
@@ -27,11 +27,13 @@ enum StoragePartition {
     /// forever: changing it would orphan every existing install's partition.
     static let prefix = "personalization_sdk_"
 
-    // Keys that are partitioned per shop (identity + session + advertising id).
+    // Keys that are partitioned per shop (identity + session + advertising id + A/B segment).
     static let deviceIdKey = SdkConstants.deviceIdKey // "device_id"
     static let seanceKey = "seance_id"
     static let seanceLastActKey = "seance_last_act"
     static let idfaKey = "IDFA"
+    /// The device's A/B segment. Same key as Android's.
+    static let abSegmentKey = "segment_ab_testing"
 
     /// Global flag (kept in the legacy `.standard` domain) marking the one-time legacy adoption as
     /// consumed, so only the first shop to initialize inherits the pre-partition identity.
