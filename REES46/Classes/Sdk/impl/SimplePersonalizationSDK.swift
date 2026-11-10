@@ -193,9 +193,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.sendAdvertisingId = sendAdvertisingId
         
         // Resolve the session (reuse the persisted one within the 2h window, else start a new one)
-        // and pick an A/B segment.
+        // and the device's A/B segment.
         userSeance = self.sessionManager.currentSessionId()
-        segment = ["A", "B"].randomElement() ?? "A"
+        segment = Self.abSegment(of: identity)
         
         // Fetch user session (permanent user Id)
         deviceId = self.userIdentity.deviceId ?? ""
@@ -269,6 +269,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     func getCurrentSegment() -> String {
         return segment
+    }
+
+    /// The device's A/B segment: assigned once, then kept across launches, as Android and React
+    /// Native do. Picked anew on every launch, it moved the device between A and B, and a block under
+    /// an A/B test showed products on one launch and nothing on the next.
+    static func abSegment(of identity: UserIdentityRepository) -> String {
+        let segments = ["A", "B"]
+        if let stored = identity.abSegment, segments.contains(stored) {
+            return stored
+        }
+        let assigned = segments.randomElement() ?? "A"
+        identity.abSegment = assigned
+        return assigned
     }
     
     func getShopId() -> String {

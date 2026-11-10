@@ -15,6 +15,7 @@ final class InMemoryUserIdentityRepository: UserIdentityRepository {
     var seance: String?
     var seanceLastActTime: Date?
     var advertisingId: String?
+    var abSegment: String?
     func removeDeviceId() { deviceId = nil }
     func clearIdentity() { deviceId = nil; seance = nil; seanceLastActTime = nil }
 }
@@ -106,6 +107,48 @@ final class UserIdentityRepositoryTests: XCTestCase {
 
         let partition = UserDefaults(suiteName: StoragePartition.suiteName(for: shopId))
         XCTAssertEqual(partition?.string(forKey: StoragePartition.deviceIdKey), "did-shop")
+    }
+
+    // A block under an A/B test answers products to one segment only, so a segment picked anew on
+    // every launch showed the block on one launch and hid it on the next.
+    func test_abSegment_is_assigned_once_and_kept_across_launches() {
+        let suite = freshSuite()
+
+        let first = SimplePersonalizationSDK.abSegment(of: UserIdentityRepositoryImpl(store: suite))
+
+        XCTAssertTrue(["A", "B"].contains(first))
+        for _ in 0..<20 {
+            // A new repository over the same store — the next launch.
+            XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: UserIdentityRepositoryImpl(store: suite)), first)
+        }
+        XCTAssertEqual(suite.string(forKey: StoragePartition.abSegmentKey), first)
+    }
+
+    func test_abSegment_keeps_a_stored_segment() {
+        let repo = InMemoryUserIdentityRepository()
+        repo.abSegment = "B"
+
+        XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: repo), "B")
+    }
+
+    func test_abSegment_replaces_an_unknown_value() {
+        let repo = InMemoryUserIdentityRepository()
+        repo.abSegment = "C"
+
+        let segment = SimplePersonalizationSDK.abSegment(of: repo)
+
+        XCTAssertTrue(["A", "B"].contains(segment))
+        XCTAssertEqual(repo.abSegment, segment)
+    }
+
+    func test_clearIdentity_keeps_the_abSegment() {
+        let repo = UserIdentityRepositoryImpl(store: freshSuite())
+        repo.deviceId = "did-1"
+        repo.abSegment = "A"
+
+        repo.clearIdentity()
+
+        XCTAssertEqual(repo.abSegment, "A")
     }
 
     func test_in_memory_fake_round_trips() {

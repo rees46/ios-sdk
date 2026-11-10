@@ -12,7 +12,7 @@ import Foundation
  The SDK's per-shop identity/session storage, behind a typed port.
 
  Owns exactly the state that is scoped to a `shop_id`: the device id (`did`), the persisted session
- (`seance`/`sid`), and the advertising id (`IDFA`). Push tokens are device-global and deliberately not
+ (`seance`/`sid`), the advertising id (`IDFA`) and the A/B segment. Push tokens are device-global and deliberately not
  here. Mirrors the concept of the Android `UserSettingsRepository` (typed accessors over the store),
  without importing its use-case ceremony.
 
@@ -35,6 +35,10 @@ protocol UserIdentityRepository: AnyObject {
 
     /// The advertising id (`IDFA`).
     var advertisingId: String? { get set }
+
+    /// The device's A/B segment, nil until one is assigned. Clearing the identity keeps it: the
+    /// segment belongs to the device, not to the user.
+    var abSegment: String? { get set }
 
     /// Removes only the device id — used by the forced re-initialization path.
     func removeDeviceId()

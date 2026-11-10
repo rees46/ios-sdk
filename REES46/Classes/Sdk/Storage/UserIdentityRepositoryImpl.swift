@@ -68,6 +68,11 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
         set { store.set(newValue, forKey: StoragePartition.idfaKey) }
     }
 
+    var abSegment: String? {
+        get { store.string(forKey: StoragePartition.abSegmentKey) }
+        set { store.set(newValue, forKey: StoragePartition.abSegmentKey) }
+    }
+
     func removeDeviceId() {
         store.removeObject(forKey: StoragePartition.deviceIdKey)
     }
