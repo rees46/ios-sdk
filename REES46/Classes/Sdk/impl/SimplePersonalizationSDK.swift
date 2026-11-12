@@ -201,6 +201,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         segment = Self.abSegment(of: identity)
         
         // Fetch user session (permanent user Id)
+        if !needReInitialization {
+            Self.restoreDeviceId(into: identity, from: self.keychainStore)
+        }
         deviceId = self.userIdentity.deviceId ?? ""
         urlSession = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: true))
         sessionWithoutWaiting = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: false))
@@ -1155,45 +1158,41 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    /// `/init` on every launch. The saved init answer — the documents file and its keychain backup,
+    /// written by `sendIDFARequest` — stands in only when no answer came: an answer, a refused shop
+    /// among them, is the server's word. The saved answer used to replace `/init` for good: the file
+    /// and the keychain took turns answering every launch, and the server never saw the device again.
     private func sendInitRequest(
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
-        let path = "init"
         let params = prepareRequestParameters()
-        
-        let convertedInitJsonFileName = shopId + baseInitJsonFileName
-        let initFileNamePath = SdkGlobalHelper.sharedInstance
-            .getSdkDocumentsDirectory()
-            .appendingPathComponent(convertedInitJsonFileName)
-        
-        if needReInitialization {
-            fetchServerInitData(
-                path: path,
-                params: params,
-                completion: completion
-            )
-        } else {
-            if let resultResponse = readLocalInitData(from: initFileNamePath) {
-                handleInitializationResponse(
-                    resultResponse,
-                    initFileNamePath: initFileNamePath,
-                    completion: completion
-                )
-            } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
+        // With a saved answer to stand in, /init does not wait for the network: offline it fails at
+        // once and the saved answer takes over. Without one, /init waits for the network, as before.
+        let saved = needReInitialization ? nil : savedInitResponse()
+        sendGet(
+            path: "init",
+            params: params,
+            timeout: 1,
+            session: saved == nil ? nil : sessionWithoutWaiting
+        ) { status, result in
+            switch result.flatMap(Self.jsonObject) {
+            case let .success(json):
+                let resultResponse = InitResponse(json: json)
+                self.storeSuccessInit(result: resultResponse)
+                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
                 completion(.success(resultResponse))
-            } else {
-                fetchServerInitData(
-                    path: path,
-                    params: params,
-                    completion: completion
-                )
+            case let .failure(error):
+                if status == nil, let saved = saved {
+                    print("[SDK INIT Response] No answer from the server, the saved init answer stands in")
+                    completion(.success(saved))
+                } else {
+                    completion(.failure(error))
+                }
             }
-
+            self.serialSemaphore.signal()
         }
- 
         serialSemaphore.wait()
     }
-
 
     private func prepareRequestParameters() -> [String: String] {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
@@ -1224,71 +1223,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return params
     }
     
-    private func readLocalInitData(from filePath: URL) -> InitResponse? {
-        guard let initData = NSData(contentsOf: filePath),
-              let json = try? JSONSerialization.jsonObject(with: initData as Data) as? [String: Any] else {
+    /// The init answer saved on this device, for a launch without network. Its popup was shown when
+    /// it came and is not shown again; the device id is the one this shop keeps now.
+    private func savedInitResponse() -> InitResponse? {
+        let savedFile = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory()
+            .appendingPathComponent(shopId + baseInitJsonFileName)
+        guard let data = (try? Data(contentsOf: savedFile)) ?? keychainStore.readInitData(),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
             return nil
         }
-        return InitResponse(json: json)
+        var response = InitResponse(json: json)
+        response.popup = nil
+        if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
+            response.deviceId = deviceId
+        }
+        return response
     }
-    
-    private func handleInitializationResponse(
-        _ resultResponse: InitResponse,
-        initFileNamePath: URL,
-        completion: @escaping (Result<InitResponse, SdkError>) -> Void
-    ) {
-        let keychainDid = userIdentity.deviceId ?? ""
 
-        if keychainDid.isEmpty || needReInitialization {
-            persistDeviceIdIfAbsent(resultResponse.deviceId)
-            // Session is client-owned — do not overwrite it with the server-assigned seance.
-            sleep(1)
-            completion(.success(resultResponse))
-        } else {
-            storeKeychainData(from: initFileNamePath, resultResponse: resultResponse)
-            completion(.success(resultResponse))
+    /// A reinstall wipes the app's storage but not the keychain: the device id of the saved init
+    /// answer comes back, so `/init` goes out with it and the shop keeps the device.
+    private static func restoreDeviceId(into identity: UserIdentityRepository, from keychain: KeychainInitStore) {
+        guard (identity.deviceId ?? "").isEmpty,
+              let data = keychain.readInitData(),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let deviceId = json["did"] as? String, !deviceId.isEmpty else {
+            return
         }
-        serialSemaphore.signal()
-    }
-    
-    private func handleKeychainInitData(initFileNamePath: URL) -> InitResponse? {
-        guard let keychainIpfsSecret = keychainStore.readInitData(),
-            let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
-            return nil
-        }
-        
-        let resultResponse = InitResponse(json: jsonSecret)
-        storeSuccessInit(result: resultResponse)
-        
-        try? saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: initFileNamePath.lastPathComponent)
-        sleep(1)
-        print("[SDK INIT Response] Successfully completed initialization from keychain data: \(resultResponse)")
-        serialSemaphore.signal()
-        return resultResponse
-    }
-    
-    private func fetchServerInitData(
-        path: String,
-        params: [String: String],
-        completion: @escaping (Result<InitResponse, SdkError>) -> Void
-    ) {
-        getRequest(path: path, params: params, timeout: 1) { result in
-            switch result {
-            case let .success(successResult):
-                let resultResponse = InitResponse(json: successResult)
-                self.storeSuccessInit(result: resultResponse)
-                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
-                completion(.success(resultResponse))
-            case let .failure(error):
-                completion(.failure(error))
-            }
-            self.serialSemaphore.signal()
-        }
-    }
-    
-    private func storeKeychainData(from filePath: URL, resultResponse: InitResponse) {
-        try? FileManager.default.removeItem(at: filePath)
-        print("[SDK INIT Response] Successfully completed initialization with keychain data: \(resultResponse)")
+        identity.deviceId = deviceId
     }
     
     func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
