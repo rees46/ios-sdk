@@ -59,6 +59,12 @@ final class StubURLProtocol: URLProtocol {
         requests.filter { $0.path == path }
     }
 
+    /// Requests of one shop to `path`. An SDK left from an earlier test may still be sending: its
+    /// requests must not count in this one.
+    static func requests(to path: String, shop shopId: String) -> [StubRequest] {
+        requests(to: path).filter { ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == shopId }
+    }
+
     static func install() {
         lock.lock()
         recorded.removeAll()

@@ -58,15 +58,15 @@ final class RequestQueueTests: XCTestCase {
         let held = StubSDK.make(shopId: heldShop)
         held.tracking.custom(event: "before-init")
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init").isEmpty })
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
         Thread.sleep(forTimeInterval: 0.3)
-        XCTAssertTrue(StubURLProtocol.requests(to: "/push/custom").isEmpty, "the event left before /init answered")
+        XCTAssertTrue(StubURLProtocol.requests(to: "/push/custom", shop: self.heldShop).isEmpty, "the event left before /init answered")
 
         let answered = Date()
         initAnswer.signal()
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/push/custom").isEmpty })
-        guard let event = StubURLProtocol.requests(to: "/push/custom").first else { return }
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/push/custom", shop: self.heldShop).isEmpty })
+        guard let event = StubURLProtocol.requests(to: "/push/custom", shop: self.heldShop).first else { return }
         XCTAssertEqual(event.body["did"] as? String, "fresh-did")
         XCTAssertLessThan(event.time.timeIntervalSince(answered), 2, "the event waited a fixed pause instead of init")
     }
@@ -75,12 +75,12 @@ final class RequestQueueTests: XCTestCase {
         let held = StubSDK.make(shopId: heldShop)
         held.recommend(blockId: "block-1") { _ in }
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init").isEmpty })
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
         Thread.sleep(forTimeInterval: 0.3)
         initAnswer.signal()
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-1").isEmpty })
-        XCTAssertEqual(StubURLProtocol.requests(to: "/recommend/block-1").first?.query["did"], "fresh-did")
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-1", shop: self.heldShop).isEmpty })
+        XCTAssertEqual(StubURLProtocol.requests(to: "/recommend/block-1", shop: self.heldShop).first?.query["did"], "fresh-did")
     }
 
     func test_a_forced_reinitialization_does_not_send_requests_with_the_dropped_device_id() {
@@ -89,27 +89,27 @@ final class RequestQueueTests: XCTestCase {
         let held = StubSDK.make(shopId: heldShop, identity: identity, needReInitialization: true)
         held.recommend(blockId: "block-1") { _ in }
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init").isEmpty })
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
         Thread.sleep(forTimeInterval: 0.3)
         initAnswer.signal()
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-1").isEmpty })
-        XCTAssertNil(StubURLProtocol.requests(to: "/init").first?.query["did"])
-        XCTAssertEqual(StubURLProtocol.requests(to: "/recommend/block-1").first?.query["did"], "fresh-did")
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-1", shop: self.heldShop).isEmpty })
+        XCTAssertNil(StubURLProtocol.requests(to: "/init", shop: self.heldShop).first?.query["did"])
+        XCTAssertEqual(StubURLProtocol.requests(to: "/recommend/block-1", shop: self.heldShop).first?.query["did"], "fresh-did")
     }
 
     func test_a_shop_waiting_for_its_device_id_does_not_hold_another_shop() {
         let other = initializedOtherShop()
         let held = StubSDK.make(shopId: heldShop)
         held.tracking.custom(event: "before-init")
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init").filter { $0.query["shop_id"] == self.heldShop }.isEmpty })
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
         Thread.sleep(forTimeInterval: 0.3)
 
         let asked = Date()
         other.recommend(blockId: "block-2") { _ in }
 
-        XCTAssertTrue(eventually(timeout: 8) { !StubURLProtocol.requests(to: "/recommend/block-2").isEmpty })
-        guard let request = StubURLProtocol.requests(to: "/recommend/block-2").first else { return }
+        XCTAssertTrue(eventually(timeout: 8) { !StubURLProtocol.requests(to: "/recommend/block-2", shop: other.shopId).isEmpty })
+        guard let request = StubURLProtocol.requests(to: "/recommend/block-2", shop: other.shopId).first else { return }
         XCTAssertLessThan(request.time.timeIntervalSince(asked), 2, "another shop's wait for its device id held this one")
     }
 }

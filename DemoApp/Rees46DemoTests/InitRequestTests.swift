@@ -54,8 +54,8 @@ final class InitRequestTests: XCTestCase {
         let (sdk, error) = initialize(identity: identity, keychain: InMemoryKeychainInitStore(savedAnswer))
 
         XCTAssertNil(error)
-        XCTAssertEqual(StubURLProtocol.requests(to: "/init").count, 1, "the saved answer replaced /init")
-        XCTAssertEqual(StubURLProtocol.requests(to: "/init").first?.query["did"], "kept-did")
+        XCTAssertEqual(StubURLProtocol.requests(to: "/init", shop: shopId).count, 1, "the saved answer replaced /init")
+        XCTAssertEqual(StubURLProtocol.requests(to: "/init", shop: shopId).first?.query["did"], "kept-did")
         XCTAssertEqual(sdk.deviceId, "kept-did")
     }
 
@@ -67,7 +67,7 @@ final class InitRequestTests: XCTestCase {
         let (_, error) = initialize(identity: identity, keychain: InMemoryKeychainInitStore(savedAnswer))
 
         XCTAssertNil(error)
-        XCTAssertEqual(StubURLProtocol.requests(to: "/init").count, 1, "the saved answer replaced /init")
+        XCTAssertEqual(StubURLProtocol.requests(to: "/init", shop: shopId).count, 1, "the saved answer replaced /init")
     }
 
     func test_after_a_reinstall_init_sends_the_device_id_kept_in_the_keychain() {
@@ -77,7 +77,7 @@ final class InitRequestTests: XCTestCase {
         let (sdk, error) = initialize(identity: identity, keychain: InMemoryKeychainInitStore(savedAnswer))
 
         XCTAssertNil(error)
-        XCTAssertEqual(StubURLProtocol.requests(to: "/init").first?.query["did"], "kept-did")
+        XCTAssertEqual(StubURLProtocol.requests(to: "/init", shop: shopId).first?.query["did"], "kept-did")
         XCTAssertEqual(sdk.deviceId, "kept-did")
         XCTAssertEqual(identity.deviceId, "kept-did")
     }
@@ -112,7 +112,7 @@ final class InitRequestTests: XCTestCase {
         let (sdk, error) = initialize(identity: identity, keychain: InMemoryKeychainInitStore())
 
         XCTAssertNil(error)
-        XCTAssertNil(StubURLProtocol.requests(to: "/init").first?.query["did"])
+        XCTAssertNil(StubURLProtocol.requests(to: "/init", shop: shopId).first?.query["did"])
         XCTAssertEqual(sdk.deviceId, "new-did")
         XCTAssertEqual(identity.deviceId, "new-did")
     }

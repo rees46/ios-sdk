@@ -50,7 +50,7 @@ final class AuditFixesTests: XCTestCase {
         sdk.suggest(query: "shoes", excludedMerchants: ["m1", "m2"]) { _ in answered.fulfill() }
         wait(for: [answered], timeout: 5)
 
-        let query = StubURLProtocol.requests(to: "/search").first?.query ?? [:]
+        let query = StubURLProtocol.requests(to: "/search", shop: sdk.shopId).first?.query ?? [:]
         XCTAssertNotNil(query["excluded_merchants"], "excluded merchants were dropped without locations")
         XCTAssertNil(query["locations"])
     }
@@ -69,8 +69,8 @@ final class AuditFixesTests: XCTestCase {
             autoSendPushToken: false
         )
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/profile/set").isEmpty }, "the contacts went nowhere")
-        let body = StubURLProtocol.requests(to: "/profile/set").first?.body ?? [:]
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/profile/set", shop: shopId).isEmpty }, "the contacts went nowhere")
+        let body = StubURLProtocol.requests(to: "/profile/set", shop: shopId).first?.body ?? [:]
         XCTAssertEqual(body["email"] as? String, "buyer@example.com")
         XCTAssertEqual(body["phone"] as? String, "+79990001122")
         XCTAssertEqual(body["loyalty_id"] as? String, "card-1")
@@ -81,13 +81,14 @@ final class AuditFixesTests: XCTestCase {
     @available(*, deprecated)
     func test_without_contacts_no_profile_is_sent() {
         let ready = expectation(description: "init")
-        let sdk = createPersonalizationSDK(shopId: newShopId(), apiDomain: "stub.test", autoSendPushToken: false) { _ in
+        let shopId = newShopId()
+        let sdk = createPersonalizationSDK(shopId: shopId, apiDomain: "stub.test", autoSendPushToken: false) { _ in
             ready.fulfill()
         }
         wait(for: [ready], timeout: 5)
         Thread.sleep(forTimeInterval: 0.5)
 
-        XCTAssertTrue(StubURLProtocol.requests(to: "/profile/set").isEmpty)
+        XCTAssertTrue(StubURLProtocol.requests(to: "/profile/set", shop: shopId).isEmpty)
         withExtendedLifetime(sdk) {}
     }
 
@@ -97,7 +98,7 @@ final class AuditFixesTests: XCTestCase {
         let first = initializedSDK()
         let token = Data([0xAB, 0xCD, 0x01])
         NotificationRegistrar(sdk: first).registerWithDeviceToken(deviceToken: token)
-        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 1 })
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: first.shopId).count == 1 })
 
         // Another shop of the app starts with token sending on: it has the token without the app.
         let shopId = newShopId()
@@ -112,10 +113,10 @@ final class AuditFixesTests: XCTestCase {
         )
 
         XCTAssertTrue(
-            eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 2 },
+            eventually { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shopId).count == 1 },
             "the token the SDK was given never went out on its own"
         )
-        let sent = StubURLProtocol.requests(to: "/mobile_push_tokens").dropFirst().first?.body ?? [:]
+        let sent = StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shopId).first?.body ?? [:]
         XCTAssertEqual(sent["token"] as? String, "abcd01")
         XCTAssertEqual(sent["shop_id"] as? String, shopId)
         withExtendedLifetime(next) {}
@@ -127,9 +128,9 @@ final class AuditFixesTests: XCTestCase {
         NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
         NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
 
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/mobile_push_tokens").isEmpty })
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).isEmpty })
         Thread.sleep(forTimeInterval: 0.5)
-        XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens").count, 1)
+        XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).count, 1)
     }
 
     func test_a_token_that_did_not_go_out_is_sent_again() {
@@ -137,13 +138,13 @@ final class AuditFixesTests: XCTestCase {
         StubURLProtocol.handler = { request in request.path == "/mobile_push_tokens" ? StubReply(500) : StubReply() }
         let token = Data([0x03, 0x04])
         NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
-        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 1 })
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).count == 1 })
         Thread.sleep(forTimeInterval: 0.3)
 
         StubURLProtocol.handler = StubURLProtocol.defaultHandler
         NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
 
-        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 2 }, "a failed upload held the token back for a week")
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).count == 2 }, "a failed upload held the token back for a week")
     }
 
     func test_the_widget_of_the_popup_on_screen_is_returned() {
