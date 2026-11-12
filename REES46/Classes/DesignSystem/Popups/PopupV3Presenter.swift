@@ -60,6 +60,15 @@ final class PopupV3Slots {
         NotificationCenter.default.post(name: .personalizationPopupsV3SlotFreed, object: nil)
     }
 
+    /// Test-only: frees every slot. The slots are the process's, and a test host's own SDK may hold
+    /// one with a popup of its live shop.
+    func reset() {
+        open.removeAll()
+        modal = nil
+        banners.removeAll()
+        Self.setModal(false)
+    }
+
     private static func setModal(_ value: Bool) {
         lock.lock()
         modalOpen = value
