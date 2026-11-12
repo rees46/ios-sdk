@@ -97,3 +97,32 @@ open class SessionQueue {
         self.queue.waitUntilAllOperationsAreFinished()
     }
 }
+
+/// A shop's request queue. Until the shop's device id is known, every request waits for the
+/// operation that brings it (`/init`); after that, requests run as they come.
+final class ShopSessionQueue: SessionQueue {
+
+    private let lock = NSLock()
+    private var gate: Operation?
+
+    /// Every request added from now on waits until `operation` finishes.
+    func hold(until operation: Operation) {
+        lock.lock()
+        gate = operation
+        lock.unlock()
+    }
+
+    override func addOperation(_ operation: @escaping () -> Void) {
+        addOperation(BlockOperation(block: operation))
+    }
+
+    override func addOperation(_ operation: Operation) {
+        lock.lock()
+        let gate = self.gate
+        lock.unlock()
+        if let gate = gate, gate !== operation, !gate.isFinished {
+            operation.addDependency(gate)
+        }
+        super.addOperation(operation)
+    }
+}

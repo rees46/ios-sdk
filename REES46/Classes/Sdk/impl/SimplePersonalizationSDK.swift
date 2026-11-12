@@ -66,7 +66,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     let sessionWithoutWaiting: URLSession
     var userInfo: InitResponse = InitResponse()
     
-    let sessionQueue = SessionQueue.manager
+    /// This shop's requests: another shop's wait for its device id does not hold them.
+    private let requestQueue: ShopSessionQueue
+    var sessionQueue: SessionQueue { requestQueue }
     private var requestOperation: RequestOperation?
     let bodyMutableData = NSMutableData()
     private let initSemaphore = DispatchSemaphore(value: 0)
@@ -150,6 +152,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
         // R2: identity/session live in this shop's partition. The default repository migrates the
         // pre-partition identity in once (existing installs keep their did); an injected repository
@@ -204,12 +207,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if !needReInitialization {
             Self.restoreDeviceId(into: identity, from: self.keychainStore)
         }
-        deviceId = self.userIdentity.deviceId ?? ""
+        // A forced re-initialization drops the stored device id: requests wait for the new one.
+        deviceId = needReInitialization ? "" : (self.userIdentity.deviceId ?? "")
         urlSession = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: true))
         sessionWithoutWaiting = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: false))
         _ = popupsV3
         
-        sessionQueue.addOperation {
+        let initOperation = BlockOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
                 case .success(let response):
@@ -250,6 +254,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 self.initSemaphore.signal()
             }
         }
+        // Requests made before the device id is known wait for /init and go out with its id.
+        if deviceId.isEmpty {
+            requestQueue.hold(until: initOperation)
+        }
+        sessionQueue.addOperation(initOperation)
         
         initializeNotificationRegistrar()
     }
@@ -1513,13 +1522,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         for (key, value) in params {
             requestParams[key] = value
         }
+        // A request made before the device id was known waited for /init on the queue; when /init
+        // failed, the stored id is the best there is.
         if self.deviceId == "" {
-            self.sessionQueue.pause()
-            sleep(5)
             let dId = self.userIdentity.deviceId ?? ""
             self.deviceId = dId
             requestParams["did"] = dId
-            self.sessionQueue.resume()
         }
         if let url = URL(string: baseURL + path) {
             var request = self.request(for: url, timeout: timeout)
