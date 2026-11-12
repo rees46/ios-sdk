@@ -221,6 +221,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     // Session is client-owned (see SessionManager) — the server-assigned seance is
                     // intentionally not adopted, matching Android/RN.
                     self.deviceId = response.deviceId
+
+                    // The contacts given at creation identify the user: they go to the profile.
+                    if self.userEmail != nil || self.userPhone != nil || self.userLoyaltyId != nil {
+                        self.setProfileData(
+                            userEmail: self.userEmail,
+                            userPhone: self.userPhone,
+                            userLoyaltyId: self.userLoyaltyId
+                        ) { _ in }
+                    }
                     
                     if let popup = response.popup {
                         self.popupPresenter.presentPopup(popup)
