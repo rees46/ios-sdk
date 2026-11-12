@@ -22,12 +22,7 @@ class PushTokenNotificationServiceImpl: PushTokenNotificationServiceProtocol {
 
             params["platform"] = isFirebaseNotification ? "ios_firebase" : "ios"
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-
-            self.sdk.urlSession = URLSession(configuration: sessionConfig)
-            self.sdk.postRequest(path: "mobile_push_tokens", params: params) { result in
+            self.sdk.postRequest(path: "mobile_push_tokens", params: params, timeout: 1) { result in
                 switch result {
                 case .success:
                     completion(.success(Void()))

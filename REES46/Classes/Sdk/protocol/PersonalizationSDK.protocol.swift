@@ -395,6 +395,25 @@ public extension PersonalizationSDK {
 
 extension PersonalizationSDK {
 
+    /// `getRequest` with the call's own timeout, for the SDK's services. The SDK's own client gives
+    /// the timeout to the request; another conformer gets the call as before.
+    func getRequest(path: String, params: [String: String], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        if let client = self as? SimplePersonalizationSDK {
+            client.getRequest(path: path, params: params, timeout: timeout, completion: completion)
+        } else {
+            getRequest(path: path, params: params, false, completion: completion)
+        }
+    }
+
+    /// `postRequest` with the call's own timeout, for the SDK's services.
+    func postRequest(path: String, params: [String: Any], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        if let client = self as? SimplePersonalizationSDK {
+            client.postRequest(path: path, params: params, timeout: timeout, completion: completion)
+        } else {
+            postRequest(path: path, params: params, completion: completion)
+        }
+    }
+
     /// Query of `GET /category/{category}`: the session plus whatever was asked. Shared by the SDK's
     /// own `getCategory` and the protocol's default one.
     func categoryParams(limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?) -> [String: String] {

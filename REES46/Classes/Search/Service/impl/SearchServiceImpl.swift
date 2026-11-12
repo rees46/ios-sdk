@@ -11,17 +11,13 @@ class SearchServiceImpl: SearchServiceProtocol {
         self.sessionQueue = sdk.sessionQueue
     }
     
-    private func configureSession(timeOut: Double? = 1) {
-        let session = URLSession.configuredSession(timeOut: timeOut ?? 1)
-        sdk?.configureURLSession(configuration: session.configuration)
-    }
-    
     private func getRequest(
         path: String,
         params: [String: String],
+        timeout: TimeInterval?,
         completion: @escaping (Result<[String: Any], SdkError>) -> Void
     ) {
-        sdk?.getRequest(path: path, params: params, false) { result in
+        sdk?.getRequest(path: path, params: params, timeout: timeout) { result in
             switch result {
             case let .success(successResult):
                 completion(.success(successResult))
@@ -109,8 +105,7 @@ class SearchServiceImpl: SearchServiceProtocol {
                 "shop_id": sdk.shopId
             ]
             
-            self.configureSession(timeOut: 1)
-            self.getRequest(path: "search/blank", params: params) { (result: Result<[String: Any], SdkError>) in
+            self.getRequest(path: "search/blank", params: params, timeout: 1) { (result: Result<[String: Any], SdkError>) in
                 switch result {
                 case let .success(successResult):
                     let resultResponse = SearchBlankResponse(json: successResult)
@@ -174,8 +169,7 @@ class SearchServiceImpl: SearchServiceProtocol {
                 disableClarification: disableClarification
             )
             
-            self.configureSession(timeOut: timeOut)
-            self.getRequest(path: "search", params: params) { (result: Result<[String: Any], SdkError>) in
+            self.getRequest(path: "search", params: params, timeout: timeOut ?? 1) { (result: Result<[String: Any], SdkError>) in
                 switch result {
                 case let .success(json):
                     let resultResponse = SearchResponse(json: json)
