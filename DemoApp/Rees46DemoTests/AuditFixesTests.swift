@@ -3,7 +3,8 @@
 //  REES46Tests
 //
 //  What the public API promised and did not do: the excluded merchants of instant search, the
-//  contacts given to createPersonalizationSDK.
+//  contacts given to createPersonalizationSDK, the push token sent on its own, the widget of the
+//  popup on screen.
 //
 
 import XCTest
@@ -88,5 +89,82 @@ final class AuditFixesTests: XCTestCase {
 
         XCTAssertTrue(StubURLProtocol.requests(to: "/profile/set").isEmpty)
         withExtendedLifetime(sdk) {}
+    }
+
+    // MARK: - Push token and the popup widget
+
+    func test_a_registered_push_token_is_sent_on_its_own_at_the_next_launch() {
+        let first = initializedSDK()
+        let token = Data([0xAB, 0xCD, 0x01])
+        NotificationRegistrar(sdk: first).registerWithDeviceToken(deviceToken: token)
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 1 })
+
+        // Another shop of the app starts with token sending on: it has the token without the app.
+        let shopId = newShopId()
+        let next = SimplePersonalizationSDK(
+            shopId: shopId,
+            apiDomain: "stub.test",
+            autoSendPushToken: true,
+            enableAutoPopupPresentation: false,
+            userIdentity: InMemoryUserIdentityRepository(),
+            keychainStore: InMemoryKeychainInitStore(),
+            localState: LocalStateRepositoryImpl(store: UserDefaults(suiteName: "test-\(shopId)")!)
+        )
+
+        XCTAssertTrue(
+            eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 2 },
+            "the token the SDK was given never went out on its own"
+        )
+        let sent = StubURLProtocol.requests(to: "/mobile_push_tokens").dropFirst().first?.body ?? [:]
+        XCTAssertEqual(sent["token"] as? String, "abcd01")
+        XCTAssertEqual(sent["shop_id"] as? String, shopId)
+        withExtendedLifetime(next) {}
+    }
+
+    func test_a_token_given_twice_at_once_goes_out_once() {
+        let sdk = initializedSDK()
+        let token = Data([0x01, 0x02])
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
+
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/mobile_push_tokens").isEmpty })
+        Thread.sleep(forTimeInterval: 0.5)
+        XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens").count, 1)
+    }
+
+    func test_a_token_that_did_not_go_out_is_sent_again() {
+        let sdk = initializedSDK()
+        StubURLProtocol.handler = { request in request.path == "/mobile_push_tokens" ? StubReply(500) : StubReply() }
+        let token = Data([0x03, 0x04])
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 1 })
+        Thread.sleep(forTimeInterval: 0.3)
+
+        StubURLProtocol.handler = StubURLProtocol.defaultHandler
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
+
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens").count == 2 }, "a failed upload held the token back for a week")
+    }
+
+    func test_the_widget_of_the_popup_on_screen_is_returned() {
+        final class Host: UIViewController, PopupPresentationDelegate {
+            override func present(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)? = nil) {}
+            func sdk(_ sdk: PersonalizationSDK, shouldPresentPopup popup: Popup) -> UIViewController? { self }
+        }
+        let sdk = initializedSDK()
+        let host = Host()
+        sdk.popupPresentationDelegate = host
+        XCTAssertNil(sdk.getNotificationWidget())
+
+        sdk.popupPresenter.presentPopup(Popup(json: [
+            "id": 7,
+            "position": "centered",
+            "components": #"{"header": "Title", "text": "Text"}"#,
+            "popup_actions": #"{"close": {"button_text": "Close"}}"#
+        ]))
+
+        XCTAssertTrue(eventually { sdk.getNotificationWidget() != nil }, "the popup on screen has no widget")
+        sdk.popupPresenter.dismissCurrentPopup()
+        withExtendedLifetime(host) {}
     }
 }

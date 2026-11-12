@@ -12,7 +12,8 @@ import UIKit
 
 public class PopupPresenter {
     private weak var sdk: AnyObject? // Use AnyObject to avoid circular dependency
-    private var currentPopup: NotificationWidget?
+    /// The legacy popup on screen, if any.
+    private(set) var currentPopup: NotificationWidget?
     private var popupQueue: [Popup] = []
     private let serialQueue = DispatchQueue(label: "com.rees46.popup.presenter")
     private var popupShownFlags: [Int: Date] = [:]

@@ -16,7 +16,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
-    var notificationWidget: NotificationWidget?
     
     weak var popupPresentationDelegate: PopupPresentationDelegate?
     var enableAutoPopupPresentation: Bool
@@ -285,7 +284,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func getNotificationWidget() -> NotificationWidget? {
-        return notificationWidget
+        return popupPresenter.currentPopup
     }
     
     func getSession() -> String {
