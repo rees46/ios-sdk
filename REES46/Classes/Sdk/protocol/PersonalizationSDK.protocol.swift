@@ -118,35 +118,51 @@ public extension PersonalizationSDK {
     }
 
     func setPushTokenNotification(token: String,isFirebaseNotification: Bool = false, completion: @escaping(Result<Void, SdkError>) -> Void) {
-        setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            setPushTokenNotification(token: token, isFirebaseNotification: isFirebaseNotification, completion: completion)
+        }, orFail: completion)
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String? = nil, comment: String? = nil, completion: @escaping(Result<Void, SdkError>) -> Void) {
-        review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            review(rate: rate, channel: channel, category: category, orderId: orderId, comment: comment, completion: completion)
+        }, orFail: completion)
     }
     
     func setProfileData(userEmail: String? = nil, userPhone: String? = nil, userLoyaltyId: String? = nil, birthday: Date? = nil, age: Int? = nil, firstName: String? = nil, lastName: String? = nil, location: String? = nil, gender: Gender? = nil, advertisingId: String? = nil, fbID: String? = nil, vkID: String? = nil, telegramId: String? = nil, loyaltyCardLocation: String? = nil, loyaltyStatus: String? = nil, loyaltyBonuses: Int? = nil, loyaltyBonusesToNextLevel: Int? = nil, boughtSomething: Bool? = nil, userId: String? = nil, customProperties: [String: Any?]? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, lastName: lastName, location: location, gender: gender, advertisingId: advertisingId, fbID: fbID, vkID: vkID, telegramId: telegramId, loyaltyCardLocation: loyaltyCardLocation, loyaltyStatus: loyaltyStatus, loyaltyBonuses: loyaltyBonuses, loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel, boughtSomething: boughtSomething, userId: userId, customProperties: customProperties, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId, birthday: birthday, age: age, firstName: firstName, lastName: lastName, location: location, gender: gender, advertisingId: advertisingId, fbID: fbID, vkID: vkID, telegramId: telegramId, loyaltyCardLocation: loyaltyCardLocation, loyaltyStatus: loyaltyStatus, loyaltyBonuses: loyaltyBonuses, loyaltyBonusesToNextLevel: loyaltyBonusesToNextLevel, boughtSomething: boughtSomething, userId: userId, customProperties: customProperties, completion: completion)
+        }, orFail: completion)
     }
     
     func recommend(blockId: String, currentProductId: String? = nil, currentCategoryId: String? = nil, locations: String? = nil, imageSize: String? = nil, timeOut: Double? = nil, withLocations: Bool = false, extended: Bool = false, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void) {
-        recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            recommend(blockId: blockId, currentProductId: currentProductId, currentCategoryId: currentCategoryId, locations: locations, imageSize: imageSize, timeOut: timeOut, withLocations: withLocations, extended: extended, completion: completion)
+        }, orFail: completion)
     }
     
     func suggest(query: String, locations: String? = nil, excludedMerchants: [String]? = nil, excludedBrands: [String]? = nil, timeOut: Double? = nil, extended: String? = nil, completion: @escaping(Result<SearchResponse, SdkError>) -> Void) {
-        suggest(query: query, locations: locations, excludedMerchants: excludedMerchants, excludedBrands: excludedBrands, timeOut: timeOut, extended: extended, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            suggest(query: query, locations: locations, excludedMerchants: excludedMerchants, excludedBrands: excludedBrands, timeOut: timeOut, extended: extended, completion: completion)
+        }, orFail: completion)
     }
     
     func getProductsList(brands: String? = nil, merchants: String? = nil, categories: String? = nil, locations: String? = nil, limit: Int? = nil, page: Int? = nil, filters: [String: Any]? = nil, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void) {
-        getProductsList(brands: brands, merchants: merchants, categories: categories, locations: locations, limit:limit, page: page, filters: filters, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            getProductsList(brands: brands, merchants: merchants, categories: categories, locations: locations, limit:limit, page: page, filters: filters, completion: completion)
+        }, orFail: completion)
     }
     
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void) {
-        getProductsFromCart(completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            getProductsFromCart(completion: completion)
+        }, orFail: completion)
     }
 
     func getUserOrders(shopSecret: String, did: String? = nil, email: String? = nil, phone: String? = nil, loyaltyId: String? = nil, externalId: String? = nil, dateFrom: String? = nil, completion: @escaping(Result<[Order], SdkError>) -> Void) {
-        getUserOrders(shopSecret: shopSecret, did: did, email: email, phone: phone, loyaltyId: loyaltyId, externalId: externalId, dateFrom: dateFrom, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            getUserOrders(shopSecret: shopSecret, did: did, email: email, phone: phone, loyaltyId: loyaltyId, externalId: externalId, dateFrom: dateFrom, completion: completion)
+        }, orFail: completion)
     }
 
     /// Notification history: `GET /notifications`. The endpoint is server-to-server and needs the shop
@@ -183,11 +199,15 @@ public extension PersonalizationSDK {
     }
 
     func joinLoyalty(phone: String, email: String? = nil, firstName: String? = nil, lastName: String? = nil, completion: @escaping(Result<LoyaltyJoinResponse, SdkError>) -> Void) {
-        joinLoyalty(phone: phone, email: email, firstName: firstName, lastName: lastName, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            joinLoyalty(phone: phone, email: email, firstName: firstName, lastName: lastName, completion: completion)
+        }, orFail: completion)
     }
 
     func getCategory(category: String, limit: Int? = nil, page: Int? = nil, brands: String? = nil, locations: String? = nil, filters: [String: Any]? = nil, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void) {
-        getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
+        }, orFail: completion)
     }
 
     /// Category page (`GET /category/{category}`) with a price range (`price_min` / `price_max`) and
@@ -208,7 +228,9 @@ public extension PersonalizationSDK {
     }
 
     func getCollection(collectionId: String, location: String? = nil, email: String? = nil, phone: String? = nil, externalId: String? = nil, loyaltyId: String? = nil, completion: @escaping(Result<CollectionResponse, SdkError>) -> Void) {
-        getCollection(collectionId: collectionId, location: location, email: email, phone: phone, externalId: externalId, loyaltyId: loyaltyId, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            getCollection(collectionId: collectionId, location: location, email: email, phone: phone, externalId: externalId, loyaltyId: loyaltyId, completion: completion)
+        }, orFail: completion)
     }
 
     func search(
@@ -236,36 +258,40 @@ public extension PersonalizationSDK {
         disableClarification: Bool? = nil,
         completion: @escaping(Result<SearchResponse, SdkError>) -> Void
     ) {
-        search(
-            query:query,
-            limit:limit,
-            offset:offset,
-            categoryLimit:categoryLimit,
-            brandLimit:brandLimit,
-            categories:categories,
-            extended:extended,
-            sortBy:sortBy,
-            sortDir:sortDir,
-            locations:locations,
-            excludedMerchants:excludedMerchants,
-            excludedBrands:excludedBrands,
-            brands:brands,
-            filters:filters,
-            priceMin:priceMin,
-            priceMax:priceMax,
-            colors:colors,
-            fashionSizes:fashionSizes,
-            exclude:exclude,
-            email:email,
-            timeOut:timeOut,
-            disableClarification:disableClarification,
-            completion: completion
-        )
+        ProtocolDefault.forward(on: self, to: {
+            search(
+                query:query,
+                limit:limit,
+                offset:offset,
+                categoryLimit:categoryLimit,
+                brandLimit:brandLimit,
+                categories:categories,
+                extended:extended,
+                sortBy:sortBy,
+                sortDir:sortDir,
+                locations:locations,
+                excludedMerchants:excludedMerchants,
+                excludedBrands:excludedBrands,
+                brands:brands,
+                filters:filters,
+                priceMin:priceMin,
+                priceMax:priceMax,
+                colors:colors,
+                fashionSizes:fashionSizes,
+                exclude:exclude,
+                email:email,
+                timeOut:timeOut,
+                disableClarification:disableClarification,
+                completion: completion
+            )
+        }, orFail: completion)
     }
     
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(itemId:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
     func track(event: Event, recommendedBy: RecomendedBy? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        track(event: event, recommendedBy: recommendedBy, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            track(event: event, recommendedBy: recommendedBy, completion: completion)
+        }, orFail: completion)
     }
 
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.purchase(request).")
@@ -294,11 +320,15 @@ public extension PersonalizationSDK {
         customFields: [String: Any]? = nil,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        trackEvent(event: event, time: time, category: category, label: label, value: value, customFields: customFields, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            trackEvent(event: event, time: time, category: category, label: label, value: value, customFields: customFields, completion: completion)
+        }, orFail: completion)
     }
     
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        notificationClicked(type: type, code: code, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            notificationClicked(type: type, code: code, completion: completion)
+        }, orFail: completion)
     }
     
     func subscribeForBackInStock(
@@ -310,15 +340,17 @@ public extension PersonalizationSDK {
         barcode: String? = nil,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        subscribeForBackInStock(
-            id: id,
-            email: email,
-            phone: phone,
-            fashionSize: fashionSize,
-            fashionColor:fashionColor,
-            barcode: barcode,
-            completion: completion
-        )
+        ProtocolDefault.forward(on: self, to: {
+            subscribeForBackInStock(
+                id: id,
+                email: email,
+                phone: phone,
+                fashionSize: fashionSize,
+                fashionColor:fashionColor,
+                barcode: barcode,
+                completion: completion
+            )
+        }, orFail: completion)
     }
     
     func unsubscribeForBackInStock(
@@ -327,7 +359,9 @@ public extension PersonalizationSDK {
         phone: String? = nil,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        unsubscribeForBackInStock(itemIds: itemIds, email: email,phone:phone,completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            unsubscribeForBackInStock(itemIds: itemIds, email: email,phone:phone,completion: completion)
+        }, orFail: completion)
     }
     
     func unsubscribeForPriceDrop(
@@ -337,7 +371,9 @@ public extension PersonalizationSDK {
         phone: String? = nil,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ){
-        unsubscribeForPriceDrop(itemIds: itemIds,currentPrice: currentPrice, email: email,phone:phone,completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            unsubscribeForPriceDrop(itemIds: itemIds,currentPrice: currentPrice, email: email,phone:phone,completion: completion)
+        }, orFail: completion)
     }
     
     func subscribeForPriceDrop(
@@ -347,30 +383,42 @@ public extension PersonalizationSDK {
         phone: String? = nil,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            subscribeForPriceDrop(id: id, currentPrice: currentPrice, email: email, phone: phone, completion: completion)
+        }, orFail: completion)
     }
     
     func getProbabilityToPurchase(
         params: PurchasePredictParams = PurchasePredictParams(),
         completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void
     ) {
-        getProbabilityToPurchase(params: params, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            getProbabilityToPurchase(params: params, completion: completion)
+        }, orFail: completion)
     }
 
     func addToSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping (Result<Void, SdkError>) -> Void) {
-        addToSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            addToSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
+        }, orFail: completion)
     }
     
     func removeFromSegment(segmentId: String, email: String? = nil, phone: String? = nil, completion: @escaping(Result<Void, SdkError>) -> Void) {
-        removeFromSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            removeFromSegment(segmentId: segmentId, email: email, phone: phone, completion: completion)
+        }, orFail: completion)
     }
     
     func manageSubscription(email: String? = nil, phone: String? = nil, userExternalId: String? = nil, userLoyaltyId: String? = nil, telegramId: String? = nil, emailBulk: Bool? = nil, emailChain: Bool? = nil, emailTransactional: Bool? = nil, smsBulk: Bool? = nil, smsChain: Bool? = nil, smsTransactional: Bool? = nil, webPushBulk: Bool? = nil, webPushChain: Bool? = nil, webPushTransactional: Bool? = nil, mobilePushBulk: Bool? = nil, mobilePushChain: Bool? = nil, mobilePushTransactional: Bool? = nil, telegramBulk: Bool? = nil, telegramChain: Bool? = nil, telegramTransactional: Bool? = nil, whatsappBulk: Bool? = nil, whatsappChain: Bool? = nil, whatsappTransactional: Bool? = nil, maxBulk: Bool? = nil, maxChain: Bool? = nil, maxTransactional: Bool? = nil, walletBulk: Bool? = nil, completion: @escaping(Result<Void, SdkError>) -> Void) {
-        manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, telegramBulk: telegramBulk, telegramChain: telegramChain, telegramTransactional: telegramTransactional, whatsappBulk: whatsappBulk, whatsappChain: whatsappChain, whatsappTransactional: whatsappTransactional, maxBulk: maxBulk, maxChain: maxChain, maxTransactional: maxTransactional, walletBulk: walletBulk, completion: completion)
+        ProtocolDefault.forward(on: self, to: {
+            manageSubscription(email: email, phone: phone, userExternalId: userExternalId, userLoyaltyId: userLoyaltyId, telegramId: telegramId, emailBulk: emailBulk, emailChain: emailChain, emailTransactional: emailTransactional, smsBulk: smsBulk, smsChain: smsChain, smsTransactional: smsTransactional, webPushBulk: webPushBulk, webPushChain: webPushChain, webPushTransactional: webPushTransactional, mobilePushBulk: mobilePushBulk, mobilePushChain: mobilePushChain, mobilePushTransactional: mobilePushTransactional, telegramBulk: telegramBulk, telegramChain: telegramChain, telegramTransactional: telegramTransactional, whatsappBulk: whatsappBulk, whatsappChain: whatsappChain, whatsappTransactional: whatsappTransactional, maxBulk: maxBulk, maxChain: maxChain, maxTransactional: maxTransactional, walletBulk: walletBulk, completion: completion)
+        }, orFail: completion)
     }
     
     func deleteUserCredentials() {
-        deleteUserCredentials()
+        ProtocolDefault.forward(on: self, to: {
+            deleteUserCredentials()
+        })
     }
     
     // R2: these caches are partitioned per shop — delegate to the shop's [LocalStateRepository] via
@@ -527,4 +575,68 @@ internal func makeRegisteredSDK(
     sdk.resetSdkCache()
     SdkRegistry.shared.register(shopId: shopId, sdk: sdk)
     return sdk
+}
+
+/**
+ Calls of the protocol's defaults that give a requirement its default arguments.
+
+ Such a default has the requirement's own signature, so for a conformer without that method — an
+ app's own mock — the default is the method, and its call to the requirement called itself until the
+ stack ran out. A method of one instance runs once per thread: met again inside itself, the method is
+ missing, and the caller gets an error instead. Another instance's call — a wrapper passing the call
+ on to the SDK it wraps — runs.
+ */
+enum ProtocolDefault {
+
+    private static let runningKey = "com.personalization.sdk.protocolDefaults"
+
+    /// Runs `call` — the requirement — unless `method` already runs on this thread; then `completion`
+    /// gets the error that the conformer does not implement it.
+    static func forward<T>(
+        _ method: String = #function,
+        on sdk: PersonalizationSDK,
+        to call: () -> Void,
+        orFail completion: (Result<T, SdkError>) -> Void
+    ) {
+        let key = runningKey(method, sdk)
+        guard enter(key) else {
+            return completion(.failure(.custom(error: "\(method) is not implemented by this PersonalizationSDK")))
+        }
+        defer { leave(key) }
+        call()
+    }
+
+    /// Runs `call` unless `method` already runs on this thread; then nothing happens.
+    static func forward(_ method: String = #function, on sdk: PersonalizationSDK, to call: () -> Void) {
+        let key = runningKey(method, sdk)
+        guard enter(key) else {
+            print("\(method) is not implemented by this PersonalizationSDK")
+            return
+        }
+        defer { leave(key) }
+        call()
+    }
+
+    /// `method` of this instance; a conformer that is not a class has no identity, its type stands in.
+    private static func runningKey(_ method: String, _ sdk: PersonalizationSDK) -> String {
+        if type(of: sdk) is AnyClass {
+            return "\(method)#\(ObjectIdentifier(sdk as AnyObject).hashValue)"
+        }
+        return "\(method)#\(String(reflecting: type(of: sdk)))"
+    }
+
+    private static func enter(_ method: String) -> Bool {
+        let thread = Thread.current.threadDictionary
+        var running = thread[runningKey] as? Set<String> ?? []
+        guard running.insert(method).inserted else { return false }
+        thread[runningKey] = running
+        return true
+    }
+
+    private static func leave(_ method: String) {
+        let thread = Thread.current.threadDictionary
+        var running = thread[runningKey] as? Set<String> ?? []
+        running.remove(method)
+        thread[runningKey] = running
+    }
 }
