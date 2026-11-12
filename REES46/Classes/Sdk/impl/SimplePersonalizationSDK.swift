@@ -16,7 +16,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
-    var notificationWidget: NotificationWidget?
     
     weak var popupPresentationDelegate: PopupPresentationDelegate?
     var enableAutoPopupPresentation: Bool
@@ -60,10 +59,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userPhone: String?
     var userLoyaltyId: String?
     var segment: String
+    /// The session every request goes through. Each request carries its own timeout.
     var urlSession: URLSession
+    /// For stories reloaded by hand: without network a request fails at once.
+    let sessionWithoutWaiting: URLSession
     var userInfo: InitResponse = InitResponse()
     
-    let sessionQueue = SessionQueue.manager
+    /// This shop's requests: another shop's wait for its device id does not hold them.
+    private let requestQueue: ShopSessionQueue
+    var sessionQueue: SessionQueue { requestQueue }
     private var requestOperation: RequestOperation?
     let bodyMutableData = NSMutableData()
     private let initSemaphore = DispatchSemaphore(value: 0)
@@ -147,6 +151,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
         // R2: identity/session live in this shop's partition. The default repository migrates the
         // pre-partition identity in once (existing installs keep their did); an injected repository
@@ -198,11 +203,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         segment = Self.abSegment(of: identity)
         
         // Fetch user session (permanent user Id)
-        deviceId = self.userIdentity.deviceId ?? ""
-        urlSession = URLSession.shared
+        if !needReInitialization {
+            Self.restoreDeviceId(into: identity, from: self.keychainStore)
+        }
+        // A forced re-initialization drops the stored device id: requests wait for the new one.
+        deviceId = needReInitialization ? "" : (self.userIdentity.deviceId ?? "")
+        urlSession = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: true))
+        sessionWithoutWaiting = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: false))
         _ = popupsV3
         
-        sessionQueue.addOperation {
+        let initOperation = BlockOperation {
             self.sendInitRequest { initResult in
                 switch initResult {
                 case .success(let response):
@@ -210,6 +220,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     // Session is client-owned (see SessionManager) — the server-assigned seance is
                     // intentionally not adopted, matching Android/RN.
                     self.deviceId = response.deviceId
+
+                    // The contacts given at creation identify the user: they go to the profile.
+                    if self.userEmail != nil || self.userPhone != nil || self.userLoyaltyId != nil {
+                        self.setProfileData(
+                            userEmail: self.userEmail,
+                            userPhone: self.userPhone,
+                            userLoyaltyId: self.userLoyaltyId
+                        ) { _ in }
+                    }
                     
                     if let popup = response.popup {
                         self.popupPresenter.presentPopup(popup)
@@ -243,6 +262,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 self.initSemaphore.signal()
             }
         }
+        // Requests made before the device id is known wait for /init and go out with its id.
+        if deviceId.isEmpty {
+            requestQueue.hold(until: initOperation)
+        }
+        sessionQueue.addOperation(initOperation)
         
         initializeNotificationRegistrar()
     }
@@ -260,7 +284,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func getNotificationWidget() -> NotificationWidget? {
-        return notificationWidget
+        return popupPresenter.currentPopup
     }
     
     func getSession() -> String {
@@ -375,12 +399,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 return // Exit from review
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            self.postRequest(path: path, params: params) { (result) in
+            self.postRequest(path: path, params: params, timeout: 1) { (result) in
                 switch result {
                 case .success:
                     completion(.success(Void()))
@@ -574,13 +593,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params.removeValue(forKey: "with_locations")
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            self.getRequest(path: path, params: params) { result in
+            self.getRequest(path: path, params: params, timeout: timeOut ?? 1) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -619,13 +632,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 queryParams["loyalty_id"] = loyaltyId
             }
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = ProbabilityToPurchaseNetworkConstants.requestTimeoutIntervalSeconds
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getRequest(path: path, params: queryParams) { result in
+            self.getRequest(path: path, params: queryParams, timeout: ProbabilityToPurchaseNetworkConstants.requestTimeoutIntervalSeconds) { result in
                 switch result {
                 case let .success(json):
                     if let parsed = ProbabilityToPurchaseResponse(json: json) {
@@ -655,10 +662,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             
             if let locations = locations {
                 params["locations"] = locations
-                if let excludedMerchants = excludedMerchants {
-                    let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
-                    params["excluded_merchants"] = excludeMerchantsString
-                }
+            }
+            if let excludedMerchants = excludedMerchants {
+                let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
+                params["excluded_merchants"] = excludeMerchantsString
             }
             if let excludedBrands = excludedBrands {
                 params["excluded_brands"] = excludedBrands.joined(separator: ",")
@@ -667,13 +674,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["extended"] = extended
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = timeOut ?? 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            self.getRequest(path: path, params: params) { result in
+            self.getRequest(path: path, params: params, timeout: timeOut ?? 1) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -723,13 +724,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            self.getRequest(path: path, params: params) { result in
+            self.getRequest(path: path, params: params, timeout: 1) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -753,13 +748,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "item_id": id
             ]
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            self.getRequest(path: path, params: params) { result in
+            self.getRequest(path: path, params: params, timeout: 1) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -780,13 +769,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceId
             ]
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            self.getRequest(path: path, params: params) { result in
+            self.getRequest(path: path, params: params, timeout: 1) { result in
                 switch result {
                 case let .success(responseJson):
                     guard let data = responseJson["data"] as? [String: Any],
@@ -815,13 +798,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "segment": self.segment
             ]
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getArrayRequest(path: path, params: params) { result in
+            self.getArrayRequest(path: path, params: params, timeout: 1) { result in
                 switch result {
                 case let .success(array):
                     completion(.success(LastOrderProductsResponse(array: array)))
@@ -849,14 +826,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if !hasIdentifier { params["did"] = self.deviceId }
             if let dateFrom = dateFrom { params["date_from"] = dateFrom }
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
             // Envelope: { "status": ..., "data": { "orders": [...] } }
-            self.getRequest(path: "orders/by_user", params: params) { result in
+            self.getRequest(path: "orders/by_user", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     let ordersJson = (json["data"] as? [String: Any])?["orders"] as? [[String: Any]] ?? []
@@ -879,13 +850,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let firstName = firstName { params["first_name"] = firstName }
             if let lastName = lastName { params["last_name"] = lastName }
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.postRequest(path: "loyalty/members/join", params: params) { result in
+            self.postRequest(path: "loyalty/members/join", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(LoyaltyJoinResponse(json: json)))
@@ -907,13 +872,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "identifier": identifier
             ]
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getRequest(path: "loyalty/members/status", params: params) { result in
+            self.getRequest(path: "loyalty/members/status", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(LoyaltyStatusResponse(json: json)))
@@ -931,13 +890,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceId
             ]
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getRequest(path: "profile", params: params) { result in
+            self.getRequest(path: "profile", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(GetProfileResponse(json: json)))
@@ -955,13 +908,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "item": item
             ]
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getRequest(path: "products/counters", params: params) { result in
+            self.getRequest(path: "products/counters", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(ProductCountersResponse(json: json)))
@@ -980,13 +927,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionQueue.addOperation {
             let params = self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getRequest(path: "category/\(category)", params: params) { result in
+            self.getRequest(path: "category/\(category)", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(CategoryResponse(json: json)))
@@ -1009,13 +950,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let externalId = externalId { params["external_id"] = externalId }
             if let loyaltyId = loyaltyId { params["loyalty_id"] = loyaltyId }
 
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            self.urlSession = URLSession(configuration: sessionConfig)
-
-            self.getRequest(path: "collection/\(collectionId)", params: params) { result in
+            self.getRequest(path: "collection/\(collectionId)", params: params, timeout: 1) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(CollectionResponse(json: json)))
@@ -1240,46 +1175,41 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    /// `/init` on every launch. The saved init answer — the documents file and its keychain backup,
+    /// written by `sendIDFARequest` — stands in only when no answer came: an answer, a refused shop
+    /// among them, is the server's word. The saved answer used to replace `/init` for good: the file
+    /// and the keychain took turns answering every launch, and the server never saw the device again.
     private func sendInitRequest(
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
-        let path = "init"
         let params = prepareRequestParameters()
-        configureSession()
-        
-        let convertedInitJsonFileName = shopId + baseInitJsonFileName
-        let initFileNamePath = SdkGlobalHelper.sharedInstance
-            .getSdkDocumentsDirectory()
-            .appendingPathComponent(convertedInitJsonFileName)
-        
-        if needReInitialization {
-            fetchServerInitData(
-                path: path,
-                params: params,
-                completion: completion
-            )
-        } else {
-            if let resultResponse = readLocalInitData(from: initFileNamePath) {
-                handleInitializationResponse(
-                    resultResponse,
-                    initFileNamePath: initFileNamePath,
-                    completion: completion
-                )
-            } else if let resultResponse = handleKeychainInitData(initFileNamePath: initFileNamePath) {
+        // With a saved answer to stand in, /init does not wait for the network: offline it fails at
+        // once and the saved answer takes over. Without one, /init waits for the network, as before.
+        let saved = needReInitialization ? nil : savedInitResponse()
+        sendGet(
+            path: "init",
+            params: params,
+            timeout: 1,
+            session: saved == nil ? nil : sessionWithoutWaiting
+        ) { status, result in
+            switch result.flatMap(Self.jsonObject) {
+            case let .success(json):
+                let resultResponse = InitResponse(json: json)
+                self.storeSuccessInit(result: resultResponse)
+                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
                 completion(.success(resultResponse))
-            } else {
-                fetchServerInitData(
-                    path: path,
-                    params: params,
-                    completion: completion
-                )
+            case let .failure(error):
+                if status == nil, let saved = saved {
+                    print("[SDK INIT Response] No answer from the server, the saved init answer stands in")
+                    completion(.success(saved))
+                } else {
+                    completion(.failure(error))
+                }
             }
-
+            self.serialSemaphore.signal()
         }
- 
         serialSemaphore.wait()
     }
-
 
     private func prepareRequestParameters() -> [String: String] {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
@@ -1310,78 +1240,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return params
     }
     
-    private func configureSession() {
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 1
-        sessionConfig.waitsForConnectivity = true
-        self.urlSession = URLSession(configuration: sessionConfig)
-    }
-    
-    private func readLocalInitData(from filePath: URL) -> InitResponse? {
-        guard let initData = NSData(contentsOf: filePath),
-              let json = try? JSONSerialization.jsonObject(with: initData as Data) as? [String: Any] else {
+    /// The init answer saved on this device, for a launch without network. Its popup was shown when
+    /// it came and is not shown again; the device id is the one this shop keeps now.
+    private func savedInitResponse() -> InitResponse? {
+        let savedFile = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory()
+            .appendingPathComponent(shopId + baseInitJsonFileName)
+        guard let data = (try? Data(contentsOf: savedFile)) ?? keychainStore.readInitData(),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
             return nil
         }
-        return InitResponse(json: json)
+        var response = InitResponse(json: json)
+        response.popup = nil
+        if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
+            response.deviceId = deviceId
+        }
+        return response
     }
-    
-    private func handleInitializationResponse(
-        _ resultResponse: InitResponse,
-        initFileNamePath: URL,
-        completion: @escaping (Result<InitResponse, SdkError>) -> Void
-    ) {
-        let keychainDid = userIdentity.deviceId ?? ""
 
-        if keychainDid.isEmpty || needReInitialization {
-            persistDeviceIdIfAbsent(resultResponse.deviceId)
-            // Session is client-owned — do not overwrite it with the server-assigned seance.
-            sleep(1)
-            completion(.success(resultResponse))
-        } else {
-            storeKeychainData(from: initFileNamePath, resultResponse: resultResponse)
-            completion(.success(resultResponse))
+    /// A reinstall wipes the app's storage but not the keychain: the device id of the saved init
+    /// answer comes back, so `/init` goes out with it and the shop keeps the device.
+    private static func restoreDeviceId(into identity: UserIdentityRepository, from keychain: KeychainInitStore) {
+        guard (identity.deviceId ?? "").isEmpty,
+              let data = keychain.readInitData(),
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let deviceId = json["did"] as? String, !deviceId.isEmpty else {
+            return
         }
-        serialSemaphore.signal()
-    }
-    
-    private func handleKeychainInitData(initFileNamePath: URL) -> InitResponse? {
-        guard let keychainIpfsSecret = keychainStore.readInitData(),
-            let jsonSecret = try? JSONSerialization.jsonObject(with: keychainIpfsSecret) as? [String: Any] else {
-            return nil
-        }
-        
-        let resultResponse = InitResponse(json: jsonSecret)
-        storeSuccessInit(result: resultResponse)
-        
-        try? saveDataToJsonFile(keychainIpfsSecret, jsonInitFileName: initFileNamePath.lastPathComponent)
-        sleep(1)
-        print("[SDK INIT Response] Successfully completed initialization from keychain data: \(resultResponse)")
-        serialSemaphore.signal()
-        return resultResponse
-    }
-    
-    private func fetchServerInitData(
-        path: String,
-        params: [String: String],
-        completion: @escaping (Result<InitResponse, SdkError>) -> Void
-    ) {
-        getRequest(path: path, params: params) { result in
-            switch result {
-            case let .success(successResult):
-                let resultResponse = InitResponse(json: successResult)
-                self.storeSuccessInit(result: resultResponse)
-                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
-                completion(.success(resultResponse))
-            case let .failure(error):
-                completion(.failure(error))
-            }
-            self.serialSemaphore.signal()
-        }
-    }
-    
-    private func storeKeychainData(from filePath: URL, resultResponse: InitResponse) {
-        try? FileManager.default.removeItem(at: filePath)
-        print("[SDK INIT Response] Successfully completed initialization with keychain data: \(resultResponse)")
+        identity.deviceId = deviceId
     }
     
     func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
@@ -1419,13 +1304,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         params["ios_advertising_id"] = advId
         userIdentity.advertisingId = advId
         
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 1
-        sessionConfig.waitsForConnectivity = true
-        self.urlSession = URLSession(configuration: sessionConfig)
-        
-        getRequest(path: path, params: params, true) { result in
-            switch result {
+        sendGet(path: path, params: params, isInit: true, timeout: 1) { _, result in
+            switch result.flatMap(Self.jsonObject) {
             case let .success(successResult):
                 let resJSON = successResult
                 let resultResponse = InitResponse(json: resJSON)
@@ -1465,20 +1345,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 SdkConstants.shopId: self.shopId,
                 SdkConstants.did: self.deviceId
             ]
-            let sessionConfig = URLSessionConfiguration.default
-            if SdkConfiguration.stories.storiesSlideReloadManually {
-                sessionConfig.timeoutIntervalForRequest = SdkConfiguration.stories.storiesSlideReloadTimeoutInterval
-                sessionConfig.waitsForConnectivity = false
-                sessionConfig.shouldUseExtendedBackgroundIdleMode = false
-            } else {
-                sessionConfig.timeoutIntervalForRequest = 5
-                sessionConfig.waitsForConnectivity = true
-                sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-            }
-            self.urlSession = URLSession(configuration: sessionConfig)
-            
-            self.getRequest(path: path, params: params, false) { result in
-                switch result {
+            // Reloaded by hand, a slide fails at once without network, so it can offer a retry.
+            let manualReload = SdkConfiguration.stories.storiesSlideReloadManually
+            self.sendGet(
+                path: path,
+                params: params,
+                timeout: manualReload ? SdkConfiguration.stories.storiesSlideReloadTimeoutInterval : 5,
+                session: manualReload ? self.sessionWithoutWaiting : nil
+            ) { _, result in
+                switch result.flatMap(Self.jsonObject) {
                 case let .success(successResult):
                     let res = StoryContent(json: successResult, shopId: self.shopId)
                     completion(.success(res))
@@ -1515,7 +1390,47 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SdkConfiguration.self
     }
     
+    /// Idle timeout of a request that does not ask for its own: the read timeout of the Android SDK.
+    static let defaultRequestTimeout: TimeInterval = 10
+
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        sendGet(path: path, params: params, isInit: isInit, timeout: nil) { _, result in
+            completion(result.flatMap(Self.jsonObject))
+        }
+    }
+
+    /// `getRequest` with the call's own timeout.
+    func getRequest(path: String, params: [String: String], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        sendGet(path: path, params: params, timeout: timeout) { _, result in
+            completion(result.flatMap(Self.jsonObject))
+        }
+    }
+
+    /// Variant of `getRequest` for endpoints that return a top-level JSON array
+    /// (e.g. `orders/last_for_user`), which `getRequest` cannot decode into `[String: Any]`.
+    private func getArrayRequest(path: String, params: [String: String], timeout: TimeInterval?, completion: @escaping (Result<[[String: Any]], SdkError>) -> Void) {
+        sendGet(path: path, params: params, timeout: timeout, forgetsSavedInit: false) { _, result in
+            completion(result.flatMap { json in
+                (json as? [[String: Any]]).map { .success($0) } ?? .failure(.decodeError)
+            })
+        }
+    }
+
+    static func jsonObject(_ json: Any) -> Result<[String: Any], SdkError> {
+        (json as? [String: Any]).map { .success($0) } ?? .failure(.decodeError)
+    }
+
+    /// One GET of `path` with the call's own timeout. Hands back the answer's HTTP status — nil when
+    /// no answer came — and its decoded JSON.
+    func sendGet(
+        path: String,
+        params: [String: String],
+        isInit: Bool = false,
+        timeout: TimeInterval?,
+        session: URLSession? = nil,
+        forgetsSavedInit: Bool = true,
+        completion: @escaping (_ status: Int?, _ result: Result<Any, SdkError>) -> Void
+    ) {
         let urlString = baseURL + path
     #if DEBUG
         print("LOG: getRequest to: \(urlString)")
@@ -1531,7 +1446,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
 
-        if needReInitialization {
+        if forgetsSavedInit && needReInitialization {
             print("Reinitialization needed. Clearing saved data...")
             let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
             let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
@@ -1545,108 +1460,67 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
 
-        if let endUrl = url?.url {
-            urlSession.dataTask(with: endUrl) { result in
-                switch result {
-                case .success(let (response, data)):
-                    guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
-                        let json = try? JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            let statusMessage = jsonObject["message"] as? String ?? ""
-                            print("\nStatus message: ", statusMessage)
-                        }
-                        completion(.failure(.invalidResponse))
-                        return
-                    }
-                    do {
-                        if isInit {
-                            let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
-                            try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
-                            self.keychainStore.writeInitData(data)
-                        }
-
-                        let json = try JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            completion(.success(jsonObject))
-                        } else {
-                            completion(.failure(.decodeError))
-                        }
-                    } catch {
-                        completion(.failure(.decodeError))
-                    }
-                case .failure:
-                    let networkManager = NetworkStatus.nManager
-                    let connectionStatus = networkManager.connectionStatus
-
-                    if connectionStatus == .Online {
-                        completion(.failure(.invalidResponse))
-                    } else if connectionStatus == .Offline {
-                        completion(.failure(.networkOfflineError))
-                    }
-                }
-            }.resume()
-        } else {
-            completion(.failure(.invalidResponse))
+        guard let endUrl = url?.url else {
+            completion(nil, .failure(.invalidResponse))
+            return
         }
+        (session ?? urlSession).postTask(with: request(for: endUrl, timeout: timeout)) { result in
+            switch result {
+            case .success(let (response, data)):
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+                guard 200 ..< 299 ~= statusCode else {
+                    let json = try? JSONSerialization.jsonObject(with: data)
+                    if let jsonObject = json as? [String: Any] {
+                        let statusMessage = jsonObject["message"] as? String ?? ""
+                        print("\nStatus message: ", statusMessage)
+                    }
+                    completion(statusCode, .failure(.invalidResponse))
+                    return
+                }
+                do {
+                    if isInit {
+                        let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
+                        try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
+                        self.keychainStore.writeInitData(data)
+                    }
+                    completion(statusCode, .success(try JSONSerialization.jsonObject(with: data)))
+                } catch {
+                    completion(statusCode, .failure(.decodeError))
+                }
+            case .failure:
+                completion(nil, .failure(Self.transportError()))
+            }
+        }.resume()
     }
-    
-    /// Variant of `getRequest` for endpoints that return a top-level JSON array
-    /// (e.g. `orders/last_for_user`), which `getRequest` cannot decode into `[String: Any]`.
-    private func getArrayRequest(path: String, params: [String: String], completion: @escaping (Result<[[String: Any]], SdkError>) -> Void) {
-        let urlString = baseURL + path
-    #if DEBUG
-        print("LOG: getArrayRequest to: \(urlString)")
-    #endif
 
-        var url = URLComponents(string: urlString)
+    /// A request with the call's own timeout. The session is shared: a call that swapped in a session
+    /// with its own timeout changed it for every call in flight on the session queue.
+    private func request(for url: URL, timeout: TimeInterval?) -> URLRequest {
+        var request = URLRequest(url: url)
+        request.timeoutInterval = timeout ?? Self.defaultRequestTimeout
+        return request
+    }
 
-        var queryItems = [URLQueryItem]()
-        for item in params {
-            queryItems.append(URLQueryItem(name: item.key, value: item.value))
-        }
-        queryItems.append(URLQueryItem(name: "stream", value: stream))
-        url?.queryItems = queryItems
+    /// A request that got no answer: offline, or the connection failed or timed out.
+    private static func transportError() -> SdkError {
+        NetworkStatus.nManager.connectionStatus == .Offline ? .networkOfflineError : .invalidResponse
+    }
 
-        if let endUrl = url?.url {
-            urlSession.dataTask(with: endUrl) { result in
-                switch result {
-                case .success(let (response, data)):
-                    guard let statusCode = (response as? HTTPURLResponse)?.statusCode, 200 ..< 299 ~= statusCode else {
-                        let json = try? JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            let statusMessage = jsonObject["message"] as? String ?? ""
-                            print("\nStatus message: ", statusMessage)
-                        }
-                        completion(.failure(.invalidResponse))
-                        return
-                    }
-                    do {
-                        let json = try JSONSerialization.jsonObject(with: data)
-                        if let jsonArray = json as? [[String: Any]] {
-                            completion(.success(jsonArray))
-                        } else {
-                            completion(.failure(.decodeError))
-                        }
-                    } catch {
-                        completion(.failure(.decodeError))
-                    }
-                case .failure:
-                    let networkManager = NetworkStatus.nManager
-                    let connectionStatus = networkManager.connectionStatus
-
-                    if connectionStatus == .Online {
-                        completion(.failure(.invalidResponse))
-                    } else if connectionStatus == .Offline {
-                        completion(.failure(.networkOfflineError))
-                    }
-                }
-            }.resume()
-        } else {
-            completion(.failure(.invalidResponse))
-        }
+    /// The configuration of the SDK's sessions. Waiting for connectivity, a request starts its timeout
+    /// once the network is back.
+    static func sessionConfiguration(waitsForConnectivity: Bool) -> URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.default
+        configuration.waitsForConnectivity = waitsForConnectivity
+        configuration.shouldUseExtendedBackgroundIdleMode = waitsForConnectivity
+        return configuration
     }
 
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+        postRequest(path: path, params: params, timeout: nil, completion: completion)
+    }
+
+    /// `postRequest` with the call's own timeout.
+    func postRequest(path: String, params: [String: Any], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
 #if DEBUG
         print("LOG: postRequest to: \(self.baseURL + path)")
 #endif
@@ -1656,16 +1530,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         for (key, value) in params {
             requestParams[key] = value
         }
+        // A request made before the device id was known waited for /init on the queue; when /init
+        // failed, the stored id is the best there is.
         if self.deviceId == "" {
-            self.sessionQueue.pause()
-            sleep(5)
             let dId = self.userIdentity.deviceId ?? ""
             self.deviceId = dId
             requestParams["did"] = dId
-            self.sessionQueue.resume()
         }
         if let url = URL(string: baseURL + path) {
-            var request = URLRequest(url: url)
+            var request = self.request(for: url, timeout: timeout)
             request.httpMethod = "POST"
             
             do {
@@ -1723,14 +1596,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(.failure(.decodeError))
                     }
                 case .failure:
-                    let networkManager = NetworkStatus.nManager
-                    let connectionStatus = networkManager.connectionStatus
-                    
-                    if connectionStatus == .Online {
-                        completion(.failure(.invalidResponse))
-                    } else if connectionStatus == .Offline {
-                        completion(.failure(.networkOfflineError))
-                    }
+                    completion(.failure(Self.transportError()))
                 }
             }.resume()
         } else {

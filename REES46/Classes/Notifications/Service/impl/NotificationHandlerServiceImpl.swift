@@ -29,17 +29,13 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
         static let dateFrom = "date_from"
     }
     
-    private func configureSession(timeOut: Double? = 1) {
-        let session = URLSession.configuredSession(timeOut: timeOut ?? 1)
-        sdk?.configureURLSession(configuration: session.configuration)
-    }
-    
     private func getRequest(
         path: String,
         params: [String: String],
+        timeout: TimeInterval?,
         completion: @escaping (Result<[String: Any], SdkError>) -> Void
     ) {
-        sdk?.getRequest(path: path, params: params, false) { result in
+        sdk?.getRequest(path: path, params: params, timeout: timeout) { result in
             switch result {
             case let .success(successResult):
                 completion(.success(successResult))
@@ -52,9 +48,10 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
     private func postRequest(
         path: String,
         params: [String: String],
+        timeout: TimeInterval?,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        sdk?.postRequest(path: path, params: params) { result in
+        sdk?.postRequest(path: path, params: params, timeout: timeout) { result in
             switch result {
             case .success:
                 completion(.success(Void()))
@@ -200,9 +197,7 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
                 dateFrom: dateFrom
             )
             
-            self.configureSession()
-            
-            self.getRequest(path: Constants.notificationPath, params: params) { result in
+            self.getRequest(path: Constants.notificationPath, params: params, timeout: 1) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -231,9 +226,7 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
                 "type": type
             ]
             
-            self.configureSession()
-            
-            self.postRequest(path: path, params: params, completion: completion)
+            self.postRequest(path: path, params: params, timeout: 1, completion: completion)
         }
     }
 }

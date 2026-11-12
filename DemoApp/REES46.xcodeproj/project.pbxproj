@@ -59,6 +59,12 @@
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		67B36DC5275BCA31AB0A0363 /* SdkRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6493F884A898C533B4817F97 /* SdkRegistryTests.swift */; };
 		6805322F7DF2A2E2F1234B24 /* InstanceResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */; };
+		65A305883A9898039E3F0718 /* AuditFixesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1BE0C0533E8778297B1CDF /* AuditFixesTests.swift */; };
+		3405D472E5955B7DD87E036D /* ProtocolDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D5ACB48B2EC6832C8529A5 /* ProtocolDefaultsTests.swift */; };
+		0B0420F429671FC8AD8F465A /* RequestQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E870C2E4F446AC84748A6C /* RequestQueueTests.swift */; };
+		C43C4B1EF567DD45329CE41D /* InitRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E038F77B8625382C2F9F82E /* InitRequestTests.swift */; };
+		06808D082556A103AA39260A /* RequestTimeoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4CEB2F13FB587D3544FFF08 /* RequestTimeoutTests.swift */; };
+		95300191D926BCFFE887810F /* StubServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4279E67656DEE2726F5841 /* StubServer.swift */; };
 		7587149C2C6CDF62008E5E4E /* SDKConfigProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7587149B2C6CDF62008E5E4E /* SDKConfigProviderTests.swift */; };
 		758714A82C6CF1EB008E5E4E /* AppEnvironments.struct.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758714A62C6CF1EB008E5E4E /* AppEnvironments.struct.swift */; };
 		75A4D60C2C5B8EAA00929368 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 75A4D60B2C5B8EAA00929368 /* GoogleService-Info.plist */; };
@@ -312,6 +318,12 @@
 		AAB9149EDCCCB4FF18DB87D6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
 		AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeSDK.swift; sourceTree = "<group>"; };
 		B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InstanceResolverTests.swift; sourceTree = "<group>"; };
+		BE1BE0C0533E8778297B1CDF /* AuditFixesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuditFixesTests.swift; sourceTree = "<group>"; };
+		B1D5ACB48B2EC6832C8529A5 /* ProtocolDefaultsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProtocolDefaultsTests.swift; sourceTree = "<group>"; };
+		E4E870C2E4F446AC84748A6C /* RequestQueueTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RequestQueueTests.swift; sourceTree = "<group>"; };
+		3E038F77B8625382C2F9F82E /* InitRequestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InitRequestTests.swift; sourceTree = "<group>"; };
+		F4CEB2F13FB587D3544FFF08 /* RequestTimeoutTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RequestTimeoutTests.swift; sourceTree = "<group>"; };
+		1B4279E67656DEE2726F5841 /* StubServer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StubServer.swift; sourceTree = "<group>"; };
 		B57812A2700376CF0EC5D913 /* Pods_REES46Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_REES46Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5AD555A428611EB01D95215 /* PushPayloadParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushPayloadParserTests.swift; sourceTree = "<group>"; };
 		B6E945ACB56ED3FB898E8A42 /* UpgradeMigrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UpgradeMigrationTests.swift; sourceTree = "<group>"; };
@@ -500,6 +512,12 @@
 				AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */,
 				DE3061A70000000000000009 /* DemoLinksTests.swift */,
 				B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */,
+				BE1BE0C0533E8778297B1CDF /* AuditFixesTests.swift */,
+				B1D5ACB48B2EC6832C8529A5 /* ProtocolDefaultsTests.swift */,
+				E4E870C2E4F446AC84748A6C /* RequestQueueTests.swift */,
+				3E038F77B8625382C2F9F82E /* InitRequestTests.swift */,
+				F4CEB2F13FB587D3544FFF08 /* RequestTimeoutTests.swift */,
+				1B4279E67656DEE2726F5841 /* StubServer.swift */,
 				6493F884A898C533B4817F97 /* SdkRegistryTests.swift */,
 				50CF8287AA77C0C1D6CD5046 /* StoragePartitionTests.swift */,
 				70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */,
@@ -1112,6 +1130,12 @@
 				D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */,
 				7FEFCE64D31526E14ADA2679 /* FakeSDK.swift in Sources */,
 				6805322F7DF2A2E2F1234B24 /* InstanceResolverTests.swift in Sources */,
+				65A305883A9898039E3F0718 /* AuditFixesTests.swift in Sources */,
+				3405D472E5955B7DD87E036D /* ProtocolDefaultsTests.swift in Sources */,
+				0B0420F429671FC8AD8F465A /* RequestQueueTests.swift in Sources */,
+				C43C4B1EF567DD45329CE41D /* InitRequestTests.swift in Sources */,
+				06808D082556A103AA39260A /* RequestTimeoutTests.swift in Sources */,
+				95300191D926BCFFE887810F /* StubServer.swift in Sources */,
 				67B36DC5275BCA31AB0A0363 /* SdkRegistryTests.swift in Sources */,
 				DFDB6BC32790E30AA243B4E9 /* StoragePartitionTests.swift in Sources */,
 				F0605CC99B325F3301237A28 /* StorageMigrationTests.swift in Sources */,

@@ -24,38 +24,45 @@ class NotificationRegistrar {
         "\(Constants.mainPushTokenLastUploadDateKey).\(sdk.shopId)"
     }
 
+    /// Guards the check and the claim of a shop's weekly upload.
+    private static let uploadLock = NSLock()
+
     func registerWithDeviceToken(deviceToken: Data) {
-        if let pushTokenLastUpdateDate = UserDefaults.standard.object(forKey: lastUploadDateKey) as? Date {
-            let currentDate = Date()
-            let timeSincePushTokenLastUpdate = currentDate.timeIntervalSince(pushTokenLastUpdateDate)
-            guard timeSincePushTokenLastUpdate >= Constants.oneWeekInSeconds else {
-                // Token was sent within the last week; no need to send again
-                let nextPossibleSendDate = pushTokenLastUpdateDate.addingTimeInterval(Constants.oneWeekInSeconds)
+        // Kept for the next launches: with `autoSendPushToken` every shop sends it after its /init.
+        UserDefaults.standard.set(deviceToken, forKey: SdkConstants.deviceToken)
+
+        // The week's upload is claimed before it goes out, so two calls at once — the app's token
+        // callback and the SDK's own send after /init — send the token once. Written after the
+        // answer, the date was lost with a registrar made for one call, and nothing held back.
+        let key = lastUploadDateKey
+        Self.uploadLock.lock()
+        let lastUpload = UserDefaults.standard.object(forKey: key) as? Date
+        if let lastUpload = lastUpload, Date().timeIntervalSince(lastUpload) < Constants.oneWeekInSeconds {
+            Self.uploadLock.unlock()
 #if DEBUG
-                print("Push token already sent recently. Next possible send date: \(nextPossibleSendDate)")
+            print("Push token already sent recently. Next possible send date: \(lastUpload.addingTimeInterval(Constants.oneWeekInSeconds))")
 #endif
-                return
-            }
+            return
         }
-        
+        UserDefaults.standard.set(Date(), forKey: key)
+        Self.uploadLock.unlock()
+
         let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        sdk.setPushTokenNotification(token: token) { [weak self] tokenResponse in
-            guard let self = self else { return }
+        sdk.setPushTokenNotification(token: token) { tokenResponse in
             switch tokenResponse {
             case .success():
-                let currentDate = Date()
-                UserDefaults.standard.setValue(currentDate, forKey: self.lastUploadDateKey)
-                let nextPossibleSendDate = currentDate.addingTimeInterval(Constants.oneWeekInSeconds)
 #if DEBUG
-                print("Push token successfully sent. Last upload date: \(currentDate). Next possible send date: \(nextPossibleSendDate)")
+                print("Push token successfully sent.")
 #endif
             case .failure(let error):
-                self.handleRegistrationError(error)
+                // Not sent: the claim goes back, and the next call tries again.
+                UserDefaults.standard.set(lastUpload, forKey: key)
+                Self.handleRegistrationError(error)
             }
         }
     }
     
-    private func handleRegistrationError(_ error: SdkError) {
+    private static func handleRegistrationError(_ error: SdkError) {
         switch error {
         case let .custom(customError):
             print("SDK Push Token Error:", customError)

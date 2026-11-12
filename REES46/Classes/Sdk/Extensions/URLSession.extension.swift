@@ -30,13 +30,4 @@ extension URLSession {
             result(.success((response, data)))
         }
     }
-    
-    static func configuredSession(timeOut: Double = 1) -> URLSession {
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = timeOut
-        sessionConfig.waitsForConnectivity = true
-        sessionConfig.shouldUseExtendedBackgroundIdleMode = true
-        
-        return URLSession(configuration: sessionConfig)
-    }
 }

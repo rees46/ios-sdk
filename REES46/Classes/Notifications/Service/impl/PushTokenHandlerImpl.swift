@@ -45,13 +45,8 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
                 params[Constants.platform] = Constants.ios
             }
             
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 1
-            sessionConfig.waitsForConnectivity = true
-            
-            sdk.configureURLSession(configuration: sessionConfig)
             sdk.postRequest(
-                path: Constants.mobilePushTokensPath, params: params, completion: { result in
+                path: Constants.mobilePushTokensPath, params: params, timeout: 1, completion: { result in
                     switch result {
                     case .success:
                         completion(.success(Void()))

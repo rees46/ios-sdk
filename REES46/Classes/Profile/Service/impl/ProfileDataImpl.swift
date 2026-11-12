@@ -14,20 +14,16 @@ class ProfileDataImpl: ProfileDataProtocol {
         self.configProvider = configProvider
     }
     
-    private func configureSession(timeOut: Double? = 1) {
-        let session = URLSession.configuredSession(timeOut: timeOut ?? 1)
-        sdk?.configureURLSession(configuration: session.configuration)
-    }
-    
     private func handlePostRequest(
         path: String,
         params: RequestParams,
+        timeout: TimeInterval? = nil,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
         guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sdk.sessionQueue.addOperation {
-            sdk.postRequest(path: path, params: params) { result in
+            sdk.postRequest(path: path, params: params, timeout: timeout) { result in
                 switch result {
                 case .success:
                     completion(.success(Void()))
@@ -148,8 +144,7 @@ class ProfileDataImpl: ProfileDataProtocol {
             
             let params = self.processProfileParams(paramsTemp)
             
-            self.configureSession()
-            self.handlePostRequest(path: ProfileDataConstants.path, params: params, completion: completion)
+            self.handlePostRequest(path: ProfileDataConstants.path, params: params, timeout: 1, completion: completion)
         }
     }
     
