@@ -16,13 +16,15 @@ final class CoreV2: Core {
     let kind = CoreKind.v2
 
     private let client: NetworkClient
+    private let logger: SdkLogger
     /// Answers come back here, in order, off the cooperative pool: a caller's completion may block.
     private let callbacks: DispatchQueue
     private let lock = NSLock()
     private var released = false
 
-    init(client: NetworkClient, label: String) {
+    init(client: NetworkClient, label: String, logger: SdkLogger) {
         self.client = client
+        self.logger = logger
         self.callbacks = DispatchQueue(label: "com.rees46.sdk.core.\(label)", qos: .utility)
     }
 
@@ -32,6 +34,7 @@ final class CoreV2: Core {
         lock.unlock()
         let callbacks = self.callbacks
         guard !isReleased else {
+            logger.requestCancelled(request.method.rawValue, request.path)
             callbacks.async { completion(Self.legacyResponse(.failure(.cancelled), for: request)) }
             return
         }

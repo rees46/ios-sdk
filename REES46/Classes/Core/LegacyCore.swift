@@ -84,7 +84,7 @@ final class LegacyCore: Core {
                     completion(CoreResponse(status: statusCode, body: data, result: .failure(.decodeError)))
                 }
             case .failure:
-                self.logger.requestFinished("GET", path, status: nil, succeeded: false)
+                self.logger.requestFinished("GET", path, status: nil, succeeded: false, reason: self.failureReason())
                 completion(CoreResponse(status: nil, body: Data(), result: .failure(self.transportError())))
             }
         }.resume()
@@ -129,7 +129,7 @@ final class LegacyCore: Core {
                 }
                 completion(CoreResponse(status: statusCode, body: data, result: self.decodePost(data, path: path)))
             case .failure:
-                self.logger.requestFinished("POST", path, status: nil, succeeded: false)
+                self.logger.requestFinished("POST", path, status: nil, succeeded: false, reason: self.failureReason())
                 completion(CoreResponse(status: nil, body: Data(), result: .failure(self.transportError())))
             }
         }.resume()
@@ -163,6 +163,11 @@ final class LegacyCore: Core {
     /// A request that got no answer: offline, or the connection failed or timed out.
     private func transportError() -> SdkError {
         connectivity.isOnline ? .invalidResponse : .networkOfflineError
+    }
+
+    /// `context.reason` of a request that got no answer: `offline` when the device has no network.
+    private func failureReason() -> String? {
+        connectivity.isOnline ? nil : SdkLogger.offlineReason
     }
 
     /// The configuration of the old sessions. Waiting for connectivity, a request starts its timeout

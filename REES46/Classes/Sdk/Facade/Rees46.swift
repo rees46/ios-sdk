@@ -216,7 +216,8 @@ public enum Rees46 {
         )
         // Not an SDK push (no resolvable type/code) — ignore regardless of the target.
         guard let (type, code) = PushPayloadParser.typeAndCode(from: payload) else {
-            SdkLogger.process.warning(LogCode.pushDropped, "the push is not an SDK push", ["reason": "not_sdk_push"])
+            // Most apps get pushes of other senders too: that is not a problem, so it is `debug`.
+            SdkLogger.process.debug(LogCode.pushDropped, "the push is not an SDK push", ["reason": "not_sdk_push"])
             return
         }
         switch resolution {

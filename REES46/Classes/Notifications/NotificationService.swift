@@ -50,6 +50,8 @@ public class NotificationService: NotificationServiceProtocol {
   }
   
   public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
+    // The token itself is never logged.
+    SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenReceived, "APNs handed a push token", ["source": "apns"])
     notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
   }
   
@@ -114,7 +116,9 @@ public class NotificationService: NotificationServiceProtocol {
   
   public func didReceiveRegistrationFCMToken(fcmToken: String?) {
     // The token itself is never logged.
-    notificationLogger.log("didReceiveRegistrationFCMToken")
+    if let fcmToken = fcmToken, !fcmToken.isEmpty {
+      SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenReceived, "FCM handed a push token", ["source": "fcm"])
+    }
     
     sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in
       switch tokenResponse {

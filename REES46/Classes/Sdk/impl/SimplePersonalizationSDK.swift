@@ -1404,7 +1404,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             return CommonFields(shopId: self.shopId, deviceId: self.deviceId, sessionId: self.userSeance, stream: self.stream, segment: self.segment)
         }
-        return CoreV2(client: client, label: shopId)
+        return CoreV2(client: client, label: shopId, logger: logger)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {

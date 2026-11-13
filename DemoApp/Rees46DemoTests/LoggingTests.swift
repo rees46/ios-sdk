@@ -280,6 +280,135 @@ final class LoggingTests: XCTestCase {
         XCTAssertEqual(SdkLogger.errorKind(nil), "none")
     }
 
+    // MARK: - Push handling, cancelled and offline requests
+
+    func test_a_push_of_another_sender_is_dropped_at_debug_and_one_for_an_unknown_shop_at_warning() {
+        // Messages about the SDK as a whole follow the most verbose live instance.
+        SdkLogger.register(SdkLogger(shopId: "verbose-\(shopId)", level: .debug), owner: self)
+        defer { SdkLogger.unregister(owner: self) }
+
+        Rees46.handlePush(["aps": ["alert": "from another sender"]], event: .delivered)
+        Rees46.handlePush(["shop_id": "unknown-\(shopId)", "type": "bulk", "id": "m1"], event: .delivered)
+
+        func dropped(_ reason: String) -> Rees46.SdkLogMessage? {
+            messages.first { $0.code == "push_dropped" && $0.context["reason"] == reason }
+        }
+        XCTAssertTrue(eventually { dropped("not_sdk_push") != nil && dropped("unknown_shop") != nil })
+        XCTAssertEqual(dropped("not_sdk_push")?.level, .debug, "a push of another sender is not a problem")
+        XCTAssertEqual(dropped("unknown_shop")?.level, .warning)
+    }
+
+    func test_the_steps_of_push_handling_go_under_the_push_area_code() {
+        SdkLogger.register(SdkLogger(shopId: "verbose-\(shopId)", level: .debug), owner: self)
+        defer { SdkLogger.unregister(owner: self) }
+        let step = "Application is in background state \(shopId)"
+
+        NotificationLogger().log(step)
+
+        XCTAssertTrue(eventually { self.messages.contains { $0.message.hasSuffix(step) } })
+        let message = messages.first { $0.message.hasSuffix(step) }
+        XCTAssertEqual(message?.code, "push", "push_received is only for a push handed to its shop")
+        XCTAssertEqual(message?.level, .debug)
+    }
+
+    func test_a_token_from_apns_or_fcm_is_logged_as_received_without_the_token() {
+        let shop = "token-\(shopId)"
+        let sdk = FakeSDK(shopId: shop)
+        SdkLogger.register(SdkLogger(shopId: shop, level: .debug), owner: sdk)
+        let tokenKey = SdkConstants.deviceToken
+        let dateKey = "mainPushTokenLastUploadDateKey.\(shop)"
+        let storedToken = UserDefaults.standard.object(forKey: tokenKey)
+        defer {
+            SdkLogger.unregister(owner: sdk)
+            UserDefaults.standard.set(storedToken, forKey: tokenKey)
+            UserDefaults.standard.removeObject(forKey: dateKey)
+        }
+        let service = NotificationService(sdk: sdk, notificationLogger: NotificationLogger())
+
+        service.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data([0xAB, 0xCD, 0xEF]))
+        service.didReceiveRegistrationFCMToken(fcmToken: "fcm-secret-token")
+
+        func received() -> [Rees46.SdkLogMessage] { messages(of: shop).filter { $0.code == "push_token_received" } }
+        XCTAssertTrue(eventually { received().count == 2 })
+        XCTAssertEqual(Set(received().compactMap { $0.context["source"] }), ["apns", "fcm"])
+        XCTAssertEqual(Set(received().map(\.level)), [.debug])
+        for message in messages(of: shop) {
+            let text = message.message + " " + message.context.values.joined(separator: " ")
+            XCTAssertFalse(text.contains("abcdef"), text)
+            XCTAssertFalse(text.contains("fcm-secret-token"), text)
+        }
+    }
+
+    func test_requests_that_release_ends_are_logged_as_cancelled_with_method_and_path() async {
+        let shop = "cancel-\(shopId)"
+        StubURLProtocol.handler = { $0.path == "/slow" ? StubReply(delay: 3) : StubReply() }
+        let client = NetworkClient(
+            baseURL: "https://stub.test/",
+            connectivity: FakeConnectivity(online: true),
+            logger: SdkLogger(shopId: shop, level: .debug)
+        ) { CommonFields(shopId: shop, deviceId: "did-1", sessionId: "sid-1", stream: "ios", segment: "A") }
+
+        let inFlight = _Concurrency.Task { await client.send(.init(method: .get, path: "slow")) }
+        let sent = await waitAsync { !StubURLProtocol.requests(to: "/slow").isEmpty }
+        XCTAssertTrue(sent)
+        await client.release()
+        _ = await inFlight.value
+        _ = await client.send(.init(method: .post, path: "later"))
+
+        func cancelled(_ path: String) -> Rees46.SdkLogMessage? {
+            messages(of: shop).first { $0.code == "request_cancelled" && $0.context["path"] == path }
+        }
+        let logged = await waitAsync { cancelled("slow") != nil && cancelled("later") != nil }
+        XCTAssertTrue(logged)
+        XCTAssertEqual(cancelled("slow")?.context["method"], "GET")
+        XCTAssertEqual(cancelled("later")?.context["method"], "POST")
+        XCTAssertEqual(cancelled("slow")?.level, .debug)
+        XCTAssertFalse(messages(of: shop).contains { $0.code == "request_failed" }, "a cancelled request did not fail")
+    }
+
+    func test_a_request_without_network_is_request_failed_with_the_reason_offline() async {
+        let shop = "offline-\(shopId)"
+        let client = NetworkClient(
+            baseURL: "https://stub.test/",
+            connectivity: FakeConnectivity(online: false),
+            logger: SdkLogger(shopId: shop, level: .warning)
+        ) { CommonFields(shopId: shop, deviceId: "did-1", sessionId: "sid-1", stream: "ios", segment: "A") }
+
+        _ = await client.send(.init(method: .get, path: "products/get"))
+
+        let logged = await waitAsync { self.messages(of: shop).contains { $0.code == "request_failed" } }
+        XCTAssertTrue(logged)
+        let failed = messages(of: shop).first { $0.code == "request_failed" }
+        XCTAssertEqual(failed?.context["reason"], "offline")
+        XCTAssertEqual(failed?.context["path"], "products/get")
+        XCTAssertEqual(failed?.level, .warning)
+    }
+
+    func test_the_old_core_logs_a_request_that_failed_offline_with_the_reason_offline() {
+        let connectivity = FakeConnectivity(online: true)
+        let ready = expectation(description: "init")
+        let sdk = StubSDK.make(shopId: shopId, connectivity: connectivity) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+        StubURLProtocol.handler = { $0.path == "/init" ? StubURLProtocol.defaultHandler($0) : StubReply.noAnswer }
+        connectivity.isOnline = false
+
+        let done = expectation(description: "post")
+        sdk.postRequest(path: "push", params: ["event": "view"]) { _ in done.fulfill() }
+        wait(for: [done], timeout: 5)
+
+        XCTAssertTrue(eventually { self.messages(of: self.shopId).contains { $0.code == "request_failed" } })
+        XCTAssertEqual(messages(of: shopId).first { $0.code == "request_failed" }?.context["reason"], "offline")
+    }
+
+    private func waitAsync(timeout: TimeInterval = 3, _ condition: @escaping () -> Bool) async -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            try? await _Concurrency.Task.sleep(nanoseconds: 20_000_000)
+        }
+        return condition()
+    }
+
     private func assertNoPersonalData(in messages: [Rees46.SdkLogMessage], file: StaticString = #filePath, line: UInt = #line) {
         for message in messages {
             let text = message.message + " " + message.context.values.joined(separator: " ")

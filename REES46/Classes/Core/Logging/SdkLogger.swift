@@ -15,6 +15,7 @@ enum LogCode {
     static let request = "request"
     static let requestFailed = "request_failed"
     static let requestBuildFailed = "request_build_failed"
+    static let requestCancelled = "request_cancelled"
     static let invalidArgument = "invalid_argument"
     static let invalidConfig = "invalid_config"
     static let decodingFailed = "decoding_failed"
@@ -30,6 +31,7 @@ enum LogCode {
     static let pushReceived = "push_received"
     static let pushDropped = "push_dropped"
     static let pushFailed = "push_failed"
+    static let pushTokenReceived = "push_token_received"
     static let pushPermission = "push_permission"
     static let pushPermissionFailed = "push_permission_failed"
     static let pushTokenSent = "push_token_sent"
@@ -92,12 +94,15 @@ final class SdkLogger {
 
     /// One request once it is over: `request` at `debug` when it succeeded; `request_failed` when the
     /// answer was not a success (`error` on `4xx`, `warning` otherwise) or no answer came (`status` is
-    /// `nil`). Method, path and HTTP code only.
-    func requestFinished(_ method: String, _ path: String, status: Int?, succeeded: Bool) {
+    /// `nil`). Method, path and HTTP code only, and `reason` when the failure has one (`offline`).
+    func requestFinished(_ method: String, _ path: String, status: Int?, succeeded: Bool, reason: String? = nil) {
         let line = Self.requestLine(method, path)
         var context = ["method": method, "path": path]
         if let status = status {
             context["status"] = String(status)
+        }
+        if let reason = reason {
+            context["reason"] = reason
         }
         if succeeded {
             debug(LogCode.request, line, context)
@@ -109,6 +114,21 @@ final class SdkLogger {
         }
         log((400..<500).contains(status) ? .error : .warning, LogCode.requestFailed, "\(status): \(line)", context)
     }
+
+    /// A request that fails at once because the device has no network: `request_failed` with the
+    /// reason `offline`, nothing went out.
+    func requestOffline(_ method: String, _ path: String) {
+        warning(LogCode.requestFailed, "no network: \(Self.requestLine(method, path))",
+                ["method": method, "path": path, "reason": Self.offlineReason])
+    }
+
+    /// A request that `release()` ended, in flight or before it went out: `request_cancelled`.
+    func requestCancelled(_ method: String, _ path: String) {
+        debug(LogCode.requestCancelled, "cancelled: \(Self.requestLine(method, path))", ["method": method, "path": path])
+    }
+
+    /// `context.reason` of a request that failed without network.
+    static let offlineReason = "offline"
 
     // MARK: - Data-free descriptions
 
@@ -244,6 +264,8 @@ extension SdkLogger {
         case stories
         case storiesV3 = "stories_v3"
         case popupsV3 = "popups_v3"
+        /// The steps of handling a push before it reaches its shop.
+        case push
     }
 
     /// Writes a message of `area`: through the shop's logger when the caller knows the shop, through

@@ -87,17 +87,16 @@ actor NetworkClient {
     // MARK: - Sending
 
     func send(_ request: Request) async -> Response {
-        guard !released else { return .failure(.cancelled) }
+        guard !released else { return cancelled(request) }
         guard request.waitsForNetwork else {
             guard connectivity.isOnline else {
-                logger.warning(LogCode.requestFailed, "no network: \(SdkLogger.requestLine(request.method.rawValue, request.path))",
-                               ["method": request.method.rawValue, "path": request.path, "reason": "offline"])
+                logger.requestOffline(request.method.rawValue, request.path)
                 return .failure(.network)
             }
             return await perform(request)
         }
         while true {
-            guard await networkIsBack() else { return .failure(.cancelled) }
+            guard await networkIsBack() else { return cancelled(request) }
             let response = await perform(request)
             // The monitor counts a path it has not reported yet as online: a request sent then may
             // find no network. One that waits for the network goes back to waiting, as the sessions
@@ -121,6 +120,12 @@ actor NetworkClient {
         }
     }
 
+    /// A request `release()` ended, before it went out or in flight.
+    private func cancelled(_ request: Request) -> Response {
+        logger.requestCancelled(request.method.rawValue, request.path)
+        return .failure(.cancelled)
+    }
+
     private func perform(_ request: Request) async -> Response {
         let method = request.method.rawValue
         let path = request.path
@@ -136,13 +141,15 @@ actor NetworkClient {
         let (data, response, error) = await load(urlRequest)
         // A request that `release()` cut short is cancelled, whatever error the session gave it.
         if error != nil, released {
-            return .failure(.cancelled)
+            return cancelled(request)
         }
         guard let http = response as? HTTPURLResponse, error == nil else {
             let failure = error.map(Self.classify) ?? .network
-            if failure != .cancelled {
-                logger.requestFinished(method, path, status: nil, succeeded: false)
+            if failure == .cancelled {
+                return cancelled(request)
             }
+            let offline = failure == .network && !connectivity.isOnline
+            logger.requestFinished(method, path, status: nil, succeeded: false, reason: offline ? SdkLogger.offlineReason : nil)
             return .failure(failure)
         }
 

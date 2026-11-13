@@ -7,9 +7,10 @@ public class NotificationLogger{
   
   public init(){}
   
-  /// A step of push handling, at `debug`. The text must not carry push values or tokens.
+  /// A step of push handling, at `debug` under the area code `push`: `push_received` is only for a
+  /// push handed to its shop. The text must not carry push values or tokens.
   public func log(_ message: String) {
-    SdkLogger.process.debug(LogCode.pushReceived, "\(logTag): \(message)")
+    SdkLogger.area(.push, .debug, "\(logTag): \(message)")
   }
   /// Logs the kind of the error, not its text: an error may carry what the server sent back.
   public func log(_ message: Error){
