@@ -194,6 +194,18 @@ final class LoggingTests: XCTestCase {
         XCTAssertEqual(message?.context["reason"], "invalid_json")
     }
 
+    func test_filters_that_are_not_json_are_an_invalid_argument() {
+        let ready = expectation(description: "init")
+        let sdk = StubSDK.make(shopId: shopId) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+
+        let done = expectation(description: "search")
+        sdk.search(query: "dress", filters: ["when": Date()]) { _ in done.fulfill() }
+        wait(for: [done], timeout: 5)
+
+        XCTAssertTrue(eventually { self.messages(of: self.shopId).contains { $0.code == "invalid_argument" && $0.context["reason"] == "invalid_json" } })
+    }
+
     func test_deleting_the_user_credentials_logs_the_reset_and_releases_the_shop_level() {
         let ready = expectation(description: "init")
         let sdk = StubSDK.make(shopId: shopId, logLevel: .info) { _ in ready.fulfill() }

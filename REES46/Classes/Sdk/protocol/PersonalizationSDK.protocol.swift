@@ -224,9 +224,13 @@ public extension PersonalizationSDK {
         guard priceMin != nil || priceMax != nil || sortBy != nil || sortDir != nil else {
             return getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
         }
-        let params = categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
-        getRequest(path: "category/\(category)", params: params, false) { result in
-            completion(result.map { CategoryResponse(json: $0) })
+        switch categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir) {
+        case let .success(params):
+            getRequest(path: "category/\(category)", params: params, false) { result in
+                completion(result.map { CategoryResponse(json: $0) })
+            }
+        case let .failure(error):
+            completion(.failure(error))
         }
     }
 
@@ -466,8 +470,8 @@ extension PersonalizationSDK {
     }
 
     /// Query of `GET /category/{category}`: the session plus whatever was asked. Shared by the SDK's
-    /// own `getCategory` and the protocol's default one.
-    func categoryParams(limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?) -> [String: String] {
+    /// own `getCategory` and the protocol's default one. Filters that are not JSON fail the call.
+    func categoryParams(limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?) -> Result<[String: String], SdkError> {
         var params: [String: String] = [
             "shop_id": shopId,
             "did": deviceId,
@@ -478,17 +482,18 @@ extension PersonalizationSDK {
         if let page = page { params["page"] = String(page) }
         if let brands = brands { params["brands"] = brands }
         if let locations = locations { params["locations"] = locations }
-        if let filters = filters,
-           let data = SafeJSON.data(filters),
-           let text = String(data: data, encoding: .utf8) {
-            params["filters"] = text
+        switch SearchFilterParams.filtersJSON(filters, method: "getCategory", shopId: shopId) {
+        case let .success(json):
+            params["filters"] = json
+        case let .failure(error):
+            return .failure(error)
         }
         // The same wire format as the search sends.
         if let priceMin = priceMin { params[SdkConstants.priceMin] = String(describing: priceMin) }
         if let priceMax = priceMax { params[SdkConstants.priceMax] = String(describing: priceMax) }
         if let sortBy = sortBy { params[SdkConstants.sortBy] = sortBy }
         if let sortDir = sortDir { params[SdkConstants.sortDir] = sortDir }
-        return params
+        return .success(params)
     }
 }
 

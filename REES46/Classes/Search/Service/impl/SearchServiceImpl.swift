@@ -41,14 +41,14 @@ class SearchServiceImpl: SearchServiceProtocol {
         excludedMerchants: [String]?,
         excludedBrands: [String]?,
         brands: String?,
-        filters: [String: Any]?,
         priceMin: Double?,
         priceMax: Double?,
         colors: [String]?,
         fashionSizes: [String]?,
         exclude: String?,
         email: String?,
-        disableClarification: Bool?
+        disableClarification: Bool?,
+        filtersJSON: String?
     ) -> [String: String] {
         
         var params: [String: String] = [
@@ -82,12 +82,7 @@ class SearchServiceImpl: SearchServiceProtocol {
             "exclude": exclude,
             "email": email,
             "no_clarification": disableClarification == true ? "1" : nil,
-            "filters": {
-                guard let filters = filters,
-                      let jsonData = SafeJSON.data(filters),
-                      let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
-                return jsonString
-            }()
+            "filters": filtersJSON
         ]
         
         params.merge(optionalParams.compactMapValues { $0 }) { _, new in new }
@@ -144,6 +139,14 @@ class SearchServiceImpl: SearchServiceProtocol {
         guard let sdk = sdk.checkInitialization(completion: completion) else { return }
         
         sessionQueue.addOperation {
+            let filtersJSON: String?
+            switch SearchFilterParams.filtersJSON(filters, method: "search", shopId: sdk.shopId) {
+            case let .success(json):
+                filtersJSON = json
+            case let .failure(error):
+                completion(.failure(error))
+                return
+            }
             let params = self.createParameters(
                 forSearch: query,
                 limit: limit,
@@ -158,14 +161,14 @@ class SearchServiceImpl: SearchServiceProtocol {
                 excludedMerchants: excludedMerchants,
                 excludedBrands: excludedBrands,
                 brands: brands,
-                filters: filters,
                 priceMin: priceMin,
                 priceMax: priceMax,
                 colors: colors,
                 fashionSizes: fashionSizes,
                 exclude: exclude,
                 email: email,
-                disableClarification: disableClarification
+                disableClarification: disableClarification,
+                filtersJSON: filtersJSON
             )
             
             self.getRequest(path: "search", params: params, timeout: timeOut) { (result: Result<[String: Any], SdkError>) in
@@ -183,6 +186,18 @@ class SearchServiceImpl: SearchServiceProtocol {
 
 /// Search filters as the server reads them, shared by full and instant search.
 enum SearchFilterParams {
+    /// `filters` as the JSON text the API reads; `nil` without filters. Filters that are not JSON (a
+    /// `Date`, a custom object, NaN) fail the call: written as they were, they crashed the app, and
+    /// left out, they brought back unfiltered products as if they were the filtered ones.
+    static func filtersJSON(_ filters: [String: Any]?, method: String, shopId: String) -> Result<String?, SdkError> {
+        guard let filters = filters else { return .success(nil) }
+        guard let data = SafeJSON.data(filters), let text = String(data: data, encoding: .utf8) else {
+            SdkLogger.forShop(shopId).warning(LogCode.invalidArgument, "\(method): filters are not valid JSON", ["reason": "invalid_json"])
+            return .failure(.custom(error: "\(method): filters are not valid JSON"))
+        }
+        return .success(text)
+    }
+
     /// `excluded_merchants`, or `nil` when it must not go. The server filters merchants inside the
     /// given locations: without locations — or with an empty list of them — the filter matches no
     /// product and the search finds nothing. Values are joined without spaces, as the server splits

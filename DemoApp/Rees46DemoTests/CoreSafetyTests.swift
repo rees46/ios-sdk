@@ -71,15 +71,64 @@ final class CoreSafetyTests: XCTestCase {
         XCTAssertTrue(StubURLProtocol.requests(to: "/push/custom", shop: shopId).isEmpty)
     }
 
-    func test_search_filters_that_are_not_json_are_left_out() {
+    func test_search_filters_that_are_not_json_fail_the_call_and_send_nothing() {
         let sdk = initializedSDK()
         let done = expectation(description: "done")
-        sdk.search(query: "dress", filters: ["when": Date()]) { _ in done.fulfill() }
+        var outcome: Result<SearchResponse, SdkError>?
+        sdk.search(query: "dress", filters: ["when": Date()]) { result in
+            outcome = result
+            done.fulfill()
+        }
         wait(for: [done], timeout: 5)
 
-        let query = StubURLProtocol.requests(to: "/search", shop: shopId).first?.query ?? [:]
-        XCTAssertEqual(query["search_query"], "dress")
-        XCTAssertNil(query["filters"])
+        assertNotJSONFailure(outcome.map { $0.map { _ in () } })
+        XCTAssertTrue(StubURLProtocol.requests(to: "/search", shop: shopId).isEmpty)
+    }
+
+    func test_products_list_filters_that_are_not_json_fail_the_call_and_send_nothing() {
+        let sdk = initializedSDK()
+        let done = expectation(description: "done")
+        var outcome: Result<ProductsListResponse, SdkError>?
+        sdk.getProductsList(brands: nil, merchants: nil, categories: nil, locations: nil, limit: nil, page: nil, filters: ["nan": Double.nan]) { result in
+            outcome = result
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        assertNotJSONFailure(outcome.map { $0.map { _ in () } })
+        XCTAssertTrue(StubURLProtocol.requests(to: "/products", shop: shopId).isEmpty)
+    }
+
+    func test_category_filters_that_are_not_json_fail_the_call_and_send_nothing() {
+        let sdk = initializedSDK()
+        let done = expectation(description: "done")
+        done.expectedFulfillmentCount = 2
+        let lock = NSLock()
+        var outcomes: [Result<CategoryResponse, SdkError>] = []
+        sdk.getCategory(category: "7", limit: nil, page: nil, brands: nil, locations: nil, filters: ["object": NSObject()]) { result in
+            lock.lock(); outcomes.append(result); lock.unlock()
+            done.fulfill()
+        }
+        sdk.getCategory(category: "7", limit: nil, page: nil, brands: nil, locations: nil, filters: ["when": Date()], priceMin: 1, priceMax: nil, sortBy: nil, sortDir: nil) { result in
+            lock.lock(); outcomes.append(result); lock.unlock()
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        XCTAssertEqual(outcomes.count, 2)
+        outcomes.forEach { assertNotJSONFailure($0.map { _ in () }) }
+        XCTAssertTrue(StubURLProtocol.requests(to: "/category/7", shop: shopId).isEmpty)
+    }
+
+    func test_filters_that_are_json_still_go_with_the_request() {
+        let sdk = initializedSDK()
+        let done = expectation(description: "done")
+        sdk.getProductsList(brands: nil, merchants: nil, categories: nil, locations: nil, limit: nil, page: nil, filters: ["color": ["red"]]) { _ in
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        XCTAssertEqual(StubURLProtocol.requests(to: "/products", shop: shopId).first?.query["filters"], #"{"color":["red"]}"#)
     }
 
     func test_a_cellular_path_without_a_radio_is_still_a_cellular_connection() {
@@ -90,5 +139,14 @@ final class CoreSafetyTests: XCTestCase {
         let started = Date()
         _ = NetworkStatus.nManager.connectionStatus
         XCTAssertLessThan(Date().timeIntervalSince(started), 3)
+    }
+
+    // MARK: - Helpers
+
+    private func assertNotJSONFailure(_ outcome: Result<Void, SdkError>?, file: StaticString = #filePath, line: UInt = #line) {
+        guard case let .failure(.custom(message))? = outcome else {
+            return XCTFail("expected a failure, got \(String(describing: outcome))", file: file, line: line)
+        }
+        XCTAssertTrue(message.contains("not valid JSON"), message, file: file, line: line)
     }
 }

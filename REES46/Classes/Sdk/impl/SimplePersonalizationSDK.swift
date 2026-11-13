@@ -722,12 +722,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let page = page {
                 params["page"] = String(page)
             }
-            if let filters = filters {
-                if let theJSONData = SafeJSON.data(filters) {
-                    let theJSONText = String(data: theJSONData,
-                                             encoding: .utf8)
-                    params["filters"] = theJSONText
-                }
+            switch SearchFilterParams.filtersJSON(filters, method: "getProductsList", shopId: self.shopId) {
+            case let .success(json):
+                params["filters"] = json
+            case let .failure(error):
+                completion(.failure(error))
+                return
             }
             
             self.getRequest(path: path, params: params, timeout: nil) { result in
@@ -931,7 +931,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
-            let params = self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
+            let params: [String: String]
+            switch self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir) {
+            case let .success(built):
+                params = built
+            case let .failure(error):
+                completion(.failure(error))
+                return
+            }
 
             self.getRequest(path: "category/\(category)", params: params, timeout: nil) { result in
                 switch result {
