@@ -50,6 +50,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Whether the device is online; a failed request offline is `networkOfflineError`.
     let connectivity: ConnectivityMonitor
 
+    /// Whether this instance runs the new core: the process's `Rees46Config.coreV2` (`CoreFlag`).
+    let usesCoreV2: Bool
+
+    /// Where this instance's requests go: the old paths (`LegacyCore`) or the new client (`CoreV2`).
+    /// Made at the end of `init`, before any request can reach it.
+    lazy var core: Core = makeCore()
+
     /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
     /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
     let localStateStore: LocalStateRepository
@@ -151,6 +158,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         enableAutoPopupPresentation: Bool = true,
         needReInitialization: Bool = false,
         storageKey: String? = nil,
+        coreV2: Bool = false,
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
         sessionManager: SessionManager? = nil,
@@ -162,6 +170,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.connectivity = connectivity ?? SystemConnectivityMonitor.shared
         // `enableLogs` is the old switch: on, it means everything (`debug`), as in `Rees46Config`.
         self.logger = SdkLogger(shopId: shopId, level: enableLogs && logLevel == .warning ? .debug : logLevel)
+        self.usesCoreV2 = CoreFlag.resolve(requested: coreV2, shopId: shopId)
         self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
         // R2: identity/session live in this shop's partition. The default repository migrates the
@@ -218,10 +227,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         // A forced re-initialization drops the stored device id: requests wait for the new one.
         deviceId = needReInitialization ? "" : (self.userIdentity.deviceId ?? "")
-        urlSession = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: true))
-        sessionWithoutWaiting = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: false))
+        urlSession = URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: true))
+        sessionWithoutWaiting = URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: false))
         // Code without the instance at hand (push routing, UI) logs at this instance's level while it lives.
         SdkLogger.register(logger, owner: self)
+        _ = core
         _ = popupsV3
         
         let initOperation = BlockOperation {
@@ -1203,7 +1213,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             path: "init",
             params: params,
             timeout: Self.initRequestTimeout,
-            session: saved == nil ? nil : sessionWithoutWaiting
+            waitsForNetwork: saved == nil
         ) { status, result in
             switch result.flatMap(Self.jsonObject) {
             case let .success(json):
@@ -1360,11 +1370,41 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         SdkLogger.unregister(owner: self)
     }
 
+    /// Stops this instance: it leaves the registry and push routing, its log level stops counting,
+    /// and its core cancels the requests in flight. Internal until `release()` joins the public API
+    /// together with the instance's states.
+    func release() {
+        SdkRegistry.shared.unregister(self)
+        SdkLogger.unregister(owner: self)
+        core.release()
+    }
+
     deinit {
         // Weak registry (see SdkRegistry): a host-released instance deallocs here — purge its routing
         // slots eagerly instead of waiting for the next compaction.
         SdkRegistry.shared.unregister(self)
         SdkLogger.unregister(owner: self)
+        core.release()
+    }
+
+    private func makeCore() -> Core {
+        guard usesCoreV2 else {
+            return LegacyCore(
+                baseURL: baseURL,
+                stream: stream,
+                logger: logger,
+                connectivity: connectivity,
+                session: { [weak self] in self?.urlSession ?? URLSession.shared },
+                sessionWithoutWaiting: sessionWithoutWaiting
+            )
+        }
+        let client = NetworkClient(baseURL: baseURL, connectivity: connectivity, logger: logger) { [weak self] in
+            guard let self = self else {
+                return CommonFields(shopId: "", deviceId: "", sessionId: "", stream: "", segment: "")
+            }
+            return CommonFields(shopId: self.shopId, deviceId: self.deviceId, sessionId: self.userSeance, stream: self.stream, segment: self.segment)
+        }
+        return CoreV2(client: client, label: shopId)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
@@ -1381,7 +1421,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 path: path,
                 params: params,
                 timeout: manualReload ? SdkConfiguration.stories.storiesSlideReloadTimeoutInterval : 5,
-                session: manualReload ? self.sessionWithoutWaiting : nil
+                waitsForNetwork: !manualReload
             ) { _, result in
                 switch result.flatMap(Self.jsonObject) {
                 case let .success(successResult):
@@ -1453,71 +1493,40 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         (json as? [String: Any]).map { .success($0) } ?? .failure(.decodeError)
     }
 
-    /// One GET of `path` with the call's own timeout. Hands back the answer's HTTP status — nil when
-    /// no answer came — and its decoded JSON.
+    /// One GET of `path` with the call's own timeout, through the instance's core. Hands back the
+    /// answer's HTTP status — nil when no answer came — and its decoded JSON.
     func sendGet(
         path: String,
         params: [String: String],
         isInit: Bool = false,
         timeout: TimeInterval?,
-        session: URLSession? = nil,
+        waitsForNetwork: Bool = true,
         forgetsSavedInit: Bool = true,
         completion: @escaping (_ status: Int?, _ result: Result<Any, SdkError>) -> Void
     ) {
-        let urlString = baseURL + path
-
-        var url = URLComponents(string: urlString)
-
-        var queryItems = [URLQueryItem]()
-        for item in params {
-            queryItems.append(URLQueryItem(name: item.key, value: item.value))
-        }
-
-        queryItems.append(URLQueryItem(name: "stream", value: stream))
-        url?.queryItems = queryItems
-
         if forgetsSavedInit && needReInitialization {
-            let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
-            let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-            do {
-                if FileManager.default.fileExists(atPath: initFileNamePath.path) {
-                    try FileManager.default.removeItem(at: initFileNamePath)
-                }
-            } catch {
-                logger.warning(LogCode.storageFailed, "the saved init answer could not be removed", ["op": "remove_saved_init", "error": SdkLogger.errorKind(error)])
-            }
+            removeSavedInitAnswer()
         }
+        let request = CoreRequest(method: .get, path: path, query: params, timeout: timeout, waitsForNetwork: waitsForNetwork)
+        core.send(request) { response in
+            if isInit, case .success = response.result {
+                self.saveInitAnswer(response.body)
+            }
+            completion(response.status, response.result)
+        }
+    }
 
-        guard let endUrl = url?.url else {
-            logger.error(LogCode.requestBuildFailed, "\(SdkLogger.requestLine("GET", path)) could not be built", ["method": "GET", "path": path])
-            completion(nil, .failure(.invalidResponse))
-            return
-        }
-        (session ?? urlSession).postTask(with: request(for: endUrl, timeout: timeout)) { result in
-            switch result {
-            case .success(let (response, data)):
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                // The error body is not logged: servers repeat the request data in it.
-                let succeeded = 200 ..< 299 ~= statusCode
-                self.logger.requestFinished("GET", path, status: statusCode, succeeded: succeeded)
-                guard succeeded else {
-                    completion(statusCode, .failure(.invalidResponse))
-                    return
-                }
-                if isInit {
-                    self.saveInitAnswer(data)
-                }
-                do {
-                    completion(statusCode, .success(try JSONSerialization.jsonObject(with: data)))
-                } catch {
-                    self.logger.warning(LogCode.decodingFailed, "the answer to \(SdkLogger.requestLine("GET", path)) did not parse", ["path": path])
-                    completion(statusCode, .failure(.decodeError))
-                }
-            case .failure:
-                self.logger.requestFinished("GET", path, status: nil, succeeded: false)
-                completion(nil, .failure(self.transportError()))
+    /// A forced re-initialization forgets the saved init answer: it belongs to the device id being
+    /// dropped.
+    private func removeSavedInitAnswer() {
+        let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(shopId + baseInitJsonFileName)
+        do {
+            if FileManager.default.fileExists(atPath: initFileNamePath.path) {
+                try FileManager.default.removeItem(at: initFileNamePath)
             }
-        }.resume()
+        } catch {
+            logger.warning(LogCode.storageFailed, "the saved init answer could not be removed", ["op": "remove_saved_init", "error": SdkLogger.errorKind(error)])
+        }
     }
 
     /// Saves an init answer to the documents file and its keychain backup. A file that cannot be
@@ -1531,40 +1540,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         keychainStore.writeInitData(data)
     }
 
-    /// A request with the call's own timeout. The session is shared: a call that swapped in a session
-    /// with its own timeout changed it for every call in flight on the session queue.
-    private func request(for url: URL, timeout: TimeInterval?) -> URLRequest {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = timeout ?? Self.defaultRequestTimeout
-        return request
-    }
-
-    /// A request that got no answer: offline, or the connection failed or timed out.
-    private func transportError() -> SdkError {
-        connectivity.isOnline ? .invalidResponse : .networkOfflineError
-    }
-
-    /// The configuration of the SDK's sessions. Waiting for connectivity, a request starts its timeout
-    /// once the network is back.
-    static func sessionConfiguration(waitsForConnectivity: Bool) -> URLSessionConfiguration {
-        let configuration = URLSessionConfiguration.default
-        configuration.waitsForConnectivity = waitsForConnectivity
-        configuration.shouldUseExtendedBackgroundIdleMode = waitsForConnectivity
-        return configuration
-    }
-
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         postRequest(path: path, params: params, timeout: nil, completion: completion)
     }
 
-    /// `postRequest` with the call's own timeout.
+    /// `postRequest` with the call's own timeout, through the instance's core.
     func postRequest(path: String, params: [String: Any], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
-        var requestParams : [String: Any] = [
-            "stream": stream
-        ]
-        for (key, value) in params {
-            requestParams[key] = value
-        }
+        var requestParams = params
         // A request made before the device id was known waited for /init on the queue; when /init
         // failed, the stored id is the best there is.
         if self.deviceId == "" {
@@ -1572,69 +1554,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             self.deviceId = dId
             requestParams["did"] = dId
         }
-        if let url = URL(string: baseURL + path) {
-            var request = self.request(for: url, timeout: timeout)
-            request.httpMethod = "POST"
-            
-            // App data (custom fields, profile properties) may hold values that are not JSON; writing
-            // them would raise an exception Swift cannot catch.
-            guard let body = SafeJSON.data(requestParams, options: .prettyPrinted) else {
-                logger.warning(LogCode.invalidArgument, "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path, "reason": "invalid_json"])
-                completion(.failure(.custom(error: "\(path): the request parameters are not valid JSON")))
-                return
-            }
-            request.httpBody = body
-            
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue("application/json", forHTTPHeaderField: "Accept")
-            
-            urlSession.postTask(with: request) { result in
-                switch result {
-                case .success(let (response, data)):
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    // The error body is not logged: servers repeat the request data in it.
-                    let succeeded = 200 ..< 299 ~= statusCode
-                    self.logger.requestFinished("POST", path, status: statusCode, succeeded: succeeded)
-                    guard succeeded else {
-                        if let json = try? JSONSerialization.jsonObject(with: data) {
-                            if let jsonObject = json as? [String:Any] {
-                                if let status = jsonObject["status"] as? String, status == "error" {
-                                    if let errorMessage = jsonObject["message"] as? String {
-                                        completion(.failure(.custom(error: errorMessage)))
-                                        return
-                                    }
-                                }
-                            }
-                        }
-                        completion(.failure(.invalidResponse))
-                        return
-                    }
-                    do {
-                        if data.isEmpty {
-                            if path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") {
-                                completion(.success([:]))
-                                return
-                            }
-                        }
-                        let json = try JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            completion(.success(jsonObject))
-                        } else {
-                            self.logger.warning(LogCode.decodingFailed, "the answer to \(SdkLogger.requestLine("POST", path)) is not a JSON object", ["path": path])
-                            completion(.failure(.decodeError))
-                        }
-                    } catch {
-                        self.logger.warning(LogCode.decodingFailed, "the answer to \(SdkLogger.requestLine("POST", path)) did not parse", ["path": path])
-                        completion(.failure(.decodeError))
-                    }
-                case .failure:
-                    self.logger.requestFinished("POST", path, status: nil, succeeded: false)
-                    completion(.failure(self.transportError()))
-                }
-            }.resume()
-        } else {
-            logger.error(LogCode.requestBuildFailed, "\(SdkLogger.requestLine("POST", path)) could not be built", ["method": "POST", "path": path])
-            completion(.failure(.invalidResponse))
+        // App data (custom fields, profile properties) may hold values that are not JSON; writing
+        // them would raise an exception Swift cannot catch.
+        guard SafeJSON.isValid(requestParams) else {
+            logger.warning(LogCode.invalidArgument, "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path, "reason": "invalid_json"])
+            completion(.failure(.custom(error: "\(path): the request parameters are not valid JSON")))
+            return
+        }
+        core.send(CoreRequest(method: .post, path: path, body: requestParams, timeout: timeout)) { response in
+            completion(response.result.flatMap(Self.jsonObject))
         }
     }
 

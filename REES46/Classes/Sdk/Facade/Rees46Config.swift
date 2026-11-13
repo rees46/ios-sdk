@@ -43,6 +43,11 @@ public struct Rees46Config {
     public let needReInitialization: Bool
     /// Custom `UserDefaults` suite name; `nil` uses the per-shop partition (the default).
     public let storageKey: String?
+    /// Runs the shop on the new core of the SDK (`false` by default): its network client first,
+    /// with init, session, queue and pushes to follow. The first `Rees46.initialize` or
+    /// `Rees46.register` of the process decides for every shop until the app restarts; a shop that
+    /// asks otherwise gets the process's core, and the log says `core_flag_mismatch`.
+    public let coreV2: Bool
 
     public init(
         shopId: String,
@@ -54,7 +59,8 @@ public struct Rees46Config {
         sendAdvertisingId: Bool = false,
         enableAutoPopupPresentation: Bool = true,
         needReInitialization: Bool = false,
-        storageKey: String? = nil
+        storageKey: String? = nil,
+        coreV2: Bool = false
     ) {
         self.shopId = shopId
         self.apiDomain = apiDomain
@@ -66,5 +72,6 @@ public struct Rees46Config {
         self.enableAutoPopupPresentation = enableAutoPopupPresentation
         self.needReInitialization = needReInitialization
         self.storageKey = storageKey
+        self.coreV2 = coreV2
     }
 }

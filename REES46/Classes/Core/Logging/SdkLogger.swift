@@ -120,6 +120,9 @@ final class SdkLogger {
         if let sdkError = error as? SdkError {
             return sdkError.logKind
         }
+        if let sdkError = error as? Rees46.SdkError {
+            return sdkError.logKind
+        }
         if let urlError = error as? URLError {
             return "URLError \(urlError.code.rawValue)"
         }

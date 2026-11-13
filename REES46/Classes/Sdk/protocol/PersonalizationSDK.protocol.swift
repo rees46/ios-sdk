@@ -562,6 +562,7 @@ internal func makeRegisteredSDK(
     enableAutoPopupPresentation: Bool = true,
     needReInitialization: Bool = false,
     storageKey: String? = nil,
+    coreV2: Bool = false,
     completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
     let sdk = SimplePersonalizationSDK(
@@ -579,6 +580,7 @@ internal func makeRegisteredSDK(
         enableAutoPopupPresentation: enableAutoPopupPresentation,
         needReInitialization: needReInitialization,
         storageKey: storageKey,
+        coreV2: coreV2,
         completion: completion
     )
 

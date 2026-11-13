@@ -63,6 +63,7 @@ public enum Rees46 {
             enableAutoPopupPresentation: config.enableAutoPopupPresentation,
             needReInitialization: config.needReInitialization,
             storageKey: config.storageKey,
+            coreV2: config.coreV2,
             completion: completion
         )
         lock.lock()
@@ -79,6 +80,8 @@ public enum Rees46 {
      */
     public static func register(shops: [Rees46Config], eagerInit: Bool = false) {
         for config in shops {
+            // The first registration decides the core of the process, as the first initialization does.
+            _ = CoreFlag.resolve(requested: config.coreV2, shopId: config.shopId)
             if eagerInit {
                 _ = initialize(config)
             } else {
