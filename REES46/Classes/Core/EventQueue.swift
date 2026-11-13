@@ -13,8 +13,9 @@ import Foundation
 /// What the queue needs from the instance that sends its events.
 protocol EventQueueHost: AnyObject {
     /// Whether an event of `path` may go out now. An instance whose session's window ran out asks for a
-    /// new one here (`InitMachine.renewSession()`) and says `wait` — but not for the events of pushes,
-    /// which carry no session (`EventQueue.sessionlessPaths`) and need only a stored device id.
+    /// new one here (`InitMachine.renewSession()`) and says `wait` — in the foreground: in the background
+    /// no session starts, and it says `held` —, but not for the events of pushes, which carry no session
+    /// (`EventQueue.sessionlessPaths`) and need only a stored device id.
     func queueGate(for path: String) -> EventQueue.Gate
     /// Sends one event through the instance's client.
     func queueSend(_ request: NetworkClient.Request) async -> NetworkClient.Response
@@ -37,12 +38,16 @@ protocol EventQueueHost: AnyObject {
 ///   atomically, named by the time it was taken, the process and a random part — unique between
 ///   instances, launches and processes. An event the disk refuses is not queued: the log says
 ///   `storage_failed`, and it is sent once as a plain request.
-/// - **In order**, one at a time. The event keeps its creation time; `time` goes only to
-///   `push/custom`, the one address that reads it; `sid` is the instance's when the event goes out, and
-///   the stored source is added then, to `/push` only.
-/// - **Sent** when the instance is usable and its session alive, online: after `ready`, on the way to
-///   the foreground and to the background, when the network comes back, on `flush()`, when an event
-///   comes in, after a pause, and every 60 seconds while events wait with nothing else to wake them.
+/// - **Two lanes**, each in its own order and one event at a time: the events of pushes and the
+///   tracking. A lane's wait — for a new session, a pause after a failure, a check of the shop — holds
+///   only that lane: a push event never waits for a session, nor for a tracking event. The event keeps
+///   its creation time; `time` goes only to `push/custom`, the one address that reads it; `sid` is the
+///   instance's when the event goes out, and the stored source is added then, to `/push` only.
+/// - **Sent** online, the events of pushes once the instance is usable with a device id, the tracking
+///   once its session is alive too — a new one starts in the foreground only —: after `ready`, on the
+///   way to the foreground and to the background, when the network comes back, on `flush()`, when an
+///   event comes in, after a pause, and every 60 seconds while events wait with nothing else to wake
+///   them.
 ///   Files another queue of the folder wrote after this one read it — an instance released while it
 ///   took an event — are found then too.
 /// - **Answers** (decision 0002): `2xx` deletes the event, also when its instance was released while
@@ -76,10 +81,26 @@ final class EventQueue {
         case open
         /// Not yet: `ready`, a new session or a check of the shop is on its way.
         case wait
+        /// Not until the app gives a trigger: the session ended in the background, where no new one
+        /// starts — the foreground renews it. A `flush()` does not wait for it.
+        case held
         /// The shop refused: the queue is cleared.
         case refused
         /// Released.
         case closed
+    }
+
+    /// The two lanes of the queue. Each keeps its own order, sends one event at a time and has its own
+    /// pause and its own check of the shop.
+    enum Lane: CaseIterable {
+        /// The events of pushes: they need a device id and no session.
+        case push
+        /// The tracking: it needs a live session.
+        case tracking
+
+        init(path: String) {
+            self = EventQueue.sessionlessPaths.contains(path) ? .push : .tracking
+        }
     }
 
     /// What the app's callback of one event hears: once.
@@ -237,17 +258,8 @@ final class EventQueue {
     private var nextSeq: UInt64 = 1
     /// The time part of the last file name this queue gave, in microseconds: names it gives grow.
     private var lastNameTime: UInt64 = 0
-    /// The event on its way.
-    private var inFlight: UInt64?
-    private var retry: Cancellable?
-    private var retryToken: UUID?
-    /// Whether the pause is the server's `Retry-After`: no trigger cuts it short.
-    private var retryIsTheServers = false
-    /// Failed tries in a row; the pause grows with them.
-    private var failures = 0
-    /// A check of the shop is on its way after `402`, `403` or `404` to this event.
-    private var pausedForCheck = false
-    private var checkingSeq: UInt64?
+    /// What each lane is doing.
+    private var lanes: [Lane: LaneState] = [:]
     /// The wake every `timerInterval` while events wait, and the token of the one armed.
     private var timer: Cancellable?
     private var timerToken: UUID?
@@ -266,16 +278,33 @@ final class EventQueue {
     private var passes: [Pass] = []
 
     /// What `clear` asks for, at once from any thread; `work` catches up with it. Under `clearLock`,
-    /// with the task of the event on its way, which `clear` cancels.
+    /// with the tasks of the events on their way, which `clear` cancels.
     private let clearLock = NSLock()
     private var clearedGeneration = 0
     private var pendingClear: (error: Rees46.SdkError, reason: String)?
-    private var inFlightTask: _Concurrency.Task<Void, Never>?
+    private var inFlightTasks: [UInt64: _Concurrency.Task<Void, Never>] = [:]
 
-    /// A wait for the queue to be tried: every event up to `through`.
+    /// One lane's state.
+    private struct LaneState {
+        /// The event on its way.
+        var inFlight: UInt64?
+        var retry: Cancellable?
+        var retryToken: UUID?
+        /// Whether the pause is the server's `Retry-After`: no trigger cuts it short.
+        var retryIsTheServers = false
+        /// Failed tries in a row; the pause grows with them.
+        var failures = 0
+        /// A check of the shop is on its way after `402`, `403` or `404` to this event.
+        var pausedForCheck = false
+        var checkingSeq: UInt64?
+    }
+
+    /// A wait for the queue to be tried: every event up to `through`, in each lane.
     private final class Pass {
         let through: UInt64
         let done: () -> Void
+        /// The lanes not tried that far yet.
+        var lanes = Set(Lane.allCases)
         /// While the instance is not usable yet, the wait lasts at most a read timeout.
         var deadline: Cancellable?
         init(through: UInt64, done: @escaping () -> Void) {
@@ -298,6 +327,8 @@ final class EventQueue {
         var shopChecked: Bool
         /// Whether its file was written.
         var stored: Bool
+
+        var lane: Lane { Lane(path: path) }
     }
 
     /// A file not read yet, with its place in the queue.
@@ -361,7 +392,7 @@ final class EventQueue {
             }
             // At most `capacity`: the oldest that is not on its way goes.
             while self.events.count >= Self.capacity,
-                  let oldest = self.events.firstIndex(where: { $0.seq != self.inFlight }) {
+                  let oldest = self.events.firstIndex(where: { !self.isInFlight($0.seq) }) {
                 self.drop(at: oldest, error: .cancelled, reason: "overflow")
             }
             event.stored = self.write(event)
@@ -389,26 +420,27 @@ final class EventQueue {
         work.async { self.drain(explicit: explicit, rescan: explicit) }
     }
 
-    /// An `/init` passed: a check of the shop after `402`, `403` or `404` is answered — the event is
-    /// checked and goes again —, and the instance is `ready` with a session.
+    /// An `/init` passed: a check of the shop after `402`, `403` or `404` is answered — the event of each
+    /// lane that asked is checked and goes again —, and the instance is `ready` with a session.
     func initSucceeded() {
         work.async {
             self.catchUpWithClear()
-            if self.pausedForCheck, let seq = self.checkingSeq, let index = self.events.firstIndex(where: { $0.seq == seq }) {
+            for lane in Lane.allCases {
+                let state = self.state(lane)
+                guard state.pausedForCheck else { continue }
+                self.lanes[lane, default: LaneState()].pausedForCheck = false
+                self.lanes[lane, default: LaneState()].checkingSeq = nil
+                guard let seq = state.checkingSeq, let index = self.events.firstIndex(where: { $0.seq == seq }) else { continue }
                 var checked = self.events[index]
                 checked.shopChecked = true
                 guard !checked.stored || self.write(checked) else {
                     // Not written: not checked either. It goes again after a pause and asks again.
-                    self.pausedForCheck = false
-                    self.checkingSeq = nil
-                    self.failures += 1
-                    self.scheduleRetry(after: RetryPolicy.pause(afterFailures: self.failures, random: self.random()))
-                    return
+                    self.lanes[lane, default: LaneState()].failures += 1
+                    self.scheduleRetry(lane, after: RetryPolicy.pause(afterFailures: self.state(lane).failures, random: self.random()))
+                    continue
                 }
                 self.events[index] = checked
             }
-            self.pausedForCheck = false
-            self.checkingSeq = nil
             // It wakes the queue; a pause after a failure stands — an answer to `/init` is no reason to
             // send an event the server just turned away.
             self.drain(explicit: false)
@@ -436,12 +468,10 @@ final class EventQueue {
     /// owner asked will not be answered — its `/init` was cancelled —, so the event goes again through
     /// the new owner, which asks again if the answer is the same.
     private func ownerChanged() {
-        guard pausedForCheck else {
-            drain(explicit: false)
-            return
+        for lane in Lane.allCases {
+            lanes[lane, default: LaneState()].pausedForCheck = false
+            lanes[lane, default: LaneState()].checkingSeq = nil
         }
-        pausedForCheck = false
-        checkingSeq = nil
         drain(explicit: false)
     }
 
@@ -456,10 +486,10 @@ final class EventQueue {
         clearLock.lock()
         clearedGeneration += 1
         pendingClear = (error, reason)
-        let task = inFlightTask
-        inFlightTask = nil
+        let tasks = Array(inFlightTasks.values)
+        inFlightTasks.removeAll()
         clearLock.unlock()
-        task?.cancel()
+        tasks.forEach { $0.cancel() }
         work.async { self.catchUpWithClear() }
     }
 
@@ -483,11 +513,8 @@ final class EventQueue {
         unread.removeAll()
         letGo.removeAll()
         loaded = true
-        inFlight = nil
-        checkingSeq = nil
-        cancelRetry()
-        failures = 0
-        pausedForCheck = false
+        Lane.allCases.forEach(cancelRetry)
+        lanes.removeAll()
         updateTimer()
         storage.removeQueueDirectory()
         for event in dropped {
@@ -502,7 +529,7 @@ final class EventQueue {
     private func stop() {
         guard owner == nil else { return }
         stopped = true
-        cancelRetry()
+        Lane.allCases.forEach(cancelRetry)
         updateTimer()
         // The events stay on disk; their callbacks belong to the instance that went.
         for event in events {
@@ -519,18 +546,13 @@ final class EventQueue {
         catchUpWithClear()
         // A trigger the app or the system gives does not wait for the pause after a failure — but the
         // server's `Retry-After` stands.
-        if explicit, !retryIsTheServers {
-            cancelRetry()
+        if explicit {
+            for lane in Lane.allCases where !state(lane).retryIsTheServers {
+                cancelRetry(lane)
+            }
         }
-        // The event on its way goes on when its answer comes.
-        guard inFlight == nil else { return }
-        guard !stopped, retry == nil, let host = owner else {
+        guard !stopped, let host = owner else {
             finishPasses()
-            return
-        }
-        guard !pausedForCheck else {
-            // The check of the shop is an `/init`: a flush waits for it as for `ready`.
-            holdPasses(host)
             return
         }
         ensureLoaded()
@@ -538,49 +560,89 @@ final class EventQueue {
             self.rescan()
         }
         readUnread()
+        for lane in Lane.allCases {
+            // A refusal of the shop cleared the queue: nothing is left to send.
+            guard drain(lane, host: host) else { return }
+        }
+    }
+
+    /// One lane's turn: its oldest event goes when it may. `false` when the shop refused and the queue
+    /// was cleared.
+    private func drain(_ lane: Lane, host: EventQueueHost) -> Bool {
+        let state = self.state(lane)
+        // The event on its way goes on when its answer comes.
+        guard state.inFlight == nil else { return true }
+        guard state.retry == nil else {
+            finishPasses(lane)
+            return true
+        }
+        guard !state.pausedForCheck else {
+            // The check of the shop is an `/init`: a flush waits for it as for `ready`.
+            holdPasses(host)
+            return true
+        }
         let now = host.queueEnvironment.clock.now()
-        while let head = events.first {
+        while let index = headIndex(lane) {
+            let head = events[index]
             if now.timeIntervalSince(head.createdAt) > Self.lifetime {
-                drop(at: 0, error: .timeout, reason: "expired")
+                drop(at: index, error: .timeout, reason: "expired")
                 continue
             }
             // Another queue of the shop sent it, or its folder was cleared.
             if head.stored, let file = file(head.name), !fileManager.fileExists(atPath: file.path) {
-                events.removeFirst()
+                events.remove(at: index)
                 complete(head.seq, .failed(.cancelled, body: Data()))
                 continue
             }
             break
         }
-        guard let head = events.first else {
-            finishPasses()
-            return
+        guard let index = headIndex(lane) else {
+            finishPasses(lane)
+            return true
         }
+        let head = events[index]
         // An event another queue of the shop has on its way waits for its answer.
         if let mark = onTheirWayKey(head.name), Self.isOnItsWay(mark) {
-            finishPasses()
-            return
+            finishPasses(lane)
+            return true
         }
         guard host.queueConnectivity.isOnline else {
             // The network trigger goes on.
-            finishPasses()
-            return
+            finishPasses(lane)
+            return true
         }
         switch host.queueGate(for: head.path) {
         case .open:
-            send(head, host: host)
+            send(head, lane: lane, host: host)
         case .wait:
             holdPasses(host)
-        case .closed:
-            finishPasses()
+        case .held, .closed:
+            finishPasses(lane)
         case .refused:
             clear(error: .cancelled, reason: "refused")
             catchUpWithClear()
+            return false
         }
+        return true
     }
 
-    private func send(_ event: Event, host: EventQueueHost) {
-        inFlight = event.seq
+    /// The oldest event of `lane`.
+    private func headIndex(_ lane: Lane) -> Int? {
+        events.firstIndex { $0.lane == lane }
+    }
+
+    private func state(_ lane: Lane) -> LaneState {
+        lanes[lane] ?? LaneState()
+    }
+
+    /// Whether the event of `seq` is on its way, in either lane.
+    private func isInFlight(_ seq: UInt64) -> Bool {
+        lanes.values.contains { $0.inFlight == seq }
+    }
+
+    private func send(_ event: Event, lane: Lane, host: EventQueueHost) {
+        let seq = event.seq
+        lanes[lane, default: LaneState()].inFlight = seq
         let mark = onTheirWayKey(event.name)
         mark.map(Self.markOnItsWay)
         let generation = self.generation
@@ -593,7 +655,7 @@ final class EventQueue {
             waitsForNetwork: false
         )
         request.identity = host.queueIdentity()
-        resolvePasses(before: event.seq)
+        resolvePasses(lane, before: seq)
         let clock = host.queueEnvironment.clock
         let folder = key
         let file = event.stored ? self.file(event.name) : nil
@@ -601,7 +663,7 @@ final class EventQueue {
         // not send — or finds it and cancels it.
         clearLock.lock()
         defer { clearLock.unlock() }
-        inFlightTask = _Concurrency.Task { [weak self] in
+        inFlightTasks[seq] = _Concurrency.Task { [weak self] in
             // A `clear` since the decision: the event was the deleted customer's.
             let response: NetworkClient.Response
             if let self = self, self.isCleared(since: generation) {
@@ -624,7 +686,7 @@ final class EventQueue {
                 Self.settle(mark, folder: folder, from: self)
             }
             self?.work.async {
-                self?.handle(response, of: event.seq, generation: generation, sentAt: sentAt, sender: host)
+                self?.handle(response, of: seq, lane: lane, generation: generation, sentAt: sentAt, sender: host)
             }
         }
     }
@@ -648,13 +710,13 @@ final class EventQueue {
         return body
     }
 
-    private func handle(_ response: NetworkClient.Response, of seq: UInt64, generation: Int, sentAt: Date, sender: EventQueueHost) {
+    private func handle(_ response: NetworkClient.Response, of seq: UInt64, lane: Lane, generation: Int, sentAt: Date, sender: EventQueueHost) {
         defer { updateTimer() }
         catchUpWithClear()
-        if inFlight == seq {
-            inFlight = nil
+        if state(lane).inFlight == seq {
+            lanes[lane, default: LaneState()].inFlight = nil
             clearLock.lock()
-            inFlightTask = nil
+            inFlightTasks[seq] = nil
             clearLock.unlock()
         }
         // Cleared meanwhile: whatever came back belongs to events that are gone.
@@ -666,7 +728,7 @@ final class EventQueue {
         switch response.result {
         case .success, .failure(.decoding):
             // Any 2xx: the server has it. It leaves the queue even when its file cannot be removed.
-            failures = 0
+            lanes[lane, default: LaneState()].failures = 0
             events.remove(at: index)
             deleteFile(of: event)
             complete(seq, .sent(response))
@@ -675,8 +737,7 @@ final class EventQueue {
         case .failure(.cancelled):
             if isAttached(sender) {
                 // Cancelled by something else than `release()`: again, after a pause.
-                failures += 1
-                scheduleRetry(after: RetryPolicy.pause(afterFailures: failures, random: random()))
+                retryAfterFailure(lane)
             } else {
                 // Its instance was released: the next owner, if any, sends it.
                 drain(explicit: false)
@@ -684,17 +745,15 @@ final class EventQueue {
         case .failure(.network):
             if owner?.queueConnectivity.isOnline ?? false {
                 // No answer though the device is online: again, after a pause; it does not count.
-                failures += 1
-                scheduleRetry(after: RetryPolicy.pause(afterFailures: failures, random: random()))
+                retryAfterFailure(lane)
             } else {
                 // It waits for the network; it does not count.
-                finishPasses()
+                finishPasses(lane)
             }
         case .failure(.timeout):
-            failures += 1
-            scheduleRetry(after: RetryPolicy.pause(afterFailures: failures, random: random()))
+            retryAfterFailure(lane)
         case .failure(.http(let code, _)) where RetryPolicy.isRetryable(code):
-            failures += 1
+            lanes[lane, default: LaneState()].failures += 1
             events[index].attempts += 1
             if events[index].attempts >= Self.maxAttempts {
                 drop(at: index, error: .http(code: code, serverCode: nil), body: response.body, reason: "attempts", status: code)
@@ -703,11 +762,12 @@ final class EventQueue {
                 _ = write(events[index])
             }
             scheduleRetry(
-                after: RetryPolicy.pause(retryAfter: response.retryAfter, afterFailures: failures, random: random()),
+                lane,
+                after: RetryPolicy.pause(retryAfter: response.retryAfter, afterFailures: state(lane).failures, random: random()),
                 theServers: response.retryAfter != nil
             )
         case .failure(.http(let code, _)) where Self.shopCheckCodes.contains(code):
-            handleShopRefusal(code, of: event, at: index, body: response.body)
+            handleShopRefusal(code, of: event, at: index, lane: lane, body: response.body)
         case .failure(.http(let code, _)):
             // The request of the SDK is wrong: it would be every time.
             drop(at: index, error: .http(code: code, serverCode: nil), body: response.body, reason: "rejected", status: code)
@@ -719,8 +779,9 @@ final class EventQueue {
         }
     }
 
-    /// `402`, `403` or `404` to an event: the shop is asked whether it still serves the SDK.
-    private func handleShopRefusal(_ code: Int, of event: Event, at index: Int, body: Data) {
+    /// `402`, `403` or `404` to an event: the shop is asked whether it still serves the SDK. Only the
+    /// event's lane waits for the answer.
+    private func handleShopRefusal(_ code: Int, of event: Event, at index: Int, lane: Lane, body: Data) {
         guard !event.shopChecked else {
             // The shop passed the check and the event is refused again: a service the shop has not
             // paid for, not the shop. The queue goes on.
@@ -729,31 +790,36 @@ final class EventQueue {
             return
         }
         // Paused until a new `/init` answers: only then is the event checked and sent again.
-        pausedForCheck = true
-        checkingSeq = event.seq
+        lanes[lane, default: LaneState()].pausedForCheck = true
+        lanes[lane, default: LaneState()].checkingSeq = event.seq
         switch owner?.queueCheckShop() ?? .notAsked {
         case .asked, .onItsWay:
             if let owner = owner {
                 // A flush waits for the check, an `/init`, as for `ready`.
                 holdPasses(owner)
             } else {
-                finishPasses()
+                finishPasses(lane)
             }
         case .passed:
             // The shop passed a check less than ten minutes ago and is ready: the refusal is the
             // service's. The event goes at once, and the queue does not wait.
-            pausedForCheck = false
-            checkingSeq = nil
+            lanes[lane, default: LaneState()].pausedForCheck = false
+            lanes[lane, default: LaneState()].checkingSeq = nil
             drop(at: index, error: .http(code: code, serverCode: nil), body: body, reason: "service_refused", status: code)
             drain(explicit: false)
         case .notAsked:
             // The last check, a moment ago, got no answer: no new one is coming yet. The event goes
             // again after a pause, not counted, and asks again.
-            pausedForCheck = false
-            checkingSeq = nil
-            failures += 1
-            scheduleRetry(after: RetryPolicy.pause(afterFailures: failures, random: random()))
+            lanes[lane, default: LaneState()].pausedForCheck = false
+            lanes[lane, default: LaneState()].checkingSeq = nil
+            retryAfterFailure(lane)
         }
+    }
+
+    /// A failure that does not count as an attempt: the lane goes again after a pause that grows.
+    private func retryAfterFailure(_ lane: Lane) {
+        lanes[lane, default: LaneState()].failures += 1
+        scheduleRetry(lane, after: RetryPolicy.pause(afterFailures: state(lane).failures, random: random()))
     }
 
     /// The spread of a pause, from the owner's seams.
@@ -761,37 +827,45 @@ final class EventQueue {
         (owner?.queueEnvironment.random ?? { 0.5 })()
     }
 
-    private func scheduleRetry(after pause: TimeInterval, theServers: Bool = false) {
-        cancelRetry()
+    /// The lane goes again after `pause`; a flush does not wait for it.
+    private func scheduleRetry(_ lane: Lane, after pause: TimeInterval, theServers: Bool = false) {
+        cancelRetry(lane)
         let token = UUID()
-        retryToken = token
-        retryIsTheServers = theServers
         let scheduler = owner?.queueEnvironment.scheduler ?? DispatchScheduler()
-        retry = scheduler.schedule(after: pause) { [weak self] in
+        let retry = scheduler.schedule(after: pause) { [weak self] in
             self?.work.async {
-                guard let self = self, self.retryToken == token else { return }
-                self.retry = nil
-                self.retryToken = nil
-                self.retryIsTheServers = false
+                guard let self = self, self.state(lane).retryToken == token else { return }
+                self.lanes[lane, default: LaneState()].retry = nil
+                self.lanes[lane, default: LaneState()].retryToken = nil
+                self.lanes[lane, default: LaneState()].retryIsTheServers = false
                 self.drain(explicit: false)
             }
         }
+        lanes[lane, default: LaneState()].retry = retry
+        lanes[lane, default: LaneState()].retryToken = token
+        lanes[lane, default: LaneState()].retryIsTheServers = theServers
         updateTimer()
-        finishPasses()
+        finishPasses(lane)
     }
 
-    private func cancelRetry() {
-        retry?.cancel()
-        retry = nil
-        retryToken = nil
-        retryIsTheServers = false
+    private func cancelRetry(_ lane: Lane) {
+        state(lane).retry?.cancel()
+        lanes[lane, default: LaneState()].retry = nil
+        lanes[lane, default: LaneState()].retryToken = nil
+        lanes[lane, default: LaneState()].retryIsTheServers = false
     }
 
     /// Arms the wake every `timerInterval` while events wait and nothing else will wake the queue — no
-    /// pause, no event on its way —, and disarms it otherwise. Called on `work` whenever that changes.
+    /// pause, no event on its way in their lane —, and disarms it otherwise. Called on `work` whenever
+    /// that changes.
     private func updateTimer() {
-        let waiting = !events.isEmpty || !unread.isEmpty
-        guard waiting, !stopped, retry == nil, inFlight == nil, let host = owner else {
+        let idle: (Lane) -> Bool = { lane in
+            let state = self.state(lane)
+            return state.retry == nil && state.inFlight == nil
+        }
+        let laneWaits = Lane.allCases.contains { idle($0) && headIndex($0) != nil }
+        let unreadWaits = !unread.isEmpty && Lane.allCases.allSatisfy(idle)
+        guard laneWaits || unreadWaits, !stopped, let host = owner else {
             timer?.cancel()
             timer = nil
             timerToken = nil
@@ -828,17 +902,33 @@ final class EventQueue {
         callbacks.async { completion(outcome) }
     }
 
-    /// The waits that end once every event up to theirs was tried: those before `seq`.
-    private func resolvePasses(before seq: UInt64) {
-        let ended = passes.filter { $0.through < seq }
-        passes.removeAll { $0.through < seq }
-        ended.forEach(end)
+    /// `lane` tried every event before `seq`: the waits up to an earlier event are done with it.
+    private func resolvePasses(_ lane: Lane, before seq: UInt64) {
+        for pass in passes where pass.through < seq {
+            pass.lanes.remove(lane)
+        }
+        endPassesDone()
+    }
+
+    /// `lane` cannot send more now: no wait waits for it any more.
+    private func finishPasses(_ lane: Lane) {
+        for pass in passes {
+            pass.lanes.remove(lane)
+        }
+        endPassesDone()
     }
 
     /// The queue cannot send more now: every wait ends.
     private func finishPasses() {
         let ended = passes
         passes.removeAll()
+        ended.forEach(end)
+    }
+
+    /// The waits every lane is done with end.
+    private func endPassesDone() {
+        let ended = passes.filter { $0.lanes.isEmpty }
+        passes.removeAll { $0.lanes.isEmpty }
         ended.forEach(end)
     }
 
@@ -925,8 +1015,8 @@ final class EventQueue {
                 logger.warning(LogCode.queueDropped, "an event of the queue could not be read", ["reason": "unreadable"])
                 continue
             }
-            // In the order of the names: the time each event was taken. The one on its way stays first.
-            let place = events.firstIndex { $0.name > entry.name && $0.seq != inFlight } ?? events.endIndex
+            // In the order of the names: the time each event was taken. The ones on their way stay first.
+            let place = events.firstIndex { $0.name > entry.name && !isInFlight($0.seq) } ?? events.endIndex
             events.insert(event, at: place)
         }
         unread = still
@@ -1001,5 +1091,10 @@ final class EventQueue {
     /// Returns once everything handed to the queue so far was done; for tests.
     func settle() {
         work.sync {}
+    }
+
+    /// How many events are on their way, in both lanes; for tests.
+    var inFlightCount: Int {
+        work.sync { lanes.values.filter { $0.inFlight != nil }.count }
     }
 }

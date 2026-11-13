@@ -380,6 +380,54 @@ final class CorePushTests: XCTestCase {
         XCTAssertNil(sdk.sessionId, "no session started or revived")
     }
 
+    func test_a_background_push_goes_past_tracking_events_whose_session_ended_and_starts_no_session() {
+        let shop = newShop()
+        let sdk = make(shop)
+        network.isOnline = false
+        sdk.tracking.productView(itemId: "37")
+        sdk.tracking.categoryView(categoryId: "5")
+        sdk.eventQueue?.settle()
+        lifecycle.send(.didEnterBackground)
+        clock.advance(by: 2 * 60 * 60 + 1)
+        network.isOnline = true
+
+        Rees46.handlePush(push(shop), event: .delivered)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 }, "the push lane goes")
+        XCTAssertTrue(eventually { sdk.eventQueue?.inFlightCount == 0 })
+        XCTAssertEqual(sdk.eventQueue?.waiting.map { $0.path }, ["push", "push"], "the tracking waits for the foreground")
+        XCTAssertEqual(requests("/init", shop).count, 1, "the launch's only: no session starts in the background")
+        XCTAssertTrue(requests("/push", shop).isEmpty)
+
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 }, "the foreground's session sends them")
+        XCTAssertEqual(requests("/init", shop).count, 2)
+        XCTAssertEqual(requests("/push", shop).map { $0.body["sid"] as? String }, ["s-2", "s-2"])
+    }
+
+    func test_a_tracking_event_waiting_for_its_new_session_does_not_hold_a_push_event() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            return handler(request)
+        }
+        clock.advance(by: 2 * 60 * 60 + 1)
+        sdk.tracking.productView(itemId: "37")
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == 2 }, "the new session's /init, held")
+
+        Rees46.handlePush(push(shop), event: .clicked)
+        Rees46.handlePush(push(shop, code: "m-2"), event: .clicked)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/clicked", shop: shop) == 2 }, "the push lane in its own order")
+        XCTAssertEqual(requests("/track/clicked", shop).map { $0.body["code"] as? String }, ["m-1", "m-2"])
+        XCTAssertTrue(requests("/push", shop).isEmpty, "the tracking still waits for its session")
+
+        held.signal()
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+        XCTAssertEqual(requests("/push", shop).first?.body["sid"] as? String, "s-2")
+    }
+
     func test_a_push_event_the_queue_does_not_take_is_not_counted_as_sent() {
         let shop = newShop()
         let first = make(shop)

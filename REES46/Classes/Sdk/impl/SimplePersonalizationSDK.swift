@@ -2368,7 +2368,9 @@ extension SimplePersonalizationSDK: EventQueueHost {
         }
         guard machine.isUsable else { return .wait }
         guard session.isAlive else {
-            // An event after the window ran out goes with the next sid (`sdk/core/session.md`).
+            // An event after the window ran out goes with the next sid (`sdk/core/session.md`). In the
+            // background no session starts: the foreground renews it, and the tracking waits for that.
+            guard environment.lifecycle.isInForeground else { return .held }
             machine.renewSession()
             return .wait
         }

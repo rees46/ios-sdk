@@ -149,6 +149,34 @@ final class EventQueueTests: XCTestCase {
         XCTAssertTrue(eventually { self.files(store).isEmpty })
     }
 
+    func test_each_lane_keeps_its_order_and_a_pause_of_the_tracking_does_not_hold_the_events_of_pushes() {
+        let store = storage()
+        let host = FakeQueueHost()
+        let queue = EventQueue.attach(host, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        take(queue, "a")
+        XCTAssertTrue(eventually { host.waitingSends == 1 })
+        take(queue, "b")
+        queue.enqueue(path: "track/delivered", body: ["code": "m-1", "type": "bulk"], createdAt: clock.now(), completion: nil, unstored: { _ in })
+        queue.enqueue(path: "track/clicked", body: ["code": "m-1", "type": "bulk"], createdAt: clock.now(), completion: nil, unstored: { _ in })
+        // The tracking's event is on its way: the push lane goes beside it.
+        XCTAssertTrue(eventually { host.waitingSends == 2 })
+        XCTAssertEqual(host.sent.current.map(\.path), ["push", "track/delivered"])
+
+        // The tracking gets a server error and pauses; the push lane goes on, in its order.
+        host.answer(NetworkClient.Response(status: 500, body: Data(), retryAfter: nil, result: .failure(.http(code: 500, serverCode: nil))))
+        host.answer(Self.ok)
+        XCTAssertTrue(eventually { host.waitingSends == 1 })
+        XCTAssertEqual(host.sent.current.map(\.path), ["push", "track/delivered", "track/clicked"])
+        host.answer(Self.ok)
+        XCTAssertTrue(eventually { queue.inFlightCount == 0 })
+        XCTAssertEqual(queue.waiting.map { $0.path }, ["push", "push"], "the tracking waits out its pause")
+        XCTAssertEqual(host.scheduler.pendingDelays.first, 1, "its own pause, after one failure")
+
+        host.scheduler.advance(by: 1)
+        XCTAssertTrue(eventually { host.waitingSends == 1 })
+        XCTAssertEqual(ids(host.sent.current), ["a", "a"], "the tracking in its order: the one that failed first")
+    }
+
     func test_clear_returns_without_waiting_for_the_queues_thread_and_no_event_taken_before_it_goes() {
         let store = storage()
         let host = FakeQueueHost()
