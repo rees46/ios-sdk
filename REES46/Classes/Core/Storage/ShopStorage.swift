@@ -239,12 +239,14 @@ final class ShopStorage {
         }
     }
 
+    /// Removes what the customer left — the saved answer, the queue — so a failure is an `error`:
+    /// the customer's data stays on the device.
     private func remove(_ item: URL, op: String) {
         guard fileManager.fileExists(atPath: item.path) else { return }
         do {
             try fileManager.removeItem(at: item)
         } catch {
-            logger.warning(LogCode.storageFailed, "a file of the SDK could not be removed", ["op": op, "error": SdkLogger.errorKind(error)])
+            logger.error(LogCode.storageFailed, "the customer's data could not be removed", ["op": op, "error": SdkLogger.errorKind(error)])
         }
     }
 }
