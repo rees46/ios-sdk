@@ -22,7 +22,7 @@ class PushTokenNotificationServiceImpl: PushTokenNotificationServiceProtocol {
 
             params["platform"] = isFirebaseNotification ? "ios_firebase" : "ios"
 
-            self.sdk.postRequest(path: "mobile_push_tokens", params: params, timeout: 1) { result in
+            self.sdk.postRequest(path: "mobile_push_tokens", params: params, timeout: nil) { result in
                 switch result {
                 case .success:
                     completion(.success(Void()))

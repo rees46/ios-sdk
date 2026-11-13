@@ -144,7 +144,7 @@ class ProfileDataImpl: ProfileDataProtocol {
             
             let params = self.processProfileParams(paramsTemp)
             
-            self.handlePostRequest(path: ProfileDataConstants.path, params: params, timeout: 1, completion: completion)
+            self.handlePostRequest(path: ProfileDataConstants.path, params: params, timeout: nil, completion: completion)
         }
     }
     

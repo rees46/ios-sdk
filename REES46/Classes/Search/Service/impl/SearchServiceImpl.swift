@@ -104,7 +104,7 @@ class SearchServiceImpl: SearchServiceProtocol {
                 "shop_id": sdk.shopId
             ]
             
-            self.getRequest(path: "search/blank", params: params, timeout: 1) { (result: Result<[String: Any], SdkError>) in
+            self.getRequest(path: "search/blank", params: params, timeout: nil) { (result: Result<[String: Any], SdkError>) in
                 switch result {
                 case let .success(successResult):
                     let resultResponse = SearchBlankResponse(json: successResult)
@@ -168,7 +168,7 @@ class SearchServiceImpl: SearchServiceProtocol {
                 disableClarification: disableClarification
             )
             
-            self.getRequest(path: "search", params: params, timeout: timeOut ?? 1) { (result: Result<[String: Any], SdkError>) in
+            self.getRequest(path: "search", params: params, timeout: timeOut) { (result: Result<[String: Any], SdkError>) in
                 switch result {
                 case let .success(json):
                     let resultResponse = SearchResponse(json: json)
