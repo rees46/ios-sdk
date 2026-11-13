@@ -582,11 +582,9 @@ extension PersonalizationStories {
             observers = []
             completion(host)
         }
-        // Без сцен (iOS 12) — активация приложения; со сценами — и сцены, и приложения.
+        // Активация и приложения, и сцены.
         var names = [UIApplication.didBecomeActiveNotification]
-        if #available(iOS 13.0, *) {
-            names += [UIScene.willEnterForegroundNotification, UIScene.didActivateNotification]
-        }
+        names += [UIScene.willEnterForegroundNotification, UIScene.didActivateNotification]
         observers = names.map { name in
             center.addObserver(forName: name, object: nil, queue: .main) { _ in
                 if let host = keyRoot() { finish(host) }

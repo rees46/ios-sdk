@@ -915,11 +915,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     }
     
     public static var isDarkMode: Bool {
-        if #available(iOS 13.0, *) {
-            return UITraitCollection.current.userInterfaceStyle == .dark
-        } else {
-            return false
-        }
+        return UITraitCollection.current.userInterfaceStyle == .dark
     }
     
     public func getInstalledFontsFrom(bundle: Bundle = .main,

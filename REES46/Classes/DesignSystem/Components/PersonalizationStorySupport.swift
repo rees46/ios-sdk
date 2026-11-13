@@ -99,18 +99,13 @@ enum PersonalizationStoryColors {
     /// `cgColor` динамического цвета в теме конкретной вью. Слои тему не знают:
     /// без явного разрешения цвет взялся бы из текущего глобального контекста.
     static func cgColor(_ color: UIColor, in view: UIView) -> CGColor {
-        if #available(iOS 13.0, *) {
-            return color.resolvedColor(with: view.traitCollection).cgColor
-        }
-        return color.cgColor
+        return color.resolvedColor(with: view.traitCollection).cgColor
     }
 
-    /// Токен кита на медиа-слайде. С iOS 13 тёмную тему поддереву даёт
-    /// `overrideUserInterfaceStyle`, и токен остаётся динамическим; на iOS 12 переопределять
-    /// тему нечем — берётся тёмное значение токена напрямую.
+    /// Токен кита на медиа-слайде. Тёмную тему поддереву даёт `overrideUserInterfaceStyle`,
+    /// и токен остаётся динамическим.
     static func token(_ color: UIColor, forcingDark: Bool) -> UIColor {
-        if #available(iOS 13.0, *) { return color }
-        return forcingDark ? PersonalizationColorSet.darkVariant(of: color) : color
+        return color
     }
 
     /// Цвет из hex админки: `#RGB`, `#RRGGBB` или `#RRGGBBAA`. Пусто или мусор — `nil`.
@@ -302,11 +297,8 @@ final class PersonalizationStoryAudio: NSObject {
     }
 
     private static func wasSuspended(_ note: Notification) -> Bool {
-        if #available(iOS 14.5, *) {
-            let reason = note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt
-            return reason == AVAudioSession.InterruptionReason.appWasSuspended.rawValue
-        }
-        return note.userInfo?[AVAudioSessionInterruptionWasSuspendedKey] as? Bool ?? false
+        let reason = note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt
+        return reason == AVAudioSession.InterruptionReason.appWasSuspended.rawValue
     }
 
     /// Пропал выход звука (выдернули наушники, отключилась колонка): дальше без звука,
@@ -378,15 +370,11 @@ extension UIViewController {
     /// активная, а без неё — неактивная (центр управления, звонок, холодный старт по ссылке,
     /// пока сцена не активировалась). Сцены на экране нет — `nil`.
     static var personalizationKeyRoot: UIViewController? {
-        if #available(iOS 13.0, *) {
-            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            for state in [UIScene.ActivationState.foregroundActive, .foregroundInactive] {
-                let windows = scenes.filter { $0.activationState == state }.flatMap(\.windows)
-                if let root = (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController { return root }
-            }
-            return nil
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        for state in [UIScene.ActivationState.foregroundActive, .foregroundInactive] {
+            let windows = scenes.filter { $0.activationState == state }.flatMap(\.windows)
+            if let root = (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController { return root }
         }
-        let windows = UIApplication.shared.windows
-        return (windows.first { $0.isKeyWindow } ?? windows.first)?.rootViewController
+        return nil
     }
 }

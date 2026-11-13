@@ -157,23 +157,13 @@ public class PopupPresenter {
     }
     
     private func getTopViewController() -> UIViewController? {
-        // Get key window's root view controller
-        if #available(iOS 13.0, *) {
-            // iOS 13+ approach using UIWindowScene
-            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let window = windowScene.windows.first(where: { $0.isKeyWindow }),
-                  let rootViewController = window.rootViewController else {
-                return nil
-            }
-            return findTopViewController(from: rootViewController)
-        } else {
-            // iOS 12 and earlier approach using UIApplication.shared.keyWindow
-            guard let window = UIApplication.shared.keyWindow,
-                  let rootViewController = window.rootViewController else {
-                return nil
-            }
-            return findTopViewController(from: rootViewController)
+        // The key window's root view controller, through the window scene
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+              let rootViewController = window.rootViewController else {
+            return nil
         }
+        return findTopViewController(from: rootViewController)
     }
     
     private func findTopViewController(from viewController: UIViewController) -> UIViewController {

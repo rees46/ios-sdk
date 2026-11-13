@@ -441,7 +441,7 @@ final class PopupV3ViewController: UIViewController, UIGestureRecognizerDelegate
 
     func show(over host: UIWindow?) {
         let window: PopupV3Window
-        if #available(iOS 13.0, *), let scene = host?.windowScene {
+        if let scene = host?.windowScene {
             window = PopupV3Window(windowScene: scene)
         } else {
             window = PopupV3Window(frame: host?.bounds ?? UIScreen.main.bounds)

@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "REES46",
     platforms: [
-            .iOS(.v12)
+            .iOS(.v15)
         ],
         products: [
             // REES46 SDK and libraries produced by a package.

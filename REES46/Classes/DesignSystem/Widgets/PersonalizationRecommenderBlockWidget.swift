@@ -25,7 +25,6 @@ public final class PersonalizationRecommenderBlockController {
 /// PersonalizationRecommenderBlockWidget(code: "block_code", onProductTap: { open($0) })
 /// PersonalizationRecommenderBlockWidget(collectionId: "42", layout: .grid)
 /// ```
-@available(iOS 13.0, *)
 public struct PersonalizationRecommenderBlockWidget: UIViewRepresentable {
 
     public var source: PersonalizationRecommenderBlock.Source
@@ -135,7 +134,6 @@ public struct PersonalizationRecommenderBlockWidget: UIViewRepresentable {
     }
 }
 
-@available(iOS 13.0, *)
 extension PersonalizationRecommenderBlockWidget {
 
     /// Блок рекомендаций `code`; `itemId` и `categoryId` — для «похожих» и «с этим покупают».

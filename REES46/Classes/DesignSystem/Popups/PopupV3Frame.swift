@@ -90,7 +90,7 @@ final class PopupV3FrameView: UIView {
         scrollView.alwaysBounceVertical = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.keyboardDismissMode = .interactive
-        if #available(iOS 11.0, *) { scrollView.contentInsetAdjustmentBehavior = .never }
+        scrollView.contentInsetAdjustmentBehavior = .never
         grid.translatesAutoresizingMaskIntoConstraints = false
         addSubview(scrollView)
         scrollView.addSubview(grid)

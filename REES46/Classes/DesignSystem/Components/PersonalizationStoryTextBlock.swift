@@ -227,8 +227,7 @@ public final class PersonalizationStoryTextBlock: UIView {
             font = PersonalizationTheme.current.font(style.size, weight)
         case .serif, .monospaced:
             let system = UIFont.systemFont(ofSize: style.size, weight: weight)
-            if #available(iOS 13.0, *),
-               let descriptor = system.fontDescriptor.withDesign(family == .serif ? .serif : .monospaced) {
+            if let descriptor = system.fontDescriptor.withDesign(family == .serif ? .serif : .monospaced) {
                 font = UIFont(descriptor: descriptor, size: style.size)
             } else {
                 font = UIFont(name: family == .serif ? "Georgia" : "Menlo", size: style.size) ?? system

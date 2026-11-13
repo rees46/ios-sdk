@@ -522,20 +522,18 @@ class StoryCollectionViewCell: UICollectionViewCell {
 #endif
         let errorIcon = UIImage(named: "iconError", in: frameworkBundle, compatibleWith: nil)?.withRenderingMode(UIImage.RenderingMode.alwaysTemplate)
         
-        if #available(iOS 13.0, *) {
-            let popupView = SdkPopupAlertView(
-                title: "",
-                titleFont: .systemFont(ofSize: 5, weight: .light),
-                subtitle: SdkConfiguration.stories.storiesSlideReloadPopupMessageError,
-                subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
-                icon: errorIcon,
-                iconSpacing: 16,
-                position: .centerCustom,
-                onTap: {}
-            )
-            popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
-            popupView.show()
-        }
+        let popupView = SdkPopupAlertView(
+            title: "",
+            titleFont: .systemFont(ofSize: 5, weight: .light),
+            subtitle: SdkConfiguration.stories.storiesSlideReloadPopupMessageError,
+            subtitleFont: .systemFont(ofSize: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontSize, weight: SdkConfiguration.stories.storiesSlideReloadPopupMessageFontWeight),
+            icon: errorIcon,
+            iconSpacing: 16,
+            position: .centerCustom,
+            onTap: {}
+        )
+        popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
+        popupView.show()
     }
     
     func displayPromocodeBanner(promoTitle: String?, promoCodeData: StoriesPromoCodeElement) {

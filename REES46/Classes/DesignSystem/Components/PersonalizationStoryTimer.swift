@@ -219,11 +219,7 @@ public final class PersonalizationStoryTimer: UIView {
         attributes[.foregroundColor] = PersonalizationColor.textPrimary
         if let font = attributes[.font] as? UIFont {
             let setting: [UIFontDescriptor.FeatureKey: Int]
-            if #available(iOS 15.0, *) {
-                setting = [.type: kNumberSpacingType, .selector: kMonospacedNumbersSelector]
-            } else {
-                setting = [.featureIdentifier: kNumberSpacingType, .typeIdentifier: kMonospacedNumbersSelector]
-            }
+            setting = [.type: kNumberSpacingType, .selector: kMonospacedNumbersSelector]
             let descriptor = font.fontDescriptor.addingAttributes([.featureSettings: [setting]])
             attributes[.font] = UIFont(descriptor: descriptor, size: font.pointSize)
         }

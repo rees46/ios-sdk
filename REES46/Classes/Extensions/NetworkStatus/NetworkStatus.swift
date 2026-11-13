@@ -182,14 +182,10 @@ public class NetworkStatus {
         case CTRadioAccessTechnologyLTE:
             return .cellular(radioType: ._4G)
         default:
-            if #available(iOS 14.1, *) {
-                switch currentRadio {
-                case CTRadioAccessTechnologyNRNSA, CTRadioAccessTechnologyNR:
-                    return .cellular(radioType: ._5G)
-                default:
-                    return .cellular(radioType: .notdeterminedcellular)
-                }
-            } else {
+            switch currentRadio {
+            case CTRadioAccessTechnologyNRNSA, CTRadioAccessTechnologyNR:
+                return .cellular(radioType: ._5G)
+            default:
                 return .cellular(radioType: .notdeterminedcellular)
             }
         }

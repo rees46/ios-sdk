@@ -102,11 +102,7 @@ final class PersonalizationStoryPollView: UIView {
         /// Цифры одной ширины: проценты и оценки не пляшут.
         static func tabular(_ font: UIFont) -> UIFont {
             let setting: [UIFontDescriptor.FeatureKey: Int]
-            if #available(iOS 15.0, *) {
-                setting = [.type: kNumberSpacingType, .selector: kMonospacedNumbersSelector]
-            } else {
-                setting = [.featureIdentifier: kNumberSpacingType, .typeIdentifier: kMonospacedNumbersSelector]
-            }
+            setting = [.type: kNumberSpacingType, .selector: kMonospacedNumbersSelector]
             return UIFont(descriptor: font.fontDescriptor.addingAttributes([.featureSettings: [setting]]), size: font.pointSize)
         }
 
@@ -197,10 +193,9 @@ final class PersonalizationStoryPollView: UIView {
         return true
     }
 
-    /// Тонкий светлый материал; на iOS 12 — светлое размытие.
+    /// Тонкий светлый материал.
     private static var material: UIBlurEffect {
-        if #available(iOS 13.0, *) { return UIBlurEffect(style: .systemThinMaterialLight) }
-        return UIBlurEffect(style: .light)
+        return UIBlurEffect(style: .systemThinMaterialLight)
     }
 }
 
@@ -209,7 +204,7 @@ final class PersonalizationStoryPollView: UIView {
 extension PersonalizationStoryPollView: UIGestureRecognizerDelegate {
 
     fileprivate func setup() {
-        if #available(iOS 13.0, *) { overrideUserInterfaceStyle = .light }
+        overrideUserInterfaceStyle = .light
         backgroundColor = .clear
         layer.cornerRadius = Style.cardRadius
         // Граница слоя рисуется поверх подслоёв — и поверх размытия.

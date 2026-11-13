@@ -54,11 +54,7 @@ public class SdkPopupAlertView: UIView {
         let label = UILabel()
         label.numberOfLines = 0 //1
         
-        if #available(iOS 13.0, *) {
-            label.textColor = .black //.label
-        } else {
-            label.textColor = .black
-        }
+        label.textColor = .black //.label
         return label
     }()
 
@@ -143,11 +139,7 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 28)
             ])
             
-            if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .black //.label
-            } else {
-                iconImageView.tintColor = .black
-            }
+            iconImageView.tintColor = .black //.label
             
             iconImageView.image = icon
             hStack.addArrangedSubview(iconImageView)
@@ -163,11 +155,7 @@ public class SdkPopupAlertView: UIView {
                 iconImageView.heightAnchor.constraint(equalToConstant: 26)
             ])
             
-            if #available(iOS 13.0, *) {
-                iconImageView.tintColor = .black //.label
-            } else {
-                iconImageView.tintColor = .black
-            }
+            iconImageView.tintColor = .black //.label
             
             var frameworkBundle = Bundle(for: classForCoder)
 #if SWIFT_PACKAGE
@@ -181,11 +169,7 @@ public class SdkPopupAlertView: UIView {
         if let subtitle = subtitle {
             let subtitleLabel = UILabel()
             
-            if #available(iOS 13.0, *) {
-                subtitleLabel.textColor = .black
-            } else {
-                subtitleLabel.textColor = .lightGray
-            }
+            subtitleLabel.textColor = .black
             
             subtitleLabel.textAlignment = .center
             subtitleLabel.numberOfLines = 0
@@ -338,14 +322,10 @@ public class SdkPopupAlertView: UIView {
 
 class SdkPopupAlertViewWindow: UIWindow {
     init(SdkPopupAlertView: SdkPopupAlertView) {
-        if #available(iOS 13.0, *) {
-            if let activeForegroundScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                super.init(windowScene: activeForegroundScene)
-            } else if let inactiveForegroundScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundInactive }) as? UIWindowScene {
-                super.init(windowScene: inactiveForegroundScene)
-            } else {
-                super.init(frame: UIScreen.main.bounds)
-            }
+        if let activeForegroundScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            super.init(windowScene: activeForegroundScene)
+        } else if let inactiveForegroundScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundInactive }) as? UIWindowScene {
+            super.init(windowScene: inactiveForegroundScene)
         } else {
             super.init(frame: UIScreen.main.bounds)
         }

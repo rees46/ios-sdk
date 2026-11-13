@@ -42,9 +42,7 @@ public class SlideViewController: UIViewController, SlideView {
         imageView.contentMode = .scaleAspectFit
         view.addSubview(imageView)
         
-        if #available(iOS 13.0, *) {
-            loadingIndicator = UIActivityIndicatorView(style: .large)
-        }
+        loadingIndicator = UIActivityIndicatorView(style: .large)
         loadingIndicator.center = view.center
         view.addSubview(loadingIndicator)
         

@@ -237,10 +237,7 @@ final class PersonalizationStoryImages {
             return PersonalizationStoryGif(data: data).map { .gif($0) }
         }
         guard let image = UIImage(data: data) else { return nil }
-        if #available(iOS 15.0, *) {
-            return .image(image.preparingForDisplay() ?? image)
-        }
-        return .image(image)
+        return .image(image.preparingForDisplay() ?? image)
     }
 }
 
