@@ -52,7 +52,8 @@ struct CommonFields {
         var values: [String: String?] = ["shop_id": shop, "stream": source]
         guard path != "init", own["shop_secret"] == nil else { return values }
 
-        let session: String? = present("sid") ?? present("seance") ?? nonEmpty(sessionId)
+        // The events of pushes carry no session: the server does not read it there.
+        let session: String? = EventQueue.sessionlessPaths.contains(path) ? nil : present("sid") ?? present("seance") ?? nonEmpty(sessionId)
         let device: String? = nonEmpty(deviceId) ?? present("did")
         let group: String? = present("segment") ?? nonEmpty(segment)
         values["did"] = .some(device)

@@ -61,11 +61,10 @@ public enum Rees46 {
         return value
     }
 
-    /// Fires the tracking beacon for a *pending* shop's push without constructing it — see `handlePush`.
-    /// Injectable so tests can assert the pending-track path offline; defaults to the real standalone
+    /// Sends the event of a *pending* shop's push without constructing it — see `handlePush`.
+    /// Injectable so tests can assert the pending path offline; defaults to the real standalone
     /// tracker (`PushDeliveryTracker`).
-    internal static var pendingPushTracker: (String, Rees46Config, PushEvent, String, String) -> Void
-        = PushDeliveryTracker.track
+    internal static var pendingPushTracker: (PendingPush) -> Void = PushDeliveryTracker.track
 
     // MARK: - Initialization
 
@@ -292,24 +291,74 @@ public enum Rees46 {
     // MARK: - Push
 
     /**
-     Routes a push to the shop it belongs to and tracks `event` for it. The target is the payload's
-     `shop_id`; with no `shop_id` a single-shop app still resolves, but an unknown shop — or an absent
-     `shop_id` while several shops are registered — **drops** the push instead of tracking it against the
-     wrong one. A payload that is not an SDK push (no resolvable `type`/`code`) is ignored. Call this from
-     a host that owns its messaging service.
+     Routes a push to the shop it belongs to and sends `event` for it (`sdk/contract/notifications.md`).
+     Returns the shop the push went to, or `nil` when it is not a push of the SDK — no `type` and `code`
+     — or no shop takes it: an app with its own messaging service handles such a push itself. Never
+     throws.
 
-     Resolution matches `instance(for:)` — it considers LIVE and PENDING shops. A push addressed to a
-     registered-but-not-initialized (pending) shop is tracked **without** initializing it: the shop's
-     persisted did in its storage partition is all `track/<event>` needs, so a lazily-registered shop's
-     push is tracked — not dropped — even when the process was launched cold by that push and only eager
-     shops are live (parity with Android's `materializeForPush` and RN's standalone `trackPush`).
+     The shop is the payload's `shop_id`; with no `shop_id` a single registered shop takes it, while an
+     unknown shop — or no `shop_id` with several shops — **drops** the push (`push_dropped`) instead of
+     counting it to another shop. `type` and `code` are the top-level `type` and `id` of FCM, or
+     `src.type` and `src.id` of APNs.
 
-     `delivered`/`received`/`clicked` track `track/delivered`/`track/received`/`track/clicked`.
-     Navigation stays with the host: unlike the Android singleton, iOS routes click actions through the
-     host's own deep-link handling (or the legacy `NotificationService`'s action delegate), so this
-     method tracks but does not open the target screen.
+     - With `Rees46Config.coreV2`, each event goes once per message in the process — a repeat sends
+       nothing and calls no callback —, through the shop's queue: `track/delivered`, `track/opened`,
+       `track/clicked`, `track/closed`. A click stores the push as the source of the shop's `/push`
+       events for 48 hours.
+     - Without it the events go at once, as they always have — `delivered` and `clicked`; `opened` and
+       `closed`, which that core never had, send nothing there and only call the callbacks.
+
+     A shop that is registered but not created (`register` without `eagerInit`, the app launched by the
+     push) is not created: the event goes with the device id the shop has stored, without `/init` — and
+     not at all without one. The app's callback of the event is called on the main thread: the shop
+     instance's own (`setPushCallbacks` of the bridges' API), else the one of `setPushCallbacks(_:)`.
+
+     Navigation stays with the app: open `PushPayload.target` in `onClicked`.
      */
-    public static func handlePush(_ payload: [AnyHashable: Any], event: PushEvent) {
+    @discardableResult
+    public static func handlePush(_ payload: [AnyHashable: Any], event: Rees46.PushEvent) -> String? {
+        route(payload, .event(event))
+    }
+
+    /**
+     The push events of earlier versions; `handlePush(_:event:)` with `Rees46.PushEvent` replaces it.
+     `delivered` and `clicked` are the same events there. `received` — a push that came while the app
+     was in the background, which the server counts as one more open — is `delivered` with
+     `Rees46Config.coreV2`, sent once with the `delivered` of the same push; without it,
+     `track/received` as before.
+     */
+    @_disfavoredOverload
+    public static func handlePush(_ payload: [AnyHashable: Any], event: REES46.PushEvent) {
+        route(payload, PushRoute(event))
+    }
+
+    /**
+     Sets the app's callbacks on pushes for every shop — also one registered but not created yet, whose
+     push may come before the app could set the callbacks of its instance. A callback gets the parsed
+     push (`PushPayload`, with the shop it went to) on the main thread; `onToken` gets each token the
+     SDK gets from APNs or FCM. An instance's own callbacks win over these, one by one. `nil` removes
+     them.
+     */
+    public static func setPushCallbacks(_ callbacks: Rees46.PushCallbacks?) {
+        PushCenter.callbacks = callbacks
+    }
+
+    /// The new core got the device's token from APNs or FCM through `sdk`'s `NotificationService`: it
+    /// becomes the device's token, and every instance of the process sends it to its shop by that shop's
+    /// week (`sdk/core/push.md`).
+    static func deviceTokenReceived(_ token: Rees46.PushToken, apnsData: Data?, through sdk: PersonalizationSDK) {
+        var instances = SdkRegistry.shared.shopIds().compactMap { SdkRegistry.shared.byShopId($0) as? SimplePersonalizationSDK }
+        if let own = sdk as? SimplePersonalizationSDK, !instances.contains(where: { $0 === own }) {
+            instances.append(own)
+        }
+        for instance in instances where instance.usesCoreV2 {
+            instance.submitPushToken(token, apnsData: apnsData, completion: nil)
+        }
+    }
+
+    /// Sends `route` of `payload` to its shop; the shop, or `nil` when the push was not taken.
+    @discardableResult
+    static func route(_ payload: [AnyHashable: Any], _ route: PushRoute) -> String? {
         let resolution = InstanceResolver.resolve(
             requestedShopId: PushPayloadParser.shopId(from: payload),
             liveShopIds: SdkRegistry.shared.shopIds(),
@@ -319,37 +368,87 @@ public enum Rees46 {
         guard let (type, code) = PushPayloadParser.typeAndCode(from: payload) else {
             // Most apps get pushes of other senders too: that is not a problem, so it is `debug`.
             SdkLogger.process.debug(LogCode.pushDropped, "the push is not an SDK push", ["reason": "not_sdk_push"])
-            return
+            return nil
         }
         switch resolution {
         case .existing(let shopId):
             guard let sdk = SdkRegistry.shared.byShopId(shopId) else {
                 SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
-                return
+                return nil
             }
-            SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": "\(event)"])
-            switch event {
-            case .delivered:
-                sdk.notificationDelivered(type: type, code: code) { _ in }
-            case .received:
-                sdk.notificationReceived(type: type, code: code) { _ in }
-            case .clicked:
-                sdk.notificationClicked(type: type, code: code) { _ in }
+            SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": route.name])
+            if let instance = sdk as? SimplePersonalizationSDK {
+                instance.receivePush(route, type: type, code: code, payload: payload)
+            } else {
+                // An instance of the app's own: the events its protocol has.
+                switch route {
+                case .event(.delivered):
+                    sdk.notificationDelivered(type: type, code: code) { _ in }
+                case .event(.clicked):
+                    sdk.notificationClicked(type: type, code: code) { _ in }
+                case .received:
+                    sdk.notificationReceived(type: type, code: code) { _ in }
+                case .event(.opened), .event(.closed):
+                    // Events the old protocol never had: nothing goes.
+                    break
+                }
+                if case .event(let event) = route, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
+                    PushCenter.notify(event, payload: parsed, instance: nil)
+                }
             }
+            return shopId
         case .pending(let shopId):
-            // Registered but not initialized: track on its persisted identity, no construction/init —
-            // so a lazily-registered shop's push is tracked, not dropped.
+            // Registered but not initialized: sent on its stored identity, without making it.
             guard let config = pendingConfig(for: shopId) else {
                 SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
-                return
+                return nil
             }
-            SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": "\(event)"])
-            pendingPushTracker(shopId, config, event, type, code)
+            routeToPending(shopId: shopId, config: config, route: route, type: type, code: code, payload: payload)
+            return shopId
         case .notRegistered:
             SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
+            return nil
         case .ambiguous:
             // No shop_id while several shops are registered: tracking it would guess the shop.
             SdkLogger.process.warning(LogCode.pushDropped, "the push names no shop and several are registered", ["reason": "ambiguous_shop"])
+            return nil
+        }
+    }
+
+    /// A push of a shop that is registered and not created: the event goes with the device id the shop
+    /// has stored, without `/init`, a token, a profile or a popup — and not at all without one
+    /// (`push_dropped`, `no_did`) —, and the facade's callback is called. With the new core, once per
+    /// message, `received` sent as `delivered`, a click storing the source in the shop's partition.
+    /// Initialized later, the shop gets an instance with a full start.
+    private static func routeToPending(
+        shopId: String,
+        config: Rees46Config,
+        route: PushRoute,
+        type: String,
+        code: String,
+        payload: [AnyHashable: Any]
+    ) {
+        let logger = SdkLogger.forShop(shopId)
+        let newCore = CoreFlag.current ?? config.coreV2
+        let sent = newCore ? PushRoute.event(route.newCoreEvent) : route
+        let deviceId = StoragePartition.deviceId(for: shopId, storageKey: config.storageKey)
+        guard !deviceId.isEmpty else {
+            // The shop has never had a device id here: the server sent this device no push of it.
+            logger.warning(LogCode.pushDropped, "the shop of the push has no device id: the event was not sent", ["reason": "no_did"])
+            return
+        }
+        if newCore, !PushCenter.claim(route.newCoreEvent, code: code, shopId: shopId) {
+            logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": sent.name, "repeat": "true"])
+            return
+        }
+        logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
+        // The old core sends exactly the events it always has: no `opened`, no `closed`.
+        let neverSent = !newCore && (sent == .event(.opened) || sent == .event(.closed))
+        if !neverSent {
+            pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: newCore))
+        }
+        if case .event(let event) = sent, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
+            PushCenter.notify(event, payload: parsed, instance: nil)
         }
     }
 
@@ -391,13 +490,14 @@ public enum Rees46 {
 
     // MARK: - Test hooks
 
-    /// Test-only: drops pending registrations and restores the real push tracker. Live instances live
-    /// in `SdkRegistry`.
+    /// Test-only: drops pending registrations, the push callbacks and the events sent, and restores the
+    /// real push tracker. Live instances live in `SdkRegistry`.
     internal static func reset() {
         lock.lock()
         pending.removeAll()
         lock.unlock()
         pendingPushTracker = PushDeliveryTracker.track
+        PushCenter.reset()
     }
 
     /// Test-only: shops registered lazily and not yet initialized.
@@ -406,41 +506,55 @@ public enum Rees46 {
     }
 }
 
+/// The event of a pending shop's push, as `handlePush` hands it to the standalone tracker.
+struct PendingPush {
+    let shopId: String
+    let config: Rees46Config
+    /// What is sent: with the new core, one of its events — never `received`.
+    let route: PushRoute
+    let type: String
+    let code: String
+    /// The device id the shop has stored; never empty.
+    let deviceId: String
+    let newCore: Bool
+}
+
 /**
- Fires a push tracking beacon for a shop WITHOUT constructing its SDK. A registered-but-pending shop
+ Sends the event of a push for a shop WITHOUT constructing its SDK. A registered-but-pending shop
  already has its did persisted in its storage partition — all `track/<event>` needs — so a push for a
  lazily-registered shop is tracked even when the process was launched cold by that push and only eager
- shops are live. Standalone counterpart of an instance's `notification{Delivered,Received,Clicked}`;
- mirror of RN's `trackPush`. iOS keeps the shop pending: the beacon needs no live instance.
+ shops are live. Standalone counterpart of an instance's push events; mirror of RN's `trackPush`. iOS
+ keeps the shop pending: the request needs no live instance. With the new core the event carries the
+ device's A/B group, as every event does, and a click stores the source in the shop's partition.
  */
 internal enum PushDeliveryTracker {
 
-    static func track(
-        shopId: String,
-        config: Rees46Config,
-        event: PushEvent,
-        type: String,
-        code: String
-    ) {
-        let did = StoragePartition.deviceId(for: shopId, storageKey: config.storageKey)
-
+    static func track(_ push: PendingPush) {
         let path: String
-        switch event {
-        case .delivered: path = "track/delivered"
+        switch push.route {
+        case .event(let event): path = event.path
         case .received: path = "track/received"
-        case .clicked: path = "track/clicked"
         }
 
-        guard let url = URL(string: "https://" + config.apiDomain + "/" + path) else { return }
+        guard let url = URL(string: "https://" + push.config.apiDomain + "/" + path) else { return }
 
         // Same wire shape as SimplePersonalizationSDK.postRequest: a JSON body of stream + params.
-        let body: [String: Any] = [
-            "stream": config.stream,
-            "shop_id": shopId,
-            "did": did,
-            "code": code,
-            "type": type,
+        var body: [String: Any] = [
+            "stream": push.config.stream,
+            "shop_id": push.shopId,
+            "did": push.deviceId,
+            "code": push.code,
+            "type": push.type,
         ]
+        if push.newCore {
+            if let group = DeviceStore.shared.abGroup {
+                body["segment"] = group
+            }
+            if push.route == .event(.clicked), let source = TrackingSourceType(rawValue: push.type) {
+                TrackingSourceStoreImpl(store: StoragePartition.store(for: push.shopId, storageKey: push.config.storageKey))
+                    .store(type: source.rawValue, code: push.code)
+            }
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

@@ -48,6 +48,9 @@ struct CoreResponse {
     let body: Data
     /// The decoded JSON, or the error the old methods return.
     let result: Result<Any, SdkError>
+    /// The failure as the new core classifies it (`Rees46.SdkError`), which the old error loses: the
+    /// HTTP code, network or timeout. What the bridges hand on (`Rees46.BridgeErrors`). `nil` on success.
+    var error: Rees46.SdkError? = nil
 }
 
 /// Which core an instance runs.

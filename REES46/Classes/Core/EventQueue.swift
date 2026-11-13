@@ -12,9 +12,10 @@ import Foundation
 
 /// What the queue needs from the instance that sends its events.
 protocol EventQueueHost: AnyObject {
-    /// Whether events may go out now. An instance whose session's window ran out asks for a new one
-    /// here (`InitMachine.renewSession()`) and says `wait`.
-    func queueGate() -> EventQueue.Gate
+    /// Whether an event of `path` may go out now. An instance whose session's window ran out asks for a
+    /// new one here (`InitMachine.renewSession()`) and says `wait` — but not for the events of pushes,
+    /// which carry no session (`EventQueue.sessionlessPaths`) and need only a stored device id.
+    func queueGate(for path: String) -> EventQueue.Gate
     /// Sends one event through the instance's client.
     func queueSend(_ request: NetworkClient.Request) async -> NetworkClient.Response
     /// Asks the shop through `/init` whether it still serves the SDK (`InitMachine.askShop()`).
@@ -29,7 +30,8 @@ protocol EventQueueHost: AnyObject {
     var queueConnectivity: ConnectivityMonitor { get }
 }
 
-/// The events of one shop: `/push`, `/push/custom`, `track/stories`, `track/slider`, `popup/showed`.
+/// The events of one shop: `/push`, `/push/custom`, `track/stories`, `track/slider`, `popup/showed`, and
+/// the events of pushes, `track/delivered`, `track/opened`, `track/clicked`, `track/closed`.
 ///
 /// - **Accepted** is written to disk: one file per event in the shop's `queue/` folder, written
 ///   atomically, named by the time it was taken, the process and a random part — unique between
@@ -104,8 +106,16 @@ final class EventQueue {
     static let maxAttempts = 10
     /// The answers that make the queue ask the shop.
     static let shopCheckCodes: Set<Int> = [402, 403, 404]
-    /// The addresses whose events go through the queue.
-    static let paths: Set<String> = ["push", "push/custom", "track/stories", "track/slider", "popup/showed"]
+    /// The addresses whose events go through the queue: tracking, and the events of pushes
+    /// (`sdk/core/push.md`) — never `track/received`, which the new core does not send.
+    static let paths: Set<String> = [
+        "push", "push/custom", "track/stories", "track/slider", "popup/showed",
+        "track/delivered", "track/opened", "track/clicked", "track/closed",
+    ]
+    /// The events of pushes: the server reads no `sid` in them, so they wait for no session and never
+    /// renew one — a push that comes in the background two hours after the last event starts no
+    /// session and no `/init`. A stored device id is all they need.
+    static let sessionlessPaths: Set<String> = ["track/delivered", "track/opened", "track/clicked", "track/closed"]
     /// How often the queue wakes itself while events wait and nothing else will wake it: no pause, no
     /// event on its way. A trigger missed — a network change the monitor did not report, say — does not
     /// leave events waiting until the next launch.
@@ -311,10 +321,14 @@ final class EventQueue {
     /// Takes an event: written to disk in the order of the calls, then sent. `completion` hears once
     /// that it went out, or that it never will. The caller has checked its arguments and the state.
     /// An event the disk refuses is not kept: `unstored` gets its body, stamped, to send once.
+    /// `accepted` hears `nil` once the event is on disk — accepted (`sdk/core/queue.md`) —, or why it
+    /// is not: `notInitialized` when the queue has stopped, `cancelled` when a clear came after it;
+    /// nothing for an event the disk refused.
     func enqueue(
         path: String,
         body: [String: Any],
         createdAt: Date,
+        accepted: ((Rees46.SdkError?) -> Void)? = nil,
         completion: ((Outcome) -> Void)?,
         unstored: @escaping ([String: Any]) -> Void
     ) {
@@ -327,6 +341,7 @@ final class EventQueue {
             self.catchUpWithClear()
             guard takenIn == self.generation else {
                 completion.map { done in self.callbacks.async { done(.failed(.cancelled, body: Data())) } }
+                accepted.map { done in self.callbacks.async { done(.cancelled) } }
                 return
             }
             self.ensureLoaded()
@@ -341,6 +356,7 @@ final class EventQueue {
                 // of the shop, which finds the file.
                 event.stored = self.write(event)
                 completion.map { done in self.callbacks.async { done(.failed(.notInitialized, body: Data())) } }
+                accepted.map { done in self.callbacks.async { done(.notInitialized) } }
                 return
             }
             // At most `capacity`: the oldest that is not on its way goes.
@@ -359,6 +375,7 @@ final class EventQueue {
             if let completion = completion {
                 self.completions[seq] = completion
             }
+            accepted.map { done in self.callbacks.async { done(nil) } }
             self.drain(explicit: false)
         }
     }
@@ -549,7 +566,7 @@ final class EventQueue {
             finishPasses()
             return
         }
-        switch host.queueGate() {
+        switch host.queueGate(for: head.path) {
         case .open:
             send(head, host: host)
         case .wait:

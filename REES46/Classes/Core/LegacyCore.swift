@@ -59,7 +59,7 @@ final class LegacyCore: Core {
         lock.unlock()
         guard !isReleased else {
             DispatchQueue.global(qos: .utility).async {
-                completion(CoreResponse(status: nil, body: Data(), result: .failure(.legacy(.notInitialized))))
+                completion(CoreResponse(status: nil, body: Data(), result: .failure(.legacy(.notInitialized)), error: .notInitialized))
             }
             return
         }
@@ -82,7 +82,7 @@ final class LegacyCore: Core {
 
         guard let endUrl = url?.url else {
             logger.error(LogCode.requestBuildFailed, "\(SdkLogger.requestLine("GET", path)) could not be built", ["method": "GET", "path": path])
-            completion(CoreResponse(status: nil, body: Data(), result: .failure(.invalidResponse)))
+            completion(CoreResponse(status: nil, body: Data(), result: .failure(.invalidResponse), error: .invalidArgument("the path \(path) is not a URL path")))
             return
         }
         let session = request.waitsForNetwork ? self.session() : sessionWithoutWaiting
@@ -94,18 +94,18 @@ final class LegacyCore: Core {
                 let succeeded = 200 ..< 299 ~= statusCode
                 self.logger.requestFinished("GET", path, status: statusCode, succeeded: succeeded)
                 guard succeeded else {
-                    completion(CoreResponse(status: statusCode, body: data, result: .failure(.invalidResponse)))
+                    completion(CoreResponse(status: statusCode, body: data, result: .failure(.invalidResponse), error: .http(code: statusCode, serverCode: nil)))
                     return
                 }
                 do {
                     completion(CoreResponse(status: statusCode, body: data, result: .success(try JSONSerialization.jsonObject(with: data))))
                 } catch {
                     self.logger.warning(LogCode.decodingFailed, "the answer to \(SdkLogger.requestLine("GET", path)) did not parse", ["path": path])
-                    completion(CoreResponse(status: statusCode, body: data, result: .failure(.decodeError)))
+                    completion(CoreResponse(status: statusCode, body: data, result: .failure(.decodeError), error: .decoding))
                 }
-            case .failure:
+            case .failure(let failure):
                 self.logger.requestFinished("GET", path, status: nil, succeeded: false, reason: self.failureReason())
-                completion(CoreResponse(status: nil, body: Data(), result: .failure(self.transportError())))
+                completion(CoreResponse(status: nil, body: Data(), result: .failure(self.transportError()), error: self.transportFailure(failure)))
             }
         }.resume()
     }
@@ -116,7 +116,7 @@ final class LegacyCore: Core {
         let path = request.path
         guard let url = URL(string: baseURL + path) else {
             logger.error(LogCode.requestBuildFailed, "\(SdkLogger.requestLine("POST", path)) could not be built", ["method": "POST", "path": path])
-            completion(CoreResponse(status: nil, body: Data(), result: .failure(.invalidResponse)))
+            completion(CoreResponse(status: nil, body: Data(), result: .failure(.invalidResponse), error: .invalidArgument("the path \(path) is not a URL path")))
             return
         }
         var requestParams: [String: Any] = ["stream": stream]
@@ -140,13 +140,18 @@ final class LegacyCore: Core {
                 self.logger.requestFinished("POST", path, status: statusCode, succeeded: succeeded)
                 guard succeeded else {
                     let error = SdkError.serverMessage(in: data).map { SdkError.custom(error: $0) } ?? .invalidResponse
-                    completion(CoreResponse(status: statusCode, body: data, result: .failure(error)))
+                    completion(CoreResponse(status: statusCode, body: data, result: .failure(error), error: .http(code: statusCode, serverCode: nil)))
                     return
                 }
-                completion(CoreResponse(status: statusCode, body: data, result: self.decodePost(data, path: path)))
-            case .failure:
+                let decoded = self.decodePost(data, path: path)
+                var error: Rees46.SdkError?
+                if case .failure = decoded {
+                    error = .decoding
+                }
+                completion(CoreResponse(status: statusCode, body: data, result: decoded, error: error))
+            case .failure(let failure):
                 self.logger.requestFinished("POST", path, status: nil, succeeded: false, reason: self.failureReason())
-                completion(CoreResponse(status: nil, body: Data(), result: .failure(self.transportError())))
+                completion(CoreResponse(status: nil, body: Data(), result: .failure(self.transportError()), error: self.transportFailure(failure)))
             }
         }.resume()
     }
@@ -179,6 +184,13 @@ final class LegacyCore: Core {
     /// A request that got no answer: offline, or the connection failed or timed out.
     private func transportError() -> SdkError {
         connectivity.isOnline ? .invalidResponse : .networkOfflineError
+    }
+
+    /// The same failure as the new core names it: `network` offline or when no connection was made,
+    /// `timeout` when the request timed out.
+    private func transportFailure(_ error: Error) -> Rees46.SdkError {
+        guard connectivity.isOnline else { return .network }
+        return (error as? URLError)?.code == .timedOut ? .timeout : .network
     }
 
     /// `context.reason` of a request that got no answer: `offline` when the device has no network.

@@ -31,6 +31,11 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
             completion(.failure(.custom(error: "setPushToken: SDK is not initialized")))
             return
         }
+        // The new core: the device's token, a week per shop, never without a device id.
+        if let instance = sdk as? SimplePersonalizationSDK, instance.usesCoreV2 {
+            instance.submitPushToken(Rees46.PushToken(token: token, provider: isFirebaseNotification ? .fcm : .apns), completion: completion)
+            return
+        }
         
         sessionQueue.addOperation {
             // The token never goes out without a device id: the SDK keeps it until /init stores one.

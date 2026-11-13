@@ -22,6 +22,9 @@ final class ShopStorage {
     static let queueFolderName = "queue"
     /// The shop's `refused` state in its partition (with `keyScope` in a shared one).
     static let refusedKey = "personalization_sdk.refused"
+    /// The push token the new core last sent to the shop, and when (`sdk/core/push.md`).
+    static let pushTokenSentKey = "personalization_sdk.push_token_sent"
+    static let pushTokenSentAtKey = "personalization_sdk.push_token_sent_at"
 
     let shopId: String
     /// The shop's partition.
@@ -149,6 +152,39 @@ final class ShopStorage {
     /// The key of the shop's `refused` state.
     var refusedKey: String {
         StoragePartition.scoped(Self.refusedKey, keyScope)
+    }
+
+    // MARK: - The push token sent
+
+    /// A push token sent to the shop: its platform and value, and when it went.
+    struct PushTokenSent: Equatable {
+        let key: String
+        let at: Date
+    }
+
+    /// The push token the new core last sent to the shop, or claimed for a request on its way; `nil`
+    /// before the first one and after `deleteUserCredentials`.
+    var pushTokenSent: PushTokenSent? {
+        get {
+            guard let key = partition.string(forKey: scopedKey(Self.pushTokenSentKey)),
+                  let at = partition.object(forKey: scopedKey(Self.pushTokenSentAtKey)) as? Double, at.isFinite else {
+                return nil
+            }
+            return PushTokenSent(key: key, at: Date(timeIntervalSince1970: at))
+        }
+        set {
+            if let sent = newValue {
+                partition.set(sent.key, forKey: scopedKey(Self.pushTokenSentKey))
+                partition.set(sent.at.timeIntervalSince1970, forKey: scopedKey(Self.pushTokenSentAtKey))
+            } else {
+                partition.removeObject(forKey: scopedKey(Self.pushTokenSentKey))
+                partition.removeObject(forKey: scopedKey(Self.pushTokenSentAtKey))
+            }
+        }
+    }
+
+    private func scopedKey(_ key: String) -> String {
+        StoragePartition.scoped(key, keyScope)
     }
 
     // MARK: - The queue's folder

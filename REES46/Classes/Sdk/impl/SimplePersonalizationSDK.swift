@@ -101,6 +101,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Per-shop attribution set through `tracking.setSource(_:)`. Reached from the tracking services
     /// through the `PersonalizationSDK.trackingSourceStore` bridge. See [TrackingSourceStore].
     let sourceStore: TrackingSourceStore
+
+    /// Where the new core keeps the device's push token (`sdk/core/push.md`): the device's store, one
+    /// for every shop; the old core goes on reading and writing `DeviceStore.shared`.
+    let deviceStore: DeviceStore
+
+    /// The instance's own push callbacks: they win over the facade's (`Rees46.setPushCallbacks`).
+    let pushCallbackBox = PushCallbackBox()
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -228,9 +235,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionManager: SessionManager? = nil,
         localState: LocalStateRepository? = nil,
         connectivity: ConnectivityMonitor? = nil,
+        deviceStore: DeviceStore? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        self.deviceStore = deviceStore ?? .shared
         self.storageKey = storageKey
         // Code that has only the shop at hand (stories, popups v3) opens the same partition.
         StoragePartition.remember(storageKey: storageKey, forShop: shopId)
@@ -452,7 +461,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return settledCount
     }
 
-    private func currentInitGeneration() -> Int {
+    func currentInitGeneration() -> Int {
         initLock.lock(); defer { initLock.unlock() }
         return initGeneration
     }
@@ -650,9 +659,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     /// After `/init` stored a device id: the push token goes with `autoSendPushToken`, and so does one
-    /// that came while the device had none.
+    /// that came while the device had none. The new core sends the device's token after every `/init`
+    /// answer, whoever gave it — the week holds a second one back (`sdk/core/push.md`).
     private func sendPushTokenIfDeviceIdIsKnown() {
         guard !deviceId.isEmpty, !isReleased else { return }
+        if usesCoreV2 {
+            // The deferred token is the device's last one: sent, it is the device's token anyway.
+            if !sendDeferredPushToken() {
+                sendDevicePushToken()
+            }
+            return
+        }
         if autoSendPushToken {
             handleAutoSendPushToken()
         }
@@ -660,12 +677,24 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     /// The token deferred for want of a device id, taken under the lock: once, whoever takes it.
-    private func sendDeferredPushToken() {
-        guard !deviceId.isEmpty, !isReleased else { return }
+    /// `true` when there was one.
+    @discardableResult
+    private func sendDeferredPushToken() -> Bool {
+        guard !deviceId.isEmpty, !isReleased else { return false }
         pushTokenLock.lock()
         let deferred = deferredPushToken
         deferredPushToken = nil
         pushTokenLock.unlock()
+        if usesCoreV2, let deferred = deferred {
+            // The new core's token: its own rules, its own log.
+            switch deferred {
+            case .device(let token):
+                submitPushToken(Rees46.PushToken(token: DeviceStore.hex(token), provider: .apns), apnsData: token, completion: nil)
+            case let .direct(token, isFirebase):
+                submitPushToken(Rees46.PushToken(token: token, provider: isFirebase ? .fcm : .apns), completion: nil)
+            }
+            return true
+        }
         switch deferred {
         case .device(let token)?:
             // With autoSendPushToken the device's token just went: the registrar's weekly claim holds a
@@ -681,8 +710,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
         case nil:
-            break
+            return false
         }
+        return true
     }
 
     /// `release()`: a deferred token is not sent any more.
@@ -1762,6 +1792,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         storage.refused = false
         sourceStore.clear()
         NotificationRegistrar.forgetUpload(shopId: shopId)
+        storage.pushTokenSent = nil
         // Where an older SDK kept the customer, so neither a downgrade nor a pending shop's push finds it.
         StorageMigrations.forgetCustomer(storageKey: storageKey, partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey))
         RecentSearches.forget(shopKey: shopId)
@@ -1995,7 +2026,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.saveInitAnswer(response.body)
                 }
             }
-            completion(response.status, response.result)
+            // The whole error goes with the old one, for the bridges (`Rees46.BridgeErrors`).
+            CurrentError.with(response.error) {
+                completion(response.status, response.result)
+            }
         }
     }
 
@@ -2049,7 +2083,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             return
         }
         core.send(CoreRequest(method: .post, path: path, body: requestParams, timeout: timeout)) { response in
-            completion(response.result.flatMap(Self.jsonObject))
+            let result = response.result.flatMap(Self.jsonObject)
+            // The whole error goes with the old one, for the bridges (`Rees46.BridgeErrors`).
+            var error = response.error
+            if error == nil, case .failure = result {
+                error = .decoding
+            }
+            CurrentError.with(error) {
+                completion(result)
+            }
         }
     }
 
@@ -2212,7 +2254,14 @@ extension SimplePersonalizationSDK: EventQueueHost {
     /// the state — released, refused — or of its body comes back at once and nothing is queued;
     /// otherwise `completion` hears the server's answer once the event went out, or why it never will,
     /// as the old methods always heard it. `false` on the old core: the caller sends it as before.
-    func enqueueEvent(path: String, body: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) -> Bool {
+    /// `accepted` hears the contract's result (`sdk/core/queue.md`): `nil` once the event is on disk,
+    /// the refusal at once, or — the disk refused it — the outcome of the one request it goes as.
+    func enqueueEvent(
+        path: String,
+        body: [String: Any],
+        accepted: ((Rees46.SdkError?) -> Void)? = nil,
+        completion: @escaping (Result<[String: Any], SdkError>) -> Void
+    ) -> Bool {
         guard let queue = eventQueue else { return false }
         let refusal: Rees46.SdkError?
         if isReleased {
@@ -2226,7 +2275,12 @@ extension SimplePersonalizationSDK: EventQueueHost {
             refusal = nil
         }
         if let refusal = refusal {
-            DispatchQueue.global(qos: .utility).async { completion(.failure(.legacy(refusal))) }
+            DispatchQueue.global(qos: .utility).async {
+                CurrentError.with(refusal) {
+                    completion(.failure(.legacy(refusal)))
+                }
+                accepted?(refusal)
+            }
             return true
         }
         let request = CoreRequest(method: .post, path: path)
@@ -2238,12 +2292,22 @@ extension SimplePersonalizationSDK: EventQueueHost {
             path: path,
             body: body,
             createdAt: environment.clock.now(),
+            accepted: accepted,
             completion: { outcome in
                 switch outcome {
                 case .sent(let response):
-                    completion(CoreV2.legacyResponse(response, for: request).result.flatMap(Self.jsonObject))
+                    let result = CoreV2.legacyResponse(response, for: request).result.flatMap(Self.jsonObject)
+                    var error: Rees46.SdkError?
+                    if case .failure = result {
+                        error = .decoding
+                    }
+                    CurrentError.with(error) {
+                        completion(result)
+                    }
                 case .failed(let error, let errorBody):
-                    completion(.failure(.legacy(error, serverMessage: SdkError.serverMessage(in: errorBody))))
+                    CurrentError.with(error) {
+                        completion(.failure(.legacy(error, serverMessage: SdkError.serverMessage(in: errorBody))))
+                    }
                 }
             },
             unstored: { [weak self] stamped in
@@ -2251,12 +2315,16 @@ extension SimplePersonalizationSDK: EventQueueHost {
                 // the instance is usable, and only for the customer it was made for.
                 guard let self = self else {
                     completion(.failure(.legacy(.notInitialized)))
+                    accepted?(.notInitialized)
                     return
                 }
                 var once = CoreRequest(method: .post, path: path, body: stamped)
                 once.identity = { [weak self] in self?.identity(ifCurrent: generation) }
                 self.core.send(once) { response in
-                    completion(response.result.flatMap(Self.jsonObject))
+                    CurrentError.with(response.error) {
+                        completion(response.result.flatMap(Self.jsonObject))
+                    }
+                    accepted?(response.error)
                 }
             }
         )
@@ -2289,10 +2357,14 @@ extension SimplePersonalizationSDK: EventQueueHost {
 
     // MARK: EventQueueHost
 
-    func queueGate() -> EventQueue.Gate {
+    func queueGate(for path: String) -> EventQueue.Gate {
         guard !isReleased, let machine = initMachine, let session = sessionWindow else { return .closed }
         if machine.isRefused {
             return .refused
+        }
+        // The events of pushes need a stored device id and nothing else: no session, no `/init`.
+        if EventQueue.sessionlessPaths.contains(path) {
+            return (userIdentity.deviceId ?? "").isEmpty ? .wait : .open
         }
         guard machine.isUsable else { return .wait }
         guard session.isAlive else {

@@ -52,7 +52,25 @@ public class NotificationService: NotificationServiceProtocol {
   public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
     // The token itself is never logged.
     SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenReceived, "APNs handed a push token", ["source": "apns"])
+    let token = Rees46.PushToken(token: DeviceStore.hex(deviceToken), provider: .apns)
+    PushCenter.notify(token, instance: ownCallbacks)
+    // The new core: the device's token, for every shop of the process.
+    if usesCoreV2 {
+      Rees46.deviceTokenReceived(token, apnsData: deviceToken, through: sdk)
+      return
+    }
     notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
+  }
+
+  /// The push callbacks of this service's instance, which win over the facade's.
+  private var ownCallbacks: Rees46.PushCallbacks? {
+    (sdk as? SimplePersonalizationSDK)?.pushCallbackBox.callbacks
+  }
+
+  /// Whether this service's instance runs the new core, which sends `opened` and logs its push token
+  /// itself.
+  private var usesCoreV2: Bool {
+    (sdk as? SimplePersonalizationSDK)?.usesCoreV2 ?? false
   }
   
   private func setupNotificationCategories() {
@@ -101,6 +119,10 @@ public class NotificationService: NotificationServiceProtocol {
     switch state {
     case .active:
       notificationLogger.log("Application is in active state: the push arrived, nobody tapped it")
+      // The new core: a push in the active app is shown to the user — `opened` (decision 0004).
+      if usesCoreV2 {
+        Rees46.handlePush(userInfo, event: Rees46.PushEvent.opened)
+      }
     case .background:
       notificationLogger.log("Application is in background state")
       pushRetrieved(userInfo: userInfo)
@@ -118,6 +140,14 @@ public class NotificationService: NotificationServiceProtocol {
     // The token itself is never logged.
     if let fcmToken = fcmToken, !fcmToken.isEmpty {
       SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenReceived, "FCM handed a push token", ["source": "fcm"])
+      PushCenter.notify(Rees46.PushToken(token: fcmToken, provider: .fcm), instance: ownCallbacks)
+    }
+    // The new core: the device's token, for every shop of the process; it logs the outcome itself.
+    if usesCoreV2 {
+      if let fcmToken = fcmToken, !fcmToken.isEmpty {
+        Rees46.deviceTokenReceived(Rees46.PushToken(token: fcmToken, provider: .fcm), apnsData: nil, through: sdk)
+      }
+      return
     }
     
     sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in

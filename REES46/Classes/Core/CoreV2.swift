@@ -153,6 +153,10 @@ final class CoreV2: Core {
             let message = request.method == .post ? SdkError.serverMessage(in: response.body) : nil
             return SdkError.legacy(error, serverMessage: message)
         }
-        return CoreResponse(status: response.status, body: response.body, result: result)
+        var error: Rees46.SdkError?
+        if case .failure(let failure) = response.result {
+            error = failure
+        }
+        return CoreResponse(status: response.status, body: response.body, result: result, error: error)
     }
 }

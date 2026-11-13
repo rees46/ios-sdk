@@ -42,6 +42,16 @@ class NotificationRegistrar {
     private static let uploadLock = NSLock()
 
     func registerWithDeviceToken(deviceToken: Data) {
+        // The new core: the device's token, a week per shop, never without a device id
+        // (`sdk/core/push.md`).
+        if let instance = sdk as? SimplePersonalizationSDK, instance.usesCoreV2 {
+            instance.submitPushToken(
+                Rees46.PushToken(token: DeviceStore.hex(deviceToken), provider: .apns),
+                apnsData: deviceToken,
+                completion: nil
+            )
+            return
+        }
         // Kept for the next launches: with `autoSendPushToken` every shop sends it after its /init.
         DeviceStore.shared.pushToken = deviceToken
 

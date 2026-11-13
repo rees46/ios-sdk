@@ -23,6 +23,9 @@ final class DeviceStore {
     static let abGroupKey = "ab_group"
     static let advertisingIdKey = "advertising_id"
     static let pushTokenKey = "push_token"
+    /// The new core's token of the device: any provider's, as a string, and its provider.
+    static let deviceTokenKey = "push_token_value"
+    static let deviceTokenProviderKey = "push_token_provider"
     /// The A/B groups the server knows.
     static let abGroups = ["A", "B"]
 
@@ -54,6 +57,31 @@ final class DeviceStore {
             defaults.set(newValue, forKey: Self.pushTokenKey)
             pushTokenDefaults.set(newValue, forKey: SdkConstants.deviceToken)
         }
+    }
+
+    /// The device's push token (`sdk/core/push.md`): the last one the SDK got or was given, with its
+    /// provider — one token per device, whichever shop it came through. Without one of its own, the
+    /// APNs token an older version kept is the device's.
+    var deviceToken: Rees46.PushToken? {
+        get {
+            lock.lock(); defer { lock.unlock() }
+            if let value = defaults.string(forKey: Self.deviceTokenKey), !value.isEmpty,
+               let provider = defaults.string(forKey: Self.deviceTokenProviderKey).flatMap(Rees46.PushProvider.init(rawValue:)) {
+                return Rees46.PushToken(token: value, provider: provider)
+            }
+            let data = defaults.data(forKey: Self.pushTokenKey) ?? pushTokenDefaults.data(forKey: SdkConstants.deviceToken)
+            return data.flatMap { $0.isEmpty ? nil : Rees46.PushToken(token: Self.hex($0), provider: .apns) }
+        }
+        set {
+            lock.lock(); defer { lock.unlock() }
+            defaults.set(newValue?.token, forKey: Self.deviceTokenKey)
+            defaults.set(newValue?.provider.rawValue, forKey: Self.deviceTokenProviderKey)
+        }
+    }
+
+    /// An APNs token as the API takes it: lowercase hex.
+    static func hex(_ token: Data) -> String {
+        token.map { String(format: "%02.2hhx", $0) }.joined()
     }
 
     /// The device's A/B group, `nil` until one is assigned.
