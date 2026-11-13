@@ -254,6 +254,10 @@ enum StubSDK {
         logLevel: Rees46.LogLevel = .warning,
         connectivity: ConnectivityMonitor? = nil,
         coreV2: Bool = false,
+        sendAdvertisingId: Bool = false,
+        deviceId: String? = nil,
+        environment: CoreEnvironment? = nil,
+        shopStorage: ShopStorage? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
         // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
@@ -263,11 +267,15 @@ enum StubSDK {
             apiDomain: "stub.test",
             logLevel: logLevel,
             autoSendPushToken: false,
+            sendAdvertisingId: sendAdvertisingId,
             enableAutoPopupPresentation: false,
             needReInitialization: needReInitialization,
             coreV2: coreV2,
+            deviceId: deviceId,
+            environment: environment,
             userIdentity: identity,
             keychainStore: keychain,
+            shopStorage: shopStorage,
             localState: LocalStateRepositoryImpl(store: UserDefaults(suiteName: "test-\(shopId)")!),
             connectivity: connectivity,
             completion: completion

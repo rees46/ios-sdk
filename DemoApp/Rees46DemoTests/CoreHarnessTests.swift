@@ -11,40 +11,65 @@ import XCTest
 
 // MARK: - Doubles
 
-/// A clock that moves only when told.
+/// A clock that moves only when told; read from any thread.
 final class FakeClock: Clock {
-    var current: Date
-    init(_ start: Date = Date(timeIntervalSince1970: 1_800_000_000)) { current = start }
+    private let lock = NSLock()
+    private var value: Date
+    init(_ start: Date = Date(timeIntervalSince1970: 1_800_000_000)) { value = start }
+    var current: Date {
+        get { lock.lock(); defer { lock.unlock() }; return value }
+        set { lock.lock(); value = newValue; lock.unlock() }
+    }
     func now() -> Date { current }
     func advance(by seconds: TimeInterval) { current = current.addingTimeInterval(seconds) }
 }
 
-/// A scheduler that runs work only when its time comes on the paired `FakeClock`.
+/// A scheduler that runs work only when its time comes on the paired `FakeClock`. Work may be
+/// scheduled from any thread (the new core's tasks); it runs on the thread that advances the clock.
 final class ManualScheduler: Scheduler {
     private struct Job { let due: Date; let work: () -> Void; let id: Int }
     private let clock: FakeClock
+    private let lock = NSLock()
     private var jobs: [Job] = []
     private var cancelled: Set<Int> = []
     private var nextId = 0
 
     init(clock: FakeClock) { self.clock = clock }
 
-    var pending: Int { jobs.filter { !cancelled.contains($0.id) }.count }
+    var pending: Int {
+        lock.lock(); defer { lock.unlock() }
+        return jobs.filter { !cancelled.contains($0.id) }.count
+    }
+
+    /// The delays of the work waiting, from now, in order.
+    var pendingDelays: [TimeInterval] {
+        lock.lock(); defer { lock.unlock() }
+        let now = clock.now()
+        return jobs.filter { !cancelled.contains($0.id) }.map { $0.due.timeIntervalSince(now) }.sorted()
+    }
 
     @discardableResult
     func schedule(after delay: TimeInterval, _ work: @escaping () -> Void) -> Cancellable {
+        lock.lock()
         nextId += 1
         let id = nextId
         jobs.append(Job(due: clock.now().addingTimeInterval(delay), work: work, id: id))
-        return Cancellable { [weak self] in self?.cancelled.insert(id) }
+        lock.unlock()
+        return Cancellable { [weak self] in
+            guard let self = self else { return }
+            self.lock.lock(); self.cancelled.insert(id); self.lock.unlock()
+        }
     }
 
     /// Moves the clock and runs, in order, the work that has come due.
     func advance(by seconds: TimeInterval) {
+        lock.lock()
         clock.advance(by: seconds)
-        let due = jobs.filter { $0.due <= clock.now() }.sorted { $0.due < $1.due }
-        jobs.removeAll { $0.due <= clock.now() }
-        due.filter { !cancelled.contains($0.id) }.forEach { $0.work() }
+        let now = clock.now()
+        let due = jobs.filter { $0.due <= now && !cancelled.contains($0.id) }.sorted { $0.due < $1.due }
+        jobs.removeAll { $0.due <= now }
+        lock.unlock()
+        due.forEach { $0.work() }
     }
 }
 
@@ -96,17 +121,33 @@ final class FakeConnectivity: ConnectivityMonitor {
 
 /// App lifecycle events sent by the test.
 final class ManualAppLifecycle: AppLifecycle {
+    private let lock = NSLock()
     private var observers: [Int: (AppLifecycleEvent) -> Void] = [:]
     private var nextId = 0
 
+    var observerCount: Int {
+        lock.lock(); defer { lock.unlock() }
+        return observers.count
+    }
+
     func observe(_ handler: @escaping (AppLifecycleEvent) -> Void) -> Cancellable {
+        lock.lock()
         nextId += 1
         let id = nextId
         observers[id] = handler
-        return Cancellable { [weak self] in self?.observers[id] = nil }
+        lock.unlock()
+        return Cancellable { [weak self] in
+            guard let self = self else { return }
+            self.lock.lock(); self.observers[id] = nil; self.lock.unlock()
+        }
     }
 
-    func send(_ event: AppLifecycleEvent) { observers.values.forEach { $0(event) } }
+    func send(_ event: AppLifecycleEvent) {
+        lock.lock()
+        let current = Array(observers.values)
+        lock.unlock()
+        current.forEach { $0(event) }
+    }
 }
 
 // MARK: - Contract fixtures

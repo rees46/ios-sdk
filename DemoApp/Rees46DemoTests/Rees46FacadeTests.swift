@@ -6,7 +6,7 @@
 //  registration bookkeeping, and the reactive `awaitInstance` path. Mirror of the Android `Rees46Test`.
 //
 //  Resolution is exercised with `FakeSDK` instances registered into `SdkRegistry` directly, so no real
-//  (network-spawning) SDK is constructed. The registry holds instances weakly, so each fake is bound
+//  (network-spawning) SDK is constructed. Each fake is also bound
 //  to a retained local for the test's duration. Materialization of a pending shop (which would build a
 //  real SDK) is intentionally not driven here — it is covered by the demo E2E (iOS-21).
 //
@@ -36,7 +36,7 @@ final class Rees46FacadeTests: XCTestCase {
         (lhs as AnyObject?) === (rhs as AnyObject?)
     }
 
-    /// Registers a live `FakeSDK` for `shopId`, retaining it against the registry's weak reference.
+    /// Registers a live `FakeSDK` for `shopId`.
     @discardableResult
     private func live(_ shopId: String) -> FakeSDK {
         let sdk = FakeSDK(shopId: shopId)

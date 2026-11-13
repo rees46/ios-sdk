@@ -4,9 +4,8 @@
 //
 //  Covers `SdkRegistry`, the internal routing state behind multi-instance (R1). Pins the
 //  single-instance behaviour (unchanged) and the shop-id resolution the public API will build on.
-//  Mirror of the Android `SdkRegistryTest`, adapted for the iOS design difference: the registry
-//  holds instances **weakly** (the host owns their lifetime), so tests bind each `FakeSDK` to a local
-//  to keep it alive, and there is an extra test for the auto-drop on deallocation.
+//  Mirror of the Android `SdkRegistryTest`. The registry holds instances strongly (`sdk/core/README.md`,
+//  "Экземпляр"): one lives while it is registered, and leaves on `release()`.
 //
 //  `PersonalizationSDK` is not class-constrained, so identity is compared through `same(_:_:)`, which
 //  bridges to `AnyObject` — the same bridge the registry uses internally to key on reference identity.
@@ -161,15 +160,24 @@ final class SdkRegistryTests: XCTestCase {
         XCTAssertTrue(same(registry.byShopId("shop-b"), b))
     }
 
-    /// iOS-specific: the registry references instances weakly, so an instance the host stops
-    /// retaining deallocs and drops out on its own — no explicit unregister required.
-    func test_a_deallocated_instance_drops_out_of_the_registry() {
+    /// The registry keeps an instance the app no longer holds: it stays reachable by its shop until it
+    /// is released, and then it goes.
+    func test_the_registry_holds_an_instance_until_it_is_released() {
+        weak var dropped: FakeSDK?
         do {
             let sdk = FakeSDK(shopId: "shop-a")
+            dropped = sdk
             registry.register(shopId: "shop-a", sdk: sdk)
-            XCTAssertEqual(registry.count(), 1)
         }
 
+        XCTAssertNotNil(dropped, "the registry let the instance go")
+        XCTAssertTrue(same(registry.byShopId("shop-a"), dropped))
+        XCTAssertTrue(same(registry.current(), dropped))
+        XCTAssertEqual(registry.count(), 1)
+
+        dropped?.release()
+
+        XCTAssertNil(dropped, "released, the instance is no longer held")
         XCTAssertNil(registry.byShopId("shop-a"))
         XCTAssertNil(registry.current())
         XCTAssertEqual(registry.count(), 0)

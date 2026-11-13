@@ -24,8 +24,8 @@ final class MultiInstanceE2ETest: XCTestCase {
     private let shopB = Constants.testShopIdB
     private let apiDomain = Constants.testApiDomain
 
-    /// The registry holds instances weakly, so real SDKs built by these tests are retained here for the
-    /// test's duration (an in-flight `/init` also retains them, but this keeps assertions robust).
+    /// Real SDKs built by these tests, kept for the test's duration; the registry holds them too until
+    /// `reset()`.
     private var retained: [PersonalizationSDK] = []
 
     override func setUp() {

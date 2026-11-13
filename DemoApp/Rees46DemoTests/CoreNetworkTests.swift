@@ -523,7 +523,7 @@ final class CoreNetworkTests: XCTestCase {
         XCTAssertEqual(sdk.deviceId, "stub-did")
     }
 
-    func test_with_coreV2_an_empty_init_answer_is_an_error_and_keeps_the_device_id_and_the_saved_answer() {
+    func test_with_coreV2_an_empty_init_answer_is_retried_on_the_saved_answer_and_keeps_the_device_id_and_the_backup() {
         StubURLProtocol.handler = { request in
             request.path == "/init" ? StubReply(200, json: "") : StubReply()
         }
@@ -539,7 +539,9 @@ final class CoreNetworkTests: XCTestCase {
         }
         wait(for: [ready], timeout: 5)
 
-        guard case .decodeError? = initError else { return XCTFail("an empty /init is decoding, got \(String(describing: initError))") }
+        // An empty /init is decoding: retried, and meanwhile the saved answer lets calls through.
+        XCTAssertNil(initError, "the saved answer stands in")
+        XCTAssertEqual(sdk.state, .retrying)
         XCTAssertEqual(sdk.deviceId, "kept-did")
         XCTAssertEqual(identity.deviceId, "kept-did")
         XCTAssertEqual(keychain.data, saved)
