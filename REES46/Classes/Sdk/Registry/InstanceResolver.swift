@@ -49,7 +49,7 @@ internal enum InstanceResolver {
         case 0:
             return .notRegistered
         case 1:
-            let only = allShopIds.first!
+            guard let only = allShopIds.first else { return .notRegistered }
             return liveShopIds.contains(only) ? .existing(only) : .pending(only)
         default:
             return .ambiguous

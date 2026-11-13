@@ -102,7 +102,11 @@ internal final class SdkRegistry {
         var added: Awaiter?
         queue.sync(flags: .barrier) {
             compactLocked()
-            alreadyLive = (shopId != nil) ? byShop[shopId!]?.sdk : (currentDefault as? PersonalizationSDK)
+            if let shopId = shopId {
+                alreadyLive = byShop[shopId]?.sdk
+            } else {
+                alreadyLive = currentDefault as? PersonalizationSDK
+            }
             if alreadyLive == nil {
                 let awaiter = Awaiter(shopId: shopId, onReady: onReady)
                 awaiting.append(awaiter)
@@ -115,7 +119,7 @@ internal final class SdkRegistry {
             return Cancellable.noop
         }
 
-        let awaiter = added!
+        guard let awaiter = added else { return Cancellable.noop }
         return Cancellable { [weak self] in
             self?.queue.sync(flags: .barrier) {
                 self?.awaiting.removeAll { $0 === awaiter }
