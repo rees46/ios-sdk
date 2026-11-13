@@ -26,20 +26,44 @@ final class PushPayloadParserTests: XCTestCase {
         XCTAssertEqual(result?.code, "p1")
     }
 
-    func test_type_from_event_json_with_top_level_id() {
+    func test_the_event_type_is_what_the_push_opens_not_the_mailing_type() {
+        // FCM data as the server sends it: every value a string, `event` a JSON string.
         let payload: [AnyHashable: Any] = [
-            "event": "{\"type\":\"category\",\"uri\":\"https://x/y\"}",
-            "id": "c1"
+            "type": "bulk",
+            "id": "c1",
+            "event": "{\"type\":\"category\",\"uri\":\"https://x/y\"}"
         ]
         let result = PushPayloadParser.typeAndCode(from: payload)
-        XCTAssertEqual(result?.type, "category")
+        XCTAssertEqual(result?.type, "bulk")
         XCTAssertEqual(result?.code, "c1")
+        XCTAssertEqual(PushPayloadParser.event(from: payload)?["type"] as? String, "category")
+    }
+
+    func test_a_push_without_a_mailing_type_is_not_an_sdk_push() {
+        let payload: [AnyHashable: Any] = ["id": "c1", "event": "{\"type\":\"category\"}"]
+        XCTAssertNil(PushPayloadParser.typeAndCode(from: payload))
+    }
+
+    func test_a_push_sent_through_apns_carries_src_and_event_as_objects() throws {
+        // What the server sends to a token with platform=ios (message-service MobilePushToken).
+        let json = """
+        {"aps":{"alert":{"title":"T","body":"B"},"category":"web","mutable-content":1,"sound":"default"},
+         "src":{"type":"chain","id":12345},"event":{"type":"web","uri":"https://example.com"},
+         "image_url":"https://example.com/i.png","source":"utm","shop_id":"shop-a"}
+        """
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [AnyHashable: Any])
+
+        let result = PushPayloadParser.typeAndCode(from: payload)
+        XCTAssertEqual(result?.type, "chain")
+        XCTAssertEqual(result?.code, "12345")
+        XCTAssertEqual(PushPayloadParser.shopId(from: payload), "shop-a")
+        XCTAssertEqual(PushPayloadParser.event(from: payload)?["uri"] as? String, "https://example.com")
     }
 
     func test_type_and_code_from_nested_src_json() {
-        let payload: [AnyHashable: Any] = ["src": "{\"type\":\"web\",\"id\":\"s1\"}"]
+        let payload: [AnyHashable: Any] = ["src": "{\"type\":\"transactional\",\"id\":\"s1\"}"]
         let result = PushPayloadParser.typeAndCode(from: payload)
-        XCTAssertEqual(result?.type, "web")
+        XCTAssertEqual(result?.type, "transactional")
         XCTAssertEqual(result?.code, "s1")
     }
 

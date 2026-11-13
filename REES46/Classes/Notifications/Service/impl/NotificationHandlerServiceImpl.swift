@@ -197,7 +197,7 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
                 dateFrom: dateFrom
             )
             
-            self.getRequest(path: Constants.notificationPath, params: params, timeout: 1) { result in
+            self.getRequest(path: Constants.notificationPath, params: params, timeout: nil) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -226,7 +226,7 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
                 "type": type
             ]
             
-            self.postRequest(path: path, params: params, timeout: 1, completion: completion)
+            self.postRequest(path: path, params: params, timeout: nil, completion: completion)
         }
     }
 }

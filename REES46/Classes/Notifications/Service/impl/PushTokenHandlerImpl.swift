@@ -46,7 +46,7 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
             }
             
             sdk.postRequest(
-                path: Constants.mobilePushTokensPath, params: params, timeout: 1, completion: { result in
+                path: Constants.mobilePushTokensPath, params: params, timeout: nil, completion: { result in
                     switch result {
                     case .success:
                         completion(.success(Void()))

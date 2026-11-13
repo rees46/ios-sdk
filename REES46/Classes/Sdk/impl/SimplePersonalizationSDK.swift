@@ -399,7 +399,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 return // Exit from review
             }
             
-            self.postRequest(path: path, params: params, timeout: 1) { (result) in
+            self.postRequest(path: path, params: params, timeout: nil) { (result) in
                 switch result {
                 case .success:
                     completion(.success(Void()))
@@ -593,7 +593,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params.removeValue(forKey: "with_locations")
             }
             
-            self.getRequest(path: path, params: params, timeout: timeOut ?? 1) { result in
+            self.getRequest(path: path, params: params, timeout: timeOut) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -663,9 +663,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let locations = locations {
                 params["locations"] = locations
             }
-            if let excludedMerchants = excludedMerchants {
-                let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
-                params["excluded_merchants"] = excludeMerchantsString
+            if let excludedMerchants = SearchFilterParams.excludedMerchants(excludedMerchants, locations: locations) {
+                params["excluded_merchants"] = excludedMerchants
             }
             if let excludedBrands = excludedBrands {
                 params["excluded_brands"] = excludedBrands.joined(separator: ",")
@@ -674,7 +673,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["extended"] = extended
             }
             
-            self.getRequest(path: path, params: params, timeout: timeOut ?? 1) { result in
+            self.getRequest(path: path, params: params, timeout: timeOut) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -724,7 +723,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
             }
             
-            self.getRequest(path: path, params: params, timeout: 1) { result in
+            self.getRequest(path: path, params: params, timeout: nil) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -748,7 +747,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "item_id": id
             ]
             
-            self.getRequest(path: path, params: params, timeout: 1) { result in
+            self.getRequest(path: path, params: params, timeout: nil) { result in
                 switch result {
                 case let .success(successResult):
                     let resJSON = successResult
@@ -769,7 +768,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceId
             ]
             
-            self.getRequest(path: path, params: params, timeout: 1) { result in
+            self.getRequest(path: path, params: params, timeout: nil) { result in
                 switch result {
                 case let .success(responseJson):
                     guard let data = responseJson["data"] as? [String: Any],
@@ -798,7 +797,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "segment": self.segment
             ]
 
-            self.getArrayRequest(path: path, params: params, timeout: 1) { result in
+            self.getArrayRequest(path: path, params: params, timeout: nil) { result in
                 switch result {
                 case let .success(array):
                     completion(.success(LastOrderProductsResponse(array: array)))
@@ -827,7 +826,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let dateFrom = dateFrom { params["date_from"] = dateFrom }
 
             // Envelope: { "status": ..., "data": { "orders": [...] } }
-            self.getRequest(path: "orders/by_user", params: params, timeout: 1) { result in
+            self.getRequest(path: "orders/by_user", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     let ordersJson = (json["data"] as? [String: Any])?["orders"] as? [[String: Any]] ?? []
@@ -850,7 +849,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let firstName = firstName { params["first_name"] = firstName }
             if let lastName = lastName { params["last_name"] = lastName }
 
-            self.postRequest(path: "loyalty/members/join", params: params, timeout: 1) { result in
+            self.postRequest(path: "loyalty/members/join", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(LoyaltyJoinResponse(json: json)))
@@ -872,7 +871,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "identifier": identifier
             ]
 
-            self.getRequest(path: "loyalty/members/status", params: params, timeout: 1) { result in
+            self.getRequest(path: "loyalty/members/status", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(LoyaltyStatusResponse(json: json)))
@@ -890,7 +889,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "did": self.deviceId
             ]
 
-            self.getRequest(path: "profile", params: params, timeout: 1) { result in
+            self.getRequest(path: "profile", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(GetProfileResponse(json: json)))
@@ -908,7 +907,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "item": item
             ]
 
-            self.getRequest(path: "products/counters", params: params, timeout: 1) { result in
+            self.getRequest(path: "products/counters", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(ProductCountersResponse(json: json)))
@@ -927,7 +926,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionQueue.addOperation {
             let params = self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
 
-            self.getRequest(path: "category/\(category)", params: params, timeout: 1) { result in
+            self.getRequest(path: "category/\(category)", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(CategoryResponse(json: json)))
@@ -950,7 +949,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let externalId = externalId { params["external_id"] = externalId }
             if let loyaltyId = loyaltyId { params["loyalty_id"] = loyaltyId }
 
-            self.getRequest(path: "collection/\(collectionId)", params: params, timeout: 1) { result in
+            self.getRequest(path: "collection/\(collectionId)", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(CollectionResponse(json: json)))
@@ -1189,7 +1188,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sendGet(
             path: "init",
             params: params,
-            timeout: 1,
+            timeout: Self.initRequestTimeout,
             session: saved == nil ? nil : sessionWithoutWaiting
         ) { status, result in
             switch result.flatMap(Self.jsonObject) {
@@ -1211,6 +1210,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         serialSemaphore.wait()
     }
 
+    /// The session `/init` comes in. Without one the server starts its "new session" chain on every
+    /// `/init`, that is on every launch.
+    private static func addSession(_ sessionId: String, to params: inout [String: String]) {
+        guard !sessionId.isEmpty else { return }
+        params["sid"] = sessionId
+        params["seance"] = sessionId
+    }
+
     private func prepareRequestParameters() -> [String: String] {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
         let hours = secondsFromGMT / 3600
@@ -1227,6 +1234,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
             params[SdkConstants.did] = deviceId
         }
+        Self.addSession(userSeance, to: &params)
 
         if let advId = userIdentity.advertisingId, advId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advId
@@ -1296,6 +1304,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if dId != "" {
             params[SdkConstants.did] = dId
         }
+        Self.addSession(userSeance, to: &params)
 
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
@@ -1304,7 +1313,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         params["ios_advertising_id"] = advId
         userIdentity.advertisingId = advId
         
-        sendGet(path: path, params: params, isInit: true, timeout: 1) { _, result in
+        sendGet(path: path, params: params, isInit: true, timeout: Self.initRequestTimeout) { _, result in
             switch result.flatMap(Self.jsonObject) {
             case let .success(successResult):
                 let resJSON = successResult
@@ -1392,6 +1401,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     /// Idle timeout of a request that does not ask for its own: the read timeout of the Android SDK.
     static let defaultRequestTimeout: TimeInterval = 10
+
+    /// Timeout of `/init`: the server itself gives up after five seconds.
+    static let initRequestTimeout: TimeInterval = 5
 
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         sendGet(path: path, params: params, isInit: isInit, timeout: nil) { _, result in
