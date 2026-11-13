@@ -22,7 +22,7 @@ private final class FakeQueueHost: EventQueueHost {
     let gateHold = Locked<DispatchSemaphore?>(nil)
     let gateEntered = DispatchSemaphore(value: 0)
 
-    func queueGate() -> EventQueue.Gate {
+    func queueGate(for path: String) -> EventQueue.Gate {
         if let hold = gateHold.current {
             gateHold.current = nil
             gateEntered.signal()

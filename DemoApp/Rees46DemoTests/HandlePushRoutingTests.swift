@@ -21,12 +21,15 @@ final class HandlePushRoutingTests: XCTestCase {
         super.setUp()
         Rees46.reset()
         registry.reset()
+        CoreFlag.reset(to: false)
     }
 
     override func tearDown() {
         Rees46.reset()
         registry.reset()
         retained.removeAll()
+        UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: "shop-lazy"))
+        CoreFlag.reset()
         super.tearDown()
     }
 
@@ -124,19 +127,19 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     private func recordPendingTracks(into sink: @escaping (PendingTrack) -> Void) {
-        Rees46.pendingPushTracker = { shopId, _, event, type, code in
-            let name: String
-            switch event {
-            case .delivered: name = "delivered"
-            case .received: name = "received"
-            case .clicked: name = "clicked"
-            }
-            sink(PendingTrack(shopId: shopId, event: name, type: type, code: code))
+        Rees46.pendingPushTracker = { push in
+            sink(PendingTrack(shopId: push.shopId, event: push.route.name, type: push.type, code: push.code))
         }
     }
 
+    /// A pending shop with a device id stored, as one the app ran before: its push is sent.
+    private func registerPending(_ shopId: String = "shop-lazy") {
+        StoragePartition.store(for: shopId).set("lazy-did", forKey: StoragePartition.deviceIdKey)
+        Rees46.register(shops: [Rees46Config(shopId: shopId)])
+    }
+
     func test_a_push_for_a_registered_but_pending_shop_is_tracked_without_initializing_it() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")]) // pending, not initialized
+        registerPending() // pending, not initialized
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -151,7 +154,7 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     func test_a_clicked_push_for_a_pending_shop_is_tracked_standalone() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -162,7 +165,7 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     func test_no_shop_id_with_a_single_pending_shop_falls_back_to_it() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -172,7 +175,7 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     func test_a_pending_shop_push_without_type_or_code_is_ignored() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -183,7 +186,7 @@ final class HandlePushRoutingTests: XCTestCase {
 
     func test_no_shop_id_with_one_live_and_one_pending_shop_is_ambiguous_and_dropped() {
         let a = live("shop-a")
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 

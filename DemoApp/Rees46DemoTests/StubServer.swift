@@ -277,6 +277,7 @@ enum StubSDK {
         deviceId: String? = nil,
         environment: CoreEnvironment? = nil,
         shopStorage: ShopStorage? = nil,
+        deviceStore: DeviceStore? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
         // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
@@ -297,8 +298,16 @@ enum StubSDK {
             shopStorage: shopStorage,
             localState: LocalStateRepositoryImpl(store: UserDefaults(suiteName: "test-\(shopId)")!),
             connectivity: connectivity,
+            // The new core's push token: the shop's own device, not the push token other tests left.
+            deviceStore: deviceStore ?? StubSDK.deviceStore(shopId: shopId),
             completion: completion
         )
+    }
+
+    /// A device store of its own for `shopId`'s test.
+    static func deviceStore(shopId: String) -> DeviceStore {
+        let suite = UserDefaults(suiteName: "test-device-\(shopId)") ?? .standard
+        return DeviceStore(defaults: suite, pushTokenDefaults: suite)
     }
 
     /// Where earlier SDK versions saved the init answer of `shopId`: the app's Documents.
@@ -309,6 +318,7 @@ enum StubSDK {
     static func removeSavedInit(shopId: String) {
         try? FileManager.default.removeItem(at: savedInitFile(shopId: shopId))
         UserDefaults.standard.removePersistentDomain(forName: "test-\(shopId)")
+        UserDefaults.standard.removePersistentDomain(forName: "test-device-\(shopId)")
         // The shop's partition and its folder in Application Support.
         if let folder = ShopStorage(shopId: shopId, logger: SdkLogger(shopId: shopId, level: .none)).directory {
             try? FileManager.default.removeItem(at: folder)

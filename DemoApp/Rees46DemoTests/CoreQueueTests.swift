@@ -1167,7 +1167,7 @@ final class CoreQueueTests: XCTestCase {
         for result in results.current {
             guard case .failure(.custom) = result else { return XCTFail("\(result)") }
         }
-        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "invalid_argument" })
+        XCTAssertTrue(eventually { self.logs.current.contains { $0.shopId == shop && $0.code == "invalid_argument" } })
         sdk.eventQueue?.settle()
         XCTAssertTrue(files(sdk).isEmpty)
     }
@@ -1308,6 +1308,6 @@ final class CoreQueueTests: XCTestCase {
         held.signal()
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)).contains("new") })
         XCTAssertEqual(itemIds(requests("/push", shop)).filter { $0.hasPrefix("old") }, ["old-1"], "only the one on its way at the call")
-        XCTAssertTrue(dropped(shop).contains { $0.context["reason"] == "delete_user_credentials" })
+        XCTAssertTrue(eventually { self.dropped(shop).contains { $0.context["reason"] == "delete_user_credentials" } })
     }
 }
