@@ -130,9 +130,20 @@ public protocol PersonalizationSDK {
 
     /// Stops the instance: it leaves the registry, `Rees46.instance(for:)` no longer finds it, and every
     /// later call on it fails as not initialized — the old methods with `.initializationFailed`. The
-    /// next `Rees46.initialize` for the shop makes a new instance. Has a default implementation, so
-    /// conforming types keep compiling.
+    /// next `Rees46.initialize` for the shop makes a new instance. The events it has not sent stay on
+    /// the device and go on the next launch. Has a default implementation, so conforming types keep
+    /// compiling.
     func release()
+
+    /// Sends the queued events now, without waiting for the SDK's own triggers: `completion` is called
+    /// on the main thread once every event queued at the call was tried — sent, or kept for later
+    /// because there is no network, the instance is not ready or the server asked to wait. With
+    /// `Rees46Config.coreV2 = false`, which keeps no queue, it is called at once. Has a default
+    /// implementation, so conforming types keep compiling.
+    func flush(completion: @escaping () -> Void)
+
+    /// `flush(completion:)` for `async` code.
+    func flush() async
 }
 
 public extension PersonalizationSDK {
@@ -476,6 +487,17 @@ public extension PersonalizationSDK {
     /// A conformer's release: it leaves the registry.
     func release() {
         SdkRegistry.shared.unregister(self)
+    }
+
+    /// A conformer without a queue has nothing to send.
+    func flush(completion: @escaping () -> Void) {
+        DispatchQueue.main.async(execute: completion)
+    }
+
+    func flush() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            flush { continuation.resume() }
+        }
     }
     
     // R2: these caches are partitioned per shop — delegate to the shop's [LocalStateRepository] via

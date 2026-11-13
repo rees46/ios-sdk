@@ -50,17 +50,20 @@ struct TrackingSourceWire {
  - `results` — the ids a host-run search displayed (`.search`)
  - `storiesCode` — an explicit stories block code (`.slideView` / `.slideClick`), overriding the code
    of the block the SDK last loaded
+ - `fashionSize` — the cart line's size (`.productAddedToCart`)
  */
 struct TrackEventDetails {
 
     var price: Double?
     var results: [String]?
     var storiesCode: String?
+    var fashionSize: String?
 
-    init(price: Double? = nil, results: [String]? = nil, storiesCode: String? = nil) {
+    init(price: Double? = nil, results: [String]? = nil, storiesCode: String? = nil, fashionSize: String? = nil) {
         self.price = price
         self.results = results
         self.storiesCode = storiesCode
+        self.fashionSize = fashionSize
     }
 
     /// Nothing extra — what the deprecated `track(event:)` path sends.

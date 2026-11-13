@@ -75,7 +75,7 @@ struct TrackingAPIImpl: TrackingAPI {
         trackService.track(
             event: .productAddedToCart(id: item.id, amount: item.quantity),
             source: source?.wire,
-            details: TrackEventDetails(price: item.price),
+            details: TrackEventDetails(price: item.price, fashionSize: item.fashionSize),
             completion: completion
         )
     }

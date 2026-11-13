@@ -88,6 +88,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Made at the end of `init`, before any request can reach it.
     lazy var core: Core = makeCore()
 
+    /// The new core's event queue (`EventQueue`), shared with the other instances of the shop; `nil` on
+    /// the old core, which sends its events at once.
+    private(set) var eventQueue: EventQueue?
+    /// What sends the queue: the app's lifecycle and the network.
+    private var queueTriggers: [Cancellable] = []
+
     /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
     /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
     let localStateStore: LocalStateRepository
@@ -333,6 +339,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
         initCompletion.add(completion)
         if let machine = initMachine {
+            // The queue is there before /init can say ready.
+            startEventQueue()
             machine.delegate = self
             machine.start()
         } else {
@@ -1734,9 +1742,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // Where an older SDK kept the customer, so neither a downgrade nor a pending shop's push finds it.
         StorageMigrations.forgetCustomer(storageKey: storageKey, partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey))
         RecentSearches.forget(shopKey: shopId)
-        if usesCoreV2 {
-            storage.removeQueueDirectory()
-        }
         // The contacts given at creation were the deleted customer's: the next /init does not send
         // them to the profile of the new device id.
         userEmail = nil
@@ -1755,6 +1760,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         initLock.unlock()
         if let seance = newLegacySeance {
             legacySessionListeners.notify(seance)
+        }
+        // The queue of the new core held the deleted customer's events: they go with the customer, off
+        // the init lock the queue's gate takes.
+        if let queue = eventQueue {
+            queue.clearSync(error: .cancelled, reason: "delete_user_credentials")
+        } else if usesCoreV2 {
+            storage.removeQueueDirectory()
         }
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
         if let machine = machine {
@@ -1784,6 +1796,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         guard first else { return }
         SdkLogger.unregister(owner: self)
+        // The queue stops sending; its events stay on disk for the next launch.
+        stopEventQueue()
         core.release()
         // What waits for a device id runs now, and fails.
         requestQueue.open()
@@ -1796,6 +1810,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     deinit {
         // Registered, an instance is held by the registry: one that deinits is no longer registered.
         SdkLogger.unregister(owner: self)
+        queueTriggers.forEach { $0.cancel() }
+        eventQueue?.detach(nil)
         core.release()
     }
 
@@ -2041,6 +2057,10 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
     }
 
     func initMachine(didFinish response: InitResponse, fromServer: Bool, generation: Int) {
+        // The queue goes: the instance is ready with a session, and a check of the shop is answered.
+        if fromServer {
+            eventQueue?.initSucceeded()
+        }
         // Off the cooperative pool the machine answers on: what follows reaches the UI.
         DispatchQueue.main.async { [weak self] in
             self?.finishInit(response, fromServer: fromServer, generation: generation)
@@ -2080,6 +2100,13 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
 
     func initMachine(didSettle error: Rees46.SdkError?) {
         initCompletion.finish(error.map { SdkError.legacy($0) })
+        if error == nil {
+            // Usable: the queue goes, if the session lives.
+            eventQueue?.kick(explicit: true)
+        } else if error == .shopBlocked, initMachine?.isRefused == true {
+            // The shop refused: its events are not sent, and the queue keeps none.
+            eventQueue?.clear(error: .shopBlocked, reason: "refused")
+        }
     }
 
     /// Whether this is the first server answer since the instance was made or its customer deleted;
@@ -2093,4 +2120,154 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
         serverAnswered = true
         return first
     }
+}
+
+// MARK: - The new core's event queue
+
+extension SimplePersonalizationSDK: EventQueueHost {
+
+    /// A popup in the answer to an event shows only when the event went out this soon after it was
+    /// made (decision 2 of the core's brief): one queued offline would pop up out of context.
+    static let eventPopupFreshness: TimeInterval = 10
+    /// The name of the background task that sends the queue on the way to the background.
+    static let queueBackgroundTask = "com.rees46.sdk.queue"
+
+    /// Joins the shop's queue and what sends it: the foreground, the background — with a background
+    /// task, so the queue gets its time — and the network coming back.
+    fileprivate func startEventQueue() {
+        let queue = EventQueue.attach(self, storage: storage, logger: logger)
+        eventQueue = queue
+        let lifecycle = environment.lifecycle
+        let onLifecycle = lifecycle.observe { [weak queue] event in
+            guard let queue = queue else { return }
+            switch event {
+            case .willEnterForeground:
+                queue.kick(explicit: true)
+            case .didEnterBackground:
+                let task = lifecycle.beginBackgroundTask(Self.queueBackgroundTask) {}
+                queue.flush { task.cancel() }
+            }
+        }
+        let onNetwork = connectivity.observe { [weak queue] online in
+            if online {
+                queue?.kick(explicit: false)
+            }
+        }
+        queueTriggers = [onLifecycle, onNetwork]
+    }
+
+    fileprivate func stopEventQueue() {
+        queueTriggers.forEach { $0.cancel() }
+        queueTriggers.removeAll()
+        eventQueue?.detach(self)
+    }
+
+    /// The new core's queue takes an event of the tracking methods (`sdk/core/queue.md`): an error of
+    /// the state — released, refused — or of its body comes back at once and nothing is queued;
+    /// otherwise `completion` hears the server's answer once the event went out, or why it never will,
+    /// as the old methods always heard it. `false` on the old core: the caller sends it as before.
+    func enqueueEvent(path: String, body: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) -> Bool {
+        guard let queue = eventQueue else { return false }
+        let refusal: Rees46.SdkError?
+        if isReleased {
+            refusal = .notInitialized
+        } else if initMachine?.isRefused == true {
+            refusal = .shopBlocked
+        } else if !SafeJSON.isValid(body) {
+            logger.warning(LogCode.invalidArgument, "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path, "reason": "invalid_json"])
+            refusal = .invalidArgument("\(path): the request parameters are not valid JSON")
+        } else {
+            refusal = nil
+        }
+        if let refusal = refusal {
+            DispatchQueue.global(qos: .utility).async { completion(.failure(.legacy(refusal))) }
+            return true
+        }
+        let request = CoreRequest(method: .post, path: path)
+        queue.enqueue(
+            path: path,
+            body: body,
+            createdAt: environment.clock.now(),
+            completion: { outcome in
+                switch outcome {
+                case .sent(let response):
+                    completion(CoreV2.legacyResponse(response, for: request).result.flatMap(Self.jsonObject))
+                case .failed(let error, let errorBody):
+                    completion(.failure(.legacy(error, serverMessage: SdkError.serverMessage(in: errorBody))))
+                }
+            },
+            unstored: { [weak self] stamped in
+                // The disk refused it: sent once, as a plain request, with no queue behind it.
+                guard let self = self else {
+                    completion(.failure(.legacy(.notInitialized)))
+                    return
+                }
+                self.postRequest(path: path, params: stamped, completion: completion)
+            }
+        )
+        return true
+    }
+
+    /// Sends the queued events now; `completion` on the main thread once each event queued at the call
+    /// was tried, or none can go: no network, the server's `Retry-After` not over. An instance that is
+    /// not usable yet is waited for, at most a read timeout. On the old core, which keeps no queue, and
+    /// after `release()`, at once.
+    func flush(completion: @escaping () -> Void) {
+        guard let queue = eventQueue, !isReleased else {
+            DispatchQueue.main.async(execute: completion)
+            return
+        }
+        queue.flush { DispatchQueue.main.async(execute: completion) }
+    }
+
+    // MARK: EventQueueHost
+
+    func queueGate() -> EventQueue.Gate {
+        guard !isReleased, let machine = initMachine, let session = sessionWindow else { return .closed }
+        if machine.isRefused {
+            return .refused
+        }
+        guard machine.isUsable else { return .wait }
+        guard session.isAlive else {
+            // An event after the window ran out goes with the next sid (`sdk/core/session.md`).
+            machine.renewSession()
+            return .wait
+        }
+        return .open
+    }
+
+    func queueSend(_ request: NetworkClient.Request) async -> NetworkClient.Response {
+        guard let core = core as? CoreV2 else { return .failure(.notInitialized) }
+        return await core.sendEvent(request)
+    }
+
+    func queueCheckShop() -> Bool {
+        (core as? CoreV2)?.checkShop() ?? false
+    }
+
+    func queueSource() -> [String: String]? {
+        sourceStore.currentSource().map { ["from": $0.type, "code": $0.code] }
+    }
+
+    /// An event went out: the session's window opens again, and a popup in a fresh answer shows.
+    func queueDelivered(_ event: EventQueue.Delivered) {
+        sessionWindow?.touch()
+        guard event.path == "push" || event.path == "push/custom",
+              case .success(let json) = event.response.result,
+              let answer = json as? [String: Any], answer["status"] as? String == "success",
+              let popup = answer["popup"] as? [String: Any], !popup.isEmpty else { return }
+        guard event.sentAt.timeIntervalSince(event.createdAt) <= Self.eventPopupFreshness else {
+            logger.debug(LogCode.popupNotShown, "the popup of a late event is not shown", ["reason": "late_event"])
+            return
+        }
+        guard environment.lifecycle.isInForeground else {
+            logger.debug(LogCode.popupNotShown, "the popup of an event is not shown in the background", ["reason": "app_in_background"])
+            return
+        }
+        popupPresenter.presentPopup(Popup(json: popup))
+    }
+
+    var queueEnvironment: CoreEnvironment { environment }
+
+    var queueConnectivity: ConnectivityMonitor { connectivity }
 }

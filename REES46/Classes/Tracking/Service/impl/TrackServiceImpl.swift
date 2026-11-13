@@ -139,10 +139,28 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             return
         }
 
+        // The new core: built now, in the order of the calls, and handed to its queue.
+        if Self.queues(sdk) {
+            if let problem = Self.invalidArgument(of: event) {
+                SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "track: \(problem)", ["reason": "empty"])
+                completion(.failure(.custom(error: "track: \(problem)")))
+                return
+            }
+            let built = Self.fields(of: event, details: details, sdk: sdk, contract: true)
+            var body = built.fields
+            if let source = source {
+                for item in source.params() {
+                    body[item.key] = item.value
+                }
+            }
+            Self.storeStoriesSource(built.storiesCode, sdk: sdk)
+            _ = enqueue(sdk, path: built.path, body: body) { result in
+                self.finish(result, showsPopup: false, completion: completion)
+            }
+            return
+        }
+
         sessionQueue.addOperation {
-            var path = "push"
-            
-            var paramEvent = ""
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
@@ -150,108 +168,10 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 Constants.sid: sdk.userSeance,
                 Constants.segment: sdk.segment
             ]
-            /// Set by the story branches so the block can be stored as the attribution source below,
-            /// the way Android's `StoriesManager.trackStory` does.
-            var storiesBlockCode: String?
-            switch event {
-            case let .slideView(storyId, slideId):
-                let blockCode = details.storiesCode ?? sdk.storiesCode
-                params[Constants.storyId] = storyId
-                params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = blockCode
-                path = Constants.trackStoriesPath
-                storiesBlockCode = blockCode
-
-                paramEvent = Constants.view
-            case let .slideClick(storyId, slideId):
-                let blockCode = details.storiesCode ?? sdk.storiesCode
-                params[Constants.storyId] = storyId
-                params[Constants.slideId] = slideId
-                params[Constants.sourceCode] = blockCode
-                path = Constants.trackStoriesPath
-                storiesBlockCode = blockCode
-
-                paramEvent = Constants.click
-            case let .search(query):
-                params[Constants.searchQuery] = query
-                if let results = details.results, !results.isEmpty {
-                    params[Constants.results] = results.joined(separator: ",")
-                }
-                paramEvent = Constants.search
-            case let .categoryView(id):
-                params[Constants.categoryId] = id
-                paramEvent = Constants.category
-            case let .productView(id):
-                params[Constants.items] = [[Constants.id:id]]
-                paramEvent = Constants.view
-            case let .productAddedToCart(id, amount):
-                var item: [String: Any] = [Constants.id: id, Constants.amount: amount]
-                if let price = details.price {
-                    item[Constants.price] = price
-                }
-                params[Constants.items] = [item]
-                paramEvent = Constants.cart
-            case let .productAddedToFavorites(id):
-                params[Constants.items] = [[Constants.id:id]]
-                paramEvent = Constants.wish
-            case let .productRemovedFromCart(id):
-                params[Constants.items] = [[Constants.id:id]]
-                paramEvent = Constants.removeFromCart
-            case let .productRemovedFromFavorites(id):
-                params[Constants.items] = [[Constants.id:id]]
-                paramEvent = Constants.removeWish
-            case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
-                let mappedItems = products.map { line in
-                    PurchaseItemRequest(
-                        id: line.id,
-                        amount: line.amount,
-                        price: Double(line.price)
-                    )
-                }
-                let purchaseRequest = PurchaseTrackingRequest(
-                    orderId: orderId,
-                    orderPrice: totalValue,
-                    items: mappedItems,
-                    deliveryType: deliveryType,
-                    deliveryAddress: deliveryAddress,
-                    paymentType: paymentType,
-                    isTaxFree: taxFree ?? false,
-                    promocode: promocode,
-                    custom: nil,
-                    recommendedSource: nil,
-                    stream: nil,
-                    segment: nil
-                )
-                Self.mergePurchasePayload(request: purchaseRequest, params: &params)
-                paramEvent = Constants.purchase
-            case let .synchronizeCart(items):
-                var tempItems: [[String: Any]] = []
-                for item in items {
-                    var row: [String: Any] = [
-                        Constants.id: item.productId,
-                        Constants.amount: String(item.quantity)
-                    ]
-                    if let price = item.price {
-                        row[Constants.price] = price
-                    }
-                    tempItems.append(row)
-                }
-                params[Constants.items] = tempItems
-                params[Constants.fullCart] = Constants.fullCartValue
-                paramEvent = Constants.cart
-            case let .synchronizeFavorites(ids):
-                var tempItems: [[String: Any]] = []
-                for id in ids {
-                    tempItems.append([
-                        Constants.id: id
-                    ])
-                }
-                params[Constants.items] = tempItems
-                params[Constants.fullWish] = Constants.fullCartValue
-                paramEvent = Constants.wish
+            let built = Self.fields(of: event, details: details, sdk: sdk, contract: false)
+            for (key, value) in built.fields {
+                params[key] = value
             }
-            
-            params[Constants.event] = paramEvent
 
             // Process recommendedBy parameter
             if let source = source {
@@ -262,12 +182,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
 
             // A story slide attributes the events that follow it to its block — parity with Android's
             // `StoriesManager.trackStory`, which stores `stories` + code the same way.
-            if let storiesBlockCode = storiesBlockCode, !storiesBlockCode.isEmpty {
-                sdk.trackingSourceStore.store(
-                    type: TrackingSourceType.stories.rawValue,
-                    code: storiesBlockCode
-                )
-            }
+            Self.storeStoriesSource(built.storiesCode, sdk: sdk)
 
             // Check source tracker params
             if let stored = sdk.trackingSourceStore.currentSource() {
@@ -278,24 +193,188 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 params[Constants.source] = sourceParams
             }
 
-            sdk.postRequest(
-                path: path, params: params, completion: { result in
-                    switch result {
-                    case let .success(successResult):
-                        let resJSON = successResult
-                        let status = resJSON[Constants.status] as? String ?? ""
-                        if status == Constants.success {
-                            self.showPopup(jsonResult: resJSON)
-                            completion(.success(Void()))
-                        } else {
-                            completion(.failure(.responseError))
-                        }
-                    case let .failure(error):
-                        completion(.failure(error))
-                    }
-                }
-            )
+            sdk.postRequest(path: built.path, params: params) { result in
+                self.finish(result, showsPopup: true, completion: completion)
+            }
         }
+    }
+
+    /// Whether `sdk` runs the new core, whose queue takes the events (`sdk/core/queue.md`).
+    private static func queues(_ sdk: PersonalizationSDK) -> Bool {
+        (sdk as? SimplePersonalizationSDK)?.eventQueue != nil
+    }
+
+    /// Hands an event to the new core's queue; `false` when there is none.
+    private func enqueue(
+        _ sdk: PersonalizationSDK,
+        path: String,
+        body: [String: Any],
+        completion: @escaping (Result<[String: Any], SdkError>) -> Void
+    ) -> Bool {
+        (sdk as? SimplePersonalizationSDK)?.enqueueEvent(path: path, body: body, completion: completion) ?? false
+    }
+
+    /// The answer as the tracking methods have always taken it: `status: success` is a success —
+    /// with its popup, on the old core; the new core's queue shows popups itself (decision 2) —
+    /// anything else `.responseError`.
+    private func finish(_ result: Result<[String: Any], SdkError>, showsPopup: Bool, completion: (Result<Void, SdkError>) -> Void) {
+        switch result {
+        case let .success(answer):
+            let status = answer[Constants.status] as? String ?? ""
+            if status == Constants.success {
+                if showsPopup {
+                    showPopup(jsonResult: answer)
+                }
+                completion(.success(Void()))
+            } else {
+                completion(.failure(.responseError))
+            }
+        case let .failure(error):
+            completion(.failure(error))
+        }
+    }
+
+    /// A story slide makes its block the stored source of the events that follow.
+    private static func storeStoriesSource(_ code: String?, sdk: PersonalizationSDK) {
+        guard let code = code, !code.isEmpty else { return }
+        sdk.trackingSourceStore.store(type: TrackingSourceType.stories.rawValue, code: code)
+    }
+
+    /// What the new core refuses before an event is queued (`sdk/contract/tracking.md`), as Android
+    /// does: an empty item id or search query.
+    private static func invalidArgument(of event: Event) -> String? {
+        func blank(_ value: String) -> Bool { value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        switch event {
+        case let .productView(id), let .productAddedToFavorites(id), let .productRemovedFromCart(id),
+             let .productRemovedFromFavorites(id), let .productAddedToCart(id, _):
+            return blank(id) ? "the item id must not be empty" : nil
+        case let .search(query):
+            return blank(query) ? "the search query must not be empty" : nil
+        default:
+            return nil
+        }
+    }
+
+    /// The address and the fields of `event`, without the fields every request carries. `contract`
+    /// is the wire of the new core (`sdk/contract/tracking.md`): a story id as a number, `full_cart`
+    /// and `full_wish` as booleans, the quantities as numbers; the old core keeps the wire it has
+    /// always sent.
+    private static func fields(
+        of event: Event,
+        details: TrackEventDetails,
+        sdk: PersonalizationSDK,
+        contract: Bool
+    ) -> (path: String, fields: [String: Any], storiesCode: String?) {
+        var path = "push"
+        var params: [String: Any] = [:]
+        var paramEvent = ""
+        /// Set by the story branches so the block can be stored as the attribution source.
+        var storiesBlockCode: String?
+        func storyId(_ id: String) -> Any {
+            guard contract, let number = Int(id), number > 0 else { return id }
+            return number
+        }
+        let fullValue: Any = contract ? true : Constants.fullCartValue
+        switch event {
+        case let .slideView(storyId: id, slideId: slideId):
+            let blockCode = details.storiesCode ?? sdk.storiesCode
+            params[Constants.storyId] = storyId(id)
+            params[Constants.slideId] = slideId
+            params[Constants.sourceCode] = blockCode
+            path = Constants.trackStoriesPath
+            storiesBlockCode = blockCode
+            paramEvent = Constants.view
+        case let .slideClick(storyId: id, slideId: slideId):
+            let blockCode = details.storiesCode ?? sdk.storiesCode
+            params[Constants.storyId] = storyId(id)
+            params[Constants.slideId] = slideId
+            params[Constants.sourceCode] = blockCode
+            path = Constants.trackStoriesPath
+            storiesBlockCode = blockCode
+            paramEvent = Constants.click
+        case let .search(query):
+            params[Constants.searchQuery] = query
+            if let results = details.results, !results.isEmpty {
+                params[Constants.results] = results.joined(separator: ",")
+            }
+            paramEvent = Constants.search
+        case let .categoryView(id):
+            params[Constants.categoryId] = id
+            paramEvent = Constants.category
+        case let .productView(id):
+            params[Constants.items] = [[Constants.id: id]]
+            paramEvent = Constants.view
+        case let .productAddedToCart(id, amount):
+            var item: [String: Any] = [Constants.id: id, Constants.amount: amount]
+            if let price = details.price {
+                item[Constants.price] = price
+            }
+            if let size = details.fashionSize?.trimmingCharacters(in: .whitespacesAndNewlines), !size.isEmpty {
+                item[Constants.fashionSize] = size
+            }
+            params[Constants.items] = [item]
+            paramEvent = Constants.cart
+        case let .productAddedToFavorites(id):
+            params[Constants.items] = [[Constants.id: id]]
+            paramEvent = Constants.wish
+        case let .productRemovedFromCart(id):
+            params[Constants.items] = [[Constants.id: id]]
+            paramEvent = Constants.removeFromCart
+        case let .productRemovedFromFavorites(id):
+            params[Constants.items] = [[Constants.id: id]]
+            paramEvent = Constants.removeWish
+        case let .orderCreated(orderId, totalValue, products, deliveryAddress, deliveryType, promocode, paymentType, taxFree):
+            let mappedItems = products.map { line in
+                PurchaseItemRequest(
+                    id: line.id,
+                    amount: line.amount,
+                    price: Double(line.price)
+                )
+            }
+            let purchaseRequest = PurchaseTrackingRequest(
+                orderId: orderId,
+                orderPrice: totalValue,
+                items: mappedItems,
+                deliveryType: deliveryType,
+                deliveryAddress: deliveryAddress,
+                paymentType: paymentType,
+                isTaxFree: taxFree ?? false,
+                promocode: promocode,
+                custom: nil,
+                recommendedSource: nil,
+                stream: nil,
+                segment: nil
+            )
+            Self.mergePurchasePayload(request: purchaseRequest, params: &params)
+            paramEvent = Constants.purchase
+        case let .synchronizeCart(items):
+            var tempItems: [[String: Any]] = []
+            for item in items {
+                var row: [String: Any] = [
+                    Constants.id: item.productId,
+                    Constants.amount: contract ? item.quantity as Any : String(item.quantity)
+                ]
+                if let price = item.price {
+                    row[Constants.price] = price
+                }
+                tempItems.append(row)
+            }
+            params[Constants.items] = tempItems
+            params[Constants.fullCart] = fullValue
+            paramEvent = Constants.cart
+        case let .synchronizeFavorites(ids):
+            var tempItems: [[String: Any]] = []
+            for id in ids {
+                tempItems.append([
+                    Constants.id: id
+                ])
+            }
+            params[Constants.items] = tempItems
+            params[Constants.fullWish] = fullValue
+            paramEvent = Constants.wish
+        }
+        params[Constants.event] = paramEvent
+        return (path, params, storiesBlockCode)
     }
 
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void) {
@@ -313,6 +392,28 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
         if let customError = Self.validatePurchaseCustomFields(request.custom) {
             completion(.failure(.custom(error: customError)))
+            return
+        }
+
+        // The new core: built now and handed to its queue; `sid` and the stored source go when it is sent.
+        if Self.queues(sdk) {
+            var body: [String: Any] = [:]
+            Self.mergePurchasePayload(request: request, params: &body)
+            body[Constants.event] = Constants.purchase
+            if let source = source {
+                for item in source.params() {
+                    body[item.key] = item.value
+                }
+            }
+            _ = enqueue(sdk, path: "push", body: body) { result in
+                self.finish(result, showsPopup: false) { outcome in
+                    if case .success = outcome {
+                        // Popups v3: a purchase changes the audience — the list is fetched again.
+                        (sdk as? SimplePersonalizationSDK)?.popupsV3.purchased()
+                    }
+                    completion(outcome)
+                }
+            }
             return
         }
 
@@ -494,6 +595,38 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
         // Popups v3: a custom event may be a `track_event` trigger.
         (sdk as? SimplePersonalizationSDK)?.popupsV3.trackEvent(event)
+
+        // The new core: checked and built now, handed to its queue. `time` is the event's own or the
+        // time it was made; no source: `push/custom` does not read it.
+        if Self.queues(sdk) {
+            let logger = SdkLogger.forShop(sdk.shopId)
+            var body: [String: Any] = [Constants.event: event]
+            if let time = time { body[Constants.time] = time }
+            if let category = category { body[Constants.category] = category }
+            if let label = label { body[Constants.label] = label }
+            if let value = value { body[Constants.value] = value }
+            if let customFields = customFields, !customFields.isEmpty {
+                let collisions = Set(customFields.keys).intersection(Self.reservedCustomEventKeys)
+                guard collisions.isEmpty else {
+                    logger.warning(LogCode.invalidArgument, "trackEvent: customFields use reserved keys", ["reason": "reserved_keys"])
+                    completion(.failure(.custom(error: "trackEvent: customFields contains reserved keys: \(collisions.sorted().joined(separator: ", "))")))
+                    return
+                }
+                guard SafeJSON.isValid(customFields) else {
+                    logger.warning(LogCode.invalidArgument, "trackEvent: customFields are not valid JSON", ["reason": "invalid_json"])
+                    completion(.failure(.custom(error: "trackEvent: customFields are not valid JSON")))
+                    return
+                }
+                for (key, value) in customFields {
+                    body[key] = value
+                }
+                body[Constants.payload] = customFields
+            }
+            _ = enqueue(sdk, path: Constants.trackCustomEventPath, body: body) { result in
+                self.finish(result, showsPopup: false, completion: completion)
+            }
+            return
+        }
         
         sessionQueue.addOperation {
             
@@ -573,6 +706,14 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "trackPopupShown: SDK is not initialized")))
+            return
+        }
+
+        // The new core: queued; `did` and `sid` go when it is sent, after ready.
+        if Self.queues(sdk) {
+            _ = enqueue(sdk, path: Constants.popupShownPath, body: ["popup": popupId]) { result in
+                completion(result.map { _ in Void() })
+            }
             return
         }
         
