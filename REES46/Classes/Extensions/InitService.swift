@@ -46,7 +46,10 @@ public struct InitService {
             throw KeychainError.unexpectedStatus(status)
         }
         
-        return res as! Data
+        guard let data = res as? Data else {
+            throw KeychainError.unexpectedStatus(errSecDecode)
+        }
+        return data
     }
     
     static func updateKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {

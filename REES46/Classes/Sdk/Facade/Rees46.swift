@@ -319,7 +319,7 @@ internal enum PushDeliveryTracker {
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        request.httpBody = SafeJSON.data(body)
 
         URLSession.shared.dataTask(with: request).resume()
     }

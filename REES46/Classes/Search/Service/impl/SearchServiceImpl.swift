@@ -84,7 +84,7 @@ class SearchServiceImpl: SearchServiceProtocol {
             "no_clarification": disableClarification == true ? "1" : nil,
             "filters": {
                 guard let filters = filters,
-                      let jsonData = try? JSONSerialization.data(withJSONObject: filters, options: []),
+                      let jsonData = SafeJSON.data(filters),
                       let jsonString = String(data: jsonData, encoding: .utf8) else { return nil }
                 return jsonString
             }()

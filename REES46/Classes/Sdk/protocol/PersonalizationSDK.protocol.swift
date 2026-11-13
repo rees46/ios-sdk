@@ -479,7 +479,7 @@ extension PersonalizationSDK {
         if let brands = brands { params["brands"] = brands }
         if let locations = locations { params["locations"] = locations }
         if let filters = filters,
-           let data = try? JSONSerialization.data(withJSONObject: filters, options: []),
+           let data = SafeJSON.data(filters),
            let text = String(data: data, encoding: .utf8) {
             params["filters"] = text
         }

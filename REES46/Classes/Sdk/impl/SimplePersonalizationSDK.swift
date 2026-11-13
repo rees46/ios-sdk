@@ -714,9 +714,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 params["page"] = String(page)
             }
             if let filters = filters {
-                if let theJSONData = try? JSONSerialization.data(
-                    withJSONObject: filters,
-                    options: []) {
+                if let theJSONData = SafeJSON.data(filters) {
                     let theJSONText = String(data: theJSONData,
                                              encoding: .utf8)
                     params["filters"] = theJSONText
@@ -1553,12 +1551,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             var request = self.request(for: url, timeout: timeout)
             request.httpMethod = "POST"
             
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
-            } catch let error {
-                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
+            // App data (custom fields, profile properties) may hold values that are not JSON; writing
+            // them would raise an exception Swift cannot catch.
+            guard let body = SafeJSON.data(requestParams, options: .prettyPrinted) else {
+                completion(.failure(.custom(error: "\(path): the request parameters are not valid JSON")))
                 return
             }
+            request.httpBody = body
             
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue("application/json", forHTTPHeaderField: "Accept")

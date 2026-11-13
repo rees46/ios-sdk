@@ -31,6 +31,9 @@ public class NetworkStatus {
     
     private var observers: [String: NetworkStatusObserver]
     
+    /// How long the first reader waits for the monitor's first path.
+    static let firstPathTimeout: DispatchTimeInterval = .seconds(1)
+
     private init() {
         connectionStatus = .Offline
         connectionType = .none
@@ -43,7 +46,9 @@ public class NetworkStatus {
         
         monitor.start(queue: DispatchQueue.global(qos: .default))
         
-        semaphore?.wait()
+        // Waits for the first path so the first reader gets a real status, but never longer than
+        // `firstPathTimeout`: a path update that never signals would block this thread for good.
+        _ = semaphore?.wait(timeout: .now() + Self.firstPathTimeout)
         semaphore = nil
     }
     
@@ -68,30 +73,10 @@ public class NetworkStatus {
         
         if path.usesInterfaceType(.cellular) {
             #if os(iOS)
+                // A cellular path without a reported radio is still online: it used to return here
+                // without updating the status or signalling the first reader, who then waited forever.
                 let networkInfo = CTTelephonyNetworkInfo()
-                guard let currentRadio = networkInfo.serviceCurrentRadioAccessTechnology?.values.first else {
-                    newConnectionType = .cellular(radioType: .notdeterminedcellular)
-                    return
-                }
-                switch currentRadio {
-                case CTRadioAccessTechnologyGPRS, CTRadioAccessTechnologyEdge, CTRadioAccessTechnologyCDMA1x:
-                    newConnectionType = .cellular(radioType: ._2G)
-                case CTRadioAccessTechnologyWCDMA, CTRadioAccessTechnologyHSDPA, CTRadioAccessTechnologyHSUPA, CTRadioAccessTechnologyCDMAEVDORev0, CTRadioAccessTechnologyCDMAEVDORevA, CTRadioAccessTechnologyCDMAEVDORevB, CTRadioAccessTechnologyeHRPD:
-                    newConnectionType = .cellular(radioType: ._3G)
-                case CTRadioAccessTechnologyLTE:
-                    newConnectionType = .cellular(radioType: ._4G)
-                default:
-                    if #available(iOS 14.1, *) {
-                        switch currentRadio {
-                        case CTRadioAccessTechnologyNRNSA, CTRadioAccessTechnologyNR:
-                            newConnectionType = .cellular(radioType: ._5G)
-                        default:
-                            newConnectionType = .cellular(radioType: .notdeterminedcellular)
-                        }
-                    } else {
-                        newConnectionType = .cellular(radioType: .notdeterminedcellular)
-                    }
-                }
+                newConnectionType = Self.cellularType(currentRadio: networkInfo.serviceCurrentRadioAccessTechnology?.values.first)
             #else
                 newConnectionType = .cellular(radioType: .notdeterminedcellular)
             #endif
@@ -111,6 +96,35 @@ public class NetworkStatus {
         semaphore?.signal()
     }
     
+    #if os(iOS)
+    /// The connection type of a cellular path from the radio the system reports; `nil` when it
+    /// reports none.
+    static func cellularType(currentRadio: String?) -> NetworkConnectionType {
+        guard let currentRadio = currentRadio else {
+            return .cellular(radioType: .notdeterminedcellular)
+        }
+        switch currentRadio {
+        case CTRadioAccessTechnologyGPRS, CTRadioAccessTechnologyEdge, CTRadioAccessTechnologyCDMA1x:
+            return .cellular(radioType: ._2G)
+        case CTRadioAccessTechnologyWCDMA, CTRadioAccessTechnologyHSDPA, CTRadioAccessTechnologyHSUPA, CTRadioAccessTechnologyCDMAEVDORev0, CTRadioAccessTechnologyCDMAEVDORevA, CTRadioAccessTechnologyCDMAEVDORevB, CTRadioAccessTechnologyeHRPD:
+            return .cellular(radioType: ._3G)
+        case CTRadioAccessTechnologyLTE:
+            return .cellular(radioType: ._4G)
+        default:
+            if #available(iOS 14.1, *) {
+                switch currentRadio {
+                case CTRadioAccessTechnologyNRNSA, CTRadioAccessTechnologyNR:
+                    return .cellular(radioType: ._5G)
+                default:
+                    return .cellular(radioType: .notdeterminedcellular)
+                }
+            } else {
+                return .cellular(radioType: .notdeterminedcellular)
+            }
+        }
+    }
+    #endif
+
     internal func addObserver(observer: NetworkStatusObserver) {
         observer.didChangeConnectionStatus(connectionStatus)
         observer.didChangeConnectionType(connectionType)

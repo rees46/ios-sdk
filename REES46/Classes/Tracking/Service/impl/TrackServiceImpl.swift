@@ -527,6 +527,12 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     completion(.failure(.custom(error: "trackEvent: customFields contains reserved keys: \(sorted)")))
                     return
                 }
+                // A value that is not JSON (a Date, a custom object, NaN) would crash the app when the
+                // body is written: fail the call instead.
+                guard SafeJSON.isValid(customFields) else {
+                    completion(.failure(.custom(error: "trackEvent: customFields are not valid JSON")))
+                    return
+                }
                 
                 for (key, value) in customFields {
                     params[key] = value
