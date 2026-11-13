@@ -116,4 +116,15 @@ final class InitRequestTests: XCTestCase {
         XCTAssertEqual(sdk.deviceId, "new-did")
         XCTAssertEqual(identity.deviceId, "new-did")
     }
+
+    func test_init_comes_in_the_current_session() {
+        // Without a session the server starts its "new session" chain on every /init.
+        let (sdk, error) = initialize(identity: InMemoryUserIdentityRepository(), keychain: InMemoryKeychainInitStore())
+
+        XCTAssertNil(error)
+        let query = StubURLProtocol.requests(to: "/init", shop: shopId).first?.query ?? [:]
+        XCTAssertFalse(sdk.userSeance.isEmpty)
+        XCTAssertEqual(query["sid"], sdk.userSeance)
+        XCTAssertEqual(query["seance"], sdk.userSeance)
+    }
 }

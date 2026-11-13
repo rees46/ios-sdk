@@ -1210,6 +1210,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         serialSemaphore.wait()
     }
 
+    /// The session `/init` comes in. Without one the server starts its "new session" chain on every
+    /// `/init`, that is on every launch.
+    private static func addSession(_ sessionId: String, to params: inout [String: String]) {
+        guard !sessionId.isEmpty else { return }
+        params["sid"] = sessionId
+        params["seance"] = sessionId
+    }
+
     private func prepareRequestParameters() -> [String: String] {
         let secondsFromGMT = TimeZone.current.secondsFromGMT()
         let hours = secondsFromGMT / 3600
@@ -1226,6 +1234,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
             params[SdkConstants.did] = deviceId
         }
+        Self.addSession(userSeance, to: &params)
 
         if let advId = userIdentity.advertisingId, advId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advId
@@ -1295,6 +1304,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if dId != "" {
             params[SdkConstants.did] = dId
         }
+        Self.addSession(userSeance, to: &params)
 
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
