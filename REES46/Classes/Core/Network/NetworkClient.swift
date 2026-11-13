@@ -33,7 +33,8 @@ actor NetworkClient {
         let status: Int?
         /// The body as it came; empty without one.
         let body: Data
-        /// `Retry-After` of the answer in seconds, when it has one.
+        /// `Retry-After` of a `429` or `503` in seconds, when it has a valid one (decision 0002): not
+        /// held to the limits of a pause yet — `RetryPolicy` does that.
         let retryAfter: TimeInterval?
         /// The decoded JSON — an empty object for an empty body — or the error.
         let result: Result<Any, Rees46.SdkError>
@@ -220,7 +221,7 @@ actor NetworkClient {
         return Response(
             status: http.statusCode,
             body: data,
-            retryAfter: Self.retryAfter(http.value(forHTTPHeaderField: "Retry-After")),
+            retryAfter: Self.retryAfter(http.value(forHTTPHeaderField: "Retry-After"), status: http.statusCode),
             result: result
         )
     }
@@ -370,18 +371,30 @@ actor NetworkClient {
         return reachedServer ? .timeout : .network
     }
 
-    /// `Retry-After` in seconds: a number of seconds or an HTTP date.
+    /// The statuses whose `Retry-After` the SDK honours (decision 0002).
+    static let retryAfterStatuses: Set<Int> = [429, 503]
+
+    /// `Retry-After` of an answer with `status`: only a `429` or `503` has one that counts.
+    static func retryAfter(_ value: String?, status: Int, now: Date = Date()) -> TimeInterval? {
+        guard retryAfterStatuses.contains(status) else { return nil }
+        return retryAfter(value, now: now)
+    }
+
+    /// `Retry-After` in seconds: a number of seconds or an HTTP date. A value that is not a finite,
+    /// non-negative number of seconds — `inf`, `nan`, `-5`, `1e400` — or not a date is none; a date in
+    /// the past is `0`.
     static func retryAfter(_ value: String?, now: Date = Date()) -> TimeInterval? {
         guard let value = value?.trimmingCharacters(in: .whitespaces), !value.isEmpty else { return nil }
         if let seconds = TimeInterval(value) {
-            return max(0, seconds)
+            return seconds.isFinite && seconds >= 0 ? seconds : nil
         }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = TimeZone(identifier: "GMT")
         formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
         guard let date = formatter.date(from: value) else { return nil }
-        return max(0, date.timeIntervalSince(now))
+        let seconds = date.timeIntervalSince(now)
+        return seconds.isFinite ? max(0, seconds) : nil
     }
 }
 

@@ -23,6 +23,9 @@ struct CommonFields {
     /// - A request that names a customer with the shop's secret (`shop_secret`) keeps its own
     ///   identity: it gets no `did`, `sid` or `segment` of this device, which the API would prefer to
     ///   the customer the call asked about.
+    /// - Any other request goes with the device id the shop has stored when the request is sent, not
+    ///   the one its caller put in earlier: after `deleteUserCredentials` the deleted one must not go
+    ///   out. The caller's stands only while the shop has none, as in the old core.
     func values(forPath path: String, own: [String: Any]) -> [String: String?] {
         func present(_ key: String) -> String? {
             guard let value = own[key] else { return nil }
@@ -39,7 +42,7 @@ struct CommonFields {
         guard path != "init", own["shop_secret"] == nil else { return values }
 
         let session: String? = present("sid") ?? present("seance") ?? nonEmpty(sessionId)
-        let device: String? = present("did") ?? nonEmpty(deviceId)
+        let device: String? = nonEmpty(deviceId) ?? present("did")
         let group: String? = present("segment") ?? nonEmpty(segment)
         values["did"] = .some(device)
         values["sid"] = .some(session)

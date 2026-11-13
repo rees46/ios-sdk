@@ -132,11 +132,6 @@ final class InitCompletion {
         self.onMain = onMain
     }
 
-    var isFinished: Bool {
-        lock.lock(); defer { lock.unlock() }
-        return outcome != nil
-    }
-
     /// Calls `completion` once init settles, or now — off the caller's thread — if it has.
     func add(_ completion: ((SdkError?) -> Void)?) {
         guard let completion = completion else { return }

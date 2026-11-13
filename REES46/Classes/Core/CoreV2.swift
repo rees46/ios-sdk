@@ -34,7 +34,8 @@ final class CoreV2: Core {
 
     /// Sends `request` once the instance is usable. A call made after `release()` is `notInitialized`;
     /// a shop that refused fails it with `shopBlocked`; one that is not usable within the request's
-    /// timeout fails it with `timeout`. An `/init` of the funnel (`sendIDFARequest`) does not wait.
+    /// timeout fails it with `timeout`. An `/init` of the funnel (`sendIDFARequest`) does not wait, and
+    /// does not go for a refused shop.
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         lock.lock()
         let isReleased = released
@@ -43,6 +44,12 @@ final class CoreV2: Core {
         // A call after `release()` is `notInitialized`; the ones in flight end as `cancelled`.
         guard !isReleased else {
             callbacks.async { completion(Self.legacyResponse(.failure(.notInitialized), for: request)) }
+            return
+        }
+        // A refused shop sends nothing, its own `/init` of the funnel (`sendIDFARequest`) included: only
+        // the machine's `/init` of the next launch asks again.
+        if request.isInit, machine.isRefused {
+            callbacks.async { completion(Self.legacyResponse(.failure(.shopBlocked), for: request)) }
             return
         }
         let client = self.client

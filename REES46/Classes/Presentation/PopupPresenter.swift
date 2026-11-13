@@ -81,21 +81,22 @@ public class PopupPresenter {
     
     // MARK: - Private Methods
     
+    /// Shows `popup` on the main thread: the view controller is looked up there, and the app's delegate
+    /// asked there, without making the caller's thread wait for the main one.
     private func showPopupNow(_ popup: Popup) {
-        // Check if popup was shown in the last 60 seconds
-        if let shownDate = popupShownFlags[popup.id] {
-            let timeSinceShown = Date().timeIntervalSince(shownDate)
-            if timeSinceShown < 60 {
-                return // Popup was already shown, skip
-            }
-        }
-        
-        guard let presentingVC = getPresentingViewController(for: popup) else {
-            return // No VC available or delegate prevented presentation
-        }
-        
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+            // A released instance shows nothing: its answers may still come in.
+            if let instance = self.sdk as? SimplePersonalizationSDK, instance.isReleased {
+                return
+            }
+            // Check if popup was shown in the last 60 seconds
+            if let shownDate = self.popupShownFlags[popup.id], Date().timeIntervalSince(shownDate) < 60 {
+                return // Popup was already shown, skip
+            }
+            guard let presentingVC = self.getPresentingViewController(for: popup) else {
+                return // No VC available or delegate prevented presentation
+            }
             let widget = NotificationWidget(
                 parentViewController: presentingVC,
                 popup: popup,
@@ -148,12 +149,8 @@ public class PopupPresenter {
             return parentVC
         }
         
-        // 4. Auto-discover from window hierarchy (must be on main thread)
-        var topVC: UIViewController?
-        DispatchQueue.main.sync {
-            topVC = getTopViewController()
-        }
-        return topVC
+        // 4. Auto-discover from window hierarchy: `showPopupNow` asks on the main thread.
+        return getTopViewController()
     }
     
     private func getTopViewController() -> UIViewController? {

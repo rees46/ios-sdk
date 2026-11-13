@@ -161,10 +161,28 @@ public enum Rees46 {
        `Rees46Error.unknownShopId` when the shop is unknown (nothing registered, or no such shop).
      */
     public static func instance(for shopId: String? = nil) throws -> PersonalizationSDK {
+        // A live instance is found without the creation lock: another thread building an instance —
+        // disk and keychain work — does not hold up a lookup on the main thread.
+        if let live = liveInstance(shopId) {
+            return live
+        }
         let resolved: Result<PersonalizationSDK, Error> = withCreationLock {
             (Result { try resolveLocked(shopId) }, {})
         }
         return try resolved.get()
+    }
+
+    /// The registered instance `shopId` resolves to, without the creation lock; `nil` when the shop is
+    /// pending, unknown or ambiguous — the creation lock decides those.
+    private static func liveInstance(_ shopId: String?) -> PersonalizationSDK? {
+        guard case .existing(let resolved) = InstanceResolver.resolve(
+            requestedShopId: shopId,
+            liveShopIds: SdkRegistry.shared.shopIds(),
+            pendingShopIds: pendingShopIdsSnapshot()
+        ) else {
+            return nil
+        }
+        return SdkRegistry.shared.byShopId(resolved)
     }
 
     /// `instance(for:)` under the creation lock: a shop being made is either pending or live.
@@ -219,7 +237,12 @@ public enum Rees46 {
         for shopId: String? = nil,
         _ onReady: @escaping (PersonalizationSDK) -> Void
     ) -> Cancellable {
-        // Resolved under the creation lock; `onReady` runs once it is released.
+        // A live instance comes at once, without the creation lock.
+        if let live = liveInstance(shopId) {
+            onReady(live)
+            return .noop
+        }
+        // Otherwise resolved under the creation lock; `onReady` runs once it is released.
         enum Found {
             case instance(PersonalizationSDK)
             case nothing
