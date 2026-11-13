@@ -140,19 +140,25 @@ extension PersonalizationSDK {
 
     /**
      An event through the instance's queue (`sdk/core/queue.md`), as the tracking methods send theirs:
-     `push`, `push/custom`, `track/stories`, `track/slider`, `popup/showed` and the push events
-     `track/delivered`, `track/opened`, `track/clicked`, `track/closed`. `body` holds the event's own
-     fields; the queue adds the device id, the session, the source of a `/push` and the time of a
-     `push/custom` when the event goes. The session's window moves as for any event.
+     `push`, `push/custom`, `track/stories`, `track/slider` and `popup/showed`. The events of pushes —
+     `track/delivered`, `track/opened`, `track/clicked`, `track/closed` — are not taken here: a bridge
+     hands its pushes to `Rees46.handlePush`, which finds their shop, sends each event once per message
+     and calls the callbacks. `body` holds the event's own fields; the queue adds the device id, the
+     session, the source of a `/push` and the time of a `push/custom` when the event goes. The session's
+     window moves as for any event.
 
      `completion` hears once, on the main thread: success once the event is accepted — on disk, the way
-     the contract's tracking methods complete —, or `invalidArgument` for another path or a body that is
-     not JSON, `notInitialized`, `shopBlocked`. With `Rees46Config.coreV2 = false`, which keeps no
-     queue, the event goes at once and `completion` hears the server's answer.
+     the contract's tracking methods complete —, or `invalidArgument` for an event of a push, another
+     path or a body that is not JSON, `notInitialized`, `shopBlocked`. With `Rees46Config.coreV2 =
+     false`, which keeps no queue, the event goes at once and `completion` hears the server's answer.
      */
     public func queueEvent(path: String, body: [String: Any], completion: @escaping (Result<Void, Rees46.SdkError>) -> Void) {
         let finish: (Rees46.SdkError?) -> Void = { error in
             DispatchQueue.main.async { completion(error.map { .failure($0) } ?? .success(())) }
+        }
+        guard !EventQueue.sessionlessPaths.contains(path) else {
+            finish(.invalidArgument("\(path) is an event of a push: hand the push to Rees46.handlePush"))
+            return
         }
         guard EventQueue.paths.contains(path) else {
             finish(.invalidArgument("\(path) is not an event of the queue"))

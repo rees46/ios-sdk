@@ -304,16 +304,16 @@ final class CoreBridgeTests: XCTestCase {
             wait(for: [done], timeout: 5)
             return result.current
         }
-        let accepted = queue("track/opened", ["code": "m-1", "type": "bulk"], on: sdk)
+        let accepted = queue("push/custom", ["event": "promo"], on: sdk)
         guard case (.success, true)? = accepted else { return XCTFail("\(String(describing: accepted))") }
         let folder = try XCTUnwrap(sdk.storage.queueDirectory)
         XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: folder.path).count, 1, "accepted: on disk, not sent")
-        XCTAssertTrue(StubURLProtocol.requests(to: "/track/opened", shop: sdk.shopId).isEmpty)
+        XCTAssertTrue(StubURLProtocol.requests(to: "/push/custom", shop: sdk.shopId).isEmpty)
 
         guard case (.failure(.invalidArgument), _)? = queue("products/get", [:], on: sdk) else { return XCTFail("not an event") }
         guard case (.failure(.invalidArgument), _)? = queue("push", ["value": Double.nan], on: sdk) else { return XCTFail("not JSON") }
         network.isOnline = true
-        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/track/opened", shop: sdk.shopId).count == 1 })
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/push/custom", shop: sdk.shopId).count == 1 })
         sdk.release()
         guard case (.failure(.notInitialized), _)? = queue("push", ["event": "view"], on: sdk) else { return XCTFail("released") }
 
@@ -324,6 +324,28 @@ final class CoreBridgeTests: XCTestCase {
         XCTAssertEqual(StubURLProtocol.requests(to: "/push", shop: legacy.shopId).first?.body["did"] as? String, "d")
         StubURLProtocol.handler = { $0.path == "/push" ? StubReply(500) : StubReply() }
         guard case (.failure(.http(code: 500, serverCode: nil)), _)? = queue("push", ["event": "view"], on: legacy) else { return XCTFail("500") }
+    }
+
+    func test_queue_event_refuses_the_events_of_pushes_on_both_cores_which_go_through_handle_push() throws {
+        for coreV2 in [true, false] {
+            let sdk = make(coreV2: coreV2)
+            for event in Rees46.PushEvent.allCases {
+                let done = expectation(description: event.path)
+                let result = Locked<Result<Void, Rees46.SdkError>?>(nil)
+                sdk.queueEvent(path: event.path, body: ["code": "m-1", "type": "bulk"]) { result.current = $0; done.fulfill() }
+                wait(for: [done], timeout: 5)
+                guard case .failure(.invalidArgument(let what))? = result.current, what.contains("handlePush") else {
+                    return XCTFail("\(event.path), coreV2 = \(coreV2): \(String(describing: result.current))")
+                }
+            }
+            sdk.eventQueue?.settle()
+            let folder = try XCTUnwrap(sdk.storage.queueDirectory)
+            XCTAssertTrue(((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).isEmpty, "nothing queued")
+            for event in Rees46.PushEvent.allCases {
+                XCTAssertTrue(StubURLProtocol.requests(to: "/" + event.path, shop: sdk.shopId).isEmpty, "nothing sent")
+            }
+            sdk.release()
+        }
     }
 
     // MARK: - The session
