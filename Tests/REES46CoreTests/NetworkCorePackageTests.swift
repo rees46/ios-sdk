@@ -57,6 +57,12 @@ final class NetworkCorePackageTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let past = "Sun, 06 Nov 1994 08:49:37 GMT"
         XCTAssertEqual(NetworkClient.retryAfter(past, now: now), 0)
+        // Whatever comes in the header, nothing traps: non-ASCII digits, a date in another script.
+        for value in ["５", "١٢٠", "🙂", "Вс, 06 ноя 1994 08:49:37 GMT", "1٢", "\u{0}", String(repeating: "9", count: 400)] {
+            let seconds = NetworkClient.retryAfter(value, status: 503)
+            XCTAssertTrue(seconds == nil || seconds?.isFinite == true, value)
+            _ = RetryPolicy.pause(retryAfter: seconds, afterFailures: 1, random: 0.5)
+        }
     }
 
     func test_the_common_fields_fill_what_is_missing_and_leave_out_what_is_empty() {

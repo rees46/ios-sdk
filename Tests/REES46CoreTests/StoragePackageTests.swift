@@ -400,6 +400,12 @@ final class StoragePackageTests: XCTestCase {
         XCTAssertTrue(StorageMigrations.isDone(.savedInitFile, in: shopA.partition, scope: shopA.keyScope))
         XCTAssertFalse(StorageMigrations.isDone(.savedInitFile, in: shopB.partition, scope: shopB.keyScope), "B's migration still runs")
 
+        // The files — the queue among them — stay in the process's own Application Support, never in
+        // the group's container: an app and its extension never drain one queue.
+        let support = try XCTUnwrap(FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first)
+        XCTAssertTrue(try XCTUnwrap(shopA.queueDirectory).path.hasPrefix(support.path))
+        XCTAssertNotEqual(shopA.queueDirectory, shopB.queueDirectory)
+
         // A partition of the shop's own keeps the plain keys.
         let own = ShopStorage(shopId: "shop-c", storageKey: "app-key", logger: logger)
         defer { UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: "shop-c", storageKey: "app-key")) }

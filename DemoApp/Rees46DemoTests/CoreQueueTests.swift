@@ -317,11 +317,18 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertEqual(requests("/init", shop).count, 2, "one check")
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["second"] })
 
-        // Asked less than ten minutes ago: the event goes again at once, and is dropped.
-        answer("/push", StubReply(404), StubReply(404))
+        // Asked less than ten minutes ago: no new /init answer can come, so the event is not taken for
+        // checked — it goes again after a pause, and once a check can be asked, its answer counts.
+        answer("/push", StubReply(404))
         sdk.tracking.productView(itemId: "third")
-        XCTAssertTrue(eventually { self.dropped(shop).count == 2 })
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 && self.scheduler.pending == 1 })
+        XCTAssertEqual(dropped(shop).count, 1, "not dropped without a new answer")
         XCTAssertEqual(requests("/init", shop).count, 2, "not asked again within ten minutes")
+        scheduler.advance(by: 10 * 60)
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == 3 }, "the check, once it may be asked")
+        XCTAssertTrue(eventually { self.dropped(shop).count == 2 })
+        XCTAssertEqual(dropped(shop).last?.context["reason"], "service_refused")
+        XCTAssertEqual(itemIds(requests("/push", shop)), ["second", "third", "third", "third"])
     }
 
     func test_a_refusal_of_the_shop_clears_the_queue_and_takes_no_new_events() {
@@ -513,7 +520,8 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && self.scheduler.pending == 1 })
 
         let flushed = expectation(description: "flushed")
-        sdk.flush {
+        sdk.flush { error in
+            XCTAssertNil(error)
             XCTAssertTrue(Thread.isMainThread)
             flushed.fulfill()
         }
@@ -525,7 +533,7 @@ final class CoreQueueTests: XCTestCase {
         network.isOnline = false
         sdk.tracking.productView(itemId: "c")
         let offlineFlush = expectation(description: "offline")
-        sdk.flush { offlineFlush.fulfill() }
+        sdk.flush { _ in offlineFlush.fulfill() }
         wait(for: [offlineFlush], timeout: 5)
         XCTAssertEqual(files(sdk).count, 1)
     }
@@ -544,7 +552,7 @@ final class CoreQueueTests: XCTestCase {
         let early = expectation(description: "flushed before ready")
         early.isInverted = true
         let isReady = Locked(false)
-        sdk.flush {
+        sdk.flush { _ in
             if !isReady.current { early.fulfill() }
             flushed.fulfill()
         }
@@ -565,7 +573,7 @@ final class CoreQueueTests: XCTestCase {
         let waiting = make(other, identity: InMemoryUserIdentityRepository(), settled: false)
         waiting.tracking.productView(itemId: "b")
         let timedOut = expectation(description: "timed out")
-        waiting.flush { timedOut.fulfill() }
+        waiting.flush { _ in timedOut.fulfill() }
         XCTAssertTrue(eventually { self.scheduler.pendingDelays.contains(NetworkClient.defaultTimeout) })
         scheduler.advance(by: NetworkClient.defaultTimeout)
         wait(for: [timedOut], timeout: 5)
@@ -580,7 +588,7 @@ final class CoreQueueTests: XCTestCase {
         sdk.tracking.productView(itemId: "a")
         XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && self.scheduler.pendingDelays == [30] })
         let flushed = expectation(description: "flushed")
-        sdk.flush { flushed.fulfill() }
+        sdk.flush { _ in flushed.fulfill() }
         wait(for: [flushed], timeout: 5)
         lifecycle.send(.willEnterForeground)
         expectNoRequest(to: "/push", shop: shop, within: 0.3)
@@ -611,18 +619,32 @@ final class CoreQueueTests: XCTestCase {
         try? FileManager.default.removeItem(at: folder)
     }
 
-    func test_flush_async_and_on_the_old_core_and_a_conformer_completes_at_once() async {
+    func test_flush_async_and_on_the_old_core_and_a_conformer_completes_at_once_and_after_release_is_not_initialized() async throws {
         let shop = newShop()
         let sdk = make(shop)
         sdk.tracking.productView(itemId: "a")
-        await sdk.flush()
+        try await sdk.flush()
         XCTAssertEqual(requests("/push", shop).count, 1)
+        sdk.release()
+        do {
+            try await sdk.flush()
+            XCTFail("flush after release")
+        } catch let error as Rees46.SdkError {
+            XCTAssertEqual(error, .notInitialized)
+        }
 
         CoreFlag.reset(to: false)
         let legacy = StubSDK.make(shopId: newShop())
         XCTAssertNil(legacy.eventQueue)
-        await legacy.flush()
-        await FakeSDK(shopId: "fake").flush()
+        try await legacy.flush()
+        legacy.release()
+        do {
+            try await legacy.flush()
+            XCTFail("flush after release, old core")
+        } catch let error as Rees46.SdkError {
+            XCTAssertEqual(error, .notInitialized)
+        }
+        try await FakeSDK(shopId: "fake").flush()
     }
 
     // MARK: - Clearing and release()
@@ -670,8 +692,159 @@ final class CoreQueueTests: XCTestCase {
         wait(for: [call], timeout: 2)
         XCTAssertEqual(files(sdk).count, 1, "nothing is queued after release")
         let flushed = expectation(description: "flush")
-        sdk.flush { flushed.fulfill() }
+        sdk.flush { error in
+            XCTAssertEqual(error, .notInitialized)
+            flushed.fulfill()
+        }
         wait(for: [flushed], timeout: 2)
+    }
+
+    // MARK: - The customer an event goes as
+
+    func test_an_event_on_its_way_when_the_customer_is_deleted_goes_as_that_customer_and_never_again() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/push", (request.body["items"] as? [[String: Any]])?.first?["id"] as? String == "old" {
+                _ = held.wait(timeout: .now() + 10)
+            }
+            return handler(request)
+        }
+        answer("/init", StubReply(json: #"{"did":"next-did","seance":"next-sid"}"#))
+        let old = expectation(description: "the deleted customer's event")
+        let result = Locked<Result<Void, SdkError>?>(nil)
+        sdk.tracking.productView(itemId: "old") { result.current = $0; old.fulfill() }
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+
+        sdk.deleteUserCredentials()
+        held.signal()
+        wait(for: [old], timeout: 5)
+
+        guard case .failure? = result.current else { return XCTFail("cleared with its customer") }
+        XCTAssertEqual(requests("/push", shop).first?.body["did"] as? String, "d", "taken when it was sent")
+        sdk.tracking.productView(itemId: "new")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 })
+        expectNoRequest(to: "/push", shop: shop, within: 0.3)
+        XCTAssertEqual(itemIds(requests("/push", shop)), ["old", "new"], "the deleted customer's event is not sent again")
+        XCTAssertEqual(requests("/push", shop).last?.body["did"] as? String, "next-did")
+        XCTAssertEqual(requests("/push", shop).last?.body["sid"] as? String, "next-sid")
+    }
+
+    func test_a_disk_refused_event_waiting_for_the_instance_does_not_go_for_the_next_customer() throws {
+        let shop = newShop()
+        let first = DispatchSemaphore(value: 0)
+        defer { first.signal() }
+        let inits = Locked(0)
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/init" {
+                var call = 0
+                inits.mutate { $0 += 1; call = $0 }
+                if call == 1 { _ = first.wait(timeout: .now() + 10) }
+            }
+            return handler(request)
+        }
+        let sdk = make(shop, identity: InMemoryUserIdentityRepository(), settled: false)
+        let folder = try XCTUnwrap(sdk.storage.queueDirectory)
+        try FileManager.default.createDirectory(at: folder.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("not a folder".utf8).write(to: folder)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let done = expectation(description: "done")
+        let result = Locked<Result<Void, SdkError>?>(nil)
+        sdk.tracking.productView(itemId: "old") { result.current = $0; done.fulfill() }
+
+        // It waits for the instance; meanwhile the customer is deleted and a new did comes.
+        sdk.deleteUserCredentials()
+        wait(for: [done], timeout: 5)
+        guard case .failure? = result.current else { return XCTFail("\(String(describing: result.current))") }
+        expectNoRequest(to: "/push", shop: shop, within: 0.3)
+        XCTAssertTrue(requests("/push", shop).isEmpty)
+    }
+
+    // MARK: - Disk that fails
+
+    func test_a_write_or_a_removal_that_fails_never_sends_an_event_again_at_once() throws {
+        let shop = newShop()
+        let sdk = make(shop)
+        network.isOnline = false
+        answer("/push", StubReply(402), StubReply(json: #"{"status":"success"}"#))
+        sdk.tracking.productView(itemId: "a")
+        sdk.eventQueue?.settle()
+        let folder = try XCTUnwrap(sdk.storage.queueDirectory)
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: folder.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.path) }
+
+        // 402: the shop is checked; the event cannot be marked as checked on disk, so it is not resent
+        // at once but after a pause.
+        network.isOnline = true
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == 2 && self.scheduler.pending == 1 })
+        expectNoRequest(to: "/push", shop: shop, within: 0.3)
+        XCTAssertEqual(requests("/push", shop).count, 1)
+        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "storage_failed" })
+
+        // Delivered, its file cannot be removed: it leaves the queue anyway.
+        scheduler.advance(by: scheduler.pendingDelays.first ?? 0)
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 })
+        expectNoRequest(to: "/push", shop: shop, within: 0.3)
+        XCTAssertEqual(sdk.eventQueue?.waiting.count, 0)
+        XCTAssertEqual(files(sdk).count, 1, "the file stays where the disk refused")
+    }
+
+    func test_the_identity_source_and_time_go_on_a_copy_and_a_retry_takes_them_anew() throws {
+        let shop = newShop()
+        let sdk = make(shop)
+        sdk.tracking.setSource(TrackingSource(type: .chain, code: "c-1"))
+        answer("/push", StubReply(503), StubReply(json: #"{"status":"success"}"#))
+        sdk.tracking.productView(itemId: "a")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && self.scheduler.pending == 1 })
+        XCTAssertEqual(requests("/push", shop).first?.body["source"] as? [String: String], ["from": "chain", "code": "c-1"])
+
+        // On disk: the event, not what it went with.
+        let name = try XCTUnwrap(files(sdk).first)
+        let folder = try XCTUnwrap(sdk.storage.queueDirectory)
+        let record = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: folder.appendingPathComponent(name))) as? [String: Any])
+        let stored = try XCTUnwrap(record["body"] as? [String: Any])
+        for key in ["did", "sid", "seance", "segment", "stream", "shop_id", "source", "time"] {
+            XCTAssertNil(stored[key], key)
+        }
+
+        // The source expired before the retry: the retry goes without it.
+        sdk.sourceStore.clear()
+        scheduler.advance(by: scheduler.pendingDelays.first ?? 0)
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 })
+        XCTAssertNil(requests("/push", shop).last?.body["source"])
+    }
+
+    func test_a_file_that_does_not_parse_is_dropped_and_one_that_cannot_be_read_now_waits() throws {
+        let shop = newShop()
+        let first = make(shop)
+        network.isOnline = false
+        first.tracking.productView(itemId: "ok")
+        first.tracking.productView(itemId: "locked")
+        first.eventQueue?.settle()
+        first.release()
+        let folder = try XCTUnwrap(first.storage.queueDirectory)
+        let names = files(first)
+        XCTAssertEqual(names.count, 2)
+        let locked = folder.appendingPathComponent(names[1])
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: locked.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: locked.path) }
+        let broken = folder.appendingPathComponent(String(format: "%020llu.json", UInt64(99)))
+        try Data("{not json".utf8).write(to: broken)
+
+        network.isOnline = true
+        let second = make(shop, settled: false)
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["ok"] })
+        XCTAssertTrue(eventually { self.dropped(shop).contains { $0.context["reason"] == "unreadable" } })
+        XCTAssertFalse(FileManager.default.fileExists(atPath: broken.path), "dropped")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: locked.path), "kept to be read later")
+
+        try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: locked.path)
+        let flushed = expectation(description: "flushed")
+        second.flush { _ in flushed.fulfill() }
+        wait(for: [flushed], timeout: 5)
+        XCTAssertEqual(itemIds(requests("/push", shop)), ["ok", "locked"])
     }
 
     // MARK: - Popups, callbacks, arguments
@@ -751,13 +924,21 @@ final class CoreQueueTests: XCTestCase {
             ("empty item", { sdk.tracking.productView(itemId: " ", completion: $0) }),
             ("empty cart item", { sdk.tracking.addToCart(item: TrackingItem(id: ""), completion: $0) }),
             ("empty query", { sdk.tracking.search(query: "", completion: $0) }),
+            ("empty event", { sdk.tracking.custom(event: " ", completion: $0) }),
+            ("empty story", { sdk.tracking.storyView(storyId: "", slideId: "1", completion: $0) }),
+            ("empty slide", { sdk.tracking.storyClick(storyId: "1", slideId: "", completion: $0) }),
             ("reserved key", { sdk.tracking.custom(event: "e", customFields: ["sid": "x"], completion: $0) }),
             ("not JSON", { sdk.tracking.custom(event: "e", customFields: ["when": Date()], completion: $0) }),
+            ("NaN", { sdk.tracking.custom(event: "e", customFields: ["value": Double.nan], completion: $0) }),
+            ("infinity", { sdk.tracking.custom(event: "e", customFields: ["value": Double.infinity], completion: $0) }),
+            ("NaN in a purchase", { sdk.tracking.purchase(PurchaseTrackingRequest(orderId: "A", orderPrice: 1, items: [PurchaseItemRequest(id: "1", amount: 1, price: 1)], custom: ["x": Double.nan]), completion: $0) }),
             ("no items", { sdk.tracking.purchase(PurchaseTrackingRequest(orderId: "A", orderPrice: 0, items: []), completion: $0) }),
         ]
         for (name, call) in calls {
             let failed = expectation(description: name)
             call { result in
+                // Told later, on another queue: never inside the call, which the test makes on main.
+                XCTAssertFalse(Thread.isMainThread, name)
                 if case .failure(.custom) = result { failed.fulfill() }
             }
             wait(for: [failed], timeout: 1)

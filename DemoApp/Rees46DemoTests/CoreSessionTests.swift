@@ -251,6 +251,75 @@ final class CoreSessionTests: XCTestCase {
         guard case .failure(.networkOfflineError)? = getProduct(sdk) else { return XCTFail("offline: networkOfflineError") }
     }
 
+    func test_an_init_answer_without_a_seance_leaves_a_live_session_without_a_sid_and_no_init_storm() {
+        let shop = newShop()
+        StubURLProtocol.handler = { request in
+            request.path == "/init" ? StubReply(json: #"{"did":"d"}"#) : StubReply()
+        }
+        let sdk = make(shop, identity: identity(sid: "OldSid0001", ago: 60))
+        XCTAssertTrue(eventually { self.inits(shop).count == 1 && sdk.sessionId == nil })
+        XCTAssertEqual(sdk.userSeance, "", "no sid: the client makes none")
+        for _ in 0..<3 {
+            guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
+        }
+        clock.advance(by: 2 * 60 * 60 - 60)
+        guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
+        XCTAssertEqual(inits(shop).count, 1, "the window lives without a sid: no /init again")
+        XCTAssertNil(products(shop).last?.query["sid"])
+
+        clock.advance(by: 120)
+        guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
+        XCTAssertEqual(inits(shop).count, 2, "once it ended, one /init")
+    }
+
+    func test_session_id_is_nil_once_the_window_ended() {
+        let shop = newShop()
+        answerInit()
+        let sdk = make(shop)
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+        clock.advance(by: 2 * 60 * 60 + 1)
+        XCTAssertNil(sdk.sessionId)
+        XCTAssertEqual(sdk.userSeance, "s-1", "the last sid, for whatever still reads it")
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { sdk.sessionId == "s-2" })
+    }
+
+    func test_a_failed_renewal_or_check_keeps_ready_replays_no_saved_answer_and_does_not_storm() {
+        let shop = newShop()
+        let replies = Locked<[StubReply]>([StubReply(json: #"{"did":"d","seance":"s-1","popups_v3":true}"#), StubReply(503)])
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            var reply = StubReply()
+            replies.mutate { reply = $0.count > 1 ? $0.removeFirst() : $0[0] }
+            return reply
+        }
+        let logs = Locked<[Rees46.SdkLogMessage]>([])
+        Rees46.setLogHandler { message in
+            if message.shopId == shop { logs.mutate { $0.append(message) } }
+        }
+        defer { Rees46.setLogHandler(nil) }
+        let sdk = make(shop)
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" && sdk.state == .ready })
+        var heard: [Rees46.SdkState] = []
+        sdk.onStateChange { heard.append($0) }
+
+        clock.advance(by: 2 * 60 * 60 + 1)
+        guard case .success? = getProduct(sdk) else { return XCTFail("the call went out after the failed renewal") }
+        XCTAssertEqual(inits(shop).count, 2)
+        XCTAssertTrue(eventually { self.scheduler.pending == 1 }, "the renewal is repeated after a pause")
+        XCTAssertEqual(sdk.state, .ready, "not retrying")
+        // Calls do not cut the pause short.
+        expectNoRequest(to: "/init", shop: shop) {
+            for _ in 0..<3 { _ = self.getProduct(sdk) }
+        }
+        // Back in the foreground the renewal goes at once; failing again, it keeps ready too.
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { self.inits(shop).count == 3 && self.scheduler.pending == 1 })
+        XCTAssertEqual(sdk.state, .ready)
+        XCTAssertEqual(heard, [.ready], "no state change")
+        XCTAssertFalse(logs.current.contains { $0.code == "init_saved_answer" }, "the saved answer is not replayed")
+    }
+
     // MARK: - The foreground
 
     func test_back_in_the_foreground_two_hours_after_the_last_event_renews_the_session_however_long_in_the_background() {
