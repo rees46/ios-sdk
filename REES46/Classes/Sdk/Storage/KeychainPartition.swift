@@ -35,4 +35,24 @@ enum KeychainPartition {
     /// binary and `Bundle(for:)` answers with the app's bundle id instead, so an app that switches package
     /// manager would lose its keychain backup — and with it the did — on the next reinstall.
     static let cocoaPodsFrameworkService = "org.cocoapods.REES46"
+
+    /// The service of the SDK's keychain items when the app has no bundle id; what the SDK used then.
+    static let fallbackService = "com.rees46.sdk"
+
+    /**
+     The service of the SDK's keychain items, pinned to what it has always been: the bundle id of
+     the binary the SDK is linked into, as `Bundle(for:)` gave it — `org.cocoapods.REES46` for the
+     framework CocoaPods builds with `use_frameworks!`, the app's bundle id when the SDK is linked into
+     the app (SwiftPM, a static CocoaPods build). Found by the framework's identifier, not by the
+     bundle of an SDK class: moved to a folder or module of its own, the core still finds the items
+     every install already has.
+     */
+    static let service: String = service(
+        frameworkIsLoaded: Bundle(identifier: cocoaPodsFrameworkService) != nil,
+        appBundleId: Bundle.main.bundleIdentifier
+    )
+
+    static func service(frameworkIsLoaded: Bool, appBundleId: String?) -> String {
+        frameworkIsLoaded ? cocoaPodsFrameworkService : (appBundleId ?? fallbackService)
+    }
 }

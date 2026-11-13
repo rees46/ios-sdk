@@ -19,6 +19,8 @@ final class LocalStateRepositoryImpl: LocalStateRepository {
     private static let cachedSlidePrefix = "cached.slide."
     private static let cartPrefix = "cart.product."
     private static let favoritesPrefix = "favorites.product."
+    /// Every prefix of the state's keys.
+    static let keyPrefixes = [viewedSlidePrefix, cachedSlidePrefix, cartPrefix, favoritesPrefix]
 
     private let store: UserDefaults
 

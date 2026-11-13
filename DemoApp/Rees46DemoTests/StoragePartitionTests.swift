@@ -50,14 +50,30 @@ final class StoragePartitionTests: XCTestCase {
         XCTAssertEqual(store.string(forKey: "k"), "value")
     }
 
-    func test_store_uses_the_custom_suite_when_a_storage_key_is_given() {
-        let custom = "custom-\(UUID().uuidString)"
-        createdSuites.append(custom)
+    func test_a_storage_key_is_the_prefix_of_the_shops_partition() {
+        let custom = "custom-\(UUID().uuidString)-"
+        let name = StoragePartition.suiteName(for: "shop/a", storageKey: custom)
+        createdSuites.append(name)
+        XCTAssertEqual(name, custom + "shop_a")
+        XCTAssertEqual(StoragePartition.suiteName(for: "shop-a", storageKey: ""), "personalization_sdk_shop-a", "an empty key is none")
 
-        let store = StoragePartition.store(for: "ignored-shop", storageKey: custom)
+        let store = StoragePartition.store(for: "shop/a", storageKey: custom)
         store.set("v", forKey: "k")
 
-        // The value must be visible through a separately-opened handle on the same custom suite.
-        XCTAssertEqual(UserDefaults(suiteName: custom)?.string(forKey: "k"), "v")
+        // The value must be visible through a separately-opened handle on the same partition, and the
+        // suite named exactly by the key stays untouched.
+        XCTAssertEqual(UserDefaults(suiteName: name)?.string(forKey: "k"), "v")
+        XCTAssertNil(UserDefaults.standard.persistentDomain(forName: custom))
+    }
+
+    func test_the_sdks_keys_are_told_from_an_apps_own() {
+        for key in ["device_id", "seance_id", "seance_last_act", "IDFA", "segment_ab_testing",
+                    "recomendedCode", "recomendedType", "timeStartSave",
+                    "viewed.slide.1", "cached.slide.2", "cart.product.3", "favorites.product.4"] {
+            XCTAssertTrue(StoragePartition.isShopKey(key), key)
+        }
+        for key in ["app.token", "personalization_sdk.migrated.storage_key_suite", "AppleLanguages"] {
+            XCTAssertFalse(StoragePartition.isShopKey(key), key)
+        }
     }
 }

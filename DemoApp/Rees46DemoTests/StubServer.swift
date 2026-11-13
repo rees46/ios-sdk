@@ -274,7 +274,7 @@ enum StubSDK {
         )
     }
 
-    /// The saved init answer of `shopId` in the SDK's documents folder.
+    /// Where earlier SDK versions saved the init answer of `shopId`: the app's Documents.
     static func savedInitFile(shopId: String) -> URL {
         SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(shopId + ".json")
     }
@@ -282,6 +282,11 @@ enum StubSDK {
     static func removeSavedInit(shopId: String) {
         try? FileManager.default.removeItem(at: savedInitFile(shopId: shopId))
         UserDefaults.standard.removePersistentDomain(forName: "test-\(shopId)")
+        // The shop's partition and its folder in Application Support.
+        if let folder = ShopStorage(shopId: shopId, logger: SdkLogger(shopId: shopId, level: .none)).directory {
+            try? FileManager.default.removeItem(at: folder)
+        }
+        UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: shopId))
     }
 }
 

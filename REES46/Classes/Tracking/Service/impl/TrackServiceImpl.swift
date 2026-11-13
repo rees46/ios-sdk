@@ -638,11 +638,14 @@ protocol TrackingSourceStore {
 
     /// The stored attribution, or `nil` when nothing was set or the window has expired.
     func currentSource() -> (type: String, code: String)?
+
+    /// Forgets the stored attribution: it was the deleted customer's (`deleteUserCredentials`).
+    func clear()
 }
 
 final class TrackingSourceStoreImpl: TrackingSourceStore {
 
-    private enum Keys {
+    enum Keys {
         static let code = "recomendedCode"
         static let type = "recomendedType"
         static let savedAt = "timeStartSave"
@@ -663,6 +666,15 @@ final class TrackingSourceStoreImpl: TrackingSourceStore {
         store.setValue(Date().timeIntervalSince1970, forKey: Keys.savedAt)
         store.setValue(code, forKey: Keys.code)
         store.setValue(type, forKey: Keys.type)
+    }
+
+    func clear() {
+        // The shared domain of a pre-partition install too: read as a fallback, it would come back.
+        for defaults in [store, legacy] {
+            defaults.removeObject(forKey: Keys.code)
+            defaults.removeObject(forKey: Keys.type)
+            defaults.removeObject(forKey: Keys.savedAt)
+        }
     }
 
     func currentSource() -> (type: String, code: String)? {

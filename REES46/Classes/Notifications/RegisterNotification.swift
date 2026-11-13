@@ -21,7 +21,19 @@ class NotificationRegistrar {
     /// makes each initialized instance register the token independently — the iOS analog of Android's
     /// per-shop `PushTokenManager` throttle, and what implicitly fans the token out across shops.
     private var lastUploadDateKey: String {
-        "\(Constants.mainPushTokenLastUploadDateKey).\(sdk.shopId)"
+        Self.lastUploadDateKey(shopId: sdk.shopId)
+    }
+
+    static func lastUploadDateKey(shopId: String) -> String {
+        "\(Constants.mainPushTokenLastUploadDateKey).\(shopId)"
+    }
+
+    /// Forgets when the token last went to `shopId`: the next registration sends it at once — to the
+    /// new customer after `deleteUserCredentials`.
+    static func forgetUpload(shopId: String) {
+        uploadLock.lock()
+        UserDefaults.standard.removeObject(forKey: lastUploadDateKey(shopId: shopId))
+        uploadLock.unlock()
     }
 
     /// Guards the check and the claim of a shop's weekly upload.

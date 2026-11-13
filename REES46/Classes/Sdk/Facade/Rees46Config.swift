@@ -15,8 +15,7 @@ import Foundation
  the parameters of the (deprecated) `createPersonalizationSDK`, minus the per-call user identifiers
  (`userEmail`/`userPhone`/`userLoyaltyId`) and the `parentViewController` — those are set on the
  instance after init. Storage is partitioned per `shopId` automatically (see `StoragePartition`); pass
- `storageKey` only to pin a custom suite (parity with Android's `preferencesKey`), which also opts that
- shop out of the legacy identity migration.
+ `storageKey` only when the app needs its own prefix of the partitions.
 
  Mirror of the Android `Rees46Config`.
  */
@@ -41,7 +40,11 @@ public struct Rees46Config {
     public let enableAutoPopupPresentation: Bool
     /// Forces a fresh `init` request instead of reusing stored session data.
     public let needReInitialization: Bool
-    /// Custom `UserDefaults` suite name; `nil` uses the per-shop partition (the default).
+    /// The app's prefix of the shop's storage, in place of `personalization_sdk_`: the shop's
+    /// `UserDefaults` suite is `<storageKey><shopId>` and its files have a folder of that name. `nil`
+    /// (the default) is the SDK's prefix. Earlier versions named the suite `storageKey` itself, so two
+    /// shops on one key shared it; the SDK copies the shop's values from that suite once and leaves it
+    /// as it is.
     public let storageKey: String?
     /// Runs the shop on the new core of the SDK (`false` by default): its network client first,
     /// with init, session, queue and pushes to follow. The first `Rees46.initialize` or

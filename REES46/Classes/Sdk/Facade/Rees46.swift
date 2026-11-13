@@ -324,9 +324,7 @@ internal enum PushDeliveryTracker {
         type: String,
         code: String
     ) {
-        let did = StoragePartition
-            .store(for: shopId, storageKey: config.storageKey)
-            .string(forKey: StoragePartition.deviceIdKey) ?? ""
+        let did = StoragePartition.deviceId(for: shopId, storageKey: config.storageKey)
 
         let path: String
         switch event {

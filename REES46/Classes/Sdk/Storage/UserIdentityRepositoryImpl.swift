@@ -13,28 +13,36 @@ import Foundation
  partition ([StoragePartition]) instead of the shared `.standard` domain, so two shops in one app do
  not clone one identity.
 
- On the default partition it runs the one-time legacy adoption ([StorageMigration]) at construction,
- so an existing (pre-partition) install keeps its did with no silent re-registration. A host that
- supplies its own `storageKey` gets that suite verbatim and no migration — parity with Android's
- `preferencesKey`.
+ Built for a shop, it runs the identity migrations once ([StorageMigrations]): the pre-partition
+ identity, or the suite an app's `storageKey` named before it became a prefix; then the advertising id
+ into the device's store. The A/B segment and the advertising id belong to the device ([DeviceStore]);
+ the shop's keys go on being written, because `LegacyCore` and older SDK versions read them.
  */
 final class UserIdentityRepositoryImpl: UserIdentityRepository {
 
     private let store: UserDefaults
+    private let device: DeviceStore?
 
-    /// Builds the repository over [shopId]'s partition, migrating the legacy identity in on the
-    /// default partition. Pass [storageKey] to use a custom suite verbatim (no migration).
-    init(shopId: String, storageKey: String? = nil) {
+    /// Builds the repository over [shopId]'s partition — [storageKey] is the app's prefix of it — and
+    /// migrates what older versions left into it.
+    init(shopId: String, storageKey: String? = nil, device: DeviceStore? = .shared, legacy: UserDefaults = .standard) {
         let store = StoragePartition.store(for: shopId, storageKey: storageKey)
         self.store = store
-        if storageKey == nil {
-            StorageMigration.migrateLegacyIfNeeded(into: store)
-        }
+        self.device = device
+        StorageMigrations.migrateIdentity(
+            into: store,
+            partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey),
+            storageKey: storageKey,
+            legacy: legacy,
+            device: device
+        )
     }
 
-    /// Direct-store initializer for tests/DI — no migration, no shop-name derivation.
-    init(store: UserDefaults) {
+    /// Direct-store initializer for tests/DI — no migration, no shop-name derivation; without [device]
+    /// the A/B segment is the shop's own.
+    init(store: UserDefaults, device: DeviceStore? = nil) {
         self.store = store
+        self.device = device
     }
 
     var deviceId: String? {
@@ -63,14 +71,31 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
         }
     }
 
+    /// The shop's own: an id the app gave one shop does not go out with another's `/init`.
     var advertisingId: String? {
         get { store.string(forKey: StoragePartition.idfaKey) }
-        set { store.set(newValue, forKey: StoragePartition.idfaKey) }
+        set {
+            store.set(newValue, forKey: StoragePartition.idfaKey)
+            if let newValue = newValue, !newValue.isEmpty {
+                device?.advertisingId = newValue
+            }
+        }
     }
 
     var abSegment: String? {
         get { store.string(forKey: StoragePartition.abSegmentKey) }
         set { store.set(newValue, forKey: StoragePartition.abSegmentKey) }
+    }
+
+    /// The device's group: the one the device has, or this shop's when it is the first to have one,
+    /// or a new one (decision 4). The shop's key gets it too: `LegacyCore` sends what it reads there.
+    func resolveAbSegment() -> String {
+        guard let device = device else { return resolveOwnAbSegment() }
+        let group = device.resolveAbGroup(candidate: abSegment)
+        if abSegment != group {
+            abSegment = group
+        }
+        return group
     }
 
     func removeDeviceId() {

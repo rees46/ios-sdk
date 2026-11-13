@@ -26,7 +26,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userSeance: String
     var stream: String
     var baseURL: String
-    let baseInitJsonFileName = ".json"
     let autoSendPushToken: Bool
     let needReInitialization: Bool
     let sendAdvertisingId: Bool
@@ -39,6 +38,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// This shop's keychain-backed init-secret backup (R2), keyed per shop so the did that survives a
     /// reinstall belongs to this shop only. See [KeychainInitStore].
     let keychainStore: KeychainInitStore
+
+    /// This shop's partition and files: the saved `/init` answer, `refused`, the queue's folder, the
+    /// migration flags. See [ShopStorage].
+    let storage: ShopStorage
 
     /// Owns the session id with a rolling 2h TTL, persisted per shop and reused across cold starts —
     /// aligned with Android/RN. See [SessionManager].
@@ -187,6 +190,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         coreV2: Bool = false,
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
+        shopStorage: ShopStorage? = nil,
         sessionManager: SessionManager? = nil,
         localState: LocalStateRepository? = nil,
         connectivity: ConnectivityMonitor? = nil,
@@ -200,31 +204,36 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         CoreFlag.reportMismatch(requested: coreV2, active: usesCoreV2, logger: logger)
         self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
-        // R2: identity/session live in this shop's partition. The default repository migrates the
-        // pre-partition identity in once (existing installs keep their did); an injected repository
+        // The shop's partition — `storageKey` is the app's prefix of it — and its files.
+        let storage = shopStorage ?? ShopStorage(shopId: shopId, storageKey: storageKey, logger: logger)
+        self.storage = storage
+
+        // R2: identity/session live in this shop's partition. The default repository runs the identity
+        // migrations once, before /init (existing installs keep their did); an injected repository
         // (tests) is used verbatim.
         let identity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
         self.userIdentity = identity
 
         // R2: stories UI state (viewed/downloaded/cart/favourites) shares this shop's partition suite.
-        self.localStateStore = localState
-            ?? LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId, storageKey: storageKey))
+        self.localStateStore = localState ?? LocalStateRepositoryImpl(store: storage.partition)
 
         // R2: the attribution `tracking.setSource(_:)` stores is shop-scoped too — a source set for one
         // shop must not colour another shop's events. Reads still fall back to the legacy shared keys
         // so an install upgrading mid-window keeps its source.
-        self.sourceStore = TrackingSourceStoreImpl(
-            store: StoragePartition.store(for: shopId, storageKey: storageKey)
-        )
+        self.sourceStore = TrackingSourceStoreImpl(store: storage.partition)
+
+        // The saved init answer leaves Documents for the SDK's folder, once.
+        StorageMigrations.once(.savedInitFile, in: storage.partition) { storage.moveLegacySavedInitAnswer() }
 
         // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
         // reinstall keeps this shop's did — also the one a CocoaPods build kept under the framework's
-        // bundle id, for an app now linking the SDK through SwiftPM. Injected (tests) is used verbatim.
-        let keychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk"
+        // bundle id, for an app now linking the SDK through SwiftPM. The service is pinned
+        // (`KeychainPartition.service`). Injected (tests) is used verbatim.
         self.keychainStore = keychainStore ?? KeychainInitStoreImpl(
             shopId: shopId,
-            service: keychainService,
-            previousServices: [KeychainPartition.cocoaPodsFrameworkService]
+            service: KeychainPartition.service,
+            previousServices: [KeychainPartition.cocoaPodsFrameworkService],
+            partition: storage.partition
         )
 
         // Session (aligned with Android/RN): a rolling 2h client session over the per-shop partition.
@@ -346,16 +355,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     /// The device's A/B segment: assigned once, then kept across launches, as Android and React
-    /// Native do. Picked anew on every launch, it moved the device between A and B, and a block under
-    /// an A/B test showed products on one launch and nothing on the next.
+    /// Native do, and the same for every shop of the app (decision 4). Picked anew on every launch, it
+    /// moved the device between A and B, and a block under an A/B test showed products on one launch
+    /// and nothing on the next.
     static func abSegment(of identity: UserIdentityRepository) -> String {
-        let segments = ["A", "B"]
-        if let stored = identity.abSegment, segments.contains(stored) {
-            return stored
-        }
-        let assigned = segments.randomElement() ?? "A"
-        identity.abSegment = assigned
-        return assigned
+        identity.resolveAbSegment()
     }
     
     func getShopId() -> String {
@@ -1314,9 +1318,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// The init answer saved on this device, for a launch without network. Its popup was shown when
     /// it came and is not shown again; the device id is the one this shop keeps now.
     private func savedInitResponse() -> InitResponse? {
-        let savedFile = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory()
-            .appendingPathComponent(shopId + baseInitJsonFileName)
-        guard let data = (try? Data(contentsOf: savedFile)) ?? keychainStore.readInitData(),
+        guard let data = storage.readSavedInitAnswer() ?? keychainStore.readInitData(),
               let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
             return nil
         }
@@ -1338,19 +1340,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             return
         }
         identity.deviceId = deviceId
-    }
-    
-    func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
-        let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
-        do {
-            let fileExists = (try? jsonFileURL.checkResourceIsReachable()) ?? false
-            if !fileExists {
-                try data.write(to: jsonFileURL)
-            }
-        } catch {
-            // One more try; a second failure goes to the caller, which logs it as `storage_failed`.
-            try data.write(to: jsonFileURL)
-        }
     }
     
     public func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
@@ -1388,15 +1377,25 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    /// Forgets the customer (`sdk/core/storage.md`): the did, the session and its last activity — in
+    /// storage and in this instance — the saved init answer and its keychain backup, `refused`, the
+    /// source the app set, the date the push token last went to the shop, so it goes again for the
+    /// new customer, and on the new core the queue of their events. The device's push token, A/B group
+    /// and advertising id stay, and so does the stories state.
     public func deleteUserCredentials() {
-        let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
-        let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-        try? FileManager.default.removeItem(at: initFileNamePath)
-
         userIdentity.clearIdentity()
-        // Also drop the keychain backup — otherwise a re-init would restore the very did we just
-        // deleted from its reinstall-surviving copy.
+        deviceId = ""
+        userSeance = ""
+        storage.removeSavedInitAnswer()
+        // The keychain backup too: otherwise a re-init would restore the very did just deleted from
+        // its reinstall-surviving copy.
         keychainStore.clear()
+        storage.refused = false
+        sourceStore.clear()
+        NotificationRegistrar.forgetUpload(shopId: shopId)
+        if usesCoreV2 {
+            storage.removeQueueDirectory()
+        }
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
 
         // Multi-instance groundwork (R1): this instance is torn down — drop it from push routing so a
@@ -1550,14 +1549,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// A forced re-initialization forgets the saved init answer: it belongs to the device id being
     /// dropped.
     private func removeSavedInitAnswer() {
-        let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(shopId + baseInitJsonFileName)
-        do {
-            if FileManager.default.fileExists(atPath: initFileNamePath.path) {
-                try FileManager.default.removeItem(at: initFileNamePath)
-            }
-        } catch {
-            logger.warning(LogCode.storageFailed, "the saved init answer could not be removed", ["op": "remove_saved_init", "error": SdkLogger.errorKind(error)])
-        }
+        storage.removeSavedInitAnswer()
     }
 
     /// Whether `data` may stand in for `/init` later: a JSON object with a device id. An empty or
@@ -1571,15 +1563,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return !deviceId.isEmpty
     }
 
-    /// Saves an init answer to the documents file and its keychain backup. A file that cannot be
-    /// written is `storage_failed`: the answer itself is good, and `/init` goes on with it.
+    /// Saves an init answer and its keychain backup, as the old core always has: the file keeps the
+    /// first answer, the keychain the last. A file that cannot be written is `storage_failed`: the
+    /// answer itself is good, and `/init` goes on with it.
     private func saveInitAnswer(_ data: Data) {
         guard Self.isSavableInitAnswer(data) else { return }
-        do {
-            try saveDataToJsonFile(data, jsonInitFileName: shopId + baseInitJsonFileName)
-        } catch {
-            logger.warning(LogCode.storageFailed, "the init answer could not be saved", ["op": "write_saved_init", "error": SdkLogger.errorKind(error)])
-        }
+        storage.writeSavedInitAnswerIfAbsent(data)
         keychainStore.writeInitData(data)
     }
 

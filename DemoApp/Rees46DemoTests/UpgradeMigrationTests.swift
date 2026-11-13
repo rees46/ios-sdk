@@ -33,6 +33,8 @@ final class UpgradeMigrationTests: XCTestCase {
         StoragePartition.legacyConsumedFlag
     ]
     private var standardSnapshot: [String: Any] = [:]
+    /// The device's store is shared by the process: the host app's is put back after each test.
+    private var deviceSnapshot: [String: Any]?
     private var partitionShops: [String] = []
     private var keychainServices: [String] = []
     /// Real SDKs built by the assembled-upgrade tests, retained against the registry's weak reference.
@@ -56,6 +58,7 @@ final class UpgradeMigrationTests: XCTestCase {
             }
             UserDefaults.standard.removeObject(forKey: key)
         }
+        deviceSnapshot = UserDefaults.standard.persistentDomain(forName: DeviceStore.suiteName)
     }
 
     override func tearDown() {
@@ -81,6 +84,11 @@ final class UpgradeMigrationTests: XCTestCase {
             }
         }
         standardSnapshot = [:]
+        if let deviceSnapshot = deviceSnapshot {
+            UserDefaults.standard.setPersistentDomain(deviceSnapshot, forName: DeviceStore.suiteName)
+        } else {
+            UserDefaults.standard.removePersistentDomain(forName: DeviceStore.suiteName)
+        }
         super.tearDown()
     }
 

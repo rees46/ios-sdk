@@ -7,7 +7,8 @@ enum KeychainError: LocalizedError {
 }
 
 public let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
-public let instanceKeychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
+/// The service of the SDK's keychain items: `KeychainPartition.service`, the value it has always had.
+public let instanceKeychainService = KeychainPartition.service
 
 public struct InitService {
 

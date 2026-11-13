@@ -33,16 +33,37 @@ protocol UserIdentityRepository: AnyObject {
     /// has been recorded yet.
     var seanceLastActTime: Date? { get set }
 
-    /// The advertising id (`IDFA`).
+    /// The advertising id (`IDFA`) the app gave this shop. Setting it also gives it to the device.
     var advertisingId: String? { get set }
 
-    /// The device's A/B segment, nil until one is assigned. Clearing the identity keeps it: the
-    /// segment belongs to the device, not to the user.
+    /// The shop's copy of the device's A/B segment, nil until one is assigned. Clearing the identity
+    /// keeps it: the segment belongs to the device, not to the user.
     var abSegment: String? { get set }
+
+    /// The device's A/B segment, assigned once and written to the shop's copy too.
+    func resolveAbSegment() -> String
 
     /// Removes only the device id — used by the forced re-initialization path.
     func removeDeviceId()
 
     /// Clears the user's identity (device id + session) — backs `deleteUserCredentials`.
     func clearIdentity()
+}
+
+extension UserIdentityRepository {
+
+    /// A repository without the device's store: the segment is the shop's own.
+    func resolveAbSegment() -> String {
+        resolveOwnAbSegment()
+    }
+
+    /// The shop's own segment, assigned once and kept across launches.
+    func resolveOwnAbSegment() -> String {
+        if let stored = abSegment, DeviceStore.abGroups.contains(stored) {
+            return stored
+        }
+        let assigned = DeviceStore.abGroups.randomElement() ?? "A"
+        abSegment = assigned
+        return assigned
+    }
 }

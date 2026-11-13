@@ -228,4 +228,8 @@ final class RecordingSourceStore: TrackingSourceStore {
     func currentSource() -> (type: String, code: String)? {
         sources.last
     }
+
+    func clear() {
+        sources.removeAll()
+    }
 }

@@ -17,9 +17,13 @@ import Foundation
  `PreferencesPartition` (same `personalization_sdk_` prefix and filename-safe sanitising), so the two
  platforms share one mental model and one migration story.
 
- Only per-device state that is genuinely shop-scoped lives here: `device_id` (the did), the persisted
- `seance_id`, the advertising id and the A/B segment. The APNs/FCM **push token stays global** (`.standard`): one token
- per app install, fanned out to every shop's backend — see the push-token path.
+ `Rees46Config.storageKey` is the app's own prefix in place of `personalization_sdk_` (decision 5):
+ the partition is `<storageKey><shopId>`. Before, the suite named exactly `storageKey` was the shop's
+ whole storage; `StorageMigrations` copies it into the partition once and leaves it as it is.
+
+ What lives here is the shop's: the did, the session, the stories state, the source, and the shop's
+ copies of the advertising id and the A/B group, which belong to the device (`DeviceStore`) and are
+ still written here for `LegacyCore` and older SDK versions. The push token stays in `.standard`.
  */
 enum StoragePartition {
 
@@ -39,6 +43,25 @@ enum StoragePartition {
     /// consumed, so only the first shop to initialize inherits the pre-partition identity.
     static let legacyConsumedFlag = "personalization_sdk_legacy_consumed"
 
+    /// The SDK's own keys in a partition, besides the ones that start with `shopKeyPrefixes`: what the
+    /// migration of an old `storageKey` suite copies, and nothing else an app may keep in that suite.
+    static let shopKeys: Set<String> = [
+        deviceIdKey, seanceKey, seanceLastActKey, idfaKey, abSegmentKey,
+        TrackingSourceStoreImpl.Keys.code, TrackingSourceStoreImpl.Keys.type, TrackingSourceStoreImpl.Keys.savedAt
+    ]
+    /// The stories state (`LocalStateRepositoryImpl`): one key per story, slide or product.
+    static let shopKeyPrefixes = LocalStateRepositoryImpl.keyPrefixes
+
+    static func isShopKey(_ key: String) -> Bool {
+        shopKeys.contains(key) || shopKeyPrefixes.contains { key.hasPrefix($0) }
+    }
+
+    /// The app's prefix, when it set one: an empty `storageKey` is none.
+    static func prefix(_ storageKey: String?) -> String? {
+        guard let storageKey = storageKey, !storageKey.isEmpty else { return nil }
+        return storageKey
+    }
+
     private static let unsafeFilenameChars = "[^A-Za-z0-9_-]"
 
     /// Filename-safe form of [shopId] for use inside a suite name.
@@ -50,19 +73,33 @@ enum StoragePartition {
         )
     }
 
-    /// Stable suite name for [shopId]'s partition.
-    static func suiteName(for shopId: String) -> String {
-        prefix + sanitize(shopId)
+    /// Stable suite name for [shopId]'s partition: the app's [storageKey] or `personalization_sdk_`,
+    /// then the shop.
+    static func suiteName(for shopId: String, storageKey: String? = nil) -> String {
+        (prefix(storageKey) ?? Self.prefix) + sanitize(shopId)
     }
 
     /**
-     The `UserDefaults` a shop should read/write. Defaults to the per-shop suite; a host that passes
-     its own [storageKey] gets that suite verbatim (parity with Android's `preferencesKey`, and the
-     opt-out from migration). Falls back to `.standard` only if the suite can't be created — which
-     happens solely for reserved names (the app's bundle id), never for our prefixed names.
+     The `UserDefaults` a shop should read/write: its partition. Falls back to `.standard` only if the
+     suite can't be created — which happens solely for reserved names (the app's bundle id), never for
+     a prefix and a shop id.
      */
     static func store(for shopId: String, storageKey: String? = nil) -> UserDefaults {
-        let name = storageKey ?? suiteName(for: shopId)
-        return UserDefaults(suiteName: name) ?? .standard
+        UserDefaults(suiteName: suiteName(for: shopId, storageKey: storageKey)) ?? .standard
+    }
+
+    /// The device id a shop keeps, for code that has no instance of it (a pending shop's push): its
+    /// partition, or the suite its `storageKey` named before it became a prefix, when the shop's
+    /// instance has not been made since.
+    static func deviceId(for shopId: String, storageKey: String? = nil) -> String {
+        if let did = store(for: shopId, storageKey: storageKey).string(forKey: deviceIdKey), !did.isEmpty {
+            return did
+        }
+        guard let storageKey = prefix(storageKey),
+              storageKey != suiteName(for: shopId, storageKey: storageKey),
+              let old = UserDefaults.standard.persistentDomain(forName: storageKey)?[deviceIdKey] as? String else {
+            return ""
+        }
+        return old
     }
 }

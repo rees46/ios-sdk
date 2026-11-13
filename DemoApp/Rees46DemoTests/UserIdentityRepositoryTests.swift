@@ -85,15 +85,15 @@ final class UserIdentityRepositoryTests: XCTestCase {
         XCTAssertEqual(repo.advertisingId, "idfa-1")
     }
 
-    func test_writes_land_in_the_custom_suite_when_a_storage_key_is_given() {
-        let custom = "custom-\(UUID().uuidString)"
-        suiteNames.append(custom)
+    func test_writes_land_in_the_partition_the_storage_key_prefixes() {
+        let custom = "custom-\(UUID().uuidString)-"
+        suiteNames.append(StoragePartition.suiteName(for: "shop", storageKey: custom))
 
-        let repo = UserIdentityRepositoryImpl(shopId: "ignored-shop", storageKey: custom)
+        let repo = UserIdentityRepositoryImpl(shopId: "shop", storageKey: custom, device: nil)
         repo.deviceId = "did-custom"
 
         XCTAssertEqual(
-            UserDefaults(suiteName: custom)?.string(forKey: StoragePartition.deviceIdKey),
+            UserDefaults(suiteName: custom + "shop")?.string(forKey: StoragePartition.deviceIdKey),
             "did-custom"
         )
     }
@@ -102,7 +102,7 @@ final class UserIdentityRepositoryTests: XCTestCase {
         let shopId = "shop-\(UUID().uuidString)"
         suiteNames.append(StoragePartition.suiteName(for: shopId))
 
-        let repo = UserIdentityRepositoryImpl(shopId: shopId, storageKey: nil)
+        let repo = UserIdentityRepositoryImpl(shopId: shopId, storageKey: nil, device: nil)
         repo.deviceId = "did-shop"
 
         let partition = UserDefaults(suiteName: StoragePartition.suiteName(for: shopId))
