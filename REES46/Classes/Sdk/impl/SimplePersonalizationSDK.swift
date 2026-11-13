@@ -23,7 +23,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var storiesCode: String?
     var shopId: String
     var deviceId: String
-    var userSeance: String
+    /// The session id (`sid`): the new core's is the server's (`SessionWindow`), the old core's the one
+    /// `SessionManager` made for this launch.
+    var userSeance: String {
+        if let session = sessionWindow {
+            return session.sid
+        }
+        seanceLock.lock(); defer { seanceLock.unlock() }
+        return legacySeance
+    }
+    /// The old core's session id, under `seanceLock`.
+    private var legacySeance = ""
+    private let seanceLock = NSLock()
+    /// Listeners of the old core's session: it changes only on `deleteUserCredentials`.
+    private let legacySessionListeners = SessionListeners()
     var stream: String
     var baseURL: String
     let autoSendPushToken: Bool
@@ -287,9 +300,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.needReInitialization = needReInitialization
         self.sendAdvertisingId = sendAdvertisingId
         
-        // Resolve the session (reuse the persisted one within the 2h window, else start a new one)
-        // and the device's A/B segment.
-        userSeance = self.sessionManager.currentSessionId()
+        // The old core resolves its session (the persisted one within the 2h window, else a new one it
+        // makes); the new core never makes one: its `sid` is the server's (`SessionWindow`). Then the
+        // device's A/B segment.
+        legacySeance = usesCoreV2 ? "" : self.sessionManager.currentSessionId()
         segment = Self.abSegment(of: identity)
         
         if needReInitialization {
@@ -297,6 +311,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             // once, before /init; the old one drops the device id on its /init, as it always has.
             if usesCoreV2 {
                 identity.removeDeviceId()
+                // The session was the dropped device id's: the new one comes with the new did.
+                identity.seance = nil
+                identity.seanceLastActTime = nil
                 storage.removeSavedInitAnswer()
                 self.keychainStore.clear()
                 logger.info(LogCode.deviceIdReset, "the stored device id was removed to get a new one", ["reason": "re_initialization"])
@@ -373,6 +390,22 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     var sessionId: String? {
         userSeance.isEmpty ? nil : userSeance
+    }
+
+    /// The new core's session; `nil` on the old core.
+    var sessionWindow: SessionWindow? {
+        (core as? CoreV2)?.session
+    }
+
+    /// Calls `listener` on the main thread with every new session id until the handle is cancelled —
+    /// for the bridges, which tell their apps instead of asking for the `sid` on a timer. The new core
+    /// tells each `sid` `/init` brings; the old core the one it makes on `deleteUserCredentials`.
+    @discardableResult
+    func onSessionChange(_ listener: @escaping (String) -> Void) -> Cancellable {
+        if let session = sessionWindow {
+            return session.observe(listener)
+        }
+        return legacySessionListeners.add(listener)
     }
 
     /// Calls `completion` once the first initialization settled, or now if it has.
@@ -1545,6 +1578,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         answered.wait()
     }
 
+    /// The session an `/init` carries: the new core's only while its window is open — an install of an
+    /// older SDK sends the `sid` it made once, then the server's —; the old core's always.
+    private var sessionForInit: String {
+        guard let session = sessionWindow else { return userSeance }
+        return session.sidForInit ?? ""
+    }
+
     /// The session `/init` comes in. Without one the server starts its "new session" chain on every
     /// `/init`, that is on every launch.
     private static func addSession(_ sessionId: String, to params: inout [String: String]) {
@@ -1624,7 +1664,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if dId != "" {
             params[SdkConstants.did] = dId
         }
-        Self.addSession(userSeance, to: &params)
+        Self.addSession(sessionForInit, to: &params)
 
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
@@ -1702,9 +1742,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         userEmail = nil
         userPhone = nil
         userLoyaltyId = nil
-        // The new customer's session.
-        userSeance = sessionManager.currentSessionId()
+        // The new customer's session: the old core makes one; the new core's comes with the next /init,
+        // the wipe took the old one.
+        var newLegacySeance: String?
+        if !usesCoreV2 {
+            let seance = sessionManager.currentSessionId()
+            seanceLock.lock()
+            legacySeance = seance
+            seanceLock.unlock()
+            newLegacySeance = seance
+        }
         initLock.unlock()
+        if let seance = newLegacySeance {
+            legacySessionListeners.notify(seance)
+        }
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
         if let machine = machine {
             machine.resume()
@@ -1777,7 +1828,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         ) { request in
             await client.send(request)
         }
-        return CoreV2(client: client, machine: machine, label: shopId, logger: logger)
+        return CoreV2(client: client, machine: machine, connectivity: connectivity, label: shopId, logger: logger)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
@@ -1971,7 +2022,7 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
         if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
             params[SdkConstants.did] = deviceId
         }
-        Self.addSession(userSeance, to: &params)
+        Self.addSession(sessionForInit, to: &params)
         if sendAdvertisingId, let advertisingId = userIdentity.advertisingId, !advertisingId.isEmpty,
            advertisingId != "00000000-0000-0000-0000-000000000000" {
             params["ios_advertising_id"] = advertisingId

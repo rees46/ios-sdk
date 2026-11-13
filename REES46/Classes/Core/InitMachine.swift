@@ -46,8 +46,12 @@ struct CoreEnvironment {
 /// - A stored device id is `ready` at once, with a saved answer or without (decision 1): calls do not
 ///   wait for `/init` on every launch; `/init` still goes.
 /// - With a saved answer or a stored device id, `retrying` lets calls through as `ready` does.
-/// - `/init` goes on start, on the way back from more than two hours in the background, and on
-///   `checkShop()`, at most once in ten minutes.
+/// - Each successful answer gives the session its `sid` (`seance`) and opens its window again
+///   (`sdk/core/session.md`).
+/// - `/init` goes on start; when the session's window ran out — before a call or an event
+///   (`renewSession()`), and back in the foreground two hours after the last event, however long the
+///   app was in the background and also when it was launched there —; and on `checkShop()`, at most
+///   once in ten minutes.
 /// - No thread waits: `/init` and the calls that wait for it are tasks. `start()` reads only the
 ///   shop's `UserDefaults` on the caller's thread; the saved answer — a file, the keychain, JSON — is
 ///   read by the task that sends `/init`. Nothing is written to disk under the lock that calls, state
@@ -62,12 +66,12 @@ final class InitMachine {
     static let spread = RetryPolicy.spread
     /// The shortest wait a `Retry-After` gets: `0` would send `/init` again at once, for ever.
     static let minRetryAfter = RetryPolicy.minRetryAfter
-    /// A return from the background after this long sends `/init`.
-    static let foregroundAfter: TimeInterval = 2 * 60 * 60
     /// `checkShop()` sends `/init` at most this often.
     static let checkShopInterval: TimeInterval = 10 * 60
 
     let state: InstanceState
+    /// The shop's session: `/init` carries its `sid` while the window is open and gives it a new one.
+    let session: SessionWindow
     weak var delegate: InitMachineDelegate?
 
     private let transport: Transport
@@ -100,16 +104,18 @@ final class InitMachine {
     /// Whether the saved answer already stood in on this launch.
     private var usedSavedAnswer = false
     private var lastCheck: Date?
-    private var backgroundSince: Date?
     private var lifecycleSubscription: Cancellable?
     private var waiters: [UUID: Waiter] = [:]
 
     /// A call waiting for the instance to be usable.
     private final class Waiter {
         let continuation: CheckedContinuation<Rees46.SdkError?, Never>
+        /// Whether it waits for the `/init` on its way when the session's window ran out.
+        let needsSession: Bool
         var timeout: Cancellable?
-        init(_ continuation: CheckedContinuation<Rees46.SdkError?, Never>) {
+        init(_ continuation: CheckedContinuation<Rees46.SdkError?, Never>, needsSession: Bool) {
             self.continuation = continuation
+            self.needsSession = needsSession
         }
     }
 
@@ -127,9 +133,11 @@ final class InitMachine {
         keychain: KeychainInitStore,
         logger: SdkLogger,
         environment: CoreEnvironment,
+        session: SessionWindow? = nil,
         transport: @escaping Transport
     ) {
         self.state = state
+        self.session = session ?? SessionWindow(identity: identity, clock: environment.clock)
         self.storage = storage
         self.identity = identity
         self.keychain = keychain
@@ -211,22 +219,36 @@ final class InitMachine {
         return true
     }
 
+    /// Back in the foreground two hours after the last event, the session gets a new `sid`. The time
+    /// since the last event counts, not the time in the background: the app may have stood idle in the
+    /// foreground, or been launched in the background by a push or a fetch and never left it.
     private func lifecycle(_ event: AppLifecycleEvent) {
-        let now = environment.clock.now()
+        guard event == .willEnterForeground, !session.isAlive else { return }
+        renewSession(fromForeground: true)
+    }
+
+    /// The session's window ran out: `/init` gets a new `sid`. From `ready` the instance is
+    /// `initializing` until it answers (`sdk/core/init.md`), so calls wait for the new `sid`. An `/init`
+    /// on its way, or one that `retrying` repeats after its pause, answers anyway: nothing more goes —
+    /// but the return to the foreground repeats a failing `/init` at once. A refusal is not asked again
+    /// while the app runs: the next launch asks.
+    func renewSession(fromForeground: Bool = false) {
         lock.lock()
-        switch event {
-        case .didEnterBackground:
-            backgroundSince = now
+        guard started, !released, !inFlight else {
             lock.unlock()
-        case .willEnterForeground:
-            let since = backgroundSince
-            backgroundSince = nil
-            // A refusal is not asked again while the app runs: the next launch asks.
-            let refused = state.current == .refused
-            lock.unlock()
-            guard let since = since, !refused, now.timeIntervalSince(since) > Self.foregroundAfter else { return }
-            send()
+            return
         }
+        switch state.current {
+        case .ready:
+            state.set(.initializing)
+        case .retrying where fromForeground:
+            break
+        case .retrying, .initializing, .refused, .notInitialized:
+            lock.unlock()
+            return
+        }
+        lock.unlock()
+        send()
     }
 
     // MARK: - The saved answer
@@ -317,11 +339,13 @@ final class InitMachine {
 
     /// Waits until calls may go out, at most `timeout`: `nil` once they may; `shopBlocked` when the
     /// shop refused; `timeout` when the instance did not get there in time; `notInitialized` after
-    /// `release()`, and `cancelled` for a call `release()` ended while it waited.
-    func awaitUsable(timeout: TimeInterval) async -> Rees46.SdkError? {
+    /// `release()`, and `cancelled` for a call `release()` ended while it waited. With `needsSession`, a
+    /// call to a `ready` instance whose session's window ran out waits for the `/init` on its way — the
+    /// one of the launch, say —, so it goes with the new `sid`.
+    func awaitUsable(timeout: TimeInterval, needsSession: Bool = false) async -> Rees46.SdkError? {
         await withCheckedContinuation { (continuation: CheckedContinuation<Rees46.SdkError?, Never>) in
             lock.lock()
-            switch gateLocked() {
+            switch gateLocked(needsSession: needsSession) {
             case .pass:
                 lock.unlock()
                 continuation.resume(returning: nil)
@@ -330,7 +354,7 @@ final class InitMachine {
                 continuation.resume(returning: error)
             case .wait:
                 let id = UUID()
-                let waiter = Waiter(continuation)
+                let waiter = Waiter(continuation, needsSession: needsSession)
                 waiters[id] = waiter
                 waiter.timeout = environment.scheduler.schedule(after: timeout) { [weak self] in
                     self?.expire(id)
@@ -347,10 +371,14 @@ final class InitMachine {
         return false
     }
 
-    private func gateLocked() -> Gate {
+    private func gateLocked(needsSession: Bool = false) -> Gate {
         guard !released else { return .fail(.notInitialized) }
         switch state.current {
         case .ready:
+            // The `/init` on its way brings the session a new `sid`: the call goes with it.
+            if needsSession && inFlight && !session.isAlive {
+                return .wait
+            }
             return .pass
         case .retrying:
             return hasFallbackLocked() ? .pass : .wait
@@ -379,7 +407,7 @@ final class InitMachine {
     private func settleWaitersLocked() {
         for (id, waiter) in waiters {
             let outcome: Rees46.SdkError?
-            switch gateLocked() {
+            switch gateLocked(needsSession: waiter.needsSession) {
             case .wait:
                 continue
             case .pass:
@@ -492,6 +520,8 @@ final class InitMachine {
         // The last answer, every time. Its keychain backup stays as it is: only `sendIDFARequest` and
         // the migrations write it (`sdk/core/storage.md`).
         storage.writeSavedInitAnswer(body)
+        // The server's session from now on, before any call is let through.
+        session.adopt(answer.seance)
 
         lock.lock()
         guard generation == self.generation, !released else {

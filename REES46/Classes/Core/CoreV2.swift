@@ -3,8 +3,9 @@
 //  REES46
 //
 //  The new core, behind `Rees46Config.coreV2`: the requests of the funnel go through the new client
-//  (`NetworkClient`), and `/init` is the new core's own (`InitMachine`): a call waits until the
-//  instance is usable, at most its own timeout. Session and queue are still the instance's old ones.
+//  (`NetworkClient`), `/init` is the new core's own (`InitMachine`) and so is the session
+//  (`SessionWindow`): a call waits until the instance is usable, at most its own timeout, and goes with
+//  the current `sid`.
 //
 
 import Foundation
@@ -17,17 +18,22 @@ final class CoreV2: Core {
 
     /// The instance's `/init`.
     let machine: InitMachine
+    /// The shop's session.
+    let session: SessionWindow
 
     private let client: NetworkClient
+    private let connectivity: ConnectivityMonitor?
     private let logger: SdkLogger
     /// Answers come back here, in order, off the cooperative pool: a caller's completion may block.
     private let callbacks: DispatchQueue
     private let lock = NSLock()
     private var released = false
 
-    init(client: NetworkClient, machine: InitMachine, label: String, logger: SdkLogger) {
+    init(client: NetworkClient, machine: InitMachine, connectivity: ConnectivityMonitor? = nil, label: String, logger: SdkLogger) {
         self.client = client
+        self.connectivity = connectivity
         self.machine = machine
+        self.session = machine.session
         self.logger = logger
         self.callbacks = DispatchQueue(label: "com.rees46.sdk.core.\(label)", qos: .utility)
     }
@@ -36,6 +42,11 @@ final class CoreV2: Core {
     /// a shop that refused fails it with `shopBlocked`; one that is not usable within the request's
     /// timeout fails it with `timeout`. An `/init` of the funnel (`sendIDFARequest`) does not wait, and
     /// does not go for a refused shop.
+    ///
+    /// Every other request checks the session's window (`sdk/core/session.md`): when it ran out,
+    /// `/init` goes first and the request waits for it, then goes with the new `sid`, whatever `sid`
+    /// its caller put in. A request does not extend the window. Without network it does not wait for
+    /// the session: it fails at once, as any request does offline.
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         lock.lock()
         let isReleased = released
@@ -54,8 +65,13 @@ final class CoreV2: Core {
         }
         let client = self.client
         let machine = self.machine
+        let session = self.session
         let logger = self.logger
-        let clientRequest = NetworkClient.Request(
+        let needsSession = !request.isInit && (connectivity?.isOnline ?? true)
+        if needsSession, !session.isAlive {
+            machine.renewSession()
+        }
+        var clientRequest = NetworkClient.Request(
             method: request.method,
             path: request.path,
             query: request.query,
@@ -65,16 +81,40 @@ final class CoreV2: Core {
         )
         let wait = request.isInit ? nil : (request.timeout ?? NetworkClient.defaultTimeout)
         _Concurrency.Task {
-            if let wait = wait, let refusal = await machine.awaitUsable(timeout: wait) {
+            if let wait = wait, let refusal = await machine.awaitUsable(timeout: wait, needsSession: needsSession) {
                 if refusal == .cancelled {
                     logger.requestCancelled(request.method.rawValue, request.path)
                 }
                 callbacks.async { completion(Self.legacyResponse(.failure(refusal), for: request)) }
                 return
             }
+            if needsSession {
+                Self.stampSession(session.sid, on: &clientRequest)
+            }
             let response = await client.send(clientRequest)
             callbacks.async { completion(Self.legacyResponse(response, for: request)) }
         }
+    }
+
+    /// Puts the current `sid` in place of the one the caller put in when it built the request: the
+    /// session may have been renewed while the request waited. A request with the shop's secret keeps
+    /// its own identity; without a current `sid` the caller's stays.
+    static func stampSession(_ sid: String, on request: inout NetworkClient.Request) {
+        guard !sid.isEmpty, request.query["shop_secret"] == nil, request.body["shop_secret"] == nil else { return }
+        for key in ["sid", "seance"] {
+            if request.query[key] != nil {
+                request.query[key] = sid
+            }
+            if request.body[key] != nil {
+                request.body[key] = sid
+            }
+        }
+    }
+
+    /// Sends an event of the queue: the queue decides when, after the instance is usable and its
+    /// session alive, so nothing waits here.
+    func sendEvent(_ request: NetworkClient.Request) async -> NetworkClient.Response {
+        await client.send(request)
     }
 
     func use(_ configuration: URLSessionConfiguration) {
