@@ -17,16 +17,26 @@ struct StubReply {
     let body: Data
     /// Response headers, `Retry-After` say.
     let headers: [String: String]
-    /// Sends only the first `cutAfter` bytes of the body, then drops the connection.
+    /// Sends only the first `cutAfter` bytes of the body, then fails with `cutWith`: a dropped
+    /// connection by default, `.timedOut` for a body cut by the read timeout.
     let cutAfter: Int?
-    /// Holds the answer back this many seconds.
+    let cutWith: URLError.Code
+    /// Holds the answer back this many seconds; one held past the request's timeout fails as timed out.
     let delay: TimeInterval
 
-    init(_ status: Int = 200, json: String = "{}", headers: [String: String] = [:], cutAfter: Int? = nil, delay: TimeInterval = 0) {
+    init(
+        _ status: Int = 200,
+        json: String = "{}",
+        headers: [String: String] = [:],
+        cutAfter: Int? = nil,
+        cutWith: URLError.Code = .networkConnectionLost,
+        delay: TimeInterval = 0
+    ) {
         self.status = status
         self.body = Data(json.utf8)
         self.headers = headers
         self.cutAfter = cutAfter
+        self.cutWith = cutWith
         self.delay = delay
     }
 
@@ -37,6 +47,7 @@ struct StubReply {
 /// A request as the stub server saw it.
 struct StubRequest {
     let method: String
+    let url: URL?
     let path: String
     let query: [String: String]
     let body: [String: Any]
@@ -121,7 +132,14 @@ final class StubURLProtocol: URLProtocol {
                 return
             }
             if reply.delay > 0 {
-                Thread.sleep(forTimeInterval: reply.delay)
+                // An answer held past the request's timeout fails as the session would fail it.
+                let timedOut = seen.timeout > 0 && reply.delay >= seen.timeout
+                Thread.sleep(forTimeInterval: timedOut ? seen.timeout : reply.delay)
+                guard !self.isStopped else { return }
+                if timedOut {
+                    client.urlProtocol(self, didFailWithError: URLError(.timedOut))
+                    return
+                }
             }
             let response = HTTPURLResponse(
                 url: self.request.url!, statusCode: reply.status, httpVersion: "HTTP/1.1", headerFields: reply.headers
@@ -129,7 +147,7 @@ final class StubURLProtocol: URLProtocol {
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             if let cut = reply.cutAfter {
                 client.urlProtocol(self, didLoad: reply.body.prefix(cut))
-                client.urlProtocol(self, didFailWithError: URLError(.networkConnectionLost))
+                client.urlProtocol(self, didFailWithError: URLError(reply.cutWith))
                 return
             }
             client.urlProtocol(self, didLoad: reply.body)
@@ -137,7 +155,19 @@ final class StubURLProtocol: URLProtocol {
         }
     }
 
-    override func stopLoading() {}
+    private let stopLock = NSLock()
+    private var stopped = false
+    /// The session gave up on the request: cancelled or timed out. Nothing more goes to its client.
+    private var isStopped: Bool {
+        stopLock.lock(); defer { stopLock.unlock() }
+        return stopped
+    }
+
+    override func stopLoading() {
+        stopLock.lock()
+        stopped = true
+        stopLock.unlock()
+    }
 
     private static func describe(_ request: URLRequest) -> StubRequest {
         let components = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
@@ -150,6 +180,7 @@ final class StubURLProtocol: URLProtocol {
         let body = bodyData.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
         return StubRequest(
             method: request.httpMethod ?? "GET",
+            url: request.url,
             path: components?.path ?? "",
             query: query,
             body: body,
@@ -203,15 +234,19 @@ enum StubSDK {
         needReInitialization: Bool = false,
         logLevel: Rees46.LogLevel = .warning,
         connectivity: ConnectivityMonitor? = nil,
+        coreV2: Bool = false,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
-        SimplePersonalizationSDK(
+        // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
+        CoreFlag.reset(to: coreV2)
+        return SimplePersonalizationSDK(
             shopId: shopId,
             apiDomain: "stub.test",
             logLevel: logLevel,
             autoSendPushToken: false,
             enableAutoPopupPresentation: false,
             needReInitialization: needReInitialization,
+            coreV2: coreV2,
             userIdentity: identity,
             keychainStore: keychain,
             localState: LocalStateRepositoryImpl(store: UserDefaults(suiteName: "test-\(shopId)")!),

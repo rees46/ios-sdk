@@ -48,20 +48,38 @@ final class ManualScheduler: Scheduler {
     }
 }
 
-/// Connectivity set by the test.
+/// Connectivity set by the test; read and observed from any thread (the new client is an actor).
 final class FakeConnectivity: ConnectivityMonitor {
+    private let lock = NSLock()
     private var observers: [Int: (Bool) -> Void] = [:]
     private var nextId = 0
-    var isOnline: Bool { didSet { observers.values.forEach { $0(isOnline) } } }
+    private var online: Bool
 
-    init(online: Bool) { isOnline = online }
+    var isOnline: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return online }
+        set {
+            lock.lock()
+            online = newValue
+            let current = Array(observers.values)
+            lock.unlock()
+            current.forEach { $0(newValue) }
+        }
+    }
+
+    init(online: Bool) { self.online = online }
 
     func observe(_ handler: @escaping (Bool) -> Void) -> Cancellable {
+        lock.lock()
         nextId += 1
         let id = nextId
         observers[id] = handler
-        handler(isOnline)
-        return Cancellable { [weak self] in self?.observers[id] = nil }
+        let current = online
+        lock.unlock()
+        handler(current)
+        return Cancellable { [weak self] in
+            guard let self = self else { return }
+            self.lock.lock(); self.observers[id] = nil; self.lock.unlock()
+        }
     }
 }
 
