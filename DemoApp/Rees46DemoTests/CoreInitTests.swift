@@ -362,6 +362,9 @@ final class CoreInitTests: XCTestCase {
             }
             let identity = InMemoryUserIdentityRepository()
             identity.deviceId = "old-did"
+            // A session inside its window: the call needs no new sid (`CoreSessionTests` has the other).
+            identity.seance = "LiveSid001"
+            identity.seanceLastActTime = clock.now()
             // /init is held until the call is over: the call cannot have waited for it.
             let answer = DispatchSemaphore(value: 0)
             StubURLProtocol.handler = { request in
@@ -738,7 +741,7 @@ final class CoreInitTests: XCTestCase {
         XCTAssertNotNil(query["tz"])
         XCTAssertNil(query["ios_advertising_id"], "only with sendAdvertisingId")
         XCTAssertNil(query["segment"], "/init carries no segment")
-        XCTAssertEqual(query["sid"], flutter.userSeance)
+        XCTAssertNil(query["sid"], "no session yet: the new core makes none")
 
         let asked = newShop()
         let askedIdentity = InMemoryUserIdentityRepository()
@@ -792,20 +795,20 @@ final class CoreInitTests: XCTestCase {
 
     // MARK: - Triggers
 
-    func test_init_goes_again_after_more_than_two_hours_in_the_background() {
+    func test_init_goes_again_back_in_the_foreground_two_hours_after_the_last_event() {
         let shop = newShop()
         answerInit(StubReply(json: #"{"did":"d"}"#))
         let sdk = make(shop)
         XCTAssertEqual(settled(sdk), .ready)
 
-        lifecycle.send(.didEnterBackground)
-        clock.advance(by: 2 * 60 * 60 - 1)
-        lifecycle.send(.willEnterForeground)
-        Thread.sleep(forTimeInterval: 0.3)
+        expectNoRequest(to: "/init", shop: shop) {
+            lifecycle.send(.didEnterBackground)
+            clock.advance(by: 2 * 60 * 60 - 1)
+            lifecycle.send(.willEnterForeground)
+        }
         XCTAssertEqual(inits(shop).count, 1, "two hours have not passed")
 
-        lifecycle.send(.didEnterBackground)
-        clock.advance(by: 2 * 60 * 60 + 1)
+        clock.advance(by: 2)
         lifecycle.send(.willEnterForeground)
         XCTAssertTrue(eventually { self.inits(shop).count == 2 })
         XCTAssertEqual(inits(shop).last?.query["did"], "d")
@@ -865,7 +868,9 @@ final class CoreInitTests: XCTestCase {
             if let works = expect["methodsWorkAsReady"] as? Bool {
                 XCTAssertEqual(sdk.initMachine?.isUsable, works, name)
             }
-            // `sessionId` from `seance` is the session's stage (`sdk/core/session.md`): checked there.
+            if let sessionId = expect["sessionId"] as? String {
+                XCTAssertTrue(eventually { sdk.sessionId == sessionId }, "\(name): \(String(describing: sdk.sessionId))")
+            }
             sdk.release()
         }
     }

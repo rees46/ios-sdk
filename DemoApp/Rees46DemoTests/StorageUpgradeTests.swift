@@ -324,9 +324,16 @@ final class StorageUpgradeTests: XCTestCase {
 
             XCTAssertNil(identity.deviceId)
             XCTAssertEqual(sdk.deviceId, "", "the instance forgets the did too")
-            XCTAssertFalse(sdk.userSeance.isEmpty)
-            XCTAssertNotEqual(sdk.userSeance, session, "the new customer has a session of their own")
-            XCTAssertEqual(identity.seance, sdk.userSeance)
+            if coreV2 {
+                // The new core makes no session: the next /init brings the new customer's.
+                XCTAssertEqual(sdk.userSeance, "")
+                XCTAssertNil(identity.seance)
+                XCTAssertNil(identity.seanceLastActTime)
+            } else {
+                XCTAssertFalse(sdk.userSeance.isEmpty)
+                XCTAssertNotEqual(sdk.userSeance, session, "the new customer has a session of their own")
+                XCTAssertEqual(identity.seance, sdk.userSeance)
+            }
             XCTAssertNil(sdk.storage.readSavedInitAnswer())
             XCTAssertNil(sdk.keychainStore.readInitData())
             XCTAssertFalse(sdk.storage.refused)
