@@ -47,6 +47,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// This instance's logger: its `logLevel`, its shop on every message.
     let logger: SdkLogger
 
+    /// Whether the device is online; a failed request offline is `networkOfflineError`.
+    let connectivity: ConnectivityMonitor
+
     /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
     /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
     let localStateStore: LocalStateRepository
@@ -152,9 +155,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         keychainStore: KeychainInitStore? = nil,
         sessionManager: SessionManager? = nil,
         localState: LocalStateRepository? = nil,
+        connectivity: ConnectivityMonitor? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        self.connectivity = connectivity ?? SystemConnectivityMonitor.shared
         // `enableLogs` is the old switch: on, it means everything (`debug`).
         self.logger = SdkLogger(shopId: shopId, level: logLevel ?? (enableLogs ? .debug : .warning))
         SdkLogger.register(self.logger)
@@ -1496,7 +1501,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     completion(statusCode, .failure(.decodeError))
                 }
             case .failure:
-                completion(nil, .failure(Self.transportError()))
+                completion(nil, .failure(self.transportError()))
             }
         }.resume()
     }
@@ -1510,8 +1515,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     /// A request that got no answer: offline, or the connection failed or timed out.
-    private static func transportError() -> SdkError {
-        NetworkStatus.nManager.connectionStatus == .Offline ? .networkOfflineError : .invalidResponse
+    private func transportError() -> SdkError {
+        connectivity.isOnline ? .invalidResponse : .networkOfflineError
     }
 
     /// The configuration of the SDK's sessions. Waiting for connectivity, a request starts its timeout
@@ -1598,7 +1603,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(.failure(.decodeError))
                     }
                 case .failure:
-                    completion(.failure(Self.transportError()))
+                    completion(.failure(self.transportError()))
                 }
             }.resume()
         } else {

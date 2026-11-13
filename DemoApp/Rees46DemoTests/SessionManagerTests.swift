@@ -9,12 +9,6 @@
 import XCTest
 @testable import REES46
 
-private final class FakeClock: Clock {
-    var current: Date
-    init(_ current: Date) { self.current = current }
-    func now() -> Date { current }
-}
-
 final class SessionManagerTests: XCTestCase {
 
     private let base = Date(timeIntervalSince1970: 1_000_000)

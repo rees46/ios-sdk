@@ -24,6 +24,15 @@ let package = Package(
                     .linkedFramework("Foundation"),
                     .linkedFramework("UIKit"),
                 ]
-        )
+        ),
+            // Core tests without the demo app or CocoaPods; UIKit, so they run on an iOS simulator.
+            .testTarget(
+                name: "REES46CoreTests",
+                dependencies: ["REES46"],
+                path: "Tests/REES46CoreTests",
+                resources: [
+                    .copy("Fixtures")
+                ]
+            )
     ]
 )

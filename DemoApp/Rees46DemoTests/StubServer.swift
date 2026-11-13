@@ -15,10 +15,19 @@ import XCTest
 struct StubReply {
     let status: Int
     let body: Data
+    /// Response headers, `Retry-After` say.
+    let headers: [String: String]
+    /// Sends only the first `cutAfter` bytes of the body, then drops the connection.
+    let cutAfter: Int?
+    /// Holds the answer back this many seconds.
+    let delay: TimeInterval
 
-    init(_ status: Int = 200, json: String = "{}") {
+    init(_ status: Int = 200, json: String = "{}", headers: [String: String] = [:], cutAfter: Int? = nil, delay: TimeInterval = 0) {
         self.status = status
         self.body = Data(json.utf8)
+        self.headers = headers
+        self.cutAfter = cutAfter
+        self.delay = delay
     }
 
     /// No answer: the connection fails as a timed-out one.
@@ -111,10 +120,18 @@ final class StubURLProtocol: URLProtocol {
                 client.urlProtocol(self, didFailWithError: URLError(.timedOut))
                 return
             }
+            if reply.delay > 0 {
+                Thread.sleep(forTimeInterval: reply.delay)
+            }
             let response = HTTPURLResponse(
-                url: self.request.url!, statusCode: reply.status, httpVersion: "HTTP/1.1", headerFields: nil
+                url: self.request.url!, statusCode: reply.status, httpVersion: "HTTP/1.1", headerFields: reply.headers
             )!
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            if let cut = reply.cutAfter {
+                client.urlProtocol(self, didLoad: reply.body.prefix(cut))
+                client.urlProtocol(self, didFailWithError: URLError(.networkConnectionLost))
+                return
+            }
             client.urlProtocol(self, didLoad: reply.body)
             client.urlProtocolDidFinishLoading(self)
         }
@@ -185,6 +202,7 @@ enum StubSDK {
         keychain: KeychainInitStore = InMemoryKeychainInitStore(),
         needReInitialization: Bool = false,
         logLevel: LogLevel? = nil,
+        connectivity: ConnectivityMonitor? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
         SimplePersonalizationSDK(
@@ -197,6 +215,7 @@ enum StubSDK {
             userIdentity: identity,
             keychainStore: keychain,
             localState: LocalStateRepositoryImpl(store: UserDefaults(suiteName: "test-\(shopId)")!),
+            connectivity: connectivity,
             completion: completion
         )
     }
