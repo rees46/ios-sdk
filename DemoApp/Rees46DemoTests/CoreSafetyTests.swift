@@ -225,6 +225,34 @@ final class CoreSafetyTests: XCTestCase {
         XCTAssertTrue(observers.contains { $0.calls > 0 })
     }
 
+    func test_an_observer_hears_online_once_when_the_first_path_is_online() {
+        let source = FakePathSource()
+        let status = NetworkStatus(source: source)
+        let observer = RecordingObserver()
+
+        status.addObserver(observer: observer)
+        source.deliver(.wifi)
+        source.deliver(.offline)
+        source.deliver(.wifi)
+
+        XCTAssertEqual(observer.statuses, [.Online, .Offline, .Online], "unknown was told as online: the first online path is no change")
+        XCTAssertEqual(observer.types, [nil, .wifi, nil, .wifi])
+    }
+
+    func test_a_new_observer_never_hears_its_first_state_after_a_newer_one() {
+        for _ in 0..<300 {
+            let source = FakePathSource()
+            let status = NetworkStatus(source: source)
+            source.deliver(.offline)
+            let observer = RecordingObserver()
+            let both = DispatchGroup()
+            DispatchQueue.global().async(group: both) { status.addObserver(observer: observer) }
+            DispatchQueue.global().async(group: both) { source.deliver(.wifi) }
+            both.wait()
+            XCTAssertEqual(observer.statuses.last, status.connectionStatus, "the last state an observer heard is the current one")
+        }
+    }
+
     func test_the_system_connectivity_monitor_reports_the_state_at_once_and_stops_when_cancelled() {
         var reports: [Bool] = []
         let subscription = SystemConnectivityMonitor.shared.observe { reports.append($0) }
@@ -265,4 +293,15 @@ final class CountingObserver: NetworkStatusObserver {
     var calls: Int { lock.lock(); defer { lock.unlock() }; return count }
     func didChangeConnectionStatus(_ status: NetworkConnectionStatus) { lock.lock(); count += 1; lock.unlock() }
     func didChangeConnectionType(_ type: NetworkConnectionType?) { lock.lock(); count += 1; lock.unlock() }
+}
+
+/// Records what an observer of `NetworkStatus` hears, in order.
+final class RecordingObserver: NetworkStatusObserver {
+    private let lock = NSLock()
+    private var heardStatuses: [NetworkConnectionStatus] = []
+    private var heardTypes: [NetworkConnectionType?] = []
+    var statuses: [NetworkConnectionStatus] { lock.lock(); defer { lock.unlock() }; return heardStatuses }
+    var types: [NetworkConnectionType?] { lock.lock(); defer { lock.unlock() }; return heardTypes }
+    func didChangeConnectionStatus(_ status: NetworkConnectionStatus) { lock.lock(); heardStatuses.append(status); lock.unlock() }
+    func didChangeConnectionType(_ type: NetworkConnectionType?) { lock.lock(); heardTypes.append(type); lock.unlock() }
 }

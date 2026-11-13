@@ -71,6 +71,10 @@ public class NetworkStatus {
 
     private let source: NetworkPathSource
     private let lock = NSLock()
+    /// Held while a change is made and told: observers hear the states in the order they came, and a
+    /// new observer's first state never arrives after a newer one. Recursive: an observer may add
+    /// another from its callback.
+    private let delivery = NSRecursiveLock()
     /// `nil` until the first path: unknown.
     private var knownStatus: NetworkConnectionStatus?
     private var knownType: NetworkConnectionType?
@@ -141,12 +145,16 @@ public class NetworkStatus {
     /// Changes the state under the lock, then tells the observers what changed, outside it: an
     /// observer may read the status or stop observing from its callback.
     private func update(status: NetworkConnectionStatus?, type: NetworkConnectionType?, keepsType: Bool) {
+        delivery.lock()
+        defer { delivery.unlock() }
         lock.lock()
         var statusChanged = false
         var typeChanged = false
         if let status = status, knownStatus != status {
+            // Until the first path observers were told `Online`: a first path that is online is
+            // no change for them.
+            statusChanged = (knownStatus ?? .Online) != status
             knownStatus = status
-            statusChanged = true
         }
         if !keepsType, knownType != type {
             knownType = type
@@ -193,8 +201,11 @@ public class NetworkStatus {
     #endif
 
     /// Adds `observer` and tells it the current state. Safe from any thread: the monitor's queue
-    /// notifies a copy of the observers taken under the lock.
+    /// notifies a copy of the observers taken under the lock, and a change that comes meanwhile
+    /// reaches the observer after its first state, never before.
     internal func addObserver(observer: NetworkStatusObserver) {
+        delivery.lock()
+        defer { delivery.unlock() }
         lock.lock()
         observers[observer.connectionObserverId] = observer
         let currentStatus = knownStatus ?? .Online
