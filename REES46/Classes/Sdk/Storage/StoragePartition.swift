@@ -23,6 +23,10 @@ import Foundation
  once and leaves it as it is. A new `storageKey` on an existing install starts a fresh partition — it
  never falls back to the unprefixed one, so separate keys stay separate.
 
+ A `storageKey` that names an app group (`group.…`) keeps its old meaning: that suite is the partition,
+ shared with the app's extensions, as it always was. Shops on one group key share it, as before. The
+ shop's files still get a folder of their own (`folderName`).
+
  What lives here is the shop's: the did, the session, the stories state, the source, and the shop's
  copies of the advertising id and the A/B group, which belong to the device (`DeviceStore`) and are
  still written here for `LegacyCore` and older SDK versions. The push token stays in `.standard`.
@@ -75,12 +79,56 @@ enum StoragePartition {
         )
     }
 
+    /// The prefix of an app group's suite: a `storageKey` that starts with it is the suite itself.
+    static let appGroupPrefix = "group."
+
+    /// Whether `storageKey` names an app group's suite, which is the partition as it is.
+    static func isAppGroup(_ storageKey: String?) -> Bool {
+        prefix(storageKey)?.hasPrefix(appGroupPrefix) ?? false
+    }
+
     /// Stable suite name for [shopId]'s partition: `personalization_sdk_<shopId>`, after the app's
-    /// [storageKey] and `_` when it set one.
+    /// [storageKey] and `_` when it set one; an app group's [storageKey] as it is.
     static func suiteName(for shopId: String, storageKey: String? = nil) -> String {
+        if isAppGroup(storageKey), let group = prefix(storageKey) {
+            return group
+        }
+        return prefixedName(for: shopId, storageKey: storageKey)
+    }
+
+    /// The name of the shop's folder of files: the prefixed partition name, also for an app group's
+    /// key, so two shops on one group never share their saved answer or queue.
+    static func folderName(for shopId: String, storageKey: String? = nil) -> String {
+        sanitize(prefixedName(for: shopId, storageKey: storageKey))
+    }
+
+    private static func prefixedName(for shopId: String, storageKey: String?) -> String {
         let name = Self.prefix + sanitize(shopId)
         guard let storageKey = prefix(storageKey) else { return name }
         return storageKey + "_" + name
+    }
+
+    // MARK: - The storageKey of a live shop
+
+    private static let knownKeysLock = NSLock()
+    private static var knownKeys: [String: String] = [:]
+
+    /// Remembers the `storageKey` the shop's instance was made with, for code that has only the shop
+    /// at hand (the stories' media state, the popups' frequency): it opens the same partition.
+    static func remember(storageKey: String?, forShop shopId: String) {
+        knownKeysLock.lock(); defer { knownKeysLock.unlock() }
+        knownKeys[shopId] = prefix(storageKey)
+    }
+
+    /// The `storageKey` of the shop's instance; `nil` when it had none or none was made.
+    static func storageKey(ofShop shopId: String) -> String? {
+        knownKeysLock.lock(); defer { knownKeysLock.unlock() }
+        return knownKeys[shopId]
+    }
+
+    /// The partition of a shop made in this process, with the `storageKey` it was made with.
+    static func store(ofShop shopId: String) -> UserDefaults {
+        store(for: shopId, storageKey: storageKey(ofShop: shopId))
     }
 
     /**

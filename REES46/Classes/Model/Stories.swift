@@ -97,7 +97,7 @@ class Slide {
     /// Slide ids are not unique across shops, so this state must be per shop.
     private let shopId: String
     private lazy var localState: LocalStateRepository =
-        LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId))
+        LocalStateRepositoryImpl(store: StoragePartition.store(ofShop: shopId))
 
     public init(json: [String: Any], shopId: String = "") {
         self.shopId = shopId

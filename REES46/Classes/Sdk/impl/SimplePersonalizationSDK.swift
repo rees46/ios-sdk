@@ -29,6 +29,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     let autoSendPushToken: Bool
     let needReInitialization: Bool
     let sendAdvertisingId: Bool
+    /// The app's prefix of the shop's storage (`Rees46Config.storageKey`).
+    let storageKey: String?
 
     /// This shop's identity/session storage (R2): `device_id` / `seance` / `IDFA` are read and written
     /// through this typed port, backed by a per-shop partition so two shops in one app do not share
@@ -196,6 +198,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        self.storageKey = storageKey
+        // Code that has only the shop at hand (stories, popups v3) opens the same partition.
+        StoragePartition.remember(storageKey: storageKey, forShop: shopId)
         self.connectivity = connectivity ?? SystemConnectivityMonitor.shared
         // `enableLogs` is the old switch: on, it means everything (`debug`), as in `Rees46Config`.
         self.logger = SdkLogger(shopId: shopId, level: enableLogs && logLevel == .warning ? .debug : logLevel)

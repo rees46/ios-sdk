@@ -58,7 +58,7 @@ final class ShopStorage {
         self.logger = logger
         let base = root ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent(Self.folderName, isDirectory: true)
-        let folder = StoragePartition.sanitize(StoragePartition.suiteName(for: shopId, storageKey: storageKey))
+        let folder = StoragePartition.folderName(for: shopId, storageKey: storageKey)
         self.root = base
         self.directory = base?.appendingPathComponent(folder, isDirectory: true)
         self.documents = documents ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first

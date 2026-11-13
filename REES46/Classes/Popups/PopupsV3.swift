@@ -135,7 +135,7 @@ import UIKit
         )
         let shopId = (sdkObject as? PersonalizationSDK)?.shopId ?? ""
         let frequency = PopupsV3Frequency(
-            defaults: StoragePartition.store(for: shopId),
+            defaults: (sdkObject as? SimplePersonalizationSDK)?.storage.partition ?? StoragePartition.store(ofShop: shopId),
             now: Date.init,
             sid: { (sdkObject as? PersonalizationSDK)?.userSeance ?? "" },
             testMode: { [weak self] in self?.testMode ?? false }

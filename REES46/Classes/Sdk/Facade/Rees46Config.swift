@@ -46,6 +46,10 @@ public struct Rees46Config {
     /// `storageKey` itself, so two shops on one key shared it; the SDK copies the shop's values from
     /// that suite once and leaves it as it is. A key set on an install that had none starts a fresh
     /// partition.
+    ///
+    /// A key that starts with `group.` names an app group's suite and keeps that meaning: the suite
+    /// itself is the shop's storage, shared with the app's extensions as before (shops on one group key
+    /// share it); the shop's files still get a folder of their own.
     public let storageKey: String?
     /// Runs the shop on the new core of the SDK (`false` by default): its network client first,
     /// with init, session, queue and pushes to follow. The first `Rees46.initialize` or

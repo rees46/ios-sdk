@@ -359,6 +359,41 @@ final class StoragePackageTests: XCTestCase {
         XCTAssertEqual(StoragePartition.deviceId(for: "none-\(UUID().uuidString)"), "")
     }
 
+    // MARK: - An app group's storageKey
+
+    func test_an_app_groups_key_is_the_partition_and_the_files_still_get_the_shops_folder() {
+        XCTAssertEqual(StoragePartition.suiteName(for: "shop-1", storageKey: "group.com.app.shared"), "group.com.app.shared")
+        XCTAssertEqual(StoragePartition.suiteName(for: "shop-1", storageKey: "app-key"), "app-key_personalization_sdk_shop-1")
+        XCTAssertEqual(StoragePartition.folderName(for: "shop-1", storageKey: "group.com.app.shared"), "group_com_app_shared_personalization_sdk_shop-1")
+        XCTAssertNotEqual(StoragePartition.folderName(for: "shop-1", storageKey: "group.x"), StoragePartition.folderName(for: "shop-2", storageKey: "group.x"))
+        XCTAssertTrue(StoragePartition.isAppGroup("group.x"))
+        XCTAssertFalse(StoragePartition.isAppGroup("groupie"))
+        XCTAssertFalse(StoragePartition.isAppGroup(nil))
+    }
+
+    func test_an_app_groups_suite_keeps_its_did_and_is_not_copied() throws {
+        let group = "group.test.\(UUID().uuidString.prefix(6))"
+        let shop = "group-shop-\(UUID().uuidString.prefix(6))"
+        defer { UserDefaults.standard.removePersistentDomain(forName: group) }
+        try XCTUnwrap(UserDefaults(suiteName: group)).set("did-group", forKey: StoragePartition.deviceIdKey)
+
+        let identity = UserIdentityRepositoryImpl(shopId: shop, storageKey: group)
+
+        XCTAssertEqual(identity.deviceId, "did-group")
+        XCTAssertEqual(StoragePartition.deviceId(for: shop, storageKey: group), "did-group")
+    }
+
+    func test_a_shop_made_with_a_storage_key_is_opened_with_it_by_code_that_has_only_the_shop() {
+        let shop = "known-\(UUID().uuidString.prefix(6))"
+        StoragePartition.remember(storageKey: "app-key", forShop: shop)
+        defer { UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: shop, storageKey: "app-key")) }
+        StoragePartition.store(for: shop, storageKey: "app-key").set("v", forKey: "probe")
+
+        XCTAssertEqual(StoragePartition.storageKey(ofShop: shop), "app-key")
+        XCTAssertEqual(StoragePartition.store(ofShop: shop).string(forKey: "probe"), "v")
+        XCTAssertNil(StoragePartition.storageKey(ofShop: "never-made"))
+    }
+
     // MARK: - The keychain's service
 
     func test_the_keychain_service_is_the_bundle_of_the_sdks_binary_as_it_always_was() {
