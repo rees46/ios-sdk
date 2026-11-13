@@ -211,9 +211,10 @@ final class DeleteCredentialsTests: XCTestCase {
 
             DispatchQueue.global().async { sdk.deleteUserCredentials() }
             XCTAssertEqual(identity.wiping.wait(timeout: .now() + 5), .success)
-            // The earlier /init answers while the wipe is halfway through.
+            // The earlier /init answers while the wipe is halfway through: the stub has handed it to the
+            // client before the wipe goes on.
             firstAnswer.signal()
-            Thread.sleep(forTimeInterval: 0.5)
+            XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) >= 1 }, "coreV2 = \(coreV2)")
             identity.resume.signal()
 
             XCTAssertTrue(eventually { identity.deviceId == "next-did" && sdk.deviceId == "next-did" }, "coreV2 = \(coreV2)")
@@ -235,9 +236,7 @@ final class DeleteCredentialsTests: XCTestCase {
         sdk.deleteUserCredentials()
         XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/init", shop: shop).count == 2 })
         // The answer to the earlier /init comes: it belongs to the deleted customer and lets nothing go.
-        first.signal()
-        Thread.sleep(forTimeInterval: 0.5)
-        XCTAssertTrue(StubURLProtocol.requests(to: "/recommend/queued", shop: shop).isEmpty, "released by the stale /init")
+        expectNoRequest(to: "/recommend/queued", shop: shop, within: 0.5) { first.signal() }
         XCTAssertTrue(tokens(shop).isEmpty)
 
         second.signal()
@@ -264,7 +263,7 @@ final class DeleteCredentialsTests: XCTestCase {
             sdk.setPushTokenNotification(token: "fcm-token", isFirebaseNotification: true) { outcome = $0; direct.fulfill() }
             wait(for: [direct], timeout: 5)
 
-            Thread.sleep(forTimeInterval: 0.3)
+            expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3)
             XCTAssertTrue(tokens(shop).isEmpty, "a push token went out without a did, coreV2 = \(coreV2)")
             XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop)), "the week was claimed")
             guard case let .failure(error)? = outcome else { return XCTFail("the call should say the token waits") }
@@ -289,8 +288,9 @@ final class DeleteCredentialsTests: XCTestCase {
         let sdk = StubSDK.make(shopId: shop) { _ in ready.fulfill() }
         wait(for: [ready], timeout: 5)
 
-        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: Data([0x0C]))
-        Thread.sleep(forTimeInterval: 0.3)
+        expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3) {
+            NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: Data([0x0C]))
+        }
 
         XCTAssertTrue(tokens(shop).isEmpty)
         XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop)))
@@ -377,7 +377,7 @@ final class DeleteCredentialsTests: XCTestCase {
             for outcome in outcomes {
                 guard case .initializationFailed? = outcome else { return XCTFail("expected initializationFailed, got \(String(describing: outcome))") }
             }
-            Thread.sleep(forTimeInterval: 0.3)
+            expectNoRequest(to: "/init", shop: shop, within: 0.3)
             XCTAssertEqual(StubURLProtocol.requests(to: "/init", shop: shop).count, 1, "no /init after release, coreV2 = \(coreV2)")
             XCTAssertTrue(StubURLProtocol.requests(to: "/recommend/after-release", shop: shop).isEmpty)
             XCTAssertTrue(StubURLProtocol.requests(to: "/push", shop: shop).isEmpty)
@@ -405,8 +405,8 @@ final class DeleteCredentialsTests: XCTestCase {
         XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/init", shop: shop).contains { $0.query["ios_advertising_id"] != nil } })
 
         sdk.deleteUserCredentials()
+        // The answer is saved, or not, before the call hears it.
         wait(for: [answered], timeout: 5)
-        Thread.sleep(forTimeInterval: 0.2)
 
         XCTAssertNil(keychain.data, "the keychain got the deleted customer back")
         XCTAssertNil(sdk.storage.readSavedInitAnswer(), "the saved answer got the deleted customer back")

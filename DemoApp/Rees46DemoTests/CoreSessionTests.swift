@@ -251,21 +251,21 @@ final class CoreSessionTests: XCTestCase {
         guard case .failure(.networkOfflineError)? = getProduct(sdk) else { return XCTFail("offline: networkOfflineError") }
     }
 
-    func test_an_init_answer_without_a_seance_leaves_a_live_session_without_a_sid_and_no_init_storm() {
+    func test_an_init_answer_without_a_seance_keeps_the_live_sid_and_brings_no_init_storm() {
         let shop = newShop()
         StubURLProtocol.handler = { request in
             request.path == "/init" ? StubReply(json: #"{"did":"d"}"#) : StubReply()
         }
         let sdk = make(shop, identity: identity(sid: "OldSid0001", ago: 60))
-        XCTAssertTrue(eventually { self.inits(shop).count == 1 && sdk.sessionId == nil })
-        XCTAssertEqual(sdk.userSeance, "", "no sid: the client makes none")
+        XCTAssertTrue(eventually { self.inits(shop).count == 1 && sdk.settledInitCount >= 2 })
+        XCTAssertEqual(sdk.sessionId, "OldSid0001", "a live sid is not erased")
         for _ in 0..<3 {
             guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
         }
         clock.advance(by: 2 * 60 * 60 - 60)
         guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
-        XCTAssertEqual(inits(shop).count, 1, "the window lives without a sid: no /init again")
-        XCTAssertNil(products(shop).last?.query["sid"])
+        XCTAssertEqual(inits(shop).count, 1, "the window /init opened lives: no /init again")
+        XCTAssertEqual(products(shop).last?.query["sid"], "OldSid0001")
 
         clock.advance(by: 120)
         guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
@@ -437,5 +437,128 @@ final class CoreSessionTests: XCTestCase {
         XCTAssertEqual(heard.current, [sdk.userSeance])
         XCTAssertNotEqual(sdk.userSeance, own)
         subscription.cancel()
+    }
+
+    // MARK: - After the review of stages 4–5
+
+    /// `/init` answers in turn from `replies`; the last one repeats.
+    private func answerInit(_ replies: [StubReply]) {
+        let list = Locked(replies)
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            var reply = StubReply()
+            list.mutate { reply = $0.count > 1 ? $0.removeFirst() : $0[0] }
+            return reply
+        }
+    }
+
+    private func live(_ sid: String) -> InMemoryUserIdentityRepository {
+        identity(did: "d", sid: sid, ago: 0)
+    }
+
+    func test_an_init_answer_without_a_seance_keeps_a_live_sid_and_extends_its_window() {
+        let shop = newShop()
+        answerInit([StubReply(json: #"{"did":"d","seance":"s-1"}"#), StubReply(json: #"{"did":"d"}"#)])
+        let stored = live("s-0")
+        let sdk = make(shop, identity: stored)
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+        clock.advance(by: 60 * 60)
+        XCTAssertEqual((sdk.core as? CoreV2)?.checkShop(), true)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 && stored.seanceLastActTime == self.clock.now() })
+        XCTAssertEqual(sdk.sessionId, "s-1", "the live sid stays")
+        XCTAssertEqual(stored.seance, "s-1")
+    }
+
+    func test_an_init_answer_without_a_seance_after_the_window_ended_leaves_no_sid() {
+        let shop = newShop()
+        answerInit([StubReply(json: #"{"did":"d","seance":"s-1"}"#), StubReply(json: #"{"did":"d"}"#)])
+        let sdk = make(shop, identity: live("s-0"))
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+        clock.advance(by: 2 * 60 * 60 + 1)
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 })
+        XCTAssertTrue(eventually { sdk.userSeance.isEmpty }, "an ended sid is not kept alive")
+        XCTAssertNil(sdk.sessionId)
+    }
+
+    func test_the_return_of_the_network_sends_an_init_waiting_out_its_own_pause_at_once() {
+        let shop = newShop()
+        answerInit()
+        let network = FakeConnectivity(online: true)
+        let sdk = make(shop, identity: live("s-0"), connectivity: network)
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+
+        // The session ends offline: its /init fails at once and waits out a pause.
+        network.isOnline = false
+        clock.advance(by: 2 * 60 * 60 + 1)
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { self.scheduler.pending == 1 }, "the /init waits out its pause")
+        XCTAssertEqual(inits(shop).count, 1)
+
+        network.isOnline = true
+        XCTAssertTrue(eventually { self.inits(shop).count == 2 }, "at once, not after the pause")
+        XCTAssertTrue(eventually { sdk.sessionId == "s-2" })
+    }
+
+    func test_the_servers_retry_after_on_init_is_cut_by_nothing_and_its_own_pause_by_the_foreground() {
+        let shop = newShop()
+        answerInit([
+            StubReply(json: #"{"did":"d","seance":"s-1"}"#),
+            StubReply(503, headers: ["Retry-After": "120"]),
+            StubReply(json: #"{"did":"d","seance":"s-3"}"#),
+        ])
+        let network = FakeConnectivity(online: true)
+        let sdk = make(shop, identity: live("s-0"), connectivity: network)
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+        clock.advance(by: 2 * 60 * 60 + 1)
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { self.inits(shop).count == 2 && self.scheduler.pendingDelays == [120] })
+
+        expectNoRequest(to: "/init", shop: shop, within: 0.3) {
+            self.lifecycle.send(.didEnterBackground)
+            self.lifecycle.send(.willEnterForeground)
+            _ = (sdk.core as? CoreV2)?.checkShop()
+            network.isOnline = false
+            network.isOnline = true
+        }
+        XCTAssertEqual(scheduler.pendingDelays, [120], "the server's pause stands")
+        scheduler.advance(by: 120)
+        XCTAssertTrue(eventually { self.inits(shop).count == 3 })
+        XCTAssertTrue(eventually { sdk.sessionId == "s-3" })
+    }
+
+    func test_popups_v3_and_the_polls_take_the_session_after_the_window_check() {
+        let shop = newShop()
+        answerInit()
+        let sdk = make(shop, identity: live("s-0"))
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+        XCTAssertEqual(sdk.currentSessionId, "s-1")
+        clock.advance(by: 2 * 60 * 60 + 1)
+        XCTAssertEqual(sdk.currentSessionId, "", "no live session: none")
+
+        let asked = Locked<[URL]>([])
+        let transport = StoriesApiV3.transport
+        defer { StoriesApiV3.transport = transport }
+        StoriesApiV3.transport = { request, completion in
+            request.url.map { url in asked.mutate { $0.append(url) } }
+            completion(Data(#"{"status":"success","popups":[]}"#.utf8), HTTPURLResponse(url: request.url ?? URL(fileURLWithPath: "/"), statusCode: 200, httpVersion: nil, headerFields: nil), nil)
+        }
+        let api = PopupsV3API(sdk: sdk, appHost: { "app.stub.test" }, apiHost: "stub.test")
+        let done = expectation(description: "list")
+        api.fetchList(testMode: false, debug: false) { _ in done.fulfill() }
+        wait(for: [done], timeout: 5)
+
+        XCTAssertEqual(inits(shop).count, 2, "the window was renewed first")
+        let query = asked.current.first.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? []
+        XCTAssertEqual(query.first { $0.name == "sid" }?.value, "s-2", "the new session, not the ended one")
+
+        let fields = Locked<String?>(nil)
+        let polled = expectation(description: "poll body")
+        DispatchQueue.global().async {
+            fields.current = sdk.sessionIdForRequest()
+            polled.fulfill()
+        }
+        wait(for: [polled], timeout: 5)
+        XCTAssertEqual(fields.current, "s-2")
     }
 }

@@ -89,18 +89,16 @@ final class CoreQueueTests: XCTestCase {
         known.deviceId = "d"
         known.seance = "s-0"
         known.seanceLastActTime = clock.now()
-        let before = logs.current.filter { $0.shopId == shop && $0.code == "init_succeeded" }.count
         let sdk = StubSDK.make(
             shopId: shop, identity: identity ?? known, logLevel: .debug, connectivity: network,
             coreV2: true, environment: environment
         )
         if settled {
-            XCTAssertTrue(eventually { self.logs.current.filter { $0.shopId == shop && $0.code == "init_succeeded" }.count > before },
-                          "the launch's /init answered")
-            // `init_succeeded` is written just before the queue hears it.
-            let heard = expectation(description: "the queue heard /init")
-            heard.isInverted = true
-            wait(for: [heard], timeout: 0.05)
+            // Settled once the launch's /init answered and the queue heard it — `didSettle` comes after
+            // `initSucceeded` and kicks the queue last —, and the queue did what it was told.
+            // A stored device id settles once at the start, ready at once (decision 1), then on the answer.
+            let settles = ((identity ?? known).deviceId ?? "").isEmpty ? 1 : 2
+            XCTAssertTrue(eventually { sdk.settledInitCount >= settles }, "the launch's /init answered")
             sdk.eventQueue?.settle()
         }
         return sdk
@@ -317,18 +315,35 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertEqual(requests("/init", shop).count, 2, "one check")
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["second"] })
 
-        // Asked less than ten minutes ago: no new /init answer can come, so the event is not taken for
-        // checked — it goes again after a pause, and once a check can be asked, its answer counts.
-        answer("/push", StubReply(404))
+        // The shop passed a check less than ten minutes ago and is ready: the same answer to another
+        // event is the service's refusal — it is dropped at once, and the queue does not wait.
+        answer("/push", StubReply(404), StubReply(json: #"{"status":"success"}"#))
         sdk.tracking.productView(itemId: "third")
-        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 && self.scheduler.pending == 1 })
-        XCTAssertEqual(dropped(shop).count, 1, "not dropped without a new answer")
-        XCTAssertEqual(requests("/init", shop).count, 2, "not asked again within ten minutes")
-        scheduler.advance(by: 10 * 60)
-        XCTAssertTrue(eventually { self.requests("/init", shop).count == 3 }, "the check, once it may be asked")
+        sdk.tracking.productView(itemId: "fourth")
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["second", "third", "fourth"] })
         XCTAssertTrue(eventually { self.dropped(shop).count == 2 })
         XCTAssertEqual(dropped(shop).last?.context["reason"], "service_refused")
-        XCTAssertEqual(itemIds(requests("/push", shop)), ["second", "third", "third", "third"])
+        XCTAssertEqual(requests("/init", shop).count, 2, "not asked again within ten minutes")
+        sdk.eventQueue?.settle()
+        XCTAssertTrue(files(sdk).isEmpty)
+    }
+
+    func test_a_refusal_while_the_last_check_is_still_on_its_way_waits_for_its_answer() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            return handler(request)
+        }
+        answer("/push", StubReply(402), StubReply(json: #"{"status":"success"}"#))
+        sdk.tracking.productView(itemId: "a")
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == 2 }, "the check")
+        XCTAssertEqual(requests("/push", shop).count, 1)
+        held.signal()
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["a", "a"] }, "sent again once checked")
+        XCTAssertTrue(dropped(shop).isEmpty)
     }
 
     func test_a_refusal_of_the_shop_clears_the_queue_and_takes_no_new_events() {
@@ -346,8 +361,10 @@ final class CoreQueueTests: XCTestCase {
         }
         wait(for: [first, second], timeout: 5)
         XCTAssertEqual(sdk.state, .refused)
+        // Cleared by the refusal: `cancelled` (`sdk/core/queue.md`), which the old callbacks hear as
+        // `invalidResponse`; a new event is refused at once with `shopBlocked`.
         for result in results.current {
-            guard case .failure(.custom("shop blocked")) = result else { return XCTFail("\(result)") }
+            guard case .failure(.invalidResponse) = result else { return XCTFail("\(result)") }
         }
         XCTAssertTrue(files(sdk).isEmpty, "cleared")
         XCTAssertEqual(dropped(shop).last?.context["reason"], "refused")
@@ -660,6 +677,8 @@ final class CoreQueueTests: XCTestCase {
 
         sdk.deleteUserCredentials()
 
+        // The call does not wait for the queue's thread: the files go right after it.
+        sdk.eventQueue?.settle()
         XCTAssertTrue(files(sdk).isEmpty, "gone with the customer")
         XCTAssertEqual(sdk.eventQueue?.waiting.count, 0)
         XCTAssertTrue(eventually { self.dropped(shop).last?.context["reason"] == "delete_user_credentials" })
@@ -1061,5 +1080,234 @@ final class CoreQueueTests: XCTestCase {
         case "webPushDigest": return .webPushDigest
         default: return raw.flatMap(TrackingSourceType.init(rawValue:))
         }
+    }
+
+    // MARK: - After the review of stages 4–5
+
+    func test_the_queue_wakes_itself_every_60_seconds_while_events_wait_and_not_when_empty() {
+        let shop = newShop()
+        let sdk = make(shop)
+        network.isOnline = false
+        sdk.tracking.productView(itemId: "a")
+        sdk.eventQueue?.settle()
+        XCTAssertTrue(eventually { self.scheduler.pendingDelays.contains(EventQueue.timerInterval) })
+        // The network came back and nobody said so: the timer finds out.
+        network.setOnlineSilently(true)
+        scheduler.advance(by: EventQueue.timerInterval)
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+        sdk.eventQueue?.settle()
+        XCTAssertTrue(eventually { !self.scheduler.pendingDelays.contains(EventQueue.timerInterval) }, "an empty queue does not wake")
+    }
+
+    func test_no_timer_while_a_pause_or_an_event_on_its_way_wakes_the_queue() {
+        let shop = newShop()
+        let sdk = make(shop)
+        answer("/push", StubReply(503), StubReply(json: #"{"status":"success"}"#))
+        sdk.tracking.productView(itemId: "a")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && self.scheduler.pending == 1 })
+        XCTAssertFalse(scheduler.pendingDelays.contains(EventQueue.timerInterval), "the pause wakes it")
+    }
+
+    func test_an_event_extends_a_live_session_when_it_is_accepted_and_not_an_ended_one() {
+        let shop = newShop()
+        let identity = InMemoryUserIdentityRepository()
+        identity.deviceId = "d"
+        identity.seance = "s-0"
+        identity.seanceLastActTime = clock.now()
+        let sdk = make(shop, identity: identity)
+        let opened = identity.seanceLastActTime
+        offline {
+            clock.advance(by: 30 * 60)
+            sdk.tracking.productView(itemId: "a")
+            XCTAssertEqual(identity.seanceLastActTime, clock.now(), "accepted, not sent: the window moved")
+            XCTAssertNotEqual(identity.seanceLastActTime, opened)
+
+            clock.advance(by: 2 * 60 * 60 + 1)
+            let ended = identity.seanceLastActTime
+            sdk.tracking.productView(itemId: "b")
+            XCTAssertEqual(identity.seanceLastActTime, ended, "an ended window is not opened by an event")
+            XCTAssertNil(sdk.sessionId)
+        }
+    }
+
+    func test_a_virtual_story_slide_is_not_sent_and_is_no_error_on_any_path() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let done = expectation(description: "done")
+        done.expectedFulfillmentCount = 4
+        let results = Locked<[Result<Void, SdkError>]>([])
+        let record: (Result<Void, SdkError>) -> Void = { result in results.mutate { $0.append(result) }; done.fulfill() }
+        expectNoRequest(to: "/track/stories", shop: shop, within: 0.5) {
+            sdk.tracking.storyView(storyId: "12_3", slideId: "5", code: "main", completion: record)
+            sdk.tracking.storyClick(storyId: "12", slideId: "12_0", code: "main", completion: record)
+            sdk.tracking.storyView(storyId: "0", slideId: "5", code: "main", completion: record)
+            sdk.track(event: .slideView(storyId: "7_1", slideId: "2"), recommendedBy: nil, completion: record)
+        }
+        wait(for: [done], timeout: 5)
+        for result in results.current {
+            guard case .success = result else { return XCTFail("\(result)") }
+        }
+        sdk.eventQueue?.settle()
+        XCTAssertTrue(files(sdk).isEmpty, "nothing queued")
+        XCTAssertEqual(sdk.trackingSourceStore.currentSource()?.type, "stories", "the slide still makes its block the source")
+    }
+
+    func test_an_empty_category_id_is_an_invalid_argument_at_once_on_any_path() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let done = expectation(description: "done")
+        done.expectedFulfillmentCount = 2
+        let results = Locked<[Result<Void, SdkError>]>([])
+        let record: (Result<Void, SdkError>) -> Void = { result in results.mutate { $0.append(result) }; done.fulfill() }
+        expectNoRequest(to: "/push", shop: shop) {
+            sdk.tracking.categoryView(categoryId: "", completion: record)
+            sdk.track(event: .categoryView(id: "  "), recommendedBy: nil, completion: record)
+        }
+        wait(for: [done], timeout: 5)
+        for result in results.current {
+            guard case .failure(.custom) = result else { return XCTFail("\(result)") }
+        }
+        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "invalid_argument" })
+        sdk.eventQueue?.settle()
+        XCTAssertTrue(files(sdk).isEmpty)
+    }
+
+    func test_the_files_of_the_queue_have_unique_names_of_time_process_and_a_random_part() throws {
+        let shop = newShop()
+        let sdk = make(shop)
+        offline {
+            (1...5).forEach { sdk.tracking.productView(itemId: "item-\($0)") }
+            sdk.eventQueue?.settle()
+        }
+        let names = files(sdk)
+        XCTAssertEqual(names.count, 5)
+        XCTAssertEqual(Set(names).count, 5)
+        let pattern = try NSRegularExpression(pattern: #"^\d{20}-\d+-[0-9a-f]{8}\.json$"#)
+        for name in names {
+            XCTAssertNotNil(pattern.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)), name)
+            XCTAssertTrue(name.contains("-\(ProcessInfo.processInfo.processIdentifier)-"), name)
+        }
+        XCTAssertEqual(names, names.sorted(), "in the order of the calls")
+    }
+
+    func test_release_then_initialize_sends_each_event_once_with_new_names() {
+        let shop = newShop()
+        let first = make(shop)
+        network.isOnline = false
+        first.tracking.productView(itemId: "a")
+        first.eventQueue?.settle()
+        let before = files(first)
+        first.release()
+        let second = make(shop, settled: false)
+        second.tracking.productView(itemId: "b")
+        second.eventQueue?.settle()
+        XCTAssertEqual(files(second).count, 2)
+        XCTAssertTrue(Set(files(second)).isSuperset(of: before), "the first file is kept, the new one has its own name")
+
+        network.isOnline = true
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["a", "b"] })
+        expectNoRequest(to: "/push", shop: shop, within: 0.3)
+        XCTAssertEqual(itemIds(requests("/push", shop)), ["a", "b"], "each once")
+        XCTAssertTrue(eventually { self.files(second).isEmpty })
+    }
+
+    func test_the_remaining_instance_takes_over_the_check_of_a_released_owner() {
+        let shop = newShop()
+        let older = InMemoryUserIdentityRepository()
+        older.deviceId = "older-did"
+        older.seance = "s-0"
+        older.seanceLastActTime = clock.now()
+        let first = make(shop, identity: older)
+        let newer = InMemoryUserIdentityRepository()
+        newer.deviceId = "newer-did"
+        newer.seance = "s-0"
+        newer.seanceLastActTime = clock.now()
+        let owner = make(shop, identity: newer)
+        // The owner's check is held, and its instance goes while it is on its way.
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/init", request.query["did"] == "newer-did" { _ = held.wait(timeout: .now() + 10) }
+            return handler(request)
+        }
+        answer("/push", StubReply(402), StubReply(json: #"{"status":"success"}"#))
+        owner.tracking.productView(itemId: "a")
+        XCTAssertTrue(eventually { self.requests("/init", shop).filter { $0.query["did"] == "newer-did" }.count == 2 }, "the owner's check")
+        owner.release()
+
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 2 }, "sent again through the remaining instance")
+        XCTAssertEqual(requests("/push", shop).last?.body["did"] as? String, "older-did")
+        XCTAssertTrue(eventually { self.files(first).isEmpty })
+        XCTAssertTrue(dropped(shop).isEmpty)
+    }
+
+    func test_delete_user_credentials_on_any_instance_resets_the_other_ones_of_the_shop() {
+        let shop = newShop()
+        let shared = InMemoryUserIdentityRepository()
+        shared.deviceId = "d"
+        shared.seance = "s-0"
+        shared.seanceLastActTime = clock.now()
+        let first = make(shop, identity: shared)
+        let owner = make(shop, identity: shared)
+        XCTAssertEqual(owner.deviceId, "d")
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
+            if request.query["did"] == nil { _ = held.wait(timeout: .now() + 10) }
+            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "next-did")","seance":"s-9"}"#)
+        }
+
+        first.deleteUserCredentials()
+        XCTAssertEqual(owner.deviceId, "", "the owner forgot the deleted did")
+        XCTAssertEqual(owner.state, .initializing)
+        let done = expectation(description: "products/get")
+        owner.getProductInfo(id: "37") { _ in done.fulfill() }
+        owner.tracking.productView(itemId: "after")
+        expectNoRequest(to: "/products/get", shop: shop, within: 0.3)
+        XCTAssertTrue(requests("/push", shop).isEmpty)
+
+        // Both instances asked for the next did; the first answer stored is the one both take.
+        held.signal()
+        held.signal()
+        wait(for: [done], timeout: 5)
+        XCTAssertEqual(requests("/products/get", shop).first?.query["did"], "next-did")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+        XCTAssertEqual(requests("/push", shop).first?.body["did"] as? String, "next-did")
+        XCTAssertTrue(eventually { owner.deviceId == "next-did" && first.deviceId == "next-did" })
+        let all = requests("/products/get", shop) + requests("/push", shop)
+        XCTAssertFalse(all.contains { (($0.query["did"] ?? $0.body["did"] as? String) ?? "").isEmpty }, "never without a did")
+    }
+
+    func test_delete_user_credentials_from_the_main_thread_does_not_wait_for_the_queue_and_nothing_old_goes_after_it() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        let holds = Locked(true)
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/push" {
+                var first = false
+                holds.mutate { first = $0; $0 = false }
+                if first { _ = held.wait(timeout: .now() + 10) }
+            }
+            return handler(request)
+        }
+        sdk.tracking.productView(itemId: "old-1")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+        network.isOnline = false
+        sdk.tracking.productView(itemId: "old-2")
+        sdk.eventQueue?.settle()
+        network.isOnline = true
+
+        XCTAssertTrue(Thread.isMainThread)
+        let started = Date()
+        sdk.deleteUserCredentials()
+        XCTAssertLessThan(Date().timeIntervalSince(started), 0.5, "not held by the queue")
+        sdk.tracking.productView(itemId: "new")
+        held.signal()
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)).contains("new") })
+        XCTAssertEqual(itemIds(requests("/push", shop)).filter { $0.hasPrefix("old") }, ["old-1"], "only the one on its way at the call")
+        XCTAssertTrue(dropped(shop).contains { $0.context["reason"] == "delete_user_credentials" })
     }
 }

@@ -62,6 +62,8 @@ final class StubURLProtocol: URLProtocol {
 
     private static let lock = NSLock()
     private static var recorded: [StubRequest] = []
+    /// Requests whose answer the stub handed to the client in full.
+    private static var finished: [StubRequest] = []
     private static var installed = false
 
     private static var currentHandler: (StubRequest) -> StubReply? = defaultHandler
@@ -92,9 +94,17 @@ final class StubURLProtocol: URLProtocol {
         requests(to: path).filter { ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == shopId }
     }
 
+    /// How many answers of `shop` to `path` the stub handed to the client in full: what a test waits
+    /// for instead of sleeping.
+    static func answered(to path: String, shop shopId: String) -> Int {
+        lock.lock(); defer { lock.unlock() }
+        return finished.filter { $0.path == path && ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == shopId }.count
+    }
+
     static func install() {
         lock.lock()
         recorded.removeAll()
+        finished.removeAll()
         lock.unlock()
         handler = defaultHandler
         guard !installed else { return }
@@ -177,6 +187,9 @@ final class StubURLProtocol: URLProtocol {
             }
             client.urlProtocol(self, didLoad: reply.body)
             client.urlProtocolDidFinishLoading(self)
+            Self.lock.lock()
+            Self.finished.append(seen)
+            Self.lock.unlock()
         }
     }
 

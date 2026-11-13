@@ -93,6 +93,13 @@ final class FakeConnectivity: ConnectivityMonitor {
 
     private var pathReported = true
 
+    /// Changes the network without telling the observers: a change the system's monitor missed.
+    func setOnlineSilently(_ value: Bool) {
+        lock.lock()
+        online = value
+        lock.unlock()
+    }
+
     /// `false` plays a cold start: the monitor has not reported its first path yet.
     var hasPath: Bool {
         get { lock.lock(); defer { lock.unlock() }; return pathReported }
