@@ -191,6 +191,105 @@ final class CoreBridgeTests: XCTestCase {
         sdk.setPushTokenNotification(token: "", isFirebaseNotification: false, completion: Rees46.BridgeErrors.completion { tokenResult.current = $0; token.fulfill() })
         wait(for: [token], timeout: 5)
         guard case .failure(.invalidArgument)? = tokenResult.current else { return XCTFail("\(String(describing: tokenResult.current))") }
+
+        // The bridges' own setPushToken refuses an empty token and a provider of another platform on
+        // both cores, before anything goes.
+        for instance in [sdk, make(coreV2: false)] {
+            for refused in [Rees46.PushToken(token: "", provider: .apns), Rees46.PushToken(token: "t", provider: .hms)] {
+                let done = expectation(description: "bridge token")
+                let result = Locked<Result<Void, Rees46.SdkError>?>(nil)
+                (instance as PersonalizationSDK).setPushToken(refused) { result.current = $0; done.fulfill() }
+                wait(for: [done], timeout: 5)
+                guard case .failure(.invalidArgument)? = result.current else { return XCTFail("\(refused): \(String(describing: result.current))") }
+            }
+            XCTAssertTrue(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: instance.shopId).isEmpty)
+        }
+    }
+
+    func test_a_refused_shops_initialize_reaches_the_bridge_as_shop_blocked() {
+        let shop = StubSDK.shopId()
+        shops.append(shop)
+        StubURLProtocol.handler = { $0.path == "/init" ? StubReply(403) : StubReply() }
+        let first = expectation(description: "initialize")
+        let later = expectation(description: "a later initialize")
+        let heard = Locked<[Rees46.SdkError?]>([])
+        let sdk = StubSDK.make(shopId: shop, connectivity: network, coreV2: true, environment: environment, completion: Rees46.BridgeErrors.completion { error in
+            heard.mutate { $0.append(error) }
+            first.fulfill()
+        })
+        wait(for: [first], timeout: 5)
+        sdk.whenInitialized(Rees46.BridgeErrors.completion { error in
+            heard.mutate { $0.append(error) }
+            later.fulfill()
+        })
+        wait(for: [later], timeout: 5)
+        XCTAssertEqual(heard.current, [.shopBlocked, .shopBlocked], "not the text of the old error")
+        XCTAssertEqual(Rees46.BridgeErrors.error(of: .legacy(.shopBlocked)), .shopBlocked, "made from the old one")
+        XCTAssertEqual(Rees46.BridgeErrors.error(of: .custom(error: "track: SDK is not initialized")), .notInitialized)
+        XCTAssertEqual(Rees46.BridgeErrors.error(of: .custom(error: "track: the item id must not be empty")), .invalidArgument("track: the item id must not be empty"))
+    }
+
+    func test_a_request_release_cuts_off_reaches_the_bridge_as_cancelled() {
+        let sdk = make()
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/products/get" { _ = held.wait(timeout: .now() + 10) }
+            return handler(request)
+        }
+        let done = expectation(description: "products/get")
+        let result = Locked<Result<ProductInfo, Rees46.SdkError>?>(nil)
+        sdk.getProductInfo(id: "37", completion: Rees46.BridgeErrors.completion { result.current = $0; done.fulfill() })
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/products/get", shop: sdk.shopId).count == 1 })
+        sdk.release()
+        wait(for: [done], timeout: 5)
+        guard case .failure(.cancelled)? = result.current else { return XCTFail("\(String(describing: result.current))") }
+    }
+
+    func test_a_push_token_waiting_for_the_did_is_no_failure_to_the_bridge_on_both_cores() {
+        for coreV2 in [true, false] {
+            let shop = StubSDK.shopId()
+            shops.append(shop)
+            // The first /init fails: the device has no did; the next one brings it.
+            let inits = Locked(0)
+            StubURLProtocol.handler = { request in
+                guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
+                var call = 0
+                inits.mutate { $0 += 1; call = $0 }
+                return call == 1 ? StubReply(500) : StubReply(json: #"{"did":"d-new","seance":"s-1"}"#)
+            }
+            let settled = expectation(description: "the first /init settled")
+            let sdk = StubSDK.make(shopId: shop, connectivity: network, coreV2: coreV2, environment: environment) { _ in settled.fulfill() }
+            wait(for: [settled], timeout: 5)
+            XCTAssertEqual(sdk.deviceId, "", "no did yet, coreV2 = \(coreV2)")
+
+            let bridge: PersonalizationSDK = sdk
+            let heard = expectation(description: "the bridge, once it went")
+            let result = Locked<(Result<Void, Rees46.SdkError>, Bool)?>(nil)
+            bridge.setPushToken(Rees46.PushToken(token: "t", provider: .fcm)) { result.current = ($0, Thread.isMainThread); heard.fulfill() }
+            XCTAssertTrue(eventually { sdk.pendingPushToken != nil }, "it waits, coreV2 = \(coreV2)")
+            XCTAssertNil(result.current)
+            if !coreV2 {
+                // The app's old completion is told at once, as it always was.
+                let app = expectation(description: "the app")
+                sdk.setPushTokenNotification(token: "t", isFirebaseNotification: true) { outcome in
+                    if case .failure(let error) = outcome, error.isPushTokenWaitingForDeviceId { app.fulfill() }
+                }
+                wait(for: [app], timeout: 5)
+            }
+
+            // The next /init brings the did: the token goes, and the bridge hears that.
+            if coreV2 {
+                scheduler.advance(by: 1)
+            } else {
+                sdk.deleteUserCredentials()
+            }
+            wait(for: [heard], timeout: 5)
+            guard case (.success, true)? = result.current else { return XCTFail("\(String(describing: result.current)), coreV2 = \(coreV2)") }
+            XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shop).first?.body["did"] as? String, "d-new")
+            XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shop).first?.body["platform"] as? String, "ios_firebase")
+            sdk.release()
+        }
     }
 
     // MARK: - An event through the queue

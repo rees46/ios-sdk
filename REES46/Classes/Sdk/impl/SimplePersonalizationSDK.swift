@@ -361,7 +361,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 requestQueue.close()
             }
             startInit(generation: currentInitGeneration()) { [initCompletion] error in
-                initCompletion.finish(error)
+                // Called inside the answer's completion: the whole error of `/init` is the current one.
+                initCompletion.finish(error, full: CurrentError.current ?? error.map(Self.newCoreError))
             }
         }
         
@@ -637,14 +638,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     private var deferredPushToken: DeferredPushToken?
+    /// Who waits to hear the answer of the deferred token: the new core's callers, a bridge's on the old
+    /// core.
+    private var deferredPushTokenWaiters: [(Result<Void, SdkError>) -> Void] = []
     private let pushTokenLock = NSLock()
 
-    /// Keeps `token` until the device has an id; a later one replaces it. A device id stored meanwhile
-    /// — `/init` answered between the check and here, and already looked for a deferred token — sends it
+    /// Keeps `token` until the device has an id; a later one replaces it, and `waiter` — with those of
+    /// the token it replaced — hears the answer of the one that goes. A device id stored meanwhile —
+    /// `/init` answered between the check and here, and already looked for a deferred token — sends it
     /// now instead of leaving it until the next `/init`.
-    func deferPushToken(_ token: DeferredPushToken) {
+    func deferPushToken(_ token: DeferredPushToken, waiter: ((Result<Void, SdkError>) -> Void)? = nil) {
         pushTokenLock.lock()
         deferredPushToken = token
+        if let waiter = waiter {
+            deferredPushTokenWaiters.append(waiter)
+        }
         pushTokenLock.unlock()
         logger.debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
         if !deviceId.isEmpty {
@@ -684,14 +692,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         pushTokenLock.lock()
         let deferred = deferredPushToken
         deferredPushToken = nil
+        let waiters = deferredPushTokenWaiters
+        deferredPushTokenWaiters.removeAll()
         pushTokenLock.unlock()
+        // Called inside the answer's completion: the whole error is the current one there.
+        let heard: ((Result<Void, SdkError>) -> Void)? = waiters.isEmpty ? nil : { result in waiters.forEach { $0(result) } }
         if usesCoreV2, let deferred = deferred {
             // The new core's token: its own rules, its own log.
             switch deferred {
             case .device(let token):
-                submitPushToken(Rees46.PushToken(token: DeviceStore.hex(token), provider: .apns), apnsData: token, completion: nil)
+                submitPushToken(Rees46.PushToken(token: DeviceStore.hex(token), provider: .apns), apnsData: token, completion: heard)
             case let .direct(token, isFirebase):
-                submitPushToken(Rees46.PushToken(token: token, provider: isFirebase ? .fcm : .apns), completion: nil)
+                submitPushToken(Rees46.PushToken(token: token, provider: isFirebase ? .fcm : .apns), completion: heard)
             }
             return true
         }
@@ -699,7 +711,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         case .device(let token)?:
             // With autoSendPushToken the device's token just went: the registrar's weekly claim holds a
             // second one back anyway.
-            NotificationRegistrar(sdk: self).registerWithDeviceToken(deviceToken: token)
+            NotificationRegistrar(sdk: self).registerWithDeviceToken(deviceToken: token, completion: heard)
         case let .direct(token, isFirebase)?:
             setPushTokenNotification(token: token, isFirebaseNotification: isFirebase) { result in
                 switch result {
@@ -708,6 +720,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure(let error):
                     self.logger.warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
                 }
+                heard?(result)
             }
         case nil:
             return false
@@ -715,11 +728,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return true
     }
 
-    /// `release()`: a deferred token is not sent any more.
+    /// `release()`: a deferred token is not sent any more, and who waits for it hears `notInitialized`.
     private func failDeferredPushToken() {
         pushTokenLock.lock()
         deferredPushToken = nil
+        let waiters = deferredPushTokenWaiters
+        deferredPushTokenWaiters.removeAll()
         pushTokenLock.unlock()
+        guard !waiters.isEmpty else { return }
+        DispatchQueue.global(qos: .utility).async {
+            CurrentError.with(.notInitialized) {
+                waiters.forEach { $0(.failure(.legacy(.notInitialized))) }
+            }
+        }
     }
     
     @available(*, deprecated, message: "GET /notifications requires the shop secret: use getAllNotifications(shopSecret:type:...).")
@@ -1882,7 +1903,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         failDeferredPushToken()
         instanceState.set(.notInitialized)
         // An initialize still waiting for its outcome hears it once.
-        initCompletion.finish(.legacy(.notInitialized))
+        initCompletion.finish(.legacy(.notInitialized), full: .notInitialized)
     }
 
     deinit {
@@ -2084,7 +2105,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // them would raise an exception Swift cannot catch.
         guard SafeJSON.isValid(requestParams) else {
             logger.warning(LogCode.invalidArgument, "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path, "reason": "invalid_json"])
-            completion(.failure(.custom(error: "\(path): the request parameters are not valid JSON")))
+            let what = "\(path): the request parameters are not valid JSON"
+            CurrentError.with(.invalidArgument(what)) {
+                completion(.failure(.custom(error: what)))
+            }
             return
         }
         core.send(CoreRequest(method: .post, path: path, body: requestParams, timeout: timeout)) { response in
@@ -2189,7 +2213,7 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
     }
 
     func initMachine(didSettle error: Rees46.SdkError?) {
-        initCompletion.finish(error.map { SdkError.legacy($0) })
+        initCompletion.finish(error.map { SdkError.legacy($0) }, full: error)
         if error == nil {
             // Usable: the queue goes, if the session lives; a pause after a failure stands.
             eventQueue?.kick(explicit: false)

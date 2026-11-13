@@ -117,12 +117,16 @@ final class InstanceState {
 }
 
 /// The completion of `Rees46.initialize`: called once with the outcome of the instance's first
-/// initialization, also for the completions of later `initialize` calls for the same shop.
+/// initialization, also for the completions of later `initialize` calls for the same shop. Each is
+/// called with the whole error behind the old one as `Rees46.BridgeErrors.currentError()`: a shop that
+/// refused is `shopBlocked` to a bridge, not the text of the old error.
 final class InitCompletion {
 
     private let lock = NSLock()
     /// `nil` until init settles; then the error it ended with, `.none` for none.
     private var outcome: SdkError??
+    /// The whole error of `outcome`.
+    private var full: Rees46.SdkError?
     private var waiting: [(SdkError?) -> Void] = []
     /// The new core calls the app back on the main thread; the old one on the thread init ends on, as
     /// it always has.
@@ -137,31 +141,35 @@ final class InitCompletion {
         guard let completion = completion else { return }
         lock.lock()
         if let outcome = outcome {
+            let full = self.full
             lock.unlock()
             let queue = onMain ? DispatchQueue.main : DispatchQueue.global(qos: .utility)
-            queue.async { completion(outcome) }
+            queue.async { CurrentError.with(full) { completion(outcome) } }
             return
         }
         waiting.append(completion)
         lock.unlock()
     }
 
-    /// The first call settles the outcome; later ones change nothing.
-    func finish(_ error: SdkError?) {
+    /// The first call settles the outcome — `error`, and `full`, the whole error behind it —; later
+    /// ones change nothing.
+    func finish(_ error: SdkError?, full: Rees46.SdkError?) {
         lock.lock()
         guard outcome == nil else {
             lock.unlock()
             return
         }
         outcome = .some(error)
+        self.full = error == nil ? nil : full
         let all = waiting
+        let full = self.full
         waiting.removeAll()
         lock.unlock()
         guard !all.isEmpty else { return }
         if onMain {
-            DispatchQueue.main.async { all.forEach { $0(error) } }
+            DispatchQueue.main.async { CurrentError.with(full) { all.forEach { $0(error) } } }
         } else {
-            all.forEach { $0(error) }
+            CurrentError.with(full) { all.forEach { $0(error) } }
         }
     }
 }

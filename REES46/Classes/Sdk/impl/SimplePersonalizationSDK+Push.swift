@@ -123,9 +123,9 @@ extension SimplePersonalizationSDK {
 
     /// The new core takes a push token (`sdk/core/push.md`): it becomes the device's token, kept for
     /// every shop, and goes to this shop — at once when it is new to it, at most once a week when it
-    /// is not, never without a device id: until `/init` stores one it waits, and `completion` hears
-    /// `pushTokenWaitsForDeviceId`. `platform` is `ios` for APNs and `ios_firebase` for FCM.
-    /// `apnsData` is the APNs token as the system gave it: kept where the old core reads it.
+    /// is not, never without a device id: until `/init` stores one it waits, which is no failure —
+    /// `completion` hears the answer once it went. `platform` is `ios` for APNs and `ios_firebase` for
+    /// FCM. `apnsData` is the APNs token as the system gave it: kept where the old core reads it.
     func submitPushToken(_ token: Rees46.PushToken, apnsData: Data? = nil, completion: ((Result<Void, SdkError>) -> Void)?) {
         // Off the caller's thread, with the whole error for the bridges (`Rees46.BridgeErrors`).
         let finish: (Result<Void, SdkError>, Rees46.SdkError?) -> Void = { result, error in
@@ -152,8 +152,8 @@ extension SimplePersonalizationSDK {
         }
         deviceStore.deviceToken = token
         guard !deviceId.isEmpty else {
-            deferPushToken(apnsData.map { .device($0) } ?? .direct(token: token.token, isFirebase: token.provider == .fcm))
-            finish(.failure(.pushTokenWaitsForDeviceId), nil)
+            // Waiting is no failure: the caller hears the answer once the token went.
+            deferPushToken(apnsData.map { .device($0) } ?? .direct(token: token.token, isFirebase: token.provider == .fcm), waiter: completion)
             return
         }
         sendPushToken(token.token, platform: platform, completion: finish)

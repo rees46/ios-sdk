@@ -84,12 +84,28 @@ final class InitPackageTests: XCTestCase {
         let both = expectation(description: "both")
         both.expectedFulfillmentCount = 2
         completion.add { error in heard.append("early \(error == nil)"); both.fulfill() }
-        completion.finish(nil)
-        completion.finish(.decodeError)
+        completion.finish(nil, full: nil)
+        completion.finish(.decodeError, full: .decoding)
         completion.add { error in heard.append("late \(error == nil)"); both.fulfill() }
         wait(for: [both], timeout: 2)
-        RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        // Whatever else had been dispatched to the main queue has run by now.
+        let drained = expectation(description: "the main queue")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 2)
         XCTAssertEqual(heard, ["early true", "late true"])
+    }
+
+    func test_the_completion_of_initialize_runs_with_the_whole_error_behind_the_old_one() {
+        let completion = InitCompletion(onMain: true)
+        var heard: [Rees46.SdkError?] = []
+        let both = expectation(description: "both")
+        both.expectedFulfillmentCount = 2
+        completion.add { _ in heard.append(CurrentError.current); both.fulfill() }
+        completion.finish(.legacy(.shopBlocked), full: .shopBlocked)
+        completion.add { _ in heard.append(CurrentError.current); both.fulfill() }
+        wait(for: [both], timeout: 2)
+        XCTAssertEqual(heard, [.shopBlocked, .shopBlocked], "early and late")
+        XCTAssertNil(CurrentError.current, "only while the completion runs")
     }
 
     // MARK: - Config

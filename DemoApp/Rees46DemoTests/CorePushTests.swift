@@ -336,17 +336,19 @@ final class CorePushTests: XCTestCase {
             return handler(request)
         }
         let sdk = make(shop, identity: InMemoryUserIdentityRepository(), settled: false)
+        let heard = expectation(description: "the answer once it went")
         let result = Locked<Result<Void, SdkError>?>(nil)
-        expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3) {
-            result.current = self.send(sdk, "t")
-        }
-        guard case .failure(let error)? = result.current, error.isPushTokenWaitingForDeviceId else {
-            return XCTFail("\(String(describing: result.current))")
-        }
+        sdk.setPushTokenNotification(token: "t") { result.current = $0; heard.fulfill() }
+        // Taken on the caller's thread: it waits for the did, and waiting is no failure.
+        XCTAssertEqual(sdk.pendingPushToken, .direct(token: "t", isFirebase: false))
+        XCTAssertNil(result.current)
+        XCTAssertTrue(tokens(shop).isEmpty)
         XCTAssertTrue(eventually { self.logged(shop, "push_token_skipped").last?.context["reason"] == "no_device_id" })
 
         held.signal()
-        XCTAssertTrue(eventually { self.tokens(shop).count == 1 })
+        wait(for: [heard], timeout: 5)
+        guard case .success? = result.current else { return XCTFail("\(String(describing: result.current))") }
+        XCTAssertEqual(tokens(shop).count, 1)
         XCTAssertEqual(tokens(shop).first?.body["did"] as? String, "d-1")
         XCTAssertEqual(tokens(shop).first?.body["token"] as? String, "t")
     }

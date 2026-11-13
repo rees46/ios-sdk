@@ -36,14 +36,18 @@ extension Rees46 {
 
     /**
      The whole `Rees46.SdkError` — its type, HTTP code and `serverCode` — behind the old `SdkError` an
-     existing method gives its completion, so a bridge hands Dart and JavaScript the error the core had.
+     existing method gives its completion, so a bridge hands Dart and JavaScript the error the core had:
+     a shop that refused is `shopBlocked`, an answer outside `2xx` `http(code:serverCode:)`, a request
+     `release()` cut off `cancelled`, and only an argument the SDK refuses `invalidArgument`.
 
      Every old method keeps calling its completion with the old `SdkError`; while the SDK calls it,
-     `currentError()` is the error behind it, on that thread. A completion that reaches the app later,
-     on another thread, loses it: `error(of:)` then makes one from the old error.
+     `currentError()` is the error behind it, on that thread — the completion of `Rees46.initialize`
+     too. A completion that reaches the app later, on another thread, loses it: `error(of:)` then makes
+     one from the old error.
 
      ```swift
      sdk.recommend(blockId: id, completion: Rees46.BridgeErrors.completion { result in … })
+     Rees46.initialize(config, completion: Rees46.BridgeErrors.completion { error in … })
      ```
      */
     public enum BridgeErrors {
@@ -56,7 +60,8 @@ extension Rees46 {
 
         /// The error of an old `SdkError` the SDK is handing over: `currentError()` when it is known,
         /// otherwise one made from `legacy` — `network` offline, `decoding`, `notInitialized`,
-        /// `invalidArgument` with the message of `.custom`, `timeout` for an answer that did not come.
+        /// `shopBlocked` for a refused shop, `invalidArgument` with the message of another `.custom`,
+        /// `timeout` for an answer that did not come.
         public static func error(of legacy: REES46.SdkError) -> Rees46.SdkError {
             currentError() ?? SimplePersonalizationSDK.newCoreError(legacy)
         }
@@ -66,6 +71,14 @@ extension Rees46 {
         public static func completion<T>(_ onResult: @escaping (Result<T, Rees46.SdkError>) -> Void) -> (Result<T, REES46.SdkError>) -> Void {
             { result in
                 onResult(result.mapError { error(of: $0) })
+            }
+        }
+
+        /// A completion for an old method that reports only an error — `Rees46.initialize` — that hands
+        /// `onError` the whole error, or `nil` for none, once, on the thread the SDK answers on.
+        public static func completion(_ onError: @escaping (Rees46.SdkError?) -> Void) -> (REES46.SdkError?) -> Void {
+            { legacy in
+                onError(legacy.map { error(of: $0) })
             }
         }
     }
@@ -89,6 +102,40 @@ extension PersonalizationSDK {
     /// `NotificationService` gets; on the main thread. A new call replaces them, `nil` removes them.
     public func setPushCallbacks(_ callbacks: Rees46.PushCallbacks?) {
         (self as? SimplePersonalizationSDK)?.setPushCallbacks(callbacks)
+    }
+
+    /**
+     The push token the bridge's messaging got (`notifications.setPushToken` of the contract): `apns` or
+     `fcm` — `hms` is not a provider of iOS. It goes to the shop by the rules of the SDK's own token
+     (`sdk/core/push.md`). `completion` hears once, on the main thread: success once the token went —
+     also when it went within the week, so nothing goes, and when it waited for the device id and went
+     once `/init` brought one: waiting is no failure —, or the whole error: `invalidArgument` for an
+     empty token or a provider of another platform, `notInitialized`, `http(code:serverCode:)`,
+     `network`, `timeout`. A token that waits for the device id and is replaced by a newer one before it
+     goes — the device's token changed — hears the answer of the newer one.
+
+     The old `setPushTokenNotification` keeps telling the app at once that the token waits for the
+     device id, as it always has; on `Rees46Config.coreV2` it, too, hears the answer once it went.
+     */
+    public func setPushToken(_ token: Rees46.PushToken, completion: @escaping (Result<Void, Rees46.SdkError>) -> Void) {
+        let finish: (Result<Void, REES46.SdkError>) -> Void = { result in
+            let mapped = result.mapError { Rees46.BridgeErrors.error(of: $0) }
+            DispatchQueue.main.async { completion(mapped) }
+        }
+        guard let instance = self as? SimplePersonalizationSDK else {
+            setPushTokenNotification(token: token.token, isFirebaseNotification: token.provider == .fcm, completion: finish)
+            return
+        }
+        guard instance.usesCoreV2 else {
+            guard !token.token.isEmpty, token.provider.iosPlatform != nil else {
+                let what = token.token.isEmpty ? "the push token must not be empty" : "\(token.provider.rawValue) is not a provider of iOS"
+                CurrentError.with(.invalidArgument(what)) { finish(.failure(.custom(error: what))) }
+                return
+            }
+            instance.pushTokenService.setPushToken(token: token.token, isFirebaseNotification: token.provider == .fcm, whenSent: finish)
+            return
+        }
+        instance.submitPushToken(token, completion: finish)
     }
 
     /**
@@ -150,7 +197,9 @@ extension SimplePersonalizationSDK {
         _ = enqueueEvent(path: path, body: body, accepted: completion) { _ in }
     }
 
-    /// The new core's name for an old error the core did not classify.
+    /// The new core's name for an old error whose whole error is not known on this thread: the SDK's
+    /// own refusals by their text — a refused shop, an instance that is not there —, any other text an
+    /// argument the SDK refused.
     static func newCoreError(_ legacy: SdkError) -> Rees46.SdkError {
         switch legacy {
         case .networkOfflineError, .airplaneModeError:
@@ -159,10 +208,22 @@ extension SimplePersonalizationSDK {
             return .decoding
         case .initializationFailed:
             return .notInitialized
+        case .custom(let message) where message == shopBlockedMessage:
+            return .shopBlocked
+        case .custom(let message) where message.hasSuffix("SDK is not initialized"):
+            return .notInitialized
         case .custom(let message):
             return .invalidArgument(message)
         default:
             return .timeout
         }
     }
+
+    /// The text of the old error of a refused shop (`SdkError.legacy`).
+    private static let shopBlockedMessage: String = {
+        if case .custom(let message) = SdkError.legacy(.shopBlocked) {
+            return message
+        }
+        return ""
+    }()
 }

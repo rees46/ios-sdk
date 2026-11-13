@@ -259,16 +259,21 @@ final class DeleteCredentialsTests: XCTestCase {
 
             NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: Data([0x0A, 0x0B]))
             let direct = expectation(description: "direct")
-            var outcome: Result<Void, SdkError>?
-            sdk.setPushTokenNotification(token: "fcm-token", isFirebaseNotification: true) { outcome = $0; direct.fulfill() }
-            wait(for: [direct], timeout: 5)
-
-            expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3)
+            let outcome = Locked<Result<Void, SdkError>?>(nil)
+            sdk.setPushTokenNotification(token: "fcm-token", isFirebaseNotification: true) { outcome.current = $0; direct.fulfill() }
+            if coreV2 {
+                // Waiting for the did is no failure on the new core: the caller hears once it went.
+                XCTAssertNil(outcome.current)
+            } else {
+                // The old core tells at once that it waits, as it always has.
+                wait(for: [direct], timeout: 5)
+                guard case let .failure(error)? = outcome.current else { return XCTFail("the call should say the token waits") }
+                XCTAssertTrue(error.isPushTokenWaitingForDeviceId)
+            }
+            // Kept on the caller's thread, or before the old core's call answered: nothing went or can go.
+            XCTAssertEqual(sdk.pendingPushToken, .direct(token: "fcm-token", isFirebase: true), "the later token is the one kept")
             XCTAssertTrue(tokens(shop).isEmpty, "a push token went out without a did, coreV2 = \(coreV2)")
             XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop)), "the week was claimed")
-            guard case let .failure(error)? = outcome else { return XCTFail("the call should say the token waits") }
-            XCTAssertTrue(error.isPushTokenWaitingForDeviceId)
-            XCTAssertEqual(sdk.pendingPushToken, .direct(token: "fcm-token", isFirebase: true), "the later token is the one kept")
 
             // A did comes: the token goes with it.
             _ = initAnswers(dids: ["fresh-did"])
@@ -278,6 +283,10 @@ final class DeleteCredentialsTests: XCTestCase {
             XCTAssertEqual(tokens(shop).first?.body["token"] as? String, "fcm-token")
             XCTAssertEqual(tokens(shop).first?.body["platform"] as? String, "ios_firebase")
             XCTAssertNil(sdk.pendingPushToken)
+            if coreV2 {
+                wait(for: [direct], timeout: 5)
+                guard case .success? = outcome.current else { return XCTFail("\(String(describing: outcome.current))") }
+            }
         }
     }
 

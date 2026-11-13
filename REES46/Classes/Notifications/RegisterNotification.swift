@@ -41,14 +41,17 @@ class NotificationRegistrar {
     /// Guards the check and the claim of a shop's weekly upload.
     private static let uploadLock = NSLock()
 
-    func registerWithDeviceToken(deviceToken: Data) {
+    /// Sends the APNs token to the shop by the old core's week; `completion`, when given, hears the
+    /// answer — success also when the week holds it back — once it went, never while it waits for the
+    /// device id.
+    func registerWithDeviceToken(deviceToken: Data, completion: ((Result<Void, SdkError>) -> Void)? = nil) {
         // The new core: the device's token, a week per shop, never without a device id
         // (`sdk/core/push.md`).
         if let instance = sdk as? SimplePersonalizationSDK, instance.usesCoreV2 {
             instance.submitPushToken(
                 Rees46.PushToken(token: DeviceStore.hex(deviceToken), provider: .apns),
                 apnsData: deviceToken,
-                completion: nil
+                completion: completion
             )
             return
         }
@@ -59,7 +62,7 @@ class NotificationRegistrar {
         // just deleted: the SDK sends it once /init stores one, and the week is not claimed meanwhile.
         guard !sdk.deviceId.isEmpty else {
             if let instance = sdk as? SimplePersonalizationSDK {
-                instance.deferPushToken(.device(deviceToken))
+                instance.deferPushToken(.device(deviceToken), waiter: completion)
             } else {
                 SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
             }
@@ -75,6 +78,7 @@ class NotificationRegistrar {
         if let lastUpload = lastUpload, Date().timeIntervalSince(lastUpload) < Constants.oneWeekInSeconds {
             Self.uploadLock.unlock()
             SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenSkipped, "the push token was sent within the last week", ["reason": "sent_recently"])
+            completion?(.success(()))
             return
         }
         UserDefaults.standard.set(Date(), forKey: key)
@@ -91,9 +95,15 @@ class NotificationRegistrar {
                 UserDefaults.standard.set(lastUpload, forKey: key)
                 Self.uploadLock.unlock()
                 // Held back for want of a device id: it goes once there is one, and that is no failure.
-                guard !error.isPushTokenWaitingForDeviceId else { return }
+                guard !error.isPushTokenWaitingForDeviceId else {
+                    if let completion = completion, let instance = self.sdk as? SimplePersonalizationSDK {
+                        instance.deferPushToken(.device(deviceToken), waiter: completion)
+                    }
+                    return
+                }
                 Self.handleRegistrationError(error, shopId: self.sdk.shopId)
             }
+            completion?(tokenResponse)
         }
     }
     
