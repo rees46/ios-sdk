@@ -13,7 +13,6 @@ public extension RawRepresentable where Self: Hashable {
                 }
                 
                 raw += 1
-                print("\(current)")
                 return current
             }
         }

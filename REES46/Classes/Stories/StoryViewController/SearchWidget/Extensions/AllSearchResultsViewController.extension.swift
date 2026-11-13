@@ -54,21 +54,18 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     }
     
     func didTapWidgetAddToCartButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
-        print("Click 01")
         guard let indexPath = resultsListView.collectionView.indexPath(for: cell) else { return }
         let productId = searchResults?[indexPath.item].id ?? ""
         toggleCartItem(for: productId, in: cell)
     }
     
     func didTapWidgetAddToFavoritesButtonInside(cell: RecommendationsWidgetViewCell, position: CGPoint) {
-        print("Click 02")
         guard let indexPath = resultsListView.collectionView.indexPath(for: cell) else { return }
         let productId = searchResults?[indexPath.item].id ?? ""
         toggleFavoritesItem(for: productId, in: cell)
     }
     
     private func toggleCartItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
-        print("Click 1")
         let cartKey = "cart.product.\(productId)"
         let cartItems = sdk?.localState?.cartProducts(productId: productId) ?? []
         
@@ -80,7 +77,6 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     }
 
     private func toggleFavoritesItem(for productId: String, in cell: RecommendationsWidgetViewCell) {
-        print("Click 2")
         let favoritesKey = "favorites.product.\(productId)"
         let favoritesItems = sdk?.localState?.favoriteProducts(productId: productId) ?? []
         
@@ -209,9 +205,10 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         sdk?.tracking.addToFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
-                print("Product id \(productId) added to 'Favorites' success")
+                SdkLogger.area(.ui, .debug, "a product was added to favorites", shopId: self.sdk?.shopId)
             case let .failure(error):
-                print("Error:", error)
+                // The kind of the error only: `.custom` carries the server's message.
+                SdkLogger.area(.ui, .warning, "a product was not added to favorites: \(error.logKind)", shopId: self.sdk?.shopId)
             }
         }
     }
@@ -220,9 +217,10 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
         sdk?.tracking.removeFromFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
-                print("Product id \(productId) removed from 'Favorites' success")
+                SdkLogger.area(.ui, .debug, "a product was removed from favorites", shopId: self.sdk?.shopId)
             case let .failure(error):
-                print("Error:", error)
+                // The kind of the error only: `.custom` carries the server's message.
+                SdkLogger.area(.ui, .warning, "a product was not removed from favorites: \(error.logKind)", shopId: self.sdk?.shopId)
             }
         }
     }

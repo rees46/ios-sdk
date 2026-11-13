@@ -26,7 +26,7 @@ extension SettingsManageable where Self: Codable {
                 return dictionary
             }
         } catch {
-            print(error.localizedDescription)
+            SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
         }
         
         return nil
@@ -38,7 +38,7 @@ extension SettingsManageable where Self: Codable {
             try encoded.write(to: settingsAddr())
             return true
         } catch {
-            print(error.localizedDescription)
+            SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
             return false
         }
     }
@@ -50,7 +50,7 @@ extension SettingsManageable where Self: Codable {
                 self = try PropertyListDecoder().decode(Self.self, from: fileContents)
                 return true
             } catch {
-                print(error.localizedDescription)
+                SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
                 return false
             }
         } else {
@@ -77,7 +77,7 @@ extension SettingsManageable where Self: Codable {
             self = try PropertyListDecoder().decode(Self.self, from: fileContents)
             return true
         } catch {
-            print(error.localizedDescription)
+            SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
             return false
         }
     }
@@ -87,7 +87,7 @@ extension SettingsManageable where Self: Codable {
             try FileManager.default.removeItem(at: settingsAddr())
             return true
         } catch {
-            print(error.localizedDescription)
+            SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
             return false
         }
     }
@@ -96,7 +96,7 @@ extension SettingsManageable where Self: Codable {
         do {
             try FileManager.default.copyItem(at: settingsAddr(), to: settingsAddr().appendingPathExtension("init"))
         } catch {
-            print(error.localizedDescription)
+            SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
         }
     }
     
@@ -105,7 +105,7 @@ extension SettingsManageable where Self: Codable {
             try FileManager.default.copyItem(at: settingsAddr().appendingPathExtension("init"), to: settingsAddr())
             return true
         } catch {
-            print(error.localizedDescription)
+            SdkLogger.area(.ui, .debug, "the view settings file failed: \(SdkLogger.errorKind(error))")
             return false
         }
     }

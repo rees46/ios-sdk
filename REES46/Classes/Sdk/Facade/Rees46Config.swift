@@ -32,7 +32,7 @@ public struct Rees46Config {
     @available(*, deprecated, message: "Set logLevel; enableLogs = true is logLevel = .debug.")
     public var enableLogs: Bool { logLevel == .debug }
     /// How much the SDK writes to the log, `warning` by default; see `Rees46.setLogHandler`.
-    public let logLevel: LogLevel
+    public let logLevel: Rees46.LogLevel
     /// Whether the SDK registers push tokens with the backend on its own.
     public let autoSendPushToken: Bool
     /// Whether the SDK collects and sends the advertising id (IDFA).
@@ -49,7 +49,7 @@ public struct Rees46Config {
         apiDomain: String = "api.rees46.ru",
         stream: String = "ios",
         enableLogs: Bool = false,
-        logLevel: LogLevel = .warning,
+        logLevel: Rees46.LogLevel = .warning,
         autoSendPushToken: Bool = true,
         sendAdvertisingId: Bool = false,
         enableAutoPopupPresentation: Bool = true,

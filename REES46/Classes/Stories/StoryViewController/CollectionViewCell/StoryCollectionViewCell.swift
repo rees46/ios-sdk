@@ -421,7 +421,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             audioSession.addObserver(self, forKeyPath: "outputVolume", options: NSKeyValueObservingOptions.new, context: nil)
             kAudioLevel = audioSession.outputVolume
         } catch {
-            print("SDK Output volume listener error")
+            SdkLogger.area(.stories, .debug, "the volume buttons cannot be listened to: \(SdkLogger.errorKind(error))")
         }
     }
     
@@ -442,7 +442,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 } catch let error {
                     player.volume = audioSession.outputVolume
                     muteButton.setImage(UIImage(named: "iconStoryMute", in: frameworkBundle, compatibleWith: nil), for: .normal)
-                    print("Error in AVAudio Session\(error.localizedDescription)")
+                    SdkLogger.area(.stories, .debug, "the audio session refused the category: \(SdkLogger.errorKind(error))")
                 }
             }
             if audioSession.outputVolume < kAudioLevel {
@@ -478,7 +478,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
             do {
                 try audioSession.setCategory(.playback, mode: .default, options: [])
             } catch let error {
-                print("SDK Error in AVAudio Session\(error.localizedDescription)")
+                SdkLogger.area(.stories, .debug, "the audio session refused the category: \(SdkLogger.errorKind(error))")
             }
             
             muteButton.setImage(UIImage(named: "iconStoryVolumeUp", in: frameworkBundle, compatibleWith: nil), for: .normal)
@@ -531,8 +531,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
                 icon: errorIcon,
                 iconSpacing: 16,
                 position: .centerCustom,
-                onTap: { print("SDK Alert popup tapped")
-                }
+                onTap: {}
             )
             popupView.displayRealAlertTime = SdkConfiguration.stories.storiesSlideReloadPopupMessageDisplayTime
             popupView.show()
@@ -886,7 +885,7 @@ class StoryCollectionViewCell: UICollectionViewCell {
         do {
             try audioSession.setCategory(AVAudioSession.Category.playback)
         } catch {
-            print("SDK Error in AVAudio Session\(error.localizedDescription)")
+            SdkLogger.area(.stories, .debug, "the audio session refused the category: \(SdkLogger.errorKind(error))")
         }
         player.play()
     }

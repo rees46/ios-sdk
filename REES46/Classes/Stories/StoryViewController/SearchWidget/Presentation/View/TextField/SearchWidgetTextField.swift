@@ -32,9 +32,6 @@ open class SearchWidgetTextField: UITextField {
         self.font = UIFont.systemFont(ofSize: 14)
     }
     
-    deinit {
-        print("SDK deinit UITextField \(self.placeholder ?? "") \(self.text ?? "")")
-    }
 }
 
 open class SearchWidgetTextFieldView: UIView {

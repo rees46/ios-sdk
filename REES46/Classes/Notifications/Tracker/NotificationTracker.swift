@@ -55,14 +55,16 @@ public class NotificationTracker: NotificationTrackerDelegate{
       notificationLogger.log("Failed to extract type and code, skipping notificationDelivered")
       return
     }
-    notificationLogger.log("Extracted eventType: \(eventType), srcID: \(srcID)")
+    // The type and code of the push are its content: they are not logged.
+    notificationLogger.log("Extracted the type and code of the push")
     
     notificationService.sdk.notificationDelivered(type: eventType, code: srcID) { [weak self] result in
       switch result {
       case .success:
         self?.notificationLogger.log("Notification Delivered Successfully")
       case .failure(let error):
-        self?.notificationLogger.log("Notification Delivered Error: \(error)")
+        // The kind of the error only: `.custom` carries the server's message.
+        self?.notificationLogger.log(error)
       }
     }
   }

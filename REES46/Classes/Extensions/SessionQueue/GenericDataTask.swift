@@ -28,7 +28,7 @@ public class GenericDataTask<T: Decodable>: SessionDataTaskProtocol {
             
             return try JSONDecoder().decode(T.self, from: sessionData)
         } catch let error {
-            debugPrint(error)
+            SdkLogger.area(.sdkLog, .warning, "a session answer did not decode: \(SdkLogger.errorKind(error))")
             return nil
         }
     }
@@ -41,7 +41,7 @@ public class GenericDataTask<T: Decodable>: SessionDataTaskProtocol {
             
             return try JSONDecoder().decode([T].self, from: data)
         } catch let error {
-            debugPrint(error)
+            SdkLogger.area(.sdkLog, .warning, "a session answer did not decode: \(SdkLogger.errorKind(error))")
             return []
         }
     }

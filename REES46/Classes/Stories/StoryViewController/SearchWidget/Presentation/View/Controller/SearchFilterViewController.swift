@@ -9,8 +9,7 @@ class SearchFilterViewController:
     
     public var searchResults: [SearchResult]? {
         didSet {
-            if let count = searchResults?.count {
-                print("Count \(count)")
+            if searchResults != nil {
                 setupFilterViews()
             }
         }
@@ -103,7 +102,7 @@ class SearchFilterViewController:
     
     private func setupFilterViews() {
         guard let searchResults = searchResults, let filters = searchResults.first?.filters else {
-            print("No search results or filters found")
+            SdkLogger.area(.ui, .debug, "the search filters have no results or filters to show", shopId: sdk?.shopId)
             return
         }
         
@@ -255,15 +254,16 @@ class SearchFilterViewController:
     }
     
     func performSearch(with filters: [String: Any]) {
+        // Neither the query the buyer typed nor the filters are logged.
         guard let query = searchResults?.first?.query else {
-            print("Query is nil or empty \(filters)")
+            SdkLogger.area(.ui, .debug, "the filtered search has no query", shopId: sdk?.shopId)
             return
         }
-        print("Query is nil or empty \(filters)")
+        let shopId = sdk?.shopId
         sdk?.search(query: query, filters: filters) { [weak self] response in
             switch response {
             case .success(let response):
-                print("Search results: \(response)")
+                SdkLogger.area(.ui, .debug, "the filtered search answered", shopId: shopId)
                 DispatchQueue.main.async {
                     let searchResults = response.products.map {
                         SearchResult(
@@ -280,7 +280,8 @@ class SearchFilterViewController:
                     self?.updateActionButtons(searchResult: searchResults)
                 }
             case .failure(let error):
-                print("Search error: \(error)")
+                // The kind of the error only: `.custom` carries the server's message.
+                SdkLogger.area(.ui, .warning, "the filtered search failed: \(error.logKind)", shopId: shopId)
             }
         }
     }

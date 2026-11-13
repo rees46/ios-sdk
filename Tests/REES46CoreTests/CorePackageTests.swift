@@ -18,8 +18,8 @@ final class CorePackageTests: XCTestCase {
     }
 
     func test_log_levels_are_ordered_from_debug_to_none() {
-        XCTAssertEqual(LogLevel.allCases, [.debug, .info, .warning, .error, .none])
-        XCTAssertLessThan(LogLevel.debug, LogLevel.error)
+        XCTAssertEqual(Rees46.LogLevel.allCases, [.debug, .info, .warning, .error, .none])
+        XCTAssertLessThan(Rees46.LogLevel.debug, Rees46.LogLevel.error)
         XCTAssertEqual(Rees46Config(shopId: "a").logLevel, .warning)
     }
 

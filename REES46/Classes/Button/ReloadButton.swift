@@ -21,7 +21,6 @@ class ReloadButton: UIButton {
     
     @objc
     public func didTapReloadButton() {
-        print("didTapReloadButton")
     }
     
     required init?(coder: NSCoder) {

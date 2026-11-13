@@ -39,7 +39,7 @@ class NotificationRegistrar {
         let lastUpload = UserDefaults.standard.object(forKey: key) as? Date
         if let lastUpload = lastUpload, Date().timeIntervalSince(lastUpload) < Constants.oneWeekInSeconds {
             Self.uploadLock.unlock()
-            SdkLogger.forShop(sdk.shopId).debug("push_token_skipped", "the push token was sent within the last week")
+            SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenSkipped, "the push token was sent within the last week", ["reason": "sent_recently"])
             return
         }
         UserDefaults.standard.set(Date(), forKey: key)
@@ -49,7 +49,7 @@ class NotificationRegistrar {
         sdk.setPushTokenNotification(token: token) { tokenResponse in
             switch tokenResponse {
             case .success():
-                SdkLogger.forShop(self.sdk.shopId).info("push_token_sent", "the push token was sent")
+                SdkLogger.forShop(self.sdk.shopId).info(LogCode.pushTokenSent, "the push token was sent")
             case .failure(let error):
                 // Not sent: the claim goes back, and the next call tries again.
                 UserDefaults.standard.set(lastUpload, forKey: key)
@@ -60,16 +60,6 @@ class NotificationRegistrar {
     
     /// The server's message is not logged: it may repeat the request data.
     private static func handleRegistrationError(_ error: SdkError, shopId: String) {
-        SdkLogger.forShop(shopId).warning("push_token_failed", "the push token was not sent", ["error": Self.kind(of: error)])
-    }
-
-    private static func kind(of error: SdkError) -> String {
-        switch error {
-        case .custom: return "custom"
-        case .networkOfflineError: return "offline"
-        case .decodeError: return "decoding"
-        case .invalidResponse, .responseError: return "response"
-        default: return "other"
-        }
+        SdkLogger.forShop(shopId).warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
     }
 }

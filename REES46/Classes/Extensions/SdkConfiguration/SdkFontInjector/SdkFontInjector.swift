@@ -66,7 +66,7 @@ open class SdkFontInjector: NSObject {
                 var errorRef: Unmanaged<CFError>? = nil
 
                 if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                    print("SDK Error registering font")
+                    SdkLogger.area(.ui, .debug, "a font was not registered")
                 } else {
                     let fontName = fontRef!.postScriptName as String?
                     let fontWeightName = "\(String(describing: fontName))".split(separator: ".").last
@@ -79,7 +79,7 @@ open class SdkFontInjector: NSObject {
                         //SdkFontInjector.registeredFont[fontName!]?[fontWeight] = fontName
                     }
                     SdkFontInjector.registeredFont[fontName!]?[UIFont.Weight.regular] = fontName
-                    print("SDK Success registering font")
+                    SdkLogger.area(.ui, .debug, "a font was registered")
                     SdkFontInjector.lastestRegisterFontFamilyName = fontName
                 }
             }

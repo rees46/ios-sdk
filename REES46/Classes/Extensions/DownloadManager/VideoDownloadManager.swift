@@ -27,7 +27,7 @@ final public class VideoDownloadManager: NSObject {
                                        onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
         
         guard let url = request.url else {
-            print("SDK Request url is empty")
+            SdkLogger.area(.stories, .debug, "a video download has no URL")
             return nil
         }
         
@@ -148,7 +148,7 @@ final public class VideoDownloadManager: NSObject {
                                                 content: content, trigger: trigger)
             notificationCenter.add(request, withCompletionHandler: { (error) in
                 if let error = error {
-                    debugPrint("SDK could not schedule notification with error: \(error)")
+                    SdkLogger.area(.stories, .debug, "the download notification was not scheduled: \(SdkLogger.errorKind(error))")
                 }
             })
         }

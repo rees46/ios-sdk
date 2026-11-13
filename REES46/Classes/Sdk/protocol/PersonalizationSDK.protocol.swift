@@ -550,7 +550,7 @@ internal func makeRegisteredSDK(
     apiDomain: String = "api.rees46.ru",
     stream: String = "ios",
     enableLogs: Bool = false,
-    logLevel: LogLevel? = nil,
+    logLevel: Rees46.LogLevel = .warning,
     autoSendPushToken: Bool = true,
     sendAdvertisingId: Bool = false,
     parentViewController: UIViewController? = nil,
@@ -615,7 +615,7 @@ enum ProtocolDefault {
     static func forward(_ method: String = #function, on sdk: PersonalizationSDK, to call: () -> Void) {
         let key = runningKey(method, sdk)
         guard enter(key) else {
-            SdkLogger.process.error("not_implemented", "\(method) is not implemented by this PersonalizationSDK")
+            SdkLogger.process.error(LogCode.notImplemented, "\(method) is not implemented by this PersonalizationSDK")
             return
         }
         defer { leave(key) }

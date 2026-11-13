@@ -38,7 +38,7 @@ open class UISdkWrapLabel: UILabel {
 
     private func adjustFontSize() {
         if self.maximumFontSizeBySdk < self.minimumFontSizeBySdk {
-            print("SDK Warning maximumFontSizeBySdk should be greater minimumFontSizeBySdk")
+            SdkLogger.area(.ui, .debug, "maximumFontSizeBySdk is less than minimumFontSizeBySdk")
             self.minimumFontSizeBySdk = self.maximumFontSizeBySdk
         }
 

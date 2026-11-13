@@ -90,12 +90,6 @@ public struct InitService {
 
         let status = SecItemDelete(query)
         
-        if status == errSecItemNotFound {
-            print ("SDK Keychain errSecItemNotFound")
-        } else if status == errSecNoSuchKeychain {
-            print ("SDK Keychain errSecNoSuchKeychain")
-        }
-        
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)
         }

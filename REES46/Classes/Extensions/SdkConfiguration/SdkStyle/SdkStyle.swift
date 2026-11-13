@@ -78,7 +78,7 @@ public class SdkStyle: NSObject {
     }
 
     internal func registerViewController(_ viewController: UIViewController) {
-        print("SDK SdkStyle registers view controller: \(String(describing: type(of: viewController)))")
+        SdkLogger.area(.ui, .debug, "SdkStyle registers \(String(describing: type(of: viewController)))")
         if blacklist.contains(String(describing: type(of: viewController))) {
             return
         }

@@ -201,7 +201,7 @@ enum StubSDK {
         identity: UserIdentityRepository = InMemoryUserIdentityRepository(),
         keychain: KeychainInitStore = InMemoryKeychainInitStore(),
         needReInitialization: Bool = false,
-        logLevel: LogLevel? = nil,
+        logLevel: Rees46.LogLevel = .warning,
         connectivity: ConnectivityMonitor? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {

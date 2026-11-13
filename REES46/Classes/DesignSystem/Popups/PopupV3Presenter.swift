@@ -188,7 +188,8 @@ final class PopupV3SDKActions: PopupV3Actions {
     /// иначе она уходит системе, попап остаётся.
     func open(_ link: String) {
         guard let url = Self.url(link) else {
-            PopupsV3Log.log("bad link \(link)")
+            // The link is not logged: it carries what the shop put in it.
+            PopupsV3Log.log("a link of the popup is not a URL")
             return
         }
         if linkHandler?(url) == true {
@@ -269,13 +270,13 @@ final class PopupV3SDKActions: PopupV3Actions {
     func review(kind: PersonalizationStoryPoll.Scale, body: [String: Any], completion: @escaping (Bool) -> Void) {
         guard let sdk else { return completion(false) }
         StoriesPollsApi(api: StoriesApiV3(domain: appHost), sdk: sdk).review(kind: kind, body: body) { result in
-            if case .failure(let error) = result { PopupsV3Log.log("\(kind.rawValue) review failed: \(error)") }
+            if case .failure(let error) = result { PopupsV3Log.log("\(kind.rawValue) review failed: \(SdkLogger.errorKind(error))") }
             completion((try? result.get()) != nil)
         }
     }
 
     private static func finish(_ result: Result<Void, SdkError>, _ what: String, _ completion: @escaping (Bool) -> Void) {
-        if case .failure(let error) = result { PopupsV3Log.log("\(what) failed: \(error)") }
+        if case .failure(let error) = result { PopupsV3Log.log("\(what) failed: \(error.logKind)") }
         let ok = (try? result.get()) != nil
         MainThread.run { completion(ok) }
     }

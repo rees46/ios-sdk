@@ -102,9 +102,7 @@ extension PersonalizationStoryPoll {
     }
 
     private static func skip(_ reason: String) {
-        #if DEBUG
-        print("Stories v3: \(reason) is skipped")
-        #endif
+        SdkLogger.area(.storiesV3, .debug, "\(reason) is skipped")
     }
 }
 
@@ -205,9 +203,9 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
         api.post(sdk: sdk, url: url, body: fields) { data, response, error in
             let result = StoriesApiV3.response(data: data, response: response, error: error)
                 .map { reply(StoriesJSON.object($0["payload"]) ?? [:]) }
-            #if DEBUG
-            if case .failure(let failure) = result { print("Stories v3: \(what) failed: \(failure)") }
-            #endif
+            if case .failure(let failure) = result {
+                SdkLogger.area(.storiesV3, .warning, "\(what) failed: \(SdkLogger.errorKind(failure))", shopId: sdk.shopId)
+            }
             MainThread.run { completion(result.mapError { $0 }) }
         }
     }

@@ -51,7 +51,7 @@ public enum Rees46 {
     @discardableResult
     public static func initialize(
         _ config: Rees46Config,
-        completion: ((SdkError?) -> Void)? = nil
+        completion: ((REES46.SdkError?) -> Void)? = nil
     ) -> PersonalizationSDK {
         let sdk = makeRegisteredSDK(
             shopId: config.shopId,
@@ -171,6 +171,20 @@ public enum Rees46 {
         }
     }
 
+    // MARK: - Logs
+
+    /**
+     Hands the app every message the SDK logs at or above each instance's `Rees46Config.logLevel` —
+     to forward to Crashlytics or Sentry, say. Messages of all shops come here, on a background
+     queue and in order. `nil` removes the handler.
+
+     Messages never carry request data, response bodies, contacts, the push token, push content or
+     the `/init` answer.
+     */
+    public static func setLogHandler(_ handler: ((SdkLogMessage) -> Void)?) {
+        SdkLogger.setHandler(handler)
+    }
+
     // MARK: - Push
 
     /**
@@ -191,16 +205,6 @@ public enum Rees46 {
      host's own deep-link handling (or the legacy `NotificationService`'s action delegate), so this
      method tracks but does not open the target screen.
      */
-    /**
-     The app receives every message the SDK logs at or above each instance's `Rees46Config.logLevel` —
-     to forward to Crashlytics or Sentry, say. Called in background, in order. `nil` removes the
-     handler. Messages never carry request data, response bodies, contacts, the push token, push
-     content or the `/init` answer.
-     */
-    public static func setLogHandler(_ handler: ((SdkLogMessage) -> Void)?) {
-        SdkLogger.setHandler(handler)
-    }
-
     public static func handlePush(_ payload: [AnyHashable: Any], event: PushEvent) {
         let resolution = InstanceResolver.resolve(
             requestedShopId: PushPayloadParser.shopId(from: payload),
@@ -209,11 +213,16 @@ public enum Rees46 {
         )
         // Not an SDK push (no resolvable type/code) — ignore regardless of the target.
         guard let (type, code) = PushPayloadParser.typeAndCode(from: payload) else {
+            SdkLogger.process.warning(LogCode.pushDropped, "the push is not an SDK push", ["reason": "not_sdk_push"])
             return
         }
         switch resolution {
         case .existing(let shopId):
-            guard let sdk = SdkRegistry.shared.byShopId(shopId) else { return }
+            guard let sdk = SdkRegistry.shared.byShopId(shopId) else {
+                SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
+                return
+            }
+            SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": "\(event)"])
             switch event {
             case .delivered:
                 sdk.notificationDelivered(type: type, code: code) { _ in }
@@ -225,10 +234,17 @@ public enum Rees46 {
         case .pending(let shopId):
             // Registered but not initialized: track on its persisted identity, no construction/init —
             // so a lazily-registered shop's push is tracked, not dropped.
-            guard let config = pendingConfig(for: shopId) else { return }
+            guard let config = pendingConfig(for: shopId) else {
+                SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
+                return
+            }
+            SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": "\(event)"])
             pendingPushTracker(shopId, config, event, type, code)
-        case .notRegistered, .ambiguous:
-            return // drop: unknown shop, or ambiguous (no shop_id while several are registered)
+        case .notRegistered:
+            SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
+        case .ambiguous:
+            // No shop_id while several shops are registered: tracking it would guess the shop.
+            SdkLogger.process.warning(LogCode.pushDropped, "the push names no shop and several are registered", ["reason": "ambiguous_shop"])
         }
     }
 

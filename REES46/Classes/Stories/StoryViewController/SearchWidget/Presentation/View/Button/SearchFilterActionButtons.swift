@@ -4,13 +4,7 @@ class SearchFilterActionButtons: UIView {
     
     weak var delegate: SearchFilterActionButtonsDelegate?
     public var sdk: PersonalizationSDK?
-    public var searchResults: [SearchResult]? {
-        didSet {
-            if let count = searchResults?.count {
-                print("Count \(count)")
-            }
-        }
-    }
+    public var searchResults: [SearchResult]?
     
     private let resetButton: UIButton = {
         let button = UIButton(type: .system)

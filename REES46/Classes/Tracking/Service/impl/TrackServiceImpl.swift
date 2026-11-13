@@ -524,12 +524,14 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 let collisions = Set(customFields.keys).intersection(Self.reservedCustomEventKeys)
                 if !collisions.isEmpty {
                     let sorted = collisions.sorted().joined(separator: ", ")
+                    SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "trackEvent: customFields use reserved keys", ["reason": "reserved_keys"])
                     completion(.failure(.custom(error: "trackEvent: customFields contains reserved keys: \(sorted)")))
                     return
                 }
                 // A value that is not JSON (a Date, a custom object, NaN) would crash the app when the
                 // body is written: fail the call instead.
                 guard SafeJSON.isValid(customFields) else {
+                    SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "trackEvent: customFields are not valid JSON", ["reason": "invalid_json"])
                     completion(.failure(.custom(error: "trackEvent: customFields are not valid JSON")))
                     return
                 }

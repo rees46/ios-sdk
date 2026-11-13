@@ -48,12 +48,8 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
                     self.reloadData()
                 }
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("RecommendationsWidgetView custom Error:", customError)
-                default:
-                    print("RecommendationsWidgetView default Error:", error.description)
-                }
+                // The kind of the error only: `.custom` carries the server's message.
+                SdkLogger.area(.ui, .warning, "the recommendations widget was not loaded: \(error.logKind)", shopId: sdk.shopId)
             }
         }
     }
@@ -338,14 +334,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         sdk?.tracking.addToCart(item: TrackingItem(id: productId)) { trackResponse in
             switch trackResponse {
             case .success(_):
-                print("Product id \(productId) added to 'Cart' success")
+                SdkLogger.area(.ui, .debug, "a product was added to the cart", shopId: self.sdk?.shopId)
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                SdkLogger.area(.ui, .warning, "a product was not added to the cart: \(error.logKind)", shopId: self.sdk?.shopId)
             }
         }
     }
@@ -354,14 +345,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         sdk?.tracking.removeFromCart(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
-                print("Product id \(productId) removed from 'Cart' success")
+                SdkLogger.area(.ui, .debug, "a product was removed from the cart", shopId: self.sdk?.shopId)
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                SdkLogger.area(.ui, .warning, "a product was not removed from the cart: \(error.logKind)", shopId: self.sdk?.shopId)
             }
         }
     }
@@ -370,14 +356,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         sdk?.tracking.addToFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
-                print("Product id \(productId) added to 'Favorites' success")
+                SdkLogger.area(.ui, .debug, "a product was added to favorites", shopId: self.sdk?.shopId)
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                SdkLogger.area(.ui, .warning, "a product was not added to favorites: \(error.logKind)", shopId: self.sdk?.shopId)
             }
         }
     }
@@ -386,14 +367,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
         sdk?.tracking.removeFromFavorites(itemId: productId) { trackResponse in
             switch trackResponse {
             case .success(_):
-                print("Product id \(productId) removed from 'Favorites' success")
+                SdkLogger.area(.ui, .debug, "a product was removed from favorites", shopId: self.sdk?.shopId)
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                SdkLogger.area(.ui, .warning, "a product was not removed from favorites: \(error.logKind)", shopId: self.sdk?.shopId)
             }
         }
     }

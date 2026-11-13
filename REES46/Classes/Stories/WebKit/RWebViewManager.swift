@@ -35,7 +35,8 @@ public class RWebViewManager {
   }
   
   private func openInWebView(_ url: URL, from viewController: UIViewController) {
-    print("Opening in WebView: \(url)")
+    // The link is not logged: it carries what the shop put in it.
+    SdkLogger.area(.stories, .debug, "a link opens in the web view")
     viewController.presentWebKit(urlRequest: URLRequest(url: url))
   }
 }

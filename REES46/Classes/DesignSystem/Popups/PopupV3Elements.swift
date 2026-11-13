@@ -213,7 +213,7 @@ enum PopupV3Elements {
             view.content.heightAnchor.constraint(greaterThanOrEqualToConstant: 40)
         ])
         block.onLoaded = { _ in context.actions?.relayout() }
-        block.onError = { error in PopupsV3Log.log("recommendations \(code): \(error)") }
+        block.onError = { error in PopupsV3Log.log("recommendations \(code): \(SdkLogger.errorKind(error))") }
         let open = { (product: PersonalizationProduct) in
             context.actions?.event("click", channel: nil)
             context.actions?.product(product)

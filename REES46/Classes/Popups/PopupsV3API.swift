@@ -132,10 +132,11 @@ final class PopupsV3API: PopupsV3Backend {
         get(url: { sdk, did in Self.listURL(host: host, shopId: sdk.shopId, did: did, sid: sdk.userSeance, testMode: testMode, debug: debug) },
             timeout: 15) { status, json, error in
             let result = Self.listResult(status: status, json: json, error: error)
+            // The code only: the answer's message often repeats the request's data.
             if case .clientError(let code) = result {
-                PopupsV3Log.log("list request failed with HTTP \(code): \(PopupV3Value.string(json?["message"]) ?? "unexpected response")")
+                PopupsV3Log.log("list request failed: HTTP \(code)")
             } else if case .failure = result {
-                PopupsV3Log.log("list request failed: \(error.map { "\($0)" } ?? "HTTP \(status)")")
+                PopupsV3Log.log("list request failed: \(Self.reason(status: status, error: error))")
             }
             completion(result)
         }
@@ -147,7 +148,7 @@ final class PopupsV3API: PopupsV3Backend {
             timeout: 15) { status, json, error in
             let popup = Self.popupResult(status: status, json: json)
             if popup == nil {
-                PopupsV3Log.log("popup \(id) request failed: \(error.map { "\($0)" } ?? "HTTP \(status) \(PopupV3Value.string(json?["message"]) ?? "")")")
+                PopupsV3Log.log("popup \(id) request failed: \(Self.reason(status: status, error: error))")
             }
             completion(popup)
         }
@@ -162,7 +163,7 @@ final class PopupsV3API: PopupsV3Backend {
             if let code, let self {
                 self.promoCodes[listId] = (code, self.now().addingTimeInterval(Self.promoTTL))
             } else if code == nil {
-                PopupsV3Log.log("no promo code from the list \(listId): \(error.map { "\($0)" } ?? "HTTP \(status) \(PopupV3Value.string(json?["message"]) ?? "")")")
+                PopupsV3Log.log("no promo code from the list \(listId): \(Self.reason(status: status, error: error))")
             }
             completion(code)
         }
@@ -194,10 +195,16 @@ final class PopupsV3API: PopupsV3Backend {
                 } else if (error != nil || status == 0 || status >= 500) && attempt == 1 {
                     self.send(popupId: popupId, event: event, channel: channel, attempt: 2)
                 } else {
-                    PopupsV3Log.log("popup \(popupId) event \(event) failed: \(error.map { "\($0)" } ?? "HTTP \(status)")")
+                    PopupsV3Log.log("popup \(popupId) event \(event) failed: \(Self.reason(status: status, error: error))")
                 }
             }
         }
+    }
+
+    /// Why a request failed, for the log: the kind of the error or the HTTP code. Never the error's
+    /// text, which repeats the URL with the device id and the session, or the answer's message.
+    static func reason(status: Int, error: Error?) -> String {
+        error.map { SdkLogger.errorKind($0) } ?? "HTTP \(status)"
     }
 
     /// GET в очереди сессии SDK, когда есть `did`; ответ — на главной очереди.

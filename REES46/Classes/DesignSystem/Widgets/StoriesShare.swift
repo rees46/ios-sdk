@@ -179,13 +179,14 @@ struct StoriesApiV3 {
     /// Событие `POST …/events`. Ответ не ждём: событие — не повод мешать просмотру.
     func track(sdk: PersonalizationSDK, code: String, event: Event, storyId: String, slideId: String) {
         let body = { did in Self.eventBody(shopId: sdk.shopId, did: did, event: event, storyId: storyId, slideId: slideId) }
+        let shopId = sdk.shopId
         post(sdk: sdk, url: eventsURL(code: code), body: body) { _, response, error in
-            #if DEBUG
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             if error != nil || !(200..<300).contains(status) {
-                print("Stories v3: \(event.rawValue) event failed (\(error.map { "\($0)" } ?? "HTTP \(status)"))")
+                // The kind of the error or the HTTP code: an error's text repeats the URL and its query.
+                let reason = error.map { SdkLogger.errorKind($0) } ?? "HTTP \(status)"
+                SdkLogger.area(.storiesV3, .warning, "\(event.rawValue) event failed: \(reason)", shopId: shopId)
             }
-            #endif
         }
     }
 

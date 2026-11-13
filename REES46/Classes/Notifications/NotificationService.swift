@@ -119,9 +119,9 @@ public class NotificationService: NotificationServiceProtocol {
     sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in
       switch tokenResponse {
       case .success():
-        self.notificationLogger.log("Successfully registered FCM token")
+        SdkLogger.forShop(self.sdk.shopId).info(LogCode.pushTokenSent, "the push token was sent")
       case let .failure(error):
-        self.notificationLogger.log(error)
+        SdkLogger.forShop(self.sdk.shopId).warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
       }
     }
   }
@@ -148,10 +148,11 @@ public class NotificationService: NotificationServiceProtocol {
   private func requireUserPrivacy(completion: @escaping (Bool) -> Void) {
     let center = UNUserNotificationCenter.current()
     center.requestAuthorization(options: [.badge, .alert, .sound]) { granted, error in
-      if error != nil {
-        SdkLogger.process.warning("push_permission_failed", "the notification permission request failed")
+      if let error = error {
+        SdkLogger.process.warning(LogCode.pushPermissionFailed, "the notification permission request failed", ["error": SdkLogger.errorKind(error)])
+      } else {
+        SdkLogger.process.info(LogCode.pushPermission, "the notification permission was answered", ["granted": String(granted)])
       }
-      SdkLogger.process.debug("push_permission", "notification permission granted: \(granted)")
       completion(granted)
     }
     UIApplication.shared.registerForRemoteNotifications()

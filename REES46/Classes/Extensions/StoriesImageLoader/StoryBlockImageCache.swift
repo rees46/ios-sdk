@@ -42,7 +42,7 @@ public struct StoryBlockImageCache {
                         dispatchCompletionOnMain(image)
                     } else {
                         if let error = error, (error as NSError).code != -999 {
-                            print("SDK Error downloading image for block")
+                            SdkLogger.area(.stories, .debug, "a block image was not downloaded: \(SdkLogger.errorKind(error))")
                         }
                         dispatchCompletionOnMain(nil)
                     }
