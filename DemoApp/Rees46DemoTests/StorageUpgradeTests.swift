@@ -1,0 +1,312 @@
+//
+//  StorageUpgradeTests.swift
+//  REES46Tests
+//
+//  Stage 2 of the new core (`sdk/core/storage.md`), through the SDK's real construction path: every
+//  layout an older SDK left — the pre-partition keys in `.standard`, the per-shop suite, the suite an
+//  app's `storageKey` named, the legacy keychain item, `Documents/<shopId>.json` — comes through the
+//  upgrade with its did, and nothing an older SDK or the old core reads is deleted. Then what
+//  `deleteUserCredentials()` wipes and keeps on both cores.
+//
+//  The host app's own state in `.standard`, the device's store and the legacy keychain item is put
+//  aside before each test and back after it.
+//
+
+import XCTest
+import Security
+@testable import REES46
+
+final class StorageUpgradeTests: XCTestCase {
+
+    private let standardKeys = [
+        StoragePartition.deviceIdKey,
+        StoragePartition.seanceKey,
+        StoragePartition.idfaKey,
+        StoragePartition.legacyConsumedFlag,
+        SdkConstants.deviceToken,
+        TrackingSourceStoreImpl.Keys.code,
+        TrackingSourceStoreImpl.Keys.type,
+        TrackingSourceStoreImpl.Keys.savedAt
+    ]
+    private var standardSnapshot: [String: Any] = [:]
+    private var deviceSnapshot: [String: Any]?
+    private var legacyKeychainItem: Data?
+    private var shops: [(shop: String, storageKey: String?)] = []
+    private var suites: [String] = []
+    private var retained: [AnyObject] = []
+
+    private var service: String { KeychainPartition.service }
+
+    override func setUp() {
+        super.setUp()
+        StubURLProtocol.install()
+        // The server knows the did it is sent, and makes a new one only for a new device.
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "new-did")","seance":"server-seance"}"#)
+        }
+        Rees46.reset()
+        SdkRegistry.shared.reset()
+        standardSnapshot = [:]
+        for key in standardKeys {
+            if let value = UserDefaults.standard.object(forKey: key) {
+                standardSnapshot[key] = value
+            }
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        deviceSnapshot = UserDefaults.standard.persistentDomain(forName: DeviceStore.suiteName)
+        UserDefaults.standard.removePersistentDomain(forName: DeviceStore.suiteName)
+        legacyKeychainItem = try? InitService.getKeychainDidToken(identifier: KeychainPartition.legacyAccount(service: service), instanceKeychainService: service)
+        try? InitService.deleteKeychainDidToken(identifier: KeychainPartition.legacyAccount(service: service), instanceKeychainService: service)
+    }
+
+    override func tearDown() {
+        StubURLProtocol.uninstall()
+        retained.removeAll()
+        Rees46.reset()
+        SdkRegistry.shared.reset()
+        CoreFlag.reset()
+        for (shop, storageKey) in shops {
+            if let folder = ShopStorage(shopId: shop, storageKey: storageKey, logger: SdkLogger(shopId: shop, level: .none)).directory {
+                try? FileManager.default.removeItem(at: folder)
+            }
+            UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: shop, storageKey: storageKey))
+            try? InitService.deleteKeychainDidToken(identifier: KeychainPartition.account(shopId: shop, service: service), instanceKeychainService: service)
+            try? FileManager.default.removeItem(at: StubSDK.savedInitFile(shopId: shop))
+            UserDefaults.standard.removeObject(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop))
+        }
+        shops.removeAll()
+        suites.forEach { UserDefaults.standard.removePersistentDomain(forName: $0) }
+        suites.removeAll()
+        try? InitService.deleteKeychainDidToken(identifier: KeychainPartition.legacyAccount(service: service), instanceKeychainService: service)
+        if let item = legacyKeychainItem {
+            try? InitService.upsertKeychainDidToken(item, identifier: KeychainPartition.legacyAccount(service: service), instanceKeychainService: service)
+        }
+        for key in standardKeys {
+            if let value = standardSnapshot[key] {
+                UserDefaults.standard.set(value, forKey: key)
+            } else {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
+        }
+        if let deviceSnapshot = deviceSnapshot {
+            UserDefaults.standard.setPersistentDomain(deviceSnapshot, forName: DeviceStore.suiteName)
+        } else {
+            UserDefaults.standard.removePersistentDomain(forName: DeviceStore.suiteName)
+        }
+        super.tearDown()
+    }
+
+    // MARK: - Fixtures
+
+    private func freshShop(storageKey: String? = nil) -> String {
+        let shop = "upgrade-\(UUID().uuidString.prefix(8))"
+        shops.append((shop, storageKey))
+        return shop
+    }
+
+    private func partition(_ shop: String, storageKey: String? = nil) -> UserDefaults {
+        StoragePartition.store(for: shop, storageKey: storageKey)
+    }
+
+    /// The SDK as an app makes it, on the stub server, once its `/init` is over.
+    private func makeSDK(_ shop: String, storageKey: String? = nil, coreV2: Bool = false) -> SimplePersonalizationSDK {
+        CoreFlag.reset(to: coreV2)
+        let ready = expectation(description: "init \(shop)")
+        let sdk = SimplePersonalizationSDK(
+            shopId: shop,
+            apiDomain: "stub.test",
+            autoSendPushToken: false,
+            enableAutoPopupPresentation: false,
+            storageKey: storageKey,
+            coreV2: coreV2
+        ) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+        retained.append(sdk)
+        return sdk
+    }
+
+    private func initDid(_ shop: String) -> String? {
+        StubURLProtocol.requests(to: "/init", shop: shop).first?.query["did"]
+    }
+
+    private func json(_ text: String) -> Data { Data(text.utf8) }
+
+    // MARK: - Layouts of older versions
+
+    func test_the_pre_partition_keys_in_standard_give_the_shop_its_did_and_stay() {
+        UserDefaults.standard.set("did-standard", forKey: StoragePartition.deviceIdKey)
+        UserDefaults.standard.set("seance-standard", forKey: StoragePartition.seanceKey)
+        UserDefaults.standard.set("idfa-standard", forKey: StoragePartition.idfaKey)
+        let shop = freshShop()
+
+        let sdk = makeSDK(shop)
+
+        XCTAssertEqual(sdk.getDeviceId(), "did-standard")
+        XCTAssertEqual(initDid(shop), "did-standard", "no silent re-registration")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: StoragePartition.deviceIdKey), "did-standard", "an older SDK still reads it")
+        XCTAssertEqual(UserDefaults.standard.string(forKey: StoragePartition.idfaKey), "idfa-standard")
+        XCTAssertEqual(partition(shop).string(forKey: StoragePartition.idfaKey), "idfa-standard", "the old core reads the shop's copy")
+        XCTAssertEqual(DeviceStore.shared.advertisingId, "idfa-standard")
+        for step in StorageMigrations.Step.allCases where step != .storageKeySuite {
+            XCTAssertTrue(StorageMigrations.isDone(step, in: partition(shop)), step.rawValue)
+        }
+    }
+
+    func test_the_per_shop_suites_keep_their_values_and_the_first_shops_group_is_the_devices() {
+        let shopA = freshShop()
+        let shopB = freshShop()
+        let a = partition(shopA)
+        a.set("did-A", forKey: StoragePartition.deviceIdKey)
+        a.set("idfa-A", forKey: StoragePartition.idfaKey)
+        a.set("B", forKey: StoragePartition.abSegmentKey)
+        a.set(["slide-1"], forKey: "viewed.slide.7")
+        let b = partition(shopB)
+        b.set("did-B", forKey: StoragePartition.deviceIdKey)
+        b.set("A", forKey: StoragePartition.abSegmentKey)
+
+        let sdkA = makeSDK(shopA)
+        let sdkB = makeSDK(shopB)
+
+        XCTAssertEqual(sdkA.getDeviceId(), "did-A")
+        XCTAssertEqual(sdkB.getDeviceId(), "did-B")
+        XCTAssertEqual(sdkA.segment, "B")
+        XCTAssertEqual(sdkB.segment, "B", "the A/B group is the device's: the first shop's")
+        XCTAssertEqual(b.string(forKey: StoragePartition.abSegmentKey), "B", "the shop's key is written too, for the old core")
+        XCTAssertEqual(DeviceStore.shared.abGroup, "B")
+        XCTAssertEqual(DeviceStore.shared.advertisingId, "idfa-A")
+        XCTAssertEqual(a.string(forKey: StoragePartition.idfaKey), "idfa-A")
+        XCTAssertNil(b.string(forKey: StoragePartition.idfaKey), "one shop's advertising id is not another's")
+        XCTAssertEqual(sdkA.localStateStore.viewedSlides(storyId: "7"), ["slide-1"])
+    }
+
+    func test_the_suite_an_apps_storage_key_named_comes_into_the_prefixed_partition_once_and_stays() {
+        let key = "app-suite-\(UUID().uuidString.prefix(8))-"
+        suites.append(key)
+        let old = UserDefaults(suiteName: key) ?? .standard
+        old.set("did-custom", forKey: StoragePartition.deviceIdKey)
+        old.set(["slide-9"], forKey: "viewed.slide.9")
+        old.set(Date().timeIntervalSince1970, forKey: TrackingSourceStoreImpl.Keys.savedAt)
+        old.set("chain", forKey: TrackingSourceStoreImpl.Keys.type)
+        old.set("c-1", forKey: TrackingSourceStoreImpl.Keys.code)
+        old.set("the app's", forKey: "app.own.key")
+        let shop = freshShop(storageKey: key)
+
+        let sdk = makeSDK(shop, storageKey: key)
+
+        XCTAssertEqual(sdk.getDeviceId(), "did-custom")
+        XCTAssertEqual(initDid(shop), "did-custom")
+        let prefixed = partition(shop, storageKey: key)
+        XCTAssertEqual(prefixed.string(forKey: StoragePartition.deviceIdKey), "did-custom")
+        XCTAssertNil(prefixed.object(forKey: "app.own.key"), "only the SDK's keys come")
+        XCTAssertEqual(sdk.localStateStore.viewedSlides(storyId: "9"), ["slide-9"])
+        XCTAssertEqual(sdk.sourceStore.currentSource()?.code, "c-1")
+        XCTAssertEqual(old.string(forKey: StoragePartition.deviceIdKey), "did-custom", "an older SDK still reads the old suite")
+        XCTAssertEqual(old.string(forKey: "app.own.key"), "the app's")
+        XCTAssertTrue(StorageMigrations.isDone(.storageKeySuite, in: prefixed))
+
+        // Once: a later value in the old suite does not come again.
+        old.set("did-later", forKey: StoragePartition.deviceIdKey)
+        prefixed.removeObject(forKey: StoragePartition.deviceIdKey)
+        _ = UserIdentityRepositoryImpl(shopId: shop, storageKey: key)
+        XCTAssertNil(prefixed.string(forKey: StoragePartition.deviceIdKey))
+    }
+
+    func test_the_legacy_keychain_item_gives_the_first_shop_its_did_after_a_reinstall_and_is_consumed() {
+        let legacyAccount = KeychainPartition.legacyAccount(service: service)
+        try? InitService.upsertKeychainDidToken(json(#"{"did":"did-keychain"}"#), identifier: legacyAccount, instanceKeychainService: service)
+        let first = freshShop()
+        let second = freshShop()
+
+        let sdk = makeSDK(first)
+
+        XCTAssertEqual(sdk.getDeviceId(), "did-keychain")
+        XCTAssertEqual(initDid(first), "did-keychain")
+        XCTAssertNil(try? InitService.getKeychainDidToken(identifier: legacyAccount, instanceKeychainService: service),
+                     "consumed, so a second shop cannot clone the did")
+        XCTAssertTrue(StorageMigrations.isDone(.keychainItem, in: partition(first)))
+
+        let other = makeSDK(second)
+        XCTAssertEqual(other.getDeviceId(), "new-did", "the second shop gets its own did from the server")
+    }
+
+    func test_a_keychain_that_does_not_answer_leaves_the_adoption_for_the_next_launch() {
+        let shop = freshShop()
+        let original = InitService.copyMatching
+        InitService.copyMatching = { _, _ in errSecInteractionNotAllowed }
+        _ = KeychainInitStoreImpl(shopId: shop, service: service, partition: partition(shop))
+        InitService.copyMatching = original
+        XCTAssertFalse(StorageMigrations.isDone(.keychainItem, in: partition(shop)))
+
+        _ = KeychainInitStoreImpl(shopId: shop, service: service, partition: partition(shop))
+        XCTAssertTrue(StorageMigrations.isDone(.keychainItem, in: partition(shop)))
+    }
+
+    func test_the_saved_answer_in_documents_moves_to_the_sdks_folder_and_stands_in_without_an_answer() throws {
+        let shop = freshShop()
+        let legacy = StubSDK.savedInitFile(shopId: shop)
+        let saved = json(#"{"did":"did-saved","seance":"s"}"#)
+        try saved.write(to: legacy)
+        partition(shop).set("did-saved", forKey: StoragePartition.deviceIdKey)
+        StubURLProtocol.handler = { $0.path == "/init" ? StubReply.noAnswer : StubReply() }
+
+        let sdk = makeSDK(shop)
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: legacy.path), "out of the app's Documents")
+        let file = try XCTUnwrap(sdk.storage.savedInitFile)
+        XCTAssertTrue(file.path.contains("Application Support/personalization_sdk/"), file.path)
+        XCTAssertEqual(try Data(contentsOf: file), saved)
+        XCTAssertEqual(sdk.userInfo.deviceId, "did-saved", "no answer: the saved one stood in")
+        XCTAssertTrue(StorageMigrations.isDone(.savedInitFile, in: partition(shop)))
+    }
+
+    func test_the_keychain_service_is_pinned_to_the_value_it_has_always_had() {
+        XCTAssertEqual(KeychainPartition.service, Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier)
+        XCTAssertEqual(instanceKeychainService, KeychainPartition.service)
+    }
+
+    // MARK: - deleteUserCredentials
+
+    func test_deleting_the_user_credentials_wipes_the_customer_and_keeps_the_device_on_both_cores() throws {
+        for coreV2 in [false, true] {
+            let shop = freshShop()
+            let sdk = makeSDK(shop, coreV2: coreV2)
+            let identity = sdk.userIdentity
+            XCTAssertEqual(sdk.deviceId, "new-did")
+            // What the customer left.
+            sdk.sourceStore.store(type: "chain", code: "c-1")
+            sdk.storage.refused = true
+            sdk.storage.writeSavedInitAnswer(json(#"{"did":"new-did"}"#))
+            sdk.keychainStore.writeInitData(json(#"{"did":"new-did"}"#))
+            UserDefaults.standard.set(Date(), forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop))
+            let queue = try XCTUnwrap(sdk.storage.makeQueueDirectory())
+            // What the device and the shop's stories keep.
+            sdk.localStateStore.setViewedSlides(["slide-1"], storyId: "7")
+            DeviceStore.shared.pushToken = Data([9, 9])
+            identity.advertisingId = "idfa-kept"
+            let group = sdk.segment
+
+            sdk.deleteUserCredentials()
+
+            XCTAssertNil(identity.deviceId)
+            XCTAssertNil(identity.seance)
+            XCTAssertNil(identity.seanceLastActTime)
+            XCTAssertEqual(sdk.deviceId, "", "the instance forgets the did too")
+            XCTAssertEqual(sdk.userSeance, "")
+            XCTAssertNil(sdk.storage.readSavedInitAnswer())
+            XCTAssertNil(sdk.keychainStore.readInitData())
+            XCTAssertFalse(sdk.storage.refused)
+            XCTAssertNil(sdk.sourceStore.currentSource())
+            XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop)),
+                         "the push token goes to the shop again, for the new customer")
+            XCTAssertEqual(FileManager.default.fileExists(atPath: queue.path), !coreV2, "the queue goes with the customer on the new core")
+
+            XCTAssertEqual(sdk.localStateStore.viewedSlides(storyId: "7"), ["slide-1"])
+            XCTAssertEqual(DeviceStore.shared.pushToken, Data([9, 9]))
+            XCTAssertEqual(identity.advertisingId, "idfa-kept")
+            XCTAssertEqual(DeviceStore.shared.advertisingId, "idfa-kept")
+            XCTAssertEqual(identity.abSegment, group)
+            XCTAssertEqual(DeviceStore.shared.abGroup, group)
+        }
+    }
+}
