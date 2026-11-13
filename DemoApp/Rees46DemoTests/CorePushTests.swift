@@ -428,6 +428,43 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(requests("/push", shop).first?.body["sid"] as? String, "s-2")
     }
 
+    func test_a_push_event_waits_while_the_machine_was_reset_and_never_goes_with_the_deleted_did() {
+        let shop = newShop()
+        let sdk = make(shop)
+        // What deleteUserCredentials() does first: the machine waits for the next customer's /init.
+        sdk.initMachine?.reset()
+        XCTAssertEqual(sdk.userIdentity.deviceId, "d", "the did is still stored")
+        Rees46.handlePush(push(shop), event: .delivered)
+        sdk.eventQueue?.settle()
+        XCTAssertEqual(sdk.eventQueue?.inFlightCount, 0)
+        XCTAssertEqual(sdk.eventQueue?.waiting.map { $0.path }, ["track/delivered"], "accepted, and waiting")
+        XCTAssertTrue(requests("/track/delivered", shop).isEmpty)
+
+        sdk.initMachine?.resume()
+        XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 }, "the next /init lets it go")
+    }
+
+    func test_after_delete_user_credentials_a_push_goes_with_the_next_did() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            return handler(request)
+        }
+        sdk.deleteUserCredentials()
+        Rees46.handlePush(push(shop), event: .delivered)
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == 2 }, "the next customer's /init, held")
+        sdk.eventQueue?.settle()
+        XCTAssertEqual(sdk.eventQueue?.inFlightCount, 0)
+        XCTAssertTrue(requests("/track/delivered", shop).isEmpty, "not with the deleted did, nor without one")
+
+        held.signal()
+        XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 })
+        XCTAssertEqual(requests("/track/delivered", shop).first?.body["did"] as? String, "d-2", "a push of a message of the deleted customer goes as the next one")
+    }
+
     func test_a_push_event_the_queue_does_not_take_is_not_counted_as_sent() {
         let shop = newShop()
         let first = make(shop)

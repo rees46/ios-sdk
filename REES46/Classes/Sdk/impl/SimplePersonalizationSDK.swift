@@ -1753,6 +1753,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// meanwhile — and the ones already queued — wait for the new one instead of going out without it,
     /// the push token goes to the shop once the new id is stored, and a late answer to the earlier
     /// `/init` changes nothing. After `release()` nothing is wiped or sent.
+    ///
+    /// On the new core no event goes with the deleted device id, a push's neither: the events of the
+    /// deleted customer leave the queue, and one accepted afterwards waits for the new id. A push of a
+    /// message the deleted customer got that comes afterwards goes with the new id: the push names no
+    /// customer, only the shop.
     public func deleteUserCredentials() {
         guard !isReleased else {
             logger.warning(LogCode.invalidArgument, "deleteUserCredentials on a released instance: nothing was deleted", ["reason": "not_initialized"])
@@ -2362,11 +2367,13 @@ extension SimplePersonalizationSDK: EventQueueHost {
         if machine.isRefused {
             return .refused
         }
+        // Usable first, in both lanes: from `deleteUserCredentials()` on, the machine waits for the next
+        // customer's `/init`, and no event goes with the deleted did meanwhile — a push's neither.
+        guard machine.isUsable else { return .wait }
         // The events of pushes need a stored device id and nothing else: no session, no `/init`.
         if EventQueue.sessionlessPaths.contains(path) {
             return (userIdentity.deviceId ?? "").isEmpty ? .wait : .open
         }
-        guard machine.isUsable else { return .wait }
         guard session.isAlive else {
             // An event after the window ran out goes with the next sid (`sdk/core/session.md`). In the
             // background no session starts: the foreground renews it, and the tracking waits for that.
