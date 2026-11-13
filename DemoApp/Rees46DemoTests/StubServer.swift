@@ -40,7 +40,8 @@ struct StubReply {
         self.delay = delay
     }
 
-    /// No answer: the connection fails as a timed-out one.
+    /// No answer: the connection is never made — a connect that timed out. The new client calls it
+    /// `network`; a held or cut answer reached the server and is `timeout`.
     static let noAnswer: StubReply? = nil
 }
 
@@ -94,6 +95,10 @@ final class StubURLProtocol: URLProtocol {
         installed = true
         URLProtocol.registerClass(StubURLProtocol.self)
         swapDefaultConfiguration()
+        // A URL protocol has no metrics of the request's phases: the stub says which reached it.
+        NetworkClient.reachedServer = { task, metrics in
+            StubURLProtocol.reached(task) || NetworkClient.requestWentOut(task, metrics)
+        }
     }
 
     static func uninstall() {
@@ -102,6 +107,15 @@ final class StubURLProtocol: URLProtocol {
         installed = false
         URLProtocol.unregisterClass(StubURLProtocol.self)
         swapDefaultConfiguration()
+        NetworkClient.reachedServer = NetworkClient.requestWentOut
+    }
+
+    /// Tasks the stub server answered or held: their request reached it.
+    private static let reachedTasks = NSHashTable<URLSessionTask>.weakObjects()
+
+    static func reached(_ task: URLSessionTask) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return reachedTasks.contains(task)
     }
 
     /// Sessions the SDK builds itself do not see `registerClass`: their configuration has to list
@@ -127,6 +141,11 @@ final class StubURLProtocol: URLProtocol {
         DispatchQueue.global().async { [weak self] in
             let reply = handler(seen)
             guard let self = self, let client = self.client else { return }
+            if reply != nil, let task = self.task {
+                Self.lock.lock()
+                Self.reachedTasks.add(task)
+                Self.lock.unlock()
+            }
             guard let reply = reply else {
                 client.urlProtocol(self, didFailWithError: URLError(.timedOut))
                 return

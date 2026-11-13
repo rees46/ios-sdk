@@ -72,10 +72,36 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userPhone: String?
     var userLoyaltyId: String?
     var segment: String
-    /// The session every request goes through. Each request carries its own timeout.
-    var urlSession: URLSession
-    /// For stories reloaded by hand: without network a request fails at once.
-    let sessionWithoutWaiting: URLSession
+    /// The session of the old core's requests; each request carries its own timeout. Made on first
+    /// use: an instance on the new core sends through its own client and never makes it. A session
+    /// the app sets gives the new core its configuration, not its delegate (see `Rees46Config.coreV2`).
+    var urlSession: URLSession {
+        get {
+            sessionLock.lock(); defer { sessionLock.unlock() }
+            if let session = legacySession {
+                return session
+            }
+            let session = URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: true))
+            legacySession = session
+            return session
+        }
+        set {
+            sessionLock.lock()
+            legacySession = newValue
+            sessionLock.unlock()
+            guard usesCoreV2 else { return }
+            if newValue.delegate != nil {
+                logger.warning(
+                    LogCode.invalidConfig,
+                    "coreV2 sends with the configuration of the app's URLSession, not with its delegate: pinning set there does not apply",
+                    ["reason": "url_session_delegate"]
+                )
+            }
+            core.use(newValue.configuration)
+        }
+    }
+    private var legacySession: URLSession?
+    private let sessionLock = NSLock()
     var userInfo: InitResponse = InitResponse()
     
     /// This shop's requests: another shop's wait for its device id does not hold them.
@@ -170,7 +196,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.connectivity = connectivity ?? SystemConnectivityMonitor.shared
         // `enableLogs` is the old switch: on, it means everything (`debug`), as in `Rees46Config`.
         self.logger = SdkLogger(shopId: shopId, level: enableLogs && logLevel == .warning ? .debug : logLevel)
-        self.usesCoreV2 = CoreFlag.resolve(requested: coreV2, shopId: shopId)
+        self.usesCoreV2 = CoreFlag.resolve(requested: coreV2)
+        CoreFlag.reportMismatch(requested: coreV2, active: usesCoreV2, logger: logger)
         self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
         // R2: identity/session live in this shop's partition. The default repository migrates the
@@ -227,8 +254,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         // A forced re-initialization drops the stored device id: requests wait for the new one.
         deviceId = needReInitialization ? "" : (self.userIdentity.deviceId ?? "")
-        urlSession = URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: true))
-        sessionWithoutWaiting = URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: false))
         // Code without the instance at hand (push routing, UI) logs at this instance's level while it lives.
         SdkLogger.register(logger, owner: self)
         _ = core
@@ -240,8 +265,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .success(let response):
                     self.userInfo = response
                     // Session is client-owned (see SessionManager) — the server-assigned seance is
-                    // intentionally not adopted, matching Android/RN.
-                    self.deviceId = response.deviceId
+                    // intentionally not adopted, matching Android/RN. An answer without a device id
+                    // keeps the one the shop has: an empty one would go out with every request.
+                    if !response.deviceId.isEmpty {
+                        self.deviceId = response.deviceId
+                    } else if self.deviceId.isEmpty {
+                        self.deviceId = self.userIdentity.deviceId ?? ""
+                    }
 
                     // The contacts given at creation identify the user: they go to the profile.
                     if self.userEmail != nil || self.userPhone != nil || self.userLoyaltyId != nil {
@@ -397,7 +427,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
+    /// The old core sends through a session of this configuration; the new core gives it to its own
+    /// client.
     func configureURLSession(configuration: URLSessionConfiguration) {
+        guard !usesCoreV2 else {
+            core.use(configuration)
+            return
+        }
         self.urlSession = URLSession(configuration: configuration)
     }
     
@@ -1212,7 +1248,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sendGet(
             path: "init",
             params: params,
-            timeout: Self.initRequestTimeout,
+            timeout: NetworkClient.initTimeout,
             waitsForNetwork: saved == nil
         ) { status, result in
             switch result.flatMap(Self.jsonObject) {
@@ -1340,7 +1376,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         params["ios_advertising_id"] = advId
         userIdentity.advertisingId = advId
         
-        sendGet(path: path, params: params, isInit: true, timeout: Self.initRequestTimeout) { _, result in
+        sendGet(path: path, params: params, isInit: true, timeout: NetworkClient.initTimeout) { _, result in
             switch result.flatMap(Self.jsonObject) {
             case let .success(successResult):
                 let resJSON = successResult
@@ -1395,7 +1431,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 logger: logger,
                 connectivity: connectivity,
                 session: { [weak self] in self?.urlSession ?? URLSession.shared },
-                sessionWithoutWaiting: sessionWithoutWaiting
+                // For stories reloaded by hand: without network a request fails at once.
+                sessionWithoutWaiting: URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: false))
             )
         }
         let client = NetworkClient(baseURL: baseURL, connectivity: connectivity, logger: logger) { [weak self] in
@@ -1460,12 +1497,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SdkConfiguration.self
     }
     
-    /// Idle timeout of a request that does not ask for its own: the read timeout of the Android SDK.
-    static let defaultRequestTimeout: TimeInterval = 10
-
-    /// Timeout of `/init`: the server itself gives up after five seconds.
-    static let initRequestTimeout: TimeInterval = 5
-
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         sendGet(path: path, params: params, isInit: isInit, timeout: nil) { _, result in
             completion(result.flatMap(Self.jsonObject))
@@ -1529,9 +1560,21 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
+    /// Whether `data` may stand in for `/init` later: a JSON object with a device id. An empty or
+    /// unparsable answer never replaces the saved one or its keychain backup.
+    static func isSavableInitAnswer(_ data: Data) -> Bool {
+        guard !data.isEmpty,
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let deviceId = json["did"] as? String else {
+            return false
+        }
+        return !deviceId.isEmpty
+    }
+
     /// Saves an init answer to the documents file and its keychain backup. A file that cannot be
     /// written is `storage_failed`: the answer itself is good, and `/init` goes on with it.
     private func saveInitAnswer(_ data: Data) {
+        guard Self.isSavableInitAnswer(data) else { return }
         do {
             try saveDataToJsonFile(data, jsonInitFileName: shopId + baseInitJsonFileName)
         } catch {

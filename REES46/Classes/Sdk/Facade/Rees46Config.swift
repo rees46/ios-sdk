@@ -47,6 +47,12 @@ public struct Rees46Config {
     /// with init, session, queue and pushes to follow. The first `Rees46.initialize` or
     /// `Rees46.register` of the process decides for every shop until the app restarts; a shop that
     /// asks otherwise gets the process's core, and the log says `core_flag_mismatch`.
+    ///
+    /// The new core sends through a session of its own. `configureURLSession(configuration:)` and a
+    /// `urlSession` the app sets give it their configuration — proxy, headers, protocols, TLS settings
+    /// — but not a session's delegate: certificate pinning done in a delegate does not apply, and the
+    /// log says `invalid_config` with the reason `url_session_delegate`. A request still fails at once
+    /// without network and keeps its own timeout.
     public let coreV2: Bool
 
     public init(

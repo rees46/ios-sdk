@@ -80,8 +80,9 @@ public enum Rees46 {
      */
     public static func register(shops: [Rees46Config], eagerInit: Bool = false) {
         for config in shops {
-            // The first registration decides the core of the process, as the first initialization does.
-            _ = CoreFlag.resolve(requested: config.coreV2, shopId: config.shopId)
+            // The first registration decides the core of the process, as the first initialization does;
+            // a shop that asks for the other one says so when its instance is made, at its log level.
+            _ = CoreFlag.resolve(requested: config.coreV2)
             if eagerInit {
                 _ = initialize(config)
             } else {

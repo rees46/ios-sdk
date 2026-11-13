@@ -96,7 +96,7 @@ final class CoreNetworkTests: XCTestCase {
         let (client, _) = client()
         reply("/dropped", StubReply(200, json: #"{"products":[1,2,3,4,5,6,7,8]}"#, cutAfter: 5))
         let dropped = await client.send(.init(method: .get, path: "dropped"))
-        XCTAssertEqual(dropped.result.failure, .network)
+        XCTAssertEqual(dropped.result.failure, .timeout, "the request reached the server: a dropped answer is timeout")
         XCTAssertNil(dropped.status)
 
         reply("/stalled", StubReply(200, json: #"{"products":[1,2,3,4,5,6,7,8]}"#, cutAfter: 5, cutWith: .timedOut))
@@ -113,13 +113,48 @@ final class CoreNetworkTests: XCTestCase {
         XCTAssertTrue(requests("/products/get").isEmpty)
     }
 
-    func test_the_errors_of_the_transport_are_classified() {
-        XCTAssertEqual(NetworkClient.classify(URLError(.timedOut)), .timeout)
-        XCTAssertEqual(NetworkClient.classify(URLError(.cancelled)), .cancelled)
-        XCTAssertEqual(NetworkClient.classify(URLError(.notConnectedToInternet)), .network)
-        XCTAssertEqual(NetworkClient.classify(URLError(.cannotConnectToHost)), .network)
-        XCTAssertEqual(NetworkClient.classify(URLError(.networkConnectionLost)), .network)
-        XCTAssertEqual(NetworkClient.classify(NSError(domain: "other", code: 1)), .network)
+    func test_the_errors_of_the_transport_are_classified_by_whether_the_request_reached_the_server() {
+        // Before the request reached the server: no network, DNS, a refused or timed-out connect.
+        for code: URLError.Code in [.notConnectedToInternet, .cannotFindHost, .cannotConnectToHost, .timedOut, .networkConnectionLost] {
+            XCTAssertEqual(NetworkClient.classify(URLError(code), reachedServer: false), .network, "\(code)")
+        }
+        // After: the answer did not come in time or broke off midway.
+        for code: URLError.Code in [.timedOut, .networkConnectionLost, .badServerResponse] {
+            XCTAssertEqual(NetworkClient.classify(URLError(code), reachedServer: true), .timeout, "\(code)")
+        }
+        XCTAssertEqual(NetworkClient.classify(URLError(.cancelled), reachedServer: true), .cancelled)
+        XCTAssertEqual(NetworkClient.classify(URLError(.cancelled), reachedServer: false), .cancelled)
+        XCTAssertEqual(NetworkClient.classify(NSError(domain: "other", code: 1), reachedServer: false), .network)
+    }
+
+    func test_a_connect_that_never_happened_is_network_and_a_held_answer_is_timeout() async {
+        let (client, _) = client()
+        StubURLProtocol.handler = { $0.path == "/unreachable" ? StubReply.noAnswer : StubReply(delay: 2) }
+        let unreachable = await client.send(.init(method: .get, path: "unreachable"))
+        XCTAssertEqual(unreachable.result.failure, .network)
+
+        let held = await client.send(.init(method: .get, path: "held", timeout: 0.3))
+        XCTAssertEqual(held.result.failure, .timeout)
+    }
+
+    func test_the_real_session_tells_a_refused_connect_from_a_silent_server() async throws {
+        // Real sockets, no stub: the phase comes from the session's own metrics.
+        StubURLProtocol.uninstall()
+        defer { StubURLProtocol.install() }
+        let silent = try SilentServer()
+        defer { silent.close() }
+        let connectivity = FakeConnectivity(online: true)
+        let logger = SdkLogger(shopId: "core-network", level: .none)
+
+        let refused = NetworkClient(baseURL: "http://127.0.0.1:\(silent.port + 1)/", connectivity: connectivity, logger: logger) { self.fields }
+        let refusedResponse = await refused.send(.init(method: .get, path: "x", timeout: 2))
+        XCTAssertEqual(refusedResponse.result.failure, .network, "a refused connection never reached the server")
+
+        let accepting = NetworkClient(baseURL: "http://127.0.0.1:\(silent.port)/", connectivity: connectivity, logger: logger) { self.fields }
+        let silentResponse = await accepting.send(.init(method: .get, path: "x", timeout: 0.5))
+        XCTAssertEqual(silentResponse.result.failure, .timeout, "the server took the request and did not answer")
+        await refused.release()
+        await accepting.release()
     }
 
     // MARK: - Cancellation
@@ -159,6 +194,77 @@ final class CoreNetworkTests: XCTestCase {
         await client.release()
         let cancelled = await released.value
         XCTAssertEqual(cancelled.result.failure, .cancelled)
+    }
+
+    func test_release_while_a_waiting_request_wakes_up_never_sends_on_the_released_session() async {
+        // The wake-up and release() race for the actor: whichever wins, nothing is sent on the
+        // invalidated session, which would raise an exception.
+        for _ in 0..<100 {
+            let (client, connectivity) = client(online: false)
+            let waiting = _Concurrency.Task { await client.send(.init(method: .get, path: "init", waitsForNetwork: true)) }
+            try? await _Concurrency.Task.sleep(nanoseconds: 1_000_000)
+            connectivity.isOnline = true
+            await client.release()
+            let response = await waiting.value
+            if case .failure(let error) = response.result {
+                XCTAssertEqual(error, .cancelled)
+            }
+        }
+    }
+
+    func test_cancelling_the_callers_task_cancels_the_request_in_flight_and_the_waiting_one() async {
+        let (client, connectivity) = client()
+        reply("/slow", StubReply(delay: 3))
+        let inFlight = _Concurrency.Task { await client.send(.init(method: .get, path: "slow")) }
+        let sent = await waitUntil { !self.requests("/slow").isEmpty }
+        XCTAssertTrue(sent)
+        let started = Date()
+        inFlight.cancel()
+        let response = await inFlight.value
+        XCTAssertEqual(response.result.failure, .cancelled)
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
+
+        connectivity.isOnline = false
+        let waiting = _Concurrency.Task { await client.send(.init(method: .get, path: "init", waitsForNetwork: true)) }
+        try? await _Concurrency.Task.sleep(nanoseconds: 200_000_000)
+        waiting.cancel()
+        let cancelled = await waiting.value
+        XCTAssertEqual(cancelled.result.failure, .cancelled)
+        XCTAssertTrue(requests("/init").isEmpty)
+
+        // The client itself goes on.
+        connectivity.isOnline = true
+        let next = await client.send(.init(method: .get, path: "next"))
+        XCTAssertEqual(next.status, 200)
+    }
+
+    func test_at_cold_start_a_waiting_init_that_finds_no_network_waits_for_the_first_path() async {
+        // The monitor has no path yet and counts that as online; the first try finds no network.
+        let connectivity = FakeConnectivity(online: true, hasPath: false)
+        let client = NetworkClient(
+            baseURL: "https://stub.test/",
+            connectivity: connectivity,
+            logger: SdkLogger(shopId: "core-network", level: .none)
+        ) { self.fields }
+        StubURLProtocol.handler = { _ in
+            connectivity.hasPath ? StubReply(json: #"{"did":"d"}"#) : StubReply.noAnswer
+        }
+        let waiting = _Concurrency.Task { await client.send(.init(method: .get, path: "init", waitsForNetwork: true)) }
+        let first = await waitUntil { self.requests("/init").count == 1 }
+        XCTAssertTrue(first)
+        try? await _Concurrency.Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(requests("/init").count, 1, "it waits for the path, it does not retry in a loop")
+
+        connectivity.hasPath = true
+        let response = await waiting.value
+        XCTAssertEqual(response.status, 200)
+        XCTAssertEqual(requests("/init").count, 2)
+
+        // Once the monitor knows the path, a request lost for want of a network is its failure.
+        StubURLProtocol.handler = { _ in StubReply.noAnswer }
+        let lost = await client.send(.init(method: .get, path: "init", waitsForNetwork: true))
+        XCTAssertEqual(lost.result.failure, .network)
+        XCTAssertEqual(requests("/init").count, 3)
     }
 
     // MARK: - Common fields, timeouts, Retry-After
@@ -266,28 +372,64 @@ final class CoreNetworkTests: XCTestCase {
 
     // MARK: - The flag
 
-    func test_the_first_instance_decides_the_core_of_the_process_and_a_mismatch_is_logged() {
+    func test_the_first_instance_decides_the_core_of_the_process_and_a_mismatch_is_logged_once_at_the_instances_level() throws {
         let lock = NSLock()
         var received: [Rees46.SdkLogMessage] = []
         Rees46.setLogHandler { message in lock.lock(); received.append(message); lock.unlock() }
-        defer { Rees46.setLogHandler(nil) }
-        CoreFlag.reset()
-        let shop = "flag-\(shopId)"
-
-        XCTAssertTrue(CoreFlag.resolve(requested: true, shopId: shop))
-        XCTAssertTrue(CoreFlag.resolve(requested: true, shopId: shop))
-        XCTAssertTrue(CoreFlag.resolve(requested: false, shopId: shop), "the process keeps its core")
-
-        XCTAssertTrue(eventually {
+        Rees46.reset()
+        SdkRegistry.shared.reset()
+        defer {
+            Rees46.setLogHandler(nil)
+            Rees46.reset()
+            SdkRegistry.shared.reset()
+        }
+        func mismatches(_ shop: String) -> [Rees46.SdkLogMessage] {
             lock.lock(); defer { lock.unlock() }
-            return received.contains { $0.code == "core_flag_mismatch" && $0.shopId == shop }
-        })
-        lock.lock()
-        let mismatch = received.filter { $0.code == "core_flag_mismatch" && $0.shopId == shop }
-        lock.unlock()
-        XCTAssertEqual(mismatch.count, 1)
-        XCTAssertEqual(mismatch.first?.level, .warning)
-        XCTAssertEqual(mismatch.first?.context["active"], "true")
+            return received.filter { $0.code == "core_flag_mismatch" && $0.shopId == shop }
+        }
+        CoreFlag.reset()
+        XCTAssertTrue(CoreFlag.resolve(requested: true))
+        XCTAssertTrue(CoreFlag.resolve(requested: false), "the process keeps its core")
+
+        // Registered, then made: the shop's instance says it once, at its own level.
+        let shop = "flag-\(shopId)"
+        Rees46.register(shops: [Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false)])
+        let sdk = try XCTUnwrap(try Rees46.instance(for: shop) as? SimplePersonalizationSDK)
+        XCTAssertTrue(sdk.usesCoreV2)
+        let again = Rees46.initialize(Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false))
+        XCTAssertTrue(eventually { !mismatches(shop).isEmpty })
+        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        XCTAssertEqual(mismatches(shop).count, 1)
+        XCTAssertEqual(mismatches(shop).first?.level, .warning)
+        XCTAssertEqual(mismatches(shop).first?.context["active"], "true")
+
+        // An instance that logs errors only does not get the warning.
+        let quiet = "flag-quiet-\(shopId)"
+        let quietSDK = Rees46.initialize(Rees46Config(shopId: quiet, apiDomain: "stub.test", logLevel: .error, autoSendPushToken: false))
+        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        XCTAssertTrue(mismatches(quiet).isEmpty)
+        withExtendedLifetime([sdk, again, quietSDK] as [AnyObject]) {}
+        StubSDK.removeSavedInit(shopId: shop)
+        StubSDK.removeSavedInit(shopId: quiet)
+    }
+
+    func test_the_old_createPersonalizationSDK_decides_the_core_of_the_process_too() {
+        Rees46.reset()
+        SdkRegistry.shared.reset()
+        defer {
+            Rees46.reset()
+            SdkRegistry.shared.reset()
+        }
+        CoreFlag.reset()
+        let shop = "legacy-flag-\(shopId)"
+        let legacy = createPersonalizationSDK(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false)
+        XCTAssertEqual(CoreFlag.current, false)
+
+        let later = Rees46.initialize(Rees46Config(shopId: "\(shop)-2", apiDomain: "stub.test", autoSendPushToken: false, coreV2: true))
+        XCTAssertEqual((later as? SimplePersonalizationSDK)?.usesCoreV2, false, "the process keeps the old core")
+        withExtendedLifetime([legacy, later] as [AnyObject]) {}
+        StubSDK.removeSavedInit(shopId: shop)
+        StubSDK.removeSavedInit(shopId: "\(shop)-2")
     }
 
     func test_the_old_core_is_the_default() {
@@ -381,6 +523,56 @@ final class CoreNetworkTests: XCTestCase {
         XCTAssertEqual(sdk.deviceId, "stub-did")
     }
 
+    func test_with_coreV2_an_empty_init_answer_is_an_error_and_keeps_the_device_id_and_the_saved_answer() {
+        StubURLProtocol.handler = { request in
+            request.path == "/init" ? StubReply(200, json: "") : StubReply()
+        }
+        let identity = InMemoryUserIdentityRepository()
+        identity.deviceId = "kept-did"
+        let saved = Data(#"{"did":"kept-did","seance":"s"}"#.utf8)
+        let keychain = InMemoryKeychainInitStore(saved)
+        let ready = expectation(description: "init")
+        var initError: SdkError?
+        let sdk = StubSDK.make(shopId: shopId, identity: identity, keychain: keychain, coreV2: true) { error in
+            initError = error
+            ready.fulfill()
+        }
+        wait(for: [ready], timeout: 5)
+
+        guard case .decodeError? = initError else { return XCTFail("an empty /init is decoding, got \(String(describing: initError))") }
+        XCTAssertEqual(sdk.deviceId, "kept-did")
+        XCTAssertEqual(identity.deviceId, "kept-did")
+        XCTAssertEqual(keychain.data, saved)
+
+        // The init that saves its answer (sendIDFARequest) does not save an empty one either.
+        let idfa = expectation(description: "idfa")
+        sdk.sendIDFARequest(idfa: UUID()) { _ in idfa.fulfill() }
+        wait(for: [idfa], timeout: 5)
+        XCTAssertEqual(keychain.data, saved, "an empty answer never replaces the keychain backup")
+    }
+
+    func test_an_init_answer_without_a_device_id_keeps_the_stored_one_on_both_cores() {
+        for coreV2 in [false, true] {
+            StubURLProtocol.handler = { request in
+                request.path == "/init" ? StubReply(json: #"{"seance":"s"}"#) : StubReply()
+            }
+            let identity = InMemoryUserIdentityRepository()
+            identity.deviceId = "kept-did"
+            let saved = Data(#"{"did":"kept-did"}"#.utf8)
+            let keychain = InMemoryKeychainInitStore(saved)
+            let ready = expectation(description: "init")
+            let sdk = StubSDK.make(shopId: shopId, identity: identity, keychain: keychain, coreV2: coreV2) { _ in ready.fulfill() }
+            wait(for: [ready], timeout: 5)
+            XCTAssertEqual(sdk.deviceId, "kept-did", "coreV2 = \(coreV2)")
+
+            let idfa = expectation(description: "idfa")
+            sdk.sendIDFARequest(idfa: UUID()) { _ in idfa.fulfill() }
+            wait(for: [idfa], timeout: 5)
+            XCTAssertEqual(keychain.data, saved, "an answer without a device id is not saved, coreV2 = \(coreV2)")
+            XCTAssertEqual(sdk.deviceId, "kept-did")
+        }
+    }
+
     func test_releasing_a_coreV2_instance_cancels_its_requests() {
         let sdk = coreV2SDK()
         StubURLProtocol.handler = { $0.path == "/products/get" ? StubReply(delay: 3) : StubReply() }
@@ -397,6 +589,120 @@ final class CoreNetworkTests: XCTestCase {
         wait(for: [done], timeout: 2)
         XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
         guard case .failure(.invalidResponse)? = outcome else { return XCTFail("a cancelled request is .invalidResponse for the old methods") }
+    }
+
+    // MARK: - The app's session on CoreV2
+
+    func test_with_coreV2_the_apps_session_configuration_is_used_and_a_delegate_is_reported() {
+        let lock = NSLock()
+        var received: [Rees46.SdkLogMessage] = []
+        Rees46.setLogHandler { message in lock.lock(); received.append(message); lock.unlock() }
+        defer { Rees46.setLogHandler(nil) }
+        RecordingProtocol.clear()
+        let sdk = coreV2SDK()
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [WaitingSession.self]
+        sdk.configureURLSession(configuration: configuration)
+        XCTAssertTrue(getProducts(sdk, untilSeenBy: "waiting"), "the next requests go through the app's configuration")
+
+        let delegated = URLSessionConfiguration.ephemeral
+        delegated.protocolClasses = [ImmediateSession.self]
+        sdk.urlSession = URLSession(configuration: delegated, delegate: PinningDelegate(), delegateQueue: nil)
+        XCTAssertTrue(getProducts(sdk, untilSeenBy: "immediate"), "a session the app sets gives its configuration")
+        XCTAssertTrue(eventually {
+            lock.lock(); defer { lock.unlock() }
+            return received.contains { $0.code == "invalid_config" && $0.context["reason"] == "url_session_delegate" && $0.shopId == self.shopId }
+        }, "its delegate does not apply, and the log says so")
+    }
+
+    /// Sends `products/get` until the session of `name` serves it: the configuration reaches the
+    /// client's actor a moment after the call.
+    private func getProducts(_ sdk: SimplePersonalizationSDK, untilSeenBy name: String) -> Bool {
+        for _ in 0..<20 {
+            let done = expectation(description: "get")
+            sdk.getProductInfo(id: "item-1") { _ in done.fulfill() }
+            wait(for: [done], timeout: 5)
+            if RecordingProtocol.seen.contains("\(name) /products/get") { return true }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.05))
+        }
+        return false
+    }
+
+    // MARK: - The old core, pinned
+
+    private func legacyCore(waiting: URLSession? = nil, immediate: URLSession? = nil, connectivity: ConnectivityMonitor = FakeConnectivity(online: true), logger: SdkLogger? = nil) -> LegacyCore {
+        LegacyCore(
+            baseURL: "https://stub.test/",
+            stream: "ios",
+            logger: logger ?? SdkLogger(shopId: "legacy-core", level: .none),
+            connectivity: connectivity,
+            session: { waiting ?? URLSession(configuration: .default) },
+            sessionWithoutWaiting: immediate ?? URLSession(configuration: .default)
+        )
+    }
+
+    private func send(_ core: Core, _ request: CoreRequest) -> CoreResponse? {
+        let done = expectation(description: request.path)
+        var response: CoreResponse?
+        core.send(request) { response = $0; done.fulfill() }
+        wait(for: [done], timeout: 5)
+        return response
+    }
+
+    func test_the_old_core_takes_299_for_a_failure() {
+        reply("/edge", StubReply(299, json: "[1,2]"))
+        let response = send(legacyCore(), CoreRequest(method: .get, path: "edge"))
+        XCTAssertEqual(response?.status, 299)
+        guard case .failure(.invalidResponse)? = response?.result else { return XCTFail("299 is not a success on the old core") }
+    }
+
+    func test_the_old_core_gives_the_error_body_message_of_a_post_as_custom() {
+        reply("/profile/set", StubReply(400, json: #"{"status":"error","message":"Bad email"}"#))
+        let post = send(legacyCore(), CoreRequest(method: .post, path: "profile/set", body: ["email": "e"]))
+        guard case let .failure(.custom(message))? = post?.result else { return XCTFail("a POST error body is .custom") }
+        XCTAssertEqual(message, "Bad email")
+
+        reply("/products/get", StubReply(400, json: #"{"status":"error","message":"Bad item"}"#))
+        let get = send(legacyCore(), CoreRequest(method: .get, path: "products/get"))
+        guard case .failure(.invalidResponse)? = get?.result else { return XCTFail("a GET error is .invalidResponse") }
+    }
+
+    func test_the_old_core_picks_the_session_by_whether_the_request_waits_for_the_network() {
+        RecordingProtocol.clear()
+        let waitingConfiguration = URLSessionConfiguration.ephemeral
+        waitingConfiguration.protocolClasses = [WaitingSession.self]
+        let immediateConfiguration = URLSessionConfiguration.ephemeral
+        immediateConfiguration.protocolClasses = [ImmediateSession.self]
+        let core = legacyCore(
+            waiting: URLSession(configuration: waitingConfiguration),
+            immediate: URLSession(configuration: immediateConfiguration)
+        )
+
+        _ = send(core, CoreRequest(method: .get, path: "stories/a"))
+        _ = send(core, CoreRequest(method: .get, path: "stories/b", waitsForNetwork: false))
+        _ = send(core, CoreRequest(method: .post, path: "push", body: ["event": "view"], waitsForNetwork: false))
+
+        XCTAssertEqual(RecordingProtocol.seen, ["waiting /stories/a", "immediate /stories/b", "waiting /push"],
+                       "a GET that does not wait goes through the session without waiting; a POST always waits")
+    }
+
+    func test_the_old_core_logs_request_failed_when_a_get_gets_no_answer() {
+        let lock = NSLock()
+        var received: [Rees46.SdkLogMessage] = []
+        Rees46.setLogHandler { message in lock.lock(); received.append(message); lock.unlock() }
+        defer { Rees46.setLogHandler(nil) }
+        let shop = "legacy-get-\(shopId)"
+        StubURLProtocol.handler = { _ in StubReply.noAnswer }
+
+        let response = send(legacyCore(logger: SdkLogger(shopId: shop, level: .warning)), CoreRequest(method: .get, path: "products/get"))
+
+        XCTAssertNil(response?.status)
+        guard case .failure(.invalidResponse)? = response?.result else { return XCTFail("online, no answer is .invalidResponse") }
+        XCTAssertTrue(eventually {
+            lock.lock(); defer { lock.unlock() }
+            return received.contains { $0.code == "request_failed" && $0.shopId == shop && $0.context["path"] == "products/get" && $0.context["status"] == nil }
+        })
     }
 
     // MARK: - Helpers
@@ -417,3 +723,74 @@ private extension Result {
         return nil
     }
 }
+
+/// A server that takes connections and never answers.
+private final class SilentServer {
+    let port: UInt16
+    private let socketDescriptor: Int32
+
+    init() throws {
+        let descriptor = socket(AF_INET, SOCK_STREAM, 0)
+        socketDescriptor = descriptor
+        var address = sockaddr_in()
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_port = 0
+        address.sin_addr.s_addr = inet_addr("127.0.0.1")
+        let bound = withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) }
+        }
+        guard bound == 0, listen(descriptor, 8) == 0 else { throw URLError(.cannotConnectToHost) }
+        var assigned = sockaddr_in()
+        var length = socklen_t(MemoryLayout<sockaddr_in>.size)
+        _ = withUnsafeMutablePointer(to: &assigned) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(descriptor, $0, &length) }
+        }
+        port = UInt16(bigEndian: assigned.sin_port)
+    }
+
+    func close() {
+        Darwin.close(socketDescriptor)
+    }
+}
+
+/// Answers every request with `{}` and records which session's protocol saw it.
+private class RecordingProtocol: URLProtocol {
+    class var name: String { "" }
+    private static let lock = NSLock()
+    private static var log: [String] = []
+
+    static var seen: [String] {
+        lock.lock(); defer { lock.unlock() }
+        return log
+    }
+
+    static func clear() {
+        lock.lock(); log.removeAll(); lock.unlock()
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url, let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil) else { return }
+        RecordingProtocol.lock.lock()
+        RecordingProtocol.log.append("\(type(of: self).name) \(url.path)")
+        RecordingProtocol.lock.unlock()
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data("{}".utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+}
+
+private final class WaitingSession: RecordingProtocol {
+    override class var name: String { "waiting" }
+}
+
+private final class ImmediateSession: RecordingProtocol {
+    override class var name: String { "immediate" }
+}
+
+/// A session delegate as an app that pins certificates has one.
+private final class PinningDelegate: NSObject, URLSessionDelegate {}

@@ -53,6 +53,11 @@ final class CoreV2: Core {
         }
     }
 
+    func use(_ configuration: URLSessionConfiguration) {
+        let client = self.client
+        _Concurrency.Task { await client.use(configuration) }
+    }
+
     func release() {
         lock.lock()
         released = true

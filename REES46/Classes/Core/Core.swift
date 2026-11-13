@@ -62,32 +62,44 @@ protocol Core: AnyObject {
 
     /// Stops the core: requests in flight end, and later ones are not sent.
     func release()
+
+    /// Sends the next requests with the app's session configuration (`configureURLSession`).
+    func use(_ configuration: URLSessionConfiguration)
 }
 
 /// Which core the process runs. The first `Rees46.initialize`, `Rees46.register` or SDK made decides,
 /// and the value holds until the process ends: the two cores share storage, and switching a running
 /// app between them would mix their state. An instance that asks for the other core gets the
-/// process's one, and the log says so with `core_flag_mismatch`.
+/// process's one, and its log says so with `core_flag_mismatch`, once per shop.
 enum CoreFlag {
 
     private static let lock = NSLock()
     private static var decided: Bool?
+    /// Shops whose mismatch is already in the log.
+    private static var reported: Set<String> = []
 
-    /// The value of `coreV2` for an instance of `shopId` that asks for `requested`.
-    static func resolve(requested: Bool, shopId: String?) -> Bool {
-        lock.lock()
+    /// The value of `coreV2` for an instance that asks for `requested`.
+    static func resolve(requested: Bool) -> Bool {
+        lock.lock(); defer { lock.unlock() }
         let active = decided ?? requested
         decided = active
-        lock.unlock()
-        if active != requested {
-            let logger = shopId.map { SdkLogger.forShop($0) } ?? SdkLogger.process
-            logger.warning(
-                LogCode.coreFlagMismatch,
-                "the instance asks for coreV2 = \(requested), the process runs coreV2 = \(active) until it restarts",
-                ["requested": String(requested), "active": String(active)]
-            )
-        }
         return active
+    }
+
+    /// Writes `core_flag_mismatch` through the instance's own `logger`, so its log level applies, the
+    /// first time an instance of its shop asks for another core than the process runs.
+    static func reportMismatch(requested: Bool, active: Bool, logger: SdkLogger) {
+        guard requested != active else { return }
+        let shop = logger.shopId ?? ""
+        lock.lock()
+        let first = reported.insert(shop).inserted
+        lock.unlock()
+        guard first else { return }
+        logger.warning(
+            LogCode.coreFlagMismatch,
+            "the instance asks for coreV2 = \(requested), the process runs coreV2 = \(active) until it restarts",
+            ["requested": String(requested), "active": String(active)]
+        )
     }
 
     /// The process's value, once something decided it.
@@ -96,10 +108,11 @@ enum CoreFlag {
         return decided
     }
 
-    /// Test-only: forgets the process's value, or sets it.
+    /// Test-only: forgets the process's value, or sets it, and the shops already reported.
     static func reset(to value: Bool? = nil) {
         lock.lock()
         decided = value
+        reported.removeAll()
         lock.unlock()
     }
 }

@@ -96,7 +96,7 @@ final class RequestTimeoutTests: XCTestCase {
         wait(for: [answered], timeout: 5)
 
         let shop = StubURLProtocol.requests.filter { ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == sdk.shopId }
-        let short = shop.filter { $0.path != "/init" && $0.timeout < SimplePersonalizationSDK.defaultRequestTimeout }
+        let short = shop.filter { $0.path != "/init" && $0.timeout < NetworkClient.defaultTimeout }
         XCTAssertTrue(short.isEmpty, "requests with a short timeout: \(short.map { "\($0.path) \($0.timeout)" })")
         XCTAssertGreaterThanOrEqual(shop.count, 10)
     }

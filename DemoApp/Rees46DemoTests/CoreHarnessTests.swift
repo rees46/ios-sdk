@@ -66,7 +66,18 @@ final class FakeConnectivity: ConnectivityMonitor {
         }
     }
 
-    init(online: Bool) { self.online = online }
+    private var pathReported = true
+
+    /// `false` plays a cold start: the monitor has not reported its first path yet.
+    var hasPath: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return pathReported }
+        set { lock.lock(); pathReported = newValue; lock.unlock() }
+    }
+
+    init(online: Bool, hasPath: Bool = true) {
+        self.online = online
+        self.pathReported = hasPath
+    }
 
     func observe(_ handler: @escaping (Bool) -> Void) -> Cancellable {
         lock.lock()

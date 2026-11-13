@@ -23,9 +23,13 @@ final class NetworkCorePackageTests: XCTestCase {
         XCTAssertEqual(failure(NetworkClient.classify(status: 200, body: Data("nope".utf8))), .decoding)
         XCTAssertEqual(failure(NetworkClient.classify(status: 404, body: Data())), .http(code: 404, serverCode: nil))
         XCTAssertEqual(failure(NetworkClient.classify(status: 503, body: Data("{}".utf8))), .http(code: 503, serverCode: nil))
-        XCTAssertEqual(NetworkClient.classify(URLError(.timedOut)), .timeout)
-        XCTAssertEqual(NetworkClient.classify(URLError(.cancelled)), .cancelled)
-        XCTAssertEqual(NetworkClient.classify(URLError(.notConnectedToInternet)), .network)
+        XCTAssertEqual(failure(NetworkClient.classify(status: 200, body: Data(), path: "init")), .decoding, "an empty /init has no device id")
+        XCTAssertNotNil(try? NetworkClient.classify(status: 200, body: Data(), path: "push").get())
+        XCTAssertEqual(NetworkClient.classify(URLError(.timedOut), reachedServer: true), .timeout)
+        XCTAssertEqual(NetworkClient.classify(URLError(.timedOut), reachedServer: false), .network, "a connect that timed out")
+        XCTAssertEqual(NetworkClient.classify(URLError(.networkConnectionLost), reachedServer: true), .timeout, "an answer cut midway")
+        XCTAssertEqual(NetworkClient.classify(URLError(.cancelled), reachedServer: true), .cancelled)
+        XCTAssertEqual(NetworkClient.classify(URLError(.notConnectedToInternet), reachedServer: false), .network)
     }
 
     func test_retry_after_is_read_as_seconds() {
@@ -63,8 +67,8 @@ final class NetworkCorePackageTests: XCTestCase {
     func test_the_core_flag_is_one_per_process() {
         CoreFlag.reset()
         XCTAssertNil(CoreFlag.current)
-        XCTAssertFalse(CoreFlag.resolve(requested: false, shopId: nil))
-        XCTAssertFalse(CoreFlag.resolve(requested: true, shopId: nil))
+        XCTAssertFalse(CoreFlag.resolve(requested: false))
+        XCTAssertFalse(CoreFlag.resolve(requested: true))
         XCTAssertEqual(CoreFlag.current, false)
     }
 

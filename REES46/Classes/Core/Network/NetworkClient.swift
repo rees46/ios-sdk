@@ -13,7 +13,7 @@ import Foundation
 /// own timeout, fails a request at once without network, classifies what comes back into
 /// `Rees46.SdkError`, and logs method, path and status only. It does not retry: `/init` and the queue
 /// decide on retries, and the answer's `Retry-After` reaches them as data. `release()` cancels what is
-/// in flight.
+/// in flight, and so does cancelling the task that waits for an answer.
 actor NetworkClient {
 
     struct Request {
@@ -43,12 +43,26 @@ actor NetworkClient {
         }
     }
 
-    /// The read timeout of a request that does not ask for its own.
+    /// The read timeout of a request that does not ask for its own; the old core uses it too.
     static let defaultTimeout: TimeInterval = 10
     /// `/init`: the server itself gives up after five seconds.
     static let initTimeout: TimeInterval = 5
+    /// How long a request that waits for the network waits for the monitor's first path after it
+    /// failed for want of a network at cold start.
+    static let firstPathWait: TimeInterval = 5
 
-    private let session: URLSession
+    /// Whether a request that got no answer had reached the server: its headers had started to go
+    /// out. Before that a failure is `network` (no network, DNS, a refused connection, a connect that
+    /// timed out), after it `timeout`. Tests that serve requests through a URL protocol, which has no
+    /// such metrics, say it here.
+    static var reachedServer: (URLSessionTask, URLSessionTaskMetrics?) -> Bool = requestWentOut
+
+    /// The default of `reachedServer`: the task's metrics say a request started.
+    static func requestWentOut(_ task: URLSessionTask, _ metrics: URLSessionTaskMetrics?) -> Bool {
+        metrics?.transactionMetrics.contains { $0.requestStartDate != nil } ?? false
+    }
+
+    private let sessions: Sessions
     private let baseURL: String
     private let connectivity: ConnectivityMonitor
     private let commonFields: () -> CommonFields
@@ -69,10 +83,14 @@ actor NetworkClient {
         commonFields: @escaping () -> CommonFields
     ) {
         self.baseURL = baseURL
-        self.session = URLSession(configuration: configuration)
+        self.sessions = Sessions(configuration: configuration)
         self.connectivity = connectivity
         self.logger = logger
         self.commonFields = commonFields
+    }
+
+    deinit {
+        sessions.finish()
     }
 
     /// The session of the client: a request does not wait for connectivity, and its timeout is set
@@ -84,10 +102,18 @@ actor NetworkClient {
         return configuration
     }
 
+    /// Sends the next requests with the app's configuration (`configureURLSession`, the `urlSession`
+    /// it set): its proxy, headers, protocols, cookies and TLS settings. A request still fails at once
+    /// without network and keeps its own timeout; what the old session carries finishes there.
+    func use(_ configuration: URLSessionConfiguration) {
+        guard !released else { return }
+        sessions.replace(with: configuration)
+    }
+
     // MARK: - Sending
 
     func send(_ request: Request) async -> Response {
-        guard !released else { return cancelled(request) }
+        guard !released, !_Concurrency.Task.isCancelled else { return cancelled(request) }
         guard request.waitsForNetwork else {
             guard connectivity.isOnline else {
                 logger.requestOffline(request.method.rawValue, request.path)
@@ -98,11 +124,18 @@ actor NetworkClient {
         while true {
             guard await networkIsBack() else { return cancelled(request) }
             let response = await perform(request)
-            // The monitor counts a path it has not reported yet as online: a request sent then may
-            // find no network. One that waits for the network goes back to waiting, as the sessions
-            // that wait for connectivity do; once the monitor reports a path, a lost request is
-            // its failure.
-            if case .failure(.network) = response.result, !released, !connectivity.isOnline {
+            guard case .failure(.network) = response.result, !released, !_Concurrency.Task.isCancelled else {
+                return response
+            }
+            // Lost for want of a network, a request that waits for it goes back to waiting, as the
+            // sessions that wait for connectivity do.
+            if !connectivity.isOnline {
+                continue
+            }
+            // At cold start the monitor counts the path it has not reported yet as online, and the
+            // request found none: it waits for the first path instead of failing. Once the monitor
+            // reports one, a lost request is its failure.
+            if !connectivity.hasPath, await firstPathCame() {
                 continue
             }
             return response
@@ -114,7 +147,7 @@ actor NetworkClient {
     func release() {
         guard !released else { return }
         released = true
-        session.invalidateAndCancel()
+        sessions.invalidateAndCancel()
         for id in Array(waiting.keys) {
             resumeWaiting(id, online: false)
         }
@@ -127,6 +160,8 @@ actor NetworkClient {
     }
 
     private func perform(_ request: Request) async -> Response {
+        // `release()` may have come while the request waited for the network.
+        guard !released, !_Concurrency.Task.isCancelled else { return cancelled(request) }
         let method = request.method.rawValue
         let path = request.path
         let urlRequest: URLRequest
@@ -138,13 +173,15 @@ actor NetworkClient {
             return .failure(error)
         }
 
-        let (data, response, error) = await load(urlRequest)
-        // A request that `release()` cut short is cancelled, whatever error the session gave it.
-        if error != nil, released {
+        let loaded = await load(urlRequest)
+        let data = loaded.data
+        // A request that `release()` or the caller's task cut short is cancelled, whatever error the
+        // session gave it.
+        if loaded.error != nil, released || _Concurrency.Task.isCancelled {
             return cancelled(request)
         }
-        guard let http = response as? HTTPURLResponse, error == nil else {
-            let failure = error.map(Self.classify) ?? .network
+        guard let http = loaded.response as? HTTPURLResponse, loaded.error == nil else {
+            let failure = loaded.error.map { Self.classify($0, reachedServer: loaded.reachedServer) } ?? .network
             if failure == .cancelled {
                 return cancelled(request)
             }
@@ -153,7 +190,7 @@ actor NetworkClient {
             return .failure(failure)
         }
 
-        let result = Self.classify(status: http.statusCode, body: data)
+        let result = Self.classify(status: http.statusCode, body: data, path: path)
         // Only the code goes to the log: an error body often repeats the request's data.
         logger.requestFinished(method, path, status: http.statusCode, succeeded: (200..<300).contains(http.statusCode))
         if case .failure(.decoding) = result {
@@ -167,13 +204,38 @@ actor NetworkClient {
         )
     }
 
-    /// The task is made here, on the actor, so `release()` cannot invalidate the session between the
-    /// check above and the task: a task made on an invalidated session raises an exception.
-    private func load(_ request: URLRequest) async -> (Data, URLResponse?, Error?) {
-        await withCheckedContinuation { continuation in
-            session.dataTask(with: request) { data, response, error in
-                continuation.resume(returning: (data ?? Data(), response, error))
-            }.resume()
+    /// What one request got.
+    private struct Loaded {
+        let data: Data
+        let response: URLResponse?
+        let error: Error?
+        /// Whether the request had reached the server when it failed.
+        let reachedServer: Bool
+
+        static let cancelled = Loaded(data: Data(), response: nil, error: URLError(.cancelled), reachedServer: false)
+    }
+
+    /// Sends one request. The task is made under the lock that `release()` takes to invalidate the
+    /// session, so it is never made on an invalidated session, which raises an exception; cancelling
+    /// the caller's task cancels it.
+    private func load(_ request: URLRequest) async -> Loaded {
+        let sessions = self.sessions
+        let handle = TaskHandle()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Loaded, Never>) in
+                let task = sessions.dataTask(with: request) { data, response, error in
+                    let metrics = handle.task.flatMap { sessions.metrics.take($0) }
+                    let reached = handle.task.map { Self.reachedServer($0, metrics) } ?? false
+                    continuation.resume(returning: Loaded(data: data ?? Data(), response: response, error: error, reachedServer: reached))
+                }
+                guard let task = task else {
+                    continuation.resume(returning: .cancelled)
+                    return
+                }
+                handle.start(task)
+            }
+        } onCancel: {
+            handle.cancel()
         }
     }
 
@@ -214,24 +276,41 @@ actor NetworkClient {
 
     // MARK: - Waiting for the network
 
-    /// `true` once the monitor says the device is online; `false` when the client is released first.
+    /// `true` once the monitor says the device is online; `false` when the client is released or the
+    /// caller's task is cancelled first.
     private func networkIsBack() async -> Bool {
-        guard !released else { return false }
+        guard !released, !_Concurrency.Task.isCancelled else { return false }
         guard !connectivity.isOnline else { return true }
         let id = UUID()
-        return await withCheckedContinuation { continuation in
-            waiting[id] = (continuation, nil)
-            let subscription = connectivity.observe { [weak self] online in
-                guard online, let self = self else { return }
-                _Concurrency.Task { await self.resumeWaiting(id, online: true) }
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                waiting[id] = (continuation, nil)
+                let subscription = connectivity.observe { [weak self] online in
+                    guard online, let self = self else { return }
+                    _Concurrency.Task { await self.resumeWaiting(id, online: true) }
+                }
+                // The monitor may have answered at once; then the request is no longer waiting.
+                if waiting[id] != nil {
+                    waiting[id]?.subscription = subscription
+                } else {
+                    subscription.cancel()
+                }
             }
-            // The monitor may have answered at once; then the request is no longer waiting.
-            if waiting[id] != nil {
-                waiting[id]?.subscription = subscription
-            } else {
-                subscription.cancel()
-            }
+        } onCancel: {
+            // Runs on the actor after the request started waiting: the actor is busy until then.
+            _Concurrency.Task { await self.resumeWaiting(id, online: false) }
         }
+    }
+
+    /// Waits for the monitor's first path, at most `firstPathWait`; `false` when it did not come or the
+    /// client was released or the task cancelled meanwhile.
+    private func firstPathCame() async -> Bool {
+        let deadline = Date().addingTimeInterval(Self.firstPathWait)
+        while !connectivity.hasPath {
+            guard !released, !_Concurrency.Task.isCancelled, Date() < deadline else { return false }
+            try? await _Concurrency.Task.sleep(nanoseconds: 50_000_000)
+        }
+        return !released && !_Concurrency.Task.isCancelled
     }
 
     private func resumeWaiting(_ id: UUID, online: Bool) {
@@ -243,30 +322,27 @@ actor NetworkClient {
     // MARK: - Classification
 
     /// What an answer means (`sdk/core/network.md`): any `2xx` is a success, an empty body an empty
-    /// one; a body that does not parse is `decoding`; anything else is `http` with its code.
-    static func classify(status: Int, body: Data) -> Result<Any, Rees46.SdkError> {
+    /// one — but for `/init`, whose answer is the device id: an empty one is `decoding`; a body that
+    /// does not parse is `decoding`; anything else is `http` with its code.
+    static func classify(status: Int, body: Data, path: String = "") -> Result<Any, Rees46.SdkError> {
         guard (200..<300).contains(status) else {
             // The backend sends no machine code of the error yet (question В5); it will be read here.
             return .failure(.http(code: status, serverCode: nil))
         }
-        guard !body.isEmpty else { return .success([String: Any]()) }
+        guard !body.isEmpty else { return path == "init" ? .failure(.decoding) : .success([String: Any]()) }
         guard let json = try? JSONSerialization.jsonObject(with: body) else { return .failure(.decoding) }
         return .success(json)
     }
 
-    /// A request without an answer: cut by its timeout — mid-body too — is `timeout`; cancelled is
-    /// `cancelled`; anything else (no network, no connection, a dropped one) is `network`. Never a
-    /// success with part of a body.
-    static func classify(_ error: Error) -> Rees46.SdkError {
-        guard let urlError = error as? URLError else { return .network }
-        switch urlError.code {
-        case .cancelled:
+    /// A request without an answer (`sdk/core/errors.md`): cancelled is `cancelled`; one that never
+    /// reached the server — no network, DNS, a refused connection, a connect that timed out — is
+    /// `network`; one that did, and whose answer did not come in time or broke off midway, is
+    /// `timeout`. Never a success with part of a body.
+    static func classify(_ error: Error, reachedServer: Bool) -> Rees46.SdkError {
+        if (error as? URLError)?.code == .cancelled {
             return .cancelled
-        case .timedOut:
-            return .timeout
-        default:
-            return .network
         }
+        return reachedServer ? .timeout : .network
     }
 
     /// `Retry-After` in seconds: a number of seconds or an HTTP date.
@@ -281,5 +357,117 @@ actor NetworkClient {
         formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
         guard let date = formatter.date(from: value) else { return nil }
         return max(0, date.timeIntervalSince(now))
+    }
+}
+
+// MARK: - Sessions
+
+/// The client's session and the ones the app's configuration replaced. A task is made and the
+/// sessions are invalidated under one lock, so no task is ever made on an invalidated session.
+private final class Sessions {
+
+    /// Every session reports here what each request went through.
+    let metrics = TaskMetrics()
+    /// The delegate's queue, serial: a task's metrics arrive before its completion handler runs.
+    private let queue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.maxConcurrentOperationCount = 1
+        queue.name = "com.rees46.sdk.network-client"
+        return queue
+    }()
+    private let lock = NSLock()
+    private var current: URLSession
+    private var replaced: [URLSession] = []
+    private var invalidated = false
+
+    init(configuration: URLSessionConfiguration) {
+        current = URLSession(configuration: configuration, delegate: metrics, delegateQueue: queue)
+    }
+
+    /// A task on the current session; `nil` once the sessions are invalidated.
+    func dataTask(
+        with request: URLRequest,
+        completion: @escaping (Data?, URLResponse?, Error?) -> Void
+    ) -> URLSessionDataTask? {
+        lock.lock(); defer { lock.unlock() }
+        guard !invalidated else { return nil }
+        return current.dataTask(with: request, completionHandler: completion)
+    }
+
+    func replace(with configuration: URLSessionConfiguration) {
+        let own = (configuration.copy() as? URLSessionConfiguration) ?? configuration
+        own.waitsForConnectivity = false
+        lock.lock(); defer { lock.unlock() }
+        guard !invalidated else { return }
+        current.finishTasksAndInvalidate()
+        replaced.append(current)
+        current = URLSession(configuration: own, delegate: metrics, delegateQueue: queue)
+    }
+
+    /// `release()`: every request in flight ends, no new one is made.
+    func invalidateAndCancel() {
+        lock.lock(); defer { lock.unlock() }
+        guard !invalidated else { return }
+        invalidated = true
+        current.invalidateAndCancel()
+        replaced.forEach { $0.invalidateAndCancel() }
+    }
+
+    /// The client is gone without `release()`: what is in flight finishes, the sessions let go of
+    /// their delegate.
+    func finish() {
+        lock.lock(); defer { lock.unlock() }
+        guard !invalidated else { return }
+        invalidated = true
+        current.finishTasksAndInvalidate()
+    }
+}
+
+/// What each request went through, as its session reports it, until the request's answer takes it.
+private final class TaskMetrics: NSObject, URLSessionTaskDelegate {
+
+    private let lock = NSLock()
+    private var byTask: [ObjectIdentifier: URLSessionTaskMetrics] = [:]
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+        lock.lock(); defer { lock.unlock() }
+        byTask[ObjectIdentifier(task)] = metrics
+    }
+
+    func take(_ task: URLSessionTask) -> URLSessionTaskMetrics? {
+        lock.lock(); defer { lock.unlock() }
+        return byTask.removeValue(forKey: ObjectIdentifier(task))
+    }
+}
+
+/// One request's task, for the handler that cancels it when the caller's task is cancelled.
+private final class TaskHandle {
+
+    private let lock = NSLock()
+    private var current: URLSessionTask?
+    private var cancelled = false
+
+    var task: URLSessionTask? {
+        lock.lock(); defer { lock.unlock() }
+        return current
+    }
+
+    func start(_ task: URLSessionTask) {
+        lock.lock()
+        current = task
+        let cancelled = self.cancelled
+        lock.unlock()
+        task.resume()
+        if cancelled {
+            task.cancel()
+        }
+    }
+
+    func cancel() {
+        lock.lock()
+        cancelled = true
+        let task = current
+        lock.unlock()
+        task?.cancel()
     }
 }

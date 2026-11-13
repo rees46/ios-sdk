@@ -42,6 +42,9 @@ final class LegacyCore: Core {
     /// one of its own.
     func release() {}
 
+    /// The old core reads the instance's session on every request: the app's one is already there.
+    func use(_ configuration: URLSessionConfiguration) {}
+
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         switch request.method {
         case .get:
@@ -105,13 +108,9 @@ final class LegacyCore: Core {
         }
         var urlRequest = self.urlRequest(for: url, timeout: request.timeout)
         urlRequest.httpMethod = "POST"
-        // The funnel checked the body; a value that is not JSON would raise an exception Swift
-        // cannot catch.
-        guard let body = SafeJSON.data(requestParams, options: .prettyPrinted) else {
-            completion(CoreResponse(status: nil, body: Data(), result: .failure(.custom(error: "\(path): the request parameters are not valid JSON"))))
-            return
-        }
-        urlRequest.httpBody = body
+        // The funnel let only JSON through, so the body is always written; the safe writer still
+        // keeps a value Swift cannot catch from raising an exception.
+        urlRequest.httpBody = SafeJSON.data(requestParams, options: .prettyPrinted)
         urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
 
@@ -156,7 +155,7 @@ final class LegacyCore: Core {
     /// with its own timeout changed it for every call in flight on the session queue.
     private func urlRequest(for url: URL, timeout: TimeInterval?) -> URLRequest {
         var request = URLRequest(url: url)
-        request.timeoutInterval = timeout ?? SimplePersonalizationSDK.defaultRequestTimeout
+        request.timeoutInterval = timeout ?? NetworkClient.defaultTimeout
         return request
     }
 
