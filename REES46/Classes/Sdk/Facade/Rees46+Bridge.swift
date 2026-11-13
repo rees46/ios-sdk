@@ -26,10 +26,12 @@ extension Rees46 {
 
     /// `listener` hears every new push token the SDK gets from APNs or FCM, once per token and provider
     /// in the process, on the main thread, beside the app's `onToken` — and first, at once, the
-    /// device's token the SDK already has. Until the handle is cancelled.
+    /// device's tokens the SDK already has, one per provider. A token it heard first is not heard again
+    /// when APNs or FCM hands it over later, and one that comes while it subscribes is heard once.
+    /// Until the handle is cancelled.
     @discardableResult
     public static func onPushToken(_ listener: @escaping (Rees46.PushToken) -> Void) -> Cancellable {
-        PushCenter.addTokenListener(listener, current: DeviceStore.shared.deviceToken)
+        PushCenter.addTokenListener(listener) { DeviceStore.shared.deviceTokens }
     }
 
     /**

@@ -29,6 +29,8 @@ final class CoreBridgeTests: XCTestCase {
         lifecycle = ManualAppLifecycle()
         network = FakeConnectivity(online: true)
         deviceToken = DeviceStore.shared.deviceToken
+        // The device of the test: no token of another one.
+        DeviceStore.shared.deviceToken = nil
         let inits = Locked(0)
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
@@ -116,6 +118,27 @@ final class CoreBridgeTests: XCTestCase {
         XCTAssertTrue(eventually { heard.current.count == 2 })
         XCTAssertEqual(heard.current.last, Rees46.PushToken(token: "fcm-1", provider: .fcm))
         subscription.cancel()
+    }
+
+    func test_on_push_token_does_not_hear_again_a_token_it_heard_on_subscribing_and_misses_none_told_before() {
+        let sdk = make()
+        DeviceStore.shared.deviceToken = Rees46.PushToken(token: "stored-apns", provider: .apns)
+        // Told in this process and not stored yet: the device's FCM token all the same.
+        PushCenter.notify(Rees46.PushToken(token: "told-fcm", provider: .fcm), instance: nil)
+        let app = Locked<[String]>([])
+        Rees46.setPushCallbacks(Rees46.PushCallbacks(onToken: { token in app.mutate { $0.append(token.token) } }))
+        let heard = Locked<[String]>([])
+        let subscription = Rees46.onPushToken { token in heard.mutate { $0.append(token.token) } }
+        defer { subscription.cancel() }
+        XCTAssertTrue(eventually { heard.current == ["stored-apns", "told-fcm"] })
+
+        // APNs hands over the stored token again, as on every launch: the app hears it, the bridge did.
+        let service = NotificationService(sdk: sdk, notificationLogger: NotificationLogger())
+        service.didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data([0x01]))
+        PushCenter.notify(Rees46.PushToken(token: "stored-apns", provider: .apns), instance: nil)
+        XCTAssertTrue(eventually { app.current == ["01", "stored-apns"] })
+        drainMainQueue()
+        XCTAssertEqual(heard.current, ["stored-apns", "told-fcm", "01"], "each token once")
     }
 
     func test_the_instances_own_push_callbacks_through_the_bridge() {

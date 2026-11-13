@@ -50,8 +50,22 @@ enum PushCenter {
     private static var reserved: Set<String> = []
     /// The tokens told in this process: provider and token.
     private static var tokens: Set<String> = []
+    /// The last token told in this process, per provider: it may not be the device's stored one yet.
+    private static var latestTokens: [Rees46.PushProvider: Rees46.PushToken] = [:]
     private static var eventListeners: [UUID: (Rees46.PushEvent, Rees46.PushPayload) -> Void] = [:]
-    private static var tokenListeners: [UUID: (Rees46.PushToken) -> Void] = [:]
+    private static var tokenListeners: [UUID: TokenListener] = [:]
+
+    /// A bridge's token listener and the tokens it heard: none twice.
+    private final class TokenListener {
+        let block: (Rees46.PushToken) -> Void
+        /// Under `lock`.
+        var heard: Set<String> = []
+        init(_ block: @escaping (Rees46.PushToken) -> Void) { self.block = block }
+    }
+
+    private static func key(_ token: Rees46.PushToken) -> String {
+        token.provider.rawValue + ":" + token.token
+    }
 
     /// `Rees46.setPushCallbacks`: the callbacks of every shop, pending ones included.
     static var callbacks: Rees46.PushCallbacks? {
@@ -114,18 +128,20 @@ enum PushCenter {
 
     /// The SDK got `token` from APNs or FCM: the app's `onToken` — the instance's own when it set one,
     /// the facade's otherwise — and the bridges' listeners hear it on the main thread, once per token
-    /// and provider in the process.
+    /// and provider in the process; a listener that heard it on subscribing does not hear it again.
     static func notify(_ token: Rees46.PushToken, instance: Rees46.PushCallbacks?) {
-        lock.lock()
-        let new = tokens.insert(token.provider.rawValue + ":" + token.token).inserted
-        let listeners = Array(tokenListeners.values)
-        lock.unlock()
-        guard new else { return }
         let callback = instance?.onToken ?? callbacks?.onToken
+        let key = self.key(token)
+        lock.lock()
+        defer { lock.unlock() }
+        guard tokens.insert(key).inserted else { return }
+        latestTokens[token.provider] = token
+        let listeners = tokenListeners.values.filter { $0.heard.insert(key).inserted }
         guard callback != nil || !listeners.isEmpty else { return }
+        // Dispatched under the lock: in order with what a new listener hears first.
         DispatchQueue.main.async {
             callback?(token)
-            listeners.forEach { $0(token) }
+            listeners.forEach { $0.block(token) }
         }
     }
 
@@ -142,15 +158,24 @@ enum PushCenter {
         }
     }
 
-    /// `Rees46.onPushToken`: the device's token the SDK has already goes to the new listener at once.
-    static func addTokenListener(_ listener: @escaping (Rees46.PushToken) -> Void, current: Rees46.PushToken?) -> Cancellable {
+    /// `Rees46.onPushToken`: the device's tokens the SDK already has — per provider, the last one told
+    /// in this process, else the stored one (`stored`, read under the lock) — go to the new listener at
+    /// once, and it hears every later one, none twice. It is added and the tokens read under the lock
+    /// that `notify` takes: a token that comes meanwhile is heard once, never lost.
+    static func addTokenListener(_ listener: @escaping (Rees46.PushToken) -> Void, stored: @escaping () -> [Rees46.PushToken]) -> Cancellable {
         let id = UUID()
+        let entry = TokenListener(listener)
         lock.lock()
-        tokenListeners[id] = listener
-        lock.unlock()
-        if let current = current {
-            DispatchQueue.main.async { listener(current) }
+        let known = stored()
+        let current = Rees46.PushProvider.allCases.compactMap { provider in
+            latestTokens[provider] ?? known.first { $0.provider == provider }
         }
+        current.forEach { entry.heard.insert(key($0)) }
+        tokenListeners[id] = entry
+        if !current.isEmpty {
+            DispatchQueue.main.async { current.forEach(listener) }
+        }
+        lock.unlock()
         return Cancellable {
             lock.lock()
             tokenListeners[id] = nil
@@ -165,6 +190,7 @@ enum PushCenter {
         sent.removeAll()
         reserved.removeAll()
         tokens.removeAll()
+        latestTokens.removeAll()
         eventListeners.removeAll()
         tokenListeners.removeAll()
         lock.unlock()
