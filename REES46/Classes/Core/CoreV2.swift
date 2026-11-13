@@ -91,6 +91,15 @@ final class CoreV2: Core {
             if needsSession {
                 Self.stampSession(session.sid, on: &clientRequest)
             }
+            if let identity = request.identity {
+                // The customer it was made for, checked and taken together after the wait.
+                guard let taken = identity() else {
+                    logger.requestCancelled(request.method.rawValue, request.path)
+                    callbacks.async { completion(Self.legacyResponse(.failure(.cancelled), for: request)) }
+                    return
+                }
+                clientRequest.identity = taken
+            }
             let response = await client.send(clientRequest)
             callbacks.async { completion(Self.legacyResponse(response, for: request)) }
         }

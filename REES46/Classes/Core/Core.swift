@@ -27,6 +27,10 @@ struct CoreRequest {
     var body: [String: Any] = [:]
     /// The read timeout of this request alone; `nil` is the default one.
     var timeout: TimeInterval?
+    /// `CoreV2`: once the instance is usable, the device id and session the request goes with — `nil`
+    /// when it must not go any more (the customer it was made for was deleted). `nil` here: the stored
+    /// ones when it is built.
+    var identity: (() -> CommonFields.Identity?)?
     /// Whether the request waits for the network rather than failing at once without it. The old
     /// sessions wait for every request but the ones that ask not to; `CoreV2` lets only `/init` wait
     /// (as long as the init itself is the old one), every other request fails at once with `network`.

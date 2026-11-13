@@ -137,13 +137,14 @@ public protocol PersonalizationSDK {
 
     /// Sends the queued events now, without waiting for the SDK's own triggers: `completion` is called
     /// on the main thread once every event queued at the call was tried — sent, or kept for later
-    /// because there is no network, the instance is not ready or the server asked to wait. With
-    /// `Rees46Config.coreV2 = false`, which keeps no queue, it is called at once. Has a default
+    /// because there is no network or the server asked to wait; an instance that is not ready yet is
+    /// waited for, at most a request's read timeout. With `Rees46Config.coreV2 = false`, which keeps no
+    /// queue, it is called at once; after `release()` with `notInitialized`. Has a default
     /// implementation, so conforming types keep compiling.
-    func flush(completion: @escaping () -> Void)
+    func flush(completion: @escaping (Rees46.SdkError?) -> Void)
 
-    /// `flush(completion:)` for `async` code.
-    func flush() async
+    /// `flush(completion:)` for `async` code: throws `Rees46.SdkError.notInitialized` after `release()`.
+    func flush() async throws
 }
 
 public extension PersonalizationSDK {
@@ -490,13 +491,19 @@ public extension PersonalizationSDK {
     }
 
     /// A conformer without a queue has nothing to send.
-    func flush(completion: @escaping () -> Void) {
-        DispatchQueue.main.async(execute: completion)
+    func flush(completion: @escaping (Rees46.SdkError?) -> Void) {
+        DispatchQueue.main.async { completion(nil) }
     }
 
-    func flush() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            flush { continuation.resume() }
+    func flush() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            flush { error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
         }
     }
     

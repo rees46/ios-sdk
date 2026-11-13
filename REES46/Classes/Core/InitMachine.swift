@@ -103,6 +103,9 @@ final class InitMachine {
     private var savedAnswerChecked = false
     /// Whether the saved answer already stood in on this launch.
     private var usedSavedAnswer = false
+    /// Whether `/init` answered since the start or the last `reset()`: a later `/init` that fails — a
+    /// new session, a check of the shop — leaves `ready` as it is.
+    private var hasAnswered = false
     private var lastCheck: Date?
     private var lifecycleSubscription: Cancellable?
     private var waiters: [UUID: Waiter] = [:]
@@ -239,6 +242,12 @@ final class InitMachine {
             lock.unlock()
             return
         }
+        // A failed renewal repeats after its pause: a call or an event does not cut it short, the return
+        // to the foreground does.
+        guard retry == nil || fromForeground else {
+            lock.unlock()
+            return
+        }
         switch state.current {
         case .ready:
             break
@@ -293,6 +302,7 @@ final class InitMachine {
         hasSavedAnswer = false
         savedAnswerChecked = true
         usedSavedAnswer = false
+        hasAnswered = false
         if !released {
             state.set(.initializing)
         }
@@ -535,7 +545,9 @@ final class InitMachine {
         failures = 0
         hasSavedAnswer = true
         savedAnswerChecked = true
+        // The saved answer may stand in, and say so, again after a later failure.
         usedSavedAnswer = false
+        hasAnswered = true
         delegate?.initMachine(adopt: response, fromServer: true)
         state.set(.ready)
         settleWaitersLocked()
@@ -550,8 +562,11 @@ final class InitMachine {
     private func failed(_ response: NetworkClient.Response, error: Rees46.SdkError, generation: Int) {
         // The saved answer that stands in is read before any lock: a file, the keychain, JSON.
         lock.lock()
+        // After an answer of this launch, a failing `/init` — a new session, a check of the shop — keeps
+        // `ready`: no `retrying`, no saved answer standing in again, no popups v3 refresh.
+        let keepsReady = state.current == .ready && hasAnswered
         let wantsSaved = generation == self.generation && !released && hasSavedAnswer && !usedSavedAnswer
-            && state.current != .refused
+            && state.current != .refused && !keepsReady
         lock.unlock()
         var saved = wantsSaved ? readSavedAnswer() : nil
 
@@ -589,7 +604,9 @@ final class InitMachine {
         // has not come; otherwise the instance retries, usable if it has something to fall back on.
         var standIn: InitResponse?
         let wasRefused = state.current == .refused
-        if !wasRefused {
+        if keepsReady {
+            settleWaitersLocked()
+        } else if !wasRefused {
             state.set(.retrying)
             if let saved = saved, !usedSavedAnswer {
                 usedSavedAnswer = true

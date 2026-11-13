@@ -396,8 +396,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         instanceState.observe(listener)
     }
 
+    /// The current `sid`; on the new core `nil` once its window ended, until `/init` brings a new one.
     var sessionId: String? {
-        userSeance.isEmpty ? nil : userSeance
+        if let session = sessionWindow {
+            return session.liveSid
+        }
+        return userSeance.isEmpty ? nil : userSeance
     }
 
     /// The new core's session; `nil` on the old core.
@@ -2101,8 +2105,8 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
     func initMachine(didSettle error: Rees46.SdkError?) {
         initCompletion.finish(error.map { SdkError.legacy($0) })
         if error == nil {
-            // Usable: the queue goes, if the session lives.
-            eventQueue?.kick(explicit: true)
+            // Usable: the queue goes, if the session lives; a pause after a failure stands.
+            eventQueue?.kick(explicit: false)
         } else if error == .shopBlocked, initMachine?.isRefused == true {
             // The shop refused: its events are not sent, and the queue keeps none.
             eventQueue?.clear(error: .shopBlocked, reason: "refused")
@@ -2184,6 +2188,8 @@ extension SimplePersonalizationSDK: EventQueueHost {
             return true
         }
         let request = CoreRequest(method: .post, path: path)
+        // The customer the event was made for: a disk-refused event sent once goes as them or not at all.
+        let generation = currentInitGeneration()
         queue.enqueue(
             path: path,
             body: body,
@@ -2197,12 +2203,17 @@ extension SimplePersonalizationSDK: EventQueueHost {
                 }
             },
             unstored: { [weak self] stamped in
-                // The disk refused it: sent once, as a plain request, with no queue behind it.
+                // The disk refused it: sent once, as a plain request, with no queue behind it — after
+                // the instance is usable, and only for the customer it was made for.
                 guard let self = self else {
                     completion(.failure(.legacy(.notInitialized)))
                     return
                 }
-                self.postRequest(path: path, params: stamped, completion: completion)
+                var once = CoreRequest(method: .post, path: path, body: stamped)
+                once.identity = { [weak self] in self?.identity(ifCurrent: generation) }
+                self.core.send(once) { response in
+                    completion(response.result.flatMap(Self.jsonObject))
+                }
             }
         )
         return true
@@ -2210,14 +2221,26 @@ extension SimplePersonalizationSDK: EventQueueHost {
 
     /// Sends the queued events now; `completion` on the main thread once each event queued at the call
     /// was tried, or none can go: no network, the server's `Retry-After` not over. An instance that is
-    /// not usable yet is waited for, at most a read timeout. On the old core, which keeps no queue, and
-    /// after `release()`, at once.
-    func flush(completion: @escaping () -> Void) {
-        guard let queue = eventQueue, !isReleased else {
-            DispatchQueue.main.async(execute: completion)
+    /// not usable yet is waited for, at most a read timeout. On the old core, which keeps no queue, at
+    /// once; after `release()` with `notInitialized`.
+    func flush(completion: @escaping (Rees46.SdkError?) -> Void) {
+        guard !isReleased else {
+            DispatchQueue.main.async { completion(.notInitialized) }
             return
         }
-        queue.flush { DispatchQueue.main.async(execute: completion) }
+        guard let queue = eventQueue else {
+            DispatchQueue.main.async { completion(nil) }
+            return
+        }
+        queue.flush { DispatchQueue.main.async { completion(nil) } }
+    }
+
+    /// The device id and session of the customer of `generation`; `nil` once a `deleteUserCredentials()`
+    /// or `release()` came after it. Taken under the lock they wipe under.
+    func identity(ifCurrent generation: Int) -> CommonFields.Identity? {
+        initLock.lock(); defer { initLock.unlock() }
+        guard generation == initGeneration, !released else { return nil }
+        return CommonFields.Identity(deviceId: userIdentity.deviceId ?? "", sessionId: sessionWindow?.sid ?? "")
     }
 
     // MARK: EventQueueHost
@@ -2247,6 +2270,10 @@ extension SimplePersonalizationSDK: EventQueueHost {
 
     func queueSource() -> [String: String]? {
         sourceStore.currentSource().map { ["from": $0.type, "code": $0.code] }
+    }
+
+    func queueIdentity() -> CommonFields.Identity {
+        CommonFields.Identity(deviceId: userIdentity.deviceId ?? "", sessionId: sessionWindow?.sid ?? "")
     }
 
     /// An event went out: the session's window opens again, and a popup in a fresh answer shows.

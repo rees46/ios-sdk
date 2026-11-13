@@ -21,6 +21,8 @@ protocol EventQueueHost: AnyObject {
     func queueCheckShop() -> Bool
     /// The `source` a `/push` carries: the one the app stored (`tracking.setSource`), while it lasts.
     func queueSource() -> [String: String]?
+    /// The device id and session an event goes with, taken when the queue decides to send it.
+    func queueIdentity() -> CommonFields.Identity
     /// An event went out: the server answered `2xx`.
     func queueDelivered(_ event: EventQueue.Delivered)
     var queueEnvironment: CoreEnvironment { get }
@@ -41,9 +43,18 @@ protocol EventQueueHost: AnyObject {
 /// - **Answers** (decision 0002): `2xx` deletes the event; no network waits for it, without counting;
 ///   a timeout is repeated after a pause, without counting; `5xx`, `408`, `410`, `417`, `426`, `429`
 ///   are repeated after a pause — 1 s … 5 min ±20 %, or the `Retry-After` of a `429` or `503`, which
-///   no trigger cuts short — and dropped after ten; `402`, `403`, `404` pause the queue and ask the shop (`checkShop()`): `refused`
-///   clears the queue, a passed check sends the event again, and the same answer to it drops it — the
-///   refusal of a service, not of the shop; any other `4xx` drops it.
+///   no trigger cuts short — and dropped after ten; `402`, `403`, `404` pause the queue and ask the
+///   shop (`checkShop()`): `refused` clears the queue; once a new `/init` answer came the event goes
+///   again, and the same answer to it drops it — the refusal of a service, not of the shop; a check
+///   asked too soon after the last one repeats the event after a pause instead; any other `4xx` drops
+///   it.
+/// - **Identity** is taken when the queue decides to send an event, and put on a copy with the
+///   source and `time`; none of it is written to disk. `clear` — `deleteUserCredentials()`, `refused` —
+///   cancels the event on its way, and an answer to an event sent before it changes nothing.
+/// - **Disk** that fails never makes the queue send again at once: an event whose new state cannot be
+///   written goes again after a pause, one delivered whose file cannot be removed leaves the queue
+///   anyway; a file that does not parse is dropped (`unreadable`), one that cannot be read now — the
+///   device locked, say — stays and is read later.
 /// - **Limits**: an event older than seven days is dropped when its turn comes; a shop keeps at most
 ///   1000, the oldest go first. Every drop is `queue_dropped` with its reason.
 /// - **One owner per shop.** Instances of one shop share one queue — the one of its folder — and only
@@ -205,8 +216,15 @@ final class EventQueue {
     private var retryIsTheServers = false
     /// Failed tries in a row; the pause grows with them.
     private var failures = 0
-    /// A check of the shop is on its way after `402`, `403` or `404`.
+    /// A check of the shop is on its way after `402`, `403` or `404` to this event.
     private var pausedForCheck = false
+    private var checkingSeq: UInt64?
+    /// The task of the event on its way: `clear` cancels it.
+    private var inFlightTask: _Concurrency.Task<Void, Never>?
+    /// Files of events that could not be read yet — the device locked, say —: read again later.
+    private var unread: [UInt64] = []
+    /// Marks `work`, so a call made on it does not wait for itself.
+    private static let workKey = DispatchSpecificKey<ObjectIdentifier>()
     /// No host left.
     private var stopped = false
     /// Bumped by `clear`: an answer to an event sent before changes nothing.
@@ -248,6 +266,16 @@ final class EventQueue {
         let label = "com.rees46.sdk.queue.\(storage.shopId)"
         self.work = DispatchQueue(label: label, qos: .utility)
         self.callbacks = DispatchQueue(label: label + ".callbacks", qos: .utility)
+        work.setSpecific(key: Self.workKey, value: ObjectIdentifier(self))
+    }
+
+    /// Runs `body` on `work` and waits for it — at once when already there.
+    private func onWork(_ body: () -> Void) {
+        if DispatchQueue.getSpecific(key: Self.workKey) == ObjectIdentifier(self) {
+            body()
+        } else {
+            work.sync(execute: body)
+        }
     }
 
     // MARK: - Taking events
@@ -295,18 +323,34 @@ final class EventQueue {
 
     // MARK: - Triggers
 
-    /// Tries to send now. `explicit` — `ready`, the foreground, the background, `flush()` — does not
-    /// wait for the pause after a failure; the other triggers do.
+    /// Tries to send now. `explicit` — the foreground, the background, `flush()` — does not wait for
+    /// the pause after a failure; the other triggers — `ready`, the network, a new event — do.
     func kick(explicit: Bool) {
         work.async { self.drain(explicit: explicit) }
     }
 
-    /// An `/init` passed: a check of the shop after `402`, `403` or `404` is answered, and the instance
-    /// is `ready` with a session.
+    /// An `/init` passed: a check of the shop after `402`, `403` or `404` is answered — the event is
+    /// checked and goes again —, and the instance is `ready` with a session.
     func initSucceeded() {
         work.async {
+            if self.pausedForCheck, let seq = self.checkingSeq, let index = self.events.firstIndex(where: { $0.seq == seq }) {
+                var checked = self.events[index]
+                checked.shopChecked = true
+                guard !checked.stored || self.write(checked) else {
+                    // Not written: not checked either. It goes again after a pause and asks again.
+                    self.pausedForCheck = false
+                    self.checkingSeq = nil
+                    self.failures += 1
+                    self.scheduleRetry(after: RetryPolicy.pause(afterFailures: self.failures, random: self.random()))
+                    return
+                }
+                self.events[index] = checked
+            }
             self.pausedForCheck = false
-            self.drain(explicit: true)
+            self.checkingSeq = nil
+            // It wakes the queue; a pause after a failure stands — an answer to `/init` is no reason to
+            // send an event the server just turned away.
+            self.drain(explicit: false)
         }
     }
 
@@ -316,7 +360,10 @@ final class EventQueue {
     func flush(_ done: @escaping () -> Void) {
         work.async {
             self.ensureLoaded()
-            self.passes.append(Pass(through: self.events.last?.seq ?? 0, done: done))
+            // Files that could not be read before count too: they may be readable now.
+            self.readUnread()
+            let through = max(self.events.last?.seq ?? 0, self.unread.max() ?? 0)
+            self.passes.append(Pass(through: through, done: done))
             self.drain(explicit: true)
         }
     }
@@ -328,17 +375,23 @@ final class EventQueue {
         work.async { self.clearNow(error: error, reason: reason) }
     }
 
-    /// `deleteUserCredentials()`: the events were the deleted customer's. Returns once they are gone.
+    /// `deleteUserCredentials()`: the events were the deleted customer's. Returns once they are gone —
+    /// at once when called from the queue's own work.
     func clearSync(error: Rees46.SdkError, reason: String) {
-        work.sync { self.clearNow(error: error, reason: reason) }
+        onWork { self.clearNow(error: error, reason: reason) }
     }
 
     private func clearNow(error: Rees46.SdkError, reason: String) {
         generation += 1
         let dropped = events
         events.removeAll()
+        unread.removeAll()
         loaded = true
         inFlight = nil
+        // The event on its way was the cleared customer's: it does not go if it has not yet.
+        inFlightTask?.cancel()
+        inFlightTask = nil
+        checkingSeq = nil
         cancelRetry()
         failures = 0
         pausedForCheck = false
@@ -384,6 +437,7 @@ final class EventQueue {
             return
         }
         ensureLoaded()
+        readUnread()
         let now = host.queueEnvironment.clock.now()
         while let head = events.first {
             if now.timeIntervalSince(head.createdAt) > Self.lifetime {
@@ -429,17 +483,19 @@ final class EventQueue {
         let mark = onTheirWayKey(event.seq)
         mark.map(Self.markOnItsWay)
         let generation = self.generation
-        let request = NetworkClient.Request(
+        // Who it goes as is decided here, with the decision to send it: a wipe after this cancels it.
+        var request = NetworkClient.Request(
             method: .post,
             path: event.path,
             body: stamped(event, host: host),
             timeout: nil,
             waitsForNetwork: false
         )
+        request.identity = host.queueIdentity()
         resolvePasses(before: event.seq)
         let clock = host.queueEnvironment.clock
         let folder = key
-        _Concurrency.Task { [weak self] in
+        inFlightTask = _Concurrency.Task { [weak self] in
             let response = await host.queueSend(request)
             let sentAt = clock.now()
             if let mark = mark, let self = self {
@@ -462,7 +518,7 @@ final class EventQueue {
         var body = event.body
         if event.path == Self.timedPath {
             if body["time"] == nil {
-                body["time"] = Int(event.createdAt.timeIntervalSince1970)
+                body["time"] = Self.unixSeconds(event.createdAt)
             }
         } else {
             body["time"] = nil
@@ -477,6 +533,7 @@ final class EventQueue {
     private func handle(_ response: NetworkClient.Response, of seq: UInt64, generation: Int, sentAt: Date, sender: EventQueueHost) {
         if inFlight == seq {
             inFlight = nil
+            inFlightTask = nil
         }
         // Cleared meanwhile: whatever came back belongs to events that are gone.
         guard generation == self.generation, let index = events.firstIndex(where: { $0.seq == seq }) else {
@@ -484,10 +541,9 @@ final class EventQueue {
             return
         }
         let event = events[index]
-        let random = owner?.queueEnvironment.random ?? { 0.5 }
         switch response.result {
         case .success, .failure(.decoding):
-            // Any 2xx: the server has it.
+            // Any 2xx: the server has it. It leaves the queue even when its file cannot be removed.
             failures = 0
             events.remove(at: index)
             deleteFile(of: seq)
@@ -520,8 +576,9 @@ final class EventQueue {
             events[index].attempts += 1
             if events[index].attempts >= Self.maxAttempts {
                 drop(at: index, error: .http(code: code, serverCode: nil), body: response.body, reason: "attempts", status: code)
-            } else {
-                persist(events[index])
+            } else if events[index].stored {
+                // Counted here even when the disk refuses: the pause below comes either way.
+                _ = write(events[index])
             }
             scheduleRetry(
                 after: RetryPolicy.pause(retryAfter: response.retryAfter, afterFailures: failures, random: random()),
@@ -535,9 +592,9 @@ final class EventQueue {
                 drain(explicit: false)
                 return
             }
-            events[index].shopChecked = true
-            persist(events[index])
+            // Paused until a new `/init` answers: only then is the event checked and sent again.
             pausedForCheck = true
+            checkingSeq = seq
             if let owner = owner {
                 // A flush waits for the check, an `/init`, as for `ready`.
                 holdPasses(owner)
@@ -545,9 +602,12 @@ final class EventQueue {
                 finishPasses()
             }
             if !(owner?.queueCheckShop() ?? false) {
-                // Asked less than ten minutes ago, and it served: the event goes again.
+                // Asked too soon after the last check: no new answer is coming. The event goes again
+                // after a pause, not counted, and asks again.
                 pausedForCheck = false
-                drain(explicit: false)
+                checkingSeq = nil
+                failures += 1
+                scheduleRetry(after: RetryPolicy.pause(afterFailures: failures, random: random()))
             }
         case .failure(.notInitialized), .failure(.shopBlocked):
             // The instance cannot send now: the event stays for the next owner or launch.
@@ -561,6 +621,11 @@ final class EventQueue {
             drop(at: index, error: error, reason: "rejected")
             drain(explicit: false)
         }
+    }
+
+    /// The spread of a pause, from the owner's seams.
+    private func random() -> Double {
+        (owner?.queueEnvironment.random ?? { 0.5 })()
     }
 
     private func scheduleRetry(after pause: TimeInterval, theServers: Bool = false) {
@@ -652,21 +717,49 @@ final class EventQueue {
         loaded = true
         guard let folder = storage.queueDirectory,
               let names = try? fileManager.contentsOfDirectory(atPath: folder.path) else { return }
-        var found: [Event] = []
         var last: UInt64 = 0
         for name in names where name.hasSuffix(".json") {
             guard let seq = UInt64(name.dropLast(5)) else { continue }
             last = max(last, seq)
-            let url = folder.appendingPathComponent(name)
-            guard let data = try? Data(contentsOf: url), let event = Self.decode(data, seq: seq) else {
+            unread.append(seq)
+        }
+        nextSeq = max(nextSeq, last + 1)
+        readUnread()
+    }
+
+    /// Reads the files not read yet, in their places: one that does not parse is dropped, one that
+    /// cannot be read now stays for later.
+    private func readUnread() {
+        guard !unread.isEmpty else { return }
+        var still: [UInt64] = []
+        for seq in unread.sorted() {
+            guard let url = file(seq) else { continue }
+            let data: Data
+            do {
+                data = try Data(contentsOf: url)
+            } catch {
+                if fileManager.fileExists(atPath: url.path) {
+                    // Unavailable, not broken: the device may be locked. Read again later.
+                    still.append(seq)
+                }
+                continue
+            }
+            guard let event = Self.decode(data, seq: seq) else {
                 try? fileManager.removeItem(at: url)
+                complete(seq, .failed(.decoding, body: Data()))
                 logger.warning(LogCode.queueDropped, "an event of the queue could not be read", ["reason": "unreadable"])
                 continue
             }
-            found.append(event)
+            let place = events.firstIndex { $0.seq > seq } ?? events.endIndex
+            events.insert(event, at: place)
         }
-        events = found.sorted { $0.seq < $1.seq }
-        nextSeq = max(nextSeq, last + 1)
+        unread = still
+    }
+
+    /// Unix seconds of `date`, never trapping.
+    static func unixSeconds(_ date: Date) -> Int {
+        let seconds = date.timeIntervalSince1970.rounded(.down)
+        return Int(exactly: seconds) ?? 0
     }
 
     /// Writes `event` atomically; `false` when the disk refused (`storage_failed`): it still goes now.
@@ -693,12 +786,6 @@ final class EventQueue {
         }
     }
 
-    /// Writes the attempts and the check of the shop an event has had.
-    private func persist(_ event: Event) {
-        guard event.stored else { return }
-        _ = write(event)
-    }
-
     private func deleteFile(of seq: UInt64) {
         guard let url = file(seq), fileManager.fileExists(atPath: url.path) else { return }
         do {
@@ -712,7 +799,7 @@ final class EventQueue {
         guard let record = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               let path = record["path"] as? String, paths.contains(path),
               let body = record["body"] as? [String: Any],
-              let created = record["created"] as? Double, created.isFinite else {
+              let created = record["created"] as? Double, created.isFinite, abs(created) < 1e12 else {
             return nil
         }
         return Event(

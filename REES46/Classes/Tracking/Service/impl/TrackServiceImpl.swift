@@ -143,7 +143,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         if Self.queues(sdk) {
             if let problem = Self.invalidArgument(of: event) {
                 SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "track: \(problem)", ["reason": "empty"])
-                completion(.failure(.custom(error: "track: \(problem)")))
+                Self.later(completion, .failure(.custom(error: "track: \(problem)")))
                 return
             }
             let built = Self.fields(of: event, details: details, sdk: sdk, contract: true)
@@ -204,6 +204,12 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         (sdk as? SimplePersonalizationSDK)?.eventQueue != nil
     }
 
+    /// The new core tells every failure later, never inside the call: the old core keeps calling back as
+    /// it always has.
+    private static func later(_ completion: @escaping (Result<Void, SdkError>) -> Void, _ result: Result<Void, SdkError>) {
+        DispatchQueue.global(qos: .utility).async { completion(result) }
+    }
+
     /// Hands an event to the new core's queue; `false` when there is none.
     private func enqueue(
         _ sdk: PersonalizationSDK,
@@ -241,18 +247,23 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }
 
     /// What the new core refuses before an event is queued (`sdk/contract/tracking.md`), as Android
-    /// does: an empty item id or search query.
+    /// does: an empty item id, search query, story or slide id.
     private static func invalidArgument(of event: Event) -> String? {
-        func blank(_ value: String) -> Bool { value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         switch event {
         case let .productView(id), let .productAddedToFavorites(id), let .productRemovedFromCart(id),
              let .productRemovedFromFavorites(id), let .productAddedToCart(id, _):
             return blank(id) ? "the item id must not be empty" : nil
         case let .search(query):
             return blank(query) ? "the search query must not be empty" : nil
+        case let .slideView(storyId, slideId), let .slideClick(storyId, slideId):
+            return blank(storyId) || blank(slideId) ? "the story and slide ids must not be empty" : nil
         default:
             return nil
         }
+    }
+
+    private static func blank(_ value: String) -> Bool {
+        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// The address and the fields of `event`, without the fields every request carries. `contract`
@@ -386,12 +397,12 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             completion(.failure(.custom(error: "trackPurchase: SDK is not initialized")))
             return
         }
-        if let validationError = Self.validatePurchaseRequest(request) {
-            completion(.failure(.custom(error: validationError)))
-            return
-        }
-        if let customError = Self.validatePurchaseCustomFields(request.custom) {
-            completion(.failure(.custom(error: customError)))
+        if let problem = Self.validatePurchaseRequest(request) ?? Self.validatePurchaseCustomFields(request.custom) {
+            if Self.queues(sdk) {
+                Self.later(completion, .failure(.custom(error: problem)))
+            } else {
+                completion(.failure(.custom(error: problem)))
+            }
             return
         }
 
@@ -600,6 +611,11 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         // time it was made; no source: `push/custom` does not read it.
         if Self.queues(sdk) {
             let logger = SdkLogger.forShop(sdk.shopId)
+            guard !Self.blank(event) else {
+                logger.warning(LogCode.invalidArgument, "trackEvent: the event must not be empty", ["reason": "empty"])
+                Self.later(completion, .failure(.custom(error: "trackEvent: the event must not be empty")))
+                return
+            }
             var body: [String: Any] = [Constants.event: event]
             if let time = time { body[Constants.time] = time }
             if let category = category { body[Constants.category] = category }
@@ -609,12 +625,13 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 let collisions = Set(customFields.keys).intersection(Self.reservedCustomEventKeys)
                 guard collisions.isEmpty else {
                     logger.warning(LogCode.invalidArgument, "trackEvent: customFields use reserved keys", ["reason": "reserved_keys"])
-                    completion(.failure(.custom(error: "trackEvent: customFields contains reserved keys: \(collisions.sorted().joined(separator: ", "))")))
+                    Self.later(completion, .failure(.custom(error: "trackEvent: customFields contains reserved keys: \(collisions.sorted().joined(separator: ", "))")))
                     return
                 }
+                // NaN, infinity, a date or an object of the app cannot be written: refused here.
                 guard SafeJSON.isValid(customFields) else {
                     logger.warning(LogCode.invalidArgument, "trackEvent: customFields are not valid JSON", ["reason": "invalid_json"])
-                    completion(.failure(.custom(error: "trackEvent: customFields are not valid JSON")))
+                    Self.later(completion, .failure(.custom(error: "trackEvent: customFields are not valid JSON")))
                     return
                 }
                 for (key, value) in customFields {

@@ -15,6 +15,17 @@ struct CommonFields {
     let stream: String
     let segment: String
 
+    /// A device id and a session, taken together.
+    struct Identity: Equatable {
+        let deviceId: String
+        let sessionId: String
+    }
+
+    /// These fields with `identity` in place of the stored device id and session.
+    func with(_ identity: Identity) -> CommonFields {
+        CommonFields(shopId: shopId, deviceId: identity.deviceId, sessionId: identity.sessionId, stream: stream, segment: segment)
+    }
+
     /// The values of the common fields for a request to `path` whose own fields are `own`. An empty
     /// value is not sent: the API reads an empty field as a wrong one.
     ///

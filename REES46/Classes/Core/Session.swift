@@ -47,21 +47,29 @@ final class SessionWindow {
 
     /// The `sid` `/init` carries: the current one while its window is open, none otherwise.
     var sidForInit: String? {
-        lock.lock(); defer { lock.unlock() }
-        let sid = identity.seance ?? ""
-        return !sid.isEmpty && isAliveLocked(clock.now()) ? sid : nil
+        liveSid
     }
 
     /// `/init` answered: its `seance` is the `sid` from now on, and the window opens again. An answer
-    /// without one keeps the `sid` there is. Listeners hear a `sid` that changed.
+    /// without one leaves a session without a `sid` that lives out its window — no `/init` again
+    /// before it ends. Listeners hear a new `sid`.
     func adopt(_ seance: String) {
         lock.lock(); defer { lock.unlock() }
         let previous = identity.seance ?? ""
-        if !seance.isEmpty, seance != previous {
-            identity.seance = seance
-            listeners.notify(seance)
+        if seance != previous {
+            identity.seance = seance.isEmpty ? nil : seance
+            if !seance.isEmpty {
+                listeners.notify(seance)
+            }
         }
         identity.seanceLastActTime = clock.now()
+    }
+
+    /// The `sid` of the open window; `nil` without one or once the window ended.
+    var liveSid: String? {
+        lock.lock(); defer { lock.unlock() }
+        let sid = identity.seance ?? ""
+        return !sid.isEmpty && isAliveLocked(clock.now()) ? sid : nil
     }
 
     /// An event of the queue went out: the window opens again.

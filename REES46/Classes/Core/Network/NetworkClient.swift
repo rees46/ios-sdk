@@ -26,6 +26,10 @@ actor NetworkClient {
         var timeout: TimeInterval?
         /// Waits for the network instead of failing at once without it.
         var waitsForNetwork = false
+        /// The device id and session this request goes with, taken by its sender when it decided to send
+        /// it — an event of the queue — instead of the ones stored when the request is built: a
+        /// `deleteUserCredentials()` in between does not move it to the next customer's did.
+        var identity: CommonFields.Identity?
     }
 
     struct Response {
@@ -261,7 +265,10 @@ actor NetworkClient {
     }
 
     private func build(_ request: Request) -> Result<URLRequest, Rees46.SdkError> {
-        let fields = commonFields()
+        var fields = commonFields()
+        if let identity = request.identity {
+            fields = fields.with(identity)
+        }
         var urlRequest: URLRequest
         switch request.method {
         case .get:
