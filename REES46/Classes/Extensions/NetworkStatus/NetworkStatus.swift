@@ -4,98 +4,169 @@ import Network
 import CoreTelephony
 #endif
 
+/// A network path as the monitor reports it: what `NetworkStatus` reads from an `NWPath`, which tests
+/// cannot build.
+struct NetworkPathSnapshot {
+    let isSatisfied: Bool
+    let usesCellular: Bool
+    let usesWifi: Bool
+    let usesWiredEthernet: Bool
+    /// The radio of a cellular path as the system reports it; `nil` when it reports none.
+    let cellularRadio: String?
+}
 
-public class NetworkStatus {
-    
-    public static var nManager: NetworkStatus = NetworkStatus()
-    
-    private let monitor: NWPathMonitor
-    
-    public var semaphore: DispatchSemaphore? = DispatchSemaphore(value: 0)
-    
-    public var connectionStatus: NetworkConnectionStatus {
-        didSet {
-            for observer in observers.values {
-                observer.didChangeConnectionStatus(connectionStatus)
-            }
-        }
-    }
-    
-    public var connectionType: NetworkConnectionType? {
-        didSet {
-            for observer in observers.values {
-                observer.didChangeConnectionType(connectionType)
-            }
-        }
-    }
-    
-    private var observers: [String: NetworkStatusObserver]
-    
-    /// How long the first reader waits for the monitor's first path.
-    static let firstPathTimeout: DispatchTimeInterval = .seconds(1)
+/// Where network paths come from: `NWPathMonitor` in the app, a fake in tests.
+protocol NetworkPathSource: AnyObject {
+    /// Starts delivering paths to `handler`, one at a time, on the source's own queue.
+    func start(_ handler: @escaping (NetworkPathSnapshot) -> Void)
+    func cancel()
+}
 
-    private init() {
-        connectionStatus = .Offline
-        connectionType = .none
-        observers = [:]
-        monitor = NWPathMonitor.init()
-        
+/// The production source: `NWPathMonitor` on a serial queue of its own.
+final class SystemNetworkPathSource: NetworkPathSource {
+
+    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "com.rees46.sdk.network-status", qos: .utility)
+
+    func start(_ handler: @escaping (NetworkPathSnapshot) -> Void) {
         monitor.pathUpdateHandler = { path in
-            self.setConnection(path: path)
+            handler(Self.snapshot(of: path))
         }
-        
-        monitor.start(queue: DispatchQueue.global(qos: .default))
-        
-        // Waits for the first path so the first reader gets a real status, but never longer than
-        // `firstPathTimeout`: a path update that never signals would block this thread for good.
-        _ = semaphore?.wait(timeout: .now() + Self.firstPathTimeout)
-        semaphore = nil
+        monitor.start(queue: queue)
     }
-    
-    private func setConnection(path: NWPath) {
-        var newConnectionStatus: NetworkConnectionStatus = .Offline
-        var newConnectionType: NetworkConnectionType? = nil
-        
-        guard path.status == .satisfied else {
-            newConnectionStatus = .Offline
-            newConnectionType = .none
-            if self.connectionStatus != newConnectionStatus {
-                self.connectionStatus = newConnectionStatus
-            }
-            if self.connectionType != newConnectionType {
-                self.connectionType = newConnectionType
-            }
-            semaphore?.signal()
+
+    func cancel() {
+        monitor.cancel()
+    }
+
+    private static func snapshot(of path: NWPath) -> NetworkPathSnapshot {
+        let cellular = path.usesInterfaceType(.cellular)
+        var radio: String?
+        #if os(iOS)
+        if cellular {
+            radio = CTTelephonyNetworkInfo().serviceCurrentRadioAccessTechnology?.values.first
+        }
+        #endif
+        return NetworkPathSnapshot(
+            isSatisfied: path.status == .satisfied,
+            usesCellular: cellular,
+            usesWifi: path.usesInterfaceType(.wifi),
+            usesWiredEthernet: path.usesInterfaceType(.wiredEthernet),
+            cellularRadio: radio
+        )
+    }
+}
+
+/// Whether the device is online and over what. Reading never blocks: until the monitor reports its
+/// first path the status is unknown, and unknown counts as online — a request that then finds no
+/// network fails as one. It used to wait for the first path on a semaphore that the timeout set to
+/// `nil` while the monitor's queue signalled it, and to say `Offline` when that path came late.
+public class NetworkStatus {
+
+    public static var nManager: NetworkStatus = NetworkStatus()
+
+    /// Nothing waits on it any more; kept so apps that touched it still compile.
+    @available(*, deprecated, message: "Nothing waits on it: the status is read without blocking.")
+    public var semaphore: DispatchSemaphore?
+
+    private let source: NetworkPathSource
+    private let lock = NSLock()
+    /// `nil` until the first path: unknown.
+    private var knownStatus: NetworkConnectionStatus?
+    private var knownType: NetworkConnectionType?
+    private var observers: [String: NetworkStatusObserver] = [:]
+
+    /// `Online` while the first path has not come yet.
+    public var connectionStatus: NetworkConnectionStatus {
+        get {
+            lock.lock(); defer { lock.unlock() }
+            return knownStatus ?? .Online
+        }
+        set {
+            update(status: newValue, type: nil, keepsType: true)
+        }
+    }
+
+    /// `nil` while the first path has not come yet, and on a path that is not satisfied.
+    public var connectionType: NetworkConnectionType? {
+        get {
+            lock.lock(); defer { lock.unlock() }
+            return knownType
+        }
+        set {
+            update(status: nil, type: newValue, keepsType: false)
+        }
+    }
+
+    /// Whether the monitor has reported a path yet; for tests.
+    var hasPath: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return knownStatus != nil
+    }
+
+    private convenience init() {
+        self.init(source: SystemNetworkPathSource())
+    }
+
+    /// A status over `source`; tests pass a fake one.
+    init(source: NetworkPathSource) {
+        self.source = source
+        source.start { [weak self] path in
+            self?.setConnection(path)
+        }
+    }
+
+    func setConnection(_ path: NetworkPathSnapshot) {
+        guard path.isSatisfied else {
+            update(status: .Offline, type: nil, keepsType: false)
             return
         }
-        
-        newConnectionStatus = .Online
-        
-        if path.usesInterfaceType(.cellular) {
+        var type: NetworkConnectionType?
+        if path.usesCellular {
+            // A cellular path without a reported radio is still online: it used to return here
+            // without updating the status, and the first reader waited for a signal that never came.
             #if os(iOS)
-                // A cellular path without a reported radio is still online: it used to return here
-                // without updating the status or signalling the first reader, who then waited forever.
-                let networkInfo = CTTelephonyNetworkInfo()
-                newConnectionType = Self.cellularType(currentRadio: networkInfo.serviceCurrentRadioAccessTechnology?.values.first)
+            type = Self.cellularType(currentRadio: path.cellularRadio)
             #else
-                newConnectionType = .cellular(radioType: .notdeterminedcellular)
+            type = .cellular(radioType: .notdeterminedcellular)
             #endif
-        } else if path.usesInterfaceType(.wifi) {
-            newConnectionType = .wifi
-        } else if path.usesInterfaceType(.wiredEthernet) {
-            newConnectionType = .ethernet
+        } else if path.usesWifi {
+            type = .wifi
+        } else if path.usesWiredEthernet {
+            type = .ethernet
         }
-        
-        if self.connectionStatus != newConnectionStatus {
-            self.connectionStatus = newConnectionStatus
-        }
-        
-        if self.connectionType != newConnectionType {
-            self.connectionType = newConnectionType
-        }
-        semaphore?.signal()
+        update(status: .Online, type: type, keepsType: false)
     }
-    
+
+    /// Changes the state under the lock, then tells the observers what changed, outside it: an
+    /// observer may read the status or stop observing from its callback.
+    private func update(status: NetworkConnectionStatus?, type: NetworkConnectionType?, keepsType: Bool) {
+        lock.lock()
+        var statusChanged = false
+        var typeChanged = false
+        if let status = status, knownStatus != status {
+            knownStatus = status
+            statusChanged = true
+        }
+        if !keepsType, knownType != type {
+            knownType = type
+            typeChanged = true
+        }
+        let currentStatus = knownStatus ?? .Online
+        let currentType = knownType
+        let toNotify = Array(observers.values)
+        lock.unlock()
+
+        for observer in toNotify {
+            if statusChanged {
+                observer.didChangeConnectionStatus(currentStatus)
+            }
+            if typeChanged {
+                observer.didChangeConnectionType(currentType)
+            }
+        }
+    }
+
     #if os(iOS)
     /// The connection type of a cellular path from the radio the system reports; `nil` when it
     /// reports none.
@@ -125,17 +196,25 @@ public class NetworkStatus {
     }
     #endif
 
+    /// Adds `observer` and tells it the current state. Safe from any thread: the monitor's queue
+    /// notifies a copy of the observers taken under the lock.
     internal func addObserver(observer: NetworkStatusObserver) {
-        observer.didChangeConnectionStatus(connectionStatus)
-        observer.didChangeConnectionType(connectionType)
+        lock.lock()
         observers[observer.connectionObserverId] = observer
+        let currentStatus = knownStatus ?? .Online
+        let currentType = knownType
+        lock.unlock()
+        observer.didChangeConnectionStatus(currentStatus)
+        observer.didChangeConnectionType(currentType)
     }
-    
+
     internal func removeObserver(observer: NetworkStatusObserver) {
+        lock.lock()
         observers[observer.connectionObserverId] = nil
+        lock.unlock()
     }
-    
+
     deinit {
-        monitor.cancel()
+        source.cancel()
     }
 }

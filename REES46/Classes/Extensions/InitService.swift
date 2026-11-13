@@ -10,6 +10,9 @@ public let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdenti
 public let instanceKeychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
 
 public struct InitService {
+
+    /// `SecItemCopyMatching`; tests put another one here to hand back an item that is not data.
+    static var copyMatching: (CFDictionary, UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus = SecItemCopyMatching
     
     static func insertKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
         let attributes = [
@@ -36,8 +39,8 @@ public struct InitService {
                 kSecReturnData: true
         ] as CFDictionary
 
-        var res: AnyObject?
-        let status = SecItemCopyMatching(query, &res)
+        var res: CFTypeRef?
+        let status = copyMatching(query, &res)
 
         guard status == errSecSuccess else {
             if status == errSecItemNotFound {
@@ -46,6 +49,8 @@ public struct InitService {
             throw KeychainError.unexpectedStatus(status)
         }
         
+        // The item was force-cast to `Data`: anything else in the keychain under this account (a
+        // string an app wrote there, say) crashed the app on launch.
         guard let data = res as? Data else {
             throw KeychainError.unexpectedStatus(errSecDecode)
         }

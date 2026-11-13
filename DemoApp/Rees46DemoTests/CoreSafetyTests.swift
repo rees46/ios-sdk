@@ -2,8 +2,8 @@
 //  CoreSafetyTests.swift
 //  REES46Tests
 //
-//  App data the SDK cannot write as JSON fails the call instead of crashing the app, and the network
-//  monitor never leaves a reader waiting.
+//  App data the SDK cannot write as JSON fails the call instead of crashing the app, a keychain item
+//  that is not data is an error, and the network monitor never leaves a reader waiting.
 //
 
 import XCTest
@@ -131,6 +131,33 @@ final class CoreSafetyTests: XCTestCase {
         XCTAssertEqual(StubURLProtocol.requests(to: "/products", shop: shopId).first?.query["filters"], #"{"color":["red"]}"#)
     }
 
+    func test_profile_properties_that_are_not_json_fail_the_call_and_send_nothing() {
+        let sdk = initializedSDK()
+        let done = expectation(description: "done")
+        var outcome: Result<Void, SdkError>?
+        sdk.setProfileData(userEmail: nil, customProperties: ["object": NSObject(), "nan": Double.nan]) { result in
+            outcome = result
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+
+        assertNotJSONFailure(outcome)
+        XCTAssertTrue(StubURLProtocol.requests(to: "/profile/set", shop: shopId).isEmpty)
+    }
+
+    func test_a_keychain_item_that_is_not_data_is_an_error_not_a_crash() {
+        let original = InitService.copyMatching
+        defer { InitService.copyMatching = original }
+        InitService.copyMatching = { _, result in
+            result?.pointee = "not data" as CFString
+            return errSecSuccess
+        }
+
+        XCTAssertThrowsError(try InitService.getKeychainDidToken(identifier: "account", instanceKeychainService: "service"))
+        let store = KeychainInitStoreImpl(shopId: shopId, service: "core-safety-tests")
+        XCTAssertNil(store.readInitData())
+    }
+
     func test_a_cellular_path_without_a_radio_is_still_a_cellular_connection() {
         XCTAssertEqual(NetworkStatus.cellularType(currentRadio: nil), .cellular(radioType: .notdeterminedcellular))
     }
@@ -141,6 +168,70 @@ final class CoreSafetyTests: XCTestCase {
         XCTAssertLessThan(Date().timeIntervalSince(started), 3)
     }
 
+    func test_a_cellular_path_without_a_radio_is_online_over_cellular() {
+        let source = FakePathSource()
+        let status = NetworkStatus(source: source)
+        source.deliver(.cellular(radio: nil))
+
+        XCTAssertEqual(status.connectionStatus, .Online)
+        XCTAssertEqual(status.connectionType, .cellular(radioType: .notdeterminedcellular))
+    }
+
+    func test_before_the_first_path_the_status_is_online_and_reading_does_not_wait() {
+        let status = NetworkStatus(source: FakePathSource())
+        let started = Date()
+
+        XCTAssertEqual(status.connectionStatus, .Online, "unknown counts as online")
+        XCTAssertNil(status.connectionType)
+        XCTAssertFalse(status.hasPath)
+        XCTAssertLessThan(Date().timeIntervalSince(started), 0.1)
+    }
+
+    func test_a_path_that_is_not_satisfied_is_offline_and_a_late_one_brings_it_back() {
+        let source = FakePathSource()
+        let status = NetworkStatus(source: source)
+        source.deliver(.offline)
+        XCTAssertEqual(status.connectionStatus, .Offline)
+        XCTAssertNil(status.connectionType)
+
+        source.deliver(.wifi)
+        XCTAssertEqual(status.connectionStatus, .Online)
+        XCTAssertEqual(status.connectionType, .wifi)
+    }
+
+    func test_observers_come_and_go_on_any_thread_while_paths_arrive() {
+        let source = FakePathSource()
+        let status = NetworkStatus(source: source)
+        let observers = (0..<50).map { _ in CountingObserver() }
+
+        let paths = DispatchQueue(label: "paths")
+        let delivered = expectation(description: "paths")
+        paths.async {
+            for index in 0..<2_000 {
+                source.deliver(index % 2 == 0 ? .offline : .wifi)
+            }
+            delivered.fulfill()
+        }
+        DispatchQueue.concurrentPerform(iterations: 2_000) { index in
+            let observer = observers[index % observers.count]
+            if index % 2 == 0 {
+                status.addObserver(observer: observer)
+            } else {
+                status.removeObserver(observer: observer)
+            }
+        }
+        wait(for: [delivered], timeout: 10)
+
+        XCTAssertTrue(observers.contains { $0.calls > 0 })
+    }
+
+    func test_the_system_connectivity_monitor_reports_the_state_at_once_and_stops_when_cancelled() {
+        var reports: [Bool] = []
+        let subscription = SystemConnectivityMonitor.shared.observe { reports.append($0) }
+        XCTAssertEqual(reports.count, 1, "the current state comes at once")
+        subscription.cancel()
+    }
+
     // MARK: - Helpers
 
     private func assertNotJSONFailure(_ outcome: Result<Void, SdkError>?, file: StaticString = #filePath, line: UInt = #line) {
@@ -149,4 +240,29 @@ final class CoreSafetyTests: XCTestCase {
         }
         XCTAssertTrue(message.contains("not valid JSON"), message, file: file, line: line)
     }
+}
+
+/// Network paths sent by the test, on the caller's thread.
+final class FakePathSource: NetworkPathSource {
+    private var handler: ((NetworkPathSnapshot) -> Void)?
+    func start(_ handler: @escaping (NetworkPathSnapshot) -> Void) { self.handler = handler }
+    func cancel() { handler = nil }
+    func deliver(_ path: NetworkPathSnapshot) { handler?(path) }
+}
+
+extension NetworkPathSnapshot {
+    static let offline = NetworkPathSnapshot(isSatisfied: false, usesCellular: false, usesWifi: false, usesWiredEthernet: false, cellularRadio: nil)
+    static let wifi = NetworkPathSnapshot(isSatisfied: true, usesCellular: false, usesWifi: true, usesWiredEthernet: false, cellularRadio: nil)
+    static func cellular(radio: String?) -> NetworkPathSnapshot {
+        NetworkPathSnapshot(isSatisfied: true, usesCellular: true, usesWifi: false, usesWiredEthernet: false, cellularRadio: radio)
+    }
+}
+
+/// Counts the calls it gets; safe from any thread.
+final class CountingObserver: NetworkStatusObserver {
+    private let lock = NSLock()
+    private var count = 0
+    var calls: Int { lock.lock(); defer { lock.unlock() }; return count }
+    func didChangeConnectionStatus(_ status: NetworkConnectionStatus) { lock.lock(); count += 1; lock.unlock() }
+    func didChangeConnectionType(_ type: NetworkConnectionType?) { lock.lock(); count += 1; lock.unlock() }
 }
