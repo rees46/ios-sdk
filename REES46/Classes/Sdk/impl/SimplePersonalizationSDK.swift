@@ -339,6 +339,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
         initCompletion.add(completion)
         if let machine = initMachine {
+            Self.instances.add(self)
             // The queue is there before /init can say ready.
             startEventQueue()
             machine.delegate = self
@@ -438,6 +439,18 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var released = false
     /// The new core: whether `/init` answered since the instance was made or its customer deleted.
     private var serverAnswered = false
+
+    /// The live instances of the new core. Instances of one shop share its storage: what one of them
+    /// deletes (`deleteUserCredentials()`), the others forget too.
+    static let instances = LiveInstances()
+
+    /// How many times `/init` settled (`initMachine(didSettle:)`): the tests wait for it.
+    private let settledLock = NSLock()
+    private var settledCount = 0
+    var settledInitCount: Int {
+        settledLock.lock(); defer { settledLock.unlock() }
+        return settledCount
+    }
 
     private func currentInitGeneration() -> Int {
         initLock.lock(); defer { initLock.unlock() }
@@ -1716,9 +1729,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             return
         }
         // The new core's /init first: an answer it is taking lands before the wipe, a later one is
-        // stale; calls wait for the new device id from here on.
+        // stale; calls wait for the new device id from here on. The other instances of the shop share
+        // its storage: theirs too, so none of them sends with the deleted did or without one.
         let machine = initMachine
+        let siblings = machine == nil ? [] : Self.instances.others(of: self)
         machine?.reset()
+        siblings.forEach { $0.initMachine?.reset() }
+        // The deleted customer's events: none goes from here on — the one on its way is cancelled —,
+        // and their files go on the queue's thread, before any event taken after this call.
+        eventQueue?.clear(error: .cancelled, reason: "delete_user_credentials")
         initLock.lock()
         guard !released else {
             initLock.unlock()
@@ -1765,19 +1784,37 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let seance = newLegacySeance {
             legacySessionListeners.notify(seance)
         }
-        // The queue of the new core held the deleted customer's events: they go with the customer, off
-        // the init lock the queue's gate takes.
-        if let queue = eventQueue {
-            queue.clearSync(error: .cancelled, reason: "delete_user_credentials")
-        } else if usesCoreV2 {
+        if eventQueue == nil, usesCoreV2 {
             storage.removeQueueDirectory()
         }
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
+        siblings.forEach { $0.customerDeletedElsewhere() }
         if let machine = machine {
             machine.resume()
         } else {
             startInit(generation: generation, completion: nil)
         }
+    }
+
+    /// Another instance of the shop deleted its customer (`deleteUserCredentials()`), whose storage
+    /// this one shares: its machine was reset before the wipe; now it forgets the customer it held in
+    /// memory and asks `/init` for the next device id — the one the other instance's `/init` stores, if
+    /// that came first.
+    private func customerDeletedElsewhere() {
+        guard let machine = initMachine else { return }
+        initLock.lock()
+        guard !released else {
+            initLock.unlock()
+            return
+        }
+        initGeneration += 1
+        serverAnswered = false
+        deviceId = ""
+        userEmail = nil
+        userPhone = nil
+        userLoyaltyId = nil
+        initLock.unlock()
+        machine.resume()
     }
 
     /// Stops this instance: it leaves the registry and push routing, its log level stops counting, and
@@ -1800,6 +1837,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         guard first else { return }
         SdkLogger.unregister(owner: self)
+        Self.instances.remove(self)
         // The queue stops sending; its events stay on disk for the next launch.
         stopEventQueue()
         core.release()
@@ -1844,7 +1882,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             identity: userIdentity,
             keychain: keychainStore,
             logger: logger,
-            environment: environment
+            environment: environment,
+            connectivity: connectivity
         ) { request in
             await client.send(request)
         }
@@ -2109,8 +2148,11 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
             eventQueue?.kick(explicit: false)
         } else if error == .shopBlocked, initMachine?.isRefused == true {
             // The shop refused: its events are not sent, and the queue keeps none.
-            eventQueue?.clear(error: .shopBlocked, reason: "refused")
+            eventQueue?.clear(error: .cancelled, reason: "refused")
         }
+        settledLock.lock()
+        settledCount += 1
+        settledLock.unlock()
     }
 
     /// Whether this is the first server answer since the instance was made or its customer deleted;
@@ -2188,6 +2230,8 @@ extension SimplePersonalizationSDK: EventQueueHost {
             return true
         }
         let request = CoreRequest(method: .post, path: path)
+        // Accepted: the event extends a live session now, not when it goes (`sdk/core/session.md`).
+        sessionWindow?.touch()
         // The customer the event was made for: a disk-refused event sent once goes as them or not at all.
         let generation = currentInitGeneration()
         queue.enqueue(
@@ -2260,12 +2304,12 @@ extension SimplePersonalizationSDK: EventQueueHost {
     }
 
     func queueSend(_ request: NetworkClient.Request) async -> NetworkClient.Response {
-        guard let core = core as? CoreV2 else { return .failure(.notInitialized) }
+        guard let core = core as? CoreV2 else { return .failure(.cancelled) }
         return await core.sendEvent(request)
     }
 
-    func queueCheckShop() -> Bool {
-        (core as? CoreV2)?.checkShop() ?? false
+    func queueCheckShop() -> InitMachine.ShopCheck {
+        initMachine?.askShop() ?? .notAsked
     }
 
     func queueSource() -> [String: String]? {
@@ -2276,9 +2320,9 @@ extension SimplePersonalizationSDK: EventQueueHost {
         CommonFields.Identity(deviceId: userIdentity.deviceId ?? "", sessionId: sessionWindow?.sid ?? "")
     }
 
-    /// An event went out: the session's window opens again, and a popup in a fresh answer shows.
+    /// An event went out: a popup in a fresh answer shows. The session's window moved when the event
+    /// was accepted.
     func queueDelivered(_ event: EventQueue.Delivered) {
-        sessionWindow?.touch()
         guard event.path == "push" || event.path == "push/custom",
               case .success(let json) = event.response.result,
               let answer = json as? [String: Any], answer["status"] as? String == "success",
@@ -2297,4 +2341,68 @@ extension SimplePersonalizationSDK: EventQueueHost {
     var queueEnvironment: CoreEnvironment { environment }
 
     var queueConnectivity: ConnectivityMonitor { connectivity }
+}
+
+/// The live instances of the new core, weakly held.
+final class LiveInstances {
+    private let lock = NSLock()
+    private let table = NSHashTable<SimplePersonalizationSDK>.weakObjects()
+
+    func add(_ sdk: SimplePersonalizationSDK) {
+        lock.lock(); defer { lock.unlock() }
+        table.add(sdk)
+    }
+
+    func remove(_ sdk: SimplePersonalizationSDK) {
+        lock.lock(); defer { lock.unlock() }
+        table.remove(sdk)
+    }
+
+    /// The other live instances of `sdk`'s shop: the same shop in the same storage.
+    func others(of sdk: SimplePersonalizationSDK) -> [SimplePersonalizationSDK] {
+        lock.lock(); defer { lock.unlock() }
+        return table.allObjects.filter {
+            $0 !== sdk && $0.shopId == sdk.shopId && $0.storage.directory == sdk.storage.directory
+        }
+    }
+}
+
+// MARK: - The session of the SDK's own requests
+
+extension PersonalizationSDK {
+
+    /// The session a request the SDK builds itself goes with — popups v3, the polls of stories v3 —,
+    /// as every request of the funnel: on the new core the current `sid` after the window check — an
+    /// ended window is renewed first, and its `/init` waited for, at most `timeout`. The thread waits:
+    /// call it on the session queue, where those requests wait for the device id already. On the old
+    /// core, its `sid`.
+    func sessionIdForRequest(timeout: TimeInterval = NetworkClient.defaultTimeout) -> String {
+        guard let instance = self as? SimplePersonalizationSDK else { return userSeance }
+        return instance.sessionId(waiting: timeout)
+    }
+
+    /// The session of the moment, without waiting: on the new core the current `sid`, empty once its
+    /// window ended; on the old core, its `sid`.
+    var currentSessionId: String {
+        guard let instance = self as? SimplePersonalizationSDK, instance.usesCoreV2 else { return userSeance }
+        return instance.sessionId ?? ""
+    }
+}
+
+extension SimplePersonalizationSDK {
+
+    /// `sessionIdForRequest`.
+    func sessionId(waiting timeout: TimeInterval) -> String {
+        guard let session = sessionWindow, let machine = initMachine else { return userSeance }
+        if !session.isAlive, connectivity.isOnline {
+            machine.renewSession()
+            let renewed = DispatchSemaphore(value: 0)
+            _Concurrency.Task {
+                _ = await machine.awaitUsable(timeout: timeout, needsSession: true)
+                renewed.signal()
+            }
+            _ = renewed.wait(timeout: .now() + timeout)
+        }
+        return session.sid
+    }
 }

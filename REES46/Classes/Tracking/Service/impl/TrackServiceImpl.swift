@@ -147,6 +147,15 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 return
             }
             let built = Self.fields(of: event, details: details, sdk: sdk, contract: true)
+            // A virtual slide of a product campaign (`{story_id}_{index}`): `track/stories` takes only a
+            // story and a slide that are positive whole numbers, so the event does not go — and that is
+            // no error (`sdk/contract/tracking.md`). The slide still makes its block the stored source.
+            if Self.isVirtualSlide(event) {
+                Self.storeStoriesSource(built.storiesCode, sdk: sdk)
+                SdkLogger.area(.stories, .debug, "the slide of a virtual story is not sent", shopId: sdk.shopId)
+                Self.later(completion, .success(Void()))
+                return
+            }
             var body = built.fields
             if let source = source {
                 for item in source.params() {
@@ -247,12 +256,14 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }
 
     /// What the new core refuses before an event is queued (`sdk/contract/tracking.md`), as Android
-    /// does: an empty item id, search query, story or slide id.
+    /// does: an empty item id, category id, search query, story or slide id.
     private static func invalidArgument(of event: Event) -> String? {
         switch event {
         case let .productView(id), let .productAddedToFavorites(id), let .productRemovedFromCart(id),
              let .productRemovedFromFavorites(id), let .productAddedToCart(id, _):
             return blank(id) ? "the item id must not be empty" : nil
+        case let .categoryView(id):
+            return blank(id) ? "the category id must not be empty" : nil
         case let .search(query):
             return blank(query) ? "the search query must not be empty" : nil
         case let .slideView(storyId, slideId), let .slideClick(storyId, slideId):
@@ -260,6 +271,22 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         default:
             return nil
         }
+    }
+
+    /// A slide whose story id or slide id is not a positive whole number: the virtual slide of a
+    /// product campaign, which `track/stories` does not take.
+    private static func isVirtualSlide(_ event: Event) -> Bool {
+        switch event {
+        case let .slideView(storyId, slideId), let .slideClick(storyId, slideId):
+            return !isPositiveNumber(storyId) || !isPositiveNumber(slideId)
+        default:
+            return false
+        }
+    }
+
+    private static func isPositiveNumber(_ value: String) -> Bool {
+        guard let number = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) else { return false }
+        return number > 0
     }
 
     private static func blank(_ value: String) -> Bool {

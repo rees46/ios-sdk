@@ -13,7 +13,8 @@ import Foundation
 /// - The `sid` is the server's: the `seance` of the last `/init` answer. The core never makes one up.
 ///   An install of an older SDK keeps the `sid` it made while that window lives: `/init` carries it
 ///   once, and the server's answer replaces it.
-/// - The window is two hours without an event of the queue or an `/init`; only they extend it.
+/// - The window is two hours without an event of the queue or an `/init`; only they extend it — an
+///   event when it is accepted, and only a window still open.
 /// - The `sid` and the time of the last event live in the shop's storage, so a restart inside the
 ///   window goes on with the same session.
 /// - Listeners hear every new `sid`, on the main thread, in order.
@@ -51,18 +52,23 @@ final class SessionWindow {
     }
 
     /// `/init` answered: its `seance` is the `sid` from now on, and the window opens again. An answer
-    /// without one leaves a session without a `sid` that lives out its window — no `/init` again
-    /// before it ends. Listeners hear a new `sid`.
+    /// without one keeps a live `sid`; without a live one it leaves a session without a `sid` that lives
+    /// out its window — no `/init` again before it ends. Listeners hear a new `sid`.
     func adopt(_ seance: String) {
         lock.lock(); defer { lock.unlock() }
+        let now = clock.now()
         let previous = identity.seance ?? ""
+        if seance.isEmpty, !previous.isEmpty, isAliveLocked(now) {
+            identity.seanceLastActTime = now
+            return
+        }
         if seance != previous {
             identity.seance = seance.isEmpty ? nil : seance
             if !seance.isEmpty {
                 listeners.notify(seance)
             }
         }
-        identity.seanceLastActTime = clock.now()
+        identity.seanceLastActTime = now
     }
 
     /// The `sid` of the open window; `nil` without one or once the window ended.
@@ -72,17 +78,13 @@ final class SessionWindow {
         return !sid.isEmpty && isAliveLocked(clock.now()) ? sid : nil
     }
 
-    /// An event of the queue went out: the window opens again.
+    /// An event was accepted into the queue: a live window is extended. An ended one is not: the event
+    /// waits for the `/init` that brings the next session.
     func touch() {
         lock.lock(); defer { lock.unlock() }
-        identity.seanceLastActTime = clock.now()
-    }
-
-    /// Forgets the session: the next `/init` goes without one (`needReInitialization`).
-    func forget() {
-        lock.lock(); defer { lock.unlock() }
-        identity.seance = nil
-        identity.seanceLastActTime = nil
+        let now = clock.now()
+        guard isAliveLocked(now) else { return }
+        identity.seanceLastActTime = now
     }
 
     /// Calls `listener` on the main thread with every new `sid` until the handle is cancelled.

@@ -42,7 +42,8 @@ struct CoreEnvironment {
 ///   another `4xx`, kept in the shop's storage until a later `/init` passes.
 /// - Retries: 1 s, 2 s, 4 s … 5 min, ±20 %, or the `Retry-After` of a `429` or `503`, held to
 ///   1 s … 5 min (`RetryPolicy`). An `/init` cancelled by anything but `release()` or `reset()` — the
-///   app's URL protocol, say — is repeated the same way.
+///   app's URL protocol, say — is repeated the same way. The return of the network, the foreground and
+///   `checkShop()` cut a pause of its own short; the server's `Retry-After` nothing cuts.
 /// - A stored device id is `ready` at once, with a saved answer or without (decision 1): calls do not
 ///   wait for `/init` on every launch; `/init` still goes.
 /// - With a saved answer or a stored device id, `retrying` lets calls through as `ready` does.
@@ -60,12 +61,20 @@ final class InitMachine {
 
     typealias Transport = (NetworkClient.Request) async -> NetworkClient.Response
 
-    /// The longest pause between two `/init`s, before its spread.
-    static let maxPause = RetryPolicy.maxPause
-    /// The spread of a pause: ±20 %.
-    static let spread = RetryPolicy.spread
-    /// The shortest wait a `Retry-After` gets: `0` would send `/init` again at once, for ever.
-    static let minRetryAfter = RetryPolicy.minRetryAfter
+    /// What asking the shop (`askShop()`) came to.
+    enum ShopCheck: Equatable {
+        /// An `/init` asks: its answer comes as for any `/init`.
+        case asked
+        /// Asked less than ten minutes ago, and an `/init` is on its way or waits out the server's
+        /// pause: its answer is the shop's.
+        case onItsWay
+        /// Asked less than ten minutes ago, the shop answered, and the instance is `ready`: a refusal
+        /// now is the service's, not the shop's.
+        case passed
+        /// Not asked: refused, released, or the last check, a moment ago, got no answer.
+        case notAsked
+    }
+
     /// `checkShop()` sends `/init` at most this often.
     static let checkShopInterval: TimeInterval = 10 * 60
 
@@ -97,6 +106,8 @@ final class InitMachine {
     /// Failed `/init`s in a row; the pause grows with them.
     private var failures = 0
     private var retry: Cancellable?
+    /// Whether the pause before the next `/init` is the server's `Retry-After`: nothing cuts it short.
+    private var retryIsTheServers = false
     /// Whether the shop has a saved answer to fall back on; known once `savedAnswerChecked`.
     private var hasSavedAnswer = false
     /// Whether the disk and the keychain were asked for a saved answer.
@@ -107,7 +118,11 @@ final class InitMachine {
     /// new session, a check of the shop — leaves `ready` as it is.
     private var hasAnswered = false
     private var lastCheck: Date?
+    /// Whether an `/init` passed since the last check of the shop was asked.
+    private var checkPassed = false
     private var lifecycleSubscription: Cancellable?
+    private var networkSubscription: Cancellable?
+    private let connectivity: ConnectivityMonitor?
     private var waiters: [UUID: Waiter] = [:]
 
     /// A call waiting for the instance to be usable.
@@ -136,9 +151,11 @@ final class InitMachine {
         keychain: KeychainInitStore,
         logger: SdkLogger,
         environment: CoreEnvironment,
+        connectivity: ConnectivityMonitor? = nil,
         session: SessionWindow? = nil,
         transport: @escaping Transport
     ) {
+        self.connectivity = connectivity
         self.state = state
         self.session = session ?? SessionWindow(identity: identity, clock: environment.clock)
         self.storage = storage
@@ -152,6 +169,7 @@ final class InitMachine {
     deinit {
         // Gone without `release()`: it stops observing the app and repeats nothing.
         lifecycleSubscription?.cancel()
+        networkSubscription?.cancel()
         retry?.cancel()
         inFlightTask?.cancel()
     }
@@ -184,13 +202,20 @@ final class InitMachine {
         let subscription = environment.lifecycle.observe { [weak self] event in
             self?.lifecycle(event)
         }
+        let network = connectivity?.observe { [weak self] online in
+            if online {
+                self?.networkCameBack()
+            }
+        }
         lock.lock()
         if released {
             lock.unlock()
             subscription.cancel()
+            network?.cancel()
             return
         }
         lifecycleSubscription = subscription
+        networkSubscription = network
         lock.unlock()
 
         // `/init` is on its way before anything hears the instance is ready.
@@ -201,25 +226,56 @@ final class InitMachine {
     }
 
     /// Asks the shop through `/init` whether it still serves the SDK — at most once in ten minutes, and
-    /// not once it refused. The queue asks after `402`, `403` or `404` to an event. `false` when it was
-    /// too soon or there is nothing to ask.
+    /// not once it refused. `true` when it asked.
     @discardableResult
     func checkShop() -> Bool {
+        askShop() == .asked
+    }
+
+    /// Asks the shop through `/init` whether it still serves the SDK, as the queue does after `402`,
+    /// `403` or `404` to an event: at most once in ten minutes — within them it tells how the last
+    /// check went —, and not once it refused. An `/init` on its way answers the question too; one that
+    /// waits out the server's `Retry-After` goes when it is over, not before.
+    func askShop() -> ShopCheck {
         let now = environment.clock.now()
         lock.lock()
         guard started, !released, state.current != .refused else {
             lock.unlock()
-            return false
+            return .notAsked
         }
-        if let last = lastCheck, now.timeIntervalSince(last) < Self.checkShopInterval {
+        if let last = lastCheck, now.timeIntervalSince(last) >= 0, now.timeIntervalSince(last) < Self.checkShopInterval {
+            let answer: ShopCheck
+            if inFlight || (retry != nil && retryIsTheServers) {
+                answer = .onItsWay
+            } else if checkPassed, state.current == .ready {
+                answer = .passed
+            } else {
+                answer = .notAsked
+            }
             lock.unlock()
-            return false
+            return answer
         }
         lastCheck = now
+        checkPassed = false
+        let waitsForTheServer = retry != nil && retryIsTheServers
         lock.unlock()
-        // An `/init` on its way answers the question too.
+        if !waitsForTheServer {
+            send()
+        }
+        return .asked
+    }
+
+    /// The network came back: an `/init` that waits out a pause of its own goes now — the session may
+    /// have ended, and the calls and events that need a new one wait for it. The server's `Retry-After`
+    /// stands.
+    private func networkCameBack() {
+        lock.lock()
+        guard started, !released, !inFlight, retry != nil, !retryIsTheServers else {
+            lock.unlock()
+            return
+        }
+        lock.unlock()
         send()
-        return true
     }
 
     /// Back in the foreground two hours after the last event, the session gets a new `sid`. The time
@@ -243,8 +299,8 @@ final class InitMachine {
             return
         }
         // A failed renewal repeats after its pause: a call or an event does not cut it short, the return
-        // to the foreground does.
-        guard retry == nil || fromForeground else {
+        // to the foreground does — unless the pause is the server's `Retry-After`.
+        guard retry == nil || (fromForeground && !retryIsTheServers) else {
             lock.unlock()
             return
         }
@@ -297,6 +353,7 @@ final class InitMachine {
         inFlight = false
         retry?.cancel()
         retry = nil
+        retryIsTheServers = false
         failures = 0
         // The wipe takes the saved answer and its keychain backup.
         hasSavedAnswer = false
@@ -333,13 +390,17 @@ final class InitMachine {
         inFlightTask = nil
         retry?.cancel()
         retry = nil
+        retryIsTheServers = false
         let ended = waiters
         waiters.removeAll()
         let subscription = lifecycleSubscription
         lifecycleSubscription = nil
+        let network = networkSubscription
+        networkSubscription = nil
         lock.unlock()
         task?.cancel()
         subscription?.cancel()
+        network?.cancel()
         for waiter in ended.values {
             waiter.timeout?.cancel()
             waiter.continuation.resume(returning: .cancelled)
@@ -446,6 +507,7 @@ final class InitMachine {
         inFlight = true
         retry?.cancel()
         retry = nil
+        retryIsTheServers = false
         let generation = self.generation
         lock.unlock()
 
@@ -522,12 +584,7 @@ final class InitMachine {
         storage.refused = false
         // The device id the shop keeps; the answer's only when the shop has none.
         var response = answer
-        let stored = identity.deviceId ?? ""
-        if stored.isEmpty {
-            identity.deviceId = answer.deviceId
-        } else {
-            response.deviceId = stored
-        }
+        response.deviceId = adoptDeviceId(answer.deviceId)
         // The last answer, every time. Its keychain backup stays as it is: only `sendIDFARequest` and
         // the migrations write it (`sdk/core/storage.md`).
         storage.writeSavedInitAnswer(body)
@@ -548,6 +605,9 @@ final class InitMachine {
         // The saved answer may stand in, and say so, again after a later failure.
         usedSavedAnswer = false
         hasAnswered = true
+        if lastCheck != nil {
+            checkPassed = true
+        }
         delegate?.initMachine(adopt: response, fromServer: true)
         state.set(.ready)
         settleWaitersLocked()
@@ -578,14 +638,7 @@ final class InitMachine {
         // Its device id goes to the shop's storage only when the shop has none.
         if var standIn = saved {
             standIn.popup = nil
-            let stored = identity.deviceId ?? ""
-            if stored.isEmpty {
-                if !standIn.deviceId.isEmpty {
-                    identity.deviceId = standIn.deviceId
-                }
-            } else {
-                standIn.deviceId = stored
-            }
+            standIn.deviceId = adoptDeviceId(standIn.deviceId)
             saved = standIn
         }
 
@@ -621,6 +674,7 @@ final class InitMachine {
         } else {
             usable = false
         }
+        retryIsTheServers = response.retryAfter != nil
         retry = environment.scheduler.schedule(after: pause) { [weak self] in
             self?.send()
         }
@@ -659,6 +713,7 @@ final class InitMachine {
         failures = 0
         retry?.cancel()
         retry = nil
+        retryIsTheServers = false
         state.set(.refused)
         settleWaitersLocked()
         lock.unlock()
@@ -671,6 +726,21 @@ final class InitMachine {
         }
         logger.error(LogCode.initRefused, "the shop refused the SDK: calls fail until a later launch's /init passes", context)
         delegate?.initMachine(didSettle: .shopBlocked)
+    }
+
+    /// Instances of one shop share its storage: one of them takes a device id into it at a time.
+    private static let deviceIdLock = NSLock()
+
+    /// The device id the shop keeps: the stored one; `candidate` when it has none — stored then. The
+    /// first of two instances of the shop to answer gives the device id, and the other takes it.
+    private func adoptDeviceId(_ candidate: String) -> String {
+        Self.deviceIdLock.lock(); defer { Self.deviceIdLock.unlock() }
+        let stored = identity.deviceId ?? ""
+        guard stored.isEmpty else { return stored }
+        if !candidate.isEmpty {
+            identity.deviceId = candidate
+        }
+        return candidate
     }
 
     /// The shop's saved answer — its file, or the keychain backup that outlives a reinstall — without

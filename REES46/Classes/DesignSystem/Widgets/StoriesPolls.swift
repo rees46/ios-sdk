@@ -198,7 +198,8 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
     ) {
         let sdk = self.sdk
         let fields = { (did: String) in
-            Self.identity(shopId: sdk.shopId, did: did, sid: sdk.userSeance).merging(body) { _, own in own }
+            // Built on the session queue: the session of the moment, renewed first when it ended.
+            Self.identity(shopId: sdk.shopId, did: did, sid: sdk.sessionIdForRequest()).merging(body) { _, own in own }
         }
         api.post(sdk: sdk, url: url, body: fields) { data, response, error in
             let result = StoriesApiV3.response(data: data, response: response, error: error)

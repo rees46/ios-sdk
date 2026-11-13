@@ -129,7 +129,7 @@ final class PopupsV3API: PopupsV3Backend {
 
     func fetchList(testMode: Bool, debug: Bool, completion: @escaping (PopupsV3ListResult) -> Void) {
         let host = appHost()
-        get(url: { sdk, did in Self.listURL(host: host, shopId: sdk.shopId, did: did, sid: sdk.userSeance, testMode: testMode, debug: debug) },
+        get(url: { sdk, did, sid in Self.listURL(host: host, shopId: sdk.shopId, did: did, sid: sid, testMode: testMode, debug: debug) },
             timeout: 15) { status, json, error in
             let result = Self.listResult(status: status, json: json, error: error)
             // The code only: the answer's message often repeats the request's data.
@@ -144,7 +144,7 @@ final class PopupsV3API: PopupsV3Backend {
 
     func fetchPopup(id: Int, testMode: Bool, completion: @escaping (PopupV3?) -> Void) {
         let host = appHost()
-        get(url: { sdk, did in Self.popupURL(host: host, id: id, shopId: sdk.shopId, did: did, sid: sdk.userSeance, testMode: testMode) },
+        get(url: { sdk, did, sid in Self.popupURL(host: host, id: id, shopId: sdk.shopId, did: did, sid: sid, testMode: testMode) },
             timeout: 15) { status, json, error in
             let popup = Self.popupResult(status: status, json: json)
             if popup == nil {
@@ -157,7 +157,7 @@ final class PopupsV3API: PopupsV3Backend {
     func fetchPromoCode(listId: String, completion: @escaping (String?) -> Void) {
         if let cached = promoCodes[listId], cached.expires > now() { return completion(cached.code) }
         let apiHost = self.apiHost
-        get(url: { sdk, did in Self.promoURL(apiHost: apiHost, shopId: sdk.shopId, did: did, sid: sdk.userSeance, listId: listId) },
+        get(url: { sdk, did, sid in Self.promoURL(apiHost: apiHost, shopId: sdk.shopId, did: did, sid: sid, listId: listId) },
             timeout: Self.promoTimeout) { [weak self] status, json, error in
             let code = Self.promoResult(status: status, json: json)
             if let code, let self {
@@ -181,8 +181,10 @@ final class PopupsV3API: PopupsV3Backend {
 
     private func send(popupId: Int, event: String, channel: String?, attempt: Int) {
         guard let sdk, let url = Self.eventsURL(host: appHost(), id: popupId) else { return }
-        let sid = sdk.userSeance
-        let body = { (did: String) in Self.eventBody(shopId: sdk.shopId, did: did, sid: sid, event: event, channel: channel) }
+        // Built on the session queue: the session of the moment, renewed first when it ended.
+        let body = { (did: String) in
+            Self.eventBody(shopId: sdk.shopId, did: did, sid: sdk.sessionIdForRequest(), event: event, channel: channel)
+        }
         StoriesApiV3(domain: appHost()).post(sdk: sdk, url: url, body: body) { [weak self] _, response, error in
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             MainThread.run {
@@ -208,14 +210,16 @@ final class PopupsV3API: PopupsV3Backend {
     }
 
     /// GET в очереди сессии SDK, когда есть `did`; ответ — на главной очереди.
+    /// A `GET` on the session queue, once the SDK has a device id, with the session of the moment —
+    /// on the new core renewed first when its window ended (`sessionIdForRequest`).
     private func get(
-        url: @escaping (PersonalizationSDK, String) -> URL?,
+        url: @escaping (PersonalizationSDK, String, String) -> URL?,
         timeout: TimeInterval,
         completion: @escaping (Int, [String: Any]?, Error?) -> Void
     ) {
         guard let sdk else { return MainThread.run { completion(0, nil, nil) } }
         sdk.sessionQueue.addOperation {
-            guard let did = StoriesApiV3.awaitDeviceId(sdk), let address = url(sdk, did) else {
+            guard let did = StoriesApiV3.awaitDeviceId(sdk), let address = url(sdk, did, sdk.sessionIdForRequest()) else {
                 return MainThread.run { completion(0, nil, SdkError.custom(error: "Popups v3: no did or bad host")) }
             }
             var request = URLRequest(url: address, timeoutInterval: timeout)

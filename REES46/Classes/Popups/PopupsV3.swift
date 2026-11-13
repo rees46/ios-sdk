@@ -137,12 +137,12 @@ import UIKit
         let frequency = PopupsV3Frequency(
             defaults: (sdkObject as? SimplePersonalizationSDK)?.storage.partition ?? StoragePartition.store(ofShop: shopId),
             now: Date.init,
-            sid: { (sdkObject as? PersonalizationSDK)?.userSeance ?? "" },
+            sid: { (sdkObject as? PersonalizationSDK)?.currentSessionId ?? "" },
             testMode: { [weak self] in self?.testMode ?? false }
         )
         let engine = PopupsV3Engine(
             backend: backend, presenter: presenter, clock: PopupsV3SystemClock(), frequency: frequency,
-            sid: { (sdkObject as? PersonalizationSDK)?.userSeance ?? "" }
+            sid: { (sdkObject as? PersonalizationSDK)?.currentSessionId ?? "" }
         )
         engine.autoPresentation = { (sdkObject as? PersonalizationSDK)?.enableAutoPopupPresentation ?? true }
         let state = self.state
