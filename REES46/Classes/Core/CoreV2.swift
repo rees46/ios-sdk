@@ -2,9 +2,9 @@
 //  CoreV2.swift
 //  REES46
 //
-//  The new core, behind `Rees46Config.coreV2`. Stage 1: the requests of the funnel go through the
-//  new client (`NetworkClient`); init, session and queue are still the instance's old ones, so
-//  only `/init` may wait for the network, as the old init does.
+//  The new core, behind `Rees46Config.coreV2`: the requests of the funnel go through the new client
+//  (`NetworkClient`), and `/init` is the new core's own (`InitMachine`): a call waits until the
+//  instance is usable, at most its own timeout. Session and queue are still the instance's old ones.
 //
 
 import Foundation
@@ -15,6 +15,9 @@ final class CoreV2: Core {
 
     let kind = CoreKind.v2
 
+    /// The instance's `/init`.
+    let machine: InitMachine
+
     private let client: NetworkClient
     private let logger: SdkLogger
     /// Answers come back here, in order, off the cooperative pool: a caller's completion may block.
@@ -22,12 +25,16 @@ final class CoreV2: Core {
     private let lock = NSLock()
     private var released = false
 
-    init(client: NetworkClient, label: String, logger: SdkLogger) {
+    init(client: NetworkClient, machine: InitMachine, label: String, logger: SdkLogger) {
         self.client = client
+        self.machine = machine
         self.logger = logger
         self.callbacks = DispatchQueue(label: "com.rees46.sdk.core.\(label)", qos: .utility)
     }
 
+    /// Sends `request` once the instance is usable. A call made after `release()` is `notInitialized`;
+    /// a shop that refused fails it with `shopBlocked`; one that is not usable within the request's
+    /// timeout fails it with `timeout`. An `/init` of the funnel (`sendIDFARequest`) does not wait.
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         lock.lock()
         let isReleased = released
@@ -39,6 +46,8 @@ final class CoreV2: Core {
             return
         }
         let client = self.client
+        let machine = self.machine
+        let logger = self.logger
         let clientRequest = NetworkClient.Request(
             method: request.method,
             path: request.path,
@@ -47,7 +56,15 @@ final class CoreV2: Core {
             timeout: request.timeout,
             waitsForNetwork: request.isInit && request.waitsForNetwork
         )
+        let wait = request.isInit ? nil : (request.timeout ?? NetworkClient.defaultTimeout)
         _Concurrency.Task {
+            if let wait = wait, let refusal = await machine.awaitUsable(timeout: wait) {
+                if refusal == .cancelled {
+                    logger.requestCancelled(request.method.rawValue, request.path)
+                }
+                callbacks.async { completion(Self.legacyResponse(.failure(refusal), for: request)) }
+                return
+            }
             let response = await client.send(clientRequest)
             callbacks.async { completion(Self.legacyResponse(response, for: request)) }
         }
@@ -58,10 +75,17 @@ final class CoreV2: Core {
         _Concurrency.Task { await client.use(configuration) }
     }
 
+    /// Asks the shop through `/init` whether it still serves the SDK, at most once in ten minutes.
+    @discardableResult
+    func checkShop() -> Bool {
+        machine.checkShop()
+    }
+
     func release() {
         lock.lock()
         released = true
         lock.unlock()
+        machine.release()
         let client = self.client
         _Concurrency.Task { await client.release() }
     }

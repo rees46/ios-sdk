@@ -58,6 +58,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Whether this instance runs the new core: the process's `Rees46Config.coreV2` (`CoreFlag`).
     let usesCoreV2: Bool
 
+    /// The configuration the instance was made with: a later `Rees46.initialize` of the shop compares.
+    let config: Rees46Config
+
+    /// The instance's state (`Rees46.SdkState`) and its listeners.
+    let instanceState = InstanceState()
+
+    /// The completion of `Rees46.initialize`, also of later calls for the shop: once, with the outcome
+    /// of the first initialization.
+    let initCompletion: InitCompletion
+
+    /// The new core's seams: time, pauses, the app's lifecycle.
+    let environment: CoreEnvironment
+
     /// Where this instance's requests go: the old paths (`LegacyCore`) or the new client (`CoreV2`).
     /// Made at the end of `init`, before any request can reach it.
     lazy var core: Core = makeCore()
@@ -188,6 +201,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         needReInitialization: Bool = false,
         storageKey: String? = nil,
         coreV2: Bool = false,
+        deviceId configuredDeviceId: String? = nil,
+        environment: CoreEnvironment? = nil,
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
         shopStorage: ShopStorage? = nil,
@@ -205,6 +220,22 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.logger = SdkLogger(shopId: shopId, level: enableLogs && logLevel == .warning ? .debug : logLevel)
         self.usesCoreV2 = CoreFlag.resolve(requested: coreV2)
         CoreFlag.reportMismatch(requested: coreV2, active: usesCoreV2, logger: logger)
+        self.config = Rees46Config(
+            shopId: shopId,
+            apiDomain: apiDomain,
+            stream: stream,
+            deviceId: configuredDeviceId,
+            enableLogs: enableLogs,
+            logLevel: logLevel,
+            autoSendPushToken: autoSendPushToken,
+            sendAdvertisingId: sendAdvertisingId,
+            enableAutoPopupPresentation: enableAutoPopupPresentation,
+            needReInitialization: needReInitialization,
+            storageKey: storageKey,
+            coreV2: coreV2
+        )
+        self.initCompletion = InitCompletion(onMain: usesCoreV2)
+        self.environment = environment ?? CoreEnvironment()
         self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
         // The shop's partition — `storageKey` is the app's prefix of it — and its files.
@@ -260,8 +291,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         userSeance = self.sessionManager.currentSessionId()
         segment = Self.abSegment(of: identity)
         
-        // Fetch user session (permanent user Id)
-        if !needReInitialization {
+        if needReInitialization {
+            // The new core forgets the customer's device id, the saved answer and its keychain backup
+            // once, before /init; the old one drops the device id on its /init, as it always has.
+            if usesCoreV2 {
+                identity.removeDeviceId()
+                storage.removeSavedInitAnswer()
+                self.keychainStore.clear()
+                logger.info(LogCode.deviceIdReset, "the stored device id was removed to get a new one", ["reason": "re_initialization"])
+            }
+        } else {
+            // The shop's own device id; the one the app brought when it has none; the one the keychain
+            // kept through a reinstall.
+            Self.adoptConfiguredDeviceId(configuredDeviceId, into: identity, logger: logger)
             Self.restoreDeviceId(into: identity, from: self.keychainStore)
         }
         // A forced re-initialization drops the stored device id: requests wait for the new one.
@@ -271,13 +313,59 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         _ = core
         _ = popupsV3
 
-        // Requests made before the device id is known wait for /init and go out with its id.
-        if deviceId.isEmpty {
-            requestQueue.close()
+        initCompletion.add(completion)
+        if let machine = initMachine {
+            machine.delegate = self
+            machine.start()
+        } else {
+            // The old core is ready with a device id, and initializing until /init brings one.
+            instanceState.set(deviceId.isEmpty ? .initializing : .ready)
+            // Requests made before the device id is known wait for /init and go out with its id.
+            if deviceId.isEmpty {
+                requestQueue.close()
+            }
+            startInit(generation: currentInitGeneration()) { [initCompletion] error in
+                initCompletion.finish(error)
+            }
         }
-        startInit(generation: currentInitGeneration(), completion: completion)
         
         initializeNotificationRegistrar()
+    }
+
+    /// The device id the app brought (`Rees46Config.deviceId`), taken only when the shop has none.
+    static func adoptConfiguredDeviceId(_ configured: String?, into identity: UserIdentityRepository, logger: SdkLogger) {
+        guard let configured = configured, !configured.isEmpty else { return }
+        let stored = identity.deviceId ?? ""
+        if stored.isEmpty {
+            identity.deviceId = configured
+        } else if stored != configured {
+            logger.warning(LogCode.invalidConfig, "the shop keeps its own device id: the configured one was not taken", ["reason": "device_id_kept"])
+        }
+    }
+
+    /// The new core's `/init`; `nil` on the old core.
+    var initMachine: InitMachine? {
+        (core as? CoreV2)?.machine
+    }
+
+    // MARK: - State
+
+    var state: Rees46.SdkState {
+        instanceState.current
+    }
+
+    @discardableResult
+    func onStateChange(_ listener: @escaping (Rees46.SdkState) -> Void) -> Cancellable {
+        instanceState.observe(listener)
+    }
+
+    var sessionId: String? {
+        userSeance.isEmpty ? nil : userSeance
+    }
+
+    /// Calls `completion` once the first initialization settled, or now if it has.
+    func whenInitialized(_ completion: ((SdkError?) -> Void)?) {
+        initCompletion.add(completion)
     }
 
     // MARK: - /init
@@ -291,6 +379,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private let initLock = NSLock()
     /// Set by `release()`: every later call is `notInitialized`.
     private var released = false
+    /// The new core: whether `/init` answered since the instance was made or its customer deleted.
+    private var serverAnswered = false
 
     private func currentInitGeneration() -> Int {
         initLock.lock(); defer { initLock.unlock() }
@@ -331,6 +421,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 switch initResult {
                 case .success(let response):
+                    // The old core is ready once /init gave the shop a device id.
+                    if !self.deviceId.isEmpty {
+                        self.instanceState.set(.ready)
+                    }
                     // The contacts given at creation identify the user: they go to the profile.
                     if self.userEmail != nil || self.userPhone != nil || self.userLoyaltyId != nil {
                         self.setProfileData(
@@ -1534,18 +1628,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// the push token goes to the shop once the new id is stored, and a late answer to the earlier
     /// `/init` changes nothing. After `release()` nothing is wiped or sent.
     public func deleteUserCredentials() {
+        guard !isReleased else {
+            logger.warning(LogCode.invalidArgument, "deleteUserCredentials on a released instance: nothing was deleted", ["reason": "not_initialized"])
+            return
+        }
+        // The new core's /init first: an answer it is taking lands before the wipe, a later one is
+        // stale; calls wait for the new device id from here on.
+        let machine = initMachine
+        machine?.reset()
         initLock.lock()
         guard !released else {
             initLock.unlock()
-            logger.warning(LogCode.invalidArgument, "deleteUserCredentials on a released instance: nothing was deleted", ["reason": "not_initialized"])
             return
         }
         // Before the wipe: an answer to an earlier /init or sendIDFARequest finds itself stale from here
         // on and writes nothing back.
         initGeneration += 1
         let generation = initGeneration
-        // Before the device id is cleared: nothing leaves the queue without one until the new /init.
-        requestQueue.close()
+        serverAnswered = false
+        if machine == nil {
+            // Before the device id is cleared: nothing leaves the queue without one until the new /init.
+            requestQueue.close()
+            instanceState.set(.initializing)
+        }
         userIdentity.clearIdentity()
         deviceId = ""
         storage.removeSavedInitAnswer()
@@ -1570,7 +1675,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         userSeance = sessionManager.currentSessionId()
         initLock.unlock()
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
-        startInit(generation: generation, completion: nil)
+        if let machine = machine {
+            machine.resume()
+        } else {
+            startInit(generation: generation, completion: nil)
+        }
     }
 
     /// Stops this instance: it leaves the registry and push routing, its log level stops counting, and
@@ -1592,10 +1701,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         // What waits for a device id runs now, and fails.
         requestQueue.open()
         failDeferredPushToken()
+        instanceState.set(.notInitialized)
+        // An initialize still waiting for its outcome hears it once.
+        initCompletion.finish(.legacy(.notInitialized))
     }
 
     deinit {
-        SdkRegistry.shared.unregister(self)
+        // Registered, an instance is held by the registry: one that deinits is no longer registered.
         SdkLogger.unregister(owner: self)
         core.release()
     }
@@ -1618,7 +1730,17 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
             return CommonFields(shopId: self.shopId, deviceId: self.deviceId, sessionId: self.userSeance, stream: self.stream, segment: self.segment)
         }
-        return CoreV2(client: client, label: shopId, logger: logger)
+        let machine = InitMachine(
+            state: instanceState,
+            storage: storage,
+            identity: userIdentity,
+            keychain: keychainStore,
+            logger: logger,
+            environment: environment
+        ) { request in
+            await client.send(request)
+        }
+        return CoreV2(client: client, machine: machine, label: shopId, logger: logger)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
@@ -1714,7 +1836,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         forgetsSavedInit: Bool = true,
         completion: @escaping (_ status: Int?, _ result: Result<Any, SdkError>) -> Void
     ) {
-        if forgetsSavedInit && needReInitialization {
+        // The old core forgets the saved answer on every request of a forced re-initialization, as it
+        // always has; the new one did once, before its /init, and keeps the answer that /init brings.
+        if forgetsSavedInit && needReInitialization && !usesCoreV2 {
             removeSavedInitAnswer()
         }
         let request = CoreRequest(method: .get, path: path, query: params, timeout: timeout, waitsForNetwork: waitsForNetwork)
@@ -1795,4 +1919,77 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         jsonDecoder.dateDecodingStrategy = .formatted(dateFormatter)
         return jsonDecoder
     }()
+}
+
+// MARK: - The new core's /init
+
+extension SimplePersonalizationSDK: InitMachineDelegate {
+
+    /// `/init` of the new core: the time zone, the device id the shop has, the session, the
+    /// advertising id only with `sendAdvertisingId`, the test mode of popups v3. `shop_id` and `stream`
+    /// come from the client.
+    func initQuery() -> [String: String] {
+        let hours = TimeZone.current.secondsFromGMT() / 3600
+        var params: [String: String] = [SdkConstants.tz: String(hours)]
+        if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
+            params[SdkConstants.did] = deviceId
+        }
+        Self.addSession(userSeance, to: &params)
+        if sendAdvertisingId, let advertisingId = userIdentity.advertisingId, !advertisingId.isEmpty,
+           advertisingId != "00000000-0000-0000-0000-000000000000" {
+            params["ios_advertising_id"] = advertisingId
+        }
+        if popupsV3.testMode {
+            params["testmode"] = "true"
+        }
+        return params
+    }
+
+    func initMachine(adopt response: InitResponse, fromServer: Bool) {
+        userInfo = response
+        if !response.deviceId.isEmpty {
+            deviceId = response.deviceId
+        }
+    }
+
+    func initMachine(didFinish response: InitResponse, fromServer: Bool) {
+        guard fromServer else {
+            // The saved answer stands in: its flags, not its popup, nor what goes to the shop.
+            popupsV3.initFinished(flag: response.popupsV3)
+            return
+        }
+        // The contacts given at creation and the advertising id go with the first answer for the
+        // customer; a later /init (back from the background, a check of the shop) repeats neither.
+        let first = takeFirstServerAnswer()
+        if first, userEmail != nil || userPhone != nil || userLoyaltyId != nil {
+            setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId) { _ in }
+        }
+        if let popup = response.popup {
+            popupPresenter.presentPopup(popup)
+        }
+        popupsV3.initFinished(flag: response.popupsV3)
+        sendPushTokenIfDeviceIdIsKnown()
+        if first, sendAdvertisingId {
+            updateAdvertisingIdUseCase.execute { result in
+                switch result {
+                case .success:
+                    self.logger.debug(LogCode.advertisingIdSent, "the advertising id was sent")
+                case .failure(let error):
+                    self.logger.warning(LogCode.advertisingIdFailed, "the advertising id was not sent", ["error": SdkLogger.errorKind(error)])
+                }
+            }
+        }
+    }
+
+    func initMachine(didSettle error: Rees46.SdkError?) {
+        initCompletion.finish(error.map { SdkError.legacy($0) })
+    }
+
+    /// Whether this is the first server answer since the instance was made or its customer deleted.
+    private func takeFirstServerAnswer() -> Bool {
+        initLock.lock(); defer { initLock.unlock() }
+        let first = !serverAnswered
+        serverAnswered = true
+        return first
+    }
 }

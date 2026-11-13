@@ -27,6 +27,10 @@ public struct Rees46Config {
     public let apiDomain: String
     /// Traffic stream label sent with every request.
     public let stream: String
+    /// The device id (`did`) the app already keeps — say from another version of the SDK — for a shop
+    /// that has none yet: the shop takes it instead of getting a new one from `/init`. A shop that has
+    /// its own keeps it; `nil` or empty is none.
+    public let deviceId: String?
     /// The old switch of the SDK's logs; `true` meant everything.
     @available(*, deprecated, message: "Set logLevel; enableLogs = true is logLevel = .debug.")
     public var enableLogs: Bool { logLevel == .debug }
@@ -67,6 +71,7 @@ public struct Rees46Config {
         shopId: String,
         apiDomain: String = "api.rees46.ru",
         stream: String = "ios",
+        deviceId: String? = nil,
         enableLogs: Bool = false,
         logLevel: Rees46.LogLevel = .warning,
         autoSendPushToken: Bool = true,
@@ -79,6 +84,7 @@ public struct Rees46Config {
         self.shopId = shopId
         self.apiDomain = apiDomain
         self.stream = stream
+        self.deviceId = deviceId
         // `enableLogs = true` is the old way to ask for everything.
         self.logLevel = enableLogs && logLevel == .warning ? .debug : logLevel
         self.autoSendPushToken = autoSendPushToken
@@ -87,5 +93,20 @@ public struct Rees46Config {
         self.needReInitialization = needReInitialization
         self.storageKey = storageKey
         self.coreV2 = coreV2
+    }
+
+    /// Whether an instance made with `other` behaves as one made with this configuration.
+    func hasSameSettings(as other: Rees46Config) -> Bool {
+        shopId == other.shopId
+            && apiDomain == other.apiDomain
+            && stream == other.stream
+            && (deviceId ?? "") == (other.deviceId ?? "")
+            && logLevel == other.logLevel
+            && autoSendPushToken == other.autoSendPushToken
+            && sendAdvertisingId == other.sendAdvertisingId
+            && enableAutoPopupPresentation == other.enableAutoPopupPresentation
+            && needReInitialization == other.needReInitialization
+            && storageKey == other.storageKey
+            && coreV2 == other.coreV2
     }
 }

@@ -112,6 +112,27 @@ public protocol PersonalizationSDK {
     /// the SDK sent for them; the device's push token, A/B group and advertising id stay. The instance
     /// stays usable and gets a new device id from `/init`; requests made meanwhile wait for it.
     func deleteUserCredentials()
+
+    /// Where the instance's initialization is (`Rees46.SdkState`). On the old core an instance is
+    /// `initializing` until `/init` gives it a device id, `ready` with one, and `notInitialized` once
+    /// released. Has a default implementation, so conforming types keep compiling.
+    var state: Rees46.SdkState { get }
+
+    /// Calls `listener` on the main thread at once with the current `state`, then once for every
+    /// change, until the handle is cancelled. Has a default implementation, so conforming types keep
+    /// compiling.
+    @discardableResult
+    func onStateChange(_ listener: @escaping (Rees46.SdkState) -> Void) -> Cancellable
+
+    /// The session id (`sid`) of the instance; `nil` while it has none. Has a default implementation,
+    /// so conforming types keep compiling.
+    var sessionId: String? { get }
+
+    /// Stops the instance: it leaves the registry, `Rees46.instance(for:)` no longer finds it, and every
+    /// later call on it fails as not initialized — the old methods with `.initializationFailed`. The
+    /// next `Rees46.initialize` for the shop makes a new instance. Has a default implementation, so
+    /// conforming types keep compiling.
+    func release()
 }
 
 public extension PersonalizationSDK {
@@ -430,6 +451,32 @@ public extension PersonalizationSDK {
             deleteUserCredentials()
         })
     }
+
+    /// A conformer without states: `initializing` without a device id, `ready` with one.
+    var state: Rees46.SdkState {
+        deviceId.isEmpty ? .initializing : .ready
+    }
+
+    /// A conformer without states tells its state once and has no change to tell.
+    @discardableResult
+    func onStateChange(_ listener: @escaping (Rees46.SdkState) -> Void) -> Cancellable {
+        let current = state
+        let subscription = Cancellable {}
+        DispatchQueue.main.async {
+            guard !subscription.isCancelled else { return }
+            listener(current)
+        }
+        return subscription
+    }
+
+    var sessionId: String? {
+        userSeance.isEmpty ? nil : userSeance
+    }
+
+    /// A conformer's release: it leaves the registry.
+    func release() {
+        SdkRegistry.shared.unregister(self)
+    }
     
     // R2: these caches are partitioned per shop — delegate to the shop's [LocalStateRepository] via
     // the internal `localState` bridge instead of scanning the shared `.standard` domain.
@@ -544,11 +591,9 @@ public func createPersonalizationSDK(
 
 /**
  Builds a `SimplePersonalizationSDK`, resets its per-shop stories cache, and registers it so it can be
- resolved by `shop_id` and joins the push fan-out set.
-
- The single construction path shared by the (soon-deprecated) `createPersonalizationSDK` and the
- `Rees46` facade — keeping registration and cache-reset in one place. The registry holds the instance
- weakly, so this does not extend its lifetime; it drops out on dealloc or `release()`.
+ resolved by `shop_id` and joins the push fan-out set — a new instance every time, replacing the shop's
+ registration, as `createPersonalizationSDK` always has. `Rees46.initialize` returns the shop's instance
+ when it has one instead. The registry holds the instance until `release()`.
  */
 internal func makeRegisteredSDK(
     shopId: String,
@@ -568,28 +613,28 @@ internal func makeRegisteredSDK(
     coreV2: Bool = false,
     completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
-    let sdk = SimplePersonalizationSDK(
-        shopId: shopId,
-        userEmail: userEmail,
-        userPhone: userPhone,
-        userLoyaltyId: userLoyaltyId,
-        apiDomain: apiDomain,
-        stream: stream,
-        enableLogs: enableLogs,
-        logLevel: logLevel,
-        autoSendPushToken: autoSendPushToken,
-        sendAdvertisingId: sendAdvertisingId,
-        parentViewController: parentViewController,
-        enableAutoPopupPresentation: enableAutoPopupPresentation,
-        needReInitialization: needReInitialization,
-        storageKey: storageKey,
-        coreV2: coreV2,
-        completion: completion
-    )
-
-    sdk.resetSdkCache()
-    SdkRegistry.shared.register(shopId: shopId, sdk: sdk)
-    return sdk
+    Rees46.withCreationLock {
+        let sdk = SimplePersonalizationSDK(
+            shopId: shopId,
+            userEmail: userEmail,
+            userPhone: userPhone,
+            userLoyaltyId: userLoyaltyId,
+            apiDomain: apiDomain,
+            stream: stream,
+            enableLogs: enableLogs,
+            logLevel: logLevel,
+            autoSendPushToken: autoSendPushToken,
+            sendAdvertisingId: sendAdvertisingId,
+            parentViewController: parentViewController,
+            enableAutoPopupPresentation: enableAutoPopupPresentation,
+            needReInitialization: needReInitialization,
+            storageKey: storageKey,
+            coreV2: coreV2,
+            completion: completion
+        )
+        sdk.resetSdkCache()
+        return (sdk, SdkRegistry.shared.registerDeferringAwaiters(shopId: shopId, sdk: sdk))
+    }
 }
 
 /**

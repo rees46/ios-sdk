@@ -35,6 +35,32 @@ public enum Rees46 {
     /// Guards `pending`. The live instances themselves live in the (thread-safe) `SdkRegistry`.
     private static let lock = NSLock()
 
+    /// Held while an instance is looked up, made and registered: two `initialize` calls for one shop at
+    /// once make one instance, and nobody sees a shop between its pending registration and its instance.
+    /// Recursive: materializing a pending shop initializes it.
+    private static let creationLock = NSRecursiveLock()
+    private static var creationDepth = 0
+    /// What to tell the shop's waiters (`awaitInstance`) once the outermost holder let go of the lock.
+    private static var notifications: [() -> Void] = []
+
+    /// Runs `body` under the creation lock; the closure it hands back runs once the lock is released,
+    /// so an app's `onReady` never runs under it.
+    static func withCreationLock<T>(_ body: () -> (T, () -> Void)) -> T {
+        creationLock.lock()
+        creationDepth += 1
+        let (value, notify) = body()
+        notifications.append(notify)
+        creationDepth -= 1
+        var ready: [() -> Void] = []
+        if creationDepth == 0 {
+            ready = notifications
+            notifications.removeAll()
+        }
+        creationLock.unlock()
+        ready.forEach { $0() }
+        return value
+    }
+
     /// Fires the tracking beacon for a *pending* shop's push without constructing it — see `handlePush`.
     /// Injectable so tests can assert the pending-track path offline; defaults to the real standalone
     /// tracker (`PushDeliveryTracker`).
@@ -47,29 +73,61 @@ public enum Rees46 {
      Initializes an SDK instance for `config` immediately and returns it. The instance is registered,
      so it is also reachable via `instance(for:)`. Any pending registration for the same shop is
      cleared.
+
+     A shop that has an instance gets that instance back: no second one is made. A different `config`
+     does not change it — the log says `invalid_config` with the reason `already_initialized` — and
+     `completion` is still called once: with the outcome of the instance's initialization, or when it
+     settles. `release()` lets the next call make a new instance.
      */
     @discardableResult
     public static func initialize(
         _ config: Rees46Config,
         completion: ((REES46.SdkError?) -> Void)? = nil
     ) -> PersonalizationSDK {
-        let sdk = makeRegisteredSDK(
-            shopId: config.shopId,
-            apiDomain: config.apiDomain,
-            stream: config.stream,
-            logLevel: config.logLevel,
-            autoSendPushToken: config.autoSendPushToken,
-            sendAdvertisingId: config.sendAdvertisingId,
-            enableAutoPopupPresentation: config.enableAutoPopupPresentation,
-            needReInitialization: config.needReInitialization,
-            storageKey: config.storageKey,
-            coreV2: config.coreV2,
-            completion: completion
-        )
-        lock.lock()
-        pending[config.shopId] = nil
-        lock.unlock()
-        return sdk
+        withCreationLock {
+            lock.lock()
+            pending[config.shopId] = nil
+            lock.unlock()
+            if let existing = SdkRegistry.shared.byShopId(config.shopId) {
+                return (existing, joinExisting(existing, config: config, completion: completion))
+            }
+            let sdk = SimplePersonalizationSDK(
+                shopId: config.shopId,
+                apiDomain: config.apiDomain,
+                stream: config.stream,
+                logLevel: config.logLevel,
+                autoSendPushToken: config.autoSendPushToken,
+                sendAdvertisingId: config.sendAdvertisingId,
+                enableAutoPopupPresentation: config.enableAutoPopupPresentation,
+                needReInitialization: config.needReInitialization,
+                storageKey: config.storageKey,
+                coreV2: config.coreV2,
+                deviceId: config.deviceId,
+                completion: completion
+            )
+            sdk.resetSdkCache()
+            return (sdk, SdkRegistry.shared.registerDeferringAwaiters(shopId: config.shopId, sdk: sdk))
+        }
+    }
+
+    /// A repeated `initialize` for a shop that has an instance: what to call once the lock is released.
+    private static func joinExisting(
+        _ existing: PersonalizationSDK,
+        config: Rees46Config,
+        completion: ((REES46.SdkError?) -> Void)?
+    ) -> () -> Void {
+        guard let instance = existing as? SimplePersonalizationSDK else {
+            // Another conformer the app registered: it has no outcome to tell.
+            return { completion.map { done in DispatchQueue.main.async { done(nil) } } }
+        }
+        if !instance.config.hasSameSettings(as: config) {
+            instance.logger.warning(
+                LogCode.invalidConfig,
+                "the shop is already initialized: its instance keeps the configuration it was made with",
+                ["reason": "already_initialized"]
+            )
+        }
+        return { instance.whenInitialized(completion) }
     }
 
     /**
@@ -103,6 +161,14 @@ public enum Rees46 {
        `Rees46Error.unknownShopId` when the shop is unknown (nothing registered, or no such shop).
      */
     public static func instance(for shopId: String? = nil) throws -> PersonalizationSDK {
+        let resolved: Result<PersonalizationSDK, Error> = withCreationLock {
+            (Result { try resolveLocked(shopId) }, {})
+        }
+        return try resolved.get()
+    }
+
+    /// `instance(for:)` under the creation lock: a shop being made is either pending or live.
+    private static func resolveLocked(_ shopId: String?) throws -> PersonalizationSDK {
         switch InstanceResolver.resolve(
             requestedShopId: shopId,
             liveShopIds: SdkRegistry.shared.shopIds(),
@@ -153,24 +219,35 @@ public enum Rees46 {
         for shopId: String? = nil,
         _ onReady: @escaping (PersonalizationSDK) -> Void
     ) -> Cancellable {
-        switch InstanceResolver.resolve(
-            requestedShopId: shopId,
-            liveShopIds: SdkRegistry.shared.shopIds(),
-            pendingShopIds: pendingShopIdsSnapshot()
-        ) {
-        case .existing(let resolved):
-            if let sdk = SdkRegistry.shared.byShopId(resolved) {
-                onReady(sdk)
+        // Resolved under the creation lock; `onReady` runs once it is released.
+        enum Found {
+            case instance(PersonalizationSDK)
+            case nothing
+            case later
+        }
+        let found: Found = withCreationLock {
+            switch InstanceResolver.resolve(
+                requestedShopId: shopId,
+                liveShopIds: SdkRegistry.shared.shopIds(),
+                pendingShopIds: pendingShopIdsSnapshot()
+            ) {
+            case .existing(let resolved):
+                return (SdkRegistry.shared.byShopId(resolved).map(Found.instance) ?? .nothing, {})
+            case .pending(let resolved):
+                return ((try? materialize(shopId: resolved)).map(Found.instance) ?? .nothing, {})
+            case .ambiguous:
+                return (.nothing, {})
+            case .notRegistered:
+                return (.later, {})
             }
+        }
+        switch found {
+        case .instance(let sdk):
+            onReady(sdk)
             return .noop
-        case .pending(let resolved):
-            if let sdk = try? materialize(shopId: resolved) {
-                onReady(sdk)
-            }
+        case .nothing:
             return .noop
-        case .ambiguous:
-            return .noop
-        case .notRegistered:
+        case .later:
             return SdkRegistry.shared.onNextRegister(shopId: shopId, onReady: onReady)
         }
     }
@@ -255,20 +332,20 @@ public enum Rees46 {
 
     // MARK: - Internals
 
-    /// Initializes a pending registration for `shopId`, tolerating a lost race with another caller.
-    /// The config is claimed atomically so two concurrent materializations never double-initialize.
+    /// Initializes a pending registration for `shopId`, under the creation lock its caller holds: the
+    /// config is claimed and the instance registered before anybody else looks, so two concurrent
+    /// materializations never double-initialize and no lookup finds the shop in between.
     private static func materialize(shopId: String) throws -> PersonalizationSDK {
-        lock.lock()
-        let config = pending.removeValue(forKey: shopId)
-        lock.unlock()
-
-        if let config = config {
-            return initialize(config)
+        if let sdk = SdkRegistry.shared.byShopId(shopId) {
+            return sdk
         }
-        guard let sdk = SdkRegistry.shared.byShopId(shopId) else {
+        lock.lock()
+        let config = pending[shopId]
+        lock.unlock()
+        guard let config = config else {
             throw Rees46Error.unknownShopId(shopId)
         }
-        return sdk
+        return initialize(config)
     }
 
     private static func pendingShopIdsSnapshot() -> Set<String> {
@@ -311,9 +388,7 @@ public enum Rees46 {
  already has its did persisted in its storage partition — all `track/<event>` needs — so a push for a
  lazily-registered shop is tracked even when the process was launched cold by that push and only eager
  shops are live. Standalone counterpart of an instance's `notification{Delivered,Received,Clicked}`;
- mirror of RN's `trackPush`. iOS keeps the shop pending (the beacon needs no live instance), which also
- sidesteps the weak `SdkRegistry` — a light-init instance would risk deallocating before the async POST
- completes.
+ mirror of RN's `trackPush`. iOS keeps the shop pending: the beacon needs no live instance.
  */
 internal enum PushDeliveryTracker {
 

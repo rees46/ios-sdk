@@ -52,8 +52,9 @@ enum CoreKind: Equatable {
     case v2
 }
 
-/// The engine of one SDK instance: how its requests go out and what comes back. Init, session and
-/// queue stay with the instance until the stages that move them here.
+/// The engine of one SDK instance: how its requests go out and what comes back. `CoreV2` runs its own
+/// `/init` (`InitMachine`); the old init, the session and the queue stay with the instance until the
+/// stages that move them here.
 protocol Core: AnyObject {
     var kind: CoreKind { get }
 
