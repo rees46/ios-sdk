@@ -88,10 +88,17 @@ public class NotificationService: NotificationServiceProtocol {
     // multi-shop app. Navigation below stays with this service / the host.
     Rees46.handlePush(userInfo, event: .delivered)
 
-    switch application.applicationState {
+    handleArrival(userInfo, state: application.applicationState)
+    completionHandler(.newData, "CompletionHandler")
+  }
+
+  /// What the arrival of a push means in each app state. `.inactive` is the tap that brings the app
+  /// back; `.active` is a push that came while the app is open: nobody tapped it, so it is not a click
+  /// and opens nothing.
+  func handleArrival(_ userInfo: [AnyHashable: Any], state: UIApplication.State) {
+    switch state {
     case .active:
-      notificationLogger.log("Application is in active state, processing notification")
-      pushProcessing(userInfo: userInfo)
+      notificationLogger.log("Application is in active state: the push arrived, nobody tapped it")
     case .background:
       notificationLogger.log("Application is in background state")
       pushRetrieved(userInfo: userInfo)
@@ -101,7 +108,6 @@ public class NotificationService: NotificationServiceProtocol {
     @unknown default:
       notificationLogger.log("Application is in an unknown state")
     }
-    completionHandler(.newData, "CompletionHandler")
   }
   
   
@@ -153,20 +159,22 @@ public class NotificationService: NotificationServiceProtocol {
   private func pushProcessing(userInfo: [AnyHashable: Any]) {
     notificationLogger.log("pushProcessing with userInfo: \(userInfo)")
     
-    guard let (eventType, srcID) = extractTypeAndCode(from: userInfo) else {
+    guard let (mailingType, code) = extractTypeAndCode(from: userInfo) else {
       notificationLogger.log("Failed to extract type and code, skipping processing")
       handleNonSDKPush(userInfo: userInfo)
       return
     }
 
     Rees46.handlePush(userInfo, event: .clicked)
-    
-    if let eventLink = parseDictionary(key: Constants.eventKey, userInfo: userInfo)?[Constants.uriKey] as? String {
+
+    // What to open is the event's type (web, product, …); the link carries the mailing's type.
+    if let eventJSON = PushPayloadParser.event(from: userInfo),
+       let eventLink = eventJSON[Constants.uriKey] as? String {
       var modifiedEventLink = eventLink
       if modifiedEventLink.contains(Constants.urlScheme) {
-        modifiedEventLink += "?recommended_by=\(eventType)&mail_code=\(srcID)"
+        modifiedEventLink += "?recommended_by=\(mailingType)&mail_code=\(code)"
       }
-      processingEventType(eventType: eventType, eventLink: modifiedEventLink)
+      processingEventType(eventType: eventJSON[Constants.typeKey] as? String ?? "", eventLink: modifiedEventLink)
     } else {
       notificationLogger.log("Event link not found or invalid")
     }
@@ -176,14 +184,14 @@ public class NotificationService: NotificationServiceProtocol {
   private func pushRetrieved(userInfo: [AnyHashable: Any]) {
     notificationLogger.log("pushRetrieved with userInfo: \(userInfo)")
     
-    guard let (type, code) = extractTypeAndCode(from: userInfo) else {
+    guard let (mailingType, code) = extractTypeAndCode(from: userInfo) else {
       handleNonSDKPush(userInfo: userInfo)
       return
     }
 
     Rees46.handlePush(userInfo, event: .received)
     
-    guard let eventJSON = parseDictionary(key: Constants.eventKey, userInfo: userInfo),
+    guard let eventJSON = PushPayloadParser.event(from: userInfo),
           let eventType = eventJSON[Constants.typeKey] as? String,
           let eventLink = eventJSON[Constants.uriKey] as? String else {
       handleNonSDKPush(userInfo: userInfo)
@@ -192,7 +200,7 @@ public class NotificationService: NotificationServiceProtocol {
     
     var modifiedEventLink = eventLink
     if modifiedEventLink.contains(Constants.urlScheme) {
-      modifiedEventLink += "?recommended_by=\(eventType)&mail_code=\(code)"
+      modifiedEventLink += "?recommended_by=\(mailingType)&mail_code=\(code)"
     }
     
     processingEventType(eventType: eventType, eventLink: modifiedEventLink)
@@ -218,22 +226,9 @@ public class NotificationService: NotificationServiceProtocol {
     PushPayloadParser.typeAndCode(from: userInfo)
   }
   
+  /// A field that is a JSON object: an object in APNs, a JSON string in FCM.
   public func parseDictionary(key: String, userInfo: [AnyHashable: Any]) -> [String: Any]? {
-      guard let eventJSONString = userInfo[key] as? String else {
-          return nil
-      }
-      do {
-          guard let data = eventJSONString.data(using: .utf8) else {
-              return nil
-          }
-          let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
-          if let jsonDict = jsonObject as? [String: Any] {
-              return jsonDict
-          }
-      } catch {
-          notificationLogger.log("JSON parsing error for key \(key): \(error)")
-      }
-      return nil
+      PushPayloadParser.dictionary(for: key, in: userInfo)
   }
 
   private func openCategory(categoryId: String) {
