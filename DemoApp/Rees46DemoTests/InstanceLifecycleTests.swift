@@ -8,6 +8,7 @@
 //  once per change; the old core's states.
 //
 
+import UIKit
 import XCTest
 @testable import REES46
 
@@ -83,14 +84,21 @@ final class InstanceLifecycleTests: XCTestCase {
             func count(_ key: String) { lock.lock(); counts[key, default: 0] += 1; lock.unlock() }
             func calls(_ key: String) -> Int? { lock.lock(); defer { lock.unlock() }; return counts[key] }
 
+            let opened = Locked(false)
+            let early = expectation(description: "a completion before init settled")
+            early.isInverted = true
             let first = Rees46.initialize(config(shop, coreV2: coreV2)) { _ in count("first") }
-            let second = Rees46.initialize(config(shop, coreV2: coreV2)) { _ in count("second") }
+            let second = Rees46.initialize(config(shop, coreV2: coreV2)) { _ in
+                count("second")
+                if !opened.current { early.fulfill() }
+            }
 
             XCTAssertTrue(same(first, second), "coreV2 = \(coreV2)")
             XCTAssertEqual(SdkRegistry.shared.count(), 1)
-            Thread.sleep(forTimeInterval: 0.2)
+            wait(for: [early], timeout: 0.3)
             XCTAssertNil(calls("second"), "the second completion waits for init to settle")
 
+            opened.current = true
             gate.signal()
             XCTAssertTrue(eventually { calls("first") == 1 && calls("second") == 1 })
 
@@ -136,8 +144,107 @@ final class InstanceLifecycleTests: XCTestCase {
         XCTAssertTrue(made.allSatisfy { $0 === made[0] })
         XCTAssertEqual(SdkRegistry.shared.count(), 1)
         XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/init", shop: shop).count == 1 }, "one instance, one /init")
-        Thread.sleep(forTimeInterval: 0.2)
+        expectNoRequest(to: "/init", shop: shop, within: 0.3)
         XCTAssertEqual(StubURLProtocol.requests(to: "/init", shop: shop).count, 1)
+    }
+
+    func test_release_takes_the_creation_lock_so_initialize_never_hands_out_a_released_instance() {
+        let shop = newShop()
+        holdInit()
+        guard let sdk = Rees46.initialize(config(shop)) as? SimplePersonalizationSDK else { return XCTFail("no instance") }
+        let holding = DispatchSemaphore(value: 0)
+        let letGo = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            Rees46.withCreationLock { () -> ((), () -> Void) in
+                holding.signal()
+                _ = letGo.wait(timeout: .now() + 10)
+                return ((), {})
+            }
+        }
+        holding.wait()
+        let done = Locked(false)
+        let released = expectation(description: "released")
+        DispatchQueue.global().async {
+            sdk.release()
+            done.current = true
+            released.fulfill()
+        }
+        // An initialize that holds the lock now sees the instance registered and not released.
+        let quiet = expectation(description: "release waits")
+        quiet.isInverted = true
+        wait(for: [quiet], timeout: 0.3)
+        XCTAssertFalse(done.current, "release waited for the creation lock")
+        XCTAssertFalse(sdk.isReleased)
+        XCTAssertTrue(same(SdkRegistry.shared.byShopId(shop), sdk))
+
+        letGo.signal()
+        wait(for: [released], timeout: 5)
+        XCTAssertTrue(sdk.isReleased)
+        XCTAssertNil(SdkRegistry.shared.byShopId(shop), "out of the registry once released")
+        let next = Rees46.initialize(config(shop)) as? SimplePersonalizationSDK
+        XCTAssertFalse(same(next, sdk))
+        XCTAssertEqual(next?.isReleased, false)
+
+        // Many times at once: whatever initialize returns while it is not released is registered.
+        for _ in 0..<20 {
+            guard let current = Rees46.initialize(config(shop)) as? SimplePersonalizationSDK else { return XCTFail("no instance") }
+            let got = Locked<SimplePersonalizationSDK?>(nil)
+            DispatchQueue.concurrentPerform(iterations: 2) { index in
+                if index == 0 {
+                    current.release()
+                } else {
+                    got.current = Rees46.initialize(self.config(shop)) as? SimplePersonalizationSDK
+                }
+            }
+            if let got = got.current, !got.isReleased {
+                XCTAssertTrue(same(SdkRegistry.shared.byShopId(shop), got))
+            }
+            XCTAssertFalse((SdkRegistry.shared.byShopId(shop) as? SimplePersonalizationSDK)?.isReleased ?? false,
+                           "the registry never holds a released instance")
+        }
+    }
+
+    func test_the_old_core_released_while_init_is_on_its_way_ends_not_initialized_and_shows_no_popup() {
+        final class Delegate: PopupPresentationDelegate {
+            let asked = Locked<[Bool]>([])
+            var onAsk: (() -> Void)?
+            func sdk(_ sdk: PersonalizationSDK, shouldPresentPopup popup: Popup) -> UIViewController? {
+                asked.mutate { $0.append(Thread.isMainThread) }
+                onAsk?()
+                return nil
+            }
+        }
+        let withPopup = StubReply(json: #"{"did":"stub-did","popup":{"id":7,"html":"<p>x</p>"}}"#)
+        let shop = newShop()
+        let gate = DispatchSemaphore(value: 0)
+        holdInit(until: gate, reply: withPopup)
+        let delegate = Delegate()
+        let sdk = StubSDK.make(shopId: shop, logLevel: .debug)
+        sdk.popupPresentationDelegate = delegate
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/init", shop: shop).count == 1 })
+
+        let shown = expectation(description: "a popup offered")
+        shown.isInverted = true
+        delegate.onAsk = { shown.fulfill() }
+        sdk.release()
+        gate.signal()
+        XCTAssertTrue(eventually { self.messages(shop, "request").contains { $0.context["path"] == "init" } }, "/init answered")
+        wait(for: [shown], timeout: 0.5)
+        XCTAssertEqual(sdk.state, .notInitialized, "release is not undone by the answer")
+
+        // Not released, the popup of the answer is offered — on the main thread.
+        let live = newShop()
+        let liveGate = DispatchSemaphore(value: 0)
+        holdInit(until: liveGate, reply: withPopup)
+        let liveDelegate = Delegate()
+        let asked = expectation(description: "asked")
+        liveDelegate.onAsk = { asked.fulfill() }
+        let other = StubSDK.make(shopId: live)
+        other.popupPresentationDelegate = liveDelegate
+        liveGate.signal()
+        wait(for: [asked], timeout: 5)
+        XCTAssertEqual(liveDelegate.asked.current, [true])
+        XCTAssertEqual(other.state, .ready)
     }
 
     func test_a_lazily_registered_shop_and_initialize_meet_on_one_instance() {

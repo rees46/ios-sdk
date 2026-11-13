@@ -156,8 +156,8 @@ final class CoreInitTests: XCTestCase {
 
         let sdk = make(shop, identity: identity)
 
-        XCTAssertEqual(settled(sdk), .ready)
-        XCTAssertEqual(sdk.storage.readSavedInitAnswer(), Data(#"{"did":"kept-did","currency":"NEW"}"#.utf8))
+        XCTAssertEqual(sdk.state, .ready, "a stored did is ready at once, with a saved answer too")
+        XCTAssertTrue(eventually { sdk.storage.readSavedInitAnswer() == Data(#"{"did":"kept-did","currency":"NEW"}"#.utf8) })
     }
 
     func test_a_2xx_without_a_did_or_not_json_is_retrying_and_logged_as_decoding() {
@@ -246,6 +246,46 @@ final class CoreInitTests: XCTestCase {
         sdk.release()
     }
 
+    func test_retry_after_counts_only_on_429_and_503_and_is_held_between_one_second_and_five_minutes() {
+        let shop = newShop()
+        let date = DateFormatter()
+        date.locale = Locale(identifier: "en_US_POSIX")
+        date.timeZone = TimeZone(identifier: "GMT")
+        date.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        let inTwoMinutes = date.string(from: Date().addingTimeInterval(120))
+        let replies = Locked<[StubReply]>([
+            StubReply(500, headers: ["Retry-After": "7"]),
+            StubReply(503, headers: ["Retry-After": "600"]),
+            StubReply(429, headers: ["Retry-After": "inf"]),
+            StubReply(503, headers: ["Retry-After": "nan"]),
+            StubReply(503, headers: ["Retry-After": "-5"]),
+            StubReply(503, headers: ["Retry-After": "1e400"]),
+            StubReply(429, headers: ["Retry-After": inTwoMinutes]),
+            StubReply(408, headers: ["Retry-After": "7"]),
+            StubReply(json: #"{"did":"d"}"#),
+        ])
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            var reply = StubReply()
+            replies.mutate { reply = $0.count > 1 ? $0.removeFirst() : $0[0] }
+            return reply
+        }
+        let sdk = make(shop)
+        var pauses: [TimeInterval] = []
+        for attempt in 1...8 {
+            XCTAssertTrue(eventually { self.scheduler.pending == 1 && self.inits(shop).count == attempt }, "attempt \(attempt)")
+            let pause = scheduler.pendingDelays.first ?? -1
+            pauses.append(pause)
+            scheduler.advance(by: pause)
+        }
+        XCTAssertTrue(eventually { sdk.state == .ready })
+        // 500 and 408 ignore it; 600 is held to five minutes; inf, nan, negative and overflowing values
+        // are none; a date counts.
+        XCTAssertEqual(Array(pauses.prefix(6)), [1, 300, 4, 8, 16, 32])
+        XCTAssertEqual(pauses[6], 120, accuracy: 3)
+        XCTAssertEqual(pauses[7], 128)
+    }
+
     func test_retry_after_is_honoured_and_a_success_resets_the_pause() {
         let shop = newShop()
         let lock = NSLock()
@@ -301,11 +341,12 @@ final class CoreInitTests: XCTestCase {
         let sdk = make(shop)
         XCTAssertEqual(settled(sdk), .refused)
 
-        lifecycle.send(.didEnterBackground)
-        clock.advance(by: 3 * 60 * 60)
-        lifecycle.send(.willEnterForeground)
-        XCTAssertFalse(sdk.initMachine?.checkShop() ?? true)
-        Thread.sleep(forTimeInterval: 0.3)
+        expectNoRequest(to: "/init", shop: shop) {
+            lifecycle.send(.didEnterBackground)
+            clock.advance(by: 3 * 60 * 60)
+            lifecycle.send(.willEnterForeground)
+            XCTAssertFalse(sdk.initMachine?.checkShop() ?? true)
+        }
 
         XCTAssertEqual(inits(shop).count, 1)
         XCTAssertEqual(sdk.state, .refused)
@@ -313,25 +354,36 @@ final class CoreInitTests: XCTestCase {
 
     // MARK: - Decision 1 and the saved answer
 
-    func test_a_stored_did_without_a_saved_answer_is_ready_at_once_and_init_still_goes() {
-        let shop = newShop()
-        let identity = InMemoryUserIdentityRepository()
-        identity.deviceId = "old-did"
-        answerInit(StubReply(json: #"{"did":"old-did"}"#, delay: 2))
-        let ready = expectation(description: "init")
-        let sdk = make(shop, identity: identity) { error in
-            XCTAssertNil(error)
-            ready.fulfill()
-        }
+    func test_a_stored_did_is_ready_at_once_with_a_saved_answer_or_without_and_init_still_goes() {
+        for withSavedAnswer in [false, true] {
+            let shop = newShop()
+            if withSavedAnswer {
+                storage(shop).writeSavedInitAnswer(Data(#"{"did":"old-did"}"#.utf8))
+            }
+            let identity = InMemoryUserIdentityRepository()
+            identity.deviceId = "old-did"
+            // /init is held until the call is over: the call cannot have waited for it.
+            let answer = DispatchSemaphore(value: 0)
+            StubURLProtocol.handler = { request in
+                guard request.path == "/init" else { return StubReply() }
+                _ = answer.wait(timeout: .now() + 10)
+                return StubReply(json: #"{"did":"old-did"}"#)
+            }
+            let ready = expectation(description: "init")
+            let sdk = make(shop, identity: identity) { error in
+                XCTAssertNil(error)
+                ready.fulfill()
+            }
 
-        XCTAssertEqual(sdk.state, .ready)
-        wait(for: [ready], timeout: 1)
-        let started = Date()
-        guard case .success? = getProduct(sdk) else { return XCTFail("a call works at once") }
-        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5, "the call waited for /init")
-        XCTAssertEqual(StubURLProtocol.requests(to: "/products/get", shop: shop).first?.query["did"], "old-did")
-        XCTAssertTrue(eventually { self.inits(shop).count == 1 })
-        XCTAssertEqual(inits(shop).first?.query["did"], "old-did")
+            XCTAssertEqual(sdk.state, .ready, "saved answer: \(withSavedAnswer)")
+            wait(for: [ready], timeout: 1)
+            guard case .success? = getProduct(sdk) else { return XCTFail("a call works while /init is held") }
+            XCTAssertEqual(StubURLProtocol.requests(to: "/products/get", shop: shop).first?.query["did"], "old-did")
+            XCTAssertEqual(inits(shop).count, 1, "/init is on its way")
+            XCTAssertEqual(inits(shop).first?.query["did"], "old-did")
+            answer.signal()
+            sdk.release()
+        }
     }
 
     func test_a_stored_did_without_a_saved_answer_keeps_working_while_init_is_repeated() {
@@ -380,8 +432,11 @@ final class CoreInitTests: XCTestCase {
         withSaved.release()
 
         let fresh = newShop()
-        let waiting = make(fresh, connectivity: offline)
-        Thread.sleep(forTimeInterval: 0.3)
+        var waiting: SimplePersonalizationSDK?
+        expectNoRequest(to: "/init", shop: fresh) {
+            waiting = make(fresh, connectivity: offline)
+        }
+        guard let waiting = waiting else { return XCTFail("no instance") }
         XCTAssertEqual(waiting.state, .initializing, "without a saved answer /init waits for the network")
         offline.isOnline = true
         XCTAssertTrue(eventually { waiting.state == .ready })
@@ -411,9 +466,9 @@ final class CoreInitTests: XCTestCase {
         let sdk = make(shop)
         XCTAssertTrue(eventually { self.inits(shop).count == 1 })
         let done = expectation(description: "call")
-        sdk.getProductInfo(id: "item-1") { _ in done.fulfill() }
-        Thread.sleep(forTimeInterval: 0.3)
-        XCTAssertTrue(StubURLProtocol.requests(to: "/products/get", shop: shop).isEmpty, "the call went out before ready")
+        expectNoRequest(to: "/products/get", shop: shop) {
+            sdk.getProductInfo(id: "item-1") { _ in done.fulfill() }
+        }
 
         answer.signal()
         wait(for: [done], timeout: 5)
@@ -433,17 +488,17 @@ final class CoreInitTests: XCTestCase {
         let machine = try? XCTUnwrap(sdk.initMachine)
 
         let done = expectation(description: "wait")
-        var outcome: Rees46.SdkError??
+        let outcome = Locked<Rees46.SdkError??>(nil)
         _Concurrency.Task {
-            outcome = .some(await machine?.awaitUsable(timeout: 3))
+            outcome.current = .some(await machine?.awaitUsable(timeout: 3))
             done.fulfill()
         }
         XCTAssertTrue(eventually { self.scheduler.pendingDelays == [3] })
         scheduler.advance(by: 2)
-        XCTAssertNil(outcome)
+        XCTAssertNil(outcome.current)
         scheduler.advance(by: 1)
         wait(for: [done], timeout: 5)
-        XCTAssertEqual(outcome, .some(.timeout))
+        XCTAssertEqual(outcome.current, .some(.timeout))
 
         // The old methods: the request's own timeout, mapped to the old error.
         let call = expectation(description: "call")
@@ -470,9 +525,8 @@ final class CoreInitTests: XCTestCase {
         let ready = make(other)
         XCTAssertTrue(eventually { ready.state == .ready })
 
-        let started = Date()
+        // The held shop's /init is answered only after this: the call did not wait for it.
         guard case .success? = getProduct(ready) else { return XCTFail("the other shop's call went out") }
-        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
         XCTAssertEqual(waiting.state, .initializing)
     }
 
@@ -488,18 +542,180 @@ final class CoreInitTests: XCTestCase {
         let sdk = make(shop)
         let machine = sdk.initMachine
         let waiting = expectation(description: "waiting")
-        var ended: Rees46.SdkError??
+        let ended = Locked<Rees46.SdkError??>(nil)
         _Concurrency.Task {
-            ended = .some(await machine?.awaitUsable(timeout: 30))
+            ended.current = .some(await machine?.awaitUsable(timeout: 30))
             waiting.fulfill()
         }
         XCTAssertTrue(eventually { self.scheduler.pending == 1 })
 
         sdk.release()
         wait(for: [waiting], timeout: 5)
-        XCTAssertEqual(ended, .some(.cancelled))
+        XCTAssertEqual(ended.current, .some(.cancelled))
         XCTAssertEqual(sdk.state, .notInitialized)
         guard case .failure(.initializationFailed)? = getProduct(sdk) else { return XCTFail("a call after release is notInitialized") }
+    }
+
+    // MARK: - Review of stage 3
+
+    func test_an_init_cancelled_by_anything_but_release_or_reset_is_repeated() {
+        let shop = newShop()
+        let replies = Locked<[StubReply]>([
+            // The app's URL protocol cancels it.
+            StubReply(json: "{}", cutAfter: 0, cutWith: .cancelled),
+            StubReply(json: #"{"did":"after-cancel"}"#),
+        ])
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            var reply = StubReply()
+            replies.mutate { reply = $0.count > 1 ? $0.removeFirst() : $0[0] }
+            return reply
+        }
+        let sdk = make(shop)
+
+        XCTAssertTrue(eventually { sdk.state == .retrying && self.scheduler.pending == 1 }, "\(sdk.state)")
+        XCTAssertTrue(messages(shop, "init_failed").contains { $0.context["error"] == "cancelled" })
+        scheduler.advance(by: scheduler.pendingDelays.first ?? 1)
+        XCTAssertTrue(eventually { sdk.state == .ready })
+        XCTAssertEqual(sdk.deviceId, "after-cancel")
+    }
+
+    func test_delete_user_credentials_cancels_the_init_with_the_old_did_and_the_old_did_never_goes_out_again() {
+        let shop = newShop()
+        let identity = InMemoryUserIdentityRepository()
+        identity.deviceId = "old-did"
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            guard request.query["did"] == nil else {
+                _ = held.wait(timeout: .now() + 10)
+                return StubReply(json: #"{"did":"old-did"}"#)
+            }
+            return StubReply(json: #"{"did":"new-did"}"#)
+        }
+        let sdk = make(shop, identity: identity)
+        XCTAssertTrue(eventually { self.inits(shop).count == 1 })
+
+        sdk.deleteUserCredentials()
+
+        XCTAssertTrue(eventually { self.messages(shop, "request_cancelled").contains { $0.context["path"] == "init" } },
+                      "the /init with the deleted did is cancelled")
+        XCTAssertTrue(eventually { sdk.state == .ready && identity.deviceId == "new-did" })
+        // A caller that still holds the deleted did does not send it: the stored one goes.
+        let posted = expectation(description: "post")
+        sdk.postRequest(path: "push", params: ["event": "view", "did": "old-did"]) { _ in posted.fulfill() }
+        wait(for: [posted], timeout: 5)
+        XCTAssertEqual(StubURLProtocol.requests(to: "/push", shop: shop).last?.body["did"] as? String, "new-did")
+    }
+
+    func test_a_refused_shop_sends_no_init_of_its_own_and_an_answer_saved_by_send_idfa_request_stands_in() {
+        let refusedShop = newShop()
+        answerInit(StubReply(403))
+        let refused = make(refusedShop)
+        XCTAssertEqual(settled(refused), .refused)
+        let idfa = expectation(description: "idfa")
+        var outcome: Result<InitResponse, SdkError>?
+        expectNoRequest(to: "/init", shop: refusedShop) {
+            refused.sendIDFARequest(idfa: UUID()) { outcome = $0; idfa.fulfill() }
+        }
+        wait(for: [idfa], timeout: 5)
+        guard case .failure(.custom("shop blocked"))? = outcome else { return XCTFail("\(String(describing: outcome))") }
+
+        // Without a did or a saved answer, retrying lets nothing through; an answer saved by
+        // sendIDFARequest does.
+        let shop = newShop()
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            return request.query["ios_advertising_id"] == nil ? StubReply(503) : StubReply(json: #"{"did":"idfa-did"}"#)
+        }
+        let sdk = make(shop)
+        XCTAssertTrue(eventually { sdk.state == .retrying })
+        XCTAssertEqual(sdk.initMachine?.isUsable, false)
+        let saved = expectation(description: "saved")
+        sdk.sendIDFARequest(idfa: UUID()) { _ in saved.fulfill() }
+        wait(for: [saved], timeout: 5)
+        XCTAssertEqual(sdk.initMachine?.isUsable, true, "the saved answer stands in")
+        sdk.release()
+    }
+
+    func test_start_reads_the_saved_answer_and_the_keychain_off_the_callers_thread() {
+        final class RecordingKeychain: KeychainInitStore {
+            let threads = Locked<[Bool]>([])
+            func readInitData() -> Data? {
+                threads.mutate { $0.append(Thread.isMainThread) }
+                return nil
+            }
+            func writeInitData(_ data: Data) {}
+            func clear() {}
+        }
+        XCTAssertTrue(Thread.isMainThread)
+        let shop = newShop()
+        let identity = InMemoryUserIdentityRepository()
+        identity.deviceId = "kept-did"
+        let keychain = RecordingKeychain()
+        answerInit(StubReply(json: #"{"did":"kept-did"}"#))
+        let sdk = make(shop, identity: identity, keychain: keychain)
+
+        XCTAssertEqual(sdk.state, .ready)
+        XCTAssertTrue(eventually { !keychain.threads.current.isEmpty }, "/init asked for the saved answer")
+        XCTAssertFalse(keychain.threads.current.contains(true), "not on the main thread")
+    }
+
+    func test_two_shops_on_one_app_groups_key_keep_their_own_refusal() {
+        let group = "group.test.\(UUID().uuidString.prefix(6))"
+        defer { UserDefaults.standard.removePersistentDomain(forName: group) }
+        let refusing = newShop()
+        let serving = newShop()
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            return request.query["shop_id"] == refusing ? StubReply(403) : StubReply(json: #"{"did":"serving-did"}"#)
+        }
+        func launch(_ shop: String) -> SimplePersonalizationSDK {
+            StubSDK.make(
+                shopId: shop, logLevel: .debug, coreV2: true, environment: environment,
+                shopStorage: ShopStorage(shopId: shop, storageKey: group, logger: SdkLogger(shopId: shop, level: .none))
+            )
+        }
+        let first = launch(refusing)
+        let second = launch(serving)
+        XCTAssertEqual(settled(first), .refused)
+        XCTAssertEqual(settled(second), .ready)
+        first.release()
+        second.release()
+
+        // The next launch: the refusal is the refusing shop's only.
+        StubURLProtocol.handler = { request in
+            request.path == "/init" ? StubReply(json: #"{"did":"d"}"#, delay: 1) : StubReply()
+        }
+        XCTAssertEqual(launch(serving).state, .initializing)
+        XCTAssertEqual(launch(refusing).state, .refused)
+    }
+
+    func test_a_stale_answer_does_not_take_the_first_answer_of_the_customer() {
+        CoreFlag.reset(to: true)
+        let shop = newShop()
+        let answer = DispatchSemaphore(value: 0)
+        defer { answer.signal() }
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
+            _ = answer.wait(timeout: .now() + 10)
+            return StubReply(json: #"{"did":"d"}"#)
+        }
+        let sdk = SimplePersonalizationSDK(
+            shopId: shop, userEmail: "a@b.c", apiDomain: "stub.test", autoSendPushToken: false,
+            enableAutoPopupPresentation: false, coreV2: true, environment: environment,
+            userIdentity: InMemoryUserIdentityRepository(), keychainStore: InMemoryKeychainInitStore()
+        )
+        XCTAssertTrue(eventually { self.inits(shop).count == 1 })
+
+        // The answer of an /init that is no longer the machine's does nothing.
+        expectNoRequest(to: "/profile/set", shop: shop) {
+            sdk.initMachine(didFinish: InitResponse(json: ["did": "d"]), fromServer: true, generation: 999)
+        }
+        answer.signal()
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/profile/set", shop: shop).count == 1 },
+                      "the first answer of the customer sends the contacts given at creation")
     }
 
     // MARK: - The request

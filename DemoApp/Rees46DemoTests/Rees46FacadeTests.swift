@@ -55,6 +55,30 @@ final class Rees46FacadeTests: XCTestCase {
         }
     }
 
+    func test_a_live_instance_is_found_while_another_thread_holds_the_creation_lock() {
+        let sdk = live("shop-a")
+        let holding = DispatchSemaphore(value: 0)
+        let letGo = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            // Another thread building an instance — disk and keychain work — under the lock.
+            Rees46.withCreationLock { () -> ((), () -> Void) in
+                holding.signal()
+                _ = letGo.wait(timeout: .now() + 10)
+                return ((), {})
+            }
+        }
+        holding.wait()
+        defer { letGo.signal() }
+
+        let found = expectation(description: "instance(for:)")
+        let awaited = expectation(description: "awaitInstance")
+        DispatchQueue.global().async {
+            if self.same(try? Rees46.instance(for: "shop-a"), sdk) { found.fulfill() }
+            Rees46.awaitInstance(for: "shop-a") { if self.same($0, sdk) { awaited.fulfill() } }
+        }
+        wait(for: [found, awaited], timeout: 2)
+    }
+
     func test_instance_for_an_unknown_shop_throws_unknownShopId() {
         live("shop-a")
 

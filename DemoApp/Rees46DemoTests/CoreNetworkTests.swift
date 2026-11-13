@@ -539,9 +539,10 @@ final class CoreNetworkTests: XCTestCase {
         }
         wait(for: [ready], timeout: 5)
 
-        // An empty /init is decoding: retried, and meanwhile the saved answer lets calls through.
+        // A stored did is ready at once; an empty /init is decoding: retried, and meanwhile the saved
+        // answer lets calls through.
         XCTAssertNil(initError, "the saved answer stands in")
-        XCTAssertEqual(sdk.state, .retrying)
+        XCTAssertTrue(eventually { sdk.state == .retrying })
         XCTAssertEqual(sdk.deviceId, "kept-did")
         XCTAssertEqual(identity.deviceId, "kept-did")
         XCTAssertEqual(keychain.data, saved)

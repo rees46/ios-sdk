@@ -105,7 +105,8 @@ final class UpgradeMigrationTests: XCTestCase {
         return service
     }
 
-    private func blob(_ s: String) -> Data { Data(s.utf8) }
+    /// What the SDK keeps in the keychain: the init answer, with its device id.
+    private func blob(_ s: String) -> Data { Data(#"{"did":"\#(s)"}"#.utf8) }
 
     @discardableResult
     private func retain(_ sdk: PersonalizationSDK) -> PersonalizationSDK {

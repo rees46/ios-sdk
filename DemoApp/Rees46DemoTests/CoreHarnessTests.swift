@@ -150,6 +150,20 @@ final class ManualAppLifecycle: AppLifecycle {
     }
 }
 
+/// A value written on one thread and read on another: a test's shared variable.
+final class Locked<Value> {
+    private let lock = NSLock()
+    private var value: Value
+    init(_ value: Value) { self.value = value }
+    var current: Value {
+        get { lock.lock(); defer { lock.unlock() }; return value }
+        set { lock.lock(); value = newValue; lock.unlock() }
+    }
+    func mutate(_ change: (inout Value) -> Void) {
+        lock.lock(); change(&value); lock.unlock()
+    }
+}
+
 // MARK: - Contract fixtures
 
 /// The contract fixtures shared by every SDK, from `Tests/REES46CoreTests/Fixtures/contract-<version>`.

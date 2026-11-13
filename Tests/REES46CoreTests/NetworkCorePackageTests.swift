@@ -38,8 +38,25 @@ final class NetworkCorePackageTests: XCTestCase {
 
     func test_retry_after_is_read_as_seconds() {
         XCTAssertEqual(NetworkClient.retryAfter("30"), 30)
-        XCTAssertEqual(NetworkClient.retryAfter("-5"), 0)
+        XCTAssertNil(NetworkClient.retryAfter("-5"))
         XCTAssertNil(NetworkClient.retryAfter(""))
+        for value in ["inf", "-inf", "nan", "1e400", "infinity"] {
+            XCTAssertNil(NetworkClient.retryAfter(value), value)
+        }
+        XCTAssertEqual(NetworkClient.retryAfter("86400000"), 86_400_000, "a number, held to five minutes by the policy")
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: 86_400_000), 300)
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: 0), 1)
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: 42), 42)
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: nil, afterFailures: 3, random: 0.5), 4)
+        // Only a 429 or a 503 has one that counts.
+        XCTAssertEqual(NetworkClient.retryAfter("7", status: 429), 7)
+        XCTAssertEqual(NetworkClient.retryAfter("7", status: 503), 7)
+        for status in [500, 502, 408, 200, 404] {
+            XCTAssertNil(NetworkClient.retryAfter("7", status: status), "\(status)")
+        }
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let past = "Sun, 06 Nov 1994 08:49:37 GMT"
+        XCTAssertEqual(NetworkClient.retryAfter(past, now: now), 0)
     }
 
     func test_the_common_fields_fill_what_is_missing_and_leave_out_what_is_empty() {

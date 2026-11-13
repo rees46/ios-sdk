@@ -64,8 +64,14 @@ final class StubURLProtocol: URLProtocol {
     private static var recorded: [StubRequest] = []
     private static var installed = false
 
+    private static var currentHandler: (StubRequest) -> StubReply? = defaultHandler
+
     /// Answers a request; `nil` fails it as a timed-out connection. `/init` gets a device id by default.
-    static var handler: (StubRequest) -> StubReply? = defaultHandler
+    /// Set by the test, read on the loading threads: under the lock.
+    static var handler: (StubRequest) -> StubReply? {
+        get { lock.lock(); defer { lock.unlock() }; return currentHandler }
+        set { lock.lock(); currentHandler = newValue; lock.unlock() }
+    }
 
     static let defaultHandler: (StubRequest) -> StubReply? = { request in
         request.path == "/init" ? StubReply(json: #"{"did":"stub-did","seance":"stub-seance"}"#) : StubReply()
@@ -299,6 +305,23 @@ enum StubSDK {
 }
 
 extension XCTestCase {
+    /// Runs `trigger` and fails if a request of `shop` to `path` reaches the stub server within
+    /// `timeout`: an inverted expectation, not a sleep and a count.
+    func expectNoRequest(to path: String, shop: String, within timeout: TimeInterval = 0.5, after trigger: () -> Void = {}) {
+        let none = expectation(description: "no request to \(path)")
+        none.isInverted = true
+        let previous = StubURLProtocol.handler
+        StubURLProtocol.handler = { request in
+            if request.path == path, (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop {
+                none.fulfill()
+            }
+            return previous(request)
+        }
+        trigger()
+        wait(for: [none], timeout: timeout)
+        StubURLProtocol.handler = previous
+    }
+
     /// Spins the run loop until `condition` holds or `timeout` passes; returns the last answer.
     @discardableResult
     func eventually(timeout: TimeInterval = 5, _ condition: () -> Bool) -> Bool {

@@ -146,9 +146,11 @@ final class StorageUpgradeTests: XCTestCase {
         XCTAssertEqual(UserDefaults.standard.string(forKey: StoragePartition.idfaKey), "idfa-standard")
         XCTAssertEqual(partition(shop).string(forKey: StoragePartition.idfaKey), "idfa-standard", "the old core reads the shop's copy")
         XCTAssertEqual(DeviceStore.shared.advertisingId, "idfa-standard")
-        for step in StorageMigrations.Step.allCases where step != .storageKeySuite {
+        // Without a storageKey, a keychain item (its flag holds the service) or a configured did: the rest.
+        for step in StorageMigrations.Step.allCases where ![.storageKeySuite, .keychainItem, .configuredDeviceId].contains(step) {
             XCTAssertTrue(StorageMigrations.isDone(step, in: partition(shop)), step.rawValue)
         }
+        XCTAssertEqual(partition(shop).string(forKey: StorageMigrations.flagKey(.keychainItem)), KeychainPartition.service)
     }
 
     func test_the_per_shop_suites_keep_their_values_and_the_first_shops_group_is_the_devices() {
@@ -226,7 +228,7 @@ final class StorageUpgradeTests: XCTestCase {
         XCTAssertEqual(initDid(first), "did-keychain")
         XCTAssertNil(try? InitService.getKeychainDidToken(identifier: legacyAccount, instanceKeychainService: service),
                      "consumed, so a second shop cannot clone the did")
-        XCTAssertTrue(StorageMigrations.isDone(.keychainItem, in: partition(first)))
+        XCTAssertEqual(partition(first).string(forKey: StorageMigrations.flagKey(.keychainItem)), service)
 
         let other = makeSDK(second)
         XCTAssertEqual(other.getDeviceId(), "new-did", "the second shop gets its own did from the server")
@@ -261,10 +263,10 @@ final class StorageUpgradeTests: XCTestCase {
         InitService.copyMatching = { _, _ in errSecInteractionNotAllowed }
         _ = KeychainInitStoreImpl(shopId: shop, service: service, partition: partition(shop))
         InitService.copyMatching = original
-        XCTAssertFalse(StorageMigrations.isDone(.keychainItem, in: partition(shop)))
+        XCTAssertNil(partition(shop).string(forKey: StorageMigrations.flagKey(.keychainItem)))
 
         _ = KeychainInitStoreImpl(shopId: shop, service: service, partition: partition(shop))
-        XCTAssertTrue(StorageMigrations.isDone(.keychainItem, in: partition(shop)))
+        XCTAssertEqual(partition(shop).string(forKey: StorageMigrations.flagKey(.keychainItem)), service)
     }
 
     func test_the_saved_answer_in_documents_moves_to_the_sdks_folder_and_stands_in_without_an_answer() throws {

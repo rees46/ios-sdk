@@ -383,6 +383,31 @@ final class StoragePackageTests: XCTestCase {
         XCTAssertEqual(StoragePartition.deviceId(for: shop, storageKey: group), "did-group")
     }
 
+    func test_two_shops_on_one_app_groups_key_keep_their_own_refused_state_and_migration_flags() throws {
+        let group = "group.test.\(UUID().uuidString.prefix(6))"
+        defer { UserDefaults.standard.removePersistentDomain(forName: group) }
+        let logger = SdkLogger(shopId: nil, level: .none)
+        let shopA = ShopStorage(shopId: "shop-a", storageKey: group, logger: logger)
+        let shopB = ShopStorage(shopId: "shop-b", storageKey: group, logger: logger)
+        XCTAssertEqual(shopA.keyScope, "shop-a")
+
+        shopA.refused = true
+        XCTAssertTrue(shopA.refused)
+        XCTAssertFalse(shopB.refused, "one shop's refusal is not another's on a shared suite")
+        XCTAssertTrue(try XCTUnwrap(UserDefaults(suiteName: group)).bool(forKey: "personalization_sdk.refused.shop-a"))
+
+        StorageMigrations.once(.savedInitFile, in: shopA.partition, scope: shopA.keyScope) { true }
+        XCTAssertTrue(StorageMigrations.isDone(.savedInitFile, in: shopA.partition, scope: shopA.keyScope))
+        XCTAssertFalse(StorageMigrations.isDone(.savedInitFile, in: shopB.partition, scope: shopB.keyScope), "B's migration still runs")
+
+        // A partition of the shop's own keeps the plain keys.
+        let own = ShopStorage(shopId: "shop-c", storageKey: "app-key", logger: logger)
+        defer { UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: "shop-c", storageKey: "app-key")) }
+        XCTAssertNil(own.keyScope)
+        XCTAssertEqual(own.refusedKey, ShopStorage.refusedKey)
+        XCTAssertEqual(StorageMigrations.flagKey(.savedInitFile, scope: nil), "personalization_sdk.migrated.saved_init_file")
+    }
+
     func test_a_shop_made_with_a_storage_key_is_opened_with_it_by_code_that_has_only_the_shop() {
         let shop = "known-\(UUID().uuidString.prefix(6))"
         StoragePartition.remember(storageKey: "app-key", forShop: shop)

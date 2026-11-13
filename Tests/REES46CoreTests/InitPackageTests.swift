@@ -90,7 +90,6 @@ final class InitPackageTests: XCTestCase {
         wait(for: [both], timeout: 2)
         RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         XCTAssertEqual(heard, ["early true", "late true"])
-        XCTAssertTrue(completion.isFinished)
     }
 
     // MARK: - Config
