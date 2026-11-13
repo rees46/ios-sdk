@@ -71,10 +71,9 @@ class SearchServiceImpl: SearchServiceProtocol {
             "sort_by": sortBy,
             "sort_dir": sortDir,
             "locations": locations,
-            "excluded_merchants": locations != nil ? excludedMerchants?.joined(separator: ", ") : nil ,
-            // API contract: `exclude_brands` (without `d`).
-            // Tests expect this to affect results.
-            "exclude_brands": excludedBrands?.joined(separator: ", "),
+            // The server splits on "," without trimming: a space would become part of the next value.
+            "excluded_merchants": SearchFilterParams.excludedMerchants(excludedMerchants, locations: locations),
+            "excluded_brands": excludedBrands?.joined(separator: ","),
             "brands": brands,
             "price_min": priceMin.map { String(describing: $0) },
             "price_max": priceMax.map { String(describing: $0) },
@@ -179,5 +178,20 @@ class SearchServiceImpl: SearchServiceProtocol {
                 }
             }
         }
+    }
+}
+
+/// Search filters as the server reads them, shared by full and instant search.
+enum SearchFilterParams {
+    /// `excluded_merchants`, or `nil` when it must not go. The server filters merchants inside the
+    /// given locations: without locations — or with an empty list of them — the filter matches no
+    /// product and the search finds nothing. Values are joined without spaces, as the server splits
+    /// on "," without trimming.
+    static func excludedMerchants(_ merchants: [String]?, locations: String?) -> String? {
+        guard let merchants = merchants,
+              let locations = locations,
+              !locations.trimmingCharacters(in: .whitespaces).isEmpty
+        else { return nil }
+        return merchants.joined(separator: ",")
     }
 }

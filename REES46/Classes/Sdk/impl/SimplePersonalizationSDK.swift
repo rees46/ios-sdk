@@ -663,9 +663,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let locations = locations {
                 params["locations"] = locations
             }
-            if let excludedMerchants = excludedMerchants {
-                let excludeMerchantsString = excludedMerchants.joined(separator: ", ")
-                params["excluded_merchants"] = excludeMerchantsString
+            if let excludedMerchants = SearchFilterParams.excludedMerchants(excludedMerchants, locations: locations) {
+                params["excluded_merchants"] = excludedMerchants
             }
             if let excludedBrands = excludedBrands {
                 params["excluded_brands"] = excludedBrands.joined(separator: ",")

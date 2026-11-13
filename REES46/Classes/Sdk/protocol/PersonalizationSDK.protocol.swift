@@ -48,6 +48,8 @@ public protocol PersonalizationSDK {
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
+    /// Instant search. `excludedMerchants` applies only together with non-empty `locations`: the server
+    /// filters merchants inside the given locations, so without them the parameter is not sent.
     func suggest(query: String, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, timeOut: Double?, extended: String?, completion: @escaping (Result<SearchResponse, SdkError>) -> Void)
     func getProductsList(brands: String?, merchants: String?, categories: String?, locations: String?, limit: Int?, page: Int?, filters: [String: Any]?, completion: @escaping(Result<ProductsListResponse, SdkError>) -> Void)
     func getProductsFromCart(completion: @escaping(Result<[CartItem], SdkError>) -> Void)
@@ -76,6 +78,7 @@ public protocol PersonalizationSDK {
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping(Result<Void, SdkError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SdkError>) -> Void)
+    /// Full search. `excludedMerchants` applies only together with non-empty `locations`, as in `suggest`.
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)

@@ -107,7 +107,8 @@ public struct SearchBlankResponse {
         }
         suggests = sugArr
 
-        lastProducts = json["last_products"] as? Bool ?? true
+        // The server sends the flag only when it is true.
+        lastProducts = json["last_products"] as? Bool ?? false
 
         let productsTemp = json["products"] as? [[String: Any]] ?? []
         var productArr = [Product]()

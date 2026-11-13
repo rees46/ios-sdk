@@ -44,15 +44,21 @@ final class AuditFixesTests: XCTestCase {
 
     // MARK: - Instant search
 
-    func test_instant_search_sends_excluded_merchants_without_locations() {
+    func test_instant_search_sends_excluded_merchants_only_with_locations() {
         let sdk = initializedSDK()
         let answered = expectation(description: "answered")
+        answered.expectedFulfillmentCount = 2
         sdk.suggest(query: "shoes", excludedMerchants: ["m1", "m2"]) { _ in answered.fulfill() }
+        sdk.suggest(query: "boots", locations: "10", excludedMerchants: ["m1", "m2"]) { _ in answered.fulfill() }
         wait(for: [answered], timeout: 5)
 
-        let query = StubURLProtocol.requests(to: "/search", shop: sdk.shopId).first?.query ?? [:]
-        XCTAssertNotNil(query["excluded_merchants"], "excluded merchants were dropped without locations")
-        XCTAssertNil(query["locations"])
+        let requests = StubURLProtocol.requests(to: "/search", shop: sdk.shopId)
+        let withoutLocations = requests.first { $0.query["search_query"] == "shoes" }?.query ?? [:]
+        let withLocations = requests.first { $0.query["search_query"] == "boots" }?.query ?? [:]
+        // Without locations the server's merchant filter matches no product: the search would be empty.
+        XCTAssertNil(withoutLocations["excluded_merchants"])
+        XCTAssertEqual(withLocations["excluded_merchants"], "m1,m2")
+        XCTAssertEqual(withLocations["locations"], "10")
     }
 
     // MARK: - Contacts given to createPersonalizationSDK
