@@ -61,9 +61,10 @@ public enum Rees46 {
         return value
     }
 
-    /// Sends the event of a *pending* shop's push without constructing it — see `handlePush`.
-    /// Injectable so tests can assert the pending path offline; defaults to the real standalone
-    /// tracker (`PushDeliveryTracker`).
+    /// Sends the event of a *pending* shop's push on the old core without constructing it — see
+    /// `handlePush`. Injectable so tests can assert the pending path offline; defaults to the real
+    /// standalone tracker (`PushDeliveryTracker`). The new core goes through the shop's queue on disk
+    /// (`PendingPushEvents`).
     internal static var pendingPushTracker: (PendingPush) -> Void = PushDeliveryTracker.track
 
     // MARK: - Initialization
@@ -419,9 +420,12 @@ public enum Rees46 {
     /// has stored, without `/init`, a token, a profile or a popup, and the facade's callback is called.
     /// Initialized later, the shop gets an instance with a full start.
     ///
-    /// - The new core sends nothing without a stored device id (`push_dropped`, `no_did`): the server
-    ///   sent this device no push of the shop. Each event goes once per message, `received` as
-    ///   `delivered`, a click storing the source in the shop's partition.
+    /// - The new core writes the event into the shop's queue on disk and sends it at once under a
+    ///   background task (`PendingPushEvents`); one that cannot go now — offline at a cold start — stays
+    ///   there for the shop's instance. Nothing goes without a stored device id (`push_dropped`,
+    ///   `no_did`) — the server sent this device no push of the shop — or for a shop that refused the
+    ///   SDK (`refused`). Each event goes once per message, counted and heard by the callback once it is
+    ///   on disk; `received` goes as `delivered`, a click stores the source in the shop's partition.
     /// - The old core sends exactly what it always has: the event at once, with the stored device id or
     ///   an empty one; `opened` and `closed`, which it never had, send nothing.
     private static func routeToPending(
@@ -439,7 +443,7 @@ public enum Rees46 {
         guard newCore else {
             logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
             if sent != .event(.opened), sent != .event(.closed) {
-                pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: false))
+                pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId))
             }
             if case .event(let event) = sent, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
                 PushCenter.notify(event, payload: parsed, instance: nil)
@@ -451,15 +455,28 @@ public enum Rees46 {
             logger.warning(LogCode.pushDropped, "the shop of the push has no device id: the event was not sent", ["reason": "no_did"])
             return
         }
-        if !PushCenter.reserve(route.newCoreEvent, code: code, shopId: shopId) {
+        let storage = ShopStorage(shopId: shopId, storageKey: config.storageKey, logger: logger)
+        guard !storage.refused else {
+            logger.warning(LogCode.pushDropped, "the shop of the push refused the SDK: the event was not sent", ["reason": "refused"])
+            return
+        }
+        let event = route.newCoreEvent
+        guard PushCenter.reserve(event, code: code, shopId: shopId) else {
             logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": sent.name, "repeat": "true"])
             return
         }
-        PushCenter.confirm(route.newCoreEvent, code: code, shopId: shopId)
         logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
-        pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: true))
-        if case .event(let event) = sent, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
-            PushCenter.notify(event, payload: parsed, instance: nil)
+        let parsed = Rees46.PushPayload.parse(payload, shopId: shopId)
+        let push = PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId)
+        PendingPushEvents.take(push, event: event, storage: storage, logger: logger) { accepted in
+            guard accepted else {
+                PushCenter.release(event, code: code, shopId: shopId)
+                return
+            }
+            PushCenter.confirm(event, code: code, shopId: shopId)
+            if let parsed = parsed {
+                PushCenter.notify(event, payload: parsed, instance: nil)
+            }
         }
     }
 
@@ -508,6 +525,7 @@ public enum Rees46 {
         pending.removeAll()
         lock.unlock()
         pendingPushTracker = PushDeliveryTracker.track
+        PendingPushEvents.reset()
         PushCenter.reset()
     }
 
@@ -517,7 +535,7 @@ public enum Rees46 {
     }
 }
 
-/// The event of a pending shop's push, as `handlePush` hands it to the standalone tracker.
+/// The event of a pending shop's push, as `handlePush` hands it on.
 struct PendingPush {
     let shopId: String
     let config: Rees46Config
@@ -528,16 +546,14 @@ struct PendingPush {
     /// The device id the shop has stored: never empty on the new core; on the old core empty when the
     /// shop has none, as it has always gone.
     let deviceId: String
-    let newCore: Bool
 }
 
 /**
- Sends the event of a push for a shop WITHOUT constructing its SDK. A registered-but-pending shop
- already has its did persisted in its storage partition — all `track/<event>` needs — so a push for a
- lazily-registered shop is tracked even when the process was launched cold by that push and only eager
- shops are live. Standalone counterpart of an instance's push events; mirror of RN's `trackPush`. iOS
- keeps the shop pending: the request needs no live instance. With the new core the event carries the
- device's A/B group, as every event does, and a click stores the source in the shop's partition.
+ Sends the event of a push for a shop WITHOUT constructing its SDK, on the old core. A
+ registered-but-pending shop already has its did persisted in its storage partition — all
+ `track/<event>` needs — so a push for a lazily-registered shop is tracked even when the process was
+ launched cold by that push and only eager shops are live. Standalone counterpart of an instance's push
+ events; mirror of RN's `trackPush`. iOS keeps the shop pending: the request needs no live instance.
  */
 internal enum PushDeliveryTracker {
 
@@ -551,22 +567,13 @@ internal enum PushDeliveryTracker {
         guard let url = URL(string: "https://" + push.config.apiDomain + "/" + path) else { return }
 
         // Same wire shape as SimplePersonalizationSDK.postRequest: a JSON body of stream + params.
-        var body: [String: Any] = [
+        let body: [String: Any] = [
             "stream": push.config.stream,
             "shop_id": push.shopId,
             "did": push.deviceId,
             "code": push.code,
             "type": push.type,
         ]
-        if push.newCore {
-            if let group = DeviceStore.shared.abGroup {
-                body["segment"] = group
-            }
-            if push.route == .event(.clicked), let source = TrackingSourceType(rawValue: push.type) {
-                TrackingSourceStoreImpl(store: StoragePartition.store(for: push.shopId, storageKey: push.config.storageKey))
-                    .store(type: source.rawValue, code: push.code)
-            }
-        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

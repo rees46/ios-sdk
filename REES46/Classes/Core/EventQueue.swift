@@ -962,10 +962,18 @@ final class EventQueue {
     /// and a random part, so no two instances, launches or processes give the same one. The time part
     /// grows within the queue, so its events keep the order of the calls.
     private func newFileName() -> String {
-        let micros = UInt64(max(0, Date().timeIntervalSince1970 * 1_000_000))
-        lastNameTime = max(micros, lastNameTime + 1)
+        lastNameTime = max(Self.nowMicros(), lastNameTime + 1)
+        return Self.fileName(time: lastNameTime)
+    }
+
+    /// The wall clock in microseconds: the time part of a file's name.
+    private static func nowMicros() -> UInt64 {
+        UInt64(max(0, Date().timeIntervalSince1970 * 1_000_000))
+    }
+
+    private static func fileName(time: UInt64) -> String {
         let random = UInt32.random(in: 0...UInt32.max)
-        return String(format: "%020llu-%d-%08x.json", lastNameTime, ProcessInfo.processInfo.processIdentifier, random)
+        return String(format: "%020llu-%d-%08x.json", time, ProcessInfo.processInfo.processIdentifier, random)
     }
 
     /// Reads what an earlier launch left, once: the events in the order of their names.
@@ -1030,25 +1038,90 @@ final class EventQueue {
 
     /// Writes `event` atomically; `false` when the disk refused (`storage_failed`): it still goes now.
     private func write(_ event: Event) -> Bool {
-        guard storage.makeQueueDirectory() != nil, let url = file(event.name) else { return false }
+        Self.write(
+            path: event.path, body: event.body, createdAt: event.createdAt, attempts: event.attempts, checked: event.shopChecked,
+            name: event.name, storage: storage, logger: logger
+        )
+    }
+
+    private static func write(
+        path: String,
+        body: [String: Any],
+        createdAt: Date,
+        attempts: Int,
+        checked: Bool,
+        name: String,
+        storage: ShopStorage,
+        logger: SdkLogger
+    ) -> Bool {
+        guard let folder = storage.makeQueueDirectory() else { return false }
         let record: [String: Any] = [
             "v": 1,
-            "path": event.path,
-            "body": event.body,
-            "created": event.createdAt.timeIntervalSince1970,
-            "attempts": event.attempts,
-            "checked": event.shopChecked,
+            "path": path,
+            "body": body,
+            "created": createdAt.timeIntervalSince1970,
+            "attempts": attempts,
+            "checked": checked,
         ]
         guard let data = SafeJSON.data(record) else {
             logger.warning(LogCode.storageFailed, "an event of the queue could not be written", ["op": "write_queue_event", "error": "invalid_json"])
             return false
         }
         do {
-            try data.write(to: url, options: .atomic)
+            try data.write(to: folder.appendingPathComponent(name), options: .atomic)
             return true
         } catch {
             logger.warning(LogCode.storageFailed, "an event of the queue could not be written", ["op": "write_queue_event", "error": SdkLogger.errorKind(error)])
             return false
+        }
+    }
+
+    // MARK: - A shop without an instance
+
+    /// The time part of the last name of a file written for a shop without an instance.
+    private static var lastDetachedNameTime: UInt64 = 0
+
+    /// An event of a shop that has no instance — the push of a shop that is registered and not created
+    /// (`Rees46.handlePush`): written into the shop's queue folder, where an instance of the shop finds
+    /// it in this launch or the next, and sent once at once, marked on its way so that a queue of the
+    /// folder made meanwhile waits for its answer. A `2xx` removes the file; anything else leaves it for
+    /// the shop's queue. `written` hears at once whether the disk took it (`storage_failed` when not:
+    /// it is still sent once); `completion` hears that again, and the answer.
+    static func sendDetached(
+        path: String,
+        body: [String: Any],
+        createdAt: Date,
+        storage: ShopStorage,
+        logger: SdkLogger,
+        send: @escaping () async -> NetworkClient.Response,
+        written: (Bool) -> Void,
+        completion: @escaping (_ stored: Bool, _ response: NetworkClient.Response) -> Void
+    ) {
+        let folder = storage.queueDirectory?.standardizedFileURL.path
+        registryLock.lock()
+        lastDetachedNameTime = max(nowMicros(), lastDetachedNameTime + 1)
+        let name = fileName(time: lastDetachedNameTime)
+        registryLock.unlock()
+        // On its way before its file is there: no queue of the folder sends it meanwhile.
+        let mark = folder.map { "\($0)#\(name)" }
+        mark.map(markOnItsWay)
+        let stored = write(path: path, body: body, createdAt: createdAt, attempts: 0, checked: false, name: name, storage: storage, logger: logger)
+        written(stored)
+        let file = stored ? storage.queueDirectory?.appendingPathComponent(name) : nil
+        _Concurrency.Task {
+            let response = await send()
+            switch response.result {
+            case .success, .failure(.decoding):
+                if let file = file {
+                    try? FileManager.default.removeItem(at: file)
+                }
+            default:
+                break
+            }
+            if let mark = mark {
+                settle(mark, folder: folder, from: nil)
+            }
+            completion(stored, response)
         }
     }
 

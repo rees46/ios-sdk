@@ -37,6 +37,10 @@ final class CorePushTests: XCTestCase {
         logs.current = []
         let logs = self.logs
         Rees46.setLogHandler { message in logs.mutate { $0.append(message) } }
+        let network = self.network
+        let lifecycle = self.lifecycle
+        PendingPushEvents.connectivity = { network }
+        PendingPushEvents.lifecycle = { lifecycle }
         let replies = self.replies
         let inits = Locked(0)
         StubURLProtocol.handler = { request in
@@ -131,9 +135,24 @@ final class CorePushTests: XCTestCase {
     }
 
     private func files(_ sdk: SimplePersonalizationSDK) -> [String] {
-        guard let folder = sdk.storage.queueDirectory,
+        files(sdk.storage)
+    }
+
+    private func files(_ storage: ShopStorage) -> [String] {
+        guard let folder = storage.queueDirectory,
               let names = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return [] }
         return names.filter { $0.hasSuffix(".json") }
+    }
+
+    /// A shop registered and not created, as the app registers it, with `did` stored when one is given.
+    private func registerPending(did: String?) -> (shop: String, storage: ShopStorage) {
+        CoreFlag.reset(to: true)
+        let shop = newShop()
+        if let did = did {
+            StoragePartition.store(for: shop).set(did, forKey: StoragePartition.deviceIdKey)
+        }
+        Rees46.register(shops: [Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false, coreV2: true)])
+        return (shop, ShopStorage(shopId: shop, logger: SdkLogger(shopId: shop, level: .none)))
     }
 
     /// `setPushTokenNotification` and what it hears.
@@ -569,38 +588,89 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(requests("/track/delivered", shop).count, 1)
     }
 
-    func test_a_pending_shop_sends_by_its_stored_did_without_init_and_never_without_one() {
-        CoreFlag.reset(to: true)
-        let shop = newShop()
-        let empty = newShop()
-        StoragePartition.store(for: shop).set("pending-did", forKey: StoragePartition.deviceIdKey)
-        Rees46.register(shops: [
-            Rees46Config(shopId: shop, apiDomain: "stub.test", coreV2: true),
-            Rees46Config(shopId: empty, apiDomain: "stub.test", coreV2: true),
-        ])
+    func test_a_pending_shop_sends_by_its_stored_did_through_its_queue_without_init_and_never_without_one() {
+        let (shop, storage) = registerPending(did: "pending-did")
+        let (empty, _) = registerPending(did: nil)
 
         XCTAssertEqual(Rees46.handlePush(push(shop, type: "chain", code: "p-1"), event: .clicked), shop)
-        XCTAssertTrue(eventually { self.requests("/track/clicked", shop).count == 1 })
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/clicked", shop: shop) == 1 })
         let body = requests("/track/clicked", shop).first?.body ?? [:]
         XCTAssertEqual(body["did"] as? String, "pending-did")
         XCTAssertEqual(body["code"] as? String, "p-1")
         XCTAssertEqual(body["type"] as? String, "chain")
+        XCTAssertEqual(body["stream"] as? String, "ios")
         XCTAssertNil(body["sid"])
         XCTAssertTrue(requests("/init", shop).isEmpty, "no /init for it")
         XCTAssertTrue(Rees46.pendingShopIds().contains(shop), "not created")
         XCTAssertEqual(TrackingSourceStoreImpl(store: StoragePartition.store(for: shop)).currentSource()?.code, "p-1")
+        XCTAssertTrue(eventually { self.lifecycle.backgroundTasks == (1, 1) }, "sent under a background task, ended")
+        XCTAssertTrue(files(storage).isEmpty, "a 2xx takes it off the disk")
 
-        expectNoRequest(to: "/track/clicked", shop: shop) {
-            Rees46.handlePush(self.push(shop, type: "chain", code: "p-1"), event: .clicked)
-        }
+        // Once per message: a repeat writes and sends nothing.
+        XCTAssertEqual(Rees46.handlePush(push(shop, type: "chain", code: "p-1"), event: .clicked), shop)
         Rees46.handlePush(push(shop, code: "p-2"), event: PushEvent.received)
-        XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 })
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 })
+        XCTAssertTrue(eventually { self.lifecycle.backgroundTasks == (2, 2) }, "the repeat began no task")
+        XCTAssertEqual(requests("/track/clicked", shop).count, 1)
 
-        // A shop that never had a device id here: nothing goes.
-        expectNoRequest(to: "/track/delivered", shop: empty) {
-            XCTAssertEqual(Rees46.handlePush(self.push(empty), event: .delivered), empty)
-        }
+        // A shop that never had a device id here: nothing goes, and nothing is held for the message.
+        XCTAssertEqual(Rees46.handlePush(push(empty), event: .delivered), empty)
         XCTAssertTrue(eventually { self.logs.current.contains { $0.code == "push_dropped" && $0.context["reason"] == "no_did" } })
+        XCTAssertFalse(PushCenter.isTaken(.delivered, code: "m-1", shopId: empty))
+        StoragePartition.store(for: empty).set("later-did", forKey: StoragePartition.deviceIdKey)
+        Rees46.handlePush(push(empty), event: .delivered)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: empty) == 1 }, "the drop held nothing back")
+        XCTAssertEqual(requests("/track/delivered", empty).first?.body["did"] as? String, "later-did")
+    }
+
+    func test_a_pending_shops_push_offline_at_a_cold_start_waits_on_disk_and_its_instance_sends_it() throws {
+        let (shop, storage) = registerPending(did: "pending-did")
+        network.isOnline = false
+        let heard = Locked<[String]>([])
+        Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { payload in heard.mutate { $0.append(payload.code) } }))
+
+        XCTAssertEqual(Rees46.handlePush(push(shop), event: .delivered), shop)
+        XCTAssertTrue(eventually { self.lifecycle.backgroundTasks == (1, 1) }, "tried at once, under a background task")
+        XCTAssertEqual(files(storage).count, 1, "on disk in the shop's queue")
+        XCTAssertTrue(requests("/track/delivered", shop).isEmpty, "no network")
+        XCTAssertTrue(eventually { heard.current == ["m-1"] }, "accepted: on disk")
+
+        // The message's event is counted: a repeat writes nothing.
+        Rees46.handlePush(push(shop), event: .delivered)
+        drainMainQueue()
+        XCTAssertEqual(files(storage).count, 1)
+        XCTAssertEqual(lifecycle.backgroundTasks.begun, 1)
+        XCTAssertEqual(heard.current, ["m-1"])
+
+        // The shop's instance, made later, sends it: the event counted for the message holds nothing back.
+        let sdk = try XCTUnwrap(try Rees46.instance(for: shop) as? SimplePersonalizationSDK)
+        defer { sdk.release() }
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 })
+        let body = requests("/track/delivered", shop).first?.body ?? [:]
+        XCTAssertEqual(body["did"] as? String, "pending-did")
+        XCTAssertEqual(body["code"] as? String, "m-1")
+        XCTAssertNil(body["sid"])
+        XCTAssertTrue(eventually { self.files(storage).isEmpty })
+        XCTAssertEqual(requests("/track/delivered", shop).count, 1, "once")
+    }
+
+    func test_a_pending_shop_that_refused_sends_nothing_and_holds_nothing_for_the_message() {
+        let (shop, storage) = registerPending(did: "pending-did")
+        storage.refused = true
+        let heard = Locked(0)
+        Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { _ in heard.mutate { $0 += 1 } }))
+
+        XCTAssertEqual(Rees46.handlePush(push(shop), event: .delivered), shop)
+        XCTAssertTrue(eventually { self.logs.current.contains { $0.code == "push_dropped" && $0.context["reason"] == "refused" } })
+        XCTAssertTrue(files(storage).isEmpty)
+        XCTAssertEqual(lifecycle.backgroundTasks.begun, 0)
+        drainMainQueue()
+        XCTAssertEqual(heard.current, 0, "no callback for an event that was not taken")
+
+        storage.refused = false
+        Rees46.handlePush(push(shop), event: .delivered)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 })
+        XCTAssertTrue(eventually { heard.current == 1 })
     }
 
     func test_a_push_that_is_not_the_sdks_or_names_no_known_shop_returns_nothing() {
@@ -707,10 +777,7 @@ final class CorePushTests: XCTestCase {
     }
 
     func test_a_pending_shops_push_calls_the_facades_callback() {
-        CoreFlag.reset(to: true)
-        let shop = newShop()
-        StoragePartition.store(for: shop).set("pending-did", forKey: StoragePartition.deviceIdKey)
-        Rees46.register(shops: [Rees46Config(shopId: shop, apiDomain: "stub.test", coreV2: true)])
+        let (shop, _) = registerPending(did: "pending-did")
         let heard = Locked<[String]>([])
         Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { payload in heard.mutate { $0.append(payload.shopId) } }))
         Rees46.handlePush(push(shop), event: .delivered)
