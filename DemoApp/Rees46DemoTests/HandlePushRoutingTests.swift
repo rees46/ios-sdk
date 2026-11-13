@@ -124,17 +124,17 @@ final class HandlePushRoutingTests: XCTestCase {
         let event: String
         let type: String
         let code: String
+        var deviceId = ""
     }
 
     private func recordPendingTracks(into sink: @escaping (PendingTrack) -> Void) {
         Rees46.pendingPushTracker = { push in
-            sink(PendingTrack(shopId: push.shopId, event: push.route.name, type: push.type, code: push.code))
+            sink(PendingTrack(shopId: push.shopId, event: push.route.name, type: push.type, code: push.code, deviceId: push.deviceId))
         }
     }
 
-    /// A pending shop with a device id stored, as one the app ran before: its push is sent.
+    /// A pending shop as the old core has always had it: registered, with no device id stored here.
     private func registerPending(_ shopId: String = "shop-lazy") {
-        StoragePartition.store(for: shopId).set("lazy-did", forKey: StoragePartition.deviceIdKey)
         Rees46.register(shops: [Rees46Config(shopId: shopId)])
     }
 
@@ -194,5 +194,21 @@ final class HandlePushRoutingTests: XCTestCase {
 
         XCTAssertTrue(tracks.isEmpty, "a pending shop counts toward ambiguity — no-shop_id must drop")
         XCTAssertTrue(a.deliveredTracks.isEmpty)
+    }
+
+    func test_the_old_core_sends_a_pending_shops_push_with_the_stored_did_or_an_empty_one_as_before() {
+        registerPending()
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(payload(shopId: "shop-lazy", code: "e1"), event: .delivered)
+        StoragePartition.store(for: "shop-lazy").set("lazy-did", forKey: StoragePartition.deviceIdKey)
+        Rees46.handlePush(payload(shopId: "shop-lazy", code: "e1"), event: .delivered)
+        Rees46.handlePush(payload(shopId: "shop-lazy", code: "e1"), event: .opened)
+
+        XCTAssertEqual(tracks, [
+            PendingTrack(shopId: "shop-lazy", event: "delivered", type: "web", code: "e1", deviceId: ""),
+            PendingTrack(shopId: "shop-lazy", event: "delivered", type: "web", code: "e1", deviceId: "lazy-did"),
+        ], "no did is no reason to drop it, and no once-per-message rule; opened was never the old core's")
     }
 }

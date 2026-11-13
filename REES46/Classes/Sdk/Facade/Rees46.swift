@@ -416,10 +416,14 @@ public enum Rees46 {
     }
 
     /// A push of a shop that is registered and not created: the event goes with the device id the shop
-    /// has stored, without `/init`, a token, a profile or a popup — and not at all without one
-    /// (`push_dropped`, `no_did`) —, and the facade's callback is called. With the new core, once per
-    /// message, `received` sent as `delivered`, a click storing the source in the shop's partition.
+    /// has stored, without `/init`, a token, a profile or a popup, and the facade's callback is called.
     /// Initialized later, the shop gets an instance with a full start.
+    ///
+    /// - The new core sends nothing without a stored device id (`push_dropped`, `no_did`): the server
+    ///   sent this device no push of the shop. Each event goes once per message, `received` as
+    ///   `delivered`, a click storing the source in the shop's partition.
+    /// - The old core sends exactly what it always has: the event at once, with the stored device id or
+    ///   an empty one; `opened` and `closed`, which it never had, send nothing.
     private static func routeToPending(
         shopId: String,
         config: Rees46Config,
@@ -432,21 +436,27 @@ public enum Rees46 {
         let newCore = CoreFlag.current ?? config.coreV2
         let sent = newCore ? PushRoute.event(route.newCoreEvent) : route
         let deviceId = StoragePartition.deviceId(for: shopId, storageKey: config.storageKey)
+        guard newCore else {
+            logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
+            if sent != .event(.opened), sent != .event(.closed) {
+                pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: false))
+            }
+            if case .event(let event) = sent, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
+                PushCenter.notify(event, payload: parsed, instance: nil)
+            }
+            return
+        }
         guard !deviceId.isEmpty else {
             // The shop has never had a device id here: the server sent this device no push of it.
             logger.warning(LogCode.pushDropped, "the shop of the push has no device id: the event was not sent", ["reason": "no_did"])
             return
         }
-        if newCore, !PushCenter.claim(route.newCoreEvent, code: code, shopId: shopId) {
+        if !PushCenter.claim(route.newCoreEvent, code: code, shopId: shopId) {
             logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": sent.name, "repeat": "true"])
             return
         }
         logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
-        // The old core sends exactly the events it always has: no `opened`, no `closed`.
-        let neverSent = !newCore && (sent == .event(.opened) || sent == .event(.closed))
-        if !neverSent {
-            pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: newCore))
-        }
+        pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: true))
         if case .event(let event) = sent, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
             PushCenter.notify(event, payload: parsed, instance: nil)
         }
@@ -514,7 +524,8 @@ struct PendingPush {
     let route: PushRoute
     let type: String
     let code: String
-    /// The device id the shop has stored; never empty.
+    /// The device id the shop has stored: never empty on the new core; on the old core empty when the
+    /// shop has none, as it has always gone.
     let deviceId: String
     let newCore: Bool
 }
