@@ -142,8 +142,33 @@ final class ManualAppLifecycle: AppLifecycle {
         }
     }
 
+    private var foreground = true
+    private var begun = 0
+    private var ended = 0
+
+    /// In the foreground until the test sends the app to the background.
+    var isInForeground: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return foreground }
+        set { lock.lock(); foreground = newValue; lock.unlock() }
+    }
+
+    /// The background tasks begun and ended.
+    var backgroundTasks: (begun: Int, ended: Int) {
+        lock.lock(); defer { lock.unlock() }
+        return (begun, ended)
+    }
+
+    func beginBackgroundTask(_ name: String, expiration: @escaping () -> Void) -> Cancellable {
+        lock.lock(); begun += 1; lock.unlock()
+        return Cancellable { [weak self] in
+            guard let self = self else { return }
+            self.lock.lock(); self.ended += 1; self.lock.unlock()
+        }
+    }
+
     func send(_ event: AppLifecycleEvent) {
         lock.lock()
+        foreground = event == .willEnterForeground
         let current = Array(observers.values)
         lock.unlock()
         current.forEach { $0(event) }
