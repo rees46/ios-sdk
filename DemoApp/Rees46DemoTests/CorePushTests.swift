@@ -164,6 +164,11 @@ final class CorePushTests: XCTestCase {
         return result.current
     }
 
+    /// No platform has a token sent or a send on its way.
+    private func noWeek(_ storage: ShopStorage) -> Bool {
+        ShopStorage.pushTokenPlatforms.allSatisfy { storage.pushTokenSent(platform: $0) == nil && storage.pushTokenClaim(platform: $0) == nil }
+    }
+
     private func push(_ shop: String?, type: String = "bulk", code: String = "m-1") -> [AnyHashable: Any] {
         var payload: [AnyHashable: Any] = [
             "type": type, "id": code, "title": "Sale", "body": "Today only",
@@ -213,7 +218,7 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(tokens(shop).count, 3)
     }
 
-    func test_the_week_is_claimed_before_the_request_so_two_sends_at_once_go_as_one() {
+    func test_the_week_counts_from_a_send_that_ended_and_two_sends_at_once_go_as_one_heard_by_both() {
         let shop = newShop()
         let sdk = make(shop)
         let held = DispatchSemaphore(value: 0)
@@ -222,12 +227,68 @@ final class CorePushTests: XCTestCase {
             if request.path == "/mobile_push_tokens" { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
-        sdk.setPushTokenNotification(token: "t") { _ in }
+        let first = expectation(description: "first")
+        let second = expectation(description: "second")
+        let results = Locked<[Result<Void, SdkError>]>([])
+        sdk.setPushTokenNotification(token: "t") { result in results.mutate { $0.append(result) }; first.fulfill() }
         XCTAssertTrue(eventually { self.tokens(shop).count == 1 })
-        guard case .success? = send(sdk, "t") else { return XCTFail("the second one is held back by the claim") }
+        XCTAssertEqual(sdk.storage.pushTokenClaim(platform: "ios")?.token, "t", "marked on its way")
+        XCTAssertNil(sdk.storage.pushTokenSent(platform: "ios"), "not counted before it went")
+        sdk.setPushTokenNotification(token: "t") { result in results.mutate { $0.append(result) }; second.fulfill() }
+
         held.signal()
-        expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3)
-        XCTAssertEqual(tokens(shop).count, 1)
+        wait(for: [first, second], timeout: 5)
+        XCTAssertEqual(results.current.count, 2)
+        XCTAssertTrue(results.current.allSatisfy { if case .success = $0 { return true } else { return false } }, "both hear the one answer")
+        XCTAssertEqual(tokens(shop).count, 1, "one request")
+        XCTAssertEqual(sdk.storage.pushTokenSent(platform: "ios")?.token, "t", "counted once it went")
+        XCTAssertNil(sdk.storage.pushTokenClaim(platform: "ios"))
+    }
+
+    func test_a_send_marked_by_a_process_that_died_holds_the_token_back_five_minutes_and_starts_no_week() {
+        let shop = newShop()
+        let sdk = make(shop)
+        // A launch that marked the send and died before the answer: no week, a mark only.
+        sdk.storage.setPushTokenClaim(ShopStorage.PushTokenClaim(token: "t", since: clock.now()), platform: "ios")
+        guard case .success? = send(sdk, "t") else { return XCTFail("held back, not failed") }
+        XCTAssertTrue(tokens(shop).isEmpty)
+        XCTAssertTrue(eventually { self.logged(shop, "push_token_skipped").last?.context["reason"] == "on_its_way" })
+
+        clock.advance(by: PushTokenWeek.markLifetime)
+        guard case .success? = send(sdk, "t") else { return XCTFail("sent") }
+        XCTAssertEqual(tokens(shop).count, 1, "five minutes without an ended send: the mark is free")
+        XCTAssertEqual(sdk.storage.pushTokenSent(platform: "ios")?.token, "t")
+        guard case .success? = send(sdk, "t") else { return XCTFail("within the week") }
+        XCTAssertEqual(tokens(shop).count, 1, "the week counts from the send that ended")
+    }
+
+    func test_apns_and_fcm_keep_their_own_week_and_alternating_tokens_go_once_each() {
+        let shop = newShop()
+        let device = StubSDK.deviceStore(shopId: shop)
+        let sdk = make(shop, deviceStore: device)
+        for _ in 0..<3 {
+            guard case .success? = send(sdk, "apns-1"), case .success? = send(sdk, "fcm-1", firebase: true) else { return XCTFail("sent") }
+        }
+        XCTAssertEqual(tokens(shop).map { $0.body["platform"] as? String }, ["ios", "ios_firebase"], "once each, not once per turn")
+        XCTAssertEqual(device.deviceToken(.apns), Rees46.PushToken(token: "apns-1", provider: .apns))
+        XCTAssertEqual(device.deviceToken(.fcm), Rees46.PushToken(token: "fcm-1", provider: .fcm))
+        XCTAssertEqual(sdk.storage.pushTokenSent(platform: "ios")?.token, "apns-1")
+        XCTAssertEqual(sdk.storage.pushTokenSent(platform: "ios_firebase")?.token, "fcm-1")
+
+        // A new session's /init: both tokens are the device's, each held back by its own week.
+        let skipped = { self.logged(shop, "push_token_skipped").filter { $0.context["reason"] == "sent_recently" }.count }
+        XCTAssertTrue(eventually { skipped() == 4 }, "the repeats of the turns")
+        clock.advance(by: 2 * 60 * 60 + 1)
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 })
+        XCTAssertTrue(eventually { skipped() == 6 }, "after the /init, each token once")
+        XCTAssertEqual(tokens(shop).count, 2)
+
+        // A week later the next /init sends both again.
+        clock.advance(by: PushTokenWeek.length)
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { self.tokens(shop).count == 4 })
+        XCTAssertEqual(Set(tokens(shop).suffix(2).map { $0.body["token"] as? String }), ["apns-1", "fcm-1"])
     }
 
     func test_a_failed_send_gives_the_week_back() {
@@ -313,7 +374,7 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(tokens(shop).first?.body["did"] as? String, "d-1")
 
         sdk.deleteUserCredentials()
-        XCTAssertNil(sdk.storage.pushTokenSent)
+        XCTAssertTrue(noWeek(sdk.storage))
         XCTAssertTrue(eventually { self.tokens(shop).count == 2 }, "the next customer gets the token")
         XCTAssertEqual(tokens(shop).last?.body["did"] as? String, "d-2")
         XCTAssertFalse(tokens(shop).contains { ($0.body["did"] as? String ?? "").isEmpty }, "never without a did")
@@ -333,7 +394,7 @@ final class CorePushTests: XCTestCase {
         let sdk = make(shop, coreV2: false)
         guard case .success? = send(sdk, "t"), case .success? = send(sdk, "t") else { return XCTFail("sent") }
         XCTAssertEqual(tokens(shop).count, 2, "no week on setPushTokenNotification of the old core")
-        XCTAssertNil(sdk.storage.pushTokenSent)
+        XCTAssertTrue(noWeek(sdk.storage))
     }
 
     func test_set_push_token_after_release_is_not_initialized_and_writes_nothing() {
@@ -344,7 +405,7 @@ final class CorePushTests: XCTestCase {
         expectNoRequest(to: "/mobile_push_tokens", shop: shop) { result.current = self.send(sdk, "t") }
         guard case .failure(.initializationFailed)? = result.current else { return XCTFail("\(String(describing: result.current))") }
         XCTAssertNil(sdk.deviceStore.deviceToken)
-        XCTAssertNil(sdk.storage.pushTokenSent)
+        XCTAssertTrue(noWeek(sdk.storage))
     }
 
     // MARK: - Events

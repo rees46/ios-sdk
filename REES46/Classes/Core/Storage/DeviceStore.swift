@@ -23,7 +23,8 @@ final class DeviceStore {
     static let abGroupKey = "ab_group"
     static let advertisingIdKey = "advertising_id"
     static let pushTokenKey = "push_token"
-    /// The new core's token of the device: any provider's, as a string, and its provider.
+    /// The new core's token of the device: the last one of any provider, as a string, and its
+    /// provider; each provider's own under the key with its name after a dot.
     static let deviceTokenKey = "push_token_value"
     static let deviceTokenProviderKey = "push_token_provider"
     /// The A/B groups the server knows.
@@ -60,8 +61,9 @@ final class DeviceStore {
     }
 
     /// The device's push token (`sdk/core/push.md`): the last one the SDK got or was given, with its
-    /// provider — one token per device, whichever shop it came through. Without one of its own, the
-    /// APNs token an older version kept is the device's.
+    /// provider, whichever shop it came through. Each provider's token is kept apart as well
+    /// (`deviceToken(_:)`): an app that hands the SDK both an APNs and an FCM token keeps both. Without
+    /// one of its own, the APNs token an older version kept is the device's.
     var deviceToken: Rees46.PushToken? {
         get {
             lock.lock(); defer { lock.unlock() }
@@ -69,14 +71,42 @@ final class DeviceStore {
                let provider = defaults.string(forKey: Self.deviceTokenProviderKey).flatMap(Rees46.PushProvider.init(rawValue:)) {
                 return Rees46.PushToken(token: value, provider: provider)
             }
-            let data = defaults.data(forKey: Self.pushTokenKey) ?? pushTokenDefaults.data(forKey: SdkConstants.deviceToken)
-            return data.flatMap { $0.isEmpty ? nil : Rees46.PushToken(token: Self.hex($0), provider: .apns) }
+            return legacyApnsTokenLocked()
         }
         set {
             lock.lock(); defer { lock.unlock() }
             defaults.set(newValue?.token, forKey: Self.deviceTokenKey)
             defaults.set(newValue?.provider.rawValue, forKey: Self.deviceTokenProviderKey)
+            if let token = newValue {
+                defaults.set(token.token, forKey: Self.deviceTokenKey + "." + token.provider.rawValue)
+            } else {
+                Rees46.PushProvider.allCases.forEach { defaults.removeObject(forKey: Self.deviceTokenKey + "." + $0.rawValue) }
+            }
         }
+    }
+
+    /// The device's last token of `provider`; for APNs without one of its own, the one an older
+    /// version kept.
+    func deviceToken(_ provider: Rees46.PushProvider) -> Rees46.PushToken? {
+        lock.lock(); defer { lock.unlock() }
+        if let value = defaults.string(forKey: Self.deviceTokenKey + "." + provider.rawValue), !value.isEmpty {
+            return Rees46.PushToken(token: value, provider: provider)
+        }
+        if let value = defaults.string(forKey: Self.deviceTokenKey), !value.isEmpty,
+           defaults.string(forKey: Self.deviceTokenProviderKey) == provider.rawValue {
+            return Rees46.PushToken(token: value, provider: provider)
+        }
+        return provider == .apns ? legacyApnsTokenLocked() : nil
+    }
+
+    /// The device's tokens, one per provider it has: APNs, then FCM.
+    var deviceTokens: [Rees46.PushToken] {
+        Rees46.PushProvider.allCases.compactMap(deviceToken)
+    }
+
+    private func legacyApnsTokenLocked() -> Rees46.PushToken? {
+        let data = defaults.data(forKey: Self.pushTokenKey) ?? pushTokenDefaults.data(forKey: SdkConstants.deviceToken)
+        return data.flatMap { $0.isEmpty ? nil : Rees46.PushToken(token: Self.hex($0), provider: .apns) }
     }
 
     /// An APNs token as the API takes it: lowercase hex.

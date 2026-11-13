@@ -28,7 +28,7 @@ extension Rees46 {
     }
 
     /// Whose token it is.
-    public enum PushProvider: String, Equatable {
+    public enum PushProvider: String, Equatable, CaseIterable {
         case apns
         case fcm
         case hms

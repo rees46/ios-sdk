@@ -159,18 +159,34 @@ extension SimplePersonalizationSDK {
         sendPushToken(token.token, platform: platform, completion: finish)
     }
 
-    /// After an `/init` answer: the device's token goes to this shop when the week allows.
+    /// After an `/init` answer: each of the device's tokens — APNs and FCM — goes to this shop when its
+    /// own week allows.
     func sendDevicePushToken() {
-        guard let token = deviceStore.deviceToken, let platform = token.provider.iosPlatform else { return }
-        sendPushToken(token.token, platform: platform) { _, _ in }
+        for token in deviceStore.deviceTokens {
+            guard let platform = token.provider.iosPlatform else { continue }
+            sendPushToken(token.token, platform: platform) { _, _ in }
+        }
     }
 
-    /// `POST /mobile_push_tokens` of `token` with the week claimed first; a failure gives the week back.
-    /// The customer it was claimed for: a `deleteUserCredentials()` before it goes cancels it, and the
-    /// next customer's `/init` sends it again.
+    /// `POST /mobile_push_tokens` of `token` by the week of its platform (`PushTokenWeek`): marked on its
+    /// way first, counted once it went, freed when it failed; a second send of it meanwhile hears this
+    /// one's answer. The customer it was marked for: a `deleteUserCredentials()` before it goes cancels
+    /// it, and the next customer's `/init` sends it again.
     private func sendPushToken(_ token: String, platform: String, completion: @escaping (Result<Void, SdkError>, Rees46.SdkError?) -> Void) {
-        guard let claim = PushTokenWeek.claim(token, platform: platform, storage: storage, now: environment.clock.now()) else {
+        let clock = environment.clock
+        let claim: PushTokenWeek.Claim
+        switch PushTokenWeek.claim(token, platform: platform, storage: storage, now: clock.now(), completion: completion) {
+        case .send(let marked):
+            claim = marked
+        case .sentRecently:
             logger.debug(LogCode.pushTokenSkipped, "the push token went to the shop within the last week", ["reason": "sent_recently"])
+            completion(.success(()), nil)
+            return
+        case .joined:
+            // The send on its way answers for both.
+            return
+        case .markedElsewhere:
+            logger.debug(LogCode.pushTokenSkipped, "a send of the push token began less than five minutes ago", ["reason": "on_its_way"])
             completion(.success(()), nil)
             return
         }
@@ -179,15 +195,22 @@ extension SimplePersonalizationSDK {
         request.identity = { [weak self] in self?.identity(ifCurrent: generation) }
         let logger = self.logger
         core.send(request) { response in
+            let sent: Bool
+            if case .success = response.result {
+                sent = true
+            } else {
+                sent = false
+            }
+            let joined = PushTokenWeek.finish(claim, sent: sent, at: clock.now())
+            let result: Result<Void, SdkError> = response.result.map { _ in () }
             switch response.result {
             case .success:
                 logger.info(LogCode.pushTokenSent, "the push token was sent")
-                completion(.success(()), nil)
             case .failure(let error):
-                PushTokenWeek.release(claim)
                 logger.warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
-                completion(.failure(error), response.error)
             }
+            completion(result, response.error)
+            joined.forEach { $0(result, response.error) }
         }
     }
 }

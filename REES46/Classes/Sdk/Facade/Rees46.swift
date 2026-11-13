@@ -527,6 +527,7 @@ public enum Rees46 {
         pendingPushTracker = PushDeliveryTracker.track
         PendingPushEvents.reset()
         PushCenter.reset()
+        PushTokenWeek.reset()
     }
 
     /// Test-only: shops registered lazily and not yet initialized.

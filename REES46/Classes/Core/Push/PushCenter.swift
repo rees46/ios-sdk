@@ -182,48 +182,96 @@ final class PushCallbackBox {
     }
 }
 
-/// The week of a shop's push token in the new core (`sdk/core/push.md`): the same token goes to a shop
-/// at most once a week, a new one at once. The week is claimed before the request — two sends at once
-/// go as one — and given back when the request fails.
+/// The week of a shop's push token in the new core (`sdk/core/push.md`), one per platform: APNs
+/// (`ios`) and FCM (`ios_firebase`) keep their own, so an app that hands the SDK both sends each once a
+/// week and neither replaces the other. The same token goes to a shop at most once a week, a new one at
+/// once.
+///
+/// The week counts from a send that ended with a `2xx`. A send on its way is a mark with the time it
+/// began, written before the request: a second send of the token meanwhile does not go — one of this
+/// process hears the first one's answer, so two sends at once are one request —, and a send that fails
+/// takes the mark away. A mark that no ended send follows within five minutes — the process died on the
+/// way — is free again.
 enum PushTokenWeek {
 
     static let length: TimeInterval = 7 * 24 * 60 * 60
+    /// How long a mark holds a second send back without an ended send behind it.
+    static let markLifetime: TimeInterval = 5 * 60
 
-    /// A week claimed for a token on its way, and what was there before it.
+    typealias Completion = (Result<Void, SdkError>, Rees46.SdkError?) -> Void
+
+    /// A send that may go: its mark.
     struct Claim {
         let storage: ShopStorage
-        let sent: ShopStorage.PushTokenSent
-        let previous: ShopStorage.PushTokenSent?
+        let platform: String
+        let mark: ShopStorage.PushTokenClaim
+        fileprivate let key: String
+    }
+
+    /// What a send of a token comes to.
+    enum Decision {
+        /// It goes: the mark is written.
+        case send(Claim)
+        /// It went within the week: nothing goes.
+        case sentRecently
+        /// A send of this process is on its way: `completion` hears its answer.
+        case joined
+        /// A send another launch began less than five minutes ago is on its way, as far as the mark
+        /// says: nothing goes now.
+        case markedElsewhere
     }
 
     private static let lock = NSLock()
+    /// The sends of this process on their way, by partition, platform and token, with who waits for
+    /// their answer.
+    private static var onTheirWay: [String: [Completion]] = [:]
 
-    /// What identifies a token for a shop: the server keeps the platform with it.
-    static func key(_ token: String, platform: String) -> String {
-        platform + ":" + token
-    }
-
-    /// Claims the week of `token` for the shop of `storage`; `nil` when it went there within the week.
-    static func claim(_ token: String, platform: String, storage: ShopStorage, now: Date) -> Claim? {
+    /// Decides a send of `token` to the shop of `storage`; `completion` is kept only when the decision
+    /// is `joined`.
+    static func claim(_ token: String, platform: String, storage: ShopStorage, now: Date, completion: @escaping Completion) -> Decision {
+        let key = "\(storage.directory?.path ?? storage.shopId)#\(storage.keyScope ?? "")#\(platform)#\(token)"
         lock.lock(); defer { lock.unlock() }
-        let tokenKey = key(token, platform: platform)
-        let previous = storage.pushTokenSent
-        if let previous = previous, previous.key == tokenKey {
-            let age = now.timeIntervalSince(previous.at)
+        if let sent = storage.pushTokenSent(platform: platform), sent.token == token {
+            let age = now.timeIntervalSince(sent.at)
             // A date ahead of the clock — the clock moved back — does not hold the token for good.
             if age >= 0, age < length {
-                return nil
+                return .sentRecently
             }
         }
-        let sent = ShopStorage.PushTokenSent(key: tokenKey, at: now)
-        storage.pushTokenSent = sent
-        return Claim(storage: storage, sent: sent, previous: previous)
+        if onTheirWay[key] != nil {
+            onTheirWay[key, default: []].append(completion)
+            return .joined
+        }
+        if let mark = storage.pushTokenClaim(platform: platform), mark.token == token {
+            let age = now.timeIntervalSince(mark.since)
+            if age >= 0, age < markLifetime {
+                return .markedElsewhere
+            }
+        }
+        let mark = ShopStorage.PushTokenClaim(token: token, since: now)
+        storage.setPushTokenClaim(mark, platform: platform)
+        onTheirWay[key] = []
+        return .send(Claim(storage: storage, platform: platform, mark: mark, key: key))
     }
 
-    /// The request of `claim` failed: the shop's record goes back, unless something replaced it since.
-    static func release(_ claim: Claim) {
+    /// The send of `claim` ended: a `2xx` (`sent`) starts the week at `at`, anything else frees the
+    /// token. Hands back who joined it, to hear the same answer. A mark replaced meanwhile — another
+    /// token, `deleteUserCredentials` — belongs to someone else and stays.
+    static func finish(_ claim: Claim, sent: Bool, at: Date) -> [Completion] {
         lock.lock(); defer { lock.unlock() }
-        guard claim.storage.pushTokenSent == claim.sent else { return }
-        claim.storage.pushTokenSent = claim.previous
+        let joined = onTheirWay.removeValue(forKey: claim.key) ?? []
+        guard claim.storage.pushTokenClaim(platform: claim.platform) == claim.mark else { return joined }
+        claim.storage.setPushTokenClaim(nil, platform: claim.platform)
+        if sent {
+            claim.storage.setPushTokenSent(ShopStorage.PushTokenSent(token: claim.mark.token, at: at), platform: claim.platform)
+        }
+        return joined
+    }
+
+    /// Test-only: no send of this process on its way.
+    static func reset() {
+        lock.lock()
+        onTheirWay.removeAll()
+        lock.unlock()
     }
 }

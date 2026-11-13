@@ -22,9 +22,14 @@ final class ShopStorage {
     static let queueFolderName = "queue"
     /// The shop's `refused` state in its partition (with `keyScope` in a shared one).
     static let refusedKey = "personalization_sdk.refused"
-    /// The push token the new core last sent to the shop, and when (`sdk/core/push.md`).
+    /// The push token the new core last sent to the shop for a platform, and when the send ended; a
+    /// send on its way, and when it began (`sdk/core/push.md`). Each key ends with the platform.
     static let pushTokenSentKey = "personalization_sdk.push_token_sent"
     static let pushTokenSentAtKey = "personalization_sdk.push_token_sent_at"
+    static let pushTokenClaimKey = "personalization_sdk.push_token_claim"
+    static let pushTokenClaimAtKey = "personalization_sdk.push_token_claim_at"
+    /// The platforms of `POST /mobile_push_tokens` on iOS: APNs and FCM.
+    static let pushTokenPlatforms = ["ios", "ios_firebase"]
 
     let shopId: String
     /// The shop's partition.
@@ -156,30 +161,60 @@ final class ShopStorage {
 
     // MARK: - The push token sent
 
-    /// A push token sent to the shop: its platform and value, and when it went.
+    /// A push token sent to the shop: its value, and when the send ended.
     struct PushTokenSent: Equatable {
-        let key: String
+        let token: String
         let at: Date
     }
 
-    /// The push token the new core last sent to the shop, or claimed for a request on its way; `nil`
-    /// before the first one and after `deleteUserCredentials`.
-    var pushTokenSent: PushTokenSent? {
-        get {
-            guard let key = partition.string(forKey: scopedKey(Self.pushTokenSentKey)),
-                  let at = partition.object(forKey: scopedKey(Self.pushTokenSentAtKey)) as? Double, at.isFinite else {
-                return nil
-            }
-            return PushTokenSent(key: key, at: Date(timeIntervalSince1970: at))
+    /// A send of a push token on its way, and when it began.
+    struct PushTokenClaim: Equatable {
+        let token: String
+        let since: Date
+    }
+
+    /// The push token the new core last sent to the shop for `platform` — `ios` or `ios_firebase` —;
+    /// `nil` before the first one and after `deleteUserCredentials`.
+    func pushTokenSent(platform: String) -> PushTokenSent? {
+        record(Self.pushTokenSentKey, Self.pushTokenSentAtKey, platform: platform).map { PushTokenSent(token: $0.0, at: $0.1) }
+    }
+
+    func setPushTokenSent(_ sent: PushTokenSent?, platform: String) {
+        setRecord(sent.map { ($0.token, $0.at) }, Self.pushTokenSentKey, Self.pushTokenSentAtKey, platform: platform)
+    }
+
+    /// The send of a push token for `platform` on its way, as the process that began it marked it.
+    func pushTokenClaim(platform: String) -> PushTokenClaim? {
+        record(Self.pushTokenClaimKey, Self.pushTokenClaimAtKey, platform: platform).map { PushTokenClaim(token: $0.0, since: $0.1) }
+    }
+
+    func setPushTokenClaim(_ claim: PushTokenClaim?, platform: String) {
+        setRecord(claim.map { ($0.token, $0.since) }, Self.pushTokenClaimKey, Self.pushTokenClaimAtKey, platform: platform)
+    }
+
+    /// Forgets every platform's sent token and send on its way: `deleteUserCredentials`.
+    func forgetPushTokens() {
+        for platform in Self.pushTokenPlatforms {
+            setPushTokenSent(nil, platform: platform)
+            setPushTokenClaim(nil, platform: platform)
         }
-        set {
-            if let sent = newValue {
-                partition.set(sent.key, forKey: scopedKey(Self.pushTokenSentKey))
-                partition.set(sent.at.timeIntervalSince1970, forKey: scopedKey(Self.pushTokenSentAtKey))
-            } else {
-                partition.removeObject(forKey: scopedKey(Self.pushTokenSentKey))
-                partition.removeObject(forKey: scopedKey(Self.pushTokenSentAtKey))
-            }
+    }
+
+    private func record(_ valueKey: String, _ dateKey: String, platform: String) -> (String, Date)? {
+        guard let value = partition.string(forKey: scopedKey(valueKey + "." + platform)),
+              let at = partition.object(forKey: scopedKey(dateKey + "." + platform)) as? Double, at.isFinite else {
+            return nil
+        }
+        return (value, Date(timeIntervalSince1970: at))
+    }
+
+    private func setRecord(_ record: (String, Date)?, _ valueKey: String, _ dateKey: String, platform: String) {
+        if let (value, at) = record {
+            partition.set(value, forKey: scopedKey(valueKey + "." + platform))
+            partition.set(at.timeIntervalSince1970, forKey: scopedKey(dateKey + "." + platform))
+        } else {
+            partition.removeObject(forKey: scopedKey(valueKey + "." + platform))
+            partition.removeObject(forKey: scopedKey(dateKey + "." + platform))
         }
     }
 
