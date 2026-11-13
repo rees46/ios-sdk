@@ -54,7 +54,7 @@ final class StoragePartitionTests: XCTestCase {
         let custom = "custom-\(UUID().uuidString)-"
         let name = StoragePartition.suiteName(for: "shop/a", storageKey: custom)
         createdSuites.append(name)
-        XCTAssertEqual(name, custom + "shop_a")
+        XCTAssertEqual(name, custom + "_personalization_sdk_shop_a", "the same name as on Android")
         XCTAssertEqual(StoragePartition.suiteName(for: "shop-a", storageKey: ""), "personalization_sdk_shop-a", "an empty key is none")
 
         let store = StoragePartition.store(for: "shop/a", storageKey: custom)

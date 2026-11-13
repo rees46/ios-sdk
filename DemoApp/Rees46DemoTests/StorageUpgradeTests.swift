@@ -26,7 +26,8 @@ final class StorageUpgradeTests: XCTestCase {
         SdkConstants.deviceToken,
         TrackingSourceStoreImpl.Keys.code,
         TrackingSourceStoreImpl.Keys.type,
-        TrackingSourceStoreImpl.Keys.savedAt
+        TrackingSourceStoreImpl.Keys.savedAt,
+        "mainPushTokenLastUploadDateKey"
     ]
     private var standardSnapshot: [String: Any] = [:]
     private var deviceSnapshot: [String: Any]?
@@ -40,11 +41,7 @@ final class StorageUpgradeTests: XCTestCase {
     override func setUp() {
         super.setUp()
         StubURLProtocol.install()
-        // The server knows the did it is sent, and makes a new one only for a new device.
-        StubURLProtocol.handler = { request in
-            guard request.path == "/init" else { return StubReply() }
-            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "new-did")","seance":"server-seance"}"#)
-        }
+        StubURLProtocol.handler = Self.echoingInit
         Rees46.reset()
         SdkRegistry.shared.reset()
         standardSnapshot = [:]
@@ -156,6 +153,7 @@ final class StorageUpgradeTests: XCTestCase {
     func test_the_per_shop_suites_keep_their_values_and_the_first_shops_group_is_the_devices() {
         let shopA = freshShop()
         let shopB = freshShop()
+        let shopC = freshShop()
         let a = partition(shopA)
         a.set("did-A", forKey: StoragePartition.deviceIdKey)
         a.set("idfa-A", forKey: StoragePartition.idfaKey)
@@ -167,13 +165,16 @@ final class StorageUpgradeTests: XCTestCase {
 
         let sdkA = makeSDK(shopA)
         let sdkB = makeSDK(shopB)
+        let sdkC = makeSDK(shopC)
 
         XCTAssertEqual(sdkA.getDeviceId(), "did-A")
         XCTAssertEqual(sdkB.getDeviceId(), "did-B")
+        XCTAssertEqual(DeviceStore.shared.abGroup, "B", "the device's group is the first shop's")
         XCTAssertEqual(sdkA.segment, "B")
-        XCTAssertEqual(sdkB.segment, "B", "the A/B group is the device's: the first shop's")
-        XCTAssertEqual(b.string(forKey: StoragePartition.abSegmentKey), "B", "the shop's key is written too, for the old core")
-        XCTAssertEqual(DeviceStore.shared.abGroup, "B")
+        XCTAssertEqual(sdkB.segment, "A", "a shop keeps its own group: the old core reads what it read before")
+        XCTAssertEqual(b.string(forKey: StoragePartition.abSegmentKey), "A")
+        XCTAssertEqual(sdkC.segment, "B", "a shop without a group takes the device's")
+        XCTAssertEqual(partition(shopC).string(forKey: StoragePartition.abSegmentKey), "B")
         XCTAssertEqual(DeviceStore.shared.advertisingId, "idfa-A")
         XCTAssertEqual(a.string(forKey: StoragePartition.idfaKey), "idfa-A")
         XCTAssertNil(b.string(forKey: StoragePartition.idfaKey), "one shop's advertising id is not another's")
@@ -279,26 +280,33 @@ final class StorageUpgradeTests: XCTestCase {
             sdk.storage.writeSavedInitAnswer(json(#"{"did":"new-did"}"#))
             sdk.keychainStore.writeInitData(json(#"{"did":"new-did"}"#))
             UserDefaults.standard.set(Date(), forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop))
+            UserDefaults.standard.set(Date(), forKey: "mainPushTokenLastUploadDateKey")
             let queue = try XCTUnwrap(sdk.storage.makeQueueDirectory())
-            // What the device and the shop's stories keep.
+            // What the device, the shop's stories and the migrations keep.
             sdk.localStateStore.setViewedSlides(["slide-1"], storyId: "7")
             DeviceStore.shared.pushToken = Data([9, 9])
             identity.advertisingId = "idfa-kept"
             let group = sdk.segment
+            let session = sdk.userSeance
+            // The next /init answers a moment later: the wipe is seen before the new did comes.
+            StubURLProtocol.handler = { request in
+                request.path == "/init" ? StubReply(json: #"{"did":"next-did"}"#, delay: 1) : StubReply()
+            }
 
             sdk.deleteUserCredentials()
 
             XCTAssertNil(identity.deviceId)
-            XCTAssertNil(identity.seance)
-            XCTAssertNil(identity.seanceLastActTime)
             XCTAssertEqual(sdk.deviceId, "", "the instance forgets the did too")
-            XCTAssertEqual(sdk.userSeance, "")
+            XCTAssertFalse(sdk.userSeance.isEmpty)
+            XCTAssertNotEqual(sdk.userSeance, session, "the new customer has a session of their own")
+            XCTAssertEqual(identity.seance, sdk.userSeance)
             XCTAssertNil(sdk.storage.readSavedInitAnswer())
             XCTAssertNil(sdk.keychainStore.readInitData())
             XCTAssertFalse(sdk.storage.refused)
             XCTAssertNil(sdk.sourceStore.currentSource())
             XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop)),
                          "the push token goes to the shop again, for the new customer")
+            XCTAssertNil(UserDefaults.standard.object(forKey: "mainPushTokenLastUploadDateKey"))
             XCTAssertEqual(FileManager.default.fileExists(atPath: queue.path), !coreV2, "the queue goes with the customer on the new core")
 
             XCTAssertEqual(sdk.localStateStore.viewedSlides(storyId: "7"), ["slide-1"])
@@ -307,6 +315,71 @@ final class StorageUpgradeTests: XCTestCase {
             XCTAssertEqual(DeviceStore.shared.advertisingId, "idfa-kept")
             XCTAssertEqual(identity.abSegment, group)
             XCTAssertEqual(DeviceStore.shared.abGroup, group)
+            XCTAssertTrue(StorageMigrations.isDone(.savedInitFile, in: partition(shop)), "the migration flags stay")
+            XCTAssertTrue(SdkLogger.registeredShopIds.contains(shop), "the instance goes on")
+
+            // It asks /init again, without a did, and keeps the new one.
+            XCTAssertTrue(eventually { identity.deviceId == "next-did" && sdk.deviceId == "next-did" })
+            XCTAssertNil(StubURLProtocol.requests(to: "/init", shop: shop).last?.query["did"])
+            StubURLProtocol.handler = Self.echoingInit
         }
+    }
+
+    func test_after_deleting_the_user_credentials_requests_wait_for_the_new_did_and_a_late_answer_changes_nothing() throws {
+        let shop = freshShop()
+        let lock = NSLock()
+        var calls = 0
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            lock.lock(); calls += 1; let call = calls; lock.unlock()
+            // The first /init answers late, with the did of the customer about to be deleted.
+            return call == 1 ? StubReply(json: #"{"did":"deleted-did"}"#, delay: 1.5) : StubReply(json: #"{"did":"next-did"}"#, delay: 0.3)
+        }
+        CoreFlag.reset(to: false)
+        let first = expectation(description: "the first init")
+        let sdk = try XCTUnwrap(Rees46.initialize(Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false)) { _ in
+            first.fulfill()
+        } as? SimplePersonalizationSDK)
+        retained.append(sdk)
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/init", shop: shop).count == 1 })
+
+        sdk.deleteUserCredentials()
+        let request = expectation(description: "a request made meanwhile")
+        sdk.getProductInfo(id: "item-1") { _ in request.fulfill() }
+        wait(for: [request, first], timeout: 5)
+
+        XCTAssertEqual(StubURLProtocol.requests(to: "/products/get", shop: shop).first?.query["did"], "next-did",
+                       "the request waited for the new did instead of going out without one")
+        XCTAssertEqual(sdk.userIdentity.deviceId, "next-did", "the late answer of the earlier /init changes nothing")
+        XCTAssertEqual(sdk.deviceId, "next-did")
+        XCTAssertTrue(SdkRegistry.shared.shopIds().contains(shop), "the instance stays registered")
+    }
+
+    func test_after_deleting_the_user_credentials_the_push_token_goes_with_the_new_did() {
+        DeviceStore.shared.pushToken = Data([1, 2, 3])
+        let shop = freshShop()
+        CoreFlag.reset(to: false)
+        let ready = expectation(description: "init")
+        let sdk = SimplePersonalizationSDK(shopId: shop, apiDomain: "stub.test", autoSendPushToken: true, enableAutoPopupPresentation: false) { _ in
+            ready.fulfill()
+        }
+        retained.append(sdk)
+        wait(for: [ready], timeout: 5)
+        func tokens() -> [StubRequest] { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shop) }
+        XCTAssertTrue(eventually { !tokens().isEmpty })
+        StubURLProtocol.handler = { request in
+            request.path == "/init" ? StubReply(json: #"{"did":"next-did"}"#, delay: 0.3) : StubReply()
+        }
+
+        sdk.deleteUserCredentials()
+
+        XCTAssertTrue(eventually { tokens().contains { $0.body["did"] as? String == "next-did" } }, "sent again, for the new customer")
+        XCTAssertFalse(tokens().contains { ($0.body["did"] as? String ?? "").isEmpty }, "never without a did")
+    }
+
+    /// The server knows the did it is sent, and makes a new one only for a new device.
+    private static let echoingInit: (StubRequest) -> StubReply? = { request in
+        guard request.path == "/init" else { return StubReply() }
+        return StubReply(json: #"{"did":"\#(request.query["did"] ?? "new-did")","seance":"server-seance"}"#)
     }
 }

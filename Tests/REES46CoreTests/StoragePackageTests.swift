@@ -183,9 +183,9 @@ final class StoragePackageTests: XCTestCase {
     func test_each_partition_has_its_own_folder_named_after_it() {
         let root = folder()
         let plain = storage(shop: "shop/1", root: root)
-        let prefixed = storage(shop: "shop/1", storageKey: "my.app_", root: root)
+        let prefixed = storage(shop: "shop/1", storageKey: "my.app", root: root)
         XCTAssertEqual(plain.directory?.lastPathComponent, "personalization_sdk_shop_1")
-        XCTAssertEqual(prefixed.directory?.lastPathComponent, "my_app_shop_1")
+        XCTAssertEqual(prefixed.directory?.lastPathComponent, "my_app_personalization_sdk_shop_1")
         XCTAssertNotEqual(plain.directory, prefixed.directory)
     }
 
@@ -225,25 +225,43 @@ final class StoragePackageTests: XCTestCase {
         XCTAssertEqual(device.advertisingId, "idfa-3", "the app's new id replaces it")
     }
 
-    func test_the_push_token_stays_where_it_always_was() {
+    func test_the_push_token_is_the_devices_and_is_still_written_where_it_always_was() {
         let standard = suite()
-        let device = DeviceStore(defaults: suite(), pushTokenDefaults: standard)
+        let own = suite()
+        standard.set(Data([7]), forKey: SdkConstants.deviceToken)
+        let device = DeviceStore(defaults: own, pushTokenDefaults: standard)
+        XCTAssertEqual(device.pushToken, Data([7]), "a token an older version stored is read")
+
         device.pushToken = Data([1, 2])
-        XCTAssertEqual(standard.data(forKey: SdkConstants.deviceToken), Data([1, 2]))
+
+        XCTAssertEqual(own.data(forKey: DeviceStore.pushTokenKey), Data([1, 2]))
+        XCTAssertEqual(standard.data(forKey: SdkConstants.deviceToken), Data([1, 2]), "the old core reads it there")
+    }
+
+    func test_the_sdks_folder_is_kept_out_of_backups() throws {
+        let root = folder()
+        let store = storage(root: root)
+        XCTAssertTrue(store.writeSavedInitAnswer(data(#"{"did":"1"}"#)))
+        let values = try root.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        XCTAssertEqual(values.isExcludedFromBackup, true)
     }
 
     func test_the_identity_dual_writes_the_device_level_values_and_reads_the_shops_own() {
         let device = DeviceStore(defaults: suite(), pushTokenDefaults: suite())
         let shopA = suite()
         let shopB = suite()
+        let shopC = suite()
         shopA.set("B", forKey: StoragePartition.abSegmentKey)
         shopB.set("A", forKey: StoragePartition.abSegmentKey)
         let repoA = UserIdentityRepositoryImpl(store: shopA, device: device)
         let repoB = UserIdentityRepositoryImpl(store: shopB, device: device)
+        let repoC = UserIdentityRepositoryImpl(store: shopC, device: device)
 
         XCTAssertEqual(repoA.resolveAbSegment(), "B")
-        XCTAssertEqual(repoB.resolveAbSegment(), "B", "the device's group, from the first shop that had one")
-        XCTAssertEqual(shopB.string(forKey: StoragePartition.abSegmentKey), "B", "the shop's key follows: the old core reads it")
+        XCTAssertEqual(device.abGroup, "B", "the first shop's group is the device's")
+        XCTAssertEqual(repoB.resolveAbSegment(), "A", "a shop keeps its own: the old core reads what it read before")
+        XCTAssertEqual(repoC.resolveAbSegment(), "B", "a shop without one takes the device's")
+        XCTAssertEqual(shopC.string(forKey: StoragePartition.abSegmentKey), "B", "and keeps it in its key, for the old core")
 
         repoA.advertisingId = "idfa-A"
         XCTAssertEqual(device.advertisingId, "idfa-A")

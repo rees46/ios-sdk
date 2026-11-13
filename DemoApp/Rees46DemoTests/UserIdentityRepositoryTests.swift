@@ -93,7 +93,7 @@ final class UserIdentityRepositoryTests: XCTestCase {
         repo.deviceId = "did-custom"
 
         XCTAssertEqual(
-            UserDefaults(suiteName: custom + "shop")?.string(forKey: StoragePartition.deviceIdKey),
+            UserDefaults(suiteName: custom + "_personalization_sdk_shop")?.string(forKey: StoragePartition.deviceIdKey),
             "did-custom"
         )
     }

@@ -206,7 +206,7 @@ final class LoggingTests: XCTestCase {
         XCTAssertTrue(eventually { self.messages(of: self.shopId).contains { $0.code == "invalid_argument" && $0.context["reason"] == "invalid_json" } })
     }
 
-    func test_deleting_the_user_credentials_logs_the_reset_and_releases_the_shop_level() {
+    func test_deleting_the_user_credentials_logs_the_reset_and_keeps_the_shop_level() {
         let ready = expectation(description: "init")
         let sdk = StubSDK.make(shopId: shopId, logLevel: .info) { _ in ready.fulfill() }
         wait(for: [ready], timeout: 5)
@@ -216,8 +216,9 @@ final class LoggingTests: XCTestCase {
 
         XCTAssertTrue(eventually { self.messages(of: self.shopId).contains { $0.code == "device_id_reset" } })
         XCTAssertEqual(messages(of: shopId).first { $0.code == "device_id_reset" }?.level, .info)
-        XCTAssertFalse(SdkLogger.registeredShopIds.contains(shopId))
-        XCTAssertEqual(SdkLogger.forShop(shopId).level, .warning)
+        XCTAssertTrue(SdkLogger.registeredShopIds.contains(shopId), "the instance goes on: its level still counts")
+        XCTAssertEqual(SdkLogger.forShop(shopId).level, .info)
+        withExtendedLifetime(sdk) {}
     }
 
     func test_a_released_owner_no_longer_sets_the_level_of_its_shop_or_of_the_process() {
