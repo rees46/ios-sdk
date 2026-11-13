@@ -127,7 +127,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
               completion: completion
             )
           case .failure(let error):
-              self.handleValidationFailure(error: error, actionName: "subscribeForBackInStock", completion: completion)
+              self.handleValidationFailure(error: error, actionName: "subscribeForPriceDrop", completion: completion)
         }
     }
   }
@@ -153,6 +153,9 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     if let fashionSize = fashionSize { properties[Constants.fashionSize] = fashionSize }
     if let fashionColor = fashionColor { properties[Constants.fashionColor] = fashionColor }
     if let barcode = barcode { properties[Constants.barcode] = barcode }
+    if !properties.isEmpty {
+      params[Constants.properties] = properties
+    }
     
     validator.validate(email: email, phone: phone) { result in
     switch result {
@@ -180,7 +183,8 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         return
       }
 
-      params[Constants.itemIds] = itemIds
+      // The server reads a comma-separated string: an array unsubscribes from nothing.
+      params[Constants.itemIds] = itemIds.joined(separator: ",")
 
       validator.validate(email: email, phone: phone) { result in
         switch result {
@@ -212,14 +216,9 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
         return
       }
 
-      params[Constants.itemIds] = itemIds
-      params[Constants.price] = currentPrice
-
-      if let sdk = sdk {
-        params[Constants.seance] = sdk.userSeance
-        params[Constants.sid] = sdk.userSeance
-        params[Constants.segment] = sdk.segment
-      }
+      // The server reads a comma-separated string: an array unsubscribes from nothing. It reads no
+      // price here: `currentPrice` stays in the signature for compatibility only.
+      params[Constants.itemIds] = itemIds.joined(separator: ",")
 
       validator.validate(email: email, phone: phone) { result in
         switch result {
