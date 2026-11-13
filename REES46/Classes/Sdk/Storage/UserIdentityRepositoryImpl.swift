@@ -33,6 +33,7 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
             into: store,
             partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey),
             storageKey: storageKey,
+            scope: StoragePartition.keyScope(shopId: shopId, storageKey: storageKey),
             legacy: legacy,
             device: device
         )

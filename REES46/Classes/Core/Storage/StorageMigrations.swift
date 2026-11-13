@@ -9,7 +9,8 @@ import Foundation
 
 /// Each migration runs once per shop, when the shop's instance is made — before its `/init` — and
 /// marks itself with a flag in the shop's partition. One whose source did not answer (a disk error, a
-/// locked keychain) leaves its flag unset and runs again on the next launch.
+/// locked keychain) leaves its flag unset and runs again on the next launch. In an app group's suite,
+/// which several shops may share as their partition, a flag carries its shop (`scope`).
 ///
 /// No migration deletes what `LegacyCore` or an older SDK reads: sources are copied, never cleared.
 /// Two sources move rather than copy, on purpose:
@@ -32,29 +33,31 @@ enum StorageMigrations {
         case keychainItem = "keychain_item"
         /// `Documents/<shopId>.json` into the SDK's folder in Application Support.
         case savedInitFile = "saved_init_file"
+        /// `Rees46Config.deviceId`, the device id the app brought: taken once, when the shop has none.
+        case configuredDeviceId = "configured_device_id"
     }
 
     /// Held while a shop takes what has no shop and only one shop may take: the pre-partition identity
     /// and the legacy keychain item.
     static let adoptionLock = NSLock()
 
-    static func flagKey(_ step: Step) -> String {
-        "personalization_sdk.migrated.\(step.rawValue)"
+    /// The key of `step`'s flag; `scope` names the shop in a partition shops share
+    /// (`StoragePartition.keyScope`).
+    static func flagKey(_ step: Step, scope: String? = nil) -> String {
+        StoragePartition.scoped("personalization_sdk.migrated.\(step.rawValue)", scope)
     }
 
-    static func isDone(_ step: Step, in partition: UserDefaults) -> Bool {
-        if step == .keychainItem {
-            return partition.string(forKey: flagKey(step)) == KeychainPartition.service
-        }
-        return partition.bool(forKey: flagKey(step))
+    /// Whether `step` ran. The keychain's flag holds the service it ran under: its store reads it.
+    static func isDone(_ step: Step, in partition: UserDefaults, scope: String? = nil) -> Bool {
+        partition.bool(forKey: flagKey(step, scope: scope))
     }
 
     /// Runs `migrate` unless the shop's flag says it ran. `migrate` returns whether it is done; `false`
     /// leaves the flag unset, so the next launch tries again.
-    static func once(_ step: Step, in partition: UserDefaults, _ migrate: () -> Bool) {
-        guard !isDone(step, in: partition) else { return }
+    static func once(_ step: Step, in partition: UserDefaults, scope: String? = nil, _ migrate: () -> Bool) {
+        guard !isDone(step, in: partition, scope: scope) else { return }
         if migrate() {
-            partition.set(true, forKey: flagKey(step))
+            partition.set(true, forKey: flagKey(step, scope: scope))
         }
     }
 
@@ -66,15 +69,16 @@ enum StorageMigrations {
         into partition: UserDefaults,
         partitionName: String,
         storageKey: String?,
+        scope: String? = nil,
         legacy: UserDefaults = .standard,
         device: DeviceStore?
     ) {
         if let storageKey = StoragePartition.prefix(storageKey) {
-            once(.storageKeySuite, in: partition) {
+            once(.storageKeySuite, in: partition, scope: scope) {
                 copyStorageKeySuite(named: storageKey, into: partition, partitionName: partitionName)
             }
         } else {
-            once(.standardIdentity, in: partition) {
+            once(.standardIdentity, in: partition, scope: scope) {
                 // Consume-once across shops: two shops made on two threads must not both take it.
                 adoptionLock.lock(); defer { adoptionLock.unlock() }
                 StorageMigration.migrateLegacyIfNeeded(into: partition, legacy: legacy)
@@ -82,7 +86,7 @@ enum StorageMigrations {
             }
         }
         if let device = device {
-            once(.deviceAdvertisingId, in: partition) {
+            once(.deviceAdvertisingId, in: partition, scope: scope) {
                 device.adoptAdvertisingId(partition.string(forKey: StoragePartition.idfaKey))
                 return true
             }

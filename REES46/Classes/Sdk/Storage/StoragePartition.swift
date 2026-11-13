@@ -87,6 +87,19 @@ enum StoragePartition {
         prefix(storageKey)?.hasPrefix(appGroupPrefix) ?? false
     }
 
+    /// What the keys of the new core carry in [shopId]'s partition so shops sharing it do not share
+    /// them — the `refused` state, the migration flags: the shop, in an app group's suite, which every
+    /// shop on that key shares; nothing in a partition of the shop's own. The keys an older SDK reads
+    /// (the did, the session) stay as they always were: shared, as before.
+    static func keyScope(shopId: String, storageKey: String?) -> String? {
+        isAppGroup(storageKey) ? sanitize(shopId) : nil
+    }
+
+    /// `key` in `scope`: `<key>.<scope>`, or `key` itself without one.
+    static func scoped(_ key: String, _ scope: String?) -> String {
+        scope.map { "\(key).\($0)" } ?? key
+    }
+
     /// Stable suite name for [shopId]'s partition: `personalization_sdk_<shopId>`, after the app's
     /// [storageKey] and `_` when it set one; an app group's [storageKey] as it is.
     static func suiteName(for shopId: String, storageKey: String? = nil) -> String {

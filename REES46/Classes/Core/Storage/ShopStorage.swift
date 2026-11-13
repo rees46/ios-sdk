@@ -20,12 +20,15 @@ final class ShopStorage {
     static let folderName = "personalization_sdk"
     static let savedInitFileName = "init.json"
     static let queueFolderName = "queue"
-    /// The shop's `refused` state in its partition.
+    /// The shop's `refused` state in its partition (with `keyScope` in a shared one).
     static let refusedKey = "personalization_sdk.refused"
 
     let shopId: String
     /// The shop's partition.
     let partition: UserDefaults
+    /// What the shop's own keys carry in its partition: the shop, when an app group's suite is the
+    /// partition of several shops (`StoragePartition.keyScope`).
+    let keyScope: String?
     /// The shop's folder; `nil` only if the system gives no Application Support folder.
     let directory: URL?
     /// The SDK's folder, which holds every shop's.
@@ -54,6 +57,7 @@ final class ShopStorage {
     ) {
         self.shopId = shopId
         self.partition = partition ?? StoragePartition.store(for: shopId, storageKey: storageKey)
+        self.keyScope = StoragePartition.keyScope(shopId: shopId, storageKey: storageKey)
         self.fileManager = fileManager
         self.logger = logger
         let base = root ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
@@ -132,14 +136,19 @@ final class ShopStorage {
     /// The shop refused the SDK (`402`, `403`, `404` to `/init`); kept until a later `/init` passes or
     /// the customer's data is deleted.
     var refused: Bool {
-        get { partition.bool(forKey: Self.refusedKey) }
+        get { partition.bool(forKey: refusedKey) }
         set {
             if newValue {
-                partition.set(true, forKey: Self.refusedKey)
+                partition.set(true, forKey: refusedKey)
             } else {
-                partition.removeObject(forKey: Self.refusedKey)
+                partition.removeObject(forKey: refusedKey)
             }
         }
+    }
+
+    /// The key of the shop's `refused` state.
+    var refusedKey: String {
+        StoragePartition.scoped(Self.refusedKey, keyScope)
     }
 
     // MARK: - The queue's folder

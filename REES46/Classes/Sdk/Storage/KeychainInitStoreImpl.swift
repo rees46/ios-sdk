@@ -29,14 +29,16 @@ final class KeychainInitStoreImpl: KeychainInitStore {
     private let shopId: String
     private let previousServices: [String]
 
-    /// - Parameter partition: the shop's partition, where the adoption marks itself done.
-    init(shopId: String, service: String, previousServices: [String] = [], partition: UserDefaults? = nil) {
+    /// - Parameters:
+    ///   - partition: the shop's partition, where the adoption marks itself done.
+    ///   - flagScope: what the flag carries in a partition shops share (`StoragePartition.keyScope`).
+    init(shopId: String, service: String, previousServices: [String] = [], partition: UserDefaults? = nil, flagScope: String? = nil) {
         self.service = service
         self.account = KeychainPartition.account(shopId: shopId, service: service)
         self.shopId = shopId
         self.previousServices = previousServices.filter { $0 != service }
         if let partition = partition {
-            let key = StorageMigrations.flagKey(.keychainItem)
+            let key = StorageMigrations.flagKey(.keychainItem, scope: flagScope)
             if partition.string(forKey: key) != service, adoptLegacyIfNeeded() {
                 partition.set(service, forKey: key)
             }
@@ -111,6 +113,9 @@ final class KeychainInitStoreImpl: KeychainInitStore {
                 answered = false
                 continue
             case .found(let legacy):
+                // Only the SDK's own backup — the saved init answer, with a device id. An item of the app
+                // under the same service and account (its bundle id, both) is the app's: left alone.
+                guard Self.isInitAnswer(legacy) else { continue }
                 do {
                     try InitService.upsertKeychainDidToken(legacy, identifier: account, instanceKeychainService: service)
                 } catch {
@@ -124,5 +129,14 @@ final class KeychainInitStoreImpl: KeychainInitStore {
             }
         }
         return answered
+    }
+
+    /// Whether `data` is what the SDK keeps in the keychain: a JSON object with a device id.
+    static func isInitAnswer(_ data: Data) -> Bool {
+        guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let deviceId = json["did"] as? String else {
+            return false
+        }
+        return !deviceId.isEmpty
     }
 }
