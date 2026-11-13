@@ -71,14 +71,68 @@ public class NetworkStatus {
 
     private let source: NetworkPathSource
     private let lock = NSLock()
-    /// Held while a change is made and told: observers hear the states in the order they came, and a
-    /// new observer's first state never arrives after a newer one. Recursive: an observer may add
-    /// another from its callback.
-    private let delivery = NSRecursiveLock()
     /// `nil` until the first path: unknown.
     private var knownStatus: NetworkConnectionStatus?
     private var knownType: NetworkConnectionType?
-    private var observers: [String: NetworkStatusObserver] = [:]
+    /// Counts the states: an observer never hears an older one after a newer one.
+    private var version = 0
+    private var observers: [String: Delivery] = [:]
+
+    /// One state as an observer hears it.
+    private struct State {
+        let version: Int
+        let status: NetworkConnectionStatus
+        let type: NetworkConnectionType?
+    }
+
+    /// What one observer was told, and the state waiting to be told. No lock is held while the
+    /// observer runs: one thread tells it at a time, and a state that comes meanwhile is picked up by
+    /// that thread when the observer returns — so an observer that waits for the main thread never
+    /// blocks one that adds an observer or reports a path.
+    private final class Delivery {
+        let observer: NetworkStatusObserver
+        private let lock = NSLock()
+        private var offered = -1
+        private var waiting: State?
+        private var delivering = false
+        private var told: (status: NetworkConnectionStatus, type: NetworkConnectionType?)?
+
+        init(_ observer: NetworkStatusObserver) {
+            self.observer = observer
+        }
+
+        /// Tells `state` unless the observer heard a newer one; a state it heard already is not told
+        /// again, a status or a type that did not change is left out.
+        func offer(_ state: State) {
+            lock.lock()
+            guard state.version > offered else {
+                lock.unlock()
+                return
+            }
+            offered = state.version
+            waiting = state
+            guard !delivering else {
+                lock.unlock()
+                return
+            }
+            delivering = true
+            while let next = waiting {
+                waiting = nil
+                let previous = told
+                told = (next.status, next.type)
+                lock.unlock()
+                if previous == nil || previous?.status != next.status {
+                    observer.didChangeConnectionStatus(next.status)
+                }
+                if previous == nil || previous?.type != next.type {
+                    observer.didChangeConnectionType(next.type)
+                }
+                lock.lock()
+            }
+            delivering = false
+            lock.unlock()
+        }
+    }
 
     /// `Online` while the first path has not come yet.
     public var connectionStatus: NetworkConnectionStatus {
@@ -142,37 +196,31 @@ public class NetworkStatus {
         update(status: .Online, type: type, keepsType: false)
     }
 
-    /// Changes the state under the lock, then tells the observers what changed, outside it: an
-    /// observer may read the status or stop observing from its callback.
+    /// Changes the state under the lock, then tells the observers outside it: an observer may read
+    /// the status, stop observing or wait for another thread from its callback.
     private func update(status: NetworkConnectionStatus?, type: NetworkConnectionType?, keepsType: Bool) {
-        delivery.lock()
-        defer { delivery.unlock() }
         lock.lock()
-        var statusChanged = false
-        var typeChanged = false
+        var changed = false
         if let status = status, knownStatus != status {
             // Until the first path observers were told `Online`: a first path that is online is
             // no change for them.
-            statusChanged = (knownStatus ?? .Online) != status
+            changed = (knownStatus ?? .Online) != status
             knownStatus = status
         }
         if !keepsType, knownType != type {
             knownType = type
-            typeChanged = true
+            changed = true
         }
-        let currentStatus = knownStatus ?? .Online
-        let currentType = knownType
+        guard changed else {
+            lock.unlock()
+            return
+        }
+        version += 1
+        let state = State(version: version, status: knownStatus ?? .Online, type: knownType)
         let toNotify = Array(observers.values)
         lock.unlock()
 
-        for observer in toNotify {
-            if statusChanged {
-                observer.didChangeConnectionStatus(currentStatus)
-            }
-            if typeChanged {
-                observer.didChangeConnectionType(currentType)
-            }
-        }
+        toNotify.forEach { $0.offer(state) }
     }
 
     #if os(iOS)
@@ -200,19 +248,15 @@ public class NetworkStatus {
     }
     #endif
 
-    /// Adds `observer` and tells it the current state. Safe from any thread: the monitor's queue
-    /// notifies a copy of the observers taken under the lock, and a change that comes meanwhile
-    /// reaches the observer after its first state, never before.
+    /// Adds `observer` and tells it the current state. Safe from any thread: a change that comes
+    /// meanwhile reaches the observer after its first state, never before.
     internal func addObserver(observer: NetworkStatusObserver) {
-        delivery.lock()
-        defer { delivery.unlock() }
+        let delivery = Delivery(observer)
         lock.lock()
-        observers[observer.connectionObserverId] = observer
-        let currentStatus = knownStatus ?? .Online
-        let currentType = knownType
+        observers[observer.connectionObserverId] = delivery
+        let state = State(version: version, status: knownStatus ?? .Online, type: knownType)
         lock.unlock()
-        observer.didChangeConnectionStatus(currentStatus)
-        observer.didChangeConnectionType(currentType)
+        delivery.offer(state)
     }
 
     internal func removeObserver(observer: NetworkStatusObserver) {

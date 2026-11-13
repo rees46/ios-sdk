@@ -253,6 +253,27 @@ final class CoreSafetyTests: XCTestCase {
         }
     }
 
+    func test_an_observer_that_waits_for_the_main_thread_does_not_block_one_added_on_it() {
+        let source = FakePathSource()
+        let status = NetworkStatus(source: source)
+        let waiting = MainSyncObserver()
+        status.addObserver(observer: waiting)
+        waiting.armed = true
+
+        // A path comes on another thread; its observer waits for the main thread, which meanwhile adds
+        // an observer of its own.
+        let delivered = expectation(description: "delivered")
+        DispatchQueue.global().async {
+            source.deliver(.offline)
+            delivered.fulfill()
+        }
+        XCTAssertEqual(waiting.entered.wait(timeout: .now() + 5), .success)
+        let added = RecordingObserver()
+        status.addObserver(observer: added)
+        wait(for: [delivered], timeout: 5)
+        XCTAssertEqual(added.statuses.last, .Offline)
+    }
+
     func test_the_system_connectivity_monitor_reports_the_state_at_once_and_stops_when_cancelled() {
         var reports: [Bool] = []
         let subscription = SystemConnectivityMonitor.shared.observe { reports.append($0) }
@@ -304,4 +325,16 @@ final class RecordingObserver: NetworkStatusObserver {
     var types: [NetworkConnectionType?] { lock.lock(); defer { lock.unlock() }; return heardTypes }
     func didChangeConnectionStatus(_ status: NetworkConnectionStatus) { lock.lock(); heardStatuses.append(status); lock.unlock() }
     func didChangeConnectionType(_ type: NetworkConnectionType?) { lock.lock(); heardTypes.append(type); lock.unlock() }
+}
+
+/// Waits for the main thread from its callback once armed.
+final class MainSyncObserver: NetworkStatusObserver {
+    var armed = false
+    let entered = DispatchSemaphore(value: 0)
+    func didChangeConnectionStatus(_ status: NetworkConnectionStatus) {
+        guard armed, !Thread.isMainThread else { return }
+        entered.signal()
+        DispatchQueue.main.sync {}
+    }
+    func didChangeConnectionType(_ type: NetworkConnectionType?) {}
 }
