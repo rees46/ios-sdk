@@ -12,7 +12,7 @@
 
 import UIKit
 import XCTest
-@testable import REES46
+@_spi(Bridge) @testable import REES46
 
 final class CorePushTests: XCTestCase {
 
@@ -558,6 +558,30 @@ final class CorePushTests: XCTestCase {
             XCTAssertEqual(payload.target?.type, .product)
             XCTAssertEqual(payload.target?.uri, "37")
         }
+    }
+
+    func test_the_callbacks_and_the_bridges_hear_only_an_event_the_queue_accepted() {
+        let shop = newShop()
+        let released = make(shop)
+        released.release()
+        // Still routed to, as a push that comes while the app swaps its instance: the queue takes nothing.
+        SdkRegistry.shared.register(shopId: shop, sdk: released)
+        let heard = Locked<[String]>([])
+        Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { _ in heard.mutate { $0.append("app") } }))
+        let bridge = Rees46.onPushEvent { _, _ in heard.mutate { $0.append("bridge") } }
+        defer { bridge.cancel() }
+
+        XCTAssertEqual(Rees46.handlePush(push(shop), event: .delivered), shop)
+        // The queue's refusal frees the event: nothing was told for it, and it may go again.
+        XCTAssertTrue(eventually { !PushCenter.isTaken(.delivered, code: "m-1", shopId: shop) })
+        drainMainQueue()
+        XCTAssertTrue(heard.current.isEmpty, "a refused event calls no callback and tells no bridge")
+
+        SdkRegistry.shared.reset()
+        _ = make(shop)
+        Rees46.handlePush(push(shop), event: .delivered)
+        XCTAssertTrue(eventually { heard.current.sorted() == ["app", "bridge"] }, "accepted now: heard once")
+        XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 })
     }
 
     func test_an_instances_own_callbacks_win_over_the_facades_one_by_one() {

@@ -345,6 +345,14 @@ extension XCTestCase {
         StubURLProtocol.handler = previous
     }
 
+    /// Runs what the main queue holds so far: whatever the SDK dispatched there before the call has run
+    /// when it returns.
+    func drainMainQueue() {
+        let drained = expectation(description: "the main queue")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 5)
+    }
+
     /// Spins the run loop until `condition` holds or `timeout` passes; returns the last answer.
     @discardableResult
     func eventually(timeout: TimeInterval = 5, _ condition: () -> Bool) -> Bool {

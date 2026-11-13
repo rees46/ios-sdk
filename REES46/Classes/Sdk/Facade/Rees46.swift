@@ -451,10 +451,11 @@ public enum Rees46 {
             logger.warning(LogCode.pushDropped, "the shop of the push has no device id: the event was not sent", ["reason": "no_did"])
             return
         }
-        if !PushCenter.claim(route.newCoreEvent, code: code, shopId: shopId) {
+        if !PushCenter.reserve(route.newCoreEvent, code: code, shopId: shopId) {
             logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": sent.name, "repeat": "true"])
             return
         }
+        PushCenter.confirm(route.newCoreEvent, code: code, shopId: shopId)
         logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
         pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId, newCore: true))
         if case .event(let event) = sent, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {

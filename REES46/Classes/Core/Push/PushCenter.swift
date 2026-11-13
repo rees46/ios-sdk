@@ -44,8 +44,10 @@ enum PushCenter {
 
     private static let lock = NSLock()
     private static var facadeCallbacks: Rees46.PushCallbacks?
-    /// The events sent in this process: shop, event and message.
+    /// The events of this process a queue accepted: shop, event and message.
     private static var sent: Set<String> = []
+    /// The events being handed to a queue now: a second one waits for nothing and sends nothing.
+    private static var reserved: Set<String> = []
     /// The tokens told in this process: provider and token.
     private static var tokens: Set<String> = []
     private static var eventListeners: [UUID: (Rees46.PushEvent, Rees46.PushPayload) -> Void] = [:]
@@ -57,18 +59,43 @@ enum PushCenter {
         set { lock.lock(); facadeCallbacks = newValue; lock.unlock() }
     }
 
-    /// Whether `event` of the message `code` goes to `shopId` now: once per process
-    /// (`sdk/contract/notifications.md`). The first call claims it; a repeat — a tap seen twice, a
-    /// `delivered` after the old `received` — is `false`.
-    static func claim(_ event: Rees46.PushEvent, code: String, shopId: String) -> Bool {
+    /// Whether `event` of the message `code` may go to `shopId` now: once per process
+    /// (`sdk/contract/notifications.md`). `false` for a repeat — a tap seen twice, a `delivered` after
+    /// the old `received` — of an event a queue accepted, or one being handed to a queue right now. The
+    /// event counts as sent only once its queue accepted it (`confirm`); one the queue did not take is
+    /// `release`d and may go when it comes again.
+    static func reserve(_ event: Rees46.PushEvent, code: String, shopId: String) -> Bool {
+        let key = self.key(event, code: code, shopId: shopId)
         lock.lock(); defer { lock.unlock() }
-        return sent.insert("\(shopId)\u{1F}\(event.rawValue)\u{1F}\(code)").inserted
+        guard !sent.contains(key) else { return false }
+        return reserved.insert(key).inserted
     }
 
-    /// Gives back a claim whose event the queue did not take: it may go later.
-    static func unclaim(_ event: Rees46.PushEvent, code: String, shopId: String) {
+    /// The queue accepted the event of `reserve`: a repeat sends nothing from now on.
+    static func confirm(_ event: Rees46.PushEvent, code: String, shopId: String) {
+        let key = self.key(event, code: code, shopId: shopId)
         lock.lock(); defer { lock.unlock() }
-        sent.remove("\(shopId)\u{1F}\(event.rawValue)\u{1F}\(code)")
+        reserved.remove(key)
+        sent.insert(key)
+    }
+
+    /// The queue did not take the event of `reserve` — a released instance, a refused shop, a disk
+    /// that failed: it may go when it comes again.
+    static func release(_ event: Rees46.PushEvent, code: String, shopId: String) {
+        let key = self.key(event, code: code, shopId: shopId)
+        lock.lock(); defer { lock.unlock() }
+        reserved.remove(key)
+    }
+
+    /// Whether `event` of the message is sent or being handed to a queue; for tests.
+    static func isTaken(_ event: Rees46.PushEvent, code: String, shopId: String) -> Bool {
+        let key = self.key(event, code: code, shopId: shopId)
+        lock.lock(); defer { lock.unlock() }
+        return sent.contains(key) || reserved.contains(key)
+    }
+
+    private static func key(_ event: Rees46.PushEvent, code: String, shopId: String) -> String {
+        "\(shopId)\u{1F}\(event.rawValue)\u{1F}\(code)"
     }
 
     /// Calls the app's callback of `event` on the main thread — the instance's own when it set one, the
@@ -136,6 +163,7 @@ enum PushCenter {
         lock.lock()
         facadeCallbacks = nil
         sent.removeAll()
+        reserved.removeAll()
         tokens.removeAll()
         eventListeners.removeAll()
         tokenListeners.removeAll()

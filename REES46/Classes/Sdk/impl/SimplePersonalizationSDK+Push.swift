@@ -17,11 +17,13 @@ extension SimplePersonalizationSDK {
     /// - The new core sends each event once per message in the process, through the queue —
     ///   `track/delivered`, `track/opened`, `track/clicked`, `track/closed`; never `track/received`,
     ///   which becomes `delivered` — and a click stores the push as the source of the next `/push`
-    ///   events for 48 hours. A repeat sends nothing and calls no callback.
+    ///   events for 48 hours. A repeat sends nothing and calls no callback. The app's callback and the
+    ///   bridges' listeners hear the event once the queue accepted it — on disk —, and not at all when
+    ///   it did not: a released instance, a refused shop.
     /// - The old core sends exactly what it always has: `delivered`, `received` and `clicked`, at once;
-    ///   `opened` and `closed`, which it never had, send nothing.
+    ///   `opened` and `closed`, which it never had, send nothing. The callback is called at once.
     ///
-    /// On both cores the app's callback of the event is called: the instance's own, else the facade's.
+    /// On both cores the callback is the instance's own, else the facade's.
     func receivePush(_ route: PushRoute, type: String, code: String, payload: [AnyHashable: Any]) {
         let parsed = Rees46.PushPayload.parse(payload, shopId: shopId)
         guard usesCoreV2 else {
@@ -42,13 +44,15 @@ extension SimplePersonalizationSDK {
             return
         }
         let event = route.newCoreEvent
-        guard PushCenter.claim(event, code: code, shopId: shopId) else {
+        guard PushCenter.reserve(event, code: code, shopId: shopId) else {
             logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": event.rawValue, "repeat": "true"])
             return
         }
-        enqueuePushEvent(event, type: type, code: code, completion: nil)
-        if let parsed = parsed {
-            PushCenter.notify(event, payload: parsed, instance: pushCallbackBox.callbacks)
+        let callbacks = pushCallbackBox
+        enqueuePushEvent(event, type: type, code: code, completion: nil) {
+            if let parsed = parsed {
+                PushCenter.notify(event, payload: parsed, instance: callbacks.callbacks)
+            }
         }
     }
 
@@ -68,26 +72,36 @@ extension SimplePersonalizationSDK {
             later(.failure(.legacy(.invalidArgument(what))), .invalidArgument(what))
             return
         }
-        guard PushCenter.claim(event, code: code, shopId: shopId) else {
+        guard PushCenter.reserve(event, code: code, shopId: shopId) else {
             later(.success(()), nil)
             return
         }
         enqueuePushEvent(event, type: type, code: code, completion: completion)
     }
 
-    /// The event into the shop's queue (`sdk/core/queue.md`), its message claimed by the caller: a queue
-    /// that does not take it — a released instance, a refused shop — gives the claim back, so the event
-    /// may go later. A click stores the push as the source of the `/push` events of the next 48 hours,
-    /// when its type is a source (`TrackingSourceType`).
-    private func enqueuePushEvent(_ event: Rees46.PushEvent, type: String, code: String, completion: ((Result<Void, SdkError>) -> Void)?) {
+    /// The event into the shop's queue (`sdk/core/queue.md`), its message reserved by the caller
+    /// (`PushCenter.reserve`): it counts as sent once the queue accepted it, and `onAccepted` runs
+    /// then; a queue that does not take it — a released instance, a refused shop — frees it, so the
+    /// event may go when it comes again. A click stores the push as the source of the `/push` events of
+    /// the next 48 hours, when its type is a source (`TrackingSourceType`).
+    private func enqueuePushEvent(
+        _ event: Rees46.PushEvent,
+        type: String,
+        code: String,
+        completion: ((Result<Void, SdkError>) -> Void)?,
+        onAccepted: @escaping () -> Void = {}
+    ) {
         if event == .clicked, let source = TrackingSourceType(rawValue: type) {
             sourceStore.store(type: source.rawValue, code: code)
         }
         let shopId = self.shopId
         let accepted: (Rees46.SdkError?) -> Void = { error in
-            if error != nil {
-                PushCenter.unclaim(event, code: code, shopId: shopId)
+            guard error == nil else {
+                PushCenter.release(event, code: code, shopId: shopId)
+                return
             }
+            PushCenter.confirm(event, code: code, shopId: shopId)
+            onAccepted()
         }
         _ = enqueueEvent(path: event.path, body: ["code": code, "type": type], accepted: accepted) { result in
             completion?(result.map { _ in () })
