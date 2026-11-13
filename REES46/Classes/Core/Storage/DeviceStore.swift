@@ -11,9 +11,9 @@ import Foundation
 /// advertising id. `deleteUserCredentials()` keeps them: they are about the device, not about the
 /// customer.
 ///
-/// The A/B group and the advertising id used to live in each shop's partition, and the shops' keys go
-/// on being written (`UserIdentityRepositoryImpl`): `LegacyCore` and older SDK versions read them
-/// there. The push token stays where it always was, in `UserDefaults.standard`.
+/// The A/B group and the advertising id used to live in each shop's partition, the push token in
+/// `UserDefaults.standard`; those keys go on being written (`UserIdentityRepositoryImpl`, `pushToken`),
+/// so `LegacyCore` and older SDK versions read exactly what they read before.
 final class DeviceStore {
 
     /// A suite of its own. The dot keeps it apart from every shop's partition: a partition's name is
@@ -22,6 +22,7 @@ final class DeviceStore {
 
     static let abGroupKey = "ab_group"
     static let advertisingIdKey = "advertising_id"
+    static let pushTokenKey = "push_token"
     /// The A/B groups the server knows.
     static let abGroups = ["A", "B"]
 
@@ -35,17 +36,24 @@ final class DeviceStore {
     private let lock = NSLock()
 
     /// - Parameters:
-    ///   - defaults: where the A/B group and the advertising id live;
-    ///   - pushTokenDefaults: where the push token lives — `.standard`, as it always did.
+    ///   - defaults: the device's suite;
+    ///   - pushTokenDefaults: where the push token has always been — `.standard`, still written.
     init(defaults: UserDefaults, pushTokenDefaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.pushTokenDefaults = pushTokenDefaults
     }
 
-    /// The APNs token the app was handed last, kept for the next launches.
+    /// The APNs token the app was handed last, kept for the next launches: in the device's suite,
+    /// and where it has always been, for the old core and older SDK versions. One an older version
+    /// stored is read from there.
     var pushToken: Data? {
-        get { pushTokenDefaults.data(forKey: SdkConstants.deviceToken) }
-        set { pushTokenDefaults.set(newValue, forKey: SdkConstants.deviceToken) }
+        get {
+            defaults.data(forKey: Self.pushTokenKey) ?? pushTokenDefaults.data(forKey: SdkConstants.deviceToken)
+        }
+        set {
+            defaults.set(newValue, forKey: Self.pushTokenKey)
+            pushTokenDefaults.set(newValue, forKey: SdkConstants.deviceToken)
+        }
     }
 
     /// The device's A/B group, `nil` until one is assigned.
@@ -56,7 +64,7 @@ final class DeviceStore {
 
     /// The device's A/B group, assigned once: the stored one; otherwise `candidate` — the group of the
     /// first shop that has one (decision 4) — when it is valid; otherwise a new one. Under one lock, so
-    /// two shops made at once end up with the same group.
+    /// two shops made at once without a group of their own get the same one.
     func resolveAbGroup(candidate: String?) -> String {
         lock.lock(); defer { lock.unlock() }
         if let stored = Self.validGroup(defaults.string(forKey: Self.abGroupKey)) {

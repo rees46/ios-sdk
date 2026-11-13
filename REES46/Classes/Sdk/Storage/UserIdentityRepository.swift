@@ -40,7 +40,7 @@ protocol UserIdentityRepository: AnyObject {
     /// keeps it: the segment belongs to the device, not to the user.
     var abSegment: String? { get set }
 
-    /// The device's A/B segment, assigned once and written to the shop's copy too.
+    /// The shop's A/B segment, assigned once: its own, or the device's when it has none.
     func resolveAbSegment() -> String
 
     /// Removes only the device id — used by the forced re-initialization path.

@@ -28,11 +28,13 @@ class NotificationRegistrar {
         "\(Constants.mainPushTokenLastUploadDateKey).\(shopId)"
     }
 
-    /// Forgets when the token last went to `shopId`: the next registration sends it at once — to the
-    /// new customer after `deleteUserCredentials`.
+    /// Forgets when the token last went to `shopId`, under its key and under the one key every shop
+    /// shared before: the next registration sends it at once — to the new customer after
+    /// `deleteUserCredentials`.
     static func forgetUpload(shopId: String) {
         uploadLock.lock()
         UserDefaults.standard.removeObject(forKey: lastUploadDateKey(shopId: shopId))
+        UserDefaults.standard.removeObject(forKey: Constants.mainPushTokenLastUploadDateKey)
         uploadLock.unlock()
     }
 
@@ -41,7 +43,7 @@ class NotificationRegistrar {
 
     func registerWithDeviceToken(deviceToken: Data) {
         // Kept for the next launches: with `autoSendPushToken` every shop sends it after its /init.
-        UserDefaults.standard.set(deviceToken, forKey: SdkConstants.deviceToken)
+        DeviceStore.shared.pushToken = deviceToken
 
         // The week's upload is claimed before it goes out, so two calls at once — the app's token
         // callback and the SDK's own send after /init — send the token once. Written after the

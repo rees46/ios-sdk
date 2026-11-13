@@ -113,7 +113,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var requestOperation: RequestOperation?
     let bodyMutableData = NSMutableData()
     private let initSemaphore = DispatchSemaphore(value: 0)
-    private let serialSemaphore = DispatchSemaphore(value: 0)
     
     lazy var trackEventService: TrackEventServiceProtocol = {
         return TrackEventServiceImpl(sdk: self)
@@ -268,8 +267,46 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         _ = core
         _ = popupsV3
         
+        startInit(completion: completion)
+        
+        initializeNotificationRegistrar()
+    }
+
+    // MARK: - /init
+
+    /// Counts the instance's `/init`s: `deleteUserCredentials` starts another, and a late answer to an
+    /// earlier one changes nothing.
+    private var initGeneration = 0
+    private let initGenerationLock = NSLock()
+
+    private func nextInitGeneration() -> Int {
+        initGenerationLock.lock(); defer { initGenerationLock.unlock() }
+        initGeneration += 1
+        return initGeneration
+    }
+
+    private func isCurrentInit(_ generation: Int) -> Bool {
+        initGenerationLock.lock(); defer { initGenerationLock.unlock() }
+        return generation == initGeneration
+    }
+
+    /// Queues `/init`. Requests made while the instance has no device id wait for it and go out with
+    /// the id it brings; once it is stored the push token goes to the shop.
+    private func startInit(completion: ((SdkError?) -> Void)?) {
+        let generation = nextInitGeneration()
         let initOperation = BlockOperation {
-            self.sendInitRequest { initResult in
+            self.sendInitRequest(generation: generation) { initResult in
+                // A later /init took over (`deleteUserCredentials`): this answer belonged to the
+                // customer that was deleted, and changes nothing. The app still hears once.
+                guard self.isCurrentInit(generation) else {
+                    if case let .failure(error) = initResult {
+                        completion?(error)
+                    } else {
+                        completion?(nil)
+                    }
+                    self.initSemaphore.signal()
+                    return
+                }
                 switch initResult {
                 case .success(let response):
                     self.userInfo = response
@@ -326,10 +363,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             requestQueue.hold(until: initOperation)
         }
         sessionQueue.addOperation(initOperation)
-        
-        initializeNotificationRegistrar()
     }
-    
+
     func getDeviceId() -> String {
         return deviceId
     }
@@ -384,7 +419,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     }
                     
                     // Attempt to send the push token if available
-                    if let deviceToken = UserDefaults.standard.data(forKey: SdkConstants.deviceToken) {
+                    if let deviceToken = DeviceStore.shared.pushToken {
                         let notificationRegistrar = NotificationRegistrar(sdk: self)
                         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
                     }
@@ -398,7 +433,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     private func handleAutoSendPushToken() {
-        if let deviceToken = UserDefaults.standard.data(forKey: SdkConstants.deviceToken) {
+        if let deviceToken = DeviceStore.shared.pushToken {
             let notificationRegistrar = NotificationRegistrar(sdk: self)
             notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
         }
@@ -1243,9 +1278,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// among them, is the server's word. The saved answer used to replace `/init` for good: the file
     /// and the keychain took turns answering every launch, and the server never saw the device again.
     private func sendInitRequest(
+        generation: Int,
         completion: @escaping (Result<InitResponse, SdkError>) -> Void
     ) {
         let params = prepareRequestParameters()
+        // The operation waits for its own answer: two /init at once (one after deleteUserCredentials)
+        // must not wake each other.
+        let answered = DispatchSemaphore(value: 0)
         // With a saved answer to stand in, /init does not wait for the network: offline it fails at
         // once and the saved answer takes over. Without one, /init waits for the network, as before.
         let saved = needReInitialization ? nil : savedInitResponse()
@@ -1255,6 +1294,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             timeout: NetworkClient.initTimeout,
             waitsForNetwork: saved == nil
         ) { status, result in
+            defer { answered.signal() }
+            // The answer to an /init that a later one replaced stores nothing: its device id is the
+            // deleted customer's.
+            guard self.isCurrentInit(generation) else {
+                completion(result.flatMap(Self.jsonObject).map { InitResponse(json: $0) })
+                return
+            }
             switch result.flatMap(Self.jsonObject) {
             case let .success(json):
                 let resultResponse = InitResponse(json: json)
@@ -1272,9 +1318,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     completion(.failure(error))
                 }
             }
-            self.serialSemaphore.signal()
         }
-        serialSemaphore.wait()
+        answered.wait()
     }
 
     /// The session `/init` comes in. Without one the server starts its "new session" chain on every
@@ -1379,16 +1424,19 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     
     /// Forgets the customer (`sdk/core/storage.md`): the did, the session and its last activity — in
     /// storage and in this instance — the saved init answer and its keychain backup, `refused`, the
-    /// source the app set, the date the push token last went to the shop, so it goes again for the
-    /// new customer, and on the new core the queue of their events. The device's push token, A/B group
-    /// and advertising id stay, and so does the stories state.
+    /// source the app set, the dates the push token last went to the shop, and on the new core the
+    /// queue of their events. The device's push token, A/B group and advertising id stay, and so do the
+    /// stories state and the migration flags.
+    ///
+    /// The instance stays registered and sends `/init` again, without a device id: requests made
+    /// meanwhile wait for the new one instead of going out without it, the push token goes to the
+    /// shop once the new id is stored, and a late answer to the earlier `/init` changes nothing.
     public func deleteUserCredentials() {
         userIdentity.clearIdentity()
         deviceId = ""
-        userSeance = ""
         storage.removeSavedInitAnswer()
-        // The keychain backup too: otherwise a re-init would restore the very did just deleted from
-        // its reinstall-surviving copy.
+        // The keychain backup too: otherwise the next launch would restore the very did just deleted
+        // from its reinstall-surviving copy.
         keychainStore.clear()
         storage.refused = false
         sourceStore.clear()
@@ -1396,13 +1444,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if usesCoreV2 {
             storage.removeQueueDirectory()
         }
+        // The contacts given at creation were the deleted customer's: the next /init does not send
+        // them to the profile of the new device id.
+        userEmail = nil
+        userPhone = nil
+        userLoyaltyId = nil
+        // The new customer's session.
+        userSeance = sessionManager.currentSessionId()
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
-
-        // Multi-instance groundwork (R1): this instance is torn down — drop it from push routing so a
-        // superseded object is not fed push tokens or resolved by `shop_id`, and its log level no
-        // longer counts for the shop.
-        SdkRegistry.shared.unregister(self)
-        SdkLogger.unregister(owner: self)
+        startInit(completion: nil)
     }
 
     /// Stops this instance: it leaves the registry and push routing, its log level stops counting,

@@ -87,14 +87,17 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
         set { store.set(newValue, forKey: StoragePartition.abSegmentKey) }
     }
 
-    /// The device's group: the one the device has, or this shop's when it is the first to have one,
-    /// or a new one (decision 4). The shop's key gets it too: `LegacyCore` sends what it reads there.
+    /// The shop's group. A shop that has one keeps it — `LegacyCore` reads exactly what it read before
+    /// — and gives it to the device when the device has none: the first shop's group is the device's
+    /// (decision 4). A shop without one takes the device's, or a new one the device keeps.
     func resolveAbSegment() -> String {
         guard let device = device else { return resolveOwnAbSegment() }
-        let group = device.resolveAbGroup(candidate: abSegment)
-        if abSegment != group {
-            abSegment = group
+        if let own = abSegment, DeviceStore.abGroups.contains(own) {
+            _ = device.resolveAbGroup(candidate: own)
+            return own
         }
+        let group = device.resolveAbGroup(candidate: nil)
+        abSegment = group
         return group
     }
 

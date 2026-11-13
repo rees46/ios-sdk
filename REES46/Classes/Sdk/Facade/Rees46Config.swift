@@ -40,11 +40,12 @@ public struct Rees46Config {
     public let enableAutoPopupPresentation: Bool
     /// Forces a fresh `init` request instead of reusing stored session data.
     public let needReInitialization: Bool
-    /// The app's prefix of the shop's storage, in place of `personalization_sdk_`: the shop's
-    /// `UserDefaults` suite is `<storageKey><shopId>` and its files have a folder of that name. `nil`
-    /// (the default) is the SDK's prefix. Earlier versions named the suite `storageKey` itself, so two
-    /// shops on one key shared it; the SDK copies the shop's values from that suite once and leaves it
-    /// as it is.
+    /// The app's prefix of the shop's storage: the shop's `UserDefaults` suite is
+    /// `<storageKey>_personalization_sdk_<shopId>`, as on Android, and its files have a folder of that
+    /// name; `nil` (the default) is `personalization_sdk_<shopId>`. Earlier versions named the suite
+    /// `storageKey` itself, so two shops on one key shared it; the SDK copies the shop's values from
+    /// that suite once and leaves it as it is. A key set on an install that had none starts a fresh
+    /// partition.
     public let storageKey: String?
     /// Runs the shop on the new core of the SDK (`false` by default): its network client first,
     /// with init, session, queue and pushes to follow. The first `Rees46.initialize` or

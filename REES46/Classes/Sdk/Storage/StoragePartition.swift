@@ -17,9 +17,11 @@ import Foundation
  `PreferencesPartition` (same `personalization_sdk_` prefix and filename-safe sanitising), so the two
  platforms share one mental model and one migration story.
 
- `Rees46Config.storageKey` is the app's own prefix in place of `personalization_sdk_` (decision 5):
- the partition is `<storageKey><shopId>`. Before, the suite named exactly `storageKey` was the shop's
- whole storage; `StorageMigrations` copies it into the partition once and leaves it as it is.
+ `Rees46Config.storageKey` is the app's own prefix (decision 5): the partition is
+ `<storageKey>_personalization_sdk_<shopId>`, the same name as on Android. Before, the suite named
+ exactly `storageKey` was the shop's whole storage; `StorageMigrations` copies it into the partition
+ once and leaves it as it is. A new `storageKey` on an existing install starts a fresh partition — it
+ never falls back to the unprefixed one, so separate keys stay separate.
 
  What lives here is the shop's: the did, the session, the stories state, the source, and the shop's
  copies of the advertising id and the A/B group, which belong to the device (`DeviceStore`) and are
@@ -73,10 +75,12 @@ enum StoragePartition {
         )
     }
 
-    /// Stable suite name for [shopId]'s partition: the app's [storageKey] or `personalization_sdk_`,
-    /// then the shop.
+    /// Stable suite name for [shopId]'s partition: `personalization_sdk_<shopId>`, after the app's
+    /// [storageKey] and `_` when it set one.
     static func suiteName(for shopId: String, storageKey: String? = nil) -> String {
-        (prefix(storageKey) ?? Self.prefix) + sanitize(shopId)
+        let name = Self.prefix + sanitize(shopId)
+        guard let storageKey = prefix(storageKey) else { return name }
+        return storageKey + "_" + name
     }
 
     /**

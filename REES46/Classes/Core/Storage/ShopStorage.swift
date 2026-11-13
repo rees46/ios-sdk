@@ -12,8 +12,8 @@ import Foundation
 /// migrations (`StorageMigrations`).
 ///
 /// Its `UserDefaults` are the shop's partition (`StoragePartition`); its files live in the SDK's own
-/// folder in Application Support, one folder per partition — not in Documents, which belongs to the
-/// app and which the user sees in the Files app when the app shares it.
+/// folder in Application Support, `personalization_sdk/<partition>/`, excluded from backups — not in
+/// Documents, which belongs to the app and which the user sees in the Files app when the app shares it.
 final class ShopStorage {
 
     /// The SDK's folder in Application Support.
@@ -28,6 +28,10 @@ final class ShopStorage {
     let partition: UserDefaults
     /// The shop's folder; `nil` only if the system gives no Application Support folder.
     let directory: URL?
+    /// The SDK's folder, which holds every shop's.
+    let root: URL?
+    /// Whether this storage has seen the SDK's folder excluded from backups.
+    private var rootExcluded = false
 
     private let documents: URL?
     private let fileManager: FileManager
@@ -55,6 +59,7 @@ final class ShopStorage {
         let base = root ?? fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?
             .appendingPathComponent(Self.folderName, isDirectory: true)
         let folder = StoragePartition.sanitize(StoragePartition.suiteName(for: shopId, storageKey: storageKey))
+        self.root = base
         self.directory = base?.appendingPathComponent(folder, isDirectory: true)
         self.documents = documents ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
     }
@@ -146,6 +151,7 @@ final class ShopStorage {
 
     /// The queue's folder, made when it is missing; `nil` when it cannot be made (logged).
     func makeQueueDirectory() -> URL? {
+        lock.lock(); defer { lock.unlock() }
         guard let folder = queueDirectory else {
             logger.warning(LogCode.storageFailed, "the SDK has no folder for the queue", ["op": "create_queue_dir"])
             return nil
@@ -155,6 +161,7 @@ final class ShopStorage {
 
     /// Deletes the queue's folder with what it holds.
     func removeQueueDirectory() {
+        lock.lock(); defer { lock.unlock() }
         guard let folder = queueDirectory else { return }
         remove(folder, op: "remove_queue_dir")
     }
@@ -203,17 +210,32 @@ final class ShopStorage {
         }
     }
 
+    /// Makes `folder` when it is missing, and keeps the SDK's folder out of backups: what it holds is
+    /// the device's, and a backup restored on another device would bring another device's answer and
+    /// queue. Called under `lock`.
     private func makeDirectory(_ folder: URL, op: String) -> Bool {
         var isDirectory: ObjCBool = false
-        if fileManager.fileExists(atPath: folder.path, isDirectory: &isDirectory), isDirectory.boolValue {
-            return true
+        if !(fileManager.fileExists(atPath: folder.path, isDirectory: &isDirectory) && isDirectory.boolValue) {
+            do {
+                try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
+            } catch {
+                logger.warning(LogCode.storageFailed, "the SDK's folder could not be made", ["op": op, "error": SdkLogger.errorKind(error)])
+                return false
+            }
         }
+        excludeRootFromBackup()
+        return true
+    }
+
+    private func excludeRootFromBackup() {
+        guard !rootExcluded, var root = root else { return }
         do {
-            try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
-            return true
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try root.setResourceValues(values)
+            rootExcluded = true
         } catch {
-            logger.warning(LogCode.storageFailed, "the SDK's folder could not be made", ["op": op, "error": SdkLogger.errorKind(error)])
-            return false
+            logger.warning(LogCode.storageFailed, "the SDK's folder could not be excluded from backups", ["op": "exclude_from_backup", "error": SdkLogger.errorKind(error)])
         }
     }
 

@@ -108,6 +108,9 @@ public protocol PersonalizationSDK {
     func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, telegramBulk: Bool?, telegramChain: Bool?, telegramTransactional: Bool?, whatsappBulk: Bool?, whatsappChain: Bool?, whatsappTransactional: Bool?, maxBulk: Bool?, maxChain: Bool?, maxTransactional: Bool?, walletBulk: Bool?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func configuration() -> SdkConfiguration.Type
     func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void)
+    /// Forgets the customer: the device id, the session, the saved init answer, the source and what
+    /// the SDK sent for them; the device's push token, A/B group and advertising id stay. The instance
+    /// stays usable and gets a new device id from `/init`; requests made meanwhile wait for it.
     func deleteUserCredentials()
 }
 
@@ -545,7 +548,7 @@ public func createPersonalizationSDK(
 
  The single construction path shared by the (soon-deprecated) `createPersonalizationSDK` and the
  `Rees46` facade — keeping registration and cache-reset in one place. The registry holds the instance
- weakly, so this does not extend its lifetime; it drops out on dealloc or `deleteUserCredentials`.
+ weakly, so this does not extend its lifetime; it drops out on dealloc or `release()`.
  */
 internal func makeRegisteredSDK(
     shopId: String,
