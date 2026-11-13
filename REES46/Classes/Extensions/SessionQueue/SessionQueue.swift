@@ -98,31 +98,63 @@ open class SessionQueue {
     }
 }
 
-/// A shop's request queue. Until the shop's device id is known, every request waits for the
-/// operation that brings it (`/init`); after that, requests run as they come.
+/// A shop's request queue. While the shop has no device id the queue is closed: requests added then
+/// — and the ones queued earlier that have not started — wait, and go out once the queue opens with
+/// the id `/init` brought. Opened, requests run as they come. The check is made when a request starts,
+/// not when it is added, so one queued behind an `/init` that `deleteUserCredentials` replaced waits for
+/// the new `/init`, not for the old one. Operations (the `/init` itself) are never held: they are what
+/// opens the queue.
 final class ShopSessionQueue: SessionQueue {
 
     private let lock = NSLock()
-    private var gate: Operation?
+    private var closed = false
+    private var held: [() -> Void] = []
 
-    /// Every request added from now on waits until `operation` finishes.
-    func hold(until operation: Operation) {
+    /// Requests that start from now on wait until `open()`.
+    func close() {
         lock.lock()
-        gate = operation
+        closed = true
         lock.unlock()
+    }
+
+    /// Lets the held requests and the later ones go.
+    func open() {
+        lock.lock()
+        closed = false
+        let waiting = held
+        held.removeAll()
+        lock.unlock()
+        waiting.forEach { queue.addOperation($0) }
+    }
+
+    /// Whether requests wait; for tests.
+    var isClosed: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return closed
     }
 
     override func addOperation(_ operation: @escaping () -> Void) {
-        addOperation(BlockOperation(block: operation))
+        queue.addOperation { [weak self] in
+            guard let self = self else { return operation() }
+            self.runOrHold(operation)
+        }
     }
 
     override func addOperation(_ operation: Operation) {
-        lock.lock()
-        let gate = self.gate
-        lock.unlock()
-        if let gate = gate, gate !== operation, !gate.isFinished {
-            operation.addDependency(gate)
-        }
         super.addOperation(operation)
+    }
+
+    private func runOrHold(_ operation: @escaping () -> Void) {
+        lock.lock()
+        if closed {
+            held.append { [weak self] in
+                guard let self = self else { return operation() }
+                self.runOrHold(operation)
+            }
+            lock.unlock()
+            return
+        }
+        lock.unlock()
+        operation()
     }
 }

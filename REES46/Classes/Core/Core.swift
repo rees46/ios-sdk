@@ -60,7 +60,8 @@ protocol Core: AnyObject {
     /// Sends `request`. `completion` is called exactly once, off the main thread.
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void)
 
-    /// Stops the core: requests in flight end, and later ones are not sent.
+    /// Stops the core: later requests are not sent and fail as `notInitialized`; on `CoreV2` the ones
+    /// in flight end as `cancelled`.
     func release()
 
     /// Sends the next requests with the app's session configuration (`configureURLSession`).

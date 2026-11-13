@@ -114,7 +114,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var sessionQueue: SessionQueue { requestQueue }
     private var requestOperation: RequestOperation?
     let bodyMutableData = NSMutableData()
-    private let initSemaphore = DispatchSemaphore(value: 0)
     
     lazy var trackEventService: TrackEventServiceProtocol = {
         return TrackEventServiceImpl(sdk: self)
@@ -271,8 +270,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         SdkLogger.register(logger, owner: self)
         _ = core
         _ = popupsV3
-        
-        startInit(completion: completion)
+
+        // Requests made before the device id is known wait for /init and go out with its id.
+        if deviceId.isEmpty {
+            requestQueue.close()
+        }
+        startInit(generation: currentInitGeneration(), completion: completion)
         
         initializeNotificationRegistrar()
     }
@@ -280,50 +283,54 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     // MARK: - /init
 
     /// Counts the instance's `/init`s: `deleteUserCredentials` starts another, and a late answer to an
-    /// earlier one changes nothing.
+    /// earlier one changes nothing. `initLock` guards the count and everything an `/init` answer writes
+    /// — the device id in storage and here, the saved answer, the opening of the request queue — and
+    /// `deleteUserCredentials` and `release()` hold it while they raise the count, so an earlier answer
+    /// lands before the wipe or not at all.
     private var initGeneration = 0
-    private let initGenerationLock = NSLock()
+    private let initLock = NSLock()
+    /// Set by `release()`: every later call is `notInitialized`.
+    private var released = false
 
-    private func nextInitGeneration() -> Int {
-        initGenerationLock.lock(); defer { initGenerationLock.unlock() }
-        initGeneration += 1
+    private func currentInitGeneration() -> Int {
+        initLock.lock(); defer { initLock.unlock() }
         return initGeneration
     }
 
-    private func isCurrentInit(_ generation: Int) -> Bool {
-        initGenerationLock.lock(); defer { initGenerationLock.unlock() }
-        return generation == initGeneration
+    /// Whether `release()` stopped the instance.
+    var isReleased: Bool {
+        initLock.lock(); defer { initLock.unlock() }
+        return released
     }
 
-    /// Queues `/init`. Requests made while the instance has no device id wait for it and go out with
-    /// the id it brings; once it is stored the push token goes to the shop.
-    private func startInit(completion: ((SdkError?) -> Void)?) {
-        let generation = nextInitGeneration()
+    /// Runs `write` under `initLock` when `generation` is still the instance's `/init` and the instance
+    /// was not released; `false`, and nothing written, otherwise.
+    @discardableResult
+    private func ifCurrentInit(_ generation: Int, _ write: () -> Void = {}) -> Bool {
+        initLock.lock(); defer { initLock.unlock() }
+        guard generation == initGeneration, !released else { return false }
+        write()
+        return true
+    }
+
+    /// Queues `/init` of `generation`. Requests made while the queue is closed wait for its answer and
+    /// go out with the id it brings; once a device id is stored the push token goes to the shop.
+    private func startInit(generation: Int, completion: ((SdkError?) -> Void)?) {
         let initOperation = BlockOperation {
-            self.sendInitRequest(generation: generation) { initResult in
-                // A later /init took over (`deleteUserCredentials`): this answer belonged to the
-                // customer that was deleted, and changes nothing. The app still hears once.
-                guard self.isCurrentInit(generation) else {
+            self.sendInitRequest(generation: generation) { initResult, isCurrent in
+                // A later /init took over (`deleteUserCredentials`), or the instance was released:
+                // this answer belonged to the customer that was deleted, and changes nothing. The app
+                // still hears once.
+                guard isCurrent else {
                     if case let .failure(error) = initResult {
                         completion?(error)
                     } else {
                         completion?(nil)
                     }
-                    self.initSemaphore.signal()
                     return
                 }
                 switch initResult {
                 case .success(let response):
-                    self.userInfo = response
-                    // Session is client-owned (see SessionManager) — the server-assigned seance is
-                    // intentionally not adopted, matching Android/RN. An answer without a device id
-                    // keeps the one the shop has: an empty one would go out with every request.
-                    if !response.deviceId.isEmpty {
-                        self.deviceId = response.deviceId
-                    } else if self.deviceId.isEmpty {
-                        self.deviceId = self.userIdentity.deviceId ?? ""
-                    }
-
                     // The contacts given at creation identify the user: they go to the profile.
                     if self.userEmail != nil || self.userPhone != nil || self.userLoyaltyId != nil {
                         self.setProfileData(
@@ -332,16 +339,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             userLoyaltyId: self.userLoyaltyId
                         ) { _ in }
                     }
-                    
                     if let popup = response.popup {
                         self.popupPresenter.presentPopup(popup)
                     }
                     self.popupsV3.initFinished(flag: response.popupsV3)
-                    
-                    // Handle push token if autoSendPushToken is true
-                    if self.autoSendPushToken {
-                        self.handleAutoSendPushToken()
-                    }
+
+                    // The push token goes once the device has an id: with autoSendPushToken, or when one
+                    // came while the device had none.
+                    self.sendPushTokenIfDeviceIdIsKnown()
 
                     if self.sendAdvertisingId {
                         self.updateAdvertisingIdUseCase.execute { result in
@@ -359,14 +364,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure(let error):
                     completion?(error)
                 }
-                
-                self.initSemaphore.signal()
             }
         }
-        // Requests made before the device id is known wait for /init and go out with its id.
-        if deviceId.isEmpty {
-            requestQueue.hold(until: initOperation)
-        }
+        // The init operation itself is never held: it is what opens the queue.
         sessionQueue.addOperation(initOperation)
     }
 
@@ -442,6 +442,71 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             let notificationRegistrar = NotificationRegistrar(sdk: self)
             notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
         }
+    }
+
+    // MARK: - The push token waits for the device id
+
+    /// A push token given while the device had no id. It never goes out without one: it goes once
+    /// `/init` stores one.
+    enum DeferredPushToken: Equatable {
+        /// The APNs token the registrar was handed.
+        case device(Data)
+        /// A token given to `setPushTokenNotification` — an FCM one, say.
+        case direct(token: String, isFirebase: Bool)
+    }
+
+    private var deferredPushToken: DeferredPushToken?
+    private let pushTokenLock = NSLock()
+
+    /// Keeps `token` until the device has an id; a later one replaces it.
+    func deferPushToken(_ token: DeferredPushToken) {
+        pushTokenLock.lock()
+        deferredPushToken = token
+        pushTokenLock.unlock()
+        logger.debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
+    }
+
+    /// The push token deferred for want of a device id; for tests.
+    var pendingPushToken: DeferredPushToken? {
+        pushTokenLock.lock(); defer { pushTokenLock.unlock() }
+        return deferredPushToken
+    }
+
+    /// After `/init` stored a device id: the push token goes with `autoSendPushToken`, and so does one
+    /// that came while the device had none.
+    private func sendPushTokenIfDeviceIdIsKnown() {
+        guard !deviceId.isEmpty, !isReleased else { return }
+        pushTokenLock.lock()
+        let deferred = deferredPushToken
+        deferredPushToken = nil
+        pushTokenLock.unlock()
+        if autoSendPushToken {
+            handleAutoSendPushToken()
+        }
+        switch deferred {
+        case .device(let token)?:
+            // With autoSendPushToken the device's token just went: the registrar's weekly claim holds a
+            // second one back anyway.
+            NotificationRegistrar(sdk: self).registerWithDeviceToken(deviceToken: token)
+        case let .direct(token, isFirebase)?:
+            setPushTokenNotification(token: token, isFirebaseNotification: isFirebase) { result in
+                switch result {
+                case .success:
+                    self.logger.info(LogCode.pushTokenSent, "the push token was sent")
+                case .failure(let error):
+                    self.logger.warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
+                }
+            }
+        case nil:
+            break
+        }
+    }
+
+    /// `release()`: a deferred token is not sent any more.
+    private func failDeferredPushToken() {
+        pushTokenLock.lock()
+        deferredPushToken = nil
+        pushTokenLock.unlock()
     }
     
     @available(*, deprecated, message: "GET /notifications requires the shop secret: use getAllNotifications(shopSecret:type:...).")
@@ -1282,9 +1347,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// written by `sendIDFARequest` — stands in only when no answer came: an answer, a refused shop
     /// among them, is the server's word. The saved answer used to replace `/init` for good: the file
     /// and the keychain took turns answering every launch, and the server never saw the device again.
+    ///
+    /// What the answer brings — the device id, in storage and here — is taken under `initLock`, and
+    /// only while `generation` is the instance's `/init`; the request queue opens with it. `completion`
+    /// says whether it was.
     private func sendInitRequest(
         generation: Int,
-        completion: @escaping (Result<InitResponse, SdkError>) -> Void
+        completion: @escaping (Result<InitResponse, SdkError>, _ isCurrent: Bool) -> Void
     ) {
         let params = prepareRequestParameters()
         // The operation waits for its own answer: two /init at once (one after deleteUserCredentials)
@@ -1300,29 +1369,53 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             waitsForNetwork: saved == nil
         ) { status, result in
             defer { answered.signal() }
-            // The answer to an /init that a later one replaced stores nothing: its device id is the
-            // deleted customer's.
-            guard self.isCurrentInit(generation) else {
-                completion(result.flatMap(Self.jsonObject).map { InitResponse(json: $0) })
-                return
-            }
+            let outcome: Result<InitResponse, SdkError>
             switch result.flatMap(Self.jsonObject) {
             case let .success(json):
-                let resultResponse = InitResponse(json: json)
-                self.storeSuccessInit(result: resultResponse)
-                self.logger.info(LogCode.initSucceeded, "initialization finished")
-                completion(.success(resultResponse))
+                outcome = .success(InitResponse(json: json))
             case let .failure(error):
                 if status == nil, let saved = saved {
-                    self.logger.warning(LogCode.initSavedAnswer, "no answer to /init: the saved init answer stands in")
-                    completion(.success(saved))
+                    outcome = .success(saved)
                 } else {
-                    // A shop that refused (`4xx`) is an error; no answer or a server error is a warning.
-                    let refused = status.map { (400..<500).contains($0) } ?? false
-                    self.logger.log(refused ? .error : .warning, LogCode.initFailed, "initialization failed", status.map { ["status": String($0)] } ?? [:])
-                    completion(.failure(error))
+                    outcome = .failure(error)
                 }
             }
+            // The answer to an /init that a later one replaced stores nothing: its device id is the
+            // deleted customer's. The queue opens with the current one, whatever it brought.
+            let isCurrent = self.ifCurrentInit(generation) {
+                if case let .success(response) = outcome {
+                    if case .success = result {
+                        self.storeSuccessInit(result: response)
+                    }
+                    self.userInfo = response
+                    // Session is client-owned (see SessionManager) — the server-assigned seance is
+                    // intentionally not adopted, matching Android/RN. An answer without a device id
+                    // keeps the one the shop has: an empty one would go out with every request.
+                    if !response.deviceId.isEmpty {
+                        self.deviceId = response.deviceId
+                    } else if self.deviceId.isEmpty {
+                        self.deviceId = self.userIdentity.deviceId ?? ""
+                    }
+                }
+                self.requestQueue.open()
+            }
+            guard isCurrent else {
+                completion(outcome, false)
+                return
+            }
+            switch outcome {
+            case .success:
+                if case .success = result {
+                    self.logger.info(LogCode.initSucceeded, "initialization finished")
+                } else {
+                    self.logger.warning(LogCode.initSavedAnswer, "no answer to /init: the saved init answer stands in")
+                }
+            case .failure:
+                // A shop that refused (`4xx`) is an error; no answer or a server error is a warning.
+                let refused = status.map { (400..<500).contains($0) } ?? false
+                self.logger.log(refused ? .error : .warning, LogCode.initFailed, "initialization failed", status.map { ["status": String($0)] } ?? [:])
+            }
+            completion(outcome, true)
         }
         answered.wait()
     }
@@ -1415,7 +1508,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         params["ios_advertising_id"] = advId
         userIdentity.advertisingId = advId
         
-        sendGet(path: path, params: params, isInit: true, timeout: NetworkClient.initTimeout) { _, result in
+        // Its answer is saved only while no deleteUserCredentials came after it: a late one would write
+        // the deleted customer to the saved answer and the keychain.
+        sendGet(path: path, params: params, savesAnswerOf: currentInitGeneration(), timeout: NetworkClient.initTimeout) { _, result in
             switch result.flatMap(Self.jsonObject) {
             case let .success(successResult):
                 let resJSON = successResult
@@ -1428,15 +1523,29 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     /// Forgets the customer (`sdk/core/storage.md`): the did, the session and its last activity — in
-    /// storage and in this instance — the saved init answer and its keychain backup, `refused`, the
-    /// source the app set, the dates the push token last went to the shop, and on the new core the
-    /// queue of their events. The device's push token, A/B group and advertising id stay, and so do the
-    /// stories state and the migration flags.
+    /// storage and in this instance, and in the places an older SDK kept them (`.standard`, the suite
+    /// `storageKey` named in full) — the saved init answer and its keychain backup, `refused`, the
+    /// source the app set, the dates the push token last went to the shop, the shop's recent searches,
+    /// and on the new core the queue of their events. The device's push token, A/B group and advertising
+    /// id stay, and so do the stories state and the migration flags.
     ///
     /// The instance stays registered and sends `/init` again, without a device id: requests made
-    /// meanwhile wait for the new one instead of going out without it, the push token goes to the
-    /// shop once the new id is stored, and a late answer to the earlier `/init` changes nothing.
+    /// meanwhile — and the ones already queued — wait for the new one instead of going out without it,
+    /// the push token goes to the shop once the new id is stored, and a late answer to the earlier
+    /// `/init` changes nothing. After `release()` nothing is wiped or sent.
     public func deleteUserCredentials() {
+        initLock.lock()
+        guard !released else {
+            initLock.unlock()
+            logger.warning(LogCode.invalidArgument, "deleteUserCredentials on a released instance: nothing was deleted", ["reason": "not_initialized"])
+            return
+        }
+        // Before the wipe: an answer to an earlier /init or sendIDFARequest finds itself stale from here
+        // on and writes nothing back.
+        initGeneration += 1
+        let generation = initGeneration
+        // Before the device id is cleared: nothing leaves the queue without one until the new /init.
+        requestQueue.close()
         userIdentity.clearIdentity()
         deviceId = ""
         storage.removeSavedInitAnswer()
@@ -1446,6 +1555,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         storage.refused = false
         sourceStore.clear()
         NotificationRegistrar.forgetUpload(shopId: shopId)
+        // Where an older SDK kept the customer, so neither a downgrade nor a pending shop's push finds it.
+        StorageMigrations.forgetCustomer(storageKey: storageKey, partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey))
+        RecentSearches.forget(shopKey: shopId)
         if usesCoreV2 {
             storage.removeQueueDirectory()
         }
@@ -1456,22 +1568,33 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         userLoyaltyId = nil
         // The new customer's session.
         userSeance = sessionManager.currentSessionId()
+        initLock.unlock()
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
-        startInit(completion: nil)
+        startInit(generation: generation, completion: nil)
     }
 
-    /// Stops this instance: it leaves the registry and push routing, its log level stops counting,
-    /// and its core cancels the requests in flight. Internal until `release()` joins the public API
-    /// together with the instance's states.
+    /// Stops this instance: it leaves the registry and push routing, its log level stops counting, and
+    /// every later call is `notInitialized` — the old methods get `.initializationFailed` — on both
+    /// cores; the new core also cancels the requests in flight. An `/init` on its way changes nothing
+    /// when it answers, and requests waiting for it go on to fail.
     func release() {
+        initLock.lock()
+        guard !released else {
+            initLock.unlock()
+            return
+        }
+        released = true
+        initGeneration += 1
+        initLock.unlock()
         SdkRegistry.shared.unregister(self)
         SdkLogger.unregister(owner: self)
         core.release()
+        // What waits for a device id runs now, and fails.
+        requestQueue.open()
+        failDeferredPushToken()
     }
 
     deinit {
-        // Weak registry (see SdkRegistry): a host-released instance deallocs here — purge its routing
-        // slots eagerly instead of waiting for the next compaction.
         SdkRegistry.shared.unregister(self)
         SdkLogger.unregister(owner: self)
         core.release()
@@ -1552,7 +1675,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
-        sendGet(path: path, params: params, isInit: isInit, timeout: nil) { _, result in
+        sendGet(path: path, params: params, savesAnswerOf: isInit ? currentInitGeneration() : nil, timeout: nil) { _, result in
             completion(result.flatMap(Self.jsonObject))
         }
     }
@@ -1579,11 +1702,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     /// One GET of `path` with the call's own timeout, through the instance's core. Hands back the
-    /// answer's HTTP status — nil when no answer came — and its decoded JSON.
+    /// answer's HTTP status — nil when no answer came — and its decoded JSON. With `savesAnswerOf`, an
+    /// `/init` that saves its answer: only while that init generation is the instance's, under the lock
+    /// `deleteUserCredentials` takes.
     func sendGet(
         path: String,
         params: [String: String],
-        isInit: Bool = false,
+        savesAnswerOf initGeneration: Int? = nil,
         timeout: TimeInterval?,
         waitsForNetwork: Bool = true,
         forgetsSavedInit: Bool = true,
@@ -1594,8 +1719,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         let request = CoreRequest(method: .get, path: path, query: params, timeout: timeout, waitsForNetwork: waitsForNetwork)
         core.send(request) { response in
-            if isInit, case .success = response.result {
-                self.saveInitAnswer(response.body)
+            if let generation = initGeneration, case .success = response.result {
+                self.ifCurrentInit(generation) {
+                    self.saveInitAnswer(response.body)
+                }
             }
             completion(response.status, response.result)
         }
@@ -1635,11 +1762,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func postRequest(path: String, params: [String: Any], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         var requestParams = params
         // A request made before the device id was known waited for /init on the queue; when /init
-        // failed, the stored id is the best there is.
+        // failed, the stored id is the best there is. A did the caller has is kept.
         if self.deviceId == "" {
             let dId = self.userIdentity.deviceId ?? ""
             self.deviceId = dId
-            requestParams["did"] = dId
+            if (requestParams["did"] as? String ?? "").isEmpty {
+                requestParams["did"] = dId
+            }
         }
         // App data (custom fields, profile properties) may hold values that are not JSON; writing
         // them would raise an exception Swift cannot catch.

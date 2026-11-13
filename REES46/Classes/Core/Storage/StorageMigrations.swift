@@ -89,6 +89,22 @@ enum StorageMigrations {
         }
     }
 
+    // MARK: - deleteUserCredentials
+
+    /// The customer's keys where an older SDK kept them.
+    static let customerKeys = [StoragePartition.deviceIdKey, StoragePartition.seanceKey, StoragePartition.seanceLastActKey]
+
+    /// `deleteUserCredentials`: the did, the session and its last activity in the migration sources —
+    /// the pre-partition identity in `legacy` and the suite `storageKey` named in full — and only those
+    /// keys, so a downgrade, a migration run again or a pending shop's push finds no deleted customer.
+    /// A partition that is the suite itself (an app group) was wiped with the partition.
+    static func forgetCustomer(storageKey: String?, partitionName: String, legacy: UserDefaults = .standard) {
+        customerKeys.forEach { legacy.removeObject(forKey: $0) }
+        guard let storageKey = StoragePartition.prefix(storageKey), storageKey != partitionName,
+              let suite = UserDefaults(suiteName: storageKey) else { return }
+        customerKeys.forEach { suite.removeObject(forKey: $0) }
+    }
+
     /// Copies the SDK's keys from the suite named exactly `suiteName` — the shop's whole storage while
     /// `storageKey` was the suite's name — where the partition has no value of its own. The old suite
     /// stays as it is: an older SDK still reads it.

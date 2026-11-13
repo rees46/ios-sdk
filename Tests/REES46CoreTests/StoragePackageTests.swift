@@ -394,6 +394,36 @@ final class StoragePackageTests: XCTestCase {
         XCTAssertNil(StoragePartition.storageKey(ofShop: "never-made"))
     }
 
+    // MARK: - deleteUserCredentials outside the partition
+
+    func test_the_customer_is_forgotten_in_the_migration_sources_and_only_the_customer() throws {
+        let legacyName = "legacy-\(UUID().uuidString.prefix(6))"
+        let key = "old-\(UUID().uuidString.prefix(6))"
+        defer {
+            UserDefaults.standard.removePersistentDomain(forName: legacyName)
+            UserDefaults.standard.removePersistentDomain(forName: key)
+        }
+        let legacy = try XCTUnwrap(UserDefaults(suiteName: legacyName))
+        let old = try XCTUnwrap(UserDefaults(suiteName: key))
+        for store in [legacy, old] {
+            store.set("did", forKey: StoragePartition.deviceIdKey)
+            store.set("seance", forKey: StoragePartition.seanceKey)
+            store.set(Date(), forKey: StoragePartition.seanceLastActKey)
+            store.set("idfa", forKey: StoragePartition.idfaKey)
+            store.set("kept", forKey: "app.own.key")
+        }
+
+        StorageMigrations.forgetCustomer(storageKey: key, partitionName: StoragePartition.suiteName(for: "shop", storageKey: key), legacy: legacy)
+
+        for store in [legacy, old] {
+            for name in StorageMigrations.customerKeys {
+                XCTAssertNil(store.object(forKey: name), name)
+            }
+            XCTAssertEqual(store.string(forKey: StoragePartition.idfaKey), "idfa", "the device's advertising id stays")
+            XCTAssertEqual(store.string(forKey: "app.own.key"), "kept")
+        }
+    }
+
     // MARK: - The keychain's service
 
     func test_the_keychain_service_is_the_bundle_of_the_sdks_binary_as_it_always_was() {

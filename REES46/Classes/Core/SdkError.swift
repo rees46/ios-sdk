@@ -91,6 +91,17 @@ extension SdkError {
         }
     }
 
+    /// What the old push token methods get when the token waits for the device id: it goes once
+    /// `/init` stores one.
+    static let pushTokenWaitsForDeviceId = SdkError.custom(error: "the push token is sent once the device has an id")
+
+    var isPushTokenWaitingForDeviceId: Bool {
+        if case let .custom(message) = self, case let .custom(waiting) = Self.pushTokenWaitsForDeviceId {
+            return message == waiting
+        }
+        return false
+    }
+
     /// The `message` of an error body in the shape most of the API answers with:
     /// `{"status": "error", "message": "…"}`.
     static func serverMessage(in body: Data) -> String? {

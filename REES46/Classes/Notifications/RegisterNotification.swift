@@ -45,6 +45,17 @@ class NotificationRegistrar {
         // Kept for the next launches: with `autoSendPushToken` every shop sends it after its /init.
         DeviceStore.shared.pushToken = deviceToken
 
+        // Never without a device id — a new device whose /init has not answered, or the customer was
+        // just deleted: the SDK sends it once /init stores one, and the week is not claimed meanwhile.
+        guard !sdk.deviceId.isEmpty else {
+            if let instance = sdk as? SimplePersonalizationSDK {
+                instance.deferPushToken(.device(deviceToken))
+            } else {
+                SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
+            }
+            return
+        }
+
         // The week's upload is claimed before it goes out, so two calls at once — the app's token
         // callback and the SDK's own send after /init — send the token once. Written after the
         // answer, the date was lost with a registrar made for one call, and nothing held back.
@@ -66,7 +77,11 @@ class NotificationRegistrar {
                 SdkLogger.forShop(self.sdk.shopId).info(LogCode.pushTokenSent, "the push token was sent")
             case .failure(let error):
                 // Not sent: the claim goes back, and the next call tries again.
+                Self.uploadLock.lock()
                 UserDefaults.standard.set(lastUpload, forKey: key)
+                Self.uploadLock.unlock()
+                // Held back for want of a device id: it goes once there is one, and that is no failure.
+                guard !error.isPushTokenWaitingForDeviceId else { return }
                 Self.handleRegistrationError(error, shopId: self.sdk.shopId)
             }
         }

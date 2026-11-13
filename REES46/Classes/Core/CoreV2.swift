@@ -33,9 +33,9 @@ final class CoreV2: Core {
         let isReleased = released
         lock.unlock()
         let callbacks = self.callbacks
+        // A call after `release()` is `notInitialized`; the ones in flight end as `cancelled`.
         guard !isReleased else {
-            logger.requestCancelled(request.method.rawValue, request.path)
-            callbacks.async { completion(Self.legacyResponse(.failure(.cancelled), for: request)) }
+            callbacks.async { completion(Self.legacyResponse(.failure(.notInitialized), for: request)) }
             return
         }
         let client = self.client

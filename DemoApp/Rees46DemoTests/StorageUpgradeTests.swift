@@ -21,6 +21,7 @@ final class StorageUpgradeTests: XCTestCase {
     private let standardKeys = [
         StoragePartition.deviceIdKey,
         StoragePartition.seanceKey,
+        StoragePartition.seanceLastActKey,
         StoragePartition.idfaKey,
         StoragePartition.legacyConsumedFlag,
         SdkConstants.deviceToken,

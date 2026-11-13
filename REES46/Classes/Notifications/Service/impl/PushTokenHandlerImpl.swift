@@ -33,9 +33,16 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
         }
         
         sessionQueue.addOperation {
+            // The token never goes out without a device id: the SDK keeps it until /init stores one.
+            let deviceId = sdk.deviceId
+            guard !deviceId.isEmpty else {
+                (sdk as? SimplePersonalizationSDK)?.deferPushToken(.direct(token: token, isFirebase: isFirebaseNotification))
+                completion(.failure(.pushTokenWaitsForDeviceId))
+                return
+            }
             var params = [
                 Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
+                Constants.did: deviceId,
                 Constants.token: token
             ]
             

@@ -125,6 +125,8 @@ public class NotificationService: NotificationServiceProtocol {
       case .success():
         SdkLogger.forShop(self.sdk.shopId).info(LogCode.pushTokenSent, "the push token was sent")
       case let .failure(error):
+        // Held back for want of a device id: the SDK sends it once there is one.
+        guard !error.isPushTokenWaitingForDeviceId else { return }
         SdkLogger.forShop(self.sdk.shopId).warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
       }
     }

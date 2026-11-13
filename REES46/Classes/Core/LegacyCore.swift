@@ -38,14 +38,31 @@ final class LegacyCore: Core {
         self.sessionWithoutWaiting = sessionWithoutWaiting
     }
 
-    /// The old core keeps its sessions: they belong to the instance, and the app may have handed it
-    /// one of its own.
-    func release() {}
+    private let lock = NSLock()
+    private var released = false
+
+    /// Stops the core: later requests are not sent and fail as `notInitialized` does for the old
+    /// methods. The old core keeps its sessions — they belong to the instance, and the app may have
+    /// handed it one of its own — so what is in flight finishes.
+    func release() {
+        lock.lock()
+        released = true
+        lock.unlock()
+    }
 
     /// The old core reads the instance's session on every request: the app's one is already there.
     func use(_ configuration: URLSessionConfiguration) {}
 
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
+        lock.lock()
+        let isReleased = released
+        lock.unlock()
+        guard !isReleased else {
+            DispatchQueue.global(qos: .utility).async {
+                completion(CoreResponse(status: nil, body: Data(), result: .failure(.legacy(.notInitialized))))
+            }
+            return
+        }
         switch request.method {
         case .get:
             get(request, completion: completion)
