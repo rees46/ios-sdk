@@ -57,7 +57,7 @@ public enum Rees46 {
             shopId: config.shopId,
             apiDomain: config.apiDomain,
             stream: config.stream,
-            enableLogs: config.enableLogs,
+            logLevel: config.logLevel,
             autoSendPushToken: config.autoSendPushToken,
             sendAdvertisingId: config.sendAdvertisingId,
             enableAutoPopupPresentation: config.enableAutoPopupPresentation,
@@ -191,6 +191,16 @@ public enum Rees46 {
      host's own deep-link handling (or the legacy `NotificationService`'s action delegate), so this
      method tracks but does not open the target screen.
      */
+    /**
+     The app receives every message the SDK logs at or above each instance's `Rees46Config.logLevel` —
+     to forward to Crashlytics or Sentry, say. Called in background, in order. `nil` removes the
+     handler. Messages never carry request data, response bodies, contacts, the push token, push
+     content or the `/init` answer.
+     */
+    public static func setLogHandler(_ handler: ((SdkLogMessage) -> Void)?) {
+        SdkLogger.setHandler(handler)
+    }
+
     public static func handlePush(_ payload: [AnyHashable: Any], event: PushEvent) {
         let resolution = InstanceResolver.resolve(
             requestedShopId: PushPayloadParser.shopId(from: payload),

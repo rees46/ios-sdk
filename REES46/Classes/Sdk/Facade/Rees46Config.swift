@@ -28,8 +28,11 @@ public struct Rees46Config {
     public let apiDomain: String
     /// Traffic stream label sent with every request.
     public let stream: String
-    /// Whether the SDK logs its network activity.
-    public let enableLogs: Bool
+    /// The old switch of the SDK's logs; `true` meant everything.
+    @available(*, deprecated, message: "Set logLevel; enableLogs = true is logLevel = .debug.")
+    public var enableLogs: Bool { logLevel == .debug }
+    /// How much the SDK writes to the log, `warning` by default; see `Rees46.setLogHandler`.
+    public let logLevel: LogLevel
     /// Whether the SDK registers push tokens with the backend on its own.
     public let autoSendPushToken: Bool
     /// Whether the SDK collects and sends the advertising id (IDFA).
@@ -46,6 +49,7 @@ public struct Rees46Config {
         apiDomain: String = "api.rees46.ru",
         stream: String = "ios",
         enableLogs: Bool = false,
+        logLevel: LogLevel = .warning,
         autoSendPushToken: Bool = true,
         sendAdvertisingId: Bool = false,
         enableAutoPopupPresentation: Bool = true,
@@ -55,7 +59,8 @@ public struct Rees46Config {
         self.shopId = shopId
         self.apiDomain = apiDomain
         self.stream = stream
-        self.enableLogs = enableLogs
+        // `enableLogs = true` is the old way to ask for everything.
+        self.logLevel = enableLogs && logLevel == .warning ? .debug : logLevel
         self.autoSendPushToken = autoSendPushToken
         self.sendAdvertisingId = sendAdvertisingId
         self.enableAutoPopupPresentation = enableAutoPopupPresentation

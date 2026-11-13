@@ -39,9 +39,7 @@ class NotificationRegistrar {
         let lastUpload = UserDefaults.standard.object(forKey: key) as? Date
         if let lastUpload = lastUpload, Date().timeIntervalSince(lastUpload) < Constants.oneWeekInSeconds {
             Self.uploadLock.unlock()
-#if DEBUG
-            print("Push token already sent recently. Next possible send date: \(lastUpload.addingTimeInterval(Constants.oneWeekInSeconds))")
-#endif
+            SdkLogger.forShop(sdk.shopId).debug("push_token_skipped", "the push token was sent within the last week")
             return
         }
         UserDefaults.standard.set(Date(), forKey: key)
@@ -51,23 +49,27 @@ class NotificationRegistrar {
         sdk.setPushTokenNotification(token: token) { tokenResponse in
             switch tokenResponse {
             case .success():
-#if DEBUG
-                print("Push token successfully sent.")
-#endif
+                SdkLogger.forShop(self.sdk.shopId).info("push_token_sent", "the push token was sent")
             case .failure(let error):
                 // Not sent: the claim goes back, and the next call tries again.
                 UserDefaults.standard.set(lastUpload, forKey: key)
-                Self.handleRegistrationError(error)
+                Self.handleRegistrationError(error, shopId: self.sdk.shopId)
             }
         }
     }
     
-    private static func handleRegistrationError(_ error: SdkError) {
+    /// The server's message is not logged: it may repeat the request data.
+    private static func handleRegistrationError(_ error: SdkError, shopId: String) {
+        SdkLogger.forShop(shopId).warning("push_token_failed", "the push token was not sent", ["error": Self.kind(of: error)])
+    }
+
+    private static func kind(of error: SdkError) -> String {
         switch error {
-        case let .custom(customError):
-            print("SDK Push Token Error:", customError)
-        default:
-            print("SDK Push Token server error: \(error.description)\n")
+        case .custom: return "custom"
+        case .networkOfflineError: return "offline"
+        case .decodeError: return "decoding"
+        case .invalidResponse, .responseError: return "response"
+        default: return "other"
         }
     }
 }

@@ -184,11 +184,13 @@ enum StubSDK {
         identity: UserIdentityRepository = InMemoryUserIdentityRepository(),
         keychain: KeychainInitStore = InMemoryKeychainInitStore(),
         needReInitialization: Bool = false,
+        logLevel: LogLevel? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
         SimplePersonalizationSDK(
             shopId: shopId,
             apiDomain: "stub.test",
+            logLevel: logLevel,
             autoSendPushToken: false,
             enableAutoPopupPresentation: false,
             needReInitialization: needReInitialization,

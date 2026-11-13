@@ -50,7 +50,6 @@ public class NotificationTracker: NotificationTrackerDelegate{
       return
     }
     notificationLogger.log("Notification delivered")
-    notificationLogger.logAllPushKeysAndValues(userInfo: userInfo)
     
     guard let (eventType, srcID) = notificationService.extractTypeAndCode(from: userInfo) else {
       notificationLogger.log("Failed to extract type and code, skipping notificationDelivered")

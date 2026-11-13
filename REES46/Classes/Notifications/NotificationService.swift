@@ -113,20 +113,21 @@ public class NotificationService: NotificationServiceProtocol {
   
   
   public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-    notificationLogger.log("didReceiveRegistrationFCMToken with token: \(String(describing: fcmToken))")
+    // The token itself is never logged.
+    notificationLogger.log("didReceiveRegistrationFCMToken")
     
     sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in
       switch tokenResponse {
       case .success():
         self.notificationLogger.log("Successfully registered FCM token")
       case let .failure(error):
-        self.notificationLogger.log("Error: \(error)")
+        self.notificationLogger.log(error)
       }
     }
   }
   
   public func didReceiveDeepLink(url: URL) {
-    notificationLogger.log("didReceiveDeepLink with url: \(url)")
+    notificationLogger.log("didReceiveDeepLink")
     
     let urlString = url.absoluteString
     let splitedUrlString = urlString.split(separator: "/")
@@ -147,17 +148,18 @@ public class NotificationService: NotificationServiceProtocol {
   private func requireUserPrivacy(completion: @escaping (Bool) -> Void) {
     let center = UNUserNotificationCenter.current()
     center.requestAuthorization(options: [.badge, .alert, .sound]) { granted, error in
-      if let error = error {
-        print("Request authorization error: \(error)")
+      if error != nil {
+        SdkLogger.process.warning("push_permission_failed", "the notification permission request failed")
       }
-      print("User authorization granted: \(granted)")
+      SdkLogger.process.debug("push_permission", "notification permission granted: \(granted)")
       completion(granted)
     }
     UIApplication.shared.registerForRemoteNotifications()
   }
   
   private func pushProcessing(userInfo: [AnyHashable: Any]) {
-    notificationLogger.log("pushProcessing with userInfo: \(userInfo)")
+    // Push content is never logged.
+    notificationLogger.log("pushProcessing")
     
     guard let (mailingType, code) = extractTypeAndCode(from: userInfo) else {
       notificationLogger.log("Failed to extract type and code, skipping processing")
@@ -182,7 +184,7 @@ public class NotificationService: NotificationServiceProtocol {
   
   
   private func pushRetrieved(userInfo: [AnyHashable: Any]) {
-    notificationLogger.log("pushRetrieved with userInfo: \(userInfo)")
+    notificationLogger.log("pushRetrieved")
     
     guard let (mailingType, code) = extractTypeAndCode(from: userInfo) else {
       handleNonSDKPush(userInfo: userInfo)
@@ -248,6 +250,6 @@ public class NotificationService: NotificationServiceProtocol {
   }
   
   private func handleNonSDKPush(userInfo: [AnyHashable: Any]) {
-    notificationLogger.log("Non-SDK push received with data: \(userInfo)")
+    notificationLogger.log("Non-SDK push received")
   }
 }

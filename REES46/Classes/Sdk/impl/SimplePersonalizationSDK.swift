@@ -3,6 +3,7 @@ import Foundation
 import AdSupport
 import AppTrackingTransparency
 
+@available(*, deprecated, message: "Has no effect: set Rees46Config.logLevel.")
 public var global_EL: Bool = true
 
 // MARK: - SimplePersonalizationSDK
@@ -13,7 +14,6 @@ private enum ProbabilityToPurchaseNetworkConstants {
 }
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-    private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
     
@@ -43,6 +43,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Owns the session id with a rolling 2h TTL, persisted per shop and reused across cold starts —
     /// aligned with Android/RN. See [SessionManager].
     let sessionManager: SessionManager
+
+    /// This instance's logger: its `logLevel`, its shop on every message.
+    let logger: SdkLogger
 
     /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
     /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
@@ -138,6 +141,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         apiDomain: String,
         stream: String = "ios",
         enableLogs: Bool = false,
+        logLevel: LogLevel? = nil,
         autoSendPushToken: Bool = true,
         sendAdvertisingId: Bool = false,
         parentViewController: UIViewController? = nil,
@@ -151,6 +155,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        // `enableLogs` is the old switch: on, it means everything (`debug`).
+        self.logger = SdkLogger(shopId: shopId, level: logLevel ?? (enableLogs ? .debug : .warning))
+        SdkLogger.register(self.logger)
         self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
         // R2: identity/session live in this shop's partition. The default repository migrates the
@@ -187,7 +194,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.parentViewController = parentViewController
         self.enableAutoPopupPresentation = enableAutoPopupPresentation
         
-        global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
         self.userEmail = userEmail
         self.userPhone = userPhone
@@ -242,14 +248,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
                     if self.sendAdvertisingId {
                         self.updateAdvertisingIdUseCase.execute { result in
-                            #if DEBUG
                             switch result {
-                            case .success(let advertisingId):
-                                print("Advertising ID sent successfully: \(advertisingId.value)")
-                            case .failure(let error):
-                                print("Failed to send Advertising ID: \(error.localizedDescription)")
+                            case .success:
+                                self.logger.debug("advertising_id_sent", "the advertising id was sent")
+                            case .failure:
+                                self.logger.warning("advertising_id_failed", "the advertising id was not sent")
                             }
-                            #endif
                         }
                     }
                     
@@ -331,16 +335,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         let notificationRegistrar = NotificationRegistrar(sdk: self)
                         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
                     }
-                } else if let error = error {
-#if DEBUG
-                    print("Error requesting notification authorization: \(error.localizedDescription)")
-#endif
+                } else if error != nil {
+                    self.logger.warning("push_permission_failed", "the notification permission request failed")
                 }
             }
         } else {
-#if DEBUG
-            print("Auto-send push token is disabled.")
-#endif
+            logger.debug("push_token_auto_send_off", "the SDK does not send the push token by itself")
         }
     }
     
@@ -1193,13 +1193,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .success(json):
                 let resultResponse = InitResponse(json: json)
                 self.storeSuccessInit(result: resultResponse)
-                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
+                self.logger.info("init_succeeded", "initialization finished")
                 completion(.success(resultResponse))
             case let .failure(error):
                 if status == nil, let saved = saved {
-                    print("[SDK INIT Response] No answer from the server, the saved init answer stands in")
+                    self.logger.warning("init_saved_answer", "no answer to /init: the saved init answer stands in")
                     completion(.success(saved))
                 } else {
+                    // A shop that refused (`4xx`) is an error; no answer or a server error is a warning.
+                    let refused = status.map { (400..<500).contains($0) } ?? false
+                    self.logger.log(refused ? .error : .warning, "init_failed", "initialization failed", status.map { ["status": String($0)] } ?? [:])
                     completion(.failure(error))
                 }
             }
@@ -1226,7 +1229,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         if needReInitialization {
             userIdentity.removeDeviceId()
-            print("USER DEVICE ID WAS REMOVED")
+            logger.info("device_id_reset", "the stored device id was removed to get a new one")
         }
 
         if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
@@ -1283,7 +1286,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 try data.write(to: jsonFileURL)
             }
         } catch {
-            print(error)
+            logger.warning("saved_init_write_failed", "the init answer could not be saved, writing it again")
             try data.write(to: jsonFileURL)
         }
     }
@@ -1442,9 +1445,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         completion: @escaping (_ status: Int?, _ result: Result<Any, SdkError>) -> Void
     ) {
         let urlString = baseURL + path
-    #if DEBUG
-        print("LOG: getRequest to: \(urlString)")
-    #endif
+        logger.debug("request", SdkLogger.requestLine("GET", path), ["path": path])
 
         var url = URLComponents(string: urlString)
 
@@ -1457,16 +1458,15 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         url?.queryItems = queryItems
 
         if forgetsSavedInit && needReInitialization {
-            print("Reinitialization needed. Clearing saved data...")
             let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
             let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
             do {
                 if FileManager.default.fileExists(atPath: initFileNamePath.path) {
                     try FileManager.default.removeItem(at: initFileNamePath)
-                    print("Saved data deleted successfully.")
+                    logger.debug("saved_init_cleared", "the saved init answer was removed for re-initialization")
                 }
             } catch {
-                print("Error deleting saved data: \(error)")
+                logger.warning("saved_init_clear_failed", "the saved init answer could not be removed")
             }
         }
 
@@ -1479,11 +1479,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case .success(let (response, data)):
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 guard 200 ..< 299 ~= statusCode else {
-                    let json = try? JSONSerialization.jsonObject(with: data)
-                    if let jsonObject = json as? [String: Any] {
-                        let statusMessage = jsonObject["message"] as? String ?? ""
-                        print("\nStatus message: ", statusMessage)
-                    }
+                    // The error body is not logged: servers repeat the request data in it.
+                    self.logFailedRequest("GET", path, status: statusCode)
                     completion(statusCode, .failure(.invalidResponse))
                     return
                 }
@@ -1495,6 +1492,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     }
                     completion(statusCode, .success(try JSONSerialization.jsonObject(with: data)))
                 } catch {
+                    self.logger.warning("decoding_failed", "the answer to \(SdkLogger.requestLine("GET", path)) did not parse", ["path": path])
                     completion(statusCode, .failure(.decodeError))
                 }
             case .failure:
@@ -1531,9 +1529,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     /// `postRequest` with the call's own timeout.
     func postRequest(path: String, params: [String: Any], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
-#if DEBUG
-        print("LOG: postRequest to: \(self.baseURL + path)")
-#endif
+        logger.debug("request", SdkLogger.requestLine("POST", path), ["path": path])
         var requestParams : [String: Any] = [
             "stream": stream
         ]
@@ -1554,6 +1550,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             // App data (custom fields, profile properties) may hold values that are not JSON; writing
             // them would raise an exception Swift cannot catch.
             guard let body = SafeJSON.data(requestParams, options: .prettyPrinted) else {
+                logger.error("invalid_json", "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path])
                 completion(.failure(.custom(error: "\(path): the request parameters are not valid JSON")))
                 return
             }
@@ -1567,10 +1564,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .success(let (response, data)):
                     let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                     guard 200 ..< 299 ~= statusCode else {
-#if DEBUG
-                        let errorBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body, \(data.count) bytes>"
-                        print("LOG: postRequest HTTP \(statusCode) path=\(path) response=\(errorBody)")
-#endif
+                        // The error body is not logged: servers repeat the request data in it.
+                        self.logFailedRequest("POST", path, status: statusCode)
                         if let json = try? JSONSerialization.jsonObject(with: data) {
                             if let jsonObject = json as? [String:Any] {
                                 if let status = jsonObject["status"] as? String, status == "error" {
@@ -1584,12 +1579,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         completion(.failure(.invalidResponse))
                         return
                     }
-#if DEBUG
-                    let successBody = data.isEmpty
-                        ? "<empty>"
-                        : (String(data: data, encoding: .utf8) ?? "<non-utf8 body, \(data.count) bytes>")
-                    print("LOG: postRequest HTTP \(statusCode) path=\(path) response=\(successBody)")
-#endif
                     do {
                         if data.isEmpty {
                             if path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") {
@@ -1601,9 +1590,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         if let jsonObject = json as? [String: Any] {
                             completion(.success(jsonObject))
                         } else {
+                            self.logger.warning("decoding_failed", "the answer to \(SdkLogger.requestLine("POST", path)) is not a JSON object", ["path": path])
                             completion(.failure(.decodeError))
                         }
                     } catch {
+                        self.logger.warning("decoding_failed", "the answer to \(SdkLogger.requestLine("POST", path)) did not parse", ["path": path])
                         completion(.failure(.decodeError))
                     }
                 case .failure:
@@ -1615,6 +1606,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    /// A request that got an answer outside `2xx`: method, path and status, never the body.
+    private func logFailedRequest(_ method: String, _ path: String, status: Int) {
+        let level: LogLevel = (400..<500).contains(status) ? .error : .warning
+        logger.log(level, "request_failed", "\(status): \(SdkLogger.requestLine(method, path))", ["path": path, "status": String(status)])
+    }
+
     func generateString(array : [String]) -> String {
         let mapArray = array.map{ String($0) }
         return mapArray.joined(separator: ",")
