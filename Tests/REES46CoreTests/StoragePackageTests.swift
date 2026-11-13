@@ -361,9 +361,18 @@ final class StoragePackageTests: XCTestCase {
 
     // MARK: - The keychain's service
 
-    func test_the_keychain_service_is_the_one_the_sdks_binary_has_always_had() {
-        XCTAssertEqual(KeychainPartition.service(frameworkIsLoaded: true, appBundleId: "com.app"), "org.cocoapods.REES46")
-        XCTAssertEqual(KeychainPartition.service(frameworkIsLoaded: false, appBundleId: "com.app"), "com.app")
-        XCTAssertEqual(KeychainPartition.service(frameworkIsLoaded: false, appBundleId: nil), "com.rees46.sdk")
+    func test_the_keychain_service_is_the_bundle_of_the_sdks_binary_as_it_always_was() {
+        XCTAssertEqual(KeychainPartition.service, Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk")
+        XCTAssertEqual(instanceKeychainService, Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService")
+    }
+
+    func test_the_backup_is_looked_for_under_the_ids_of_the_other_link_modes() {
+        // Linked through SwiftPM: the app's id; the CocoaPods framework's id is the other one.
+        XCTAssertEqual(KeychainPartition.previousServices(current: "com.app", appBundleId: "com.app"), ["org.cocoapods.REES46"])
+        // The CocoaPods framework: the app's id is the other one.
+        XCTAssertEqual(KeychainPartition.previousServices(current: "org.cocoapods.REES46", appBundleId: "com.app"), ["com.app"])
+        // The SDK in an app's own framework: both.
+        XCTAssertEqual(KeychainPartition.previousServices(current: "com.app.kit", appBundleId: "com.app"), ["org.cocoapods.REES46", "com.app"])
+        XCTAssertEqual(KeychainPartition.previousServices(current: "com.app", appBundleId: nil), ["org.cocoapods.REES46"])
     }
 }

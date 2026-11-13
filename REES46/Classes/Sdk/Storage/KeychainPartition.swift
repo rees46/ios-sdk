@@ -36,23 +36,34 @@ enum KeychainPartition {
     /// manager would lose its keychain backup — and with it the did — on the next reinstall.
     static let cocoaPodsFrameworkService = "org.cocoapods.REES46"
 
-    /// The service of the SDK's keychain items when the app has no bundle id; what the SDK used then.
+    /// The service of the SDK's keychain items when the binary it is linked into has no bundle id;
+    /// what the SDK used then.
     static let fallbackService = "com.rees46.sdk"
 
     /**
-     The service of the SDK's keychain items, pinned to what it has always been: the bundle id of
-     the binary the SDK is linked into, as `Bundle(for:)` gave it — `org.cocoapods.REES46` for the
-     framework CocoaPods builds with `use_frameworks!`, the app's bundle id when the SDK is linked into
-     the app (SwiftPM, a static CocoaPods build). Found by the framework's identifier, not by the
-     bundle of an SDK class: moved to a folder or module of its own, the core still finds the items
-     every install already has.
+     The service of the SDK's keychain items, computed exactly as it always was: the bundle id of the
+     binary the SDK is linked into, `Bundle(for:)` of a class of this module —
+     `org.cocoapods.REES46` for the framework CocoaPods builds with `use_frameworks!`, the app's bundle
+     id when the SDK is linked into the app, the id of an app's own framework that links it statically.
      */
-    static let service: String = service(
-        frameworkIsLoaded: Bundle(identifier: cocoaPodsFrameworkService) != nil,
-        appBundleId: Bundle.main.bundleIdentifier
-    )
+    static let service: String = Bundle(for: KeychainServiceAnchor.self).bundleIdentifier ?? fallbackService
 
-    static func service(frameworkIsLoaded: Bool, appBundleId: String?) -> String {
-        frameworkIsLoaded ? cocoaPodsFrameworkService : (appBundleId ?? fallbackService)
+    /// The services an earlier build of the same app may have kept the items under, in another link
+    /// mode: the CocoaPods framework's and the app's own; the current one left out.
+    static var previousServices: [String] {
+        previousServices(current: service, appBundleId: Bundle.main.bundleIdentifier)
+    }
+
+    static func previousServices(current: String, appBundleId: String?) -> [String] {
+        var services = [cocoaPodsFrameworkService]
+        if let app = appBundleId, !app.isEmpty, app != cocoaPodsFrameworkService {
+            services.append(app)
+        }
+        return services.filter { $0 != current }
     }
 }
+
+/// The class `KeychainPartition.service` takes the bundle of. It must stay in this module (the SDK's
+/// own target): moved to another module, `Bundle(for:)` answers with that module's bundle, the
+/// service changes, and every install loses the keychain backup of its device id.
+final class KeychainServiceAnchor {}

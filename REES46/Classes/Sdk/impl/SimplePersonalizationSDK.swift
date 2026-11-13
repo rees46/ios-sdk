@@ -231,7 +231,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.keychainStore = keychainStore ?? KeychainInitStoreImpl(
             shopId: shopId,
             service: KeychainPartition.service,
-            previousServices: [KeychainPartition.cocoaPodsFrameworkService],
+            previousServices: KeychainPartition.previousServices,
             partition: storage.partition
         )
 

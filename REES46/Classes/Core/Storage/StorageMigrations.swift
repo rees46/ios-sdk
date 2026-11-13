@@ -28,6 +28,7 @@ enum StorageMigrations {
         /// shop to resolve it gives the device its group (`DeviceStore.resolveAbGroup`).
         case deviceAdvertisingId = "device_advertising_id"
         /// The keychain backup of the init answer under the pre-partition account or another service.
+        /// Its flag holds the service it ran under: another link mode looks again.
         case keychainItem = "keychain_item"
         /// `Documents/<shopId>.json` into the SDK's folder in Application Support.
         case savedInitFile = "saved_init_file"
@@ -42,7 +43,10 @@ enum StorageMigrations {
     }
 
     static func isDone(_ step: Step, in partition: UserDefaults) -> Bool {
-        partition.bool(forKey: flagKey(step))
+        if step == .keychainItem {
+            return partition.string(forKey: flagKey(step)) == KeychainPartition.service
+        }
+        return partition.bool(forKey: flagKey(step))
     }
 
     /// Runs `migrate` unless the shop's flag says it ran. `migrate` returns whether it is done; `false`

@@ -231,6 +231,29 @@ final class StorageUpgradeTests: XCTestCase {
         XCTAssertEqual(other.getDeviceId(), "new-did", "the second shop gets its own did from the server")
     }
 
+    func test_a_switch_of_the_link_mode_adopts_the_backup_under_the_other_id_also_after_the_adoption_ran() {
+        let shop = freshShop()
+        let pods = "test.pods.\(shop)"
+        let app = "test.app.\(shop)"
+        defer {
+            for service in [pods, app] {
+                try? InitService.deleteKeychainDidToken(identifier: KeychainPartition.account(shopId: shop, service: service), instanceKeychainService: service)
+            }
+        }
+        // Linked one way: nothing to adopt, and the adoption is marked as run under that id.
+        _ = KeychainInitStoreImpl(shopId: shop, service: pods, previousServices: [app], partition: partition(shop))
+        XCTAssertEqual(partition(shop).string(forKey: StorageMigrations.flagKey(.keychainItem)), pods)
+
+        // Linked the other way, the backup is written under that id.
+        let other = KeychainInitStoreImpl(shopId: shop, service: app, previousServices: [pods], partition: partition(shop))
+        other.writeInitData(json(#"{"did":"did-app"}"#))
+
+        // Back to the first way: the flag of the first run does not hold the backup back.
+        let back = KeychainInitStoreImpl(shopId: shop, service: pods, previousServices: [app], partition: partition(shop))
+        XCTAssertEqual(back.readInitData(), json(#"{"did":"did-app"}"#))
+        XCTAssertEqual(partition(shop).string(forKey: StorageMigrations.flagKey(.keychainItem)), pods)
+    }
+
     func test_a_keychain_that_does_not_answer_leaves_the_adoption_for_the_next_launch() {
         let shop = freshShop()
         let original = InitService.copyMatching
@@ -264,6 +287,7 @@ final class StorageUpgradeTests: XCTestCase {
     func test_the_keychain_service_is_pinned_to_the_value_it_has_always_had() {
         XCTAssertEqual(KeychainPartition.service, Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier)
         XCTAssertEqual(instanceKeychainService, KeychainPartition.service)
+        XCTAssertEqual(KeychainPartition.service, "org.cocoapods.REES46", "the demo links the SDK as a CocoaPods framework")
     }
 
     // MARK: - deleteUserCredentials

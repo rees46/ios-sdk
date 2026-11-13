@@ -17,9 +17,10 @@ import Foundation
  install keeps its did across a reinstall: the first shop to initialize copies the legacy blob into
  its own account and then deletes the legacy item (consume-by-delete). The same adoption covers items
  an earlier build left under another service ([previousServices]) — the app switched the package
- manager the SDK is linked through. With the shop's partition at hand the adoption runs once
- (`StorageMigrations.Step.keychainItem`); a keychain that does not answer — locked, say — leaves it for
- the next launch.
+ manager the SDK is linked through. With the shop's partition at hand the adoption runs once per
+ service: the partition keeps the service it last ran under (`StorageMigrations.Step.keychainItem`), so
+ a switch of the link mode — either way, and back — looks again for the backup under the other ids; a
+ keychain that does not answer — locked, say — leaves it for the next launch.
  */
 final class KeychainInitStoreImpl: KeychainInitStore {
 
@@ -35,7 +36,10 @@ final class KeychainInitStoreImpl: KeychainInitStore {
         self.shopId = shopId
         self.previousServices = previousServices.filter { $0 != service }
         if let partition = partition {
-            StorageMigrations.once(.keychainItem, in: partition) { adoptLegacyIfNeeded() }
+            let key = StorageMigrations.flagKey(.keychainItem)
+            if partition.string(forKey: key) != service, adoptLegacyIfNeeded() {
+                partition.set(service, forKey: key)
+            }
         } else {
             _ = adoptLegacyIfNeeded()
         }
