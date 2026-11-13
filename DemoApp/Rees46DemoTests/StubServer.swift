@@ -96,8 +96,8 @@ final class StubURLProtocol: URLProtocol {
         URLProtocol.registerClass(StubURLProtocol.self)
         swapDefaultConfiguration()
         // A URL protocol has no metrics of the request's phases: the stub says which reached it.
-        NetworkClient.reachedServer = { task, metrics in
-            StubURLProtocol.reached(task) || NetworkClient.requestWentOut(task, metrics)
+        NetworkClient.reachedServerOverride = { task, _ in
+            StubURLProtocol.reached(task) ? true : nil
         }
     }
 
@@ -107,7 +107,7 @@ final class StubURLProtocol: URLProtocol {
         installed = false
         URLProtocol.unregisterClass(StubURLProtocol.self)
         swapDefaultConfiguration()
-        NetworkClient.reachedServer = NetworkClient.requestWentOut
+        NetworkClient.reachedServerOverride = nil
     }
 
     /// Tasks the stub server answered or held: their request reached it.

@@ -53,13 +53,34 @@ actor NetworkClient {
 
     /// Whether a request that got no answer had reached the server: its headers had started to go
     /// out. Before that a failure is `network` (no network, DNS, a refused connection, a connect that
-    /// timed out), after it `timeout`. Tests that serve requests through a URL protocol, which has no
-    /// such metrics, say it here.
-    static var reachedServer: (URLSessionTask, URLSessionTaskMetrics?) -> Bool = requestWentOut
+    /// timed out), after it `timeout`. `nil` when the session gave no metrics for the request: then a
+    /// timed-out one is `timeout`, anything else `network`.
+    static func reachedServer(_ task: URLSessionTask, _ metrics: URLSessionTaskMetrics?) -> Bool? {
+        if let override = reachedServerOverride, let reached = override(task, metrics) {
+            return reached
+        }
+        return requestWentOut(metrics)
+    }
 
-    /// The default of `reachedServer`: the task's metrics say a request started.
-    static func requestWentOut(_ task: URLSessionTask, _ metrics: URLSessionTaskMetrics?) -> Bool {
-        metrics?.transactionMetrics.contains { $0.requestStartDate != nil } ?? false
+    /// The default answer: the task's metrics say a request started; `nil` without metrics.
+    static func requestWentOut(_ metrics: URLSessionTaskMetrics?) -> Bool? {
+        metrics.map { $0.transactionMetrics.contains { $0.requestStartDate != nil } }
+    }
+
+    private static let overrideLock = NSLock()
+    private static var overrideValue: ((URLSessionTask, URLSessionTaskMetrics?) -> Bool?)?
+
+    /// Test-only: a URL protocol serves requests without the phases the metrics report, so the stub
+    /// server says which requests reached it; `nil` from it falls back to the metrics.
+    static var reachedServerOverride: ((URLSessionTask, URLSessionTaskMetrics?) -> Bool?)? {
+        get {
+            overrideLock.lock(); defer { overrideLock.unlock() }
+            return overrideValue
+        }
+        set {
+            overrideLock.lock(); defer { overrideLock.unlock() }
+            overrideValue = newValue
+        }
     }
 
     private let sessions: Sessions
@@ -209,8 +230,8 @@ actor NetworkClient {
         let data: Data
         let response: URLResponse?
         let error: Error?
-        /// Whether the request had reached the server when it failed.
-        let reachedServer: Bool
+        /// Whether the request had reached the server when it failed; `nil` without metrics.
+        let reachedServer: Bool?
 
         static let cancelled = Loaded(data: Data(), response: nil, error: URLError(.cancelled), reachedServer: false)
     }
@@ -223,12 +244,11 @@ actor NetworkClient {
         let handle = TaskHandle()
         return await withTaskCancellationHandler {
             await withCheckedContinuation { (continuation: CheckedContinuation<Loaded, Never>) in
-                let task = sessions.dataTask(with: request) { data, response, error in
-                    let metrics = handle.task.flatMap { sessions.metrics.take($0) }
-                    let reached = handle.task.map { Self.reachedServer($0, metrics) } ?? false
+                let made = sessions.dataTask(with: request) { data, response, error, metrics in
+                    let reached = handle.task.flatMap { Self.reachedServer($0, metrics) }
                     continuation.resume(returning: Loaded(data: data ?? Data(), response: response, error: error, reachedServer: reached))
                 }
-                guard let task = task else {
+                guard let task = made else {
                     continuation.resume(returning: .cancelled)
                     return
                 }
@@ -337,10 +357,15 @@ actor NetworkClient {
     /// A request without an answer (`sdk/core/errors.md`): cancelled is `cancelled`; one that never
     /// reached the server — no network, DNS, a refused connection, a connect that timed out — is
     /// `network`; one that did, and whose answer did not come in time or broke off midway, is
-    /// `timeout`. Never a success with part of a body.
-    static func classify(_ error: Error, reachedServer: Bool) -> Rees46.SdkError {
-        if (error as? URLError)?.code == .cancelled {
+    /// `timeout`. Without the session's metrics (`reachedServer` is `nil`) a request that timed out is
+    /// `timeout` and any other failure `network`. Never a success with part of a body.
+    static func classify(_ error: Error, reachedServer: Bool?) -> Rees46.SdkError {
+        let code = (error as? URLError)?.code
+        if code == .cancelled {
             return .cancelled
+        }
+        guard let reachedServer = reachedServer else {
+            return code == .timedOut ? .timeout : .network
         }
         return reachedServer ? .timeout : .network
     }
@@ -362,13 +387,17 @@ actor NetworkClient {
 
 // MARK: - Sessions
 
-/// The client's session and the ones the app's configuration replaced. A task is made and the
+/// The client's session and the one the app's configuration replaced last. A task is made and the
 /// sessions are invalidated under one lock, so no task is ever made on an invalidated session.
 private final class Sessions {
 
-    /// Every session reports here what each request went through.
-    let metrics = TaskMetrics()
-    /// The delegate's queue, serial: a task's metrics arrive before its completion handler runs.
+    /// One session with what it reports of its requests.
+    private struct Entry {
+        let session: URLSession
+        let metrics: TaskMetrics
+    }
+
+    /// The delegate's queue, serial: a task's metrics and its completion come one after the other.
     private let queue: OperationQueue = {
         let queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
@@ -376,22 +405,35 @@ private final class Sessions {
         return queue
     }()
     private let lock = NSLock()
-    private var current: URLSession
-    private var replaced: [URLSession] = []
+    private var current: Entry
+    /// The session the last `replace` let finish what it carried; an older one was let go of then.
+    private var previous: Entry?
     private var invalidated = false
 
     init(configuration: URLSessionConfiguration) {
-        current = URLSession(configuration: configuration, delegate: metrics, delegateQueue: queue)
+        current = Self.entry(configuration, queue: queue)
     }
 
-    /// A task on the current session; `nil` once the sessions are invalidated.
+    private static func entry(_ configuration: URLSessionConfiguration, queue: OperationQueue) -> Entry {
+        let metrics = TaskMetrics()
+        return Entry(session: URLSession(configuration: configuration, delegate: metrics, delegateQueue: queue), metrics: metrics)
+    }
+
+    /// A task on the current session; `nil` once the sessions are invalidated. `completion` gets the
+    /// task's metrics too, `nil` when the session gave none; its entry is gone either way.
     func dataTask(
         with request: URLRequest,
-        completion: @escaping (Data?, URLResponse?, Error?) -> Void
+        completion: @escaping (Data?, URLResponse?, Error?, URLSessionTaskMetrics?) -> Void
     ) -> URLSessionDataTask? {
         lock.lock(); defer { lock.unlock() }
         guard !invalidated else { return nil }
-        return current.dataTask(with: request, completionHandler: completion)
+        let metrics = current.metrics
+        let handle = TaskIdentifier()
+        let task = current.session.dataTask(with: request) { data, response, error in
+            completion(data, response, error, handle.id.flatMap { metrics.take($0) })
+        }
+        handle.id = task.taskIdentifier
+        return task
     }
 
     func replace(with configuration: URLSessionConfiguration) {
@@ -399,9 +441,9 @@ private final class Sessions {
         own.waitsForConnectivity = false
         lock.lock(); defer { lock.unlock() }
         guard !invalidated else { return }
-        current.finishTasksAndInvalidate()
-        replaced.append(current)
-        current = URLSession(configuration: own, delegate: metrics, delegateQueue: queue)
+        current.session.finishTasksAndInvalidate()
+        previous = current
+        current = Self.entry(own, queue: queue)
     }
 
     /// `release()`: every request in flight ends, no new one is made.
@@ -409,8 +451,8 @@ private final class Sessions {
         lock.lock(); defer { lock.unlock() }
         guard !invalidated else { return }
         invalidated = true
-        current.invalidateAndCancel()
-        replaced.forEach { $0.invalidateAndCancel() }
+        current.session.invalidateAndCancel()
+        previous?.session.invalidateAndCancel()
     }
 
     /// The client is gone without `release()`: what is in flight finishes, the sessions let go of
@@ -419,24 +461,57 @@ private final class Sessions {
         lock.lock(); defer { lock.unlock() }
         guard !invalidated else { return }
         invalidated = true
-        current.finishTasksAndInvalidate()
+        current.session.finishTasksAndInvalidate()
     }
 }
 
-/// What each request went through, as its session reports it, until the request's answer takes it.
-private final class TaskMetrics: NSObject, URLSessionTaskDelegate {
+/// The identifier of a task, set once the task is made: its completion reads it.
+private final class TaskIdentifier {
+    private let lock = NSLock()
+    private var value: Int?
+    var id: Int? {
+        get { lock.lock(); defer { lock.unlock() }; return value }
+        set { lock.lock(); value = newValue; lock.unlock() }
+    }
+}
+
+/// What each request of one session went through, as the session reports it, keyed by the task's
+/// identifier, which is unique within its session. An entry leaves when the request's completion takes
+/// it; metrics that come after the completion are dropped.
+final class TaskMetrics: NSObject, URLSessionTaskDelegate {
 
     private let lock = NSLock()
-    private var byTask: [ObjectIdentifier: URLSessionTaskMetrics] = [:]
+    private var byTask: [Int: URLSessionTaskMetrics] = [:]
+    /// Tasks whose completion came first: their metrics, when they come, are not kept.
+    private var completed: Set<Int> = []
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         lock.lock(); defer { lock.unlock() }
-        byTask[ObjectIdentifier(task)] = metrics
+        let id = task.taskIdentifier
+        if completed.remove(id) != nil {
+            return
+        }
+        byTask[id] = metrics
     }
 
-    func take(_ task: URLSessionTask) -> URLSessionTaskMetrics? {
+    /// The metrics of task `id`, removed; `nil` when they have not come — and then they never stay.
+    func take(_ id: Int) -> URLSessionTaskMetrics? {
         lock.lock(); defer { lock.unlock() }
-        return byTask.removeValue(forKey: ObjectIdentifier(task))
+        if let metrics = byTask.removeValue(forKey: id) {
+            return metrics
+        }
+        // Bounded, should a session never report a finished task's metrics.
+        if completed.count >= 256 {
+            completed.removeAll()
+        }
+        completed.insert(id)
+        return nil
+    }
+
+    /// How many entries it holds; for tests.
+    var pending: Int {
+        lock.lock(); defer { lock.unlock() }
+        return byTask.count + completed.count
     }
 }
 

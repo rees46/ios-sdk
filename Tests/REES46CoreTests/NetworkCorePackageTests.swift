@@ -27,6 +27,10 @@ final class NetworkCorePackageTests: XCTestCase {
         XCTAssertNotNil(try? NetworkClient.classify(status: 200, body: Data(), path: "push").get())
         XCTAssertEqual(NetworkClient.classify(URLError(.timedOut), reachedServer: true), .timeout)
         XCTAssertEqual(NetworkClient.classify(URLError(.timedOut), reachedServer: false), .network, "a connect that timed out")
+        // Without the session's metrics a timed-out request is a timeout, anything else no network.
+        XCTAssertEqual(NetworkClient.classify(URLError(.timedOut), reachedServer: nil), .timeout)
+        XCTAssertEqual(NetworkClient.classify(URLError(.cannotConnectToHost), reachedServer: nil), .network)
+        XCTAssertEqual(NetworkClient.classify(URLError(.cancelled), reachedServer: nil), .cancelled)
         XCTAssertEqual(NetworkClient.classify(URLError(.networkConnectionLost), reachedServer: true), .timeout, "an answer cut midway")
         XCTAssertEqual(NetworkClient.classify(URLError(.cancelled), reachedServer: true), .cancelled)
         XCTAssertEqual(NetworkClient.classify(URLError(.notConnectedToInternet), reachedServer: false), .network)
