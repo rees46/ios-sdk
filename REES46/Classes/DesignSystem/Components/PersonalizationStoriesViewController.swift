@@ -1019,7 +1019,6 @@ extension PersonalizationStoryPageViewController {
         ])
         // Тема слайда распространяется и на шапку: на медиа прогресс и крестик светлые.
         content.overrideUserInterfaceStyle = slide.interfaceStyle
-        navigation.forcesDarkTokens = slide.isMedia
         navigation.isShareVisible = story.shareUrl(of: slide) != nil
         navigation.progress.current = index
         navigation.progress.progress = 0

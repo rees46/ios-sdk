@@ -337,11 +337,6 @@ public struct PersonalizationColorSet {
     public static func dynamic(light: UIColor, dark: UIColor) -> UIColor {
         return UIColor { $0.userInterfaceStyle == .dark ? dark : light }
     }
-
-    /// Тёмное значение цвета темы — цвет в тёмной теме. Цвет не из темы остаётся как есть.
-    static func darkVariant(of color: UIColor) -> UIColor {
-        return color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
-    }
 }
 
 /// Радиусы темы. `rounded` — pill: значение заведомо больше любой стороны.

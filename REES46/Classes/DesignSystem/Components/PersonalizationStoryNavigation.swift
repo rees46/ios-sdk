@@ -47,16 +47,6 @@ public final class PersonalizationStoryNavigation: UIView {
     /// Откуда показывать окно «Поделиться» на iPad.
     var shareAnchor: UIView { shareButton }
 
-    /// Шапка медиа-слайда: тёмные токены и на iOS 12, где тему поддерева не переопределить.
-    var forcesDarkTokens = false {
-        didSet {
-            let tint = PersonalizationStoryColors.token(PersonalizationColor.textSecondary, forcingDark: forcesDarkTokens)
-            closeButton.tintColor = tint
-            shareButton.tintColor = tint
-            progress.forcesDarkTokens = forcesDarkTokens
-        }
-    }
-
     private let closeButton = UIButton(type: .custom)
     private let shareButton = UIButton(type: .custom)
 

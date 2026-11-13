@@ -102,12 +102,6 @@ enum PersonalizationStoryColors {
         return color.resolvedColor(with: view.traitCollection).cgColor
     }
 
-    /// Токен кита на медиа-слайде. Тёмную тему поддереву даёт `overrideUserInterfaceStyle`,
-    /// и токен остаётся динамическим.
-    static func token(_ color: UIColor, forcingDark: Bool) -> UIColor {
-        return color
-    }
-
     /// Цвет из hex админки: `#RGB`, `#RRGGBB` или `#RRGGBBAA`. Пусто или мусор — `nil`.
     static func parse(_ hex: String?) -> UIColor? {
         guard var value = hex?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }

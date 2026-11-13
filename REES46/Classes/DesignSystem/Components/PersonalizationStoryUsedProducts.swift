@@ -57,11 +57,6 @@ public final class PersonalizationStoryUsedProducts: UIView {
         }
     }
 
-    /// Лист на медиа-слайде: тёмные токены и на iOS 12.
-    var forcesDarkTokens = false {
-        didSet { applyState() }
-    }
-
     /// Карусель товаров.
     public let list = PersonalizationProductsList(layout: .carousel)
 
@@ -144,7 +139,7 @@ public final class PersonalizationStoryUsedProducts: UIView {
         listContainer.isHidden = !isExpanded
         // Фон листа — на самом компоненте: у UIStackView до iOS 14 фона нет.
         backgroundColor = isExpanded
-            ? PersonalizationStoryColors.token(PersonalizationColor.backgroundCard, forcingDark: forcesDarkTokens)
+            ? PersonalizationColor.backgroundCard
             : .clear
         toggle.text = isExpanded ? hideText : showText
         toggle.iconEnd = isExpanded ? PersonalizationIcons.angleDown : PersonalizationIcons.angleUp

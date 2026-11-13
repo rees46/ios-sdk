@@ -93,11 +93,6 @@ public final class PersonalizationStoryTextBlock: UIView {
     /// Промокод скопирован в буфер обмена.
     public var onPromoCopied: ((String) -> Void)?
 
-    /// Блок на медиа-слайде: тёмные токены и на iOS 12, где тему поддерева не переопределить.
-    var forcesDarkTokens = false {
-        didSet { applyText() }
-    }
-
     private lazy var promoTap = UITapGestureRecognizer(target: self, action: #selector(promoTapped))
 
     /// Блок с заливкой: рамка кита — поля и скругление.
@@ -204,10 +199,7 @@ public final class PersonalizationStoryTextBlock: UIView {
         paragraph.minimumLineHeight = style.lineHeight
         paragraph.maximumLineHeight = style.lineHeight
         paragraph.alignment = alignment
-        let color = textColor ?? PersonalizationStoryColors.token(
-            isSolid ? PersonalizationColor.textLightPrimary : PersonalizationColor.textPrimary,
-            forcingDark: forcesDarkTokens
-        )
+        let color = textColor ?? (isSolid ? PersonalizationColor.textLightPrimary : PersonalizationColor.textPrimary)
         label.attributedText = NSAttributedString(string: text, attributes: [
             .font: font,
             .paragraphStyle: paragraph,
