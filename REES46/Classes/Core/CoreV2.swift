@@ -44,8 +44,8 @@ final class CoreV2: Core {
     /// does not go for a refused shop.
     ///
     /// Every other request checks the session's window (`sdk/core/session.md`): when it ran out,
-    /// `/init` goes first and the request waits for it, then goes with the new `sid`, whatever `sid`
-    /// its caller put in. A request does not extend the window. Without network it does not wait for
+    /// `/init` goes first — the instance stays `ready` — and the request waits for it, then goes with
+    /// the new `sid`, whatever `sid` its caller put in. A request does not extend the window. Without network it does not wait for
     /// the session: it fails at once, as any request does offline.
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         lock.lock()

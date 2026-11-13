@@ -182,7 +182,13 @@ final class CoreSessionTests: XCTestCase {
         XCTAssertNil(inits(shop).last?.query["sid"], "the window ran out: no sid on it")
         XCTAssertEqual(products(shop).last?.query["sid"], "s-2", "the caller put s-1 in: the new one goes")
         XCTAssertEqual(products(shop).last?.query["seance"], "s-2")
-        XCTAssertTrue(eventually { heard == [.ready, .initializing, .ready] }, "ready → initializing → ready: \(heard)")
+        // The state does not flap on a renewal: the request waited inside the SDK.
+        let changed = expectation(description: "a state change")
+        changed.isInverted = true
+        if heard != [.ready] { changed.fulfill() }
+        wait(for: [changed], timeout: 0.3)
+        XCTAssertEqual(heard, [.ready], "\(heard)")
+        XCTAssertEqual(sdk.state, .ready)
     }
 
     func test_requests_with_a_result_do_not_extend_the_window_and_init_does() {

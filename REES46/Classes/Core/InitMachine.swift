@@ -227,11 +227,12 @@ final class InitMachine {
         renewSession(fromForeground: true)
     }
 
-    /// The session's window ran out: `/init` gets a new `sid`. From `ready` the instance is
-    /// `initializing` until it answers (`sdk/core/init.md`), so calls wait for the new `sid`. An `/init`
-    /// on its way, or one that `retrying` repeats after its pause, answers anyway: nothing more goes —
-    /// but the return to the foreground repeats a failing `/init` at once. A refusal is not asked again
-    /// while the app runs: the next launch asks.
+    /// The session's window ran out: `/init` gets a new `sid`. The state does not change — the
+    /// instance stays `ready` (`sdk/core/init.md`) —, but calls and events that need a session wait for
+    /// this `/init` inside the SDK, so they go with the new `sid`. An `/init` on its way, or one that
+    /// `retrying` repeats after its pause, answers anyway: nothing more goes — but the return to the
+    /// foreground repeats a failing `/init` at once. A refusal is not asked again while the app runs:
+    /// the next launch asks.
     func renewSession(fromForeground: Bool = false) {
         lock.lock()
         guard started, !released, !inFlight else {
@@ -240,7 +241,7 @@ final class InitMachine {
         }
         switch state.current {
         case .ready:
-            state.set(.initializing)
+            break
         case .retrying where fromForeground:
             break
         case .retrying, .initializing, .refused, .notInitialized:
