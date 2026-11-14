@@ -1069,6 +1069,28 @@ final class CorePushTests: XCTestCase {
         XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 }, "not lost")
     }
 
+    // MARK: - A pending shop's push makes no instance
+
+    func test_a_pending_shops_push_never_yields_an_instance_nor_becomes_the_current_one() throws {
+        let shop = newShop()
+        let current = make(shop)
+        let (pending, _) = registerPending(did: "pending-did")
+        Rees46.handlePush(push(pending), event: .clicked)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/clicked", shop: pending) == 1 })
+
+        XCTAssertTrue(SdkRegistry.shared.current() as AnyObject === current, "the current instance stays the app's")
+        XCTAssertTrue(try Rees46.instance(for: shop) as AnyObject === current)
+        XCTAssertNil(SdkRegistry.shared.byShopId(pending), "no instance made for the push")
+        XCTAssertTrue(Rees46.pendingShopIds().contains(pending))
+        XCTAssertTrue(requests("/init", pending).isEmpty)
+
+        // Asked for, the shop gets a full instance: its own start, its /init.
+        let full = try XCTUnwrap(Rees46.instance(for: pending) as? SimplePersonalizationSDK)
+        XCTAssertTrue(eventually { self.requests("/init", pending).count == 1 }, "a full start")
+        XCTAssertFalse(Rees46.pendingShopIds().contains(pending))
+        full.release()
+    }
+
     // MARK: - Each lane its own pause
 
     func test_each_lane_has_its_own_pause_counter_and_retry_after_and_flush_cuts_only_the_ordinary_pauses() {
