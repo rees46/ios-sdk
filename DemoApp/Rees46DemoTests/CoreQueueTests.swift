@@ -328,6 +328,40 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertTrue(files(sdk).isEmpty)
     }
 
+    func test_a_refusal_in_the_background_asks_the_shop_only_once_the_app_is_in_the_foreground() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let inits = requests("/init", shop).count
+        answer("/push", StubReply(402), StubReply(json: #"{"status":"success"}"#))
+        lifecycle.send(.didEnterBackground)
+        sdk.tracking.productView(itemId: "first")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && sdk.eventQueue?.inFlightCount == 0 })
+        expectNoRequest(to: "/init", shop: shop) {
+            sdk.flush { _ in }
+        }
+        XCTAssertEqual(requests("/init", shop).count, inits, "no /init from the background")
+        XCTAssertEqual(sdk.eventQueue?.waiting.count, 1, "the event waits for the check")
+
+        lifecycle.send(.willEnterForeground)
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == inits + 1 }, "asked once in the foreground")
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["first", "first"] }, "checked and sent again")
+        XCTAssertTrue(dropped(shop).isEmpty)
+    }
+
+    func test_a_refusal_in_the_background_is_answered_by_an_init_that_comes_before_the_foreground() {
+        let shop = newShop()
+        let sdk = make(shop)
+        answer("/push", StubReply(403), StubReply(json: #"{"status":"success"}"#))
+        lifecycle.send(.didEnterBackground)
+        sdk.tracking.productView(itemId: "first")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && sdk.eventQueue?.inFlightCount == 0 })
+        sdk.eventQueue?.settle()
+        // An /init that answers meanwhile, whatever sent it, answers the check.
+        sdk.eventQueue?.initSucceeded()
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["first", "first"] }, "checked by it")
+        XCTAssertTrue(dropped(shop).isEmpty)
+    }
+
     func test_a_refusal_while_the_last_check_is_still_on_its_way_waits_for_its_answer() {
         let shop = newShop()
         let sdk = make(shop)

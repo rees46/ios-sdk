@@ -58,7 +58,8 @@ protocol EventQueueHost: AnyObject {
 ///   (`askShop()`): `refused` clears the queue; once a new `/init` answer came the event goes again, and
 ///   the same answer to it drops it — the refusal of a service, not of the shop; so does such an answer
 ///   when a check of the shop passed less than ten minutes ago, at once; a check that failed lately
-///   repeats the event after a pause instead. The lane of pushes never asks the shop — it never sends
+///   repeats the event after a pause instead. A refusal in the background asks the shop once the app is
+///   in the foreground; the lane waits for it, and an `/init` meanwhile answers it. The lane of pushes never asks the shop — it never sends
 ///   `/init` —: an event of a push answered `402` or `403` is dropped as `service_refused`, `404` as
 ///   `rejected`. Any other `4xx` drops an event.
 /// - **Identity** is taken when the queue decides to send an event, and put on a copy with the
@@ -307,6 +308,11 @@ final class EventQueue {
         /// A check of the shop is on its way after `402`, `403` or `404` to this event.
         var pausedForCheck = false
         var checkingSeq: UInt64?
+        /// The check waits for the foreground: the refusal came in the background.
+        var checkDeferred = false
+        /// The answer the event got, and its body: what drops it when the shop turns out fine.
+        var checkCode = 0
+        var checkBody = Data()
     }
 
     /// A wait for the queue to be tried: every event up to `through`, in each lane.
@@ -438,8 +444,7 @@ final class EventQueue {
             for lane in Lane.allCases {
                 let state = self.state(lane)
                 guard state.pausedForCheck else { continue }
-                self.lanes[lane, default: LaneState()].pausedForCheck = false
-                self.lanes[lane, default: LaneState()].checkingSeq = nil
+                self.endCheck(lane)
                 guard let seq = state.checkingSeq, let index = self.events.firstIndex(where: { $0.seq == seq }) else { continue }
                 var checked = self.events[index]
                 checked.shopChecked = true
@@ -479,8 +484,7 @@ final class EventQueue {
     /// the new owner, which asks again if the answer is the same.
     private func ownerChanged() {
         for lane in Lane.allCases {
-            lanes[lane, default: LaneState()].pausedForCheck = false
-            lanes[lane, default: LaneState()].checkingSeq = nil
+            endCheck(lane)
         }
         drain(explicit: false)
     }
@@ -587,8 +591,13 @@ final class EventQueue {
             return true
         }
         guard !state.pausedForCheck else {
-            // The check of the shop is an `/init`: a flush waits for it as for `ready`.
-            holdPasses(host)
+            if state.checkDeferred {
+                // A check that waits for the foreground goes once the app is there.
+                askShop(lane)
+            } else {
+                // The check of the shop is an `/init`: a flush waits for it as for `ready`.
+                holdPasses(host)
+            }
             return true
         }
         let now = host.queueEnvironment.clock.now()
@@ -806,28 +815,53 @@ final class EventQueue {
         // Paused until a new `/init` answers: only then is the event checked and sent again.
         lanes[lane, default: LaneState()].pausedForCheck = true
         lanes[lane, default: LaneState()].checkingSeq = event.seq
-        switch owner?.queueCheckShop() ?? .notAsked {
+        lanes[lane, default: LaneState()].checkCode = code
+        lanes[lane, default: LaneState()].checkBody = body
+        askShop(lane)
+    }
+
+    /// Asks the shop about the event `lane` paused on — from the foreground only: in the background the
+    /// check, an `/init`, waits for the foreground, and so does the lane; an `/init` that answers before
+    /// answers it too (`initSucceeded`).
+    private func askShop(_ lane: Lane) {
+        guard let owner = owner else {
+            finishPasses(lane)
+            return
+        }
+        guard owner.queueEnvironment.lifecycle.isInForeground else {
+            lanes[lane, default: LaneState()].checkDeferred = true
+            finishPasses(lane)
+            return
+        }
+        lanes[lane, default: LaneState()].checkDeferred = false
+        switch owner.queueCheckShop() {
         case .asked, .onItsWay:
-            if let owner = owner {
-                // A flush waits for the check, an `/init`, as for `ready`.
-                holdPasses(owner)
-            } else {
-                finishPasses(lane)
-            }
+            // A flush waits for the check, an `/init`, as for `ready`.
+            holdPasses(owner)
         case .passed:
             // The shop passed a check less than ten minutes ago and is ready: the refusal is the
             // service's. The event goes at once, and the queue does not wait.
-            lanes[lane, default: LaneState()].pausedForCheck = false
-            lanes[lane, default: LaneState()].checkingSeq = nil
-            drop(at: index, error: .http(code: code, serverCode: nil), body: body, reason: "service_refused", status: code)
+            let state = self.state(lane)
+            endCheck(lane)
+            if let seq = state.checkingSeq, let index = events.firstIndex(where: { $0.seq == seq }) {
+                drop(at: index, error: .http(code: state.checkCode, serverCode: nil), body: state.checkBody, reason: "service_refused", status: state.checkCode)
+            }
             drain(explicit: false)
         case .notAsked:
             // The last check, a moment ago, got no answer: no new one is coming yet. The event goes
             // again after a pause, not counted, and asks again.
-            lanes[lane, default: LaneState()].pausedForCheck = false
-            lanes[lane, default: LaneState()].checkingSeq = nil
+            endCheck(lane)
             retryAfterFailure(lane)
         }
+    }
+
+    /// The check of the shop `lane` waited for is over, or will not come.
+    private func endCheck(_ lane: Lane) {
+        lanes[lane, default: LaneState()].pausedForCheck = false
+        lanes[lane, default: LaneState()].checkingSeq = nil
+        lanes[lane, default: LaneState()].checkDeferred = false
+        lanes[lane, default: LaneState()].checkCode = 0
+        lanes[lane, default: LaneState()].checkBody = Data()
     }
 
     /// A failure that does not count as an attempt: the lane goes again after a pause that grows.
