@@ -368,9 +368,10 @@ final class EventQueue {
     /// Takes an event: written to disk in the order of the calls, then sent. `completion` hears once
     /// that it went out, or that it never will. The caller has checked its arguments and the state.
     /// An event the disk refuses is not kept: `unstored` gets its body, stamped, to send once.
-    /// `accepted` hears `nil` once the event is on disk — accepted (`sdk/core/queue.md`) —, or why it
-    /// is not: `notInitialized` when the queue has stopped, `cancelled` when a clear came after it;
-    /// nothing for an event the disk refused.
+    /// `accepted` hears `nil` once the event is on disk — accepted (`sdk/core/queue.md`), also when the
+    /// queue has stopped meanwhile: the shop's next queue sends it —, or why it is not: `notInitialized`
+    /// when the queue has stopped and the disk refused it, `cancelled` when a clear came after it;
+    /// nothing for an event the disk refused while the queue runs.
     func enqueue(
         path: String,
         body: [String: Any],
@@ -400,10 +401,12 @@ final class EventQueue {
             )
             guard !self.stopped else {
                 // Its instance is gone: on disk, it goes on the next launch — or with the next instance
-                // of the shop, which finds the file.
+                // of the shop, which finds the file —, and it counts as accepted. Not on disk, it is not:
+                // its caller may hand it to the shop's next instance.
                 event.stored = self.write(event)
+                let stored = event.stored
                 completion.map { done in self.callbacks.async { done(.failed(.notInitialized, body: Data())) } }
-                accepted.map { done in self.callbacks.async { done(.notInitialized) } }
+                accepted.map { done in self.callbacks.async { done(stored ? nil : .notInitialized) } }
                 return
             }
             // At most `capacity`: the oldest that is not on its way goes.

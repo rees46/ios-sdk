@@ -387,25 +387,7 @@ public enum Rees46 {
                 return nil
             }
             SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": route.name])
-            if let instance = sdk as? SimplePersonalizationSDK {
-                instance.receivePush(route, type: type, code: code, payload: payload)
-            } else {
-                // An instance of the app's own: the events its protocol has.
-                switch route {
-                case .event(.delivered):
-                    sdk.notificationDelivered(type: type, code: code) { _ in }
-                case .event(.clicked):
-                    sdk.notificationClicked(type: type, code: code) { _ in }
-                case .received:
-                    sdk.notificationReceived(type: type, code: code) { _ in }
-                case .event(.opened), .event(.closed):
-                    // Events the old protocol never had: nothing goes.
-                    break
-                }
-                if case .event(let event) = route, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
-                    PushCenter.notify(event, payload: parsed, instance: nil)
-                }
-            }
+            deliver(route, type: type, code: code, payload: payload, to: sdk, shopId: shopId)
             return shopId
         case .pending(let shopId):
             // Registered but not initialized: sent on its stored identity, without making it.
@@ -423,6 +405,67 @@ public enum Rees46 {
             SdkLogger.process.warning(LogCode.pushDropped, "the push names no shop and several are registered", ["reason": "ambiguous_shop"])
             return nil
         }
+    }
+
+    /// How many times a push follows a shop's instances released one after another before it goes on
+    /// the shop's stored identity instead.
+    static let maxReroutes = 3
+
+    /// Hands `route` to `sdk`, the live instance of `shopId`. One the app made itself gets the events
+    /// its protocol has; an instance of the SDK that was released meanwhile takes nothing, and the push
+    /// goes on (`rerouteReleased`).
+    static func deliver(
+        _ route: PushRoute,
+        type: String,
+        code: String,
+        payload: [AnyHashable: Any],
+        to sdk: PersonalizationSDK,
+        shopId: String,
+        hops: Int = 0
+    ) {
+        if let instance = sdk as? SimplePersonalizationSDK {
+            instance.receivePush(route, type: type, code: code, payload: payload) {
+                rerouteReleased(from: instance, route: route, type: type, code: code, payload: payload, hops: hops + 1)
+            }
+            return
+        }
+        // An instance of the app's own: the events its protocol has.
+        switch route {
+        case .event(.delivered):
+            sdk.notificationDelivered(type: type, code: code) { _ in }
+        case .event(.clicked):
+            sdk.notificationClicked(type: type, code: code) { _ in }
+        case .received:
+            sdk.notificationReceived(type: type, code: code) { _ in }
+        case .event(.opened), .event(.closed):
+            // Events the old protocol never had: nothing goes.
+            break
+        }
+        if case .event(let event) = route, let parsed = Rees46.PushPayload.parse(payload, shopId: shopId) {
+            PushCenter.notify(event, payload: parsed, instance: nil)
+        }
+    }
+
+    /// A push the instance it was routed to did not take: `release()` came first — the app replaces the
+    /// instance, say. It goes to the shop's live instance now, or, with none, on the device id the shop
+    /// has stored, as a pending shop's push does — no instance is made for it. The released instance
+    /// sent and counted nothing, so the event goes once.
+    private static func rerouteReleased(
+        from released: SimplePersonalizationSDK,
+        route: PushRoute,
+        type: String,
+        code: String,
+        payload: [AnyHashable: Any],
+        hops: Int
+    ) {
+        let shopId = released.shopId
+        let logger = SdkLogger.forShop(shopId)
+        if hops <= maxReroutes, let live = SdkRegistry.shared.byShopId(shopId), (live as AnyObject) !== released {
+            logger.debug(LogCode.pushReceived, "the push went to the shop's new instance", ["event": route.name, "reason": "rerouted"])
+            deliver(route, type: type, code: code, payload: payload, to: live, shopId: shopId, hops: hops)
+            return
+        }
+        routeToPending(shopId: shopId, config: pendingConfig(for: shopId) ?? released.config, route: route, type: type, code: code, payload: payload)
     }
 
     /// A push of a shop that is registered and not created: the event goes with the device id the shop

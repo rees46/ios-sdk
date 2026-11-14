@@ -1023,6 +1023,52 @@ final class CorePushTests: XCTestCase {
         XCTAssertNil(requests("/track/clicked", shop).first?.body["sid"])
     }
 
+    // MARK: - An instance being replaced
+
+    func test_a_push_routed_to_an_instance_released_meanwhile_goes_once_to_the_shops_new_instance() {
+        let shop = newShop()
+        let old = make(shop)
+        let heard = Locked<[String]>([])
+        Rees46.setPushCallbacks(Rees46.PushCallbacks(onClicked: { payload in heard.mutate { $0.append(payload.code) } }))
+        // handlePush found the old instance; the app released it and made the next one before it took the push.
+        old.release()
+        let new = make(shop)
+        Rees46.deliver(.event(.clicked), type: "bulk", code: "m-1", payload: push(shop), to: old, shopId: shop)
+
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/clicked", shop: shop) == 1 }, "not lost")
+        XCTAssertTrue(queueIdle(new))
+        XCTAssertEqual(requests("/track/clicked", shop).count, 1, "once")
+        XCTAssertTrue(PushCenter.isTaken(.clicked, code: "m-1", shopId: shop))
+        XCTAssertTrue(eventually { heard.current == ["m-1"] }, "heard once")
+        XCTAssertTrue(logged(shop, "push_received").contains { $0.context["reason"] == "rerouted" })
+        new.release()
+    }
+
+    func test_a_push_routed_to_an_instance_released_with_no_next_one_goes_on_the_stored_did_and_makes_none() {
+        let shop = newShop()
+        let old = make(shop)
+        StoragePartition.store(for: shop).set("stored-did", forKey: StoragePartition.deviceIdKey)
+        let inits = requests("/init", shop).count
+        old.release()
+        Rees46.deliver(.event(.delivered), type: "bulk", code: "m-1", payload: push(shop), to: old, shopId: shop)
+
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 }, "not lost")
+        XCTAssertEqual(requests("/track/delivered", shop).first?.body["did"] as? String, "stored-did")
+        XCTAssertNil(SdkRegistry.shared.byShopId(shop), "no instance is made for a push")
+        XCTAssertEqual(requests("/init", shop).count, inits, "and no /init")
+        XCTAssertTrue(eventually { self.lifecycle.backgroundTasks.ended == self.lifecycle.backgroundTasks.begun })
+        XCTAssertTrue(files(old.storage).isEmpty)
+    }
+
+    func test_the_old_cores_push_routed_to_a_released_instance_goes_to_the_shops_new_instance() {
+        let shop = newShop()
+        let old = make(shop, coreV2: false)
+        old.release()
+        _ = make(shop, coreV2: false)
+        Rees46.deliver(.event(.delivered), type: "bulk", code: "m-1", payload: push(shop), to: old, shopId: shop)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 }, "not lost")
+    }
+
     // MARK: - Each lane its own pause
 
     func test_each_lane_has_its_own_pause_counter_and_retry_after_and_flush_cuts_only_the_ordinary_pauses() {
