@@ -923,4 +923,70 @@ final class CorePushTests: XCTestCase {
         XCTAssertNotNil(payload?.data["src"], "an object written as JSON")
         XCTAssertNil(Rees46.PushPayload.parse(["title": "x"], shopId: "s"), "not a push of the SDK")
     }
+
+    // MARK: - The lane of pushes never asks /init
+
+    func test_a_push_event_answered_402_or_403_is_a_refused_service_and_404_rejected_without_asking_the_shop() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let inits = requests("/init", shop).count
+        for (code, reason) in [(402, "service_refused"), (403, "service_refused"), (404, "rejected")] {
+            answer("/track/clicked", StubReply(code))
+            let before = logged(shop, "queue_dropped").count
+            Rees46.handlePush(push(shop, code: "m-\(code)"), event: .clicked)
+            XCTAssertTrue(eventually { self.logged(shop, "queue_dropped").count == before + 1 }, "\(code)")
+            XCTAssertEqual(logged(shop, "queue_dropped").last?.context["reason"], reason, "\(code)")
+            XCTAssertEqual(logged(shop, "queue_dropped").last?.context["status"], String(code))
+            XCTAssertTrue(queueIdle(sdk), "\(code): dropped, not paused")
+            XCTAssertEqual(scheduler.pending, 0, "\(code): not repeated")
+        }
+        XCTAssertEqual(requests("/init", shop).count, inits, "no check of the shop, no /init")
+        XCTAssertEqual(requests("/track/clicked", shop).count, 3, "each went once")
+        XCTAssertTrue(files(sdk).isEmpty)
+
+        // The tracking lane still asks the shop.
+        answer("/push", StubReply(402), StubReply(json: #"{"status":"success"}"#))
+        sdk.tracking.productView(itemId: "37")
+        XCTAssertTrue(eventually { self.requests("/init", shop).count == inits + 1 }, "a tracking event's check")
+    }
+
+    func test_a_pending_shops_push_answered_402_403_or_404_leaves_the_disk_without_init() {
+        for (code, reason) in [(402, "service_refused"), (403, "service_refused"), (404, "rejected")] {
+            let (shop, storage) = registerPending(did: "pending-did")
+            answer("/track/delivered", StubReply(code))
+            Rees46.handlePush(push(shop), event: .delivered)
+            XCTAssertTrue(eventually { self.logged(shop, "queue_dropped").count == 1 }, "\(code)")
+            XCTAssertEqual(logged(shop, "queue_dropped").first?.context["reason"], reason, "\(code)")
+            XCTAssertTrue(eventually { self.files(storage).isEmpty }, "\(code): its file goes, no queue sends it again")
+            XCTAssertTrue(eventually { self.lifecycle.backgroundTasks.ended == self.lifecycle.backgroundTasks.begun })
+            XCTAssertTrue(requests("/init", shop).isEmpty, "\(code)")
+        }
+
+        // An answer that is repeated stays on disk for the shop's queue.
+        let (shop, storage) = registerPending(did: "pending-did")
+        answer("/track/delivered", StubReply(503))
+        Rees46.handlePush(push(shop), event: .delivered)
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/track/delivered", shop: shop).count == 1 })
+        XCTAssertTrue(eventually { self.lifecycle.backgroundTasks.ended == self.lifecycle.backgroundTasks.begun })
+        XCTAssertEqual(files(storage).count, 1)
+        XCTAssertTrue(logged(shop, "queue_dropped").isEmpty)
+    }
+
+    func test_a_push_event_the_disk_refuses_goes_once_without_renewing_the_session() throws {
+        let shop = newShop()
+        let sdk = make(shop)
+        let inits = requests("/init", shop).count
+        // A file where the queue's folder should be: the folder cannot be made.
+        let folder = try XCTUnwrap(sdk.storage.queueDirectory)
+        try FileManager.default.createDirectory(at: folder.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("not a folder".utf8).write(to: folder)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        clock.advance(by: 2 * 60 * 60 + 1)
+
+        Rees46.handlePush(push(shop), event: .clicked)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/clicked", shop: shop) == 1 }, "sent once")
+        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "storage_failed" })
+        XCTAssertEqual(requests("/init", shop).count, inits, "the session ended, and the push renewed none")
+        XCTAssertNil(requests("/track/clicked", shop).first?.body["sid"])
+    }
 }

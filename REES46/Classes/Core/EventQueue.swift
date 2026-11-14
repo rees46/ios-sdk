@@ -54,11 +54,13 @@ protocol EventQueueHost: AnyObject {
 ///   it was on its way; no network waits for it, without counting; a timeout is repeated after a
 ///   pause, without counting; `5xx`, `408`, `410`, `417`, `426`, `429` are repeated after a pause —
 ///   1 s … 5 min ±20 %, or the `Retry-After` of a `429` or `503`, which no trigger cuts short — and
-///   dropped after ten; `402`, `403`, `404` pause the queue and ask the shop (`askShop()`): `refused`
-///   clears the queue; once a new `/init` answer came the event goes again, and the same answer to it
-///   drops it — the refusal of a service, not of the shop; so does such an answer when a check of the
-///   shop passed less than ten minutes ago, at once; a check that failed lately repeats the event after
-///   a pause instead; any other `4xx` drops it.
+///   dropped after ten; `402`, `403`, `404` to a tracking event pause its lane and ask the shop
+///   (`askShop()`): `refused` clears the queue; once a new `/init` answer came the event goes again, and
+///   the same answer to it drops it — the refusal of a service, not of the shop; so does such an answer
+///   when a check of the shop passed less than ten minutes ago, at once; a check that failed lately
+///   repeats the event after a pause instead. The lane of pushes never asks the shop — it never sends
+///   `/init` —: an event of a push answered `402` or `403` is dropped as `service_refused`, `404` as
+///   `rejected`. Any other `4xx` drops an event.
 /// - **Identity** is taken when the queue decides to send an event, and put on a copy with the
 ///   source and `time`; none of it is written to disk. `clear` — `deleteUserCredentials()`, `refused` —
 ///   takes effect when it is called: the event on its way is cancelled, none of the events before it
@@ -125,8 +127,16 @@ final class EventQueue {
     static let capacity = 1000
     /// How many passing server errors an event gets.
     static let maxAttempts = 10
-    /// The answers that make the queue ask the shop.
+    /// The answers that make the queue ask the shop, for a tracking event.
     static let shopCheckCodes: Set<Int> = [402, 403, 404]
+
+    /// Why an event of a push answered `code` is dropped: the lane of pushes never asks the shop, so
+    /// `402` and `403` refuse the service and `404`, like any other `4xx` that is not repeated, rejects
+    /// the event. `nil` for an answer that is repeated.
+    static func pushDropReason(_ code: Int) -> String? {
+        guard (400..<500).contains(code), !RetryPolicy.isRetryable(code) else { return nil }
+        return code == 402 || code == 403 ? "service_refused" : "rejected"
+    }
     /// The addresses whose events go through the queue: tracking, and the events of pushes
     /// (`sdk/core/push.md`) — never `track/received`, which the new core does not send.
     static let paths: Set<String> = [
@@ -766,6 +776,10 @@ final class EventQueue {
                 after: RetryPolicy.pause(retryAfter: response.retryAfter, afterFailures: state(lane).failures, random: random()),
                 theServers: response.retryAfter != nil
             )
+        case .failure(.http(let code, _)) where lane == .push && Self.pushDropReason(code) != nil:
+            // No check of the shop for a push: that would be an `/init`.
+            drop(at: index, error: .http(code: code, serverCode: nil), body: response.body, reason: Self.pushDropReason(code) ?? "rejected", status: code)
+            drain(explicit: false)
         case .failure(.http(let code, _)) where Self.shopCheckCodes.contains(code):
             handleShopRefusal(code, of: event, at: index, lane: lane, body: response.body)
         case .failure(.http(let code, _)):
@@ -779,8 +793,8 @@ final class EventQueue {
         }
     }
 
-    /// `402`, `403` or `404` to an event: the shop is asked whether it still serves the SDK. Only the
-    /// event's lane waits for the answer.
+    /// `402`, `403` or `404` to a tracking event: the shop is asked whether it still serves the SDK. Only
+    /// the tracking lane waits for the answer.
     private func handleShopRefusal(_ code: Int, of event: Event, at index: Int, lane: Lane, body: Data) {
         guard !event.shopChecked else {
             // The shop passed the check and the event is refused again: a service the shop has not
@@ -1084,9 +1098,10 @@ final class EventQueue {
     /// An event of a shop that has no instance — the push of a shop that is registered and not created
     /// (`Rees46.handlePush`): written into the shop's queue folder, where an instance of the shop finds
     /// it in this launch or the next, and sent once at once, marked on its way so that a queue of the
-    /// folder made meanwhile waits for its answer. A `2xx` removes the file; anything else leaves it for
-    /// the shop's queue. `written` hears at once whether the disk took it (`storage_failed` when not:
-    /// it is still sent once); `completion` hears that again, and the answer.
+    /// folder made meanwhile waits for its answer. A `2xx` removes the file, and so does an answer that
+    /// drops an event of a push (`pushDropReason`) — no shop is asked, no `/init` goes —; anything else
+    /// leaves it for the shop's queue. `written` hears at once whether the disk took it (`storage_failed`
+    /// when not: it is still sent once); `completion` hears that again, and the answer.
     static func sendDetached(
         path: String,
         body: [String: Any],
@@ -1115,6 +1130,16 @@ final class EventQueue {
                 if let file = file {
                     try? FileManager.default.removeItem(at: file)
                 }
+            case .failure(.http(let code, _)) where sessionlessPaths.contains(path):
+                guard let reason = pushDropReason(code) else { break }
+                if let file = file {
+                    try? FileManager.default.removeItem(at: file)
+                }
+                logger.warning(
+                    LogCode.queueDropped,
+                    "an event of \(SdkLogger.requestLine("POST", path)) was dropped: \(reason)",
+                    ["reason": reason, "path": path, "status": String(code)]
+                )
             default:
                 break
             }

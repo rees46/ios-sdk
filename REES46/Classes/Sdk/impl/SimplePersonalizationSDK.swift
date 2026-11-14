@@ -2338,6 +2338,8 @@ extension SimplePersonalizationSDK: EventQueueHost {
                 }
                 var once = CoreRequest(method: .post, path: path, body: stamped)
                 once.identity = { [weak self] in self?.identity(ifCurrent: generation) }
+                // An event of a push by the rules of its lane: no session renewed, no `/init`.
+                once.needsSession = !EventQueue.sessionlessPaths.contains(path)
                 self.core.send(once) { response in
                     CurrentError.with(response.error) {
                         completion(response.result.flatMap(Self.jsonObject))

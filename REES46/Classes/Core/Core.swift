@@ -35,6 +35,10 @@ struct CoreRequest {
     /// sessions wait for every request but the ones that ask not to; `CoreV2` lets only `/init` wait
     /// (as long as the init itself is the old one), every other request fails at once with `network`.
     var waitsForNetwork = true
+    /// `CoreV2`: whether the request goes with the session — renewed first when its window ended. An
+    /// event of a push carries none (`EventQueue.sessionlessPaths`): it renews no session and asks no
+    /// `/init`, the one it is sent once as when the disk refused it included.
+    var needsSession = true
 
     /// `/init`: its own timeout, and in `CoreV2` the only request that may wait for the network.
     var isInit: Bool { path == "init" }
