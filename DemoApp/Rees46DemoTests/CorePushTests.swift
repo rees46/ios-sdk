@@ -989,4 +989,55 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(requests("/init", shop).count, inits, "the session ended, and the push renewed none")
         XCTAssertNil(requests("/track/clicked", shop).first?.body["sid"])
     }
+
+    // MARK: - Each lane its own pause
+
+    func test_each_lane_has_its_own_pause_counter_and_retry_after_and_flush_cuts_only_the_ordinary_pauses() {
+        let shop = newShop()
+        let sdk = make(shop)
+        let success = StubReply(json: #"{"status":"success"}"#)
+        // The tracking: the server's Retry-After.
+        answer("/push", StubReply(503, headers: ["Retry-After": "30"]), success)
+        sdk.tracking.productView(itemId: "a")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && self.scheduler.pendingDelays == [30] })
+
+        // A push event goes past it, and its failures count in its own lane: 1 s, then 2 s.
+        answer("/track/clicked", StubReply(500), StubReply(500), success)
+        Rees46.handlePush(push(shop), event: .clicked)
+        XCTAssertTrue(eventually { self.requests("/track/clicked", shop).count == 1 && self.scheduler.pendingDelays == [1, 30] })
+        scheduler.advance(by: 1)
+        XCTAssertTrue(eventually { self.requests("/track/clicked", shop).count == 2 && self.scheduler.pendingDelays == [2, 29] })
+
+        // A flush cuts the push lane's pause short and leaves the server's.
+        let flushed = expectation(description: "flushed")
+        sdk.flush { _ in flushed.fulfill() }
+        wait(for: [flushed], timeout: 5)
+        XCTAssertEqual(requests("/track/clicked", shop).count, 3)
+        XCTAssertEqual(requests("/push", shop).count, 1)
+        XCTAssertEqual(scheduler.pendingDelays, [29], "the Retry-After stands")
+
+        // The push lane's success reset its own count: its next failure waits a second again.
+        answer("/track/clicked", StubReply(500), success)
+        Rees46.handlePush(push(shop, code: "m-2"), event: .clicked)
+        XCTAssertTrue(eventually { self.requests("/track/clicked", shop).count == 4 && self.scheduler.pendingDelays == [1, 29] })
+
+        // A push lane under the server's Retry-After holds no tracking event either.
+        scheduler.advance(by: 1)
+        XCTAssertTrue(eventually { self.requests("/track/clicked", shop).count == 5 && self.scheduler.pendingDelays == [28] })
+        answer("/track/clicked", StubReply(429, headers: ["Retry-After": "60"]), success)
+        Rees46.handlePush(push(shop, code: "m-3"), event: .clicked)
+        XCTAssertTrue(eventually { self.requests("/track/clicked", shop).count == 6 && self.scheduler.pendingDelays == [28, 60] })
+        scheduler.advance(by: 28)
+        XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["a", "a"] }, "the tracking went on its own")
+        XCTAssertEqual(scheduler.pendingDelays, [32], "the push lane still waits out its server")
+
+        // And the tracking's success reset its count: its next failure waits a second.
+        answer("/push", StubReply(500), success)
+        sdk.tracking.productView(itemId: "b")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 3 && self.scheduler.pendingDelays == [1, 32] })
+    }
+
+    private func itemIds(_ requests: [StubRequest]) -> [String] {
+        requests.compactMap { (($0.body["items"] as? [[String: Any]])?.first?["id"]) as? String }
+    }
 }
