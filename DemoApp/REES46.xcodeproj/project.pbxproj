@@ -149,6 +149,7 @@
 		E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9EAB8662AF08A43003DC1B5 /* Inter.ttf */; };
 		EEF5CF9F6430FD8202BB58BE /* SessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1E786F1F3C200D5DFE5D4 /* SessionManagerTests.swift */; };
 		EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */; };
+		9EF16928BEDA40318AFE0377 /* CoreLiveE2ETest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B50CD6B8B74B77BD55D35C /* CoreLiveE2ETest.swift */; };
 		F0605CC99B325F3301237A28 /* StorageMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */; };
 		F808067588CEF0AA10BCA7D7 /* UserIdentityRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */; };
 		8393900BD24341614E7782A8 /* ApiFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937448523E8899A7EABCFEDB /* ApiFixtures.swift */; };
@@ -311,6 +312,7 @@
 		8237EEC8810D8D4E8706C65B /* UserIdentityRepositoryIsolationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryIsolationTests.swift; sourceTree = "<group>"; };
 		86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryTests.swift; sourceTree = "<group>"; };
 		8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiInstanceE2ETest.swift; sourceTree = "<group>"; };
+		F6B50CD6B8B74B77BD55D35C /* CoreLiveE2ETest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreLiveE2ETest.swift; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -580,6 +582,7 @@
 				B5AD555A428611EB01D95215 /* PushPayloadParserTests.swift */,
 				732B3CD050F3471973F52C74 /* HandlePushRoutingTests.swift */,
 				8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */,
+				F6B50CD6B8B74B77BD55D35C /* CoreLiveE2ETest.swift */,
 				937448523E8899A7EABCFEDB /* ApiFixtures.swift */,
 				035DEBBBF56887CC74C803D6 /* ProductModelsParsingTests.swift */,
 				22C31BB010BB7196861A32AC /* Fixtures */,
@@ -1214,6 +1217,7 @@
 				D0D6C4E39581EE6F13C7E601 /* PushPayloadParserTests.swift in Sources */,
 				D824C7F34B333C3D68092BA9 /* HandlePushRoutingTests.swift in Sources */,
 				EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */,
+				9EF16928BEDA40318AFE0377 /* CoreLiveE2ETest.swift in Sources */,
 				8393900BD24341614E7782A8 /* ApiFixtures.swift in Sources */,
 				B09272C49C5810A7C9505E5C /* ProductModelsParsingTests.swift in Sources */,
 				4E521BD567322ED3B04E9186 /* ProductMapperTests.swift in Sources */,
