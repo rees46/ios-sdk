@@ -1279,6 +1279,41 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertFalse(all.contains { (($0.query["did"] ?? $0.body["did"] as? String) ?? "").isEmpty }, "never without a did")
     }
 
+    func test_two_instances_answered_after_delete_user_credentials_never_pair_the_did_of_one_answer_with_the_sid_of_the_other() {
+        let shop = newShop()
+        let shared = InMemoryUserIdentityRepository()
+        shared.deviceId = "d"
+        shared.seance = "s-0"
+        shared.seanceLastActTime = clock.now()
+        let first = make(shop, identity: shared)
+        let owner = make(shop, identity: shared)
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal(); held.signal() }
+        let answers = Locked(0)
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
+            guard request.query["did"] == nil else { return StubReply(json: #"{"did":"\#(request.query["did"] ?? "")","seance":"s-x"}"#) }
+            _ = held.wait(timeout: .now() + 10)
+            var call = 0
+            answers.mutate { $0 += 1; call = $0 }
+            return call == 1 ? StubReply(json: #"{"did":"one","seance":"s-one"}"#) : StubReply(json: #"{"did":"two","seance":"s-two"}"#)
+        }
+        let settled = (first.settledInitCount, owner.settledInitCount)
+
+        first.deleteUserCredentials()
+        XCTAssertTrue(eventually { self.requests("/init", shop).filter { $0.query["did"] == nil }.count == 2 }, "both ask for the next did")
+        held.signal()
+        XCTAssertTrue(eventually { shared.deviceId == "one" && shared.seance == "s-one" }, "the first answer: its did and its sid")
+        held.signal()
+        XCTAssertTrue(eventually { first.settledInitCount > settled.0 && owner.settledInitCount > settled.1 }, "both answers taken")
+        XCTAssertEqual(shared.deviceId, "one", "the first did stored stays")
+        XCTAssertEqual(shared.seance, "s-one", "the sid of the other answer does not go with it")
+        XCTAssertEqual(first.sessionId, "s-one")
+        XCTAssertEqual(owner.sessionId, "s-one")
+        XCTAssertEqual(first.deviceId, "one")
+        XCTAssertEqual(owner.deviceId, "one")
+    }
+
     func test_delete_user_credentials_from_the_main_thread_does_not_wait_for_the_queue_and_nothing_old_goes_after_it() {
         let shop = newShop()
         let sdk = make(shop)

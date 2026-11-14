@@ -48,7 +48,8 @@ struct CoreEnvironment {
 ///   wait for `/init` on every launch; `/init` still goes.
 /// - With a saved answer or a stored device id, `retrying` lets calls through as `ready` does.
 /// - Each successful answer gives the session its `sid` (`seance`) and opens its window again
-///   (`sdk/core/session.md`).
+///   (`sdk/core/session.md`) — the answer whose device id the shop took: the `sid` of one answer never
+///   goes with the device id of another.
 /// - `/init` goes on start; when the session's window ran out — before a call or an event
 ///   (`renewSession()`), and back in the foreground two hours after the last event, however long the
 ///   app was in the background and also when it was launched there —; and on `checkShop()`, at most
@@ -585,11 +586,18 @@ final class InitMachine {
         // The device id the shop keeps; the answer's only when the shop has none.
         var response = answer
         response.deviceId = adoptDeviceId(answer.deviceId)
-        // The last answer, every time. Its keychain backup stays as it is: only `sendIDFARequest` and
-        // the migrations write it (`sdk/core/storage.md`).
-        storage.writeSavedInitAnswer(body)
-        // The server's session from now on, before any call is let through.
-        session.adopt(answer.seance)
+        if response.deviceId == answer.deviceId {
+            // The last answer, every time. Its keychain backup stays as it is: only `sendIDFARequest` and
+            // the migrations write it (`sdk/core/storage.md`).
+            storage.writeSavedInitAnswer(body)
+            // The server's session from now on, before any call is let through.
+            session.adopt(answer.seance)
+        } else if !session.isAlive {
+            // Another instance of the shop stored its did first: this answer's session is another did's,
+            // and never goes with the shop's. Without a live one of the shop's own, a session without a
+            // sid lives out its window — no `/init` again before it ends.
+            session.adopt("")
+        }
 
         lock.lock()
         guard generation == self.generation, !released else {

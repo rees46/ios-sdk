@@ -47,8 +47,9 @@ final class CoreSessionTests: XCTestCase {
         return shop
     }
 
-    /// Every `/init` gets `did` and a new `seance`: `s-1`, `s-2`… — or the one `seance` says; the n-th
-    /// waits for `gates[n]` when there is one.
+    /// Every `/init` gets the did it sent, as the server answers, or `did` without one, and a new
+    /// `seance`: `s-1`, `s-2`… — or the one `seance` says; the n-th waits for `gates[n]` when there is
+    /// one.
     @discardableResult
     private func answerInit(did: String = "d", seance: ((Int) -> String)? = nil, gates: [Int: DispatchSemaphore] = [:]) -> Locked<Int> {
         let count = Locked(0)
@@ -60,7 +61,7 @@ final class CoreSessionTests: XCTestCase {
                 _ = gate.wait(timeout: .now() + 10)
             }
             let sid = seance?(call) ?? "s-\(call)"
-            return StubReply(json: #"{"did":"\#(did)","seance":"\#(sid)"}"#)
+            return StubReply(json: #"{"did":"\#(request.query["did"] ?? did)","seance":"\#(sid)"}"#)
         }
         return count
     }
@@ -254,7 +255,7 @@ final class CoreSessionTests: XCTestCase {
     func test_an_init_answer_without_a_seance_keeps_the_live_sid_and_brings_no_init_storm() {
         let shop = newShop()
         StubURLProtocol.handler = { request in
-            request.path == "/init" ? StubReply(json: #"{"did":"d"}"#) : StubReply()
+            request.path == "/init" ? StubReply(json: #"{"did":"\#(request.query["did"] ?? "d")"}"#) : StubReply()
         }
         let sdk = make(shop, identity: identity(sid: "OldSid0001", ago: 60))
         XCTAssertTrue(eventually { self.inits(shop).count == 1 && sdk.settledInitCount >= 2 })
