@@ -52,12 +52,20 @@ struct StubRequest {
     let path: String
     let query: [String: String]
     let body: [String: Any]
+    /// The headers as the session sent them: a `Cookie` the session added from its store included.
+    let headers: [String: String]
     let timeout: TimeInterval
     let time: Date
+
+    /// A header by its name, in any case.
+    func header(_ name: String) -> String? {
+        headers.first { $0.key.caseInsensitiveCompare(name) == .orderedSame }?.value
+    }
 }
 
 /// Serves every session the SDK builds from `URLSessionConfiguration.default` (and `URLSession.shared`)
-/// while installed. The handler runs off the loading thread, so it may block to hold an answer back.
+/// while installed; `SdkURLSession.shared` is made again from the stubbed `default` on install. The
+/// handler runs off the loading thread, so it may block to hold an answer back.
 final class StubURLProtocol: URLProtocol {
 
     private static let lock = NSLock()
@@ -111,6 +119,7 @@ final class StubURLProtocol: URLProtocol {
         installed = true
         URLProtocol.registerClass(StubURLProtocol.self)
         swapDefaultConfiguration()
+        SdkURLSession.reset()
         // A URL protocol has no metrics of the request's phases: the stub says which reached it.
         NetworkClient.reachedServerOverride = { task, _ in
             StubURLProtocol.reached(task) ? true : nil
@@ -123,6 +132,7 @@ final class StubURLProtocol: URLProtocol {
         installed = false
         URLProtocol.unregisterClass(StubURLProtocol.self)
         swapDefaultConfiguration()
+        SdkURLSession.reset()
         NetworkClient.reachedServerOverride = nil
     }
 
@@ -148,7 +158,14 @@ final class StubURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        let seen = Self.describe(request)
+        let cookies = cookieStores()
+        var sent = request
+        if let store = cookies.sent, let url = request.url, sent.value(forHTTPHeaderField: "Cookie") == nil {
+            HTTPCookie.requestHeaderFields(with: store.cookies(for: url) ?? []).forEach {
+                sent.setValue($0.value, forHTTPHeaderField: $0.key)
+            }
+        }
+        let seen = Self.describe(sent)
         Self.lock.lock()
         Self.recorded.append(seen)
         Self.lock.unlock()
@@ -179,6 +196,10 @@ final class StubURLProtocol: URLProtocol {
             let response = HTTPURLResponse(
                 url: self.request.url!, statusCode: reply.status, httpVersion: "HTTP/1.1", headerFields: reply.headers
             )!
+            if let store = cookies.kept, let url = self.request.url {
+                let set = HTTPCookie.cookies(withResponseHeaderFields: reply.headers, for: url)
+                store.setCookies(set, for: url, mainDocumentURL: self.request.mainDocumentURL ?? url)
+            }
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             if let cut = reply.cutAfter {
                 client.urlProtocol(self, didLoad: reply.body.prefix(cut))
@@ -191,6 +212,25 @@ final class StubURLProtocol: URLProtocol {
             Self.finished.append(seen)
             Self.lock.unlock()
         }
+    }
+
+    /// A URL protocol gets no cookies from the URL loading system, and the cookies of its answer are
+    /// not kept: the stub does with them what the HTTP stack would, by the request's
+    /// `httpShouldHandleCookies` and its session's configuration — which a task names only privately,
+    /// `CookieTests` checking that it is found. `sent`: the store the request's cookies come from;
+    /// `kept`: the store the answer's go into; `nil` when there are none.
+    private func cookieStores() -> (sent: HTTPCookieStorage?, kept: HTTPCookieStorage?) {
+        guard request.httpShouldHandleCookies, let configuration = sessionConfiguration(),
+              let store = configuration.httpCookieStorage else { return (nil, nil) }
+        return (
+            configuration.httpShouldSetCookies ? store : nil,
+            configuration.httpCookieAcceptPolicy == .never ? nil : store
+        )
+    }
+
+    private func sessionConfiguration() -> URLSessionConfiguration? {
+        guard let task = task, task.responds(to: NSSelectorFromString("session")) else { return nil }
+        return (task.value(forKey: "session") as? URLSession)?.configuration
     }
 
     private let stopLock = NSLock()
@@ -222,6 +262,7 @@ final class StubURLProtocol: URLProtocol {
             path: components?.path ?? "",
             query: query,
             body: body,
+            headers: request.allHTTPHeaderFields ?? [:],
             timeout: request.timeoutInterval,
             time: Date()
         )

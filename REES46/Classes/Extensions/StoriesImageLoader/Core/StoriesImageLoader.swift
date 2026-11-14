@@ -68,7 +68,7 @@ public struct StoriesCollectionCellLoader {
         var disk = Disk()
 
         init(configuration: URLSessionConfiguration = .default) {
-            self.session = URLSession(configuration: .default, delegate: StoriesCollectionCellLoader.session, delegateQueue: nil)
+            self.session = URLSession(configuration: URLSessionConfiguration.default.withoutCookies(), delegate: StoriesCollectionCellLoader.session, delegateQueue: nil)
         }
 
         func getLoader(with url: URL) -> Loader {

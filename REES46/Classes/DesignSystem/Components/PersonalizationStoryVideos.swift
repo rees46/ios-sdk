@@ -162,7 +162,7 @@ final class PersonalizationStoryVideos: NSObject, URLSessionDataDelegate {
         let delegateQueue = OperationQueue()
         delegateQueue.maxConcurrentOperationCount = 1
         delegateQueue.underlyingQueue = queue
-        return URLSession(configuration: .default, delegate: self, delegateQueue: delegateQueue)
+        return URLSession(configuration: URLSessionConfiguration.default.withoutCookies(), delegate: self, delegateQueue: delegateQueue)
     }()
 
     init(cache: PersonalizationStoryMediaCache = .shared) {

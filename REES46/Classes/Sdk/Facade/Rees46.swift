@@ -589,8 +589,9 @@ internal enum PushDeliveryTracker {
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpShouldHandleCookies = false
         request.httpBody = SafeJSON.data(body)
 
-        URLSession.shared.dataTask(with: request).resume()
+        SdkURLSession.shared.dataTask(with: request).resume()
     }
 }

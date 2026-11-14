@@ -119,18 +119,18 @@ actor NetworkClient {
         sessions.finish()
     }
 
-    /// The session of the client: a request does not wait for connectivity, and its timeout is set
-    /// on the request.
+    /// The session of the client: a request does not wait for connectivity, its timeout is set on
+    /// the request, and no cookie goes or is kept (`withoutCookies()`).
     static func configuration() -> URLSessionConfiguration {
-        let configuration = URLSessionConfiguration.default
+        let configuration = URLSessionConfiguration.default.withoutCookies()
         configuration.waitsForConnectivity = false
         configuration.timeoutIntervalForRequest = defaultTimeout
         return configuration
     }
 
     /// Sends the next requests with the app's configuration (`configureURLSession`, the `urlSession`
-    /// it set): its proxy, headers, protocols, cookies and TLS settings. A request still fails at once
-    /// without network and keeps its own timeout; what the old session carries finishes there.
+    /// it set): its proxy, headers, protocols and TLS settings, never its cookies. A request still fails
+    /// at once without network and keeps its own timeout; what the old session carries finishes there.
     func use(_ configuration: URLSessionConfiguration) {
         guard !released else { return }
         sessions.replace(with: configuration)
@@ -434,9 +434,12 @@ private final class Sessions {
         current = Self.entry(configuration, queue: queue)
     }
 
+    /// Whatever configuration it is given — the client's, the app's —, the session sends and keeps no
+    /// cookies.
     private static func entry(_ configuration: URLSessionConfiguration, queue: OperationQueue) -> Entry {
         let metrics = TaskMetrics()
-        return Entry(session: URLSession(configuration: configuration, delegate: metrics, delegateQueue: queue), metrics: metrics)
+        let session = URLSession(configuration: configuration.withoutCookies(), delegate: metrics, delegateQueue: queue)
+        return Entry(session: session, metrics: metrics)
     }
 
     /// A task on the current session; `nil` once the sessions are invalidated. `completion` gets the

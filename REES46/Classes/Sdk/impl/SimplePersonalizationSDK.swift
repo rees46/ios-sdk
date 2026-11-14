@@ -763,13 +763,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     /// The old core sends through a session of this configuration; the new core gives it to its own
-    /// client.
+    /// client. Either way the SDK's session keeps no cookies and sends none.
     func configureURLSession(configuration: URLSessionConfiguration) {
         guard !usesCoreV2 else {
             core.use(configuration)
             return
         }
-        self.urlSession = URLSession(configuration: configuration)
+        self.urlSession = URLSession(configuration: configuration.withoutCookies())
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
@@ -1913,7 +1913,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 stream: stream,
                 logger: logger,
                 connectivity: connectivity,
-                session: { [weak self] in self?.urlSession ?? URLSession.shared },
+                session: { [weak self] in self?.urlSession ?? SdkURLSession.shared },
                 // For stories reloaded by hand: without network a request fails at once.
                 sessionWithoutWaiting: URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: false))
             )

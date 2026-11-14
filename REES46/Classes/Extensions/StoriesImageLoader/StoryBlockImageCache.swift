@@ -13,7 +13,7 @@ public struct StoryBlockImageCache {
     fileprivate static var urlSession: URLSession = createUrlSession()
     
     fileprivate static func createUrlSession() -> URLSession {
-        let config = URLSessionConfiguration.default
+        let config = URLSessionConfiguration.default.withoutCookies()
         config.timeoutIntervalForRequest = 3
         config.waitsForConnectivity = true
         let session = URLSession(configuration: config)

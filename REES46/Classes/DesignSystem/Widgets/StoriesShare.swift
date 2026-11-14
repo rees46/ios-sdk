@@ -75,9 +75,9 @@ struct StoriesApiV3 {
     /// Сколько ждать `did`, пока SDK инициализируется.
     static var deviceIdTimeout: TimeInterval = 15
 
-    /// Отправка запроса; подменяется в тестах.
+    /// Отправка запроса — сессией SDK без cookies (`SdkURLSession`); подменяется в тестах.
     static var transport: (URLRequest, @escaping (Data?, URLResponse?, Error?) -> Void) -> Void = { request, completion in
-        URLSession.shared.dataTask(with: request, completionHandler: completion).resume()
+        SdkURLSession.shared.dataTask(with: request, completionHandler: completion).resume()
     }
 
     // MARK: - Адреса и тело события
@@ -225,6 +225,7 @@ struct StoriesApiV3 {
             }
             var request = URLRequest(url: address, timeoutInterval: PersonalizationStories.loadTimeout)
             request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.httpShouldHandleCookies = false
             Self.transport(request) { data, response, error in
                 completion(Self.payload(data: data, response: response, error: error))
             }

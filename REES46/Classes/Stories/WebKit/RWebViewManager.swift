@@ -7,7 +7,7 @@ public class RWebViewManager {
   private var urlHandler: URLHandler
   
   public init() {
-    let configuration = URLSessionConfiguration.default
+    let configuration = URLSessionConfiguration.default.withoutCookies()
     self.urlSession = URLSession(configuration: configuration)
     self.urlHandler = UIApplicationHandler()
   }

@@ -174,10 +174,12 @@ final class LegacyCore: Core {
     // MARK: - Helpers
 
     /// A request with the call's own timeout. The session is shared: a call that swapped in a session
-    /// with its own timeout changed it for every call in flight on the session queue.
+    /// with its own timeout changed it for every call in flight on the session queue. It neither sends
+    /// nor stores cookies, whatever the session — the app may have set one of its own (`urlSession`).
     private func urlRequest(for url: URL, timeout: TimeInterval?) -> URLRequest {
         var request = URLRequest(url: url)
         request.timeoutInterval = timeout ?? NetworkClient.defaultTimeout
+        request.httpShouldHandleCookies = false
         return request
     }
 
@@ -199,9 +201,9 @@ final class LegacyCore: Core {
     }
 
     /// The configuration of the old sessions. Waiting for connectivity, a request starts its timeout
-    /// once the network is back.
+    /// once the network is back. No cookie goes or is kept (`withoutCookies()`).
     static func sessionConfiguration(waitsForConnectivity: Bool) -> URLSessionConfiguration {
-        let configuration = URLSessionConfiguration.default
+        let configuration = URLSessionConfiguration.default.withoutCookies()
         configuration.waitsForConnectivity = waitsForConnectivity
         configuration.shouldUseExtendedBackgroundIdleMode = waitsForConnectivity
         return configuration

@@ -156,9 +156,10 @@ final public class VideoDownloadManager: NSObject {
     
     private override init() {
         super.init()
-        let sessionConfiguration = URLSessionConfiguration.default
+        let sessionConfiguration = URLSessionConfiguration.default.withoutCookies()
         self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
         let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
+        backgroundConfiguration.turnCookiesOff()
         self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
     }
 }

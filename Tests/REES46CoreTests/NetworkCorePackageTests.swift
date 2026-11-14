@@ -36,6 +36,26 @@ final class NetworkCorePackageTests: XCTestCase {
         XCTAssertEqual(NetworkClient.classify(URLError(.notConnectedToInternet), reachedServer: false), .network)
     }
 
+    /// The API sets a `did` cookie and answers an `/init` without a did by it: no session of the SDK
+    /// sends or keeps cookies, the copy of an app's configuration included (`CookieTests` over the stub).
+    func test_the_sessions_of_the_sdk_neither_send_nor_keep_cookies() {
+        let app = URLSessionConfiguration.default
+        let configurations: [(String, URLSessionConfiguration)] = [
+            ("NetworkClient", NetworkClient.configuration()),
+            ("LegacyCore waiting", LegacyCore.sessionConfiguration(waitsForConnectivity: true)),
+            ("LegacyCore not waiting", LegacyCore.sessionConfiguration(waitsForConnectivity: false)),
+            ("SdkURLSession", SdkURLSession.shared.configuration),
+            ("the app's, copied", app.withoutCookies()),
+        ]
+        for (name, configuration) in configurations {
+            XCTAssertFalse(configuration.httpShouldSetCookies, name)
+            XCTAssertEqual(configuration.httpCookieAcceptPolicy, .never, name)
+            XCTAssertNil(configuration.httpCookieStorage, name)
+        }
+        XCTAssertTrue(app.httpShouldSetCookies, "the app's configuration is left as it was")
+        XCTAssertNotNil(app.httpCookieStorage)
+    }
+
     func test_retry_after_is_read_as_seconds() {
         XCTAssertEqual(NetworkClient.retryAfter("30"), 30)
         XCTAssertNil(NetworkClient.retryAfter("-5"))

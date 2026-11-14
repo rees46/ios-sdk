@@ -64,7 +64,7 @@ public struct Rees46Config {
     /// `urlSession` the app sets give it their configuration — proxy, headers, protocols, TLS settings
     /// — but not a session's delegate: certificate pinning done in a delegate does not apply, and the
     /// log says `invalid_config` with the reason `url_session_delegate`. A request still fails at once
-    /// without network and keeps its own timeout.
+    /// without network and keeps its own timeout. On either core the SDK sends and keeps no cookies.
     public let coreV2: Bool
 
     public init(
