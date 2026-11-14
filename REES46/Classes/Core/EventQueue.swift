@@ -59,9 +59,9 @@ protocol EventQueueHost: AnyObject {
 ///   the same answer to it drops it — the refusal of a service, not of the shop; so does such an answer
 ///   when a check of the shop passed less than ten minutes ago, at once; a check that failed lately
 ///   repeats the event after a pause instead. A refusal in the background asks the shop once the app is
-///   in the foreground; the lane waits for it, and an `/init` meanwhile answers it. The lane of pushes never asks the shop — it never sends
-///   `/init` —: an event of a push answered `402` or `403` is dropped as `service_refused`, `404` as
-///   `rejected`. Any other `4xx` drops an event.
+///   in the foreground; the lane waits for it, and an `/init` meanwhile answers it. The lane of pushes
+///   never asks the shop — it never sends `/init` —: an event of a push answered `402` or `403` is
+///   dropped as `service_refused`, `404` as `rejected`. Any other `4xx` drops an event.
 /// - **Identity** is taken when the queue decides to send an event, and put on a copy with the
 ///   source and `time`; none of it is written to disk. `clear` — `deleteUserCredentials()`, `refused` —
 ///   takes effect when it is called: the event on its way is cancelled, none of the events before it
