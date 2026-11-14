@@ -228,7 +228,9 @@ public class NotificationService: NotificationServiceProtocol {
       return
     }
 
-    Rees46.handlePush(userInfo, event: .received)
+    // The old `received` — deprecated for apps —: `track/received` on the old core, as it has always
+    // gone, and once with `delivered` on the new one.
+    Rees46.route(userInfo, .received)
     
     guard let eventJSON = PushPayloadParser.event(from: userInfo),
           let eventType = eventJSON[Constants.typeKey] as? String,

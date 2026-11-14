@@ -17,8 +17,9 @@ enum PushRoute: Equatable {
     init(_ old: PushEvent) {
         switch old {
         case .delivered: self = .event(.delivered)
-        case .received: self = .received
         case .clicked: self = .event(.clicked)
+        // `received`, deprecated: named here it would warn every build of the SDK.
+        default: self = .received
         }
     }
 
