@@ -146,7 +146,7 @@ final class CoreSessionTests: XCTestCase {
 
         // The next /init — a check of the shop — carries the server's.
         clock.advance(by: 10 * 60)
-        XCTAssertEqual((sdk.core as? CoreV2)?.checkShop(), true)
+        XCTAssertEqual(sdk.initMachine?.askShop(), .asked)
         XCTAssertTrue(eventually { self.inits(shop).count == 2 })
         XCTAssertEqual(inits(shop).last?.query["sid"], "s-1")
         guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
@@ -210,7 +210,7 @@ final class CoreSessionTests: XCTestCase {
 
         // An /init opens it again: a check of the shop an hour on keeps it open two hours from there.
         clock.advance(by: 60 * 60)
-        XCTAssertEqual((sdk.core as? CoreV2)?.checkShop(), true)
+        XCTAssertEqual(sdk.initMachine?.askShop(), .asked)
         XCTAssertTrue(eventually { self.inits(shop).count == 3 && sdk.sessionId == "s-3" })
         clock.advance(by: 90 * 60)
         guard case .success? = getProduct(sdk) else { return XCTFail("the call went out") }
@@ -386,7 +386,7 @@ final class CoreSessionTests: XCTestCase {
 
         // The same sid again (the server's session lives on): nothing new.
         clock.advance(by: 10 * 60)
-        XCTAssertEqual((sdk.core as? CoreV2)?.checkShop(), true)
+        XCTAssertEqual(sdk.initMachine?.askShop(), .asked)
         XCTAssertTrue(eventually { self.inits(shop).count == 3 })
         let again = expectation(description: "the same sid told again")
         again.isInverted = true
@@ -464,7 +464,7 @@ final class CoreSessionTests: XCTestCase {
         let sdk = make(shop, identity: stored)
         XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
         clock.advance(by: 60 * 60)
-        XCTAssertEqual((sdk.core as? CoreV2)?.checkShop(), true)
+        XCTAssertEqual(sdk.initMachine?.askShop(), .asked)
         XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 && stored.seanceLastActTime == self.clock.now() })
         XCTAssertEqual(sdk.sessionId, "s-1", "the live sid stays")
         XCTAssertEqual(stored.seance, "s-1")
@@ -518,7 +518,7 @@ final class CoreSessionTests: XCTestCase {
         expectNoRequest(to: "/init", shop: shop, within: 0.3) {
             self.lifecycle.send(.didEnterBackground)
             self.lifecycle.send(.willEnterForeground)
-            _ = (sdk.core as? CoreV2)?.checkShop()
+            _ = sdk.initMachine?.askShop()
             network.isOnline = false
             network.isOnline = true
         }

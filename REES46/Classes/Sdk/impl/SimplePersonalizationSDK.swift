@@ -454,14 +454,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// deletes (`deleteUserCredentials()`), the others forget too.
     static let instances = LiveInstances()
 
-    /// How many times `/init` settled (`initMachine(didSettle:)`): the tests wait for it.
-    private let settledLock = NSLock()
-    private var settledCount = 0
-    var settledInitCount: Int {
-        settledLock.lock(); defer { settledLock.unlock() }
-        return settledCount
-    }
-
     func currentInitGeneration() -> Int {
         initLock.lock(); defer { initLock.unlock() }
         return initGeneration
@@ -2221,9 +2213,6 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
             // The shop refused: its events are not sent, and the queue keeps none.
             eventQueue?.clear(error: .cancelled, reason: "refused")
         }
-        settledLock.lock()
-        settledCount += 1
-        settledLock.unlock()
     }
 
     /// Whether this is the first server answer since the instance was made or its customer deleted;

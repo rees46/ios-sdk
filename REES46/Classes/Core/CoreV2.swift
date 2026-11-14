@@ -131,12 +131,6 @@ final class CoreV2: Core {
         _Concurrency.Task { await client.use(configuration) }
     }
 
-    /// Asks the shop through `/init` whether it still serves the SDK, at most once in ten minutes.
-    @discardableResult
-    func checkShop() -> Bool {
-        machine.checkShop()
-    }
-
     func release() {
         lock.lock()
         released = true

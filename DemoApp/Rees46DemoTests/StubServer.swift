@@ -282,6 +282,7 @@ enum StubSDK {
     ) -> SimplePersonalizationSDK {
         // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
         CoreFlag.reset(to: coreV2)
+        InitSettles.install()
         return SimplePersonalizationSDK(
             shopId: shopId,
             apiDomain: "stub.test",
@@ -325,6 +326,33 @@ enum StubSDK {
         }
         UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: shopId))
     }
+}
+
+/// How often each instance's `/init` settled, counted through the core's test seam
+/// (`InitMachine.settleObserver`): what the tests wait for instead of sleeping.
+enum InitSettles {
+    private static let lock = NSLock()
+    /// Weak keys: a machine that is gone takes its count with it.
+    private static let counts = NSMapTable<AnyObject, NSNumber>(keyOptions: [.weakMemory, .objectPointerPersonality], valueOptions: .strongMemory)
+
+    static func install() {
+        guard InitMachine.settleObserver == nil else { return }
+        InitMachine.settleObserver = { machine in
+            lock.lock(); defer { lock.unlock() }
+            counts.setObject(NSNumber(value: (counts.object(forKey: machine)?.intValue ?? 0) + 1), forKey: machine)
+        }
+    }
+
+    static func count(of machine: InitMachine?) -> Int {
+        guard let machine = machine else { return 0 }
+        lock.lock(); defer { lock.unlock() }
+        return counts.object(forKey: machine)?.intValue ?? 0
+    }
+}
+
+extension SimplePersonalizationSDK {
+    /// How many times this instance's `/init` settled (`initMachine(didSettle:)`).
+    var settledInitCount: Int { InitSettles.count(of: initMachine) }
 }
 
 extension XCTestCase {

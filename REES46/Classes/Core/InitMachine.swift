@@ -43,7 +43,7 @@ struct CoreEnvironment {
 /// - Retries: 1 s, 2 s, 4 s … 5 min, ±20 %, or the `Retry-After` of a `429` or `503`, held to
 ///   1 s … 5 min (`RetryPolicy`). An `/init` cancelled by anything but `release()` or `reset()` — the
 ///   app's URL protocol, say — is repeated the same way. The return of the network, the foreground and
-///   `checkShop()` cut a pause of its own short; the server's `Retry-After` nothing cuts.
+///   `askShop()` cut a pause of its own short; the server's `Retry-After` nothing cuts.
 /// - A stored device id is `ready` at once, with a saved answer or without (decision 1): calls do not
 ///   wait for `/init` on every launch; `/init` still goes.
 /// - With a saved answer or a stored device id, `retrying` lets calls through as `ready` does.
@@ -52,12 +52,12 @@ struct CoreEnvironment {
 ///   goes with the device id of another.
 /// - `/init` goes on start; when the session's window ran out — before a call or an event
 ///   (`renewSession()`), and back in the foreground two hours after the last event, however long the
-///   app was in the background and also when it was launched there —; and on `checkShop()`, at most
+///   app was in the background and also when it was launched there —; and on `askShop()`, at most
 ///   once in ten minutes.
 /// - No thread waits: `/init` and the calls that wait for it are tasks. `start()` reads only the
 ///   shop's `UserDefaults` on the caller's thread; the saved answer — a file, the keychain, JSON — is
 ///   read by the task that sends `/init`. Nothing is written to disk under the lock that calls, state
-///   reads and `checkShop()` take: an answer writes under `writeLock`, which only `reset()` waits for.
+///   reads and `askShop()` take: an answer writes under `writeLock`, which only `reset()` waits for.
 final class InitMachine {
 
     typealias Transport = (NetworkClient.Request) async -> NetworkClient.Response
@@ -76,7 +76,7 @@ final class InitMachine {
         case notAsked
     }
 
-    /// `checkShop()` sends `/init` at most this often.
+    /// `askShop()` sends `/init` at most this often.
     static let checkShopInterval: TimeInterval = 10 * 60
 
     let state: InstanceState
@@ -222,15 +222,8 @@ final class InitMachine {
         // `/init` is on its way before anything hears the instance is ready.
         send()
         if initial == .ready {
-            delegate?.initMachine(didSettle: nil)
+            settled(nil)
         }
-    }
-
-    /// Asks the shop through `/init` whether it still serves the SDK — at most once in ten minutes, and
-    /// not once it refused. `true` when it asked.
-    @discardableResult
-    func checkShop() -> Bool {
-        askShop() == .asked
     }
 
     /// Asks the shop through `/init` whether it still serves the SDK, as the queue does after `402`,
@@ -624,7 +617,7 @@ final class InitMachine {
 
         logger.info(LogCode.initSucceeded, "initialization finished")
         delegate?.initMachine(didFinish: response, fromServer: true, generation: generation)
-        delegate?.initMachine(didSettle: nil)
+        settled(nil)
     }
 
     private func failed(_ response: NetworkClient.Response, error: Rees46.SdkError, generation: Int) {
@@ -700,7 +693,7 @@ final class InitMachine {
             logger.warning(LogCode.initSavedAnswer, "no answer to /init: the saved init answer stands in")
             delegate?.initMachine(didFinish: standIn, fromServer: false, generation: generation)
         }
-        delegate?.initMachine(didSettle: usable ? nil : (wasRefused ? .shopBlocked : error))
+        settled(usable ? nil : (wasRefused ? .shopBlocked : error))
     }
 
     private func refused(_ code: Int, error: Rees46.SdkError, generation: Int) {
@@ -733,7 +726,7 @@ final class InitMachine {
             logger.error(LogCode.initFailed, "/init was rejected: the SDK's request is not accepted", context)
         }
         logger.error(LogCode.initRefused, "the shop refused the SDK: calls fail until a later launch's /init passes", context)
-        delegate?.initMachine(didSettle: .shopBlocked)
+        settled(.shopBlocked)
     }
 
     /// Instances of one shop share its storage: one of them takes a device id into it at a time.
@@ -761,6 +754,22 @@ final class InitMachine {
         var response = InitResponse(json: json)
         response.popup = nil
         return response
+    }
+
+    /// An `/init` settled: the delegate hears it, then the tests' observer.
+    private func settled(_ error: Rees46.SdkError?) {
+        delegate?.initMachine(didSettle: error)
+        Self.settleObserver?(self)
+    }
+
+    private static let observerLock = NSLock()
+    private static var observer: ((InitMachine) -> Void)?
+
+    /// Test-only seam: hears every machine's settled `/init`, after its delegate did. The tests count
+    /// them to wait for an `/init` to be taken; the SDK sets none.
+    static var settleObserver: ((InitMachine) -> Void)? {
+        get { observerLock.lock(); defer { observerLock.unlock() }; return observer }
+        set { observerLock.lock(); observer = newValue; observerLock.unlock() }
     }
 
     // MARK: - Rules

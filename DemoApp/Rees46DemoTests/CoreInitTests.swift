@@ -345,7 +345,7 @@ final class CoreInitTests: XCTestCase {
             lifecycle.send(.didEnterBackground)
             clock.advance(by: 3 * 60 * 60)
             lifecycle.send(.willEnterForeground)
-            XCTAssertFalse(sdk.initMachine?.checkShop() ?? true)
+            XCTAssertNotEqual(sdk.initMachine?.askShop(), .asked)
         }
 
         XCTAssertEqual(inits(shop).count, 1)
@@ -825,19 +825,19 @@ final class CoreInitTests: XCTestCase {
         XCTAssertEqual(settled(sdk), .ready)
         let core = sdk.core as? CoreV2
 
-        XCTAssertEqual(core?.checkShop(), true)
+        XCTAssertEqual(core?.machine.askShop(), .asked)
         XCTAssertTrue(eventually { self.inits(shop).count == 2 })
-        XCTAssertEqual(core?.checkShop(), false)
+        XCTAssertNotEqual(core?.machine.askShop(), .asked)
         clock.advance(by: 9 * 60)
-        XCTAssertEqual(core?.checkShop(), false)
+        XCTAssertNotEqual(core?.machine.askShop(), .asked)
         clock.advance(by: 60)
-        XCTAssertEqual(core?.checkShop(), true)
+        XCTAssertEqual(core?.machine.askShop(), .asked)
         XCTAssertTrue(eventually { self.inits(shop).count == 3 })
 
         // A shop that refused now: the check ends in refused.
         answerInit(StubReply(404))
         clock.advance(by: 10 * 60)
-        XCTAssertEqual(core?.checkShop(), true)
+        XCTAssertEqual(core?.machine.askShop(), .asked)
         XCTAssertTrue(eventually { sdk.state == .refused })
     }
 
