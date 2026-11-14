@@ -219,6 +219,10 @@ final class PushCallbackBox {
 /// process hears the first one's answer, so two sends at once are one request —, and a send that fails
 /// takes the mark away. A mark that no ended send follows within five minutes — the process died on the
 /// way — is free again.
+///
+/// A send belongs to the customer it was claimed for: `deleteUserCredentials` (`forget`) moves the shop's
+/// storage on to the next one, and a send begun before it neither writes the week once it ends nor
+/// takes in a send for the next device id.
 enum PushTokenWeek {
 
     static let length: TimeInterval = 7 * 24 * 60 * 60
@@ -233,6 +237,9 @@ enum PushTokenWeek {
         let platform: String
         let mark: ShopStorage.PushTokenClaim
         fileprivate let key: String
+        fileprivate let partition: String
+        /// The customer of the storage it was claimed for.
+        fileprivate let customer: Int
     }
 
     /// What a send of a token comes to.
@@ -252,12 +259,21 @@ enum PushTokenWeek {
     /// The sends of this process on their way, by partition, platform and token, with who waits for
     /// their answer.
     private static var onTheirWay: [String: [Completion]] = [:]
+    /// The customer of each storage, by partition: `forget` moves it on.
+    private static var customers: [String: Int] = [:]
+
+    private static func partition(of storage: ShopStorage) -> String {
+        "\(storage.directory?.path ?? storage.shopId)#\(storage.keyScope ?? "")"
+    }
 
     /// Decides a send of `token` to the shop of `storage`; `completion` is kept only when the decision
     /// is `joined`.
     static func claim(_ token: String, platform: String, storage: ShopStorage, now: Date, completion: @escaping Completion) -> Decision {
-        let key = "\(storage.directory?.path ?? storage.shopId)#\(storage.keyScope ?? "")#\(platform)#\(token)"
+        let scope = partition(of: storage)
         lock.lock(); defer { lock.unlock() }
+        let customer = customers[scope, default: 0]
+        // The customer is part of the key: a send for an earlier one is never joined.
+        let key = "\(scope)#\(customer)#\(platform)#\(token)"
         if let sent = storage.pushTokenSent(platform: platform), sent.token == token {
             let age = now.timeIntervalSince(sent.at)
             // A date ahead of the clock — the clock moved back — does not hold the token for good.
@@ -278,21 +294,31 @@ enum PushTokenWeek {
         let mark = ShopStorage.PushTokenClaim(token: token, since: now)
         storage.setPushTokenClaim(mark, platform: platform)
         onTheirWay[key] = []
-        return .send(Claim(storage: storage, platform: platform, mark: mark, key: key))
+        return .send(Claim(storage: storage, platform: platform, mark: mark, key: key, partition: scope, customer: customer))
     }
 
     /// The send of `claim` ended: a `2xx` (`sent`) starts the week at `at`, anything else frees the
     /// token. Hands back who joined it, to hear the same answer. A mark replaced meanwhile — another
-    /// token, `deleteUserCredentials` — belongs to someone else and stays.
+    /// token — belongs to someone else and stays; after `deleteUserCredentials` the send writes nothing.
     static func finish(_ claim: Claim, sent: Bool, at: Date) -> [Completion] {
         lock.lock(); defer { lock.unlock() }
         let joined = onTheirWay.removeValue(forKey: claim.key) ?? []
-        guard claim.storage.pushTokenClaim(platform: claim.platform) == claim.mark else { return joined }
+        guard customers[claim.partition, default: 0] == claim.customer,
+              claim.storage.pushTokenClaim(platform: claim.platform) == claim.mark else { return joined }
         claim.storage.setPushTokenClaim(nil, platform: claim.platform)
         if sent {
             claim.storage.setPushTokenSent(ShopStorage.PushTokenSent(token: claim.mark.token, at: at), platform: claim.platform)
         }
         return joined
+    }
+
+    /// `deleteUserCredentials`: the storage's week and mark are forgotten and its next customer begins;
+    /// a send on its way is the deleted customer's from now on.
+    static func forget(_ storage: ShopStorage) {
+        let scope = partition(of: storage)
+        lock.lock(); defer { lock.unlock() }
+        customers[scope, default: 0] += 1
+        storage.forgetPushTokens()
     }
 
     /// Test-only: no send of this process on its way.

@@ -389,6 +389,39 @@ final class CorePushTests: XCTestCase {
         XCTAssertFalse(tokens(shop).contains { ($0.body["did"] as? String ?? "").isEmpty }, "never without a did")
     }
 
+    func test_a_token_send_begun_before_delete_user_credentials_writes_no_week_and_holds_back_no_send_for_the_next_did() {
+        let shop = newShop()
+        let sdk = make(shop, identity: InMemoryUserIdentityRepository())
+        let held = DispatchSemaphore(value: 0)
+        defer { held.signal() }
+        let sends = Locked(0)
+        StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
+            if request.path == "/mobile_push_tokens" {
+                var send = 0
+                sends.mutate { $0 += 1; send = $0 }
+                if send == 1 { _ = held.wait(timeout: .now() + 10) }
+            }
+            return handler(request)
+        }
+        let first = expectation(description: "the deleted customer's send")
+        sdk.setPushTokenNotification(token: "t") { _ in first.fulfill() }
+        XCTAssertTrue(eventually { self.tokens(shop).count == 1 }, "on its way, held")
+        XCTAssertEqual(tokens(shop).first?.body["did"] as? String, "d-1")
+
+        sdk.deleteUserCredentials()
+        XCTAssertTrue(eventually { self.tokens(shop).count == 2 }, "the next did's send goes, not joined to the one on its way")
+        XCTAssertEqual(tokens(shop).last?.body["did"] as? String, "d-2")
+        XCTAssertTrue(eventually { sdk.storage.pushTokenSent(platform: "ios") != nil && sdk.storage.pushTokenClaim(platform: "ios") == nil })
+        let week = sdk.storage.pushTokenSent(platform: "ios")
+
+        clock.advance(by: 60)
+        held.signal()
+        wait(for: [first], timeout: 5)
+        XCTAssertEqual(sdk.storage.pushTokenSent(platform: "ios"), week, "the deleted customer's send wrote no week")
+        XCTAssertNil(sdk.storage.pushTokenClaim(platform: "ios"))
+        XCTAssertEqual(tokens(shop).count, 2)
+    }
+
     func test_an_empty_token_is_an_invalid_argument() {
         let shop = newShop()
         let sdk = make(shop)

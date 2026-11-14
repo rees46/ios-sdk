@@ -1810,7 +1810,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         storage.refused = false
         sourceStore.clear()
         NotificationRegistrar.forgetUpload(shopId: shopId)
-        storage.forgetPushTokens()
+        // A token send on its way is the deleted customer's: it writes no week, and holds no send back.
+        PushTokenWeek.forget(storage)
         // Where an older SDK kept the customer, so neither a downgrade nor a pending shop's push finds it.
         StorageMigrations.forgetCustomer(storageKey: storageKey, partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey))
         RecentSearches.forget(shopKey: shopId)
