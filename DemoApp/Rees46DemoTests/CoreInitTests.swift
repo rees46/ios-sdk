@@ -190,7 +190,12 @@ final class CoreInitTests: XCTestCase {
             XCTAssertFalse(sdk.storage.refused, name)
             XCTAssertTrue(eventually { self.scheduler.pending == 1 }, "\(name): a retry is scheduled")
             XCTAssertTrue(eventually { self.codes(shop).contains("init_retry") }, name)
-            XCTAssertEqual(messages(shop, "init_failed").first?.level, .warning, name)
+            let retry = messages(shop, "init_retry").first
+            XCTAssertEqual(retry?.level, .warning, name)
+            XCTAssertEqual(retry?.context["attempt"], "1", name)
+            XCTAssertEqual(retry?.context["delay_ms"], "1000", name)
+            XCTAssertEqual(retry?.context["error"], reply.map { "http \($0.status)" } ?? "network", name)
+            XCTAssertFalse(codes(shop).contains("init_failed"), "\(name): a failure that is repeated is init_retry alone")
             sdk.release()
         }
     }
@@ -225,6 +230,7 @@ final class CoreInitTests: XCTestCase {
             XCTAssertTrue(storage(shop).refused)
             XCTAssertTrue(eventually { self.codes(shop).contains("init_refused") })
             XCTAssertEqual(messages(shop, "init_failed").first?.level, .error, "\(status)")
+            XCTAssertFalse(codes(shop).contains("init_retry"), "\(status): a refusal is not repeated")
         }
     }
 
@@ -243,6 +249,11 @@ final class CoreInitTests: XCTestCase {
         }
         XCTAssertEqual(pauses, [1, 2, 4, 8, 16, 32, 64, 128, 256, 300, 300])
         XCTAssertEqual(sdk.state, .retrying)
+        XCTAssertTrue(eventually { self.messages(shop, "init_retry").count == 11 })
+        let retries = messages(shop, "init_retry")
+        XCTAssertEqual(retries.map { $0.context["delay_ms"] }, pauses.map { String(Int($0) * 1000) }, "the pause in milliseconds")
+        XCTAssertEqual(retries.map { $0.context["attempt"] }, (1...11).map { String($0) })
+        XCTAssertFalse(codes(shop).contains("init_failed"))
         sdk.release()
     }
 
@@ -309,7 +320,7 @@ final class CoreInitTests: XCTestCase {
         scheduler.advance(by: 1)
         XCTAssertTrue(eventually { sdk.state == .ready })
         XCTAssertEqual(scheduler.pending, 0)
-        XCTAssertTrue(messages(shop, "init_retry").contains { $0.context["delay"] == "7.0" })
+        XCTAssertTrue(messages(shop, "init_retry").contains { $0.context["delay_ms"] == "7000" && $0.context["status"] == "503" })
     }
 
     // MARK: - refused
@@ -577,7 +588,8 @@ final class CoreInitTests: XCTestCase {
         let sdk = make(shop)
 
         XCTAssertTrue(eventually { sdk.state == .retrying && self.scheduler.pending == 1 }, "\(sdk.state)")
-        XCTAssertTrue(messages(shop, "init_failed").contains { $0.context["error"] == "cancelled" })
+        XCTAssertTrue(messages(shop, "init_retry").contains { $0.context["error"] == "cancelled" })
+        XCTAssertFalse(codes(shop).contains("init_failed"))
         scheduler.advance(by: scheduler.pendingDelays.first ?? 1)
         XCTAssertTrue(eventually { sdk.state == .ready })
         XCTAssertEqual(sdk.deviceId, "after-cancel")

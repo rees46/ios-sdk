@@ -682,13 +682,13 @@ final class InitMachine {
         lock.unlock()
         writeLock.unlock()
 
-        var context = ["error": error.logKind, "attempt": String(attempt)]
+        // A failure that is repeated is `init_retry` alone, as on Android: `init_failed` is for a failure
+        // that is final for the launch.
+        var context = ["error": error.logKind, "attempt": String(attempt), "delay_ms": String(format: "%.0f", pause * 1000)]
         if let status = response.status {
             context["status"] = String(status)
         }
-        logger.warning(LogCode.initFailed, "initialization failed", context)
-        context["delay"] = String(format: "%.1f", pause)
-        logger.warning(LogCode.initRetry, "/init is repeated in \(String(format: "%.0f", pause)) s", context)
+        logger.warning(LogCode.initRetry, "/init failed and is repeated in \(String(format: "%.0f", pause)) s", context)
         if let standIn = standIn {
             logger.warning(LogCode.initSavedAnswer, "no answer to /init: the saved init answer stands in")
             delegate?.initMachine(didFinish: standIn, fromServer: false, generation: generation)
@@ -721,11 +721,11 @@ final class InitMachine {
         writeLock.unlock()
 
         let context = ["status": String(code)]
+        logger.error(LogCode.initRefused, "the shop refused the SDK: calls fail until a later launch's /init passes", context)
         if ![402, 403, 404].contains(code) {
-            // Not a refusal the API documents: the SDK's own request is wrong.
+            // Not a refusal the API documents: the SDK's own request is wrong, and that is final too.
             logger.error(LogCode.initFailed, "/init was rejected: the SDK's request is not accepted", context)
         }
-        logger.error(LogCode.initRefused, "the shop refused the SDK: calls fail until a later launch's /init passes", context)
         settled(.shopBlocked)
     }
 
