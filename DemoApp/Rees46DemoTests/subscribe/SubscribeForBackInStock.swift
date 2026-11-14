@@ -36,6 +36,23 @@ class SubscribeForBackInStock: XCTestCase {
         super.tearDown()
     }
 
+    /// Each test starts on a fresh did (`needReInitialization`), which has no email yet. The server
+    /// sends this subscription by email, so a request without an email is refused with `400` ("The
+    /// client doesn't have email"), with a phone in it or in the profile alike. The profile gives the
+    /// did its email first, so a request without one relies on the did.
+    private func giveTheDidAnEmail(_ email: String) {
+        let registered = XCTestExpectation(description: "Profile gives the did an email")
+
+        sdk.setProfileData(userEmail: email) { result in
+            if case .failure(let error) = result {
+                XCTFail("setProfileData failed: \(error.localizedDescription)")
+            }
+            registered.fulfill()
+        }
+
+        wait(for: [registered], timeout: Constants.defaultTimeout)
+    }
+
     func testSubscribeForBackInStock_withEmailOnly() {
         let expectation = XCTestExpectation(description: "Subscribe with email only")
         
@@ -56,6 +73,8 @@ class SubscribeForBackInStock: XCTestCase {
     }
     
     func testSubscribeForBackInStock_withPhoneOnly() {
+        giveTheDidAnEmail(testEmail)
+
         let expectation = XCTestExpectation(description: "Subscribe with phone only")
         
         sdk.subscribeForBackInStock(
@@ -95,6 +114,8 @@ class SubscribeForBackInStock: XCTestCase {
     }
     
     func testSubscribeForBackInStock_withoutContactInfo() {
+        giveTheDidAnEmail(testEmail)
+
         let expectation = XCTestExpectation(description: "Subscribe without contact info")
         
         sdk.subscribeForBackInStock(

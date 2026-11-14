@@ -36,6 +36,24 @@ class SubscribeForPriceDrop: XCTestCase {
         super.tearDown()
     }
     
+    /// The did here is whatever an earlier test left in the store, and may be a fresh one without an
+    /// email. The server sends this subscription by email, so a request without an email is then
+    /// refused with `400` ("Email or item id incorrect"), with a phone in it or in the profile alike.
+    /// The profile gives the did its email first, so a request without one relies on the did and the
+    /// test does not depend on the ones before it.
+    private func giveTheDidAnEmail(_ email: String) {
+        let registered = XCTestExpectation(description: "Profile gives the did an email")
+
+        sdk.setProfileData(userEmail: email) { result in
+            if case .failure(let error) = result {
+                XCTFail("setProfileData failed: \(error.localizedDescription)")
+            }
+            registered.fulfill()
+        }
+
+        wait(for: [registered], timeout: Constants.defaultTimeout)
+    }
+
     func testSubscribeForPriceDrop_withEmailOnly() {
         let expectation = XCTestExpectation(description: "Subscribe with email only")
         
@@ -57,6 +75,8 @@ class SubscribeForPriceDrop: XCTestCase {
     }
     
     func testSubscribeForPriceDrop_withPhoneOnly() {
+        giveTheDidAnEmail(testEmail)
+
         let expectation = XCTestExpectation(description: "Subscribe with phone only")
         
         sdk.subscribeForPriceDrop(
@@ -98,6 +118,8 @@ class SubscribeForPriceDrop: XCTestCase {
     }
     
     func testSubscribeForPriceDrop_withoutContactInfo() {
+        giveTheDidAnEmail(testEmail)
+
         let expectation = XCTestExpectation(description: "Subscribe without contact info")
         
         sdk.subscribeForPriceDrop(
