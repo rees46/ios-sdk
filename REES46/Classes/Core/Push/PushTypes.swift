@@ -20,7 +20,12 @@ extension Rees46 {
         case opened
         /// The user tapped the notification.
         case clicked
-        /// The notification was dismissed without a tap (`UNNotificationDismissActionIdentifier`).
+        /// The notification was dismissed without a tap (`UNNotificationDismissActionIdentifier`). The
+        /// SDK owns no `UNUserNotificationCenter` delegate, so it never sees a dismissal itself: the app
+        /// or the bridge that is the delegate calls `Rees46.handlePush(_:event: .closed)` from
+        /// `userNotificationCenter(_:didReceive:withCompletionHandler:)`. The system reports a dismissal
+        /// only for a notification whose category has `.customDismissAction`; the SDK's carousel
+        /// category has none.
         case closed
 
         /// The address of the event.

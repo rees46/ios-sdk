@@ -311,8 +311,17 @@ public enum Rees46 {
 
      A shop that is registered but not created (`register` without `eagerInit`, the app launched by the
      push) is not created: the event goes with the device id the shop has stored, without `/init` — and
-     not at all without one. The app's callback of the event is called on the main thread: the shop
-     instance's own (`setPushCallbacks` of the bridges' API), else the one of `setPushCallbacks(_:)`.
+     on the new core not at all without one. The app's callback of the event is called on the main
+     thread: the shop instance's own (`setPushCallbacks` of the bridges' API), else the one of
+     `setPushCallbacks(_:)`.
+
+     What the SDK sees itself on iOS comes through `NotificationService.didReceiveRemoteNotifications`:
+     a push that arrives (`delivered`), one that arrives in the active app (`opened`), one whose tap
+     brings the app back (`clicked`). The SDK owns no `UNUserNotificationCenter` delegate: the app or the
+     bridge that is the delegate calls this method itself — `clicked` for the taps it handles in
+     `userNotificationCenter(_:didReceive:withCompletionHandler:)`, and `closed` for
+     `UNNotificationDismissActionIdentifier`, which the system reports only for a category with
+     `.customDismissAction`; the SDK's carousel category has none.
 
      Navigation stays with the app: open `PushPayload.target` in `onClicked`.
      */
