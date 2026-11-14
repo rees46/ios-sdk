@@ -164,6 +164,13 @@ final class CorePushTests: XCTestCase {
         return result.current
     }
 
+    /// Whether the queue sent all it can: nothing waits in it and nothing is on its way. Once it holds,
+    /// no request of an event can come any more — what a "nothing more goes" check waits for, instead
+    /// of a time.
+    private func queueIdle(_ sdk: SimplePersonalizationSDK) -> Bool {
+        eventually { sdk.eventQueue.map { $0.inFlightCount == 0 && $0.waiting.isEmpty } ?? true }
+    }
+
     /// No platform has a token sent or a send on its way.
     private func noWeek(_ storage: ShopStorage) -> Bool {
         ShopStorage.pushTokenPlatforms.allSatisfy { storage.pushTokenSent(platform: $0) == nil && storage.pushTokenClaim(platform: $0) == nil }
@@ -213,9 +220,8 @@ final class CorePushTests: XCTestCase {
 
         clock.advance(by: PushTokenWeek.length)
         guard case .success? = send(sdk, "t-2") else { return XCTFail("sent") }
-        XCTAssertTrue(eventually { self.tokens(shop).count == 3 }, "a week later it goes again")
-        expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3)
-        XCTAssertEqual(tokens(shop).count, 3)
+        // The call heard the answer of its one request.
+        XCTAssertEqual(tokens(shop).count, 3, "a week later it goes again")
     }
 
     func test_the_week_counts_from_a_send_that_ended_and_two_sends_at_once_go_as_one_heard_by_both() {
@@ -365,8 +371,9 @@ final class CorePushTests: XCTestCase {
         clock.advance(by: 2 * 60 * 60 + 1)
         lifecycle.send(.willEnterForeground)
         XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 && sdk.settledInitCount >= 3 })
-        expectNoRequest(to: "/mobile_push_tokens", shop: shop, within: 0.3)
+        // The week decides before any request: once it said so, nothing goes for this /init.
         XCTAssertTrue(eventually { self.logged(shop, "push_token_skipped").last?.context["reason"] == "sent_recently" })
+        XCTAssertEqual(tokens(shop).count, 1)
     }
 
     func test_delete_user_credentials_forgets_the_week_and_the_next_did_gets_the_token() {
@@ -385,9 +392,9 @@ final class CorePushTests: XCTestCase {
     func test_an_empty_token_is_an_invalid_argument() {
         let shop = newShop()
         let sdk = make(shop)
-        let result = Locked<Result<Void, SdkError>?>(nil)
-        expectNoRequest(to: "/mobile_push_tokens", shop: shop) { result.current = self.send(sdk, "") }
-        guard case .failure(.custom)? = result.current else { return XCTFail("\(String(describing: result.current))") }
+        // Refused before anything could go: the call's answer is the end of it.
+        guard case .failure(.custom)? = send(sdk, "") else { return XCTFail("an invalid argument") }
+        XCTAssertTrue(tokens(shop).isEmpty)
         XCTAssertTrue(eventually { !self.logged(shop, "invalid_argument").isEmpty })
     }
 
@@ -403,9 +410,8 @@ final class CorePushTests: XCTestCase {
         let shop = newShop()
         let sdk = make(shop)
         sdk.release()
-        let result = Locked<Result<Void, SdkError>?>(nil)
-        expectNoRequest(to: "/mobile_push_tokens", shop: shop) { result.current = self.send(sdk, "t") }
-        guard case .failure(.initializationFailed)? = result.current else { return XCTFail("\(String(describing: result.current))") }
+        guard case .failure(.initializationFailed)? = send(sdk, "t") else { return XCTFail("not initialized") }
+        XCTAssertTrue(tokens(shop).isEmpty)
         XCTAssertNil(sdk.deviceStore.deviceToken)
         XCTAssertTrue(noWeek(sdk.storage))
     }
@@ -414,7 +420,7 @@ final class CorePushTests: XCTestCase {
 
     func test_handle_push_sends_each_event_through_the_queue_once_and_returns_the_shop() {
         let shop = newShop()
-        _ = make(shop)
+        let sdk = make(shop)
         for event in Rees46.PushEvent.allCases {
             XCTAssertEqual(Rees46.handlePush(push(shop), event: event), shop)
         }
@@ -432,9 +438,7 @@ final class CorePushTests: XCTestCase {
         }
 
         // One event per message in the process: a repeat sends nothing and is still the shop's.
-        expectNoRequest(to: "/track/clicked", shop: shop) {
-            XCTAssertEqual(Rees46.handlePush(push(shop), event: .clicked), shop)
-        }
+        XCTAssertEqual(Rees46.handlePush(push(shop), event: .clicked), shop)
         guard case .success? = { () -> Result<Void, SdkError>? in
             let done = expectation(description: "explicit")
             let result = Locked<Result<Void, SdkError>?>(nil)
@@ -444,8 +448,9 @@ final class CorePushTests: XCTestCase {
             return result.current
         }() else { return XCTFail("a repeat is a success") }
         XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 2 }, "m-1 and m-2")
-        expectNoRequest(to: "/track/delivered", shop: shop, within: 0.2)
+        XCTAssertTrue(queueIdle(sdk))
         XCTAssertEqual(requests("/track/delivered", shop).count, 2, "once each")
+        XCTAssertEqual(requests("/track/clicked", shop).count, 1, "the repeat sent nothing")
         XCTAssertTrue(requests("/track/received", shop).isEmpty)
     }
 
@@ -454,10 +459,10 @@ final class CorePushTests: XCTestCase {
         let sdk = make(shop)
         lifecycle.send(.didEnterBackground)
         clock.advance(by: 2 * 60 * 60 + 1)
-        expectNoRequest(to: "/init", shop: shop, within: 0.5) {
-            Rees46.handlePush(push(shop), event: .delivered)
-        }
-        XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 }, "a stored did is all it needs")
+        Rees46.handlePush(push(shop), event: .delivered)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 }, "a stored did is all it needs")
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertEqual(requests("/init", shop).count, 1, "the launch's only: a push starts no session")
         XCTAssertNil(requests("/track/delivered", shop).first?.body["sid"])
         XCTAssertNil(sdk.sessionId, "no session started or revived")
     }
@@ -578,13 +583,13 @@ final class CorePushTests: XCTestCase {
 
     func test_received_of_the_old_api_is_delivered_once_on_the_new_core_and_never_track_received() {
         let shop = newShop()
-        _ = make(shop)
-        expectNoRequest(to: "/track/received", shop: shop, within: 0.5) {
-            Rees46.handlePush(push(shop), event: PushEvent.delivered)
-            Rees46.handlePush(push(shop), event: PushEvent.received)
-            Rees46.handlePush(push(shop, code: "m-2"), event: PushEvent.received)
-        }
+        let sdk = make(shop)
+        Rees46.handlePush(push(shop), event: PushEvent.delivered)
+        Rees46.handlePush(push(shop), event: PushEvent.received)
+        Rees46.handlePush(push(shop, code: "m-2"), event: PushEvent.received)
         XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 2 })
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertTrue(requests("/track/received", shop).isEmpty)
         XCTAssertEqual(requests("/track/delivered", shop).map { $0.body["code"] as? String }, ["m-1", "m-2"])
     }
 
@@ -632,7 +637,9 @@ final class CorePushTests: XCTestCase {
         guard case .failure(.custom)? = call({ sdk.notificationClicked(type: "", code: "x-2", completion: $0) }) else { return XCTFail("empty type") }
         XCTAssertEqual(requests("/track/delivered", shop).count, 1)
         XCTAssertTrue(requests("/track/received", shop).isEmpty)
-        expectNoRequest(to: "/track/clicked", shop: shop, within: 0.2)
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertEqual(requests("/track/clicked", shop).count, 1)
+        drainMainQueue()
         XCTAssertEqual(heard.current, 0, "the app knows of the event")
     }
 
@@ -645,10 +652,11 @@ final class CorePushTests: XCTestCase {
         XCTAssertTrue(requests("/track/clicked", shop).isEmpty, "nobody tapped it")
 
         Rees46.handlePush(push(shop, code: "m-2"), event: .delivered)
-        expectNoRequest(to: "/track/received", shop: shop) {
-            service.handleArrival(self.push(shop, code: "m-2"), state: .background)
-        }
-        XCTAssertEqual(requests("/track/delivered", shop).count, 1)
+        service.handleArrival(push(shop, code: "m-2"), state: .background)
+        XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 })
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertEqual(requests("/track/delivered", shop).count, 1, "the background arrival is the same delivered")
+        XCTAssertTrue(requests("/track/received", shop).isEmpty)
     }
 
     func test_a_pending_shop_sends_by_its_stored_did_through_its_queue_without_init_and_never_without_one() {
@@ -752,7 +760,7 @@ final class CorePushTests: XCTestCase {
 
     func test_the_callback_of_each_event_gets_the_parsed_push_on_the_main_thread_once() {
         let shop = newShop()
-        _ = make(shop)
+        let sdk = make(shop)
         let heard = Locked<[(String, Rees46.PushPayload, Bool)]>([])
         func record(_ name: String) -> (Rees46.PushPayload) -> Void {
             { payload in heard.mutate { $0.append((name, payload, Thread.isMainThread)) } }
@@ -765,7 +773,8 @@ final class CorePushTests: XCTestCase {
             Rees46.handlePush(push(nil), event: event)
         }
         XCTAssertTrue(eventually { heard.current.count == 4 })
-        expectNoRequest(to: "/track/closed", shop: shop, within: 0.2)
+        XCTAssertTrue(queueIdle(sdk))
+        drainMainQueue()
         XCTAssertEqual(heard.current.map { $0.0 }, ["delivered", "opened", "clicked", "closed"], "once each")
         for (_, payload, main) in heard.current {
             XCTAssertTrue(main)
@@ -857,11 +866,11 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(Rees46.handlePush(push(shop), event: .delivered), shop)
         Rees46.handlePush(push(shop), event: .delivered)
         Rees46.handlePush(push(shop), event: PushEvent.received)
-        expectNoRequest(to: "/track/opened", shop: shop) {
-            Rees46.handlePush(self.push(shop), event: .opened)
-            Rees46.handlePush(self.push(shop), event: .closed)
-        }
-        XCTAssertTrue(requests("/track/closed", shop).isEmpty, "the old core keeps exactly its events")
+        // The old core decides on the caller's thread that these send nothing.
+        Rees46.handlePush(push(shop), event: .opened)
+        Rees46.handlePush(push(shop), event: .closed)
+        XCTAssertTrue(requests("/track/opened", shop).isEmpty, "the old core keeps exactly its events")
+        XCTAssertTrue(requests("/track/closed", shop).isEmpty)
         XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 2 }, "no once-per-message rule on the old core")
         XCTAssertTrue(eventually { self.requests("/track/received", shop).count == 1 })
         XCTAssertTrue(eventually { heard.current == 2 })

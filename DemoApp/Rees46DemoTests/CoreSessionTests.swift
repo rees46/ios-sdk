@@ -562,4 +562,46 @@ final class CoreSessionTests: XCTestCase {
         wait(for: [polled], timeout: 5)
         XCTAssertEqual(fields.current, "s-2")
     }
+
+    func test_a_poll_of_stories_v3_and_an_event_of_popups_v3_post_the_live_sid_renewed_first_when_it_ended() throws {
+        let shop = newShop()
+        answerInit()
+        let sdk = make(shop, identity: live("s-0"))
+        XCTAssertTrue(eventually { sdk.sessionId == "s-1" })
+        clock.advance(by: 2 * 60 * 60 + 1)
+
+        let posted = Locked<[(path: String, body: [String: Any])]>([])
+        let transport = StoriesApiV3.transport
+        defer { StoriesApiV3.transport = transport }
+        StoriesApiV3.transport = { request, completion in
+            let body = request.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
+            posted.mutate { $0.append((request.url?.path ?? "", body)) }
+            let url = request.url ?? URL(fileURLWithPath: "/")
+            completion(Data(#"{"status":"success","payload":{}}"#.utf8), HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil), nil)
+        }
+
+        // A poll of stories v3: the window ended, so a new session comes first and the poll goes with it.
+        let answered = expectation(description: "poll")
+        StoriesPollsApi(api: StoriesApiV3(domain: "app.stub.test"), sdk: sdk).answerMiniPoll(code: "mp-1", body: ["answer": "yes"]) { _ in
+            answered.fulfill()
+        }
+        wait(for: [answered], timeout: 5)
+        XCTAssertEqual(inits(shop).count, 2, "the window was renewed first")
+        let poll = try XCTUnwrap(posted.current.first)
+        XCTAssertEqual(poll.path, "/api/v3/polls/mini_polls/mp-1/answers")
+        XCTAssertEqual(poll.body["sid"] as? String, "s-2", "the new session, not the ended one")
+        XCTAssertEqual(poll.body["did"] as? String, "d")
+        XCTAssertEqual(poll.body["shop_id"] as? String, shop)
+
+        // An event of popups v3: the same, after the next window ended.
+        clock.advance(by: 2 * 60 * 60 + 1)
+        let api = PopupsV3API(sdk: sdk, appHost: { "app.stub.test" }, apiHost: "stub.test")
+        api.sendEvent(popupId: 7, event: "view", channel: nil)
+        XCTAssertTrue(eventually { posted.current.count == 2 })
+        let event = try XCTUnwrap(posted.current.last)
+        XCTAssertEqual(event.path, "/api/v3/storefront/popups/7/events")
+        XCTAssertEqual(event.body["sid"] as? String, "s-3")
+        XCTAssertEqual(event.body["event"] as? String, "view")
+        XCTAssertEqual(inits(shop).count, 3)
+    }
 }

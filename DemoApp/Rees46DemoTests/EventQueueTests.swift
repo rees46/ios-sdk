@@ -21,12 +21,16 @@ private final class FakeQueueHost: EventQueueHost {
     /// Held: the gate waits for it, once.
     let gateHold = Locked<DispatchSemaphore?>(nil)
     let gateEntered = DispatchSemaphore(value: 0)
+    /// Whether the queue's thread is in the held gate now.
+    let gateHolding = Locked(false)
 
     func queueGate(for path: String) -> EventQueue.Gate {
         if let hold = gateHold.current {
             gateHold.current = nil
+            gateHolding.current = true
             gateEntered.signal()
             _ = hold.wait(timeout: .now() + 10)
+            gateHolding.current = false
         }
         return .open
     }
@@ -189,9 +193,9 @@ final class EventQueueTests: XCTestCase {
         // The queue's thread is busy deciding to send it.
         XCTAssertEqual(host.gateEntered.wait(timeout: .now() + 5), .success)
 
-        let started = Date()
         queue.clear(error: .cancelled, reason: "delete_user_credentials")
-        XCTAssertLessThan(Date().timeIntervalSince(started), 0.5, "not held by the queue's thread")
+        // Had it waited for the queue's thread, that thread would have left the gate first.
+        XCTAssertTrue(host.gateHolding.current, "it returned while the queue's thread was still busy")
         take(queue, "new")
         hold.signal()
 
