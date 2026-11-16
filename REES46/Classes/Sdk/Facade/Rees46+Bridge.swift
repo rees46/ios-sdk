@@ -59,9 +59,9 @@ extension Rees46 {
         }
 
         /// The error of an old `SdkError` the SDK is handing over: `currentError()` when it is known,
-        /// otherwise one made from `legacy` — `network` offline, `decoding`, `notInitialized`,
-        /// `shopBlocked` for a refused shop, `invalidArgument` with the message of another `.custom`,
-        /// `timeout` for an answer that did not come.
+        /// otherwise one made from `legacy` — `network` offline, `decoding` for an answer the SDK could
+        /// not take, `notInitialized`, `shopBlocked` for a refused shop, `invalidArgument` with the
+        /// message of another `.custom`, `timeout` otherwise.
         public static func error(of legacy: REES46.SdkError) -> Rees46.SdkError {
             currentError() ?? SimplePersonalizationSDK.newCoreError(legacy)
         }
@@ -210,7 +210,8 @@ extension SimplePersonalizationSDK {
         switch legacy {
         case .networkOfflineError, .airplaneModeError:
             return .network
-        case .decodeError:
+        case .decodeError, .invalidResponse, .responseError:
+            // An answer the SDK could not take: one it did not read, or one that did not say success.
             return .decoding
         case .initializationFailed:
             return .notInitialized
