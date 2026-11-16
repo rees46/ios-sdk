@@ -543,7 +543,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             }
         }
         // The init operation itself is never held: it is what opens the queue.
-        sessionQueue.addOperation(initOperation)
+        requestQueue.addInitOperation(initOperation)
     }
 
     func getDeviceId() -> String {
@@ -1654,11 +1654,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         self.deviceId = self.userIdentity.deviceId ?? ""
                     }
                 }
-                self.requestQueue.open()
             }
             guard isCurrent else {
                 completion(outcome, false)
                 return
+            }
+            // The requests that waited go once the answer was taken — the profile, the popup, the push
+            // token and the app's completion first, as they always have —, whatever it brought. Only
+            // while this /init is still the instance's: the next one opens the queue for its customer.
+            defer {
+                self.initLock.lock()
+                if generation == self.initGeneration, !self.released {
+                    self.requestQueue.open()
+                }
+                self.initLock.unlock()
             }
             switch outcome {
             case .success:

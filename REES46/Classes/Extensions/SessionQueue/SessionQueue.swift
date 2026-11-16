@@ -98,59 +98,73 @@ open class SessionQueue {
     }
 }
 
-/// A shop's request queue. While the shop has no device id the queue is closed: requests added then
-/// — and the ones queued earlier that have not started — wait, and go out once the queue opens with
-/// the id `/init` brought. Opened, requests run as they come. The check is made when a request starts,
-/// not when it is added, so one queued behind an `/init` that `deleteUserCredentials` replaced waits for
-/// the new `/init`, not for the old one. Operations (the `/init` itself) are never held: they are what
-/// opens the queue.
+/// A shop's request queue. While the shop has no device id the queue is closed: every request added
+/// then waits in the queue — `operationCount`, `operations`, `cancelAll()` and
+/// `waitUntilAllOperationsAreFinished()` see it — and goes once the queue opens, after `/init` brought
+/// the id and its completion ran, as it always has. Opened, requests run as they come. A request that
+/// starts while the queue is closed — queued just before `deleteUserCredentials` closed it — waits for
+/// the next `/init` too. The init operation itself is never held: it is what opens the queue.
 final class ShopSessionQueue: SessionQueue {
 
     private let lock = NSLock()
-    private var closed = false
+    /// While closed: what the requests added meanwhile depend on; `open()` runs it.
+    private var gate: Operation?
+    /// Requests that started while the queue was closed; they go again once it opens.
     private var held: [() -> Void] = []
 
-    /// Requests that start from now on wait until `open()`.
+    /// Requests added from now on wait until `open()`; a queue closed already stays closed.
     func close() {
         lock.lock()
-        closed = true
+        if gate == nil {
+            gate = BlockOperation {}
+        }
         lock.unlock()
     }
 
-    /// Lets the held requests and the later ones go.
+    /// Lets the waiting requests and the later ones go.
     func open() {
         lock.lock()
-        closed = false
+        let opening = gate
+        gate = nil
         let waiting = held
         held.removeAll()
         lock.unlock()
-        waiting.forEach { queue.addOperation($0) }
+        opening.map(queue.addOperation)
+        waiting.forEach(addOperation)
     }
 
     /// Whether requests wait; for tests.
     var isClosed: Bool {
         lock.lock(); defer { lock.unlock() }
-        return closed
+        return gate != nil
     }
 
     override func addOperation(_ operation: @escaping () -> Void) {
-        queue.addOperation { [weak self] in
+        addOperation(BlockOperation { [weak self] in
             guard let self = self else { return operation() }
             self.runOrHold(operation)
-        }
+        })
     }
 
+    /// An operation of the app waits for the device id too, as it always has.
     override func addOperation(_ operation: Operation) {
+        lock.lock()
+        if let gate = gate, gate !== operation {
+            operation.addDependency(gate)
+        }
+        lock.unlock()
         super.addOperation(operation)
+    }
+
+    /// The init operation: never held.
+    func addInitOperation(_ operation: Operation) {
+        queue.addOperation(operation)
     }
 
     private func runOrHold(_ operation: @escaping () -> Void) {
         lock.lock()
-        if closed {
-            held.append { [weak self] in
-                guard let self = self else { return operation() }
-                self.runOrHold(operation)
-            }
+        if gate != nil {
+            held.append(operation)
             lock.unlock()
             return
         }
