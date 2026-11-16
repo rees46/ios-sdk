@@ -543,6 +543,10 @@ final class EventQueue {
         guard target != generation, let (error, reason) = request else { return }
         generation = target
         let dropped = events
+        // The files the queue has not read yet — an earlier launch's, before the first send — are
+        // events too: the log counts them.
+        let known = Set(events.map(\.name))
+        let notRead = queueFileNames().filter { !known.contains($0) && !letGo.contains($0) }.count
         events.removeAll()
         unread.removeAll()
         letGo.removeAll()
@@ -554,8 +558,9 @@ final class EventQueue {
         for event in dropped {
             complete(event.seq, .failed(error, body: Data()))
         }
-        if !dropped.isEmpty {
-            logger.warning(LogCode.queueDropped, "the queue was cleared", ["reason": reason, "count": String(dropped.count)])
+        let count = dropped.count + notRead
+        if count > 0 {
+            logger.warning(LogCode.queueDropped, "the queue was cleared", ["reason": reason, "count": String(count)])
         }
         finishPasses()
     }
@@ -1052,6 +1057,13 @@ final class EventQueue {
     private static func fileName(time: UInt64) -> String {
         let random = UInt32.random(in: 0...UInt32.max)
         return String(format: "%020llu-%d-%08x.json", time, ProcessInfo.processInfo.processIdentifier, random)
+    }
+
+    /// The names of the event files in the queue's folder.
+    private func queueFileNames() -> [String] {
+        guard let folder = storage.queueDirectory,
+              let names = try? fileManager.contentsOfDirectory(atPath: folder.path) else { return [] }
+        return names.filter { $0.hasSuffix(".json") }
     }
 
     /// Reads what an earlier launch left, once: the events in the order of their names.
