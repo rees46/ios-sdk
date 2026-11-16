@@ -923,6 +923,9 @@ final class CoreQueueTests: XCTestCase {
         sdk.popupPresentationDelegate = delegate
 
         answer("/push", withPopup(1))
+        // The test host's own SDK may hold the modal slot with a popup of popups v3 from its live shop:
+        // a legacy popup would wait for it to close.
+        PopupV3Slots.shared.reset()
         sdk.tracking.productView(itemId: "fresh")
         XCTAssertTrue(eventually { delegate.asked.current == [1] }, "fresh, in the foreground")
 
