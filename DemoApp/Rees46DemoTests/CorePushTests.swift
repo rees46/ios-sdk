@@ -366,6 +366,9 @@ final class CorePushTests: XCTestCase {
         let sdk = make(shop, deviceStore: device)
         XCTAssertTrue(eventually { self.tokens(shop).count == 1 })
         XCTAssertEqual(tokens(shop).first?.body["platform"] as? String, "ios")
+        // The week starts once the send is over: one still on its way when the next /init answers takes
+        // that send in (`joined`), and nothing says `sent_recently`.
+        XCTAssertTrue(eventually { self.logged(shop, "push_token_sent").count == 1 }, "the first send is over")
 
         // A new session's /init: the week holds the token back.
         clock.advance(by: 2 * 60 * 60 + 1)
