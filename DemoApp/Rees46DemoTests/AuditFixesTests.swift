@@ -173,7 +173,7 @@ final class AuditFixesTests: XCTestCase {
         let host = Host()
         sdk.popupPresentationDelegate = host
         XCTAssertNil(sdk.getNotificationWidget())
-        // The test host's own SDK may hold the modal slot with a popup of its live shop.
+        // A test before may leave the modal slot held by a popup.
         PopupV3Slots.shared.reset()
 
         sdk.popupPresenter.presentPopup(Popup(json: [

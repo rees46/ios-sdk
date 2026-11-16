@@ -258,7 +258,7 @@ final class PopupsV3ModelTests: XCTestCase {
 
         let image = PopupV3CloseSpec(PopupsV3Fixtures.element(name, "el-close-image"), texts: texts)
         XCTAssertEqual(image.mode, .image)
-        XCTAssertEqual(image.imageUrl, "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg")
+        XCTAssertEqual(image.imageUrl, "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg")
         XCTAssertEqual(image.size, 128, "200 → 128")
 
         let svg = PopupV3CloseSpec(PopupsV3Fixtures.element(name, "el-close-svg"), texts: texts)
@@ -271,7 +271,7 @@ final class PopupsV3ModelTests: XCTestCase {
     func testImageHeightsFitRatioAndVisibility() {
         let name = "element-image"
         let auto = PopupV3ImageSpec(PopupsV3Fixtures.element(name, "el-img-auto"), texts: texts)
-        XCTAssertEqual(auto.url, "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg")
+        XCTAssertEqual(auto.url, "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg")
         XCTAssertEqual(auto.height, .auto)
         XCTAssertEqual(auto.fit, .cover)
         XCTAssertEqual(auto.radius, 12)
@@ -449,7 +449,7 @@ final class PopupsV3ModelTests: XCTestCase {
         XCTAssertEqual(c.fractions, [0.25, 0.75])
         XCTAssertEqual(c.minHeight, 110)
         XCTAssertEqual(c.backgroundColor?.hex, "#fef3c7ff")
-        XCTAssertEqual(c.backgroundImage, "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg")
+        XCTAssertEqual(c.backgroundImage, "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg")
         XCTAssertEqual(c.backgroundSize, .contain)
         XCTAssertEqual(c.backgroundPosition, .top)
         XCTAssertEqual(c.backgroundRepeat, .repeatX)

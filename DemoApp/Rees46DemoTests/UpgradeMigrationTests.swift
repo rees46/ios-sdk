@@ -47,8 +47,8 @@ final class UpgradeMigrationTests: XCTestCase {
         super.setUp()
         // A class of the new core that ran before left the process's core as it found it.
         XCTAssertNotEqual(CoreFlag.current, true, "the old core's tests start on the old core")
-        // The multi-instance registry is process-global (the test host registers its own shop at
-        // launch); reset it so the assembled-SDK upgrade tests observe only the shop they build.
+        // The multi-instance registry is process-global (the tests before register their shops);
+        // reset it so the assembled-SDK upgrade tests observe only the shop they build.
         Rees46.reset()
         SdkRegistry.shared.reset()
         // Snapshot then clear the legacy `.standard` keys so each test starts from a clean
