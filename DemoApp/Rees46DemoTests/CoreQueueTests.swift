@@ -1320,7 +1320,8 @@ final class CoreQueueTests: XCTestCase {
         defer { held.signal() }
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
-            if request.query["did"] == nil { _ = held.wait(timeout: .now() + 10) }
+            // Only this shop's: an SDK an earlier test left must not take a signal meant for it.
+            if request.query["did"] == nil, request.query["shop_id"] == shop { _ = held.wait(timeout: .now() + 10) }
             return StubReply(json: #"{"did":"\#(request.query["did"] ?? "next-did")","seance":"s-9"}"#)
         }
 
@@ -1358,6 +1359,7 @@ final class CoreQueueTests: XCTestCase {
         let answers = Locked(0)
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply(json: #"{"status":"success"}"#) }
+            guard request.query["shop_id"] == shop else { return StubReply(json: #"{"did":"other-did","seance":"other"}"#) }
             guard request.query["did"] == nil else { return StubReply(json: #"{"did":"\#(request.query["did"] ?? "")","seance":"s-x"}"#) }
             _ = held.wait(timeout: .now() + 10)
             var call = 0
@@ -1388,7 +1390,7 @@ final class CoreQueueTests: XCTestCase {
         let holds = Locked(true)
         let letGo = Locked(false)
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/push" {
+            if request.path == "/push", request.body["shop_id"] as? String == shop {
                 var first = false
                 holds.mutate { first = $0; $0 = false }
                 if first {

@@ -73,6 +73,17 @@ final class StubURLProtocol: URLProtocol {
     /// Requests whose answer the stub handed to the client in full.
     private static var finished: [StubRequest] = []
     private static var installed = false
+    /// The shops `StubSDK.shopId()` gave in the running test, and the ones it gave in the tests before.
+    /// An SDK an earlier test left may still send for an earlier shop: its requests get the default answer,
+    /// never the running test's handler — a reply or a hold meant for the running test is not theirs.
+    private static var currentShops: Set<String> = []
+    private static var staleShops: Set<String> = []
+
+    /// A shop of the running test.
+    static func note(shop: String) {
+        lock.lock(); defer { lock.unlock() }
+        currentShops.insert(shop)
+    }
 
     private static var currentHandler: (StubRequest) -> StubReply? = defaultHandler
 
@@ -113,6 +124,9 @@ final class StubURLProtocol: URLProtocol {
         lock.lock()
         recorded.removeAll()
         finished.removeAll()
+        // A new test: the shops of the tests before are stale.
+        staleShops.formUnion(currentShops)
+        currentShops.removeAll()
         lock.unlock()
         handler = defaultHandler
         guard !installed else { return }
@@ -168,9 +182,10 @@ final class StubURLProtocol: URLProtocol {
         let seen = Self.describe(sent)
         Self.lock.lock()
         Self.recorded.append(seen)
+        let stale = (seen.query["shop_id"] ?? seen.body["shop_id"] as? String).map { Self.staleShops.contains($0) } ?? false
         Self.lock.unlock()
 
-        let handler = Self.handler
+        let handler = stale ? Self.defaultHandler : Self.handler
         DispatchQueue.global().async { [weak self] in
             let reply = handler(seen)
             guard let self = self, let client = self.client else { return }
@@ -304,7 +319,11 @@ final class InMemoryKeychainInitStore: KeychainInitStore {
 /// A real SDK over the stub server, with in-memory identity and keychain.
 enum StubSDK {
 
-    static func shopId() -> String { "stub-\(UUID().uuidString.prefix(8))" }
+    static func shopId() -> String {
+        let shop = "stub-\(UUID().uuidString.prefix(8))"
+        StubURLProtocol.note(shop: shop)
+        return shop
+    }
 
     static func make(
         shopId: String = StubSDK.shopId(),
