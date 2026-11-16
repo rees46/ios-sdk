@@ -160,6 +160,8 @@ final class DeleteCredentialsTests: XCTestCase {
         // Both instances were made and released: everything they logged is with the handler now.
         SdkLogger.awaitDelivery()
         XCTAssertEqual(logs.current.filter { $0.context["reason"] == "device_id_kept" }.count, 1)
+        // `invalid_config` with a reason of the contract's table.
+        XCTAssertTrue(LogContract.reasons(of: "invalid_config").contains("device_id_kept"))
     }
 
     func test_the_stored_did_wins_over_the_did_a_caller_passed_on_both_cores() {

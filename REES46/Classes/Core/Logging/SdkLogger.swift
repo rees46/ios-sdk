@@ -42,6 +42,15 @@ enum LogCode {
     static let popupNotShown = "popup_not_shown"
     static let coreFlagMismatch = "core_flag_mismatch"
     static let notImplemented = "not_implemented"
+
+    /// Every code above: each is a code of the table of `sdk/core/logging.md`.
+    static let all: [String] = [
+        request, requestFailed, requestBuildFailed, requestCancelled, invalidArgument, invalidConfig,
+        decodingFailed, callbackFailed, initSucceeded, initSavedAnswer, initRetry, initFailed, initRefused,
+        deviceIdReset, storageFailed, queueDropped, pushReceived, pushDropped, pushFailed, pushTokenReceived,
+        pushPermission, pushPermissionFailed, pushTokenSent, pushTokenSkipped, pushTokenFailed,
+        advertisingIdSent, advertisingIdFailed, popupNotShown, coreFlagMismatch, notImplemented,
+    ]
 }
 
 /// The logger of one SDK instance. Messages below `level` are dropped before their text is built.
@@ -264,7 +273,7 @@ extension SdkLogger {
 
     /// The code of an area: a message of old code that has no event of its own goes under the code of
     /// the part of the SDK it comes from.
-    enum Area: String {
+    enum Area: String, CaseIterable {
         case sdkLog = "sdk_log"
         case ui
         case stories
