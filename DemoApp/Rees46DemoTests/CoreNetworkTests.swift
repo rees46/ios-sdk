@@ -43,8 +43,24 @@ final class CoreNetworkTests: XCTestCase {
         StubURLProtocol.handler = { $0.path == path ? reply : StubReply() }
     }
 
+    /// The requests of this test's client: `shop-1`, or none. An SDK an earlier test left may still send
+    /// to the stub server, with a shop of its own.
     private func requests(_ path: String) -> [StubRequest] {
-        StubURLProtocol.requests(to: path)
+        StubURLProtocol.requests(to: path).filter {
+            let shop = $0.query["shop_id"] ?? $0.body["shop_id"] as? String
+            return shop == nil || shop == fields.shopId
+        }
+    }
+
+    /// Holds every request to `path` until the test ends: what ends it is the client, never an answer.
+    private func holdForever(_ path: String) -> DispatchSemaphore {
+        let gate = DispatchSemaphore(value: 0)
+        StubURLProtocol.handler = { request in
+            if request.path == path { _ = gate.wait(timeout: .now() + 30) }
+            return StubReply()
+        }
+        addTeardownBlock { for _ in 0..<8 { gate.signal() } }
+        return gate
     }
 
     // MARK: - What an answer means
@@ -84,12 +100,12 @@ final class CoreNetworkTests: XCTestCase {
 
     func test_no_answer_within_the_timeout_is_timeout() async {
         let (client, _) = client()
+        // The answer would come after the request's own timeout: the request times out first.
         reply("/slow", StubReply(delay: 2))
-        let started = Date()
         let response = await client.send(.init(method: .get, path: "slow", timeout: 0.3))
         XCTAssertEqual(response.result.failure, .timeout)
         XCTAssertNil(response.status)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
+        XCTAssertEqual(requests("/slow").first?.timeout, 0.3, "the request carried its own timeout")
     }
 
     func test_a_body_cut_midway_is_never_a_success() async {
@@ -105,11 +121,10 @@ final class CoreNetworkTests: XCTestCase {
     }
 
     func test_without_network_a_request_fails_at_once_and_is_not_sent() async {
+        // Offline for good: a request that waited for the network would never end.
         let (client, _) = client(online: false)
-        let started = Date()
         let response = await client.send(.init(method: .get, path: "products/get"))
         XCTAssertEqual(response.result.failure, .network)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 0.5)
         XCTAssertTrue(requests("/products/get").isEmpty)
     }
 
@@ -146,7 +161,11 @@ final class CoreNetworkTests: XCTestCase {
         let connectivity = FakeConnectivity(online: true)
         let logger = SdkLogger(shopId: "core-network", level: .none)
 
-        let refused = NetworkClient(baseURL: "http://127.0.0.1:\(silent.port + 1)/", connectivity: connectivity, logger: logger) { self.fields }
+        // A port that had a listener a moment ago and has none now: a connection to it is refused.
+        let gone = try SilentServer()
+        let closedPort = gone.port
+        gone.close()
+        let refused = NetworkClient(baseURL: "http://127.0.0.1:\(closedPort)/", connectivity: connectivity, logger: logger) { self.fields }
         let refusedResponse = await refused.send(.init(method: .get, path: "x", timeout: 2))
         XCTAssertEqual(refusedResponse.result.failure, .network, "a refused connection never reached the server")
 
@@ -161,16 +180,15 @@ final class CoreNetworkTests: XCTestCase {
 
     func test_release_cancels_a_request_in_flight_and_the_ones_after_it() async {
         let (client, _) = client()
-        reply("/slow", StubReply(delay: 3))
+        // The server never answers: only release() can end the request.
+        _ = holdForever("/slow")
         let inFlight = _Concurrency.Task { await client.send(.init(method: .get, path: "slow")) }
         let sent = await waitUntil { !self.requests("/slow").isEmpty }
         XCTAssertTrue(sent)
 
-        let started = Date()
         await client.release()
         let response = await inFlight.value
         XCTAssertEqual(response.result.failure, .cancelled)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
 
         let later = await client.send(.init(method: .get, path: "later"))
         XCTAssertEqual(later.result.failure, .cancelled)
@@ -214,15 +232,14 @@ final class CoreNetworkTests: XCTestCase {
 
     func test_cancelling_the_callers_task_cancels_the_request_in_flight_and_the_waiting_one() async {
         let (client, connectivity) = client()
-        reply("/slow", StubReply(delay: 3))
+        // The server never answers: only the cancellation can end the request.
+        _ = holdForever("/slow")
         let inFlight = _Concurrency.Task { await client.send(.init(method: .get, path: "slow")) }
         let sent = await waitUntil { !self.requests("/slow").isEmpty }
         XCTAssertTrue(sent)
-        let started = Date()
         inFlight.cancel()
         let response = await inFlight.value
         XCTAssertEqual(response.result.failure, .cancelled)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
 
         connectivity.isOnline = false
         let waiting = _Concurrency.Task { await client.send(.init(method: .get, path: "init", waitsForNetwork: true)) }
@@ -241,30 +258,38 @@ final class CoreNetworkTests: XCTestCase {
     func test_at_cold_start_a_waiting_init_that_finds_no_network_waits_for_the_first_path() async {
         // The monitor has no path yet and counts that as online; the first try finds no network.
         let connectivity = FakeConnectivity(online: true, hasPath: false)
+        // The first path comes when the test says so, not within a time of the runner's.
+        let firstPathWait = NetworkClient.firstPathWait
+        NetworkClient.firstPathWait = 60
+        defer { NetworkClient.firstPathWait = firstPathWait }
+        // A shop of its own: an SDK an earlier test left may still send /init to the stub server.
+        let shop = "cold-\(UUID().uuidString.prefix(8))"
+        let fields = CommonFields(shopId: shop, deviceId: "did-1", sessionId: "sid-1", stream: "ios", segment: "A")
+        func inits() -> [StubRequest] { StubURLProtocol.requests(to: "/init", shop: shop) }
         let client = NetworkClient(
             baseURL: "https://stub.test/",
             connectivity: connectivity,
             logger: SdkLogger(shopId: "core-network", level: .none)
-        ) { self.fields }
+        ) { fields }
         StubURLProtocol.handler = { _ in
             connectivity.hasPath ? StubReply(json: #"{"did":"d"}"#) : StubReply.noAnswer
         }
         let waiting = _Concurrency.Task { await client.send(.init(method: .get, path: "init", waitsForNetwork: true)) }
-        let first = await waitUntil { self.requests("/init").count == 1 }
+        let first = await waitUntil { inits().count == 1 }
         XCTAssertTrue(first)
         try? await _Concurrency.Task.sleep(nanoseconds: 300_000_000)
-        XCTAssertEqual(requests("/init").count, 1, "it waits for the path, it does not retry in a loop")
+        XCTAssertEqual(inits().count, 1, "it waits for the path, it does not retry in a loop")
 
         connectivity.hasPath = true
         let response = await waiting.value
         XCTAssertEqual(response.status, 200)
-        XCTAssertEqual(requests("/init").count, 2)
+        XCTAssertEqual(inits().count, 2)
 
         // Once the monitor knows the path, a request lost for want of a network is its failure.
         StubURLProtocol.handler = { _ in StubReply.noAnswer }
         let lost = await client.send(.init(method: .get, path: "init", waitsForNetwork: true))
         XCTAssertEqual(lost.result.failure, .network)
-        XCTAssertEqual(requests("/init").count, 3)
+        XCTAssertEqual(inits().count, 3)
     }
 
     // MARK: - Common fields, timeouts, Retry-After
@@ -579,7 +604,8 @@ final class CoreNetworkTests: XCTestCase {
 
     func test_releasing_a_coreV2_instance_cancels_its_requests() {
         let sdk = coreV2SDK()
-        StubURLProtocol.handler = { $0.path == "/products/get" ? StubReply(delay: 3) : StubReply() }
+        // The server never answers: only release() can end the request.
+        _ = holdForever("/products/get")
 
         let done = expectation(description: "done")
         var outcome: Result<ProductInfo, SdkError>?
@@ -588,10 +614,8 @@ final class CoreNetworkTests: XCTestCase {
             done.fulfill()
         }
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/products/get", shop: self.shopId).isEmpty })
-        let started = Date()
         sdk.release()
-        wait(for: [done], timeout: 2)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 1.5)
+        wait(for: [done], timeout: 10)
         guard case .failure(.invalidResponse)? = outcome else { return XCTFail("a cancelled request is .invalidResponse for the old methods") }
     }
 

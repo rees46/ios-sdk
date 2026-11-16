@@ -327,9 +327,13 @@ final class DeleteCredentialsTests: XCTestCase {
         UserDefaults.standard.set("standard-seance", forKey: StoragePartition.seanceKey)
         UserDefaults.standard.set(Date(), forKey: StoragePartition.seanceLastActKey)
         UserDefaults.standard.set(["boots"], forKey: RecentSearches.key(shopKey: shop))
+        // The /init after the wipe answers once the test looked at the wipe.
+        let wiped = DispatchSemaphore(value: 0)
+        defer { wiped.signal() }
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply() }
-            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "next-did")"}"#, delay: request.query["did"] == nil ? 1 : 0)
+            if request.query["did"] == nil { _ = wiped.wait(timeout: .now() + 20) }
+            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "next-did")"}"#)
         }
         CoreFlag.reset(to: false)
         let ready = expectation(description: "init")
@@ -350,6 +354,7 @@ final class DeleteCredentialsTests: XCTestCase {
         XCTAssertEqual(old.string(forKey: "app.own.key"), "the app's", "only the customer's keys go")
         XCTAssertEqual(StoragePartition.deviceId(for: shop, storageKey: key), "", "a pending shop's push finds no deleted did")
         XCTAssertNil(UserDefaults.standard.object(forKey: RecentSearches.key(shopKey: shop)), "the customer's recent searches go")
+        wiped.signal()
         XCTAssertTrue(eventually { sdk.deviceId == "next-did" })
         if let folder = sdk.storage.directory {
             try? FileManager.default.removeItem(at: folder)
@@ -406,11 +411,15 @@ final class DeleteCredentialsTests: XCTestCase {
         let ready = expectation(description: "init")
         let sdk = StubSDK.make(shopId: shop, keychain: keychain) { _ in ready.fulfill() }
         wait(for: [ready], timeout: 5)
+        // The answer to sendIDFARequest comes once the customer was deleted.
+        let deleted = DispatchSemaphore(value: 0)
+        defer { deleted.signal() }
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply() }
             // sendIDFARequest goes with the did it has; the /init after the wipe has none.
             if request.query["did"] != nil {
-                return StubReply(json: #"{"did":"deleted-did"}"#, delay: 1)
+                _ = deleted.wait(timeout: .now() + 20)
+                return StubReply(json: #"{"did":"deleted-did"}"#)
             }
             return StubReply(json: #"{"did":"next-did"}"#)
         }
@@ -419,6 +428,7 @@ final class DeleteCredentialsTests: XCTestCase {
         XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/init", shop: shop).contains { $0.query["ios_advertising_id"] != nil } })
 
         sdk.deleteUserCredentials()
+        deleted.signal()
         // The answer is saved, or not, before the call hears it.
         wait(for: [answered], timeout: 5)
 

@@ -59,16 +59,16 @@ final class RequestQueueTests: XCTestCase {
         held.tracking.custom(event: "before-init")
 
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
-        Thread.sleep(forTimeInterval: 0.3)
+        // It waits in the shop's queue for /init: the queue is closed and holds it.
+        XCTAssertTrue(eventually { held.sessionQueue.operationCount >= 1 })
+        XCTAssertTrue((held.sessionQueue as? ShopSessionQueue)?.isClosed ?? false)
         XCTAssertTrue(StubURLProtocol.requests(to: "/push/custom", shop: self.heldShop).isEmpty, "the event left before /init answered")
 
-        let answered = Date()
         initAnswer.signal()
 
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/push/custom", shop: self.heldShop).isEmpty })
         guard let event = StubURLProtocol.requests(to: "/push/custom", shop: self.heldShop).first else { return }
         XCTAssertEqual(event.body["did"] as? String, "fresh-did")
-        XCTAssertLessThan(event.time.timeIntervalSince(answered), 2, "the event waited a fixed pause instead of init")
     }
 
     func test_a_request_sent_before_init_goes_out_with_the_device_id_from_init() {
@@ -76,7 +76,7 @@ final class RequestQueueTests: XCTestCase {
         held.recommend(blockId: "block-1") { _ in }
 
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
-        Thread.sleep(forTimeInterval: 0.3)
+        XCTAssertTrue(eventually { held.sessionQueue.operationCount >= 1 }, "it waits for /init")
         initAnswer.signal()
 
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-1", shop: self.heldShop).isEmpty })
@@ -90,7 +90,7 @@ final class RequestQueueTests: XCTestCase {
         held.recommend(blockId: "block-1") { _ in }
 
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
-        Thread.sleep(forTimeInterval: 0.3)
+        XCTAssertTrue(eventually { held.sessionQueue.operationCount >= 1 }, "it waits for /init")
         initAnswer.signal()
 
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-1", shop: self.heldShop).isEmpty })
@@ -103,13 +103,12 @@ final class RequestQueueTests: XCTestCase {
         let held = StubSDK.make(shopId: heldShop)
         held.tracking.custom(event: "before-init")
         XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/init", shop: self.heldShop).isEmpty })
-        Thread.sleep(forTimeInterval: 0.3)
+        XCTAssertTrue(eventually { held.sessionQueue.operationCount >= 1 })
 
-        let asked = Date()
         other.recommend(blockId: "block-2") { _ in }
 
-        XCTAssertTrue(eventually(timeout: 8) { !StubURLProtocol.requests(to: "/recommend/block-2", shop: other.shopId).isEmpty })
-        guard let request = StubURLProtocol.requests(to: "/recommend/block-2", shop: other.shopId).first else { return }
-        XCTAssertLessThan(request.time.timeIntervalSince(asked), 2, "another shop's wait for its device id held this one")
+        // It goes while the held shop's /init is still unanswered: that wait holds only its own shop.
+        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/recommend/block-2", shop: other.shopId).isEmpty })
+        XCTAssertEqual(StubURLProtocol.answered(to: "/init", shop: heldShop), 0, "another shop's wait for its device id held this one")
     }
 }

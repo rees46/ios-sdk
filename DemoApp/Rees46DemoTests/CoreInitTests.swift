@@ -273,7 +273,12 @@ final class CoreInitTests: XCTestCase {
         date.locale = Locale(identifier: "en_US_POSIX")
         date.timeZone = TimeZone(identifier: "GMT")
         date.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
-        let inTwoMinutes = date.string(from: Date().addingTimeInterval(120))
+        // The HTTP date counts from the client's clock, which the test holds still.
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let clientNow = NetworkClient.now
+        NetworkClient.now = { now }
+        defer { NetworkClient.now = clientNow }
+        let inTwoMinutes = date.string(from: now.addingTimeInterval(120))
         let replies = Locked<[StubReply]>([
             StubReply(500, headers: ["Retry-After": "7"]),
             StubReply(503, headers: ["Retry-After": "600"]),
@@ -303,7 +308,7 @@ final class CoreInitTests: XCTestCase {
         // 500 and 408 ignore it; 600 is held to five minutes; inf, nan, negative and overflowing values
         // are none; a date counts.
         XCTAssertEqual(Array(pauses.prefix(6)), [1, 300, 4, 8, 16, 32])
-        XCTAssertEqual(pauses[6], 120, accuracy: 3)
+        XCTAssertEqual(pauses[6], 120)
         XCTAssertEqual(pauses[7], 128)
     }
 
@@ -338,7 +343,14 @@ final class CoreInitTests: XCTestCase {
     func test_a_shop_refused_on_an_earlier_launch_stays_refused_until_init_passes() {
         let shop = newShop()
         storage(shop).refused = true
-        answerInit(StubReply(json: #"{"did":"d-1"}"#, delay: 1))
+        // The launch's /init answers once the test let it: until then the shop is refused.
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
+        StubURLProtocol.handler = { request in
+            guard request.path == "/init" else { return StubReply() }
+            _ = gate.wait(timeout: .now() + 20)
+            return StubReply(json: #"{"did":"d-1"}"#)
+        }
         let ready = expectation(description: "init")
         var initError: SdkError?
         let sdk = make(shop) { initError = $0; ready.fulfill() }
@@ -349,6 +361,7 @@ final class CoreInitTests: XCTestCase {
         XCTAssertTrue(StubURLProtocol.requests(to: "/products/get", shop: shop).isEmpty, "nothing goes out for a refused shop")
         XCTAssertTrue(eventually { self.inits(shop).count == 1 }, "/init goes on every launch")
 
+        gate.signal()
         wait(for: [ready], timeout: 5)
         XCTAssertNil(initError)
         XCTAssertEqual(sdk.state, .ready)
@@ -711,8 +724,12 @@ final class CoreInitTests: XCTestCase {
         second.release()
 
         // The next launch: the refusal is the refusing shop's only.
+        let gate = DispatchSemaphore(value: 0)
+        defer { for _ in 0..<2 { gate.signal() } }
         StubURLProtocol.handler = { request in
-            request.path == "/init" ? StubReply(json: #"{"did":"d"}"#, delay: 1) : StubReply()
+            guard request.path == "/init" else { return StubReply() }
+            _ = gate.wait(timeout: .now() + 20)
+            return StubReply(json: #"{"did":"d"}"#)
         }
         XCTAssertEqual(launch(serving).state, .initializing)
         XCTAssertEqual(launch(refusing).state, .refused)
@@ -800,15 +817,19 @@ final class CoreInitTests: XCTestCase {
         let identity = InMemoryUserIdentityRepository()
         identity.deviceId = "old-did"
         let keychain = InMemoryKeychainInitStore(Data(#"{"did":"old-did"}"#.utf8))
+        let gate = DispatchSemaphore(value: 0)
+        defer { gate.signal() }
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply() }
-            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "new-did")"}"#, delay: 0.5)
+            _ = gate.wait(timeout: .now() + 20)
+            return StubReply(json: #"{"did":"\#(request.query["did"] ?? "new-did")"}"#)
         }
         let sdk = make(shop, identity: identity, keychain: keychain, needReInitialization: true)
 
         XCTAssertEqual(sdk.state, .initializing)
         XCTAssertEqual(sdk.deviceId, "")
         XCTAssertNil(keychain.data, "the keychain backup is forgotten too")
+        gate.signal()
         guard case .success? = getProduct(sdk) else { return XCTFail("the call waited and went out") }
         XCTAssertEqual(StubURLProtocol.requests(to: "/products/get", shop: shop).first?.query["did"], "new-did")
         XCTAssertNil(inits(shop).first?.query["did"])

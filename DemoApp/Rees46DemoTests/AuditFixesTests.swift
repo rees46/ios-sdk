@@ -92,7 +92,12 @@ final class AuditFixesTests: XCTestCase {
             ready.fulfill()
         }
         wait(for: [ready], timeout: 5)
-        Thread.sleep(forTimeInterval: 0.5)
+        // A profile the init completion sends is queued before the completion runs: once what the
+        // queue holds is done and a later request came back, it would have gone.
+        sdk.sessionQueue.waitUntilAllOperationsAreFinished()
+        let later = expectation(description: "a later request")
+        sdk.getProductInfo(id: "1") { _ in later.fulfill() }
+        wait(for: [later], timeout: 10)
 
         XCTAssertTrue(StubURLProtocol.requests(to: "/profile/set", shop: shopId).isEmpty)
         withExtendedLifetime(sdk) {}
@@ -131,11 +136,12 @@ final class AuditFixesTests: XCTestCase {
     func test_a_token_given_twice_at_once_goes_out_once() {
         let sdk = initializedSDK()
         let token = Data([0x01, 0x02])
-        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
-        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
-
-        XCTAssertTrue(eventually { !StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).isEmpty })
-        Thread.sleep(forTimeInterval: 0.5)
+        // Each call says when it is over: a request it sent reached the server before that.
+        let both = expectation(description: "both calls")
+        both.expectedFulfillmentCount = 2
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token) { _ in both.fulfill() }
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token) { _ in both.fulfill() }
+        wait(for: [both], timeout: 10)
         XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).count, 1)
     }
 
@@ -143,9 +149,12 @@ final class AuditFixesTests: XCTestCase {
         let sdk = initializedSDK()
         StubURLProtocol.handler = { request in request.path == "/mobile_push_tokens" ? StubReply(500) : StubReply() }
         let token = Data([0x03, 0x04])
-        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)
-        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).count == 1 })
-        Thread.sleep(forTimeInterval: 0.3)
+        // The failed upload has given the week back when its completion runs.
+        let failed = expectation(description: "the failed upload")
+        NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token) { _ in failed.fulfill() }
+        wait(for: [failed], timeout: 10)
+        XCTAssertEqual(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: sdk.shopId).count, 1)
+        XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: sdk.shopId)))
 
         StubURLProtocol.handler = StubURLProtocol.defaultHandler
         NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: token)

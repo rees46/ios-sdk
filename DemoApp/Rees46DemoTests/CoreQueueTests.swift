@@ -346,9 +346,13 @@ final class CoreQueueTests: XCTestCase {
         lifecycle.send(.didEnterBackground)
         sdk.tracking.productView(itemId: "first")
         XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && sdk.eventQueue?.inFlightCount == 0 })
-        expectNoRequest(to: "/init", shop: shop) {
-            sdk.flush { _ in }
-        }
+        // The flush ends without waiting for the check, which waits for the foreground: no read timeout
+        // runs out on the test's scheduler.
+        let flushed = expectation(description: "flushed")
+        sdk.flush { _ in flushed.fulfill() }
+        wait(for: [flushed], timeout: 5)
+        XCTAssertFalse(scheduler.pendingDelays.contains(10), "it did not wait for the instance")
+        sdk.eventQueue?.settle()
         XCTAssertEqual(requests("/init", shop).count, inits, "no /init from the background")
         XCTAssertEqual(sdk.eventQueue?.waiting.count, 1, "the event waits for the check")
 
@@ -1371,11 +1375,15 @@ final class CoreQueueTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         let holds = Locked(true)
+        let letGo = Locked(false)
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
             if request.path == "/push" {
                 var first = false
                 holds.mutate { first = $0; $0 = false }
-                if first { _ = held.wait(timeout: .now() + 10) }
+                if first {
+                    _ = held.wait(timeout: .now() + 10)
+                    letGo.current = true
+                }
             }
             return handler(request)
         }
@@ -1387,9 +1395,9 @@ final class CoreQueueTests: XCTestCase {
         network.isOnline = true
 
         XCTAssertTrue(Thread.isMainThread)
-        let started = Date()
         sdk.deleteUserCredentials()
-        XCTAssertLessThan(Date().timeIntervalSince(started), 0.5, "not held by the queue")
+        // It returned while the event on its way was still held at the server: it did not wait for it.
+        XCTAssertFalse(letGo.current, "not held by the queue")
         sdk.tracking.productView(itemId: "new")
         held.signal()
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)).contains("new") })

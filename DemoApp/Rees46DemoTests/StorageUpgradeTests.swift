@@ -315,9 +315,13 @@ final class StorageUpgradeTests: XCTestCase {
             identity.advertisingId = "idfa-kept"
             let group = sdk.segment
             let session = sdk.userSeance
-            // The next /init answers a moment later: the wipe is seen before the new did comes.
+            // The next /init answers once the test looked at the wipe.
+            let wiped = DispatchSemaphore(value: 0)
+            defer { wiped.signal() }
             StubURLProtocol.handler = { request in
-                request.path == "/init" ? StubReply(json: #"{"did":"next-did"}"#, delay: 1) : StubReply()
+                guard request.path == "/init" else { return StubReply() }
+                _ = wiped.wait(timeout: .now() + 20)
+                return StubReply(json: #"{"did":"next-did"}"#)
             }
 
             sdk.deleteUserCredentials()
@@ -353,6 +357,7 @@ final class StorageUpgradeTests: XCTestCase {
             XCTAssertTrue(SdkLogger.registeredShopIds.contains(shop), "the instance goes on")
 
             // It asks /init again, without a did, and keeps the new one.
+            wiped.signal()
             XCTAssertTrue(eventually { identity.deviceId == "next-did" && sdk.deviceId == "next-did" })
             XCTAssertNil(StubURLProtocol.requests(to: "/init", shop: shop).last?.query["did"])
             StubURLProtocol.handler = Self.echoingInit
@@ -363,11 +368,20 @@ final class StorageUpgradeTests: XCTestCase {
         let shop = freshShop()
         let lock = NSLock()
         var calls = 0
+        // The first /init answers once the customer was deleted, with the deleted did; the next once a
+        // request was made meanwhile.
+        let deleted = DispatchSemaphore(value: 0)
+        let asked = DispatchSemaphore(value: 0)
+        defer { deleted.signal(); asked.signal() }
         StubURLProtocol.handler = { request in
             guard request.path == "/init" else { return StubReply() }
             lock.lock(); calls += 1; let call = calls; lock.unlock()
-            // The first /init answers late, with the did of the customer about to be deleted.
-            return call == 1 ? StubReply(json: #"{"did":"deleted-did"}"#, delay: 1.5) : StubReply(json: #"{"did":"next-did"}"#, delay: 0.3)
+            if call == 1 {
+                _ = deleted.wait(timeout: .now() + 20)
+                return StubReply(json: #"{"did":"deleted-did"}"#)
+            }
+            _ = asked.wait(timeout: .now() + 20)
+            return StubReply(json: #"{"did":"next-did"}"#)
         }
         CoreFlag.reset(to: false)
         let first = expectation(description: "the first init")
@@ -380,6 +394,8 @@ final class StorageUpgradeTests: XCTestCase {
         sdk.deleteUserCredentials()
         let request = expectation(description: "a request made meanwhile")
         sdk.getProductInfo(id: "item-1") { _ in request.fulfill() }
+        deleted.signal()
+        asked.signal()
         wait(for: [request, first], timeout: 5)
 
         XCTAssertEqual(StubURLProtocol.requests(to: "/products/get", shop: shop).first?.query["did"], "next-did",
@@ -402,7 +418,7 @@ final class StorageUpgradeTests: XCTestCase {
         func tokens() -> [StubRequest] { StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shop) }
         XCTAssertTrue(eventually { !tokens().isEmpty })
         StubURLProtocol.handler = { request in
-            request.path == "/init" ? StubReply(json: #"{"did":"next-did"}"#, delay: 0.3) : StubReply()
+            request.path == "/init" ? StubReply(json: #"{"did":"next-did"}"#) : StubReply()
         }
 
         sdk.deleteUserCredentials()

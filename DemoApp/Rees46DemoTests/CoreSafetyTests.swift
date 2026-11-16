@@ -163,9 +163,13 @@ final class CoreSafetyTests: XCTestCase {
     }
 
     func test_the_network_monitor_answers_without_blocking() {
-        let started = Date()
-        _ = NetworkStatus.nManager.connectionStatus
-        XCTAssertLessThan(Date().timeIntervalSince(started), 3)
+        // Read off the main thread: a read that blocked would never fulfil it.
+        let answered = expectation(description: "answered")
+        DispatchQueue.global().async {
+            _ = NetworkStatus.nManager.connectionStatus
+            answered.fulfill()
+        }
+        wait(for: [answered], timeout: 10)
     }
 
     func test_a_cellular_path_without_a_radio_is_online_over_cellular() {
@@ -178,13 +182,24 @@ final class CoreSafetyTests: XCTestCase {
     }
 
     func test_before_the_first_path_the_status_is_online_and_reading_does_not_wait() {
-        let status = NetworkStatus(source: FakePathSource())
-        let started = Date()
+        let source = FakePathSource()
+        let status = NetworkStatus(source: source)
+        // The first path, offline, comes only once the read returned — or, should the read wait for a
+        // path, after a while: then the read would say offline.
+        let read = DispatchSemaphore(value: 0)
+        let delivered = expectation(description: "the first path")
+        DispatchQueue.global().async {
+            _ = read.wait(timeout: .now() + 5)
+            source.deliver(.offline)
+            delivered.fulfill()
+        }
 
-        XCTAssertEqual(status.connectionStatus, .Online, "unknown counts as online")
+        XCTAssertEqual(status.connectionStatus, .Online, "unknown counts as online, at once")
         XCTAssertNil(status.connectionType)
         XCTAssertFalse(status.hasPath)
-        XCTAssertLessThan(Date().timeIntervalSince(started), 0.1)
+        read.signal()
+        wait(for: [delivered], timeout: 10)
+        XCTAssertEqual(status.connectionStatus, .Offline)
     }
 
     func test_a_path_that_is_not_satisfied_is_offline_and_a_late_one_brings_it_back() {

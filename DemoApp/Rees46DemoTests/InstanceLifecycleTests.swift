@@ -395,9 +395,11 @@ final class InstanceLifecycleTests: XCTestCase {
         XCTAssertTrue(eventually { heard == [.initializing, .ready] })
 
         // deleteUserCredentials: no did until the new /init answers.
-        holdInit(reply: StubReply(json: #"{"did":"next-did"}"#, delay: 0.5))
+        let next = DispatchSemaphore(value: 0)
+        holdInit(until: next, reply: StubReply(json: #"{"did":"next-did"}"#))
         sdk.deleteUserCredentials()
         XCTAssertEqual(sdk.state, .initializing)
+        next.signal()
         XCTAssertTrue(eventually { sdk.state == .ready })
         XCTAssertTrue(eventually { heard == [.initializing, .ready, .initializing, .ready] })
         XCTAssertEqual(sdk.sessionId, sdk.userSeance)

@@ -53,8 +53,20 @@ actor NetworkClient {
     /// `/init`: the server itself gives up after five seconds.
     static let initTimeout: TimeInterval = 5
     /// How long a request that waits for the network waits for the monitor's first path after it
-    /// failed for want of a network at cold start.
-    static let firstPathWait: TimeInterval = 5
+    /// failed for want of a network at cold start. A variable for the tests, which decide when the path
+    /// comes.
+    static var firstPathWait: TimeInterval {
+        get { overrideLock.lock(); defer { overrideLock.unlock() }; return firstPathWaitValue }
+        set { overrideLock.lock(); firstPathWaitValue = newValue; overrideLock.unlock() }
+    }
+    private static var firstPathWaitValue: TimeInterval = 5
+
+    /// The time an HTTP date of `Retry-After` counts from: the system's, the test's own.
+    static var now: () -> Date {
+        get { overrideLock.lock(); defer { overrideLock.unlock() }; return nowValue }
+        set { overrideLock.lock(); nowValue = newValue; overrideLock.unlock() }
+    }
+    private static var nowValue: () -> Date = { Date() }
 
     /// Whether a request that got no answer had reached the server: its headers had started to go
     /// out. Before that a failure is `network` (no network, DNS, a refused connection, a connect that
@@ -237,7 +249,7 @@ actor NetworkClient {
         return Response(
             status: http.statusCode,
             body: data,
-            retryAfter: Self.retryAfter(http.value(forHTTPHeaderField: "Retry-After"), status: http.statusCode),
+            retryAfter: Self.retryAfter(http.value(forHTTPHeaderField: "Retry-After"), status: http.statusCode, now: Self.now()),
             result: result
         )
     }
