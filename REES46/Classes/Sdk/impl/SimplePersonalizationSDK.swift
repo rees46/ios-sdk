@@ -2458,7 +2458,10 @@ extension SimplePersonalizationSDK: EventQueueHost {
         if EventQueue.sessionlessPaths.contains(path) {
             return (userIdentity.deviceId ?? "").isEmpty ? .wait : .open
         }
-        guard session.isAlive else {
+        // A window without a `sid` — the answer that opened it brought none, or it was another device
+        // id's — is no session for a tracking event: the API refuses an event with a did and no sid
+        // (decision 0001), and the event would be dropped. It waits for an `/init` that brings one.
+        guard session.isAlive, !session.sid.isEmpty else {
             // An event after the window ran out goes with the next sid (`sdk/core/session.md`). In the
             // background no session starts: the foreground renews it, and the tracking waits for that.
             guard environment.lifecycle.isInForeground else { return .held }
