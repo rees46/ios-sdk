@@ -197,11 +197,14 @@ final class CoreEdgeTests: CoreScenarioTestCase {
         let shop = newShop()
         let sdk = makeV2(shop, identity: InMemoryUserIdentityRepository(), settled: false)
         sdk.userEmail = "a@b.c"
-        XCTAssertTrue(eventually { sdk.state == .ready })
+        XCTAssertTrue(eventually { sdk.state == .ready && sdk.settledInitCount >= 1 })
         XCTAssertTrue(eventually { self.requests("/profile/set", shop).count == 1 })
+        let settles = sdk.settledInitCount
         clock.advance(by: 2 * 60 * 60 + 1)
         lifecycle.send(.willEnterForeground)
-        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 })
+        // The SDK took the renewal's answer, not only the stub gave it: an /init still on its way
+        // answers the check itself, and no other goes.
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 && sdk.settledInitCount > settles })
         XCTAssertEqual(sdk.initMachine?.askShop(), .asked)
         XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 3 })
         _ = getProduct(sdk)

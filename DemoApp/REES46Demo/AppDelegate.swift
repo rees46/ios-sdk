@@ -29,7 +29,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         static let actionsKey: String = "ACTIONS_IS_RUNNING"
         static let actionsPositiveValue: String = "true"
         static let actionsNegativeValue: String = "false"
-        static let cleanProcessKey: String = "CLEAN_PROCESS"
+    }
+
+    /// The app hosts the SDK's tests: XCTest is loaded into its process.
+    static var isRunningTests: Bool {
+        NSClassFromString("XCTestCase") != nil
+            || ProcessInfo.processInfo.environment.keys.contains { $0.hasPrefix("XCTest") }
     }
     
     var window: UIWindow?
@@ -43,10 +48,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
 
-        // Tests that need a process the demo has not touched: the first initialization of a process
-        // decides its core (`Rees46Config.coreV2`), so with `CLEAN_PROCESS=true` — xcodebuild's
-        // `TEST_RUNNER_CLEAN_PROCESS=true` — the demo initializes nothing and shows an empty screen.
-        if ProcessInfo.processInfo.environment[Constants.cleanProcessKey] == "true" {
+        // Under the tests the demo initializes nothing and shows an empty screen: no test reaches a
+        // server, and the first initialization of a process decides its core (`Rees46Config.coreV2`),
+        // which is the tests' to choose.
+        if Self.isRunningTests {
             window?.rootViewController = UIViewController()
             return true
         }

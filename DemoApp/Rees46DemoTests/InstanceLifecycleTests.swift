@@ -217,8 +217,8 @@ final class InstanceLifecycleTests: XCTestCase {
             }
         }
         let withPopup = StubReply(json: #"{"did":"stub-did","popup":{"id":7,"html":"<p>x</p>"}}"#)
-        // The test host's own SDK may hold the modal slot with a popup of popups v3 from its live shop:
-        // a legacy popup would wait for it to close, offered or not.
+        // A test before may leave the modal slot held by a popup of popups v3: a legacy popup would
+        // wait for it to close, offered or not.
         PopupV3Slots.shared.reset()
         let shop = newShop()
         let gate = DispatchSemaphore(value: 0)
