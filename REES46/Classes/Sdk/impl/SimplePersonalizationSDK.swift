@@ -331,6 +331,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 identity.seanceLastActTime = nil
                 storage.removeSavedInitAnswer()
                 self.keychainStore.clear()
+                // The token's week was the dropped device id's: the new one gets the token at once.
+                PushTokenWeek.forget(storage)
                 logger.info(LogCode.deviceIdReset, "the stored device id was removed to get a new one", ["reason": "re_initialization"])
             }
         } else {
@@ -1671,6 +1673,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         if needReInitialization {
             userIdentity.removeDeviceId()
+            // The token's week was the dropped device id's: the new one gets the token at once.
+            NotificationRegistrar.forgetUpload(shopId: shopId)
             logger.info(LogCode.deviceIdReset, "the stored device id was removed to get a new one", ["reason": "re_initialization"])
         }
 
