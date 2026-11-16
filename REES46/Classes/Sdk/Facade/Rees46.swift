@@ -84,7 +84,7 @@ public enum Rees46 {
     @discardableResult
     public static func initialize(
         _ config: Rees46Config,
-        completion: ((REES46.SdkError?) -> Void)? = nil
+        completion: ((LegacySdkError?) -> Void)? = nil
     ) -> PersonalizationSDK {
         withCreationLock {
             lock.lock()
@@ -125,7 +125,7 @@ public enum Rees46 {
     private static func joinExisting(
         _ existing: PersonalizationSDK,
         config: Rees46Config,
-        completion: ((REES46.SdkError?) -> Void)?
+        completion: ((LegacySdkError?) -> Void)?
     ) -> () -> Void {
         guard let instance = existing as? SimplePersonalizationSDK else {
             // Another conformer the app registered: it has no outcome to tell.
@@ -349,7 +349,7 @@ public enum Rees46 {
      `track/received` as before.
      */
     @_disfavoredOverload
-    public static func handlePush(_ payload: [AnyHashable: Any], event: REES46.PushEvent) {
+    public static func handlePush(_ payload: [AnyHashable: Any], event: LegacyPushEvent) {
         route(payload, PushRoute(event))
     }
 

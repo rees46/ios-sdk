@@ -62,13 +62,13 @@ extension Rees46 {
         /// otherwise one made from `legacy` — `network` offline, `decoding` for an answer the SDK could
         /// not take, `notInitialized`, `shopBlocked` for a refused shop, `invalidArgument` with the
         /// message of another `.custom`, `timeout` otherwise.
-        public static func error(of legacy: REES46.SdkError) -> Rees46.SdkError {
+        public static func error(of legacy: LegacySdkError) -> Rees46.SdkError {
             currentError() ?? SimplePersonalizationSDK.newCoreError(legacy)
         }
 
         /// A completion for any old method that reports the whole result to `onResult`, once, on the
         /// thread the SDK answers on.
-        public static func completion<T>(_ onResult: @escaping (Result<T, Rees46.SdkError>) -> Void) -> (Result<T, REES46.SdkError>) -> Void {
+        public static func completion<T>(_ onResult: @escaping (Result<T, Rees46.SdkError>) -> Void) -> (Result<T, LegacySdkError>) -> Void {
             { result in
                 onResult(result.mapError { error(of: $0) })
             }
@@ -76,7 +76,7 @@ extension Rees46 {
 
         /// A completion for an old method that reports only an error — `Rees46.initialize` — that hands
         /// `onError` the whole error, or `nil` for none, once, on the thread the SDK answers on.
-        public static func completion(_ onError: @escaping (Rees46.SdkError?) -> Void) -> (REES46.SdkError?) -> Void {
+        public static func completion(_ onError: @escaping (Rees46.SdkError?) -> Void) -> (LegacySdkError?) -> Void {
             { legacy in
                 onError(legacy.map { error(of: $0) })
             }
@@ -118,7 +118,7 @@ extension PersonalizationSDK {
      device id, as it always has; on `Rees46Config.coreV2` it, too, hears the answer once it went.
      */
     public func setPushToken(_ token: Rees46.PushToken, completion: @escaping (Result<Void, Rees46.SdkError>) -> Void) {
-        let finish: (Result<Void, REES46.SdkError>) -> Void = { result in
+        let finish: (Result<Void, LegacySdkError>) -> Void = { result in
             let mapped = result.mapError { Rees46.BridgeErrors.error(of: $0) }
             DispatchQueue.main.async { completion(mapped) }
         }
