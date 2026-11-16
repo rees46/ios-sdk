@@ -324,7 +324,7 @@ enum StubSDK {
         // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
         CoreFlag.reset(to: coreV2)
         InitSettles.install()
-        return SimplePersonalizationSDK(
+        let sdk = SimplePersonalizationSDK(
             shopId: shopId,
             apiDomain: "stub.test",
             logLevel: logLevel,
@@ -344,6 +344,10 @@ enum StubSDK {
             deviceStore: deviceStore ?? StubSDK.deviceStore(shopId: shopId),
             completion: completion
         )
+        // The core asked for is the one that runs: a loop over both cores never runs one twice.
+        XCTAssertEqual(sdk.usesCoreV2, coreV2, "the stub SDK runs the core it asked for")
+        XCTAssertEqual(sdk.core.kind, coreV2 ? .v2 : .legacy)
+        return sdk
     }
 
     /// A device store of its own for `shopId`'s test.

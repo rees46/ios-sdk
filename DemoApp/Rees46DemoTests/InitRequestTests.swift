@@ -16,6 +16,8 @@ final class InitRequestTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // A class of the new core that ran before left the process's core as it found it.
+        XCTAssertNotEqual(CoreFlag.current, true, "the old core's tests start on the old core")
         StubURLProtocol.install()
         shopId = StubSDK.shopId()
         // The server knows the device id it is sent, and makes a new one only for a new device.
