@@ -347,6 +347,16 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         SdkLogger.register(logger, owner: self)
         _ = core
         _ = popupsV3
+        // A lazy property is not safe to make from two threads at once: an app that tracks from several
+        // threads right after making the instance would make two and release one twice. The services
+        // the public methods go through are made here, once, before anybody can call them.
+        _ = tracking
+        _ = subscriptionService
+        _ = notificationService
+        _ = pushTokenService
+        _ = searchService
+        _ = profileData
+        _ = popupPresenter
 
         initCompletion.add(completion)
         if let machine = initMachine {
