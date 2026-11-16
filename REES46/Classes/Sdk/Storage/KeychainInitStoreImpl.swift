@@ -55,8 +55,18 @@ final class KeychainInitStoreImpl: KeychainInitStore {
         try? InitService.upsertKeychainDidToken(data, identifier: account, instanceKeychainService: service)
     }
 
+    /// Removes the backup. A keychain that does not answer — the device locked, say — keeps it: the
+    /// log says `storage_failed` at `error`, the customer's data was not removed.
     func clear() {
-        try? InitService.deleteKeychainDidToken(identifier: account, instanceKeychainService: service)
+        do {
+            try InitService.deleteKeychainDidToken(identifier: account, instanceKeychainService: service)
+        } catch {
+            SdkLogger.forShop(shopId).error(
+                LogCode.storageFailed,
+                "the keychain backup of the init answer could not be removed",
+                ["op": "remove_keychain_backup", "error": SdkLogger.errorKind(error)]
+            )
+        }
     }
 
     /// What the keychain answered for one item.

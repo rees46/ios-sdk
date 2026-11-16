@@ -13,6 +13,9 @@ public struct InitService {
 
     /// `SecItemCopyMatching`; tests put another one here to hand back an item that is not data.
     static var copyMatching: (CFDictionary, UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus = SecItemCopyMatching
+    /// `SecItemDelete`; tests put another one here to play a keychain that does not answer — a locked
+    /// device.
+    static var deleteItem: (CFDictionary) -> OSStatus = SecItemDelete
     
     static func insertKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
         let attributes = [
@@ -93,7 +96,7 @@ public struct InitService {
             kSecAttrAccount: identifier
         ] as CFDictionary
 
-        let status = SecItemDelete(query)
+        let status = deleteItem(query)
         
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)
