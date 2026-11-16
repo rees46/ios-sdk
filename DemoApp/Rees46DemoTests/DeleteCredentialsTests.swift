@@ -157,10 +157,8 @@ final class DeleteCredentialsTests: XCTestCase {
             sdk.release()
         }
         XCTAssertTrue(eventually { logs.current.contains { $0.context["reason"] == "device_id_kept" } })
-        let kept = expectation(description: "a second device_id_kept")
-        kept.isInverted = true
-        if logs.current.filter({ $0.context["reason"] == "device_id_kept" }).count > 1 { kept.fulfill() }
-        wait(for: [kept], timeout: 0.3)
+        // Both instances were made and released: everything they logged is with the handler now.
+        SdkLogger.awaitDelivery()
         XCTAssertEqual(logs.current.filter { $0.context["reason"] == "device_id_kept" }.count, 1)
     }
 

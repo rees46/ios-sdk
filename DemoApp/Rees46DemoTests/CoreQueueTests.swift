@@ -114,8 +114,16 @@ final class CoreQueueTests: XCTestCase {
         return names.filter { $0.hasSuffix(".json") }.sorted()
     }
 
+    /// What the log handler heard: every message logged before the call. The handler hears them on a
+    /// queue of its own, after what the SDK did next — a callback, a request —, so a test reads them
+    /// through this, and waits (`eventually`) for one logged after what it waited for.
+    private var heard: [Rees46.SdkLogMessage] {
+        SdkLogger.awaitDelivery()
+        return logs.current
+    }
+
     private func dropped(_ shop: String) -> [Rees46.SdkLogMessage] {
-        logs.current.filter { $0.shopId == shop && $0.code == "queue_dropped" }
+        heard.filter { $0.shopId == shop && $0.code == "queue_dropped" }
     }
 
     private func itemIds(_ requests: [StubRequest]) -> [String] {
@@ -270,7 +278,7 @@ final class CoreQueueTests: XCTestCase {
         // Retry-After of a 503 and a 429, held to five minutes; a 500's is not one.
         XCTAssertEqual(Array(pauses.prefix(3)), [7, 300, 4])
         guard case .failure(.custom("down"))? = result.current else { return XCTFail("the old error: \(String(describing: result.current))") }
-        XCTAssertEqual(dropped(shop).first?.context["reason"], "attempts")
+        XCTAssertTrue(eventually { self.dropped(shop).first?.context["reason"] == "attempts" })
         XCTAssertEqual(dropped(shop).first?.level, .warning)
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)).last == "second" }, "the queue goes on")
         XCTAssertTrue(eventually { self.files(sdk).isEmpty })
@@ -429,10 +437,11 @@ final class CoreQueueTests: XCTestCase {
         wait(for: [both], timeout: 5)
         guard case .failure(.custom("bad item")) = results.current[0] else { return XCTFail("\(results.current[0])") }
         guard case .failure(.invalidResponse) = results.current[1] else { return XCTFail("\(results.current[1])") }
+        XCTAssertTrue(eventually { self.dropped(shop).count == 2 })
         XCTAssertEqual(dropped(shop).map { $0.context["reason"] }, ["rejected", "rejected"])
         XCTAssertEqual(dropped(shop).map { $0.context["status"] }, ["422", "400"])
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["a", "b", "c"] })
-        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "request_failed" && $0.level == .error }, "a 4xx is an error")
+        XCTAssertTrue(eventually { self.heard.contains { $0.shopId == shop && $0.code == "request_failed" && $0.level == .error } }, "a 4xx is an error")
     }
 
     // MARK: - Limits
@@ -448,7 +457,7 @@ final class CoreQueueTests: XCTestCase {
             sdk.eventQueue?.settle()
         }
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["new"] })
-        XCTAssertEqual(dropped(shop).first?.context["reason"], "expired")
+        XCTAssertTrue(eventually { self.dropped(shop).first?.context["reason"] == "expired" })
     }
 
     func test_a_shop_keeps_at_most_a_thousand_events_and_the_oldest_go_first() {
@@ -515,7 +524,7 @@ final class CoreQueueTests: XCTestCase {
 
         let second = make(shop)
         XCTAssertTrue(eventually { self.dropped(shop).count == 1 }, "the tenth 503 drops it: nine came before the restart")
-        XCTAssertEqual(dropped(shop).first?.context["reason"], "attempts")
+        XCTAssertTrue(eventually { self.dropped(shop).first?.context["reason"] == "attempts" })
         XCTAssertTrue(eventually { self.files(second).isEmpty })
     }
 
@@ -670,7 +679,7 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertEqual(requests("/push", shop).count, 1)
         XCTAssertEqual(scheduler.pending, 0, "not repeated")
         XCTAssertEqual(sdk.eventQueue?.waiting.count, 0, "not queued")
-        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "storage_failed" })
+        XCTAssertTrue(eventually { self.heard.contains { $0.shopId == shop && $0.code == "storage_failed" } })
         XCTAssertEqual(requests("/push", shop).first?.body["sid"] as? String, sdk.sessionId)
         try? FileManager.default.removeItem(at: folder)
     }
@@ -720,7 +729,7 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertTrue(files(sdk).isEmpty, "gone with the customer")
         XCTAssertEqual(sdk.eventQueue?.waiting.count, 0)
         XCTAssertTrue(eventually { self.dropped(shop).last?.context["reason"] == "delete_user_credentials" })
-        XCTAssertEqual(dropped(shop).last?.context["count"], "2")
+        XCTAssertTrue(eventually { self.dropped(shop).last?.context["count"] == "2" })
         XCTAssertTrue(eventually { results.current.count == 2 })
         sdk.tracking.productView(itemId: "new-customer")
         network.isOnline = true
@@ -838,7 +847,7 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertTrue(eventually { self.requests("/init", shop).count == 2 && self.scheduler.pending == 1 })
         expectNoRequest(to: "/push", shop: shop, within: 0.3)
         XCTAssertEqual(requests("/push", shop).count, 1)
-        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "storage_failed" })
+        XCTAssertTrue(eventually { self.heard.contains { $0.shopId == shop && $0.code == "storage_failed" } })
 
         // Delivered, its file cannot be removed: it leaves the queue anyway.
         scheduler.advance(by: scheduler.pendingDelays.first ?? 0)
@@ -944,9 +953,10 @@ final class CoreQueueTests: XCTestCase {
         shown.isInverted = true
         wait(for: [shown], timeout: 0.5)
         XCTAssertEqual(delegate.asked.current, [1])
-        XCTAssertEqual(logs.current.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.map { $0.context["reason"] },
+        XCTAssertTrue(eventually { self.heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.count == 2 })
+        XCTAssertEqual(heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.map { $0.context["reason"] },
                        ["late_event", "app_in_background"])
-        XCTAssertTrue(logs.current.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.allSatisfy { $0.level == .debug })
+        XCTAssertTrue(heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.allSatisfy { $0.level == .debug })
     }
 
     func test_the_old_callbacks_hear_what_they_always_heard_once_the_event_went() {
@@ -1208,7 +1218,7 @@ final class CoreQueueTests: XCTestCase {
         for result in results.current {
             guard case .failure(.custom) = result else { return XCTFail("\(result)") }
         }
-        XCTAssertTrue(eventually { self.logs.current.contains { $0.shopId == shop && $0.code == "invalid_argument" } })
+        XCTAssertTrue(eventually { self.heard.contains { $0.shopId == shop && $0.code == "invalid_argument" } })
         sdk.eventQueue?.settle()
         XCTAssertTrue(files(sdk).isEmpty)
     }

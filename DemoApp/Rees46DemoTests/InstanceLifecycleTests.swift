@@ -57,7 +57,9 @@ final class InstanceLifecycleTests: XCTestCase {
         (lhs as AnyObject?) === (rhs as AnyObject?)
     }
 
+    /// What the log handler heard: every message logged before the call.
     private func messages(_ shop: String, _ code: String) -> [Rees46.SdkLogMessage] {
+        SdkLogger.awaitDelivery()
         logLock.lock(); defer { logLock.unlock() }
         return logs.filter { $0.shopId == shop && $0.code == code }
     }

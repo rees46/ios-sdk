@@ -318,6 +318,7 @@ final class CoreSessionTests: XCTestCase {
         XCTAssertTrue(eventually { self.inits(shop).count == 3 && self.scheduler.pending == 1 })
         XCTAssertEqual(sdk.state, .ready)
         XCTAssertEqual(heard, [.ready], "no state change")
+        SdkLogger.awaitDelivery()
         XCTAssertFalse(logs.current.contains { $0.code == "init_saved_answer" }, "the saved answer is not replayed")
     }
 

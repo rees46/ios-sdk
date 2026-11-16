@@ -32,7 +32,9 @@ final class LoggingTests: XCTestCase {
         super.tearDown()
     }
 
+    /// What the handler heard: every message logged before the call.
     private var messages: [Rees46.SdkLogMessage] {
+        SdkLogger.awaitDelivery()
         lock.lock(); defer { lock.unlock() }
         return received
     }

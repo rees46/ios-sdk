@@ -384,6 +384,8 @@ final class CoreNetworkTests: XCTestCase {
             SdkRegistry.shared.reset()
         }
         func mismatches(_ shop: String) -> [Rees46.SdkLogMessage] {
+            // Every message logged before the call is with the handler.
+            SdkLogger.awaitDelivery()
             lock.lock(); defer { lock.unlock() }
             return received.filter { $0.code == "core_flag_mismatch" && $0.shopId == shop }
         }
@@ -398,7 +400,6 @@ final class CoreNetworkTests: XCTestCase {
         XCTAssertTrue(sdk.usesCoreV2)
         let again = Rees46.initialize(Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false))
         XCTAssertTrue(eventually { !mismatches(shop).isEmpty })
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
         XCTAssertEqual(mismatches(shop).count, 1)
         XCTAssertEqual(mismatches(shop).first?.level, .warning)
         XCTAssertEqual(mismatches(shop).first?.context["active"], "true")
@@ -406,7 +407,7 @@ final class CoreNetworkTests: XCTestCase {
         // An instance that logs errors only does not get the warning.
         let quiet = "flag-quiet-\(shopId)"
         let quietSDK = Rees46.initialize(Rees46Config(shopId: quiet, apiDomain: "stub.test", logLevel: .error, autoSendPushToken: false))
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2))
+        // The mismatch is logged in the instance's init, before it returns.
         XCTAssertTrue(mismatches(quiet).isEmpty)
         withExtendedLifetime([sdk, again, quietSDK] as [AnyObject]) {}
         StubSDK.removeSavedInit(shopId: shop)

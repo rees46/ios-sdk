@@ -235,6 +235,12 @@ final class SdkLogger {
         handlerQueue.async { current(entry) }
     }
 
+    /// Returns once the app's handler got every message logged before the call; for tests, which read
+    /// what their handler heard.
+    static func awaitDelivery() {
+        handlerQueue.sync {}
+    }
+
     // MARK: - System log
 
     private static let systemLog = OSLog(subsystem: "com.rees46.sdk", category: "sdk")

@@ -131,7 +131,14 @@ final class CorePushTests: XCTestCase {
     }
 
     private func logged(_ shop: String, _ code: String) -> [Rees46.SdkLogMessage] {
-        logs.current.filter { $0.shopId == shop && $0.code == code }
+        heard.filter { $0.shopId == shop && $0.code == code }
+    }
+
+    /// What the log handler heard: every message logged before the call (the handler hears them on a
+    /// queue of its own).
+    private var heard: [Rees46.SdkLogMessage] {
+        SdkLogger.awaitDelivery()
+        return logs.current
     }
 
     private func files(_ sdk: SimplePersonalizationSDK) -> [String] {
@@ -722,7 +729,7 @@ final class CorePushTests: XCTestCase {
 
         // A shop that never had a device id here: nothing goes, and nothing is held for the message.
         XCTAssertEqual(Rees46.handlePush(push(empty), event: .delivered), empty)
-        XCTAssertTrue(eventually { self.logs.current.contains { $0.code == "push_dropped" && $0.context["reason"] == "no_did" } })
+        XCTAssertTrue(eventually { self.heard.contains { $0.code == "push_dropped" && $0.context["reason"] == "no_did" } })
         XCTAssertFalse(PushCenter.isTaken(.delivered, code: "m-1", shopId: empty))
         StoragePartition.store(for: empty).set("later-did", forKey: StoragePartition.deviceIdKey)
         Rees46.handlePush(push(empty), event: .delivered)
@@ -789,7 +796,7 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(Rees46.handlePush(push(nil), event: .delivered), first, "the one shop takes a push without shop_id")
         _ = make(second)
         XCTAssertNil(Rees46.handlePush(push(nil, code: "m-9"), event: .delivered), "several shops: not guessed")
-        XCTAssertTrue(eventually { self.logs.current.contains { $0.code == "push_dropped" && $0.context["reason"] == "ambiguous_shop" } })
+        XCTAssertTrue(eventually { self.heard.contains { $0.code == "push_dropped" && $0.context["reason"] == "ambiguous_shop" } })
     }
 
     // MARK: - Callbacks
@@ -1021,7 +1028,7 @@ final class CorePushTests: XCTestCase {
 
         Rees46.handlePush(push(shop), event: .clicked)
         XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/clicked", shop: shop) == 1 }, "sent once")
-        XCTAssertTrue(logs.current.contains { $0.shopId == shop && $0.code == "storage_failed" })
+        XCTAssertTrue(eventually { self.heard.contains { $0.shopId == shop && $0.code == "storage_failed" } })
         XCTAssertEqual(requests("/init", shop).count, inits, "the session ended, and the push renewed none")
         XCTAssertNil(requests("/track/clicked", shop).first?.body["sid"])
     }

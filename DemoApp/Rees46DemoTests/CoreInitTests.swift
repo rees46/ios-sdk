@@ -95,12 +95,16 @@ final class CoreInitTests: XCTestCase {
         StubURLProtocol.requests(to: "/init", shop: shop)
     }
 
+    /// The codes the log handler heard: every message logged before the call (the handler hears them on
+    /// a queue of its own).
     private func codes(_ shop: String) -> [String] {
+        SdkLogger.awaitDelivery()
         logLock.lock(); defer { logLock.unlock() }
         return logs.filter { $0.shopId == shop }.map(\.code)
     }
 
     private func messages(_ shop: String, _ code: String) -> [Rees46.SdkLogMessage] {
+        SdkLogger.awaitDelivery()
         logLock.lock(); defer { logLock.unlock() }
         return logs.filter { $0.shopId == shop && $0.code == code }
     }
@@ -229,7 +233,8 @@ final class CoreInitTests: XCTestCase {
             XCTAssertEqual(settled(sdk), .refused, "\(status)")
             XCTAssertTrue(storage(shop).refused)
             XCTAssertTrue(eventually { self.codes(shop).contains("init_refused") })
-            XCTAssertEqual(messages(shop, "init_failed").first?.level, .error, "\(status)")
+            // `init_failed` follows `init_refused`.
+            XCTAssertTrue(eventually { self.messages(shop, "init_failed").first?.level == .error }, "\(status)")
             XCTAssertFalse(codes(shop).contains("init_retry"), "\(status): a refusal is not repeated")
         }
     }
@@ -325,7 +330,7 @@ final class CoreInitTests: XCTestCase {
         scheduler.advance(by: 1)
         XCTAssertTrue(eventually { sdk.state == .ready })
         XCTAssertEqual(scheduler.pending, 0)
-        XCTAssertTrue(messages(shop, "init_retry").contains { $0.context["delay_ms"] == "7000" && $0.context["status"] == "503" })
+        XCTAssertTrue(eventually { self.messages(shop, "init_retry").contains { $0.context["delay_ms"] == "7000" && $0.context["status"] == "503" } })
     }
 
     // MARK: - refused
@@ -593,7 +598,8 @@ final class CoreInitTests: XCTestCase {
         let sdk = make(shop)
 
         XCTAssertTrue(eventually { sdk.state == .retrying && self.scheduler.pending == 1 }, "\(sdk.state)")
-        XCTAssertTrue(messages(shop, "init_retry").contains { $0.context["error"] == "cancelled" })
+        // Logged once the retry is scheduled: waited for.
+        XCTAssertTrue(eventually { self.messages(shop, "init_retry").contains { $0.context["error"] == "cancelled" } })
         XCTAssertFalse(codes(shop).contains("init_failed"))
         scheduler.advance(by: scheduler.pendingDelays.first ?? 1)
         XCTAssertTrue(eventually { sdk.state == .ready })
