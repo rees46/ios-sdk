@@ -153,6 +153,15 @@ final class InitCompletion {
 
     /// The first call settles the outcome — `error`, and `full`, the whole error behind it —; later
     /// ones change nothing.
+    /// Whether the outcome is known and is a failure.
+    var failed: Bool {
+        lock.lock(); defer { lock.unlock() }
+        if case .some(.some) = outcome {
+            return true
+        }
+        return false
+    }
+
     func finish(_ error: SdkError?, full: Rees46.SdkError?) {
         lock.lock()
         guard outcome == nil else {

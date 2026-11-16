@@ -77,7 +77,9 @@ public enum Rees46 {
      A shop that has an instance gets that instance back: no second one is made. A different `config`
      does not change it — the log says `invalid_config` with the reason `already_initialized` — and
      `completion` is still called once: with the outcome of the instance's initialization, or when it
-     settles. `release()` lets the next call make a new instance.
+     settles. `release()` lets the next call make a new instance. Without `Rees46Config.coreV2`, as it
+     always has, a call after the instance's `/init` failed, or with `needReInitialization`, makes a new
+     instance of the shop with a new `/init`.
      */
     @discardableResult
     public static func initialize(
@@ -88,7 +90,7 @@ public enum Rees46 {
             lock.lock()
             pending[config.shopId] = nil
             lock.unlock()
-            if let existing = SdkRegistry.shared.byShopId(config.shopId) {
+            if let existing = SdkRegistry.shared.byShopId(config.shopId), !makesNewLegacyInstance(over: existing, config: config) {
                 return (existing, joinExisting(existing, config: config, completion: completion))
             }
             let sdk = SimplePersonalizationSDK(
@@ -108,6 +110,15 @@ public enum Rees46 {
             sdk.resetSdkCache()
             return (sdk, SdkRegistry.shared.registerDeferringAwaiters(shopId: config.shopId, sdk: sdk))
         }
+    }
+
+    /// Whether a repeated `initialize` makes a new instance of the shop on the old core, as it always
+    /// has there: the old core does not repeat a failed `/init` itself, so the app's next `initialize`
+    /// sends a new one; and `needReInitialization` asks for a new device id. The new instance replaces
+    /// the shop's registration; the old one goes on for whoever holds it, as before.
+    private static func makesNewLegacyInstance(over existing: PersonalizationSDK, config: Rees46Config) -> Bool {
+        guard let instance = existing as? SimplePersonalizationSDK, !instance.usesCoreV2 else { return false }
+        return config.needReInitialization || instance.initCompletion.failed
     }
 
     /// A repeated `initialize` for a shop that has an instance: what to call once the lock is released.
