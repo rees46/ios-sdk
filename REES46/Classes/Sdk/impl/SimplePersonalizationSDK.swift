@@ -2299,10 +2299,12 @@ extension SimplePersonalizationSDK: EventQueueHost {
         }
         if let refusal = refusal {
             DispatchQueue.global(qos: .utility).async {
+                // `accepted` first: it frees a push's reservation, so the same push routed once the
+                // caller heard the refusal is not taken for a repeat.
+                accepted?(refusal)
                 CurrentError.with(refusal) {
                     completion(.failure(.legacy(refusal)))
                 }
-                accepted?(refusal)
             }
             return true
         }

@@ -387,9 +387,11 @@ final class EventQueue {
         clearLock.unlock()
         work.async {
             self.catchUpWithClear()
+            // `accepted` before the app's callback, in each case: it frees a push's reservation before
+            // the caller hears the outcome.
             guard takenIn == self.generation else {
-                completion.map { done in self.callbacks.async { done(.failed(.cancelled, body: Data())) } }
                 accepted.map { done in self.callbacks.async { done(.cancelled) } }
+                completion.map { done in self.callbacks.async { done(.failed(.cancelled, body: Data())) } }
                 return
             }
             self.ensureLoaded()
@@ -405,8 +407,8 @@ final class EventQueue {
                 // its caller may hand it to the shop's next instance.
                 event.stored = self.write(event)
                 let stored = event.stored
-                completion.map { done in self.callbacks.async { done(.failed(.notInitialized, body: Data())) } }
                 accepted.map { done in self.callbacks.async { done(stored ? nil : .notInitialized) } }
+                completion.map { done in self.callbacks.async { done(.failed(.notInitialized, body: Data())) } }
                 return
             }
             // At most `capacity`: the oldest that is not on its way goes.
