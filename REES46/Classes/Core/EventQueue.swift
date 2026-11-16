@@ -411,17 +411,19 @@ final class EventQueue {
                 completion.map { done in self.callbacks.async { done(.failed(.notInitialized, body: Data())) } }
                 return
             }
-            // At most `capacity`: the oldest that is not on its way goes.
-            while self.events.count >= Self.capacity,
-                  let oldest = self.events.firstIndex(where: { !self.isInFlight($0.seq) }) {
-                self.drop(at: oldest, error: .cancelled, reason: "overflow")
-            }
             event.stored = self.write(event)
             guard event.stored else {
-                // Not accepted: no queue holds it through no network or a restart. It goes once.
+                // Not accepted: no queue holds it through no network or a restart. It goes once, and
+                // what the queue holds stays: no stored event makes room for one the disk refused.
                 let body = self.stamped(event, host: self.owner)
                 self.callbacks.async { unstored(body) }
                 return
+            }
+            // At most `capacity`, once the new event is safe on disk: the oldest that is not on its way
+            // goes.
+            while self.events.count >= Self.capacity,
+                  let oldest = self.events.firstIndex(where: { !self.isInFlight($0.seq) }) {
+                self.drop(at: oldest, error: .cancelled, reason: "overflow")
             }
             self.events.append(event)
             if let completion = completion {
