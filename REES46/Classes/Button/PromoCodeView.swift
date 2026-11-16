@@ -100,7 +100,7 @@ class PromoCodeView: UIView {
                             //Do nothing
                         })
                         
-                        let task = URLSession.shared.dataTask(with: urlImgResize!, completionHandler: { data, _, error in
+                        let task = SdkURLSession.shared.dataTask(with: urlImgResize!, completionHandler: { data, _, error in
                             if error == nil {
                                 guard let unwrappedData = data, let downloadedImage = UIImage(data: unwrappedData) else {
                                     return

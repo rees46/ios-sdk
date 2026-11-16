@@ -7,7 +7,7 @@ extension UIImageView {
             return
         }
         
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        let task = SdkURLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             guard let data = data, error == nil else {
                 SdkLogger.area(.ui, .debug, "an image was not loaded: \(SdkLogger.errorKind(error))")
                 return

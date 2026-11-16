@@ -109,7 +109,7 @@ final class SearchImages {
         }
         imageView.image = nil
         // Замыкание не держит `load`: иначе он не ушёл бы вместе с view до конца загрузки.
-        let task = URLSession.shared.dataTask(with: link) { [weak self, weak imageView] data, _, _ in
+        let task = SdkURLSession.shared.dataTask(with: link) { [weak self, weak imageView] data, _, _ in
             guard let self, let data, let image = UIImage(data: data) else { return }
             self.cache.setObject(image, forKey: url as NSString)
             DispatchQueue.main.async {

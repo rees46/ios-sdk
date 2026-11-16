@@ -171,7 +171,7 @@ final class PersonalizationStoryImages {
     /// Кто ждёт адрес; трогается только на главном потоке.
     private var waiting: [String: [(PersonalizationStoryPicture?) -> Void]] = [:]
 
-    init(cache: PersonalizationStoryMediaCache = .shared, session: URLSession = .shared) {
+    init(cache: PersonalizationStoryMediaCache = .shared, session: URLSession = SdkURLSession.shared) {
         self.cache = cache
         self.session = session
     }

@@ -216,7 +216,7 @@ class Slide {
                 self.completionCached(slideWithId: self.id, actualSlideUrl: "")
                 //print("SDK Load cached image for story id = \(String(describing: self.id))")
             } else {
-                let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
+                let task = SdkURLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
                     if error == nil {
                         guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
                             return

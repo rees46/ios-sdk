@@ -123,7 +123,7 @@ public class FullScreenAlertViewController: UIViewController {
     }
     
     private func loadBackgroundImage() {
-        URLSession.shared.dataTask(with: imageURL) { [weak self] data, response, error in
+        SdkURLSession.shared.dataTask(with: imageURL) { [weak self] data, response, error in
             guard let self = self, let data = data, let image = UIImage(data: data) else { return }
             DispatchQueue.main.async {
                 self.backgroundImageView.image = image

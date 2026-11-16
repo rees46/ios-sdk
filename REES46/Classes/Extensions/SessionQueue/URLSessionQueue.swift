@@ -21,7 +21,7 @@ public class URLSessionQueue: NSObject, URLSessionDataDelegate {
     open var taskNeedNewBodyStreamWithCompletion: ((URLSession, URLSessionTask, (InputStream?) -> Void) -> Void)?
     
     lazy var session: URLSession = {
-        let sessionConfiguration = URLSessionConfiguration.default
+        let sessionConfiguration = URLSessionConfiguration.default.withoutCookies()
         sessionConfiguration.timeoutIntervalForRequest = 3
         sessionConfiguration.waitsForConnectivity = true
         sessionConfiguration.shouldUseExtendedBackgroundIdleMode = true

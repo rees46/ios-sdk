@@ -107,7 +107,7 @@ public class SlideViewController: UIViewController, SlideView {
         showLoadingIndicator()
         startLoadingTimeout()
         
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        let task = SdkURLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.loadTimer?.invalidate()

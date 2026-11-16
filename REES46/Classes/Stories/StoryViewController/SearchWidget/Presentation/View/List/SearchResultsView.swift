@@ -119,13 +119,14 @@ class SearchResultTableViewCell: UITableViewCell {
         secondLabel.text = "\(result.price)"
         
         if let url = URL(string: result.image) {
-            DispatchQueue.global().async {
-                if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+            // Through the SDK's session, which neither sends nor keeps cookies.
+            SdkURLSession.shared.dataTask(with: url) { data, _, _ in
+                if let data = data, let image = UIImage(data: data) {
                     DispatchQueue.main.async {
                         self.customImageView.image = image
                     }
                 }
-            }
+            }.resume()
         }
     }
 }
