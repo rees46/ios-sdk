@@ -23,6 +23,9 @@ final class CoreQueueTests: XCTestCase {
     /// Replies queued per path; the last one repeats. `.some(nil)` is no answer.
     private let replies = Locked<[String: [StubReply?]]>([:])
     private let logs = Locked<[Rees46.SdkLogMessage]>([])
+    /// The shops of this test: the replies it queues are theirs. An SDK an earlier test left may still
+    /// send to the stub server; it gets the default answer.
+    private let ownShops = Locked<Set<String>>([])
 
     override func setUp() {
         super.setUp()
@@ -37,7 +40,13 @@ final class CoreQueueTests: XCTestCase {
         Rees46.setLogHandler { message in logs.mutate { $0.append(message) } }
         let replies = self.replies
         let inits = Locked(0)
+        ownShops.current = []
+        let ownShops = self.ownShops
         StubURLProtocol.handler = { request in
+            let shop = request.query["shop_id"] ?? request.body["shop_id"] as? String
+            guard shop.map({ ownShops.current.contains($0) }) ?? true else {
+                return request.path == "/init" ? StubReply(json: #"{"did":"other-did","seance":"other"}"#) : StubReply(json: #"{"status":"success"}"#)
+            }
             var reply: StubReply??
             replies.mutate { queued in
                 guard var list = queued[request.path], !list.isEmpty else { return }
@@ -74,6 +83,7 @@ final class CoreQueueTests: XCTestCase {
     private func newShop() -> String {
         let shop = StubSDK.shopId()
         shops.append(shop)
+        ownShops.mutate { _ = $0.insert(shop) }
         return shop
     }
 
@@ -145,7 +155,7 @@ final class CoreQueueTests: XCTestCase {
         defer { held.signal() }
         let sdk = make(shop)
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/push" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/push", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         let done = expectation(description: "sent")
@@ -382,7 +392,7 @@ final class CoreQueueTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/init", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         answer("/push", StubReply(402), StubReply(json: #"{"status":"success"}"#))
@@ -539,7 +549,7 @@ final class CoreQueueTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/init", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         let sdk = make(shop, identity: InMemoryUserIdentityRepository(), settled: false)
@@ -612,7 +622,7 @@ final class CoreQueueTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/init", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         let sdk = make(shop, identity: InMemoryUserIdentityRepository(), settled: false)

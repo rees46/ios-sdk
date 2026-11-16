@@ -24,6 +24,9 @@ class CoreScenarioTestCase: XCTestCase {
     private let logs = Locked<[Rees46.SdkLogMessage]>([])
     /// How many `/init`s the default answer gave.
     let initCalls = Locked(0)
+    /// The shops of this test: the replies and holds it sets are theirs. An SDK an earlier test left may
+    /// still send to the stub server; it gets the default answer.
+    let ownShops = Locked<Set<String>>([])
 
     override func setUp() {
         super.setUp()
@@ -38,6 +41,7 @@ class CoreScenarioTestCase: XCTestCase {
         holds.current = [:]
         logs.current = []
         initCalls.current = 0
+        ownShops.current = []
         let logs = self.logs
         Rees46.setLogHandler { message in logs.mutate { $0.append(message) } }
         let network = self.network
@@ -54,7 +58,12 @@ class CoreScenarioTestCase: XCTestCase {
         let replies = self.replies
         let holds = self.holds
         let inits = self.initCalls
+        let ownShops = self.ownShops
         StubURLProtocol.handler = { request in
+            let shop = request.query["shop_id"] ?? request.body["shop_id"] as? String
+            guard shop.map({ ownShops.current.contains($0) }) ?? true else {
+                return request.path == "/init" ? StubReply(json: #"{"did":"other-did","seance":"other"}"#) : StubReply(json: #"{"status":"success"}"#)
+            }
             if let hold = holds.current[request.path] {
                 _ = hold.wait(timeout: .now() + 20)
             }
@@ -103,6 +112,7 @@ class CoreScenarioTestCase: XCTestCase {
     func newShop() -> String {
         let shop = StubSDK.shopId()
         shops.append(shop)
+        ownShops.mutate { _ = $0.insert(shop) }
         return shop
     }
 

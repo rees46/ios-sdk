@@ -23,6 +23,9 @@ final class CorePushTests: XCTestCase {
     private var network = FakeConnectivity(online: true)
     private let replies = Locked<[String: [StubReply?]]>([:])
     private let logs = Locked<[Rees46.SdkLogMessage]>([])
+    /// The shops of this test: the replies it queues are theirs. An SDK an earlier test left may still
+    /// send to the stub server; it gets the default answer.
+    private let ownShops = Locked<Set<String>>([])
 
     override func setUp() {
         super.setUp()
@@ -47,7 +50,13 @@ final class CorePushTests: XCTestCase {
         PendingPushEvents.legacyIdentity = { noLegacy }
         let replies = self.replies
         let inits = Locked(0)
+        ownShops.current = []
+        let ownShops = self.ownShops
         StubURLProtocol.handler = { request in
+            let shop = request.query["shop_id"] ?? request.body["shop_id"] as? String
+            guard shop.map({ ownShops.current.contains($0) }) ?? true else {
+                return request.path == "/init" ? StubReply(json: #"{"did":"other-did","seance":"other"}"#) : StubReply(json: #"{"status":"success"}"#)
+            }
             var reply: StubReply??
             replies.mutate { queued in
                 guard var list = queued[request.path], !list.isEmpty else { return }
@@ -90,6 +99,7 @@ final class CorePushTests: XCTestCase {
     private func newShop() -> String {
         let shop = StubSDK.shopId()
         shops.append(shop)
+        ownShops.mutate { _ = $0.insert(shop) }
         return shop
     }
 
@@ -241,7 +251,7 @@ final class CorePushTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/mobile_push_tokens" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/mobile_push_tokens", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         let first = expectation(description: "first")
@@ -350,7 +360,7 @@ final class CorePushTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/init", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         let sdk = make(shop, identity: InMemoryUserIdentityRepository(), settled: false)
@@ -545,7 +555,7 @@ final class CorePushTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/init", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         clock.advance(by: 2 * 60 * 60 + 1)
@@ -585,7 +595,7 @@ final class CorePushTests: XCTestCase {
         let held = DispatchSemaphore(value: 0)
         defer { held.signal() }
         StubURLProtocol.handler = { [handler = StubURLProtocol.handler] request in
-            if request.path == "/init" { _ = held.wait(timeout: .now() + 10) }
+            if request.path == "/init", (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop { _ = held.wait(timeout: .now() + 10) }
             return handler(request)
         }
         sdk.deleteUserCredentials()
