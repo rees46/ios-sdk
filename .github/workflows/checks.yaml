@@ -67,3 +67,17 @@ jobs:
 
       - name: Build and test the Swift package
         run: xcodebuild test -scheme REES46 -destination "id=${{ steps.sim.outputs.udid }}"
+
+  # Nothing reachable from the public API may crash the app on a force unwrap, try or cast:
+  # .swiftlint.yml lists the folders it covers.
+  swiftlint:
+    if: github.event.pull_request.draft == false
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: command -v swiftlint >/dev/null || brew install swiftlint
+
+      - name: Lint the SDK core
+        run: sh scripts/lint-core.sh
