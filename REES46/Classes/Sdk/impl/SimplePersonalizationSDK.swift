@@ -2309,8 +2309,12 @@ extension SimplePersonalizationSDK: EventQueueHost {
             return true
         }
         let request = CoreRequest(method: .post, path: path)
-        // Accepted: the event extends a live session now, not when it goes (`sdk/core/session.md`).
-        sessionWindow?.touch()
+        // Accepted: a tracking event extends a live session now, not when it goes. Of the events of
+        // pushes only `track/clicked` does, as on the server: a push delivered, shown or closed in the
+        // background starts no visit (`sdk/core/session.md`).
+        if Self.extendsSession(path) {
+            sessionWindow?.touch()
+        }
         // The customer the event was made for: a disk-refused event sent once goes as them or not at all.
         let generation = currentInitGeneration()
         queue.enqueue(
@@ -2356,6 +2360,12 @@ extension SimplePersonalizationSDK: EventQueueHost {
             }
         )
         return true
+    }
+
+    /// Whether an event of `path` accepted into the queue extends a live session: every tracking event,
+    /// and of the events of pushes only `track/clicked` (`sdk/core/session.md`).
+    static func extendsSession(_ path: String) -> Bool {
+        !EventQueue.sessionlessPaths.contains(path) || path == "track/clicked"
     }
 
     /// Sends the queued events now; `completion` on the main thread once each event queued at the call
