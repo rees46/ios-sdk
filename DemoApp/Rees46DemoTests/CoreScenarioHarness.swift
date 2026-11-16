@@ -87,7 +87,8 @@ class CoreScenarioTestCase: XCTestCase {
     }
 
     override func tearDown() {
-        holds.current.values.forEach { $0.signal() }
+        // Every request still held goes, as `release(_:)` lets them: one left waiting keeps its thread.
+        holds.current.values.forEach { gate in (0..<64).forEach { _ in gate.signal() } }
         holds.current = [:]
         Rees46.setLogHandler(nil)
         Rees46.reset()
