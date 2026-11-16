@@ -41,6 +41,10 @@ final class CorePushTests: XCTestCase {
         let lifecycle = self.lifecycle
         PendingPushEvents.connectivity = { network }
         PendingPushEvents.lifecycle = { lifecycle }
+        // No identity of the time before the partitions: what other tests or the host left is not ours.
+        let noLegacy = UserDefaults(suiteName: "test-no-legacy-identity") ?? .standard
+        noLegacy.removePersistentDomain(forName: "test-no-legacy-identity")
+        PendingPushEvents.legacyIdentity = { noLegacy }
         let replies = self.replies
         let inits = Locked(0)
         StubURLProtocol.handler = { request in
@@ -776,7 +780,8 @@ final class CorePushTests: XCTestCase {
         Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { _ in heard.mutate { $0 += 1 } }))
 
         XCTAssertEqual(Rees46.handlePush(push(shop), event: .delivered), shop)
-        XCTAssertTrue(eventually { self.logs.current.contains { $0.code == "push_dropped" && $0.context["reason"] == "refused" } })
+        // An event the refused shop's queue does not take (`sdk/core/logging.md`).
+        XCTAssertTrue(eventually { self.heard.contains { $0.code == "queue_dropped" && $0.context["reason"] == "refused" } })
         XCTAssertTrue(files(storage).isEmpty)
         XCTAssertEqual(lifecycle.backgroundTasks.begun, 0)
         drainMainQueue()
@@ -833,10 +838,10 @@ final class CorePushTests: XCTestCase {
 
     func test_the_callbacks_and_the_bridges_hear_only_an_event_the_queue_accepted() {
         let shop = newShop()
-        let released = make(shop)
-        released.release()
-        // Still routed to, as a push that comes while the app swaps its instance: the queue takes nothing.
-        SdkRegistry.shared.register(shopId: shop, sdk: released)
+        // The queue itself refuses: the shop refused the SDK, its instance takes no event.
+        answer("/init", StubReply(403))
+        let refused = make(shop)
+        XCTAssertEqual(refused.state, .refused)
         let heard = Locked<[String]>([])
         Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { _ in heard.mutate { $0.append("app") } }))
         let bridge = Rees46.onPushEvent { _, _ in heard.mutate { $0.append("bridge") } }
@@ -845,14 +850,26 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(Rees46.handlePush(push(shop), event: .delivered), shop)
         // The queue's refusal frees the event: nothing was told for it, and it may go again.
         XCTAssertTrue(eventually { !PushCenter.isTaken(.delivered, code: "m-1", shopId: shop) })
+        refused.eventQueue?.settle()
         drainMainQueue()
         XCTAssertTrue(heard.current.isEmpty, "a refused event calls no callback and tells no bridge")
+        XCTAssertTrue(files(refused).isEmpty, "nothing on disk")
+        XCTAssertTrue(requests("/track/delivered", shop).isEmpty, "nothing sent")
 
+        // The shop serves again: the same push is taken now, and heard once.
+        refused.release()
         SdkRegistry.shared.reset()
-        _ = make(shop)
+        answer("/init")
+        // Refused on the earlier launch: it is ready once its /init passes.
+        let sdk = make(shop, settled: false)
+        XCTAssertTrue(eventually { sdk.state == .ready })
+        sdk.eventQueue?.settle()
         Rees46.handlePush(push(shop), event: .delivered)
         XCTAssertTrue(eventually { heard.current.sorted() == ["app", "bridge"] }, "accepted now: heard once")
         XCTAssertTrue(eventually { self.requests("/track/delivered", shop).count == 1 })
+        XCTAssertTrue(queueIdle(sdk))
+        drainMainQueue()
+        XCTAssertEqual(heard.current.count, 2)
     }
 
     func test_an_instances_own_callbacks_win_over_the_facades_one_by_one() {

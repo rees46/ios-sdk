@@ -380,30 +380,41 @@ public enum Rees46 {
     /// Sends `route` of `payload` to its shop; the shop, or `nil` when the push was not taken.
     @discardableResult
     static func route(_ payload: [AnyHashable: Any], _ route: PushRoute) -> String? {
-        let resolution = InstanceResolver.resolve(
-            requestedShopId: PushPayloadParser.shopId(from: payload),
-            liveShopIds: SdkRegistry.shared.shopIds(),
-            pendingShopIds: pendingShopIdsSnapshot()
-        )
         // Not an SDK push (no resolvable type/code) — ignore regardless of the target.
         guard let (type, code) = PushPayloadParser.typeAndCode(from: payload) else {
             // Most apps get pushes of other senders too: that is not a problem, so it is `debug`.
             SdkLogger.process.debug(LogCode.pushDropped, "the push is not an SDK push", ["reason": "not_sdk_push"])
             return nil
         }
-        switch resolution {
-        case .existing(let shopId):
-            guard let sdk = SdkRegistry.shared.byShopId(shopId) else {
+        let requested = PushPayloadParser.shopId(from: payload)
+        // The shop is looked up again when it changed between the lookups — made from its pending
+        // registration meanwhile —: a push never drops for a shop that has an instance or a registration.
+        for _ in 0..<maxLookups {
+            // The live instances are read once: one the resolution names is in hand, and a `release()`
+            // after this reroutes the push (`rerouteReleased`) instead of losing it.
+            let live = SdkRegistry.shared.liveByShop()
+            let resolution = InstanceResolver.resolve(
+                requestedShopId: requested,
+                liveShopIds: Set(live.keys),
+                pendingShopIds: pendingShopIdsSnapshot()
+            )
+            switch resolution {
+            case .existing(let shopId):
+                guard let sdk = live[shopId] else { continue }
+                SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": route.name])
+                deliver(route, type: type, code: code, payload: payload, to: sdk, shopId: shopId)
+                return shopId
+            case .pending(let shopId):
+                // Registered but not initialized: sent on its stored identity, without making it.
+                guard let config = pendingConfig(for: shopId) else { continue }
+                routeToPending(shopId: shopId, config: config, route: route, type: type, code: code, payload: payload)
+                return shopId
+            case .notRegistered:
                 SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
                 return nil
-            }
-            SdkLogger.forShop(shopId).debug(LogCode.pushReceived, "the push went to its shop", ["event": route.name])
-            deliver(route, type: type, code: code, payload: payload, to: sdk, shopId: shopId)
-            return shopId
-        case .pending(let shopId):
-            // Registered but not initialized: sent on its stored identity, without making it.
-            guard let config = pendingConfig(for: shopId) else {
-                SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
+            case .ambiguous:
+                // No shop_id while several shops are registered: tracking it would guess the shop.
+                SdkLogger.process.warning(LogCode.pushDropped, "the push names no shop and several are registered", ["reason": "ambiguous_shop"])
                 return nil
             }
         }
@@ -501,6 +512,7 @@ public enum Rees46 {
         let newCore = CoreFlag.current ?? config.coreV2
         let sent = newCore ? PushRoute.event(route.newCoreEvent) : route
         guard newCore else {
+            let deviceId = StoragePartition.deviceId(for: shopId, storageKey: config.storageKey)
             logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
             if sent != .event(.opened), sent != .event(.closed) {
                 pendingPushTracker(PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId))
@@ -510,24 +522,23 @@ public enum Rees46 {
             }
             return
         }
-        guard !deviceId.isEmpty else {
-            // The shop has never had a device id here: the server sent this device no push of it.
-            logger.warning(LogCode.pushDropped, "the shop of the push has no device id: the event was not sent", ["reason": "no_did"])
-            return
-        }
         let storage = ShopStorage(shopId: shopId, storageKey: config.storageKey, logger: logger)
+        let event = route.newCoreEvent
         guard !storage.refused else {
-            logger.warning(LogCode.pushDropped, "the shop of the push refused the SDK: the event was not sent", ["reason": "refused"])
+            logger.warning(
+                LogCode.queueDropped,
+                "an event of \(SdkLogger.requestLine("POST", event.path)) was dropped: the shop refused the SDK",
+                ["reason": "refused", "path": event.path]
+            )
             return
         }
-        let event = route.newCoreEvent
         guard PushCenter.reserve(event, code: code, shopId: shopId) else {
             logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": sent.name, "repeat": "true"])
             return
         }
         logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
         let parsed = Rees46.PushPayload.parse(payload, shopId: shopId)
-        let push = PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: deviceId)
+        let push = PendingPush(shopId: shopId, config: config, route: sent, type: type, code: code, deviceId: "")
         PendingPushEvents.take(push, event: event, storage: storage, logger: logger) { accepted in
             guard accepted else {
                 PushCenter.release(event, code: code, shopId: shopId)
@@ -604,8 +615,8 @@ struct PendingPush {
     let route: PushRoute
     let type: String
     let code: String
-    /// The device id the shop has stored: never empty on the new core; on the old core empty when the
-    /// shop has none, as it has always gone.
+    /// The device id the shop has stored; on the old core empty when the shop has none, as it has
+    /// always gone. The new core finds the shop's when it sends (`PendingPushEvents.deviceId`).
     let deviceId: String
 }
 
