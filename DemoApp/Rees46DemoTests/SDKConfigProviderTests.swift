@@ -15,6 +15,7 @@ class SDKConfigProviderTests: XCTestCase {
     }
 
     override func tearDown() {
+        (sdk as? SimplePersonalizationSDK)?.release()
         sdk = nil
         StubURLProtocol.uninstall()
         CoreFlag.reset()

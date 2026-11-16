@@ -13,6 +13,9 @@ import XCTest
 class ContractTestCase: XCTestCase {
 
     private var shops: [String] = []
+    /// Released at the end of the test: an instance left running would keep its queues, timers and
+    /// observers busy through the tests after it.
+    private var made: [SimplePersonalizationSDK] = []
 
     override func setUp() {
         super.setUp()
@@ -20,6 +23,8 @@ class ContractTestCase: XCTestCase {
     }
 
     override func tearDown() {
+        made.forEach { $0.release() }
+        made.removeAll()
         StubURLProtocol.uninstall()
         CoreFlag.reset()
         shops.forEach { StubSDK.removeSavedInit(shopId: $0) }
@@ -42,6 +47,7 @@ class ContractTestCase: XCTestCase {
         shops.append(shop)
         let ready = expectation(description: "init")
         let sdk = StubSDK.make(shopId: shop, coreV2: coreV2) { _ in ready.fulfill() }
+        made.append(sdk)
         wait(for: [ready], timeout: 5)
         return sdk
     }

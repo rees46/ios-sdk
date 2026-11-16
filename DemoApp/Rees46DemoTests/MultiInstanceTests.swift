@@ -33,6 +33,9 @@ final class MultiInstanceTests: XCTestCase {
     }
 
     override func tearDown() {
+        // The instances stop: one left running would keep working through the tests after it.
+        retained.forEach { ($0 as? SimplePersonalizationSDK)?.release() }
+        SdkRegistry.shared.shopIds().forEach { (SdkRegistry.shared.byShopId($0) as? SimplePersonalizationSDK)?.release() }
         Rees46.reset()
         SdkRegistry.shared.reset()
         retained.removeAll()
