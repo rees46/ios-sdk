@@ -60,6 +60,12 @@ final class DeviceStore {
         }
     }
 
+    /// The APNs token as the old core has always read it: from `.standard`, where every version writes
+    /// it — an older one that the app went back to included —, then the device's suite.
+    var legacyPushToken: Data? {
+        pushTokenDefaults.data(forKey: SdkConstants.deviceToken) ?? defaults.data(forKey: Self.pushTokenKey)
+    }
+
     /// The device's push token (`sdk/core/push.md`): the last one the SDK got or was given, with its
     /// provider, whichever shop it came through. Each provider's token is kept apart as well
     /// (`deviceToken(_:)`): an app that hands the SDK both an APNs and an FCM token keeps both. Without

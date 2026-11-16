@@ -599,8 +599,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         UIApplication.shared.registerForRemoteNotifications()
                     }
                     
-                    // Attempt to send the push token if available
-                    if let deviceToken = DeviceStore.shared.pushToken {
+                    // Attempt to send the push token if available: where the old core has always read it.
+                    if let deviceToken = self.deviceStore.legacyPushToken {
                         let notificationRegistrar = NotificationRegistrar(sdk: self)
                         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
                     }
@@ -614,7 +614,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
     
     private func handleAutoSendPushToken() {
-        if let deviceToken = DeviceStore.shared.pushToken {
+        if let deviceToken = deviceStore.legacyPushToken {
             let notificationRegistrar = NotificationRegistrar(sdk: self)
             notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
         }
