@@ -311,6 +311,8 @@ final class CoreQueueTests: XCTestCase {
         sdk.tracking.productView(itemId: "second")
         wait(for: [first], timeout: 5)
         guard case .failure? = result.current else { return XCTFail("dropped") }
+        // The log handler hears it on a queue of its own, not before the callback.
+        XCTAssertTrue(eventually { !self.dropped(shop).isEmpty })
         XCTAssertEqual(dropped(shop).first?.context["reason"], "service_refused")
         XCTAssertEqual(requests("/init", shop).count, 2, "one check")
         XCTAssertTrue(eventually { self.itemIds(self.requests("/push", shop)) == ["second"] })
@@ -324,8 +326,8 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertTrue(eventually { self.dropped(shop).count == 2 })
         XCTAssertEqual(dropped(shop).last?.context["reason"], "service_refused")
         XCTAssertEqual(requests("/init", shop).count, 2, "not asked again within ten minutes")
-        sdk.eventQueue?.settle()
-        XCTAssertTrue(files(sdk).isEmpty)
+        // The request of "fourth" was seen; its file goes once the answer is back.
+        XCTAssertTrue(eventually { self.files(sdk).isEmpty })
     }
 
     func test_a_refusal_in_the_background_asks_the_shop_only_once_the_app_is_in_the_foreground() {
@@ -401,7 +403,8 @@ final class CoreQueueTests: XCTestCase {
             guard case .failure(.invalidResponse) = result else { return XCTFail("\(result)") }
         }
         XCTAssertTrue(files(sdk).isEmpty, "cleared")
-        XCTAssertEqual(dropped(shop).last?.context["reason"], "refused")
+        // The log handler hears it on a queue of its own, not before the callbacks.
+        XCTAssertTrue(eventually { self.dropped(shop).last?.context["reason"] == "refused" })
 
         let refused = expectation(description: "refused at once")
         expectNoRequest(to: "/push", shop: shop) {
@@ -459,6 +462,8 @@ final class CoreQueueTests: XCTestCase {
         XCTAssertEqual(waiting.count, 1000)
         XCTAssertEqual((waiting.first?.body["items"] as? [[String: Any]])?.first?["id"] as? String, "item-4")
         XCTAssertEqual(files(sdk).count, 1000)
+        // The queue logged the drops; the log handler, a queue of its own, may not have heard them yet.
+        XCTAssertTrue(eventually { self.dropped(shop).count >= 3 })
         XCTAssertEqual(dropped(shop).count, 3)
         XCTAssertTrue(dropped(shop).allSatisfy { $0.context["reason"] == "overflow" })
         sdk.release()
