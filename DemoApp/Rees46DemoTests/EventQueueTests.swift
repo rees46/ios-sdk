@@ -3,8 +3,9 @@
 //  REES46Tests
 //
 //  The event queue on its own, with a host the test answers for: an answer that comes after its
-//  instance was released, files another queue of the folder writes after this one read it, and a clear
-//  that does not wait for the queue's thread.
+//  instance was released, files another queue of the folder writes after this one read it, a clear
+//  that does not wait for the queue's thread, and the wait of `deleteUserCredentials()` for the files of
+//  a clear to be gone.
 //
 
 import XCTest
@@ -204,5 +205,30 @@ final class EventQueueTests: XCTestCase {
         guard case .failed(.cancelled, _)? = outcome.current else { return XCTFail("\(String(describing: outcome.current))") }
         host.answer(Self.ok)
         XCTAssertTrue(eventually { self.files(store).isEmpty })
+    }
+
+    func test_await_clear_returns_once_the_files_are_gone_also_when_the_queues_thread_was_busy() {
+        let store = storage()
+        let host = FakeQueueHost()
+        let queue = EventQueue.attach(host, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        let hold = DispatchSemaphore(value: 0)
+        defer { hold.signal() }
+        host.gateHold.current = hold
+        let outcome = Locked<EventQueue.Outcome?>(nil)
+        take(queue, "old") { outcome.current = $0 }
+        // The queue's thread is busy deciding to send it, and its file is on disk.
+        XCTAssertEqual(host.gateEntered.wait(timeout: .now() + 5), .success)
+        XCTAssertEqual(files(store).count, 1)
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.2) { hold.signal() }
+
+        queue.clear(error: .cancelled, reason: "delete_user_credentials")
+        queue.awaitClear()
+
+        XCTAssertFalse(host.gateHolding.current, "it waited for the queue's thread")
+        XCTAssertTrue(files(store).isEmpty, "gone when it returns: a process that ends now leaves none")
+        queue.settle()
+        XCTAssertTrue(host.sent.current.isEmpty, "the event taken before it never went")
+        XCTAssertTrue(eventually { outcome.current != nil })
+        guard case .failed(.cancelled, _)? = outcome.current else { return XCTFail("\(String(describing: outcome.current))") }
     }
 }

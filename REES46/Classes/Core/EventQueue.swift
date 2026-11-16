@@ -66,7 +66,7 @@ protocol EventQueueHost: AnyObject {
 ///   source and `time`; none of it is written to disk. `clear` — `deleteUserCredentials()`, `refused` —
 ///   takes effect when it is called: the event on its way is cancelled, none of the events before it
 ///   goes any more, and an answer to an event sent before it changes nothing; the files go afterwards,
-///   on the queue's thread.
+///   on the queue's thread, which `deleteUserCredentials()` waits for (`awaitClear`).
 /// - **Disk** that fails never makes the queue send again at once: an event whose new state cannot be
 ///   written goes again after a pause, one delivered whose file cannot be removed leaves the queue
 ///   anyway; a file that does not parse is dropped (`unreadable`), one that cannot be read now — the
@@ -508,6 +508,19 @@ final class EventQueue {
         clearLock.unlock()
         tasks.forEach { $0.cancel() }
         work.async { self.catchUpWithClear() }
+    }
+
+    /// Returns once `work` has caught up with the `clear` calls made before: their files are gone. For
+    /// `deleteUserCredentials()`, whose customer's files would otherwise outlive a process that ends right
+    /// after the call, and the next launch would send their events with the next customer's device id.
+    /// This queue writes its files on `work` only, so none of them comes back afterwards; `work` never
+    /// waits for the network, so neither does this. Called on `work`, it catches up there.
+    func awaitClear() {
+        if DispatchQueue.getSpecific(key: Self.workKey) == ObjectIdentifier(self) {
+            catchUpWithClear()
+        } else {
+            work.sync { self.catchUpWithClear() }
+        }
     }
 
     /// Whether a `clear` came after `generation` was taken on `work`.

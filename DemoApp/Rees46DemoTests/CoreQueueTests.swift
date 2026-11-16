@@ -711,8 +711,7 @@ final class CoreQueueTests: XCTestCase {
 
         sdk.deleteUserCredentials()
 
-        // The call does not wait for the queue's thread: the files go right after it.
-        sdk.eventQueue?.settle()
+        // Gone when the call returns: a process that ends right after it leaves none of them behind.
         XCTAssertTrue(files(sdk).isEmpty, "gone with the customer")
         XCTAssertEqual(sdk.eventQueue?.waiting.count, 0)
         XCTAssertTrue(eventually { self.dropped(shop).last?.context["reason"] == "delete_user_credentials" })

@@ -1834,7 +1834,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if let seance = newLegacySeance {
             legacySessionListeners.notify(seance)
         }
-        if eventQueue == nil, usesCoreV2 {
+        if let queue = eventQueue {
+            // Their files are gone when this returns: a process that ends right after it would keep them,
+            // and its next launch would send them with the next customer's device id.
+            queue.awaitClear()
+        } else if usesCoreV2 {
             storage.removeQueueDirectory()
         }
         logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
