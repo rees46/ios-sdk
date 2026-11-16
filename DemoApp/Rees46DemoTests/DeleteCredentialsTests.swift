@@ -269,18 +269,23 @@ final class DeleteCredentialsTests: XCTestCase {
                 XCTAssertTrue(error.isPushTokenWaitingForDeviceId)
             }
             // Kept on the caller's thread, or before the old core's call answered: nothing went or can go.
-            XCTAssertEqual(sdk.pendingPushToken, .direct(token: "fcm-token", isFirebase: true), "the later token is the one kept")
+            // Each provider waits in its own slot: the FCM token does not replace the APNs one.
+            XCTAssertEqual(sdk.pendingPushTokens[.fcm], .direct(token: "fcm-token", isFirebase: true))
+            XCTAssertEqual(sdk.pendingPushTokens[.apns], .device(Data([0x0A, 0x0B])), "coreV2 = \(coreV2)")
             XCTAssertTrue(tokens(shop).isEmpty, "a push token went out without a did, coreV2 = \(coreV2)")
             XCTAssertNil(UserDefaults.standard.object(forKey: NotificationRegistrar.lastUploadDateKey(shopId: shop)), "the week was claimed")
 
             // A did comes: the token goes with it.
             _ = initAnswers(dids: ["fresh-did"])
             sdk.deleteUserCredentials()
-            XCTAssertTrue(eventually { !self.tokens(shop).isEmpty }, "coreV2 = \(coreV2)")
-            XCTAssertEqual(tokens(shop).first?.body["did"] as? String, "fresh-did")
-            XCTAssertEqual(tokens(shop).first?.body["token"] as? String, "fcm-token")
-            XCTAssertEqual(tokens(shop).first?.body["platform"] as? String, "ios_firebase")
+            // Both go, each with its platform, once the new did is stored.
+            XCTAssertTrue(eventually { self.tokens(shop).count == 2 }, "coreV2 = \(coreV2)")
+            let sent = Dictionary(uniqueKeysWithValues: tokens(shop).map { ($0.body["platform"] as? String ?? "", $0.body) })
+            XCTAssertEqual(sent["ios"]?["token"] as? String, "0a0b")
+            XCTAssertEqual(sent["ios_firebase"]?["token"] as? String, "fcm-token")
+            XCTAssertTrue(tokens(shop).allSatisfy { $0.body["did"] as? String == "fresh-did" })
             XCTAssertNil(sdk.pendingPushToken)
+            XCTAssertTrue(sdk.pendingPushTokens.isEmpty)
             if coreV2 {
                 wait(for: [direct], timeout: 5)
                 guard case .success? = outcome.current else { return XCTFail("\(String(describing: outcome.current))") }

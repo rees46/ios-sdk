@@ -171,9 +171,9 @@ extension SimplePersonalizationSDK {
     }
 
     /// After an `/init` answer: each of the device's tokens — APNs and FCM — goes to this shop when its
-    /// own week allows.
-    func sendDevicePushToken() {
-        for token in deviceStore.deviceTokens {
+    /// own week allows; a provider in `except` had a token of its own sent just now.
+    func sendDevicePushToken(except sent: Set<Rees46.PushProvider> = []) {
+        for token in deviceStore.deviceTokens where !sent.contains(token.provider) {
             guard let platform = token.provider.iosPlatform else { continue }
             sendPushToken(token.token, platform: platform) { _, _ in }
         }

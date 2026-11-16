@@ -629,69 +629,100 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         case device(Data)
         /// A token given to `setPushTokenNotification` — an FCM one, say.
         case direct(token: String, isFirebase: Bool)
+
+        /// The provider the token is of: each provider waits in a slot of its own.
+        var provider: Rees46.PushProvider {
+            switch self {
+            case .device: return .apns
+            case .direct(_, let isFirebase): return isFirebase ? .fcm : .apns
+            }
+        }
     }
 
-    private var deferredPushToken: DeferredPushToken?
-    /// Who waits to hear the answer of the deferred token: the new core's callers, a bridge's on the old
-    /// core.
-    private var deferredPushTokenWaiters: [(Result<Void, SdkError>) -> Void] = []
+    /// One waiting token per provider — APNs and FCM —, with who waits to hear its answer: the new core's
+    /// callers, a bridge's on the old core. An app that hands the SDK both tokens before the first
+    /// device id gets both to the shop once `/init` stores one.
+    private var deferredPushTokens: [Rees46.PushProvider: DeferredPushToken] = [:]
+    private var deferredPushTokenWaiters: [Rees46.PushProvider: [(Result<Void, SdkError>) -> Void]] = [:]
     private let pushTokenLock = NSLock()
 
-    /// Keeps `token` until the device has an id; a later one replaces it, and `waiter` — with those of
-    /// the token it replaced — hears the answer of the one that goes. A device id stored meanwhile —
-    /// `/init` answered between the check and here, and already looked for a deferred token — sends it
-    /// now instead of leaving it until the next `/init`.
+    /// Keeps `token` until the device has an id; a later one of the same provider replaces it, and
+    /// `waiter` — with those of the token it replaced — hears the answer of the one that goes. A token
+    /// of the other provider waits in its own slot. A device id stored meanwhile — `/init` answered
+    /// between the check and here, and already looked for a deferred token — sends it now instead of
+    /// leaving it until the next `/init`.
     func deferPushToken(_ token: DeferredPushToken, waiter: ((Result<Void, SdkError>) -> Void)? = nil) {
         pushTokenLock.lock()
-        deferredPushToken = token
+        deferredPushTokens[token.provider] = token
         if let waiter = waiter {
-            deferredPushTokenWaiters.append(waiter)
+            deferredPushTokenWaiters[token.provider, default: []].append(waiter)
         }
         pushTokenLock.unlock()
         logger.debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
         if !deviceId.isEmpty {
-            sendDeferredPushToken()
+            sendDeferredPushTokens()
         }
     }
 
-    /// The push token deferred for want of a device id; for tests.
+    /// The push token deferred for want of a device id — the last one given, of either provider —; for
+    /// tests.
     var pendingPushToken: DeferredPushToken? {
         pushTokenLock.lock(); defer { pushTokenLock.unlock() }
-        return deferredPushToken
+        return lastDeferredProvider.flatMap { deferredPushTokens[$0] } ?? deferredPushTokens.values.first
     }
 
-    /// After `/init` stored a device id: the push token goes with `autoSendPushToken`, and so does one
-    /// that came while the device had none. The new core sends the device's token after every `/init`
-    /// answer, whoever gave it — the week holds a second one back (`sdk/core/push.md`).
+    /// The push tokens deferred for want of a device id, by provider; for tests.
+    var pendingPushTokens: [Rees46.PushProvider: DeferredPushToken] {
+        pushTokenLock.lock(); defer { pushTokenLock.unlock() }
+        return deferredPushTokens
+    }
+
+    /// The provider of the token deferred last; under `pushTokenLock`.
+    private var lastDeferredProvider: Rees46.PushProvider? {
+        Rees46.PushProvider.allCases.last { deferredPushTokens[$0] != nil }
+    }
+
+    /// After `/init` stored a device id: the push token goes with `autoSendPushToken`, and so do the
+    /// ones that came while the device had none. The new core sends each of the device's tokens after
+    /// every `/init` answer, whoever gave it — the week of each provider holds a second one back
+    /// (`sdk/core/push.md`).
     private func sendPushTokenIfDeviceIdIsKnown() {
         guard !deviceId.isEmpty, !isReleased else { return }
         if usesCoreV2 {
-            // The deferred token is the device's last one: sent, it is the device's token anyway.
-            if !sendDeferredPushToken() {
-                sendDevicePushToken()
-            }
+            // A deferred token is the device's last one of its provider: sent, it is the device's token
+            // anyway. A provider with none waiting sends the device's.
+            let sent = sendDeferredPushTokens()
+            sendDevicePushToken(except: sent)
             return
         }
         if autoSendPushToken {
             handleAutoSendPushToken()
         }
-        sendDeferredPushToken()
+        sendDeferredPushTokens()
     }
 
-    /// The token deferred for want of a device id, taken under the lock: once, whoever takes it.
-    /// `true` when there was one.
+    /// The tokens deferred for want of a device id, taken under the lock: once, whoever takes them.
+    /// Hands back the providers whose token went.
     @discardableResult
-    private func sendDeferredPushToken() -> Bool {
-        guard !deviceId.isEmpty, !isReleased else { return false }
+    private func sendDeferredPushTokens() -> Set<Rees46.PushProvider> {
+        guard !deviceId.isEmpty, !isReleased else { return [] }
         pushTokenLock.lock()
-        let deferred = deferredPushToken
-        deferredPushToken = nil
+        let deferred = deferredPushTokens
+        deferredPushTokens.removeAll()
         let waiters = deferredPushTokenWaiters
         deferredPushTokenWaiters.removeAll()
         pushTokenLock.unlock()
+        for provider in Rees46.PushProvider.allCases {
+            guard let token = deferred[provider] else { continue }
+            sendDeferredPushToken(token, waiters: waiters[provider] ?? [])
+        }
+        return Set(deferred.keys)
+    }
+
+    private func sendDeferredPushToken(_ deferred: DeferredPushToken, waiters: [(Result<Void, SdkError>) -> Void]) {
         // Called inside the answer's completion: the whole error is the current one there.
         let heard: ((Result<Void, SdkError>) -> Void)? = waiters.isEmpty ? nil : { result in waiters.forEach { $0(result) } }
-        if usesCoreV2, let deferred = deferred {
+        if usesCoreV2 {
             // The new core's token: its own rules, its own log.
             switch deferred {
             case .device(let token):
@@ -699,14 +730,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             case let .direct(token, isFirebase):
                 submitPushToken(Rees46.PushToken(token: token, provider: isFirebase ? .fcm : .apns), completion: heard)
             }
-            return true
+            return
         }
         switch deferred {
-        case .device(let token)?:
+        case .device(let token):
             // With autoSendPushToken the device's token just went: the registrar's weekly claim holds a
             // second one back anyway.
             NotificationRegistrar(sdk: self).registerWithDeviceToken(deviceToken: token, completion: heard)
-        case let .direct(token, isFirebase)?:
+        case let .direct(token, isFirebase):
             setPushTokenNotification(token: token, isFirebaseNotification: isFirebase) { result in
                 switch result {
                 case .success:
@@ -716,17 +747,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 }
                 heard?(result)
             }
-        case nil:
-            return false
         }
-        return true
     }
 
     /// `release()`: a deferred token is not sent any more, and who waits for it hears `notInitialized`.
     private func failDeferredPushToken() {
         pushTokenLock.lock()
-        deferredPushToken = nil
-        let waiters = deferredPushTokenWaiters
+        deferredPushTokens.removeAll()
+        let waiters = deferredPushTokenWaiters.values.flatMap { $0 }
         deferredPushTokenWaiters.removeAll()
         pushTokenLock.unlock()
         guard !waiters.isEmpty else { return }
