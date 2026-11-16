@@ -245,9 +245,14 @@ final class CoreInitTests: XCTestCase {
             XCTAssertTrue(eventually { self.scheduler.pending == 1 && self.inits(shop).count == attempt }, "attempt \(attempt)")
             let pause = scheduler.pendingDelays.first ?? -1
             pauses.append(pause)
-            scheduler.advance(by: pause)
+            // The eleventh pause is left to run out: a twelfth /init would log a twelfth retry before the
+            // log handler, a queue of its own, delivered the eleventh.
+            if attempt < 11 {
+                scheduler.advance(by: pause)
+            }
         }
         XCTAssertEqual(pauses, [1, 2, 4, 8, 16, 32, 64, 128, 256, 300, 300])
+        XCTAssertEqual(inits(shop).count, 11)
         XCTAssertEqual(sdk.state, .retrying)
         XCTAssertTrue(eventually { self.messages(shop, "init_retry").count == 11 })
         let retries = messages(shop, "init_retry")
