@@ -165,7 +165,7 @@ final class PersonalizationStoryImages {
     }
 
     private let cache: PersonalizationStoryMediaCache
-    private let session: URLSession
+    let session: URLSession
     private let memory = NSCache<NSString, Entry>()
     private let queue = DispatchQueue(label: "personalization.stories.images", qos: .userInitiated)
     /// Кто ждёт адрес; трогается только на главном потоке.

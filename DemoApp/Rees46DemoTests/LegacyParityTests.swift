@@ -560,4 +560,307 @@ final class LegacyParityTests: CoreScenarioTestCase {
         XCTAssertEqual(requests("/products/get", shop).first?.query["did"], "kept")
         sdk.release()
     }
+
+    // MARK: - NET-H2: the app's own URLSession object
+
+    func test_the_old_core_sends_through_the_apps_very_session_and_its_delegate() {
+        final class Recorder: NSObject, URLSessionTaskDelegate {
+            let paths = Locked<[String]>([])
+            func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+                paths.mutate { $0.append(task.originalRequest?.url?.path ?? "") }
+            }
+        }
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        let recorder = Recorder()
+        let session = URLSession(configuration: .default, delegate: recorder, delegateQueue: nil)
+        sdk.urlSession = session
+        XCTAssertTrue(sdk.urlSession === session)
+        guard case .success? = getProduct(sdk) else { return XCTFail("products/get") }
+        XCTAssertTrue(eventually { recorder.paths.current.contains("/products/get") }, "its delegate (pinning, say) applies")
+        XCTAssertTrue(logged(shop, "invalid_config").isEmpty)
+        XCTAssertNil(requests("/products/get", shop).last?.header("Cookie"))
+        sdk.release()
+    }
+
+    // MARK: - S-H2: an upgrade with a storageKey that names no app group
+
+    func test_an_upgrade_with_a_storage_key_keeps_the_session_the_ab_group_and_the_advertising_id() throws {
+        let shop = newShop()
+        let key = "k-\(UUID().uuidString.prefix(6))"
+        let suite = try XCTUnwrap(UserDefaults(suiteName: key))
+        let partitionName = StoragePartition.suiteName(for: shop, storageKey: key)
+        defer {
+            UserDefaults.standard.removePersistentDomain(forName: key)
+            UserDefaults.standard.removePersistentDomain(forName: partitionName)
+            ShopStorage(shopId: shop, storageKey: key, logger: SdkLogger(shopId: shop, level: .none)).directory.map { try? FileManager.default.removeItem(at: $0) }
+        }
+        // 3.37.3's layout: the suite named by storageKey was the shop's whole storage.
+        suite.set("d", forKey: StoragePartition.deviceIdKey)
+        suite.set("S", forKey: StoragePartition.seanceKey)
+        suite.set(Date().timeIntervalSince1970 - 60, forKey: StoragePartition.seanceLastActKey)
+        suite.set("B", forKey: StoragePartition.abSegmentKey)
+        suite.set("idfa-1", forKey: StoragePartition.idfaKey)
+        let before = UserDefaults.standard.persistentDomain(forName: key)
+
+        let ready = expectation(description: "init")
+        let sdk = SimplePersonalizationSDK(
+            shopId: shop, apiDomain: "stub.test", autoSendPushToken: false, enableAutoPopupPresentation: false,
+            storageKey: key, keychainStore: InMemoryKeychainInitStore(), connectivity: network
+        ) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 10)
+        let initRequest = inits(shop).first
+        XCTAssertEqual(initRequest?.query["did"], "d")
+        XCTAssertEqual(initRequest?.query["sid"], "S", "the session goes on")
+        XCTAssertEqual(initRequest?.query["ios_advertising_id"], "idfa-1")
+        XCTAssertEqual(sdk.segment, "B", "the A/B group goes on")
+        let partition = try XCTUnwrap(UserDefaults(suiteName: partitionName))
+        XCTAssertEqual(partition.string(forKey: StoragePartition.idfaKey), "idfa-1")
+        XCTAssertEqual(UserDefaults.standard.persistentDomain(forName: key) as NSDictionary?, before as NSDictionary?, "the old suite is left as it was")
+        sdk.release()
+    }
+
+    // MARK: - S-H3: an app group's storageKey, both cores
+
+    func test_an_app_groups_storage_key_is_the_shared_partition_on_both_cores() throws {
+        for coreV2 in [false, true] {
+            CoreFlag.reset(to: coreV2)
+            let group = "group.test.\(UUID().uuidString.prefix(6))"
+            let suite = try XCTUnwrap(UserDefaults(suiteName: group))
+            defer { UserDefaults.standard.removePersistentDomain(forName: group) }
+            suite.set("G", forKey: StoragePartition.deviceIdKey)
+            suite.set("S", forKey: StoragePartition.seanceKey)
+            suite.set(Date().timeIntervalSince1970 - 60, forKey: StoragePartition.seanceLastActKey)
+            suite.set("A", forKey: StoragePartition.abSegmentKey)
+            let first = newShop()
+            let second = newShop()
+            func launch(_ shop: String) -> SimplePersonalizationSDK {
+                let ready = expectation(description: "init of \(shop)")
+                let sdk = SimplePersonalizationSDK(
+                    shopId: shop, apiDomain: "stub.test", autoSendPushToken: false, enableAutoPopupPresentation: false,
+                    storageKey: group, coreV2: coreV2, keychainStore: InMemoryKeychainInitStore(), connectivity: network
+                ) { _ in ready.fulfill() }
+                XCTAssertEqual(sdk.usesCoreV2, coreV2)
+                wait(for: [ready], timeout: 10)
+                return sdk
+            }
+            let a = launch(first)
+            // The new core is ready at once on the stored did: its /init is on its way.
+            XCTAssertTrue(eventually { !self.inits(first).isEmpty })
+            XCTAssertEqual(inits(first).first?.query["did"], "G", "coreV2 = \(coreV2)")
+            XCTAssertEqual(inits(first).first?.query["sid"], "S")
+            XCTAssertEqual(a.segment, "A")
+            XCTAssertNil(UserDefaults.standard.persistentDomain(forName: "\(group)_personalization_sdk_\(first)"), "the group's suite is the partition")
+            XCTAssertTrue(StorageMigrations.isDone(.storageKeySuite, in: suite, scope: StoragePartition.keyScope(shopId: first, storageKey: group)))
+            XCTAssertNotNil(suite.object(forKey: "personalization_sdk.migrated.storage_key_suite.\(StoragePartition.sanitize(first))"), "the flag carries the shop")
+            XCTAssertEqual(a.storage.directory?.lastPathComponent, StoragePartition.folderName(for: first, storageKey: group), "a folder of its own")
+            let b = launch(second)
+            XCTAssertTrue(eventually { !self.inits(second).isEmpty })
+            XCTAssertEqual(inits(second).first?.query["did"], "G", "shared, as before")
+            a.release()
+            b.release()
+            for shop in [first, second] {
+                ShopStorage(shopId: shop, storageKey: group, logger: SdkLogger(shopId: shop, level: .none)).directory.map { try? FileManager.default.removeItem(at: $0) }
+            }
+        }
+    }
+
+    // MARK: - S-M8: sendIDFARequest twice on the old core
+
+    func test_send_idfa_request_keeps_the_first_answer_on_file_and_the_last_in_the_keychain() {
+        let shop = newShop()
+        let keychain = InMemoryKeychainInitStore()
+        let sdk = makeLegacy(shop, keychain: keychain)
+        XCTAssertNil(sdk.storage.readSavedInitAnswer(), "the old core's /init saves nothing; sendIDFARequest does")
+        answer("/init", StubReply(json: #"{"did":"d-1","n":1}"#), StubReply(json: #"{"did":"d-1","n":2}"#))
+        for _ in 0..<2 {
+            let done = expectation(description: "idfa")
+            sdk.sendIDFARequest(idfa: UUID()) { _ in done.fulfill() }
+            wait(for: [done], timeout: 10)
+        }
+        XCTAssertEqual(keychain.data, Data(#"{"did":"d-1","n":2}"#.utf8), "the keychain the last")
+        XCTAssertEqual(sdk.storage.readSavedInitAnswer(), Data(#"{"did":"d-1","n":1}"#.utf8), "the file the first")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: StubSDK.savedInitFile(shopId: shop).path), "not in Documents any more")
+        sdk.release()
+    }
+
+    // MARK: - LEG-M6 / S-L13: the contacts are not sent again after deleteUserCredentials
+
+    @available(*, deprecated)
+    func test_the_contacts_given_at_creation_go_once_and_not_for_the_next_customer() {
+        let shop = newShop()
+        let ready = expectation(description: "init")
+        let sdk = createPersonalizationSDK(shopId: shop, userEmail: "a@b.c", apiDomain: "stub.test", autoSendPushToken: false) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 10)
+        XCTAssertTrue(eventually { self.requests("/profile/set", shop).count == 1 })
+
+        sdk.deleteUserCredentials()
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/init", shop: shop) == 2 && sdk.state == .ready })
+        sdk.sessionQueue.waitUntilAllOperationsAreFinished()
+        _ = getProduct(sdk)
+        XCTAssertEqual(requests("/profile/set", shop).count, 1, "not for the new did")
+        sdk.release()
+    }
+
+    // MARK: - PUSH-M10: a push routed to a released instance with no next one
+
+    func test_a_push_routed_to_a_released_instance_goes_on_its_stored_did_through_the_tracker() {
+        let shop = newShop()
+        let old = makeLegacy(shop)
+        StoragePartition.store(for: shop).set("stored", forKey: StoragePartition.deviceIdKey)
+        old.release()
+        let launches = inits(shop).count
+        Rees46.deliver(.event(.delivered), type: "bulk", code: "m-1", payload: pushPayload(shop), to: old, shopId: shop)
+        XCTAssertTrue(eventually { StubURLProtocol.answered(to: "/track/delivered", shop: shop) == 1 })
+        XCTAssertEqual(requests("/track/delivered", shop).first?.body["did"] as? String, "stored")
+        XCTAssertNil(SdkRegistry.shared.byShopId(shop), "no instance made")
+        XCTAssertEqual(inits(shop).count, launches, "no /init")
+    }
+
+    // MARK: - NET-M7: the bridges' errors of a timeout and a bad answer, both cores
+
+    func test_the_bridges_hear_timeout_and_decoding_on_both_cores() {
+        for coreV2 in [false, true] {
+            let shop = newShop()
+            let sdk: SimplePersonalizationSDK = coreV2 ? makeV2(shop) : makeLegacy(shop)
+            XCTAssertEqual(sdk.usesCoreV2, coreV2)
+            answer("/recommend/b", StubReply(json: "{}", delay: 2))
+            let late = expectation(description: "timeout")
+            let timedOut = Locked<Result<RecommenderResponse, Rees46.SdkError>?>(nil)
+            sdk.recommend(blockId: "b", timeOut: 0.3, completion: Rees46.BridgeErrors.completion { timedOut.current = $0; late.fulfill() })
+            wait(for: [late], timeout: 10)
+            guard case .failure(.timeout)? = timedOut.current else { return XCTFail("coreV2 = \(coreV2): \(String(describing: timedOut.current))") }
+
+            answer("/products/get", StubReply(json: "not json"))
+            let bad = expectation(description: "decoding")
+            let decoded = Locked<Result<ProductInfo, Rees46.SdkError>?>(nil)
+            sdk.getProductInfo(id: "1", completion: Rees46.BridgeErrors.completion { decoded.current = $0; bad.fulfill() })
+            wait(for: [bad], timeout: 10)
+            guard case .failure(.decoding)? = decoded.current else { return XCTFail("coreV2 = \(coreV2): \(String(describing: decoded.current))") }
+            sdk.release()
+            answer("/recommend/b")
+            answer("/products/get")
+        }
+    }
+
+    // MARK: - PUSH-M7: the bridges' API on the old core
+
+    func test_the_bridges_hear_the_pushes_and_the_token_answers_of_the_old_core() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        let events = Locked<[(Rees46.PushEvent, Bool)]>([])
+        let listener = Rees46.onPushEvent { event, _ in events.mutate { $0.append((event, Thread.isMainThread)) } }
+        defer { listener.cancel() }
+        for event in [Rees46.PushEvent.delivered, .clicked, .opened, .closed] {
+            Rees46.handlePush(pushPayload(shop, code: "m-\(event.rawValue)"), event: event)
+        }
+        XCTAssertTrue(eventually { events.current.count == 4 })
+        XCTAssertEqual(events.current.map { $0.0 }, [.delivered, .clicked, .opened, .closed])
+        XCTAssertTrue(events.current.allSatisfy { $0.1 }, "on the main thread")
+        sdk.sessionQueue.waitUntilAllOperationsAreFinished()
+        XCTAssertTrue(requests("/track/opened", shop).isEmpty)
+
+        let results = Locked<[Result<Void, Rees46.SdkError>]>([])
+        let first = expectation(description: "sent")
+        sdk.setPushToken(Rees46.PushToken(token: "t", provider: .apns)) { result in results.mutate { $0.append(result) }; first.fulfill() }
+        wait(for: [first], timeout: 10)
+        XCTAssertEqual(requests("/mobile_push_tokens", shop).first?.body["platform"] as? String, "ios")
+        answer("/mobile_push_tokens", StubReply(500))
+        let second = expectation(description: "failed")
+        sdk.setPushToken(Rees46.PushToken(token: "t2", provider: .apns)) { result in results.mutate { $0.append(result) }; second.fulfill() }
+        wait(for: [second], timeout: 10)
+        guard results.current.count == 2, case .success = results.current[0], case .failure(.http(code: 500, _)) = results.current[1] else {
+            return XCTFail("\(results.current)")
+        }
+        sdk.release()
+    }
+
+    // MARK: - LEG-L1: the old core's listeners on the main thread
+
+    func test_the_old_cores_state_listener_flush_and_push_callback_run_on_the_main_thread() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        let threads = Locked<[String: Bool]>([:])
+        let all = expectation(description: "all")
+        all.expectedFulfillmentCount = 3
+        let handle = sdk.onStateChange { _ in
+            var first = false
+            threads.mutate { first = $0["state"] == nil; $0["state"] = Thread.isMainThread }
+            if first { all.fulfill() }
+        }
+        sdk.flush { _ in threads.mutate { $0["flush"] = Thread.isMainThread }; all.fulfill() }
+        Rees46.setPushCallbacks(Rees46.PushCallbacks(onDelivered: { _ in threads.mutate { $0["push"] = Thread.isMainThread }; all.fulfill() }))
+        Rees46.handlePush(pushPayload(shop), event: .delivered)
+        wait(for: [all], timeout: 10)
+        XCTAssertEqual(threads.current, ["state": true, "flush": true, "push": true])
+        handle.cancel()
+        sdk.release()
+    }
+
+    // MARK: - LEG-L3 / LEG-L4: an empty FCM token and a plus in a query
+
+    func test_an_empty_fcm_token_goes_as_it_did_and_a_plus_in_a_query_is_sent_as_it_was() {
+        let shop = newShop()
+        let identity = InMemoryUserIdentityRepository()
+        identity.deviceId = "d"
+        let sdk = makeLegacy(shop, identity: identity)
+        let service = NotificationService(sdk: sdk, notificationLogger: NotificationLogger())
+        service.didReceiveRegistrationFCMToken(fcmToken: nil)
+        XCTAssertTrue(eventually { self.requests("/mobile_push_tokens", shop).count == 1 })
+        XCTAssertEqual(requests("/mobile_push_tokens", shop).first?.body["token"] as? String, "", "as in 3.37.3")
+        XCTAssertEqual(requests("/mobile_push_tokens", shop).first?.body["platform"] as? String, "ios_firebase")
+
+        let done = expectation(description: "search")
+        sdk.search(query: "a+b") { _ in done.fulfill() }
+        wait(for: [done], timeout: 10)
+        let url = requests("/search", shop).first?.url?.absoluteString ?? ""
+        XCTAssertTrue(url.contains("a+b"), url)
+        XCTAssertFalse(url.contains("a%2Bb"), "the old core leaves a plus as it is")
+        sdk.release()
+    }
+
+    // MARK: - INIT-L6 / INIT-L7: the old core's /init
+
+    func test_the_old_cores_init_sends_a_stored_advertising_id_and_never_the_zero_one() {
+        let shop = newShop()
+        let identity = InMemoryUserIdentityRepository()
+        identity.advertisingId = "idfa-1"
+        let sdk = makeLegacy(shop, identity: identity)
+        XCTAssertEqual(inits(shop).first?.query["ios_advertising_id"], "idfa-1", "without sendAdvertisingId, as in 3.37.3")
+        sdk.release()
+
+        let zero = newShop()
+        let zeroIdentity = InMemoryUserIdentityRepository()
+        zeroIdentity.advertisingId = "00000000-0000-0000-0000-000000000000"
+        let other = makeLegacy(zero, identity: zeroIdentity)
+        XCTAssertNil(inits(zero).first?.query["ios_advertising_id"])
+        other.release()
+    }
+
+    func test_the_old_cores_init_logs_a_refusal_as_an_error_a_server_error_as_a_warning_and_a_stand_in() {
+        let refusing = newShop()
+        answer("/init", StubReply(402))
+        let a = makeLegacy(refusing)
+        XCTAssertTrue(eventually { self.logged(refusing, "init_failed").first?.level == .error })
+        a.release()
+
+        let failing = newShop()
+        answer("/init", StubReply(500))
+        let b = makeLegacy(failing)
+        XCTAssertTrue(eventually { self.logged(failing, "init_failed").first?.level == .warning })
+        b.release()
+
+        let standing = newShop()
+        answer("/init", StubReply.noAnswer)
+        let c = makeLegacy(standing, keychain: InMemoryKeychainInitStore(Data(#"{"did":"saved"}"#.utf8)))
+        XCTAssertTrue(waitForLog(standing, "init_saved_answer"))
+        c.release()
+
+        let passing = newShop()
+        answer("/init")
+        let d = makeLegacy(passing)
+        XCTAssertTrue(eventually { self.logged(passing, "init_succeeded").first?.level == .info })
+        d.release()
+    }
 }
+

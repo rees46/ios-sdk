@@ -3,7 +3,7 @@ import WebKit
 
 public class RWebViewManager {
   
-  private var urlSession: URLSession
+  private(set) var urlSession: URLSession
   private var urlHandler: URLHandler
   
   public init() {

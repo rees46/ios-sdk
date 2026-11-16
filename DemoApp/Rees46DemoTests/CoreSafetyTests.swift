@@ -290,10 +290,22 @@ final class CoreSafetyTests: XCTestCase {
     }
 
     func test_the_system_connectivity_monitor_reports_the_state_at_once_and_stops_when_cancelled() {
-        var reports: [Bool] = []
-        let subscription = SystemConnectivityMonitor.shared.observe { reports.append($0) }
-        XCTAssertEqual(reports.count, 1, "the current state comes at once")
+        // The monitor over a network status whose paths the test sends.
+        let original = NetworkStatus.nManager
+        let source = FakePathSource()
+        NetworkStatus.nManager = NetworkStatus(source: source)
+        defer { NetworkStatus.nManager = original }
+        source.deliver(.wifi)
+        let reports = Locked<[Bool]>([])
+        let subscription = SystemConnectivityMonitor.shared.observe { online in reports.mutate { $0.append(online) } }
+        XCTAssertEqual(reports.current, [true], "the current state comes at once")
+        source.deliver(.offline)
+        XCTAssertTrue(eventually { reports.current == [true, false] })
+
         subscription.cancel()
+        source.deliver(.wifi)
+        drainMainQueue()
+        XCTAssertEqual(reports.current, [true, false], "nothing after cancel")
     }
 
     // MARK: - Helpers

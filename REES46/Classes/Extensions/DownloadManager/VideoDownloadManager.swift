@@ -7,9 +7,9 @@ final public class VideoDownloadManager: NSObject {
     public typealias DownloadProgressBlock = (_ progress : CGFloat) -> Void
     public typealias BackgroundDownloadCompletionHandler = () -> Void
     
-    private var session: URLSession!
+    private(set) var session: URLSession!
     private var ongoingDownloads: [String : VideoDownloadObject] = [:]
-    private var backgroundSession: URLSession!
+    private(set) var backgroundSession: URLSession!
     
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     public var showLocalNotificationOnBackgroundDownloadSuccess = true

@@ -231,4 +231,121 @@ final class EventQueueTests: XCTestCase {
         XCTAssertTrue(eventually { outcome.current != nil })
         guard case .failed(.cancelled, _)? = outcome.current else { return XCTFail("\(String(describing: outcome.current))") }
     }
+
+    // MARK: - A new queue while a released one's event is on its way (Q-H2)
+
+    func test_a_new_queue_does_not_send_again_an_event_the_released_queue_has_on_its_way() {
+        let store = storage()
+        let first = FakeQueueHost()
+        let old = EventQueue.attach(first, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        take(old, "a")
+        XCTAssertTrue(eventually { first.waitingSends == 1 })
+        old.detach(first)
+        old.settle()
+
+        let second = FakeQueueHost()
+        let current = EventQueue.attach(second, storage: storage(), logger: SdkLogger(shopId: shop, level: .none))
+        let flushed = expectation(description: "flushed")
+        current.flush { flushed.fulfill() }
+        wait(for: [flushed], timeout: 5)
+        XCTAssertTrue(second.sent.current.isEmpty, "it is on its way: the new queue waits for its answer")
+
+        first.answer(Self.ok)
+        XCTAssertTrue(eventually { self.files(store).isEmpty })
+        current.settle()
+        XCTAssertEqual(current.inFlightCount, 0)
+        XCTAssertTrue(second.sent.current.isEmpty, "delivered: never sent again")
+        withExtendedLifetime(old) {}
+    }
+
+    func test_a_new_queue_sends_once_an_event_the_released_queues_send_lost() {
+        let store = storage()
+        let first = FakeQueueHost()
+        let old = EventQueue.attach(first, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        take(old, "a")
+        XCTAssertTrue(eventually { first.waitingSends == 1 })
+        old.detach(first)
+        old.settle()
+        let second = FakeQueueHost()
+        let current = EventQueue.attach(second, storage: storage(), logger: SdkLogger(shopId: shop, level: .none))
+
+        // The released queue's send was cancelled: the new queue, woken by its answer, sends it once.
+        first.answer(.failure(.cancelled))
+        XCTAssertTrue(eventually { second.waitingSends == 1 })
+        XCTAssertEqual(ids(second.sent.current), ["a"])
+        second.answer(Self.ok)
+        XCTAssertTrue(eventually { self.files(store).isEmpty })
+        current.settle()
+        XCTAssertEqual(ids(second.sent.current), ["a"], "once")
+        withExtendedLifetime(old) {}
+    }
+
+    // MARK: - A stopped queue that wrote the event (b6c2003)
+
+    func test_a_stopped_queue_that_wrote_the_event_accepts_it_and_sends_nothing() {
+        let store = storage()
+        let host = FakeQueueHost()
+        let queue = EventQueue.attach(host, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        queue.detach(host)
+        queue.settle()
+
+        let heard = Locked<[String]>([])
+        let done = expectation(description: "both")
+        done.expectedFulfillmentCount = 2
+        queue.enqueue(
+            path: "track/delivered", body: ["code": "m-1", "type": "bulk"], createdAt: clock.now(),
+            accepted: { error in heard.mutate { $0.append("accepted:\(error.map { "\($0)" } ?? "nil")") }; done.fulfill() },
+            completion: { _ in heard.mutate { $0.append("completion") }; done.fulfill() },
+            unstored: { _ in XCTFail("written") }
+        )
+        wait(for: [done], timeout: 5)
+        // On disk it counts as accepted — the shop's next queue sends it —, and it was told first.
+        XCTAssertEqual(heard.current, ["accepted:nil", "completion"])
+        XCTAssertEqual(files(store).count, 1)
+        queue.settle()
+        XCTAssertTrue(host.sent.current.isEmpty, "a stopped queue sends nothing")
+    }
+
+    func test_a_cleared_queue_tells_accepted_before_the_callback() {
+        let store = storage()
+        let host = FakeQueueHost()
+        let queue = EventQueue.attach(host, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        let hold = DispatchSemaphore(value: 0)
+        defer { hold.signal() }
+        host.gateHold.current = hold
+        take(queue, "busy")
+        XCTAssertEqual(host.gateEntered.wait(timeout: .now() + 5), .success)
+
+        let heard = Locked<[String]>([])
+        let done = expectation(description: "both")
+        done.expectedFulfillmentCount = 2
+        queue.enqueue(
+            path: "push", body: ["event": "view"], createdAt: clock.now(),
+            accepted: { _ in heard.mutate { $0.append("accepted") }; done.fulfill() },
+            completion: { _ in heard.mutate { $0.append("completion") }; done.fulfill() },
+            unstored: { _ in }
+        )
+        queue.clear(error: .cancelled, reason: "delete_user_credentials")
+        hold.signal()
+        wait(for: [done], timeout: 5)
+        XCTAssertEqual(heard.current, ["accepted", "completion"])
+    }
+
+    // MARK: - A 2xx after release()
+
+    func test_an_answer_the_client_calls_cancelled_after_release_but_with_a_2xx_deletes_the_event() {
+        let store = storage()
+        let host = FakeQueueHost()
+        let queue = EventQueue.attach(host, storage: store, logger: SdkLogger(shopId: shop, level: .none))
+        let outcome = Locked<EventQueue.Outcome?>(nil)
+        take(queue, "a") { outcome.current = $0 }
+        XCTAssertTrue(eventually { host.waitingSends == 1 })
+        // The client's answer once release() came: cancelled, with the 2xx it got.
+        host.answer(NetworkClient.Response(status: 200, body: Data(#"{"status":"success"}"#.utf8), retryAfter: nil, result: .failure(.cancelled)))
+        XCTAssertTrue(eventually { self.files(store).isEmpty }, "the server has it")
+        XCTAssertTrue(eventually { outcome.current != nil })
+        guard case .sent? = outcome.current else { return XCTFail("\(String(describing: outcome.current))") }
+        queue.settle()
+        XCTAssertEqual(host.sent.current.count, 1, "not sent again")
+    }
 }

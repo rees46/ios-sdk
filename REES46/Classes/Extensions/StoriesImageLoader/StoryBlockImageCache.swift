@@ -10,7 +10,7 @@ public struct StoryBlockImageCache {
     
     public static var imageURLProvider: StoryImageURLProviding?
 
-    fileprivate static var urlSession: URLSession = createUrlSession()
+    private(set) static var urlSession: URLSession = createUrlSession()
     
     fileprivate static func createUrlSession() -> URLSession {
         let config = URLSessionConfiguration.default.withoutCookies()

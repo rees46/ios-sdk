@@ -398,6 +398,7 @@ public enum Rees46 {
                 liveShopIds: Set(live.keys),
                 pendingShopIds: pendingShopIdsSnapshot()
             )
+            resolutionObserver?(resolution)
             switch resolution {
             case .existing(let shopId):
                 guard let sdk = live[shopId] else { continue }
@@ -424,6 +425,16 @@ public enum Rees46 {
 
     /// How many times `route` looks the shop up while it changes between the lookups.
     static let maxLookups = 3
+
+    private static let observerLock = NSLock()
+    private static var resolutionObserverValue: ((InstanceResolution) -> Void)?
+
+    /// Test-only seam: hears each resolution of a push's shop before the shop is looked up, so a test
+    /// can release or make the shop's instance in between. The SDK sets none.
+    static var resolutionObserver: ((InstanceResolution) -> Void)? {
+        get { observerLock.lock(); defer { observerLock.unlock() }; return resolutionObserverValue }
+        set { observerLock.lock(); resolutionObserverValue = newValue; observerLock.unlock() }
+    }
 
     /// How many times a push follows a shop's instances released one after another before it goes on
     /// the shop's stored identity instead.
@@ -596,6 +607,7 @@ public enum Rees46 {
         pending.removeAll()
         lock.unlock()
         pendingPushTracker = PushDeliveryTracker.track
+        resolutionObserver = nil
         PendingPushEvents.reset()
         PushCenter.reset()
         PushTokenWeek.reset()
