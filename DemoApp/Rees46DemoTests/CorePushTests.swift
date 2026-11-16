@@ -265,7 +265,8 @@ final class CorePushTests: XCTestCase {
         sdk.storage.setPushTokenClaim(ShopStorage.PushTokenClaim(token: "t", since: clock.now()), platform: "ios")
         guard case .success? = send(sdk, "t") else { return XCTFail("held back, not failed") }
         XCTAssertTrue(tokens(shop).isEmpty)
-        XCTAssertTrue(eventually { self.logged(shop, "push_token_skipped").last?.context["reason"] == "on_its_way" })
+        // Another launch's send on its way counts as sent for the week (`sdk/core/logging.md`).
+        XCTAssertTrue(eventually { self.logged(shop, "push_token_skipped").contains { $0.context["reason"] == "sent_recently" } })
 
         clock.advance(by: PushTokenWeek.markLifetime)
         guard case .success? = send(sdk, "t") else { return XCTFail("sent") }
@@ -1050,7 +1051,7 @@ final class CorePushTests: XCTestCase {
         XCTAssertEqual(requests("/track/clicked", shop).count, 1, "once")
         XCTAssertTrue(PushCenter.isTaken(.clicked, code: "m-1", shopId: shop))
         XCTAssertTrue(eventually { heard.current == ["m-1"] }, "heard once")
-        XCTAssertTrue(logged(shop, "push_received").contains { $0.context["reason"] == "rerouted" })
+        XCTAssertTrue(eventually { self.logged(shop, "push_received").contains { $0.context["rerouted"] == "true" } })
         new.release()
     }
 

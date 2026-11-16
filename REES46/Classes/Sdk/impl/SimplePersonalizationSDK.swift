@@ -608,8 +608,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                     self.logger.warning(LogCode.pushPermissionFailed, "the notification permission request failed", ["error": SdkLogger.errorKind(error)])
                 }
             }
-        } else {
-            logger.debug(LogCode.pushTokenSkipped, "the SDK does not send the push token by itself", ["reason": "auto_send_off"])
         }
     }
     
@@ -697,6 +695,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
         if autoSendPushToken {
             handleAutoSendPushToken()
+        } else if deviceStore.legacyPushToken != nil {
+            // The device has a token the old core sends only with `autoSendPushToken`.
+            logger.debug(LogCode.pushTokenSkipped, "the SDK does not send the push token by itself", ["reason": "auto_send_off"])
         }
         sendDeferredPushTokens()
     }

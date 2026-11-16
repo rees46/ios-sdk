@@ -266,11 +266,24 @@ final class LoggingTests: XCTestCase {
 
         NotificationRegistrar(sdk: sdk).registerWithDeviceToken(deviceToken: Data([1, 2, 3]))
 
-        // The stub SDK does not send the token by itself: that skip is logged too, with its own reason.
         XCTAssertTrue(eventually {
             self.messages(of: self.shopId).contains { $0.code == "push_token_skipped" && $0.context["reason"] == "sent_recently" }
         })
-        XCTAssertTrue(messages(of: shopId).contains { $0.code == "push_token_skipped" && $0.context["reason"] == "auto_send_off" })
+    }
+
+    func test_a_token_the_old_core_does_not_send_by_itself_is_skipped_as_auto_send_off() {
+        // The device has a token; the stub SDK does not send it by itself (`autoSendPushToken = false`).
+        let store = StubSDK.deviceStore(shopId: shopId)
+        store.pushToken = Data([1, 2, 3])
+        let ready = expectation(description: "init")
+        let sdk = StubSDK.make(shopId: shopId, logLevel: .debug, deviceStore: store) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+
+        XCTAssertTrue(eventually {
+            self.messages(of: self.shopId).contains { $0.code == "push_token_skipped" && $0.context["reason"] == "auto_send_off" }
+        })
+        XCTAssertTrue(StubURLProtocol.requests(to: "/mobile_push_tokens", shop: shopId).isEmpty)
+        withExtendedLifetime(sdk) {}
     }
 
     func test_errors_are_logged_by_their_kind_never_by_their_text() {

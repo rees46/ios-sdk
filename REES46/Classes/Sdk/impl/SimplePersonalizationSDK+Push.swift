@@ -197,7 +197,8 @@ extension SimplePersonalizationSDK {
             // The send on its way answers for both.
             return
         case .markedElsewhere:
-            logger.debug(LogCode.pushTokenSkipped, "a send of the push token began less than five minutes ago", ["reason": "on_its_way"])
+            // Another launch's send of it is on its way: for this shop it went, as far as the week knows.
+            logger.debug(LogCode.pushTokenSkipped, "a send of the push token began less than five minutes ago", ["reason": "sent_recently"])
             completion(.success(()), nil)
             return
         }

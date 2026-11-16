@@ -461,7 +461,7 @@ public enum Rees46 {
         let shopId = released.shopId
         let logger = SdkLogger.forShop(shopId)
         if hops <= maxReroutes, let live = SdkRegistry.shared.byShopId(shopId), (live as AnyObject) !== released {
-            logger.debug(LogCode.pushReceived, "the push went to the shop's new instance", ["event": route.name, "reason": "rerouted"])
+            logger.debug(LogCode.pushReceived, "the push went to the shop's new instance", ["event": route.name, "rerouted": "true"])
             deliver(route, type: type, code: code, payload: payload, to: live, shopId: shopId, hops: hops)
             return
         }
