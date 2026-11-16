@@ -406,17 +406,13 @@ public enum Rees46 {
                 SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
                 return nil
             }
-            routeToPending(shopId: shopId, config: config, route: route, type: type, code: code, payload: payload)
-            return shopId
-        case .notRegistered:
-            SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
-            return nil
-        case .ambiguous:
-            // No shop_id while several shops are registered: tracking it would guess the shop.
-            SdkLogger.process.warning(LogCode.pushDropped, "the push names no shop and several are registered", ["reason": "ambiguous_shop"])
-            return nil
         }
+        SdkLogger.process.warning(LogCode.pushDropped, "the shop of the push is not registered", ["reason": "unknown_shop"])
+        return nil
     }
+
+    /// How many times `route` looks the shop up while it changes between the lookups.
+    static let maxLookups = 3
 
     /// How many times a push follows a shop's instances released one after another before it goes on
     /// the shop's stored identity instead.
@@ -485,10 +481,12 @@ public enum Rees46 {
     ///
     /// - The new core writes the event into the shop's queue on disk and sends it at once under a
     ///   background task (`PendingPushEvents`); one that cannot go now — offline at a cold start — stays
-    ///   there for the shop's instance. Nothing goes without a stored device id (`push_dropped`,
+    ///   there for the shop's instance. The device id is the shop's from wherever its instance would take
+    ///   it without `/init` (`PendingPushEvents.deviceId`); nothing goes without one (`push_dropped`,
     ///   `no_did`) — the server sent this device no push of the shop — or for a shop that refused the
-    ///   SDK (`refused`). Each event goes once per message, counted and heard by the callback once it is
-    ///   on disk; `received` goes as `delivered`, a click stores the source in the shop's partition.
+    ///   SDK (`queue_dropped`, `refused`). Each event goes once per message, counted and heard by the
+    ///   callback once it is on disk; `received` goes as `delivered`, a click stores the source in the
+    ///   shop's partition.
     /// - The old core sends exactly what it always has: the event at once, with the stored device id or
     ///   an empty one; `opened` and `closed`, which it never had, send nothing.
     private static func routeToPending(
@@ -502,7 +500,6 @@ public enum Rees46 {
         let logger = SdkLogger.forShop(shopId)
         let newCore = CoreFlag.current ?? config.coreV2
         let sent = newCore ? PushRoute.event(route.newCoreEvent) : route
-        let deviceId = StoragePartition.deviceId(for: shopId, storageKey: config.storageKey)
         guard newCore else {
             logger.debug(LogCode.pushReceived, "the push went to its shop", ["event": sent.name])
             if sent != .event(.opened), sent != .event(.closed) {

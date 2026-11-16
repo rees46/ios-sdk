@@ -188,6 +188,11 @@ internal final class SdkRegistry {
         queue.sync { byShop[shopId]?.sdk }
     }
 
+    /// The live instances by shop, read at once: a lookup in it never misses a shop it lists.
+    func liveByShop() -> [String: PersonalizationSDK] {
+        queue.sync { byShop.mapValues(\.sdk) }
+    }
+
     /// Shop ids with a live, initialized instance.
     func shopIds() -> Set<String> {
         queue.sync { Set(byShop.keys) }
