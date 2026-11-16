@@ -2343,19 +2343,29 @@ extension SimplePersonalizationSDK: EventQueueHost {
                 // The disk refused it: sent once, as a plain request, with no queue behind it — after
                 // the instance is usable, and only for the customer it was made for.
                 guard let self = self else {
-                    completion(.failure(.legacy(.notInitialized)))
                     accepted?(.notInitialized)
+                    completion(.failure(.legacy(.notInitialized)))
+                    return
+                }
+                let needsSession = !EventQueue.sessionlessPaths.contains(path)
+                // A tracking event whose session ended in the background: no session starts from the
+                // background (`sdk/core/queue.md`), and with no queue to hold it the event is not taken.
+                if needsSession, !self.environment.lifecycle.isInForeground, self.sessionWindow?.isAlive == false {
+                    accepted?(.cancelled)
+                    CurrentError.with(.cancelled) {
+                        completion(.failure(.legacy(.cancelled)))
+                    }
                     return
                 }
                 var once = CoreRequest(method: .post, path: path, body: stamped)
                 once.identity = { [weak self] in self?.identity(ifCurrent: generation) }
                 // An event of a push by the rules of its lane: no session renewed, no `/init`.
-                once.needsSession = !EventQueue.sessionlessPaths.contains(path)
+                once.needsSession = needsSession
                 self.core.send(once) { response in
+                    accepted?(response.error)
                     CurrentError.with(response.error) {
                         completion(response.result.flatMap(Self.jsonObject))
                     }
-                    accepted?(response.error)
                 }
             }
         )
