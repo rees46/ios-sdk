@@ -1,28 +1,23 @@
 //
-//  MultiInstanceE2ETest.swift
+//  MultiInstanceTests.swift
 //  REES46Tests
 //
-//  On-device E2E for multi-instance (iOS-21) against the live REES46 API. Initializes two distinct,
-//  real shops in one process through the public `Rees46` facade and asserts their isolation and the
-//  fail-fast resolution contracts. Mirror of the Android `MultiInstanceE2ETest`.
+//  Multi-instance through the public `Rees46` facade, over the stub server: two shops in one process,
+//  their isolation, the fail-fast resolution contracts and the lazy lifecycle (materialization,
+//  eagerInit, awaitInstance on a pending shop).
 //
-//  `Rees46` / `SdkRegistry` are process-global, and the demo app registers its own shop at launch, so
-//  each test resets the registry in setUp and makes the shops it needs live itself — assertions are
-//  order-independent. Only `test_two_shops_have_isolated_sessions` needs the live backend (it waits on
-//  `/init` for the did); every other test here is deterministic without the network. The lifecycle
-//  tests (lazy materialization, eagerInit, awaitInstance-on-pending) and the offline session-isolation
-//  test build real SDKs but never await `/init` — they assert only the synchronous registry/session
-//  state the facade establishes at construction, so they hold even with no backend.
+//  `Rees46` / `SdkRegistry` are process-global, so each test resets the registry in setUp and makes the
+//  shops it needs live itself — assertions are order-independent.
 //
 
 import XCTest
 @testable import REES46
 
-final class MultiInstanceE2ETest: XCTestCase {
+final class MultiInstanceTests: XCTestCase {
 
-    private let shopA = Constants.testShopId
-    private let shopB = Constants.testShopIdB
-    private let apiDomain = Constants.testApiDomain
+    private var shopA = ""
+    private var shopB = ""
+    private let apiDomain = "stub.test"
 
     /// Real SDKs built by these tests, kept for the test's duration; the registry holds them too until
     /// `reset()`.
@@ -30,6 +25,9 @@ final class MultiInstanceE2ETest: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        StubURLProtocol.install()
+        shopA = StubSDK.shopId()
+        shopB = StubSDK.shopId()
         Rees46.reset()
         SdkRegistry.shared.reset()
     }
@@ -38,6 +36,9 @@ final class MultiInstanceE2ETest: XCTestCase {
         Rees46.reset()
         SdkRegistry.shared.reset()
         retained.removeAll()
+        StubURLProtocol.uninstall()
+        CoreFlag.reset()
+        [shopA, shopB].forEach { StubSDK.removeSavedInit(shopId: $0) }
         super.tearDown()
     }
 
@@ -60,7 +61,7 @@ final class MultiInstanceE2ETest: XCTestCase {
         (lhs as AnyObject?) === (rhs as AnyObject?)
     }
 
-    // MARK: - Resolution contracts (no backend needed)
+    // MARK: - Resolution contracts
 
     func test_both_shops_resolve_to_distinct_instances() throws {
         let a = Rees46.initialize(config(shopA))
@@ -71,7 +72,7 @@ final class MultiInstanceE2ETest: XCTestCase {
         XCTAssertTrue(same(try Rees46.instance(for: shopB), b))
     }
 
-    func test_default_instance_is_ambiguous_with_two_shops_live() {
+    func test_default_instance_is_ambiguous_with_two_shops() {
         _ = Rees46.initialize(config(shopA))
         _ = Rees46.initialize(config(shopB))
 
@@ -92,7 +93,7 @@ final class MultiInstanceE2ETest: XCTestCase {
         }
     }
 
-    // MARK: - Lifecycle: lazy materialization / eagerInit / awaitInstance (no backend)
+    // MARK: - Lifecycle: lazy materialization / eagerInit / awaitInstance
 
     /// The core lazy-multi-instance promise: `register(shops:)` only records the config; the SDK is not
     /// built until the first `instance(for:)`, which materializes it and clears the pending entry.
@@ -148,13 +149,12 @@ final class MultiInstanceE2ETest: XCTestCase {
         handle.cancel()
     }
 
-    // MARK: - Session isolation without the backend
+    // MARK: - Session isolation
 
     /// The seance is client-owned and assigned synchronously at construction from each shop's own
     /// storage partition (the `/init` response deliberately does not adopt it — see SimplePersonalizationSDK),
-    /// so per-shop isolation is observable immediately, with no network. This is the deterministic
-    /// sibling of `test_two_shops_have_isolated_sessions`, which waits on `/init` only for the did.
-    func test_two_shops_keep_isolated_sessions_without_the_backend() {
+    /// so per-shop isolation is observable at once.
+    func test_two_shops_keep_isolated_sessions() {
         let a = retain(Rees46.initialize(config(shopA)))
         let b = retain(Rees46.initialize(config(shopB)))
 
@@ -164,28 +164,22 @@ final class MultiInstanceE2ETest: XCTestCase {
         XCTAssertNotEqual(a.getSession(), b.getSession(), "each shop keeps its own seance — no cross-shop leak")
     }
 
-    // MARK: - Session isolation (live backend)
-
-    func test_two_shops_have_isolated_sessions() {
+    /// Both shops finish `/init`, each keeping its own session through it.
+    func test_two_shops_keep_isolated_sessions_through_init() {
         let (didA, sidA) = initAndWaitSession(shopA)
         let (didB, sidB) = initAndWaitSession(shopB)
 
-        // Both shops complete /init against the live backend, each carrying its own session.
-        XCTAssertFalse(didA.isEmpty, "shop A did not receive a did")
-        XCTAssertFalse(didB.isEmpty, "shop B did not receive a did")
-        // The did is a device-level identifier — the backend assigns one did per device, shared across
-        // the shops on it (neither shop sends the other's did: prepareRequestParameters drops it under
-        // needReInitialization). Per-shop isolation shows in the session: each shop's partition holds
-        // its own client-owned seance, so the two seances differ.
+        XCTAssertEqual(didA, "stub-did")
+        XCTAssertEqual(didB, "stub-did")
         XCTAssertNotEqual(sidA, sidB, "each shop must keep its own session (seance)")
     }
 
-    /// Initializes one shop and blocks until its `/init` completes, returning its live session.
+    /// Initializes one shop and blocks until its `/init` completes, returning its session.
     private func initAndWaitSession(_ shopId: String) -> (did: String, seance: String) {
         let ready = expectation(description: "\(shopId) /init")
         var err: SdkError?
-        let sdk = Rees46.initialize(config(shopId)) { err = $0; ready.fulfill() }
-        wait(for: [ready], timeout: Constants.defaultTimeout)
+        let sdk = retain(Rees46.initialize(config(shopId)) { err = $0; ready.fulfill() })
+        wait(for: [ready], timeout: 5)
         XCTAssertNil(err, "\(shopId) init error: \(String(describing: err))")
         return (sdk.getDeviceId(), sdk.getSession())
     }

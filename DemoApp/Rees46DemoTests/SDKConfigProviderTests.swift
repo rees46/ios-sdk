@@ -1,24 +1,27 @@
 import XCTest
-import REES46
+@testable import REES46
 
 class SDKConfigProviderTests: XCTestCase {
-    
     var sdk: PersonalizationSDK?
-    let shopId = Constants.testShopId
-    
+    var shopId = ""
+
     override func setUp() {
         super.setUp()
-        sdk = createPersonalizationSDK(
-            shopId: shopId,
-            parentViewController: nil
-        )
+        StubURLProtocol.install()
+        shopId = StubSDK.shopId()
+        let ready = expectation(description: "init")
+        sdk = StubSDK.make(shopId: shopId) { _ in ready.fulfill() }
+        wait(for: [ready], timeout: 5)
     }
-    
+
     override func tearDown() {
         sdk = nil
+        StubURLProtocol.uninstall()
+        CoreFlag.reset()
+        StubSDK.removeSavedInit(shopId: shopId)
         super.tearDown()
     }
-    
+
     private func assertSupportsSDKConfigProvider() {
         guard let _ = sdk as? SDKConfigProvider else {
             XCTFail("SDK does not support SDKConfigProvider")
