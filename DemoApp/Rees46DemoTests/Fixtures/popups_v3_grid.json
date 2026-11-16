@@ -70,7 +70,7 @@
           "minHeight": 110,
           "background": {
             "color": "#fef3c7ff",
-            "image": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+            "image": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
             "size": "contain",
             "position": "top",
             "repeat": "repeat-x"
@@ -179,7 +179,7 @@
         ],
         "minHeight": null,
         "bgColor": "#fef3c7",
-        "bgImageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+        "bgImageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
         "bgSize": "contain",
         "bgPosition": "top",
         "bgRepeat": "repeat-x"

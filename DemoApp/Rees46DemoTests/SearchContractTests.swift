@@ -101,7 +101,7 @@ final class SearchContractTests: ContractTestCase {
     {"search_query": "iphon", "search_query_original": "iphon", "collections": [], "products_total": 348,
      "clarification": true, "requests_count": 1,
      "products": [{"name": "Чайник Tefal Thermo Protect KO-140AE0", "url": "https://demo.r46.dev/product/286429",
-       "brand": "Tefal", "picture": "https://pictures.rees46.ru/resize-images/180/16041.jpg",
+       "brand": "Tefal", "picture": "https://pictures.rees46.test/resize-images/180/16041.jpg",
        "price_formatted": "19 990 ₽", "price": 19990, "price_full": 19990, "oldprice": 29990,
        "currency": "₽", "_id": "16041", "id": "286429"}]}
     """

@@ -6,7 +6,7 @@
         "name": "Аня",
         "spaced": "ок",
         "path": "sale",
-        "img": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+        "img": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
         "promo_code": "FAKE"
       },
       "t_after_static": "Привет, Аня! Код: {{promo_code}}. {{unknown}} ок {{cart_total}}",
@@ -17,7 +17,7 @@
         "переменные подставляются до разбора разметки (Context#rich_html), значения витринных — без разметки"
       ],
       "b_href": "https://demo.rees46.ru/sale",
-      "i_url": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+      "i_url": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
       "e_placeholder": "Email для Аня"
     }
   },
@@ -116,7 +116,7 @@
       },
       {
         "key": "img",
-        "value": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg"
+        "value": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg"
       },
       {
         "key": "promo_code",

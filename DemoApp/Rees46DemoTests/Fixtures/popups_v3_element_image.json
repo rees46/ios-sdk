@@ -3,7 +3,7 @@
     "about": "Элемент image: переменные в URL, режимы высоты, object-fit, соотношение сторон, скрытие, ссылка.",
     "expect": {
       "el-img-auto": {
-        "url": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+        "url": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
         "height": "auto",
         "fit": "cover",
         "radius": 12,
@@ -106,7 +106,7 @@
         "rowId": "row-1",
         "partIndex": 1,
         "style": {
-          "imageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/434529932.jpg",
+          "imageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/434529932.jpg",
           "imageHeightMode": "px",
           "imageHeight": "180",
           "imageObjectFit": "contain"
@@ -118,7 +118,7 @@
         "rowId": "row-2",
         "partIndex": 0,
         "style": {
-          "imageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+          "imageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
           "imageHeightMode": "%",
           "imageHeight": 150
         }
@@ -129,7 +129,7 @@
         "rowId": "row-2",
         "partIndex": 0,
         "style": {
-          "imageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+          "imageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
           "imageHeightMode": "vh",
           "imageHeight": null
         }
@@ -140,7 +140,7 @@
         "rowId": "row-2",
         "partIndex": 0,
         "style": {
-          "imageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+          "imageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
           "imageAspectRatio": "16 / 9",
           "imageObjectFit": "cover"
         }
@@ -151,7 +151,7 @@
         "rowId": "row-2",
         "partIndex": 0,
         "style": {
-          "imageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+          "imageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
           "imageAspectRatio": "wide",
           "imageObjectFit": "stretch"
         }
@@ -162,13 +162,13 @@
         "rowId": "row-2",
         "partIndex": 0,
         "style": {
-          "imageUrl": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
+          "imageUrl": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg",
           "showImage": false
         }
       }
     ],
     "variables": {
-      "banner": "https://pictures.rees46.ru/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg"
+      "banner": "https://pictures.rees46.test/resize-images/180/c1140c8254976de297c3caf971701a/141206.jpg"
     }
   }
 }
