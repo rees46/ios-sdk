@@ -704,11 +704,21 @@ final class EventQueue {
         defer { clearLock.unlock() }
         inFlightTasks[seq] = _Concurrency.Task { [weak self] in
             // A `clear` since the decision: the event was the deleted customer's.
-            let response: NetworkClient.Response
+            var response: NetworkClient.Response
             if let self = self, self.isCleared(since: generation) {
                 response = .failure(.cancelled)
             } else {
                 response = await host.queueSend(request)
+            }
+            // A `2xx` that came after the instance's `release()`: the client calls it cancelled, but
+            // the server has the event.
+            if case .failure(.cancelled) = response.result, let status = response.status, (200..<300).contains(status) {
+                response = NetworkClient.Response(
+                    status: status,
+                    body: response.body,
+                    retryAfter: nil,
+                    result: NetworkClient.classify(status: status, body: response.body, path: event.path)
+                )
             }
             let sentAt = clock.now()
             // The server has it: its file goes now — before another queue of the folder may send it,

@@ -136,6 +136,11 @@ actor NetworkClient {
         sessions.replace(with: configuration)
     }
 
+    /// How many sessions the app's configurations replaced still carry requests; for tests.
+    var retiredSessions: Int {
+        sessions.retiredCount
+    }
+
     // MARK: - Sending
 
     func send(_ request: Request) async -> Response {
@@ -205,6 +210,13 @@ actor NetworkClient {
         // session gave it.
         if loaded.error != nil, released || _Concurrency.Task.isCancelled {
             return cancelled(request)
+        }
+        // An answer that came after `release()` is cancelled too: the instance is gone, and its caller
+        // hears what every call after `release()` hears. Its status and body stay, so a sender that
+        // must know whether the server has it — the queue, whose event's file goes on a `2xx` — does.
+        if released, let http = loaded.response as? HTTPURLResponse {
+            logger.requestCancelled(method, path)
+            return Response(status: http.statusCode, body: data, retryAfter: nil, result: .failure(.cancelled))
         }
         guard let http = loaded.response as? HTTPURLResponse, loaded.error == nil else {
             let failure = loaded.error.map { Self.classify($0, reachedServer: loaded.reachedServer) } ?? .network
@@ -407,12 +419,14 @@ actor NetworkClient {
 
 // MARK: - Sessions
 
-/// The client's session and the one the app's configuration replaced last. A task is made and the
-/// sessions are invalidated under one lock, so no task is ever made on an invalidated session.
+/// The client's session and the ones the app's configuration replaced, while they still carry
+/// requests. A task is made and the sessions are invalidated under one lock, so no task is ever made on
+/// an invalidated session.
 private final class Sessions {
 
     /// One session with what it reports of its requests.
     private struct Entry {
+        let id = UUID()
         let session: URLSession
         let metrics: TaskMetrics
     }
@@ -426,8 +440,9 @@ private final class Sessions {
     }()
     private let lock = NSLock()
     private var current: Entry
-    /// The session the last `replace` let finish what it carried; an older one was let go of then.
-    private var previous: Entry?
+    /// The sessions a `replace` let finish what they carried, until they did: `release()` cancels what
+    /// is still in flight on each of them, however many times the configuration was replaced.
+    private var retired: [Entry] = []
     private var invalidated = false
 
     init(configuration: URLSessionConfiguration) {
@@ -464,18 +479,39 @@ private final class Sessions {
         own.waitsForConnectivity = false
         lock.lock(); defer { lock.unlock() }
         guard !invalidated else { return }
-        current.session.finishTasksAndInvalidate()
-        previous = current
+        let old = current
+        let id = old.id
+        // Once it finished what it carried, the session is let go of.
+        old.metrics.onInvalid = { [weak self] in self?.forget(id) }
+        old.session.finishTasksAndInvalidate()
+        retired.append(old)
         current = Self.entry(own, queue: queue)
     }
 
-    /// `release()`: every request in flight ends, no new one is made.
+    private func forget(_ id: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        retired.removeAll { $0.id == id }
+    }
+
+    /// How many replaced sessions still carry requests; for tests.
+    var retiredCount: Int {
+        lock.lock(); defer { lock.unlock() }
+        return retired.count
+    }
+
+    /// `release()`: every request in flight ends, on the current session and on every one it replaced,
+    /// and no new one is made.
     func invalidateAndCancel() {
         lock.lock(); defer { lock.unlock() }
         guard !invalidated else { return }
         invalidated = true
         current.session.invalidateAndCancel()
-        previous?.session.invalidateAndCancel()
+        // A session told to finish what it carries is invalidated already: its tasks are cancelled one
+        // by one.
+        for entry in retired {
+            entry.session.getAllTasks { tasks in tasks.forEach { $0.cancel() } }
+            entry.session.invalidateAndCancel()
+        }
     }
 
     /// The client is gone without `release()`: what is in flight finishes, the sessions let go of
@@ -507,6 +543,22 @@ final class TaskMetrics: NSObject, URLSessionTaskDelegate {
     private var byTask: [Int: URLSessionTaskMetrics] = [:]
     /// Tasks whose completion came first: their metrics, when they come, are not kept.
     private var completed: Set<Int> = []
+    private var invalidHandler: (() -> Void)?
+
+    /// Called once the session became invalid: it finished what it carried after
+    /// `finishTasksAndInvalidate`, or was cancelled.
+    var onInvalid: (() -> Void)? {
+        get { lock.lock(); defer { lock.unlock() }; return invalidHandler }
+        set { lock.lock(); invalidHandler = newValue; lock.unlock() }
+    }
+
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
+        lock.lock()
+        let handler = invalidHandler
+        invalidHandler = nil
+        lock.unlock()
+        handler?()
+    }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         lock.lock(); defer { lock.unlock() }
