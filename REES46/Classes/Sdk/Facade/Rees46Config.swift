@@ -31,9 +31,10 @@ public struct Rees46Config {
     /// that has none yet: the shop takes it instead of getting a new one from `/init`. A shop that has
     /// its own keeps it; `nil` or empty is none.
     public let deviceId: String?
-    /// The old switch of the SDK's logs; `true` meant everything.
+    /// The old switch of the SDK's logs, as it was given; `true` meant everything.
     @available(*, deprecated, message: "Set logLevel; enableLogs = true is logLevel = .debug.")
-    public var enableLogs: Bool { logLevel == .debug }
+    public var enableLogs: Bool { givenEnableLogs }
+    private let givenEnableLogs: Bool
     /// How much the SDK writes to the log, `warning` by default; see `Rees46.setLogHandler`.
     public let logLevel: Rees46.LogLevel
     /// Whether the SDK registers push tokens with the backend on its own.
@@ -85,6 +86,7 @@ public struct Rees46Config {
         self.apiDomain = apiDomain
         self.stream = stream
         self.deviceId = deviceId
+        self.givenEnableLogs = enableLogs
         // `enableLogs = true` is the old way to ask for everything.
         self.logLevel = enableLogs && logLevel == .warning ? .debug : logLevel
         self.autoSendPushToken = autoSendPushToken
