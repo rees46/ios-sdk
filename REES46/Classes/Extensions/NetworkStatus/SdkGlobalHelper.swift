@@ -45,19 +45,15 @@ public class SdkGlobalHelper {
         
         var sysinfo = utsname()
         uname(&sysinfo)
-        let name =  String(bytes: Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN)), encoding: .ascii)!.trimmingCharacters(in: .controlCharacters)
+        let name = (String(bytes: Data(bytes: &sysinfo.machine, count: Int(_SYS_NAMELEN)), encoding: .ascii) ?? "").trimmingCharacters(in: .controlCharacters)
         return name == "iPhone15,2" || name == "iPhone15,3" || name == "iPhone15,4" || name == "iPhone15,5" || name == "iPhone16,1" || name == "iPhone16,2" ? true : false
     }
     
     public func saveVideoParamsToDictionary(parentSlideId: String, paramsDictionary: [String:String]) {
        var stringValuesToSave: [String:String] = [:]
         
-       for key in paramsDictionary.keys {
-          let valueToStore = paramsDictionary[key]!
-          let keyVideoStr: String = key
-          let durationVideoStr: String = valueToStore
-
-          stringValuesToSave[keyVideoStr] = durationVideoStr
+       for (key, valueToStore) in paramsDictionary {
+          stringValuesToSave[key] = valueToStore
        }
        UserDefaults.standard.setValue(stringValuesToSave, forKeyPath: parentSlideId)
     }
@@ -66,10 +62,8 @@ public class SdkGlobalHelper {
         let savedDownloadedVideosValues: [String:String] = UserDefaults.standard.object(forKey: parentSlideId) as? [String : String] ?? [String:String]()
         
         var convertedDurationsDictionary:[String:String] = [:]
-        for key in savedDownloadedVideosValues.keys {
-            let keyVideoStr: String = key
-            let durationVideoStr: String = savedDownloadedVideosValues[key]!
-            convertedDurationsDictionary[keyVideoStr] = durationVideoStr
+        for (key, durationVideoStr) in savedDownloadedVideosValues {
+            convertedDurationsDictionary[key] = durationVideoStr
         }
         
         return convertedDurationsDictionary

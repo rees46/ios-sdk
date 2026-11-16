@@ -15,6 +15,8 @@ final class RequestTimeoutTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // A class of the new core that ran before left the process's core as it found it.
+        XCTAssertNotEqual(CoreFlag.current, true, "the old core's tests start on the old core")
         StubURLProtocol.install()
         shopId = StubSDK.shopId()
     }
@@ -96,7 +98,7 @@ final class RequestTimeoutTests: XCTestCase {
         wait(for: [answered], timeout: 5)
 
         let shop = StubURLProtocol.requests.filter { ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == sdk.shopId }
-        let short = shop.filter { $0.path != "/init" && $0.timeout < SimplePersonalizationSDK.defaultRequestTimeout }
+        let short = shop.filter { $0.path != "/init" && $0.timeout < NetworkClient.defaultTimeout }
         XCTAssertTrue(short.isEmpty, "requests with a short timeout: \(short.map { "\($0.path) \($0.timeout)" })")
         XCTAssertGreaterThanOrEqual(shop.count, 10)
     }

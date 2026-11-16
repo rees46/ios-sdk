@@ -731,20 +731,18 @@ extension PersonalizationStoriesViewController {
             center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main, using: pause),
             center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main, using: resume)
         ]
-        if #available(iOS 13.0, *) {
-            let scenePause: (Notification) -> Void = { [weak self] note in
-                guard let self, note.object as? UIScene === self.view.window?.windowScene else { return }
-                self.setPaused(.background, true)
-            }
-            let sceneResume: (Notification) -> Void = { [weak self] note in
-                guard let self, note.object as? UIScene === self.view.window?.windowScene else { return }
-                self.setPaused(.background, false)
-            }
-            observers += [
-                center.addObserver(forName: UIScene.willDeactivateNotification, object: nil, queue: .main, using: scenePause),
-                center.addObserver(forName: UIScene.didActivateNotification, object: nil, queue: .main, using: sceneResume)
-            ]
+        let scenePause: (Notification) -> Void = { [weak self] note in
+            guard let self, note.object as? UIScene === self.view.window?.windowScene else { return }
+            self.setPaused(.background, true)
         }
+        let sceneResume: (Notification) -> Void = { [weak self] note in
+            guard let self, note.object as? UIScene === self.view.window?.windowScene else { return }
+            self.setPaused(.background, false)
+        }
+        observers += [
+            center.addObserver(forName: UIScene.willDeactivateNotification, object: nil, queue: .main, using: scenePause),
+            center.addObserver(forName: UIScene.didActivateNotification, object: nil, queue: .main, using: sceneResume)
+        ]
         observers.append(center.addObserver(forName: PersonalizationStoryAudio.didChange, object: nil, queue: .main) { [weak self] _ in
             guard let self else { return }
             let muted = PersonalizationStoryAudio.shared.isPlaybackMuted
@@ -1020,10 +1018,7 @@ extension PersonalizationStoryPageViewController {
             next.contentGuide.topAnchor.constraint(equalTo: navigation.bottomAnchor, constant: PersonalizationSpacing.xl)
         ])
         // Тема слайда распространяется и на шапку: на медиа прогресс и крестик светлые.
-        if #available(iOS 13.0, *) {
-            content.overrideUserInterfaceStyle = slide.interfaceStyle
-        }
-        navigation.forcesDarkTokens = slide.isMedia
+        content.overrideUserInterfaceStyle = slide.interfaceStyle
         navigation.isShareVisible = story.shareUrl(of: slide) != nil
         navigation.progress.current = index
         navigation.progress.progress = 0

@@ -6,7 +6,7 @@
 //  registration bookkeeping, and the reactive `awaitInstance` path. Mirror of the Android `Rees46Test`.
 //
 //  Resolution is exercised with `FakeSDK` instances registered into `SdkRegistry` directly, so no real
-//  (network-spawning) SDK is constructed. The registry holds instances weakly, so each fake is bound
+//  (network-spawning) SDK is constructed. Each fake is also bound
 //  to a retained local for the test's duration. Materialization of a pending shop (which would build a
 //  real SDK) is intentionally not driven here — it is covered by the demo E2E (iOS-21).
 //
@@ -36,7 +36,7 @@ final class Rees46FacadeTests: XCTestCase {
         (lhs as AnyObject?) === (rhs as AnyObject?)
     }
 
-    /// Registers a live `FakeSDK` for `shopId`, retaining it against the registry's weak reference.
+    /// Registers a live `FakeSDK` for `shopId`.
     @discardableResult
     private func live(_ shopId: String) -> FakeSDK {
         let sdk = FakeSDK(shopId: shopId)
@@ -53,6 +53,30 @@ final class Rees46FacadeTests: XCTestCase {
                 return XCTFail("expected unknownShopId, got \(error)")
             }
         }
+    }
+
+    func test_a_live_instance_is_found_while_another_thread_holds_the_creation_lock() {
+        let sdk = live("shop-a")
+        let holding = DispatchSemaphore(value: 0)
+        let letGo = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            // Another thread building an instance — disk and keychain work — under the lock.
+            Rees46.withCreationLock { () -> ((), () -> Void) in
+                holding.signal()
+                _ = letGo.wait(timeout: .now() + 10)
+                return ((), {})
+            }
+        }
+        holding.wait()
+        defer { letGo.signal() }
+
+        let found = expectation(description: "instance(for:)")
+        let awaited = expectation(description: "awaitInstance")
+        DispatchQueue.global().async {
+            if self.same(try? Rees46.instance(for: "shop-a"), sdk) { found.fulfill() }
+            Rees46.awaitInstance(for: "shop-a") { if self.same($0, sdk) { awaited.fulfill() } }
+        }
+        wait(for: [found, awaited], timeout: 2)
     }
 
     func test_instance_for_an_unknown_shop_throws_unknownShopId() {

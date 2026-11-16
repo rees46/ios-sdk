@@ -50,7 +50,27 @@ public class NotificationService: NotificationServiceProtocol {
   }
   
   public func didRegisterForRemoteNotificationsWithDeviceToken(deviceToken: Data) {
+    // The token itself is never logged.
+    SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenReceived, "APNs handed a push token", ["source": "apns"])
+    let token = Rees46.PushToken(token: DeviceStore.hex(deviceToken), provider: .apns)
+    PushCenter.notify(token, instance: ownCallbacks)
+    // The new core: the device's token, for every shop of the process.
+    if usesCoreV2 {
+      Rees46.deviceTokenReceived(token, apnsData: deviceToken, through: sdk)
+      return
+    }
     notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
+  }
+
+  /// The push callbacks of this service's instance, which win over the facade's.
+  private var ownCallbacks: Rees46.PushCallbacks? {
+    (sdk as? SimplePersonalizationSDK)?.pushCallbackBox.callbacks
+  }
+
+  /// Whether this service's instance runs the new core, which sends `opened` and logs its push token
+  /// itself.
+  private var usesCoreV2: Bool {
+    (sdk as? SimplePersonalizationSDK)?.usesCoreV2 ?? false
   }
   
   private func setupNotificationCategories() {
@@ -99,6 +119,10 @@ public class NotificationService: NotificationServiceProtocol {
     switch state {
     case .active:
       notificationLogger.log("Application is in active state: the push arrived, nobody tapped it")
+      // The new core: a push in the active app is shown to the user — `opened` (decision 0004).
+      if usesCoreV2 {
+        Rees46.handlePush(userInfo, event: Rees46.PushEvent.opened)
+      }
     case .background:
       notificationLogger.log("Application is in background state")
       pushRetrieved(userInfo: userInfo)
@@ -113,20 +137,33 @@ public class NotificationService: NotificationServiceProtocol {
   
   
   public func didReceiveRegistrationFCMToken(fcmToken: String?) {
-    notificationLogger.log("didReceiveRegistrationFCMToken with token: \(String(describing: fcmToken))")
+    // The token itself is never logged.
+    if let fcmToken = fcmToken, !fcmToken.isEmpty {
+      SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenReceived, "FCM handed a push token", ["source": "fcm"])
+      PushCenter.notify(Rees46.PushToken(token: fcmToken, provider: .fcm), instance: ownCallbacks)
+    }
+    // The new core: the device's token, for every shop of the process; it logs the outcome itself.
+    if usesCoreV2 {
+      if let fcmToken = fcmToken, !fcmToken.isEmpty {
+        Rees46.deviceTokenReceived(Rees46.PushToken(token: fcmToken, provider: .fcm), apnsData: nil, through: sdk)
+      }
+      return
+    }
     
     sdk.setPushTokenNotification(token: fcmToken ?? "", isFirebaseNotification: true) { tokenResponse in
       switch tokenResponse {
       case .success():
-        self.notificationLogger.log("Successfully registered FCM token")
+        SdkLogger.forShop(self.sdk.shopId).info(LogCode.pushTokenSent, "the push token was sent")
       case let .failure(error):
-        self.notificationLogger.log("Error: \(error)")
+        // Held back for want of a device id: the SDK sends it once there is one.
+        guard !error.isPushTokenWaitingForDeviceId else { return }
+        SdkLogger.forShop(self.sdk.shopId).warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
       }
     }
   }
   
   public func didReceiveDeepLink(url: URL) {
-    notificationLogger.log("didReceiveDeepLink with url: \(url)")
+    notificationLogger.log("didReceiveDeepLink")
     
     let urlString = url.absoluteString
     let splitedUrlString = urlString.split(separator: "/")
@@ -148,16 +185,18 @@ public class NotificationService: NotificationServiceProtocol {
     let center = UNUserNotificationCenter.current()
     center.requestAuthorization(options: [.badge, .alert, .sound]) { granted, error in
       if let error = error {
-        print("Request authorization error: \(error)")
+        SdkLogger.process.warning(LogCode.pushPermissionFailed, "the notification permission request failed", ["error": SdkLogger.errorKind(error)])
+      } else {
+        SdkLogger.process.info(LogCode.pushPermission, "the notification permission was answered", ["granted": String(granted)])
       }
-      print("User authorization granted: \(granted)")
       completion(granted)
     }
     UIApplication.shared.registerForRemoteNotifications()
   }
   
   private func pushProcessing(userInfo: [AnyHashable: Any]) {
-    notificationLogger.log("pushProcessing with userInfo: \(userInfo)")
+    // Push content is never logged.
+    notificationLogger.log("pushProcessing")
     
     guard let (mailingType, code) = extractTypeAndCode(from: userInfo) else {
       notificationLogger.log("Failed to extract type and code, skipping processing")
@@ -182,14 +221,16 @@ public class NotificationService: NotificationServiceProtocol {
   
   
   private func pushRetrieved(userInfo: [AnyHashable: Any]) {
-    notificationLogger.log("pushRetrieved with userInfo: \(userInfo)")
+    notificationLogger.log("pushRetrieved")
     
     guard let (mailingType, code) = extractTypeAndCode(from: userInfo) else {
       handleNonSDKPush(userInfo: userInfo)
       return
     }
 
-    Rees46.handlePush(userInfo, event: .received)
+    // The old `received` — deprecated for apps —: `track/received` on the old core, as it has always
+    // gone, and once with `delivered` on the new one.
+    Rees46.route(userInfo, .received)
     
     guard let eventJSON = PushPayloadParser.event(from: userInfo),
           let eventType = eventJSON[Constants.typeKey] as? String,
@@ -248,6 +289,6 @@ public class NotificationService: NotificationServiceProtocol {
   }
   
   private func handleNonSDKPush(userInfo: [AnyHashable: Any]) {
-    notificationLogger.log("Non-SDK push received with data: \(userInfo)")
+    notificationLogger.log("Non-SDK push received")
   }
 }

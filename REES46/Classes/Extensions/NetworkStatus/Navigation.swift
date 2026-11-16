@@ -27,8 +27,8 @@ class Navigation {
     
     func startApp() {
         let root = DefaultNavigation(rootViewController: StoryViewController())
-        window!.rootViewController = root
-        window!.makeKeyAndVisible()
+        window?.rootViewController = root
+        window?.makeKeyAndVisible()
     }
     
 }

@@ -252,16 +252,12 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
                     self.isInDownloadMode = false
                     self.collectionView.reloadData()
                     self.updateEmptyState(hasStories: !response.stories.isEmpty)
-                    print("StoriesView: Stories successfully loaded")
+                    SdkLogger.area(.stories, .debug, "stories loaded", shopId: self.sdk?.shopId)
                     self.onStoriesLoadComplete?(true)
                 }
             case let .failure(error):
-                switch error {
-                case let .custom(customError):
-                    print("Error:", customError)
-                default:
-                    print("Error:", error.description)
-                }
+                // The kind of the error only: `.custom` carries the server's message.
+                SdkLogger.area(.stories, .warning, "stories were not loaded: \(error.logKind)", shopId: self.sdk?.shopId)
                 DispatchQueue.main.async {
                     // Nothing to show either, so the block collapses the same way an empty one does
                     // instead of leaving a row of placeholders that never resolve.
@@ -269,7 +265,6 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
                     self.isInDownloadMode = false
                     self.collectionView.reloadData()
                     self.updateEmptyState(hasStories: false)
-                    print("StoriesView: Stories load failed")
                     self.onStoriesLoadComplete?(false)
                 }
             }
@@ -457,25 +452,23 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 extension StoriesView: StoriesViewLinkProtocol {
     public func sendStructSelectedStorySlide(storySlide: StoriesElement) {
         self.communicationDelegate?.receiveSelectedProductData(products: storySlide)
-        print("\nSDK Received story slide button tap links for external use:")
         printSlideObject(objElementClass: storySlide)
     }
     
     public func structOfSelectedCarouselProduct(product: StoriesProduct) {
         self.communicationDelegate?.receiveSelectedCarouselProductData(products: product)
-        print("\nSDK Received carousel selected product link for external use:")
         printCarouselObject(objProductClass: product)
     }
     
     public func sendStructSelectedPromocodeSlide(promoCodeSlide: StoriesPromoCodeElement) {
         self.communicationDelegate?.receiveSelectedPromocodeProductData(promoCodeSlide: promoCodeSlide)
-        print("\nSDK Received promocode slide button tap links for external use:")
         printPromoObject(objPromoClass: promoCodeSlide)
     }
     
     public func linkIosExternalUse(url: String) {
         self.communicationDelegate?.receiveIosLink(text: url)
-        print("\nSDK Received linkIos for external use: \(url)\n\n")
+        // Links are not logged: they carry what the shop put in them.
+        SdkLogger.area(.stories, .debug, "a slide link went to the app", shopId: sdk?.shopId)
     }
 
     public func shouldOpenLinkBySdk(url: String) -> Bool {
@@ -496,25 +489,19 @@ extension StoriesView: StoriesViewLinkProtocol {
         }
     }
     
+    /// Notes in the SDK's log that a slide button went to the app; its links are not logged.
     public func printSlideObject(objElementClass: StoriesElement) {
-        print("Deeplink iOS: \(objElementClass.deeplinkIos ?? "")")
-        print("Link iOS: \(objElementClass.linkIos ?? "")")
-        print("Link Web: \(objElementClass.link ?? "")")
+        SdkLogger.area(.stories, .debug, "a slide button went to the app", shopId: sdk?.shopId)
     }
     
+    /// Notes in the SDK's log that a carousel product went to the app; the product is not logged.
     public func printCarouselObject(objProductClass: StoriesProduct) {
-        print("ProductName: \(objProductClass.name)")
-        print("ProductUrl: \(objProductClass.url)")
-        print("ProductCategory: \(objProductClass.category.name)")
-        print("ProductCategoryUrl: \(objProductClass.category.url)")
-        print("ProductPrice: \(objProductClass.price)")
-        print("ProductPriceFormatted: \(objProductClass.price_formatted)")
-        print("ProductPicture: \(objProductClass.picture)\n\n")
+        SdkLogger.area(.stories, .debug, "a carousel product went to the app", shopId: sdk?.shopId)
     }
     
+    /// Notes in the SDK's log that a promo code slide went to the app; its links are not logged.
     public func printPromoObject(objPromoClass: StoriesPromoCodeElement) {
-        print("Deeplink iOS: \(objPromoClass.deeplinkIos )")
-        print("Link Web: \(objPromoClass.url )")
+        SdkLogger.area(.stories, .debug, "a promo code slide went to the app", shopId: sdk?.shopId)
     }
 }
 

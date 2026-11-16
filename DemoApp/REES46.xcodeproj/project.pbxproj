@@ -59,6 +59,26 @@
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		67B36DC5275BCA31AB0A0363 /* SdkRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6493F884A898C533B4817F97 /* SdkRegistryTests.swift */; };
 		6805322F7DF2A2E2F1234B24 /* InstanceResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */; };
+		3A05D0EC928EDF345A601EC6 /* CoreHarnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD73D08B7AB7C93491292513 /* CoreHarnessTests.swift */; };
+		9E8193FCDF402E699BF32C89 /* LoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7218DCA6F31C98243117767E /* LoggingTests.swift */; };
+		44DFCC614C41FC7F0D67E12D /* CoreSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE0C995E06072213DBD3C31 /* CoreSafetyTests.swift */; };
+		76EF7E5E5AFCA68265EC952C /* CoreNetworkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0A8AFDAF5D2F008B563CA8 /* CoreNetworkTests.swift */; };
+		503713D4E39047E0810E6988 /* CookieTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3353CC340E92432390D1AF13 /* CookieTests.swift */; };
+		EF80CC7B473A4738AAEFADFF /* InstanceLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7D11B264A349F7B1552812 /* InstanceLifecycleTests.swift */; };
+		297682B1B4664E35AAEB7BC0 /* CoreInitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A76A179A4504B8798C37707 /* CoreInitTests.swift */; };
+		57E21BBA9AC846B6AF446494 /* CoreQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B85FAAE19BD34C799E1FFCF1 /* CoreQueueTests.swift */; };
+		82C32BFA6E6749C090D840C1 /* CoreBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF894B709B045278F6EEFBA /* CoreBridgeTests.swift */; };
+		33CEFEE6BE4A4730A3441FEC /* CorePushTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA80D7D516344746BC4B2565 /* CorePushTests.swift */; };
+		ACFEEA590B2E4A89BD0C6A93 /* EventQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36E350FF8C3B493E857F8F14 /* EventQueueTests.swift */; };
+		41D822DBD91643B3A43BF4D2 /* CoreEdgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03EA56E69AD74F009BDDC6A8 /* CoreEdgeTests.swift */; };
+		594249BD4A084A1291AC0F14 /* CoreGapTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89006D3670A5461885FC8A49 /* CoreGapTests.swift */; };
+		681654724B174266BAACBDED /* LegacyParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 342B105ADE434053B9010136 /* LegacyParityTests.swift */; };
+		338497F3341748CF98532803 /* LogContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAFAFC3C25EF4765AEFF7116 /* LogContractTests.swift */; };
+		AD0C7CD9B2C94E6C92EBD76F /* CoreDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DA0647150D46F59A45438E /* CoreDecisionTests.swift */; };
+		185F659CDBE840968B74E646 /* CoreScenarioHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D6FEB5A43445D6A6B07DF7 /* CoreScenarioHarness.swift */; };
+		F82D9C817E27477A8B593D7E /* CoreSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44D8CA2308D2429180F2E4D5 /* CoreSessionTests.swift */; };
+		12F18816D101E0A06A6563C9 /* StorageUpgradeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5266C09087BEC3ADC1CE5D94 /* StorageUpgradeTests.swift */; };
+		14EC15DD79EC4DDD80AE195B /* DeleteCredentialsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE698617B02D443A839DD85C /* DeleteCredentialsTests.swift */; };
 		2BBFA556071529636EA4ADE1 /* SubscriptionRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC18ABCF0F0D206E143E5A30 /* SubscriptionRequestTests.swift */; };
 		256AD0136588FE6C1FA7858A /* PushArrivalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A438E363406704623E8A5F9A /* PushArrivalTests.swift */; };
 		2D0A8514D2D3FB683652EED1 /* SearchRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6217EF414A448943E5742775 /* SearchRequestTests.swift */; };
@@ -136,6 +156,7 @@
 		E9EAB8672AF08A43003DC1B5 /* Inter.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E9EAB8662AF08A43003DC1B5 /* Inter.ttf */; };
 		EEF5CF9F6430FD8202BB58BE /* SessionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F1E786F1F3C200D5DFE5D4 /* SessionManagerTests.swift */; };
 		EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */; };
+		9EF16928BEDA40318AFE0377 /* CoreLiveE2ETest.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6B50CD6B8B74B77BD55D35C /* CoreLiveE2ETest.swift */; };
 		F0605CC99B325F3301237A28 /* StorageMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D7769B0D5C13182C6C9391 /* StorageMigrationTests.swift */; };
 		F808067588CEF0AA10BCA7D7 /* UserIdentityRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */; };
 		8393900BD24341614E7782A8 /* ApiFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937448523E8899A7EABCFEDB /* ApiFixtures.swift */; };
@@ -298,6 +319,7 @@
 		8237EEC8810D8D4E8706C65B /* UserIdentityRepositoryIsolationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryIsolationTests.swift; sourceTree = "<group>"; };
 		86C33241CE9B2B9CA3CD5A9B /* UserIdentityRepositoryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserIdentityRepositoryTests.swift; sourceTree = "<group>"; };
 		8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MultiInstanceE2ETest.swift; sourceTree = "<group>"; };
+		F6B50CD6B8B74B77BD55D35C /* CoreLiveE2ETest.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreLiveE2ETest.swift; sourceTree = "<group>"; };
 		9A58AAB128E80C33004EA84C /* REESNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		9A58AAB228E80EEA004EA84C /* REESNotificationContentExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REESNotificationContentExtension.entitlements; sourceTree = "<group>"; };
 		9A7A95DE25BC40E900FFA40A /* REESNotificationContentExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = REESNotificationContentExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -321,6 +343,26 @@
 		AAB9149EDCCCB4FF18DB87D6 /* Pods-REES46Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-REES46Tests.release.xcconfig"; path = "Target Support Files/Pods-REES46Tests/Pods-REES46Tests.release.xcconfig"; sourceTree = "<group>"; };
 		AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FakeSDK.swift; sourceTree = "<group>"; };
 		B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InstanceResolverTests.swift; sourceTree = "<group>"; };
+		BD73D08B7AB7C93491292513 /* CoreHarnessTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreHarnessTests.swift; sourceTree = "<group>"; };
+		7218DCA6F31C98243117767E /* LoggingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoggingTests.swift; sourceTree = "<group>"; };
+		0EE0C995E06072213DBD3C31 /* CoreSafetyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreSafetyTests.swift; sourceTree = "<group>"; };
+		AA0A8AFDAF5D2F008B563CA8 /* CoreNetworkTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreNetworkTests.swift; sourceTree = "<group>"; };
+		3353CC340E92432390D1AF13 /* CookieTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CookieTests.swift; sourceTree = "<group>"; };
+		7F7D11B264A349F7B1552812 /* InstanceLifecycleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InstanceLifecycleTests.swift; sourceTree = "<group>"; };
+		7A76A179A4504B8798C37707 /* CoreInitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreInitTests.swift; sourceTree = "<group>"; };
+		B85FAAE19BD34C799E1FFCF1 /* CoreQueueTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreQueueTests.swift; sourceTree = "<group>"; };
+		8FF894B709B045278F6EEFBA /* CoreBridgeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreBridgeTests.swift; sourceTree = "<group>"; };
+		FA80D7D516344746BC4B2565 /* CorePushTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CorePushTests.swift; sourceTree = "<group>"; };
+		36E350FF8C3B493E857F8F14 /* EventQueueTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EventQueueTests.swift; sourceTree = "<group>"; };
+		03EA56E69AD74F009BDDC6A8 /* CoreEdgeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreEdgeTests.swift; sourceTree = "<group>"; };
+		89006D3670A5461885FC8A49 /* CoreGapTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreGapTests.swift; sourceTree = "<group>"; };
+		342B105ADE434053B9010136 /* LegacyParityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LegacyParityTests.swift; sourceTree = "<group>"; };
+		DAFAFC3C25EF4765AEFF7116 /* LogContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LogContractTests.swift; sourceTree = "<group>"; };
+		D3DA0647150D46F59A45438E /* CoreDecisionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreDecisionTests.swift; sourceTree = "<group>"; };
+		72D6FEB5A43445D6A6B07DF7 /* CoreScenarioHarness.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreScenarioHarness.swift; sourceTree = "<group>"; };
+		44D8CA2308D2429180F2E4D5 /* CoreSessionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreSessionTests.swift; sourceTree = "<group>"; };
+		5266C09087BEC3ADC1CE5D94 /* StorageUpgradeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StorageUpgradeTests.swift; sourceTree = "<group>"; };
+		BE698617B02D443A839DD85C /* DeleteCredentialsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeleteCredentialsTests.swift; sourceTree = "<group>"; };
 		FC18ABCF0F0D206E143E5A30 /* SubscriptionRequestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionRequestTests.swift; sourceTree = "<group>"; };
 		A438E363406704623E8A5F9A /* PushArrivalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PushArrivalTests.swift; sourceTree = "<group>"; };
 		6217EF414A448943E5742775 /* SearchRequestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SearchRequestTests.swift; sourceTree = "<group>"; };
@@ -518,6 +560,26 @@
 				AB3ACDA56DB305BC47811CEC /* FakeSDK.swift */,
 				DE3061A70000000000000009 /* DemoLinksTests.swift */,
 				B5038AC43E9130E56F51F7FB /* InstanceResolverTests.swift */,
+				BD73D08B7AB7C93491292513 /* CoreHarnessTests.swift */,
+				7218DCA6F31C98243117767E /* LoggingTests.swift */,
+				0EE0C995E06072213DBD3C31 /* CoreSafetyTests.swift */,
+				AA0A8AFDAF5D2F008B563CA8 /* CoreNetworkTests.swift */,
+				3353CC340E92432390D1AF13 /* CookieTests.swift */,
+				7F7D11B264A349F7B1552812 /* InstanceLifecycleTests.swift */,
+				7A76A179A4504B8798C37707 /* CoreInitTests.swift */,
+				B85FAAE19BD34C799E1FFCF1 /* CoreQueueTests.swift */,
+				8FF894B709B045278F6EEFBA /* CoreBridgeTests.swift */,
+				FA80D7D516344746BC4B2565 /* CorePushTests.swift */,
+				36E350FF8C3B493E857F8F14 /* EventQueueTests.swift */,
+				03EA56E69AD74F009BDDC6A8 /* CoreEdgeTests.swift */,
+				89006D3670A5461885FC8A49 /* CoreGapTests.swift */,
+				342B105ADE434053B9010136 /* LegacyParityTests.swift */,
+				DAFAFC3C25EF4765AEFF7116 /* LogContractTests.swift */,
+				D3DA0647150D46F59A45438E /* CoreDecisionTests.swift */,
+				72D6FEB5A43445D6A6B07DF7 /* CoreScenarioHarness.swift */,
+				44D8CA2308D2429180F2E4D5 /* CoreSessionTests.swift */,
+				5266C09087BEC3ADC1CE5D94 /* StorageUpgradeTests.swift */,
+				BE698617B02D443A839DD85C /* DeleteCredentialsTests.swift */,
 				FC18ABCF0F0D206E143E5A30 /* SubscriptionRequestTests.swift */,
 				A438E363406704623E8A5F9A /* PushArrivalTests.swift */,
 				6217EF414A448943E5742775 /* SearchRequestTests.swift */,
@@ -541,6 +603,7 @@
 				B5AD555A428611EB01D95215 /* PushPayloadParserTests.swift */,
 				732B3CD050F3471973F52C74 /* HandlePushRoutingTests.swift */,
 				8FDDEEF9BF2D37D8410CBFA2 /* MultiInstanceE2ETest.swift */,
+				F6B50CD6B8B74B77BD55D35C /* CoreLiveE2ETest.swift */,
 				937448523E8899A7EABCFEDB /* ApiFixtures.swift */,
 				035DEBBBF56887CC74C803D6 /* ProductModelsParsingTests.swift */,
 				22C31BB010BB7196861A32AC /* Fixtures */,
@@ -1139,6 +1202,26 @@
 				D005D80D2DB2CDE900841D78 /* MockGenerator.swift in Sources */,
 				7FEFCE64D31526E14ADA2679 /* FakeSDK.swift in Sources */,
 				6805322F7DF2A2E2F1234B24 /* InstanceResolverTests.swift in Sources */,
+				3A05D0EC928EDF345A601EC6 /* CoreHarnessTests.swift in Sources */,
+				9E8193FCDF402E699BF32C89 /* LoggingTests.swift in Sources */,
+				44DFCC614C41FC7F0D67E12D /* CoreSafetyTests.swift in Sources */,
+				76EF7E5E5AFCA68265EC952C /* CoreNetworkTests.swift in Sources */,
+				503713D4E39047E0810E6988 /* CookieTests.swift in Sources */,
+				EF80CC7B473A4738AAEFADFF /* InstanceLifecycleTests.swift in Sources */,
+				297682B1B4664E35AAEB7BC0 /* CoreInitTests.swift in Sources */,
+				57E21BBA9AC846B6AF446494 /* CoreQueueTests.swift in Sources */,
+				82C32BFA6E6749C090D840C1 /* CoreBridgeTests.swift in Sources */,
+				33CEFEE6BE4A4730A3441FEC /* CorePushTests.swift in Sources */,
+				ACFEEA590B2E4A89BD0C6A93 /* EventQueueTests.swift in Sources */,
+				41D822DBD91643B3A43BF4D2 /* CoreEdgeTests.swift in Sources */,
+				594249BD4A084A1291AC0F14 /* CoreGapTests.swift in Sources */,
+				681654724B174266BAACBDED /* LegacyParityTests.swift in Sources */,
+				338497F3341748CF98532803 /* LogContractTests.swift in Sources */,
+				AD0C7CD9B2C94E6C92EBD76F /* CoreDecisionTests.swift in Sources */,
+				185F659CDBE840968B74E646 /* CoreScenarioHarness.swift in Sources */,
+				F82D9C817E27477A8B593D7E /* CoreSessionTests.swift in Sources */,
+				12F18816D101E0A06A6563C9 /* StorageUpgradeTests.swift in Sources */,
+				14EC15DD79EC4DDD80AE195B /* DeleteCredentialsTests.swift in Sources */,
 				2BBFA556071529636EA4ADE1 /* SubscriptionRequestTests.swift in Sources */,
 				256AD0136588FE6C1FA7858A /* PushArrivalTests.swift in Sources */,
 				2D0A8514D2D3FB683652EED1 /* SearchRequestTests.swift in Sources */,
@@ -1162,6 +1245,7 @@
 				D0D6C4E39581EE6F13C7E601 /* PushPayloadParserTests.swift in Sources */,
 				D824C7F34B333C3D68092BA9 /* HandlePushRoutingTests.swift in Sources */,
 				EFCBC17B792379A0DACE7B9D /* MultiInstanceE2ETest.swift in Sources */,
+				9EF16928BEDA40318AFE0377 /* CoreLiveE2ETest.swift in Sources */,
 				8393900BD24341614E7782A8 /* ApiFixtures.swift in Sources */,
 				B09272C49C5810A7C9505E5C /* ProductModelsParsingTests.swift in Sources */,
 				4E521BD567322ED3B04E9186 /* ProductMapperTests.swift in Sources */,
@@ -1290,7 +1374,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -1346,7 +1430,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -1395,7 +1479,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
@@ -1417,7 +1501,7 @@
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = REES46;
@@ -1442,7 +1526,7 @@
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = REES46;
@@ -1468,7 +1552,7 @@
 				DEVELOPMENT_TEAM = MYA32EHWN4;
 				INFOPLIST_FILE = REES46Demo/Info.plist;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				MODULE_NAME = REES46;
@@ -1496,7 +1580,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Rees46DemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1523,7 +1607,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Rees46DemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1546,7 +1630,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = Rees46DemoTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1576,7 +1660,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1609,7 +1693,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1641,7 +1725,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationContentExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK1.REESNotificationContentExtension;
@@ -1672,7 +1756,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1705,7 +1789,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1737,7 +1821,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				INFOPLIST_FILE = "$(SRCROOT)/NotificationServiceExtension/Info.plist";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MTL_FAST_MATH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = Avsi.TestPushSDK1.REESNotificationServiceExtension;

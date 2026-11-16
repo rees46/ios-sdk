@@ -115,7 +115,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
         let pathForResourceString = Bundle.main.path(forResource: fileName,
                                                      ofType: fileExtension)
         guard pathForResourceString != nil else {
-            print("SDK Failed locate custom font \(fileName) in App Bundle")
+            SdkLogger.area(.ui, .debug, "the custom font \(fileName) is not in the app bundle")
             return
         }
         
@@ -126,9 +126,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
             var errorRef: Unmanaged<CFError>? = nil
 
             if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                print("SDK Error registering font")
+                SdkLogger.area(.ui, .debug, "a font was not registered")
             } else {
-                print("SDK Success registering font")
+                SdkLogger.area(.ui, .debug, "a font was registered")
             }
         }
         
@@ -158,9 +158,9 @@ open class SdkConfiguration: SdkConfigurationProtocol {
                 var errorRef: Unmanaged<CFError>? = nil
 
                 if (CTFontManagerRegisterGraphicsFont(fontRef!, &errorRef) == false) {
-                    print("SDK Error registering font")
+                    SdkLogger.area(.ui, .debug, "a font was not registered")
                 } else {
-                    print("SDK Success registering font")
+                    SdkLogger.area(.ui, .debug, "a font was registered")
                 }
             }
         }
@@ -915,11 +915,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     }
     
     public static var isDarkMode: Bool {
-        if #available(iOS 13.0, *) {
-            return UITraitCollection.current.userInterfaceStyle == .dark
-        } else {
-            return false
-        }
+        return UITraitCollection.current.userInterfaceStyle == .dark
     }
     
     public func getInstalledFontsFrom(bundle: Bundle = .main,
@@ -1156,11 +1152,7 @@ open class SdkConfiguration: SdkConfigurationProtocol {
     public class func customFont(name: String, size: CGFloat) -> UIFont {
         let sizeWithOffset = size
         guard let sFont = UIFont(name: name, size: sizeWithOffset) else {
-            UIFont.familyNames.forEach({ familyName in
-                let fontNames = UIFont.fontNames(forFamilyName: familyName)
-                print(familyName, fontNames)
-            })
-            print("SDK Error Font not found: \(name)")
+            SdkLogger.area(.ui, .debug, "the font \(name) was not found")
             return UIFont.systemFont(ofSize: 15.0)
         }
         return sFont
@@ -1188,7 +1180,7 @@ private extension SdkConfiguration {
                     }
                 }
         } catch let error as NSError {
-            print("SDK There was an error loading fonts. Path: \(url). Error: \(error)")
+            SdkLogger.area(.ui, .debug, "the fonts were not loaded: \(SdkLogger.errorKind(error))")
         }
         return loadedFonts
     }
@@ -1208,7 +1200,7 @@ private extension SdkConfiguration {
                     loadedFonts += loadFonts(at: item)
                 }
             } catch let error as NSError {
-                print("SDK There was an error accessing bundle with url. Path: \(url). Error: \(error) ")
+                SdkLogger.area(.ui, .debug, "the font bundle was not read: \(SdkLogger.errorKind(error))")
             }
         return loadedFonts
     }
@@ -1228,20 +1220,18 @@ private extension SdkConfiguration {
 
             if CTFontManagerRegisterGraphicsFont(sdkRef!, &error) {
                 if let postScriptName = sdkRef?.postScriptName {
-                    print("SDK Successfully loaded custom font: '\(postScriptName)'.")
+                    SdkLogger.area(.ui, .debug, "the custom font \(postScriptName) was loaded")
                     nowLoadedFontName = String(postScriptName)
                 }
-            } else if let error = error?.takeRetainedValue() {
-                let errorDescription = CFErrorCopyDescription(error)
-                print("SDK Already installed custom font '\(name)': \(String(describing: errorDescription))")
+            } else if error?.takeRetainedValue() != nil {
+                SdkLogger.area(.ui, .debug, "the custom font \(name) is already installed")
             }
         } else {
-            guard let error = error?.takeRetainedValue() else {
-                print("SDK Failed to load font '\(name)'.")
+            guard error?.takeRetainedValue() != nil else {
+                SdkLogger.area(.ui, .debug, "the font \(name) was not loaded")
                 return nil
             }
-            let errorDescription = CFErrorCopyDescription(error)
-            print("SDK Failed to load font '\(name)': \(String(describing: errorDescription))")
+            SdkLogger.area(.ui, .debug, "the font \(name) was not loaded")
         }
 
         if let sdkLfn = nowLoadedFontName {

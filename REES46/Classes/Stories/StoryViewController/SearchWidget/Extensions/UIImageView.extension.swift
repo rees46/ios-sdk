@@ -3,13 +3,13 @@ import UIKit
 extension UIImageView {
     func loadImage(from urlString: String) {
         guard let url = URL(string: urlString) else {
-            print("Invalid URL string.")
+            SdkLogger.area(.ui, .debug, "an image has no valid URL")
             return
         }
         
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        let task = SdkURLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             guard let data = data, error == nil else {
-                print("Error loading image: \(error?.localizedDescription ?? "Unknown error")")
+                SdkLogger.area(.ui, .debug, "an image was not loaded: \(SdkLogger.errorKind(error))")
                 return
             }
             

@@ -158,11 +158,11 @@ final class PersonalizationStoryVideos: NSObject, URLSessionDataDelegate {
     let cache: PersonalizationStoryMediaCache
     private var downloads: [String: PersonalizationStoryVideoDownload] = [:]
     private var byTask: [Int: PersonalizationStoryVideoDownload] = [:]
-    private lazy var session: URLSession = {
+    private(set) lazy var session: URLSession = {
         let delegateQueue = OperationQueue()
         delegateQueue.maxConcurrentOperationCount = 1
         delegateQueue.underlyingQueue = queue
-        return URLSession(configuration: .default, delegate: self, delegateQueue: delegateQueue)
+        return URLSession(configuration: URLSessionConfiguration.default.withoutCookies(), delegate: self, delegateQueue: delegateQueue)
     }()
 
     init(cache: PersonalizationStoryMediaCache = .shared) {

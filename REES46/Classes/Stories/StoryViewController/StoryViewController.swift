@@ -276,14 +276,14 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         needSaveStoryLocal = false
         
         guard currentPosition.section < stories.count else {
-            print("Section index out of range")
+            SdkLogger.area(.stories, .debug, "the story index is out of range")
             return
         }
         
         let storyId = stories[currentPosition.section].id
         
         guard currentPosition.row < stories[currentPosition.section].slides.count else {
-            print("Row index out of range")
+            SdkLogger.area(.stories, .debug, "the slide index is out of range")
             return
         }
         
@@ -314,14 +314,14 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
             currentPosition.row = 0
             
             guard currentPosition.section + 1 < stories.count else {
-                print("Section index out of range")
+                SdkLogger.area(.stories, .debug, "the story index is out of range")
                 return
             }
             
             let storyId = stories[currentPosition.section + 1].id
             
             guard currentPosition.row < stories[currentPosition.section + 1].slides.count else {
-                print("Row index out of range")
+                SdkLogger.area(.stories, .debug, "the slide index is out of range")
                 return
             }
             
@@ -598,19 +598,19 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     private func updateSlides() {
         // Check if stories array is not empty and currentPosition indices are valid
         guard !stories.isEmpty else {
-            print("Error: Stories array is empty")
+            SdkLogger.area(.stories, .debug, "there are no stories to show")
             return
         }
         
         guard stories.indices.contains(currentPosition.section) else {
-            print("Error: Section index \(currentPosition.section) is out of range")
+            SdkLogger.area(.stories, .debug, "the story index is out of range")
             return
         }
         
         let story = stories[currentPosition.section]
         
         guard story.slides.indices.contains(currentPosition.row) else {
-            print("Error: Row index \(currentPosition.row) is out of range for section \(currentPosition.section)")
+            SdkLogger.area(.stories, .debug, "the slide index is out of range")
             return
         }
         
@@ -798,9 +798,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
     }
     
     public func openUrl(link: String) {
-#if DEBUG
-        print("Opening product in device browser")
-#endif
+        SdkLogger.area(.stories, .debug, "a product opens in the browser")
         
         if let linkUrl = URL(string: link) {
             pauseTimer()

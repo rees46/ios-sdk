@@ -43,12 +43,41 @@ jobs:
 
   # Apps take the SDK through Swift Package Manager, while the demo app above
   # links it through CocoaPods. The package build compiles the `SWIFT_PACKAGE`
-  # branches (resources come from Bundle.module there), which nothing else here does.
+  # branches (resources come from Bundle.module there), which nothing else here does,
+  # and its test target (Tests/REES46CoreTests) pins behaviours of the core that only
+  # it checks: it runs on an iOS simulator, as the core needs UIKit.
   swift-package:
     if: github.event.pull_request.draft == false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build the Swift package
-        run: xcodebuild build -scheme REES46 -destination 'generic/platform=iOS Simulator'
+      - name: Select simulator
+        id: sim
+        run: |
+          # macos-latest floats: a runner Xcode bump can drop or rename a device, which breaks a
+          # pinned name=... destination. Pick whatever iPhone simulator is available and target it
+          # by UDID, as the run job does.
+          UDID=$(xcrun simctl list devices available | grep -m1 -E 'iPhone' | grep -oE '[0-9A-Fa-f-]{36}')
+          if [ -z "$UDID" ]; then
+            echo "No available iPhone simulator found"; exit 1
+          fi
+          echo "Selected simulator:"; xcrun simctl list devices available | grep "$UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test the Swift package
+        run: xcodebuild test -scheme REES46 -destination "id=${{ steps.sim.outputs.udid }}"
+
+  # Nothing reachable from the public API may crash the app on a force unwrap, try or cast:
+  # .swiftlint.yml lists the folders it covers.
+  swiftlint:
+    if: github.event.pull_request.draft == false
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: command -v swiftlint >/dev/null || brew install swiftlint
+
+      - name: Lint the SDK core
+        run: sh scripts/lint-core.sh

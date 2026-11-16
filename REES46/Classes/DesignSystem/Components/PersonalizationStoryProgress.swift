@@ -33,11 +33,6 @@ public final class PersonalizationStoryProgress: UIView {
         didSet { setNeedsLayout() }
     }
 
-    /// Прогресс медиа-слайда: тёмные токены и на iOS 12.
-    var forcesDarkTokens = false {
-        didSet { applyColors() }
-    }
-
     private var tracks: [UIView] = []
     private var fills: [UIView] = []
 
@@ -74,8 +69,8 @@ public final class PersonalizationStoryProgress: UIView {
     }
 
     private func applyColors() {
-        let track = PersonalizationStoryColors.token(PersonalizationColor.lineGeneric, forcingDark: forcesDarkTokens)
-        let fill = PersonalizationStoryColors.token(PersonalizationColor.textSecondary, forcingDark: forcesDarkTokens)
+        let track = PersonalizationColor.lineGeneric
+        let fill = PersonalizationColor.textSecondary
         tracks.forEach { $0.backgroundColor = track }
         fills.forEach { $0.backgroundColor = fill }
     }

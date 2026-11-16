@@ -1,26 +1,25 @@
 import Foundation
 
+/// The push service's log. It writes through the SDK's log, so `Rees46Config.logLevel` and
+/// `Rees46.setLogHandler` apply to it; push content and tokens are never part of a message.
 public class NotificationLogger{
   private let logTag = "PUSH"
   
   public init(){}
   
+  /// A step of push handling, at `debug` under the area code `push`: `push_received` is only for a
+  /// push handed to its shop. The text must not carry push values or tokens.
   public func log(_ message: String) {
-    print("\(logTag): \(message)")
+    SdkLogger.area(.push, .debug, "\(logTag): \(message)")
   }
+  /// Logs the kind of the error, not its text: an error may carry what the server sent back.
   public func log(_ message: Error){
-    print("\(logTag):\(message.localizedDescription)")
+    SdkLogger.process.error(LogCode.pushFailed, "\(logTag): the push could not be handled", ["error": SdkLogger.errorKind(message)])
   }
   
+  /// Logs the keys of a push, not their values: push content is personal data.
+  @available(*, deprecated, message: "Logs the keys only: push content is never logged.")
   public func logAllPushKeysAndValues(userInfo: [AnyHashable: Any?]) {
-    log("Logging all keys and values from push:")
-    for (key, value) in userInfo {
-      if let value = value {
-        log("Key: \(key), Value: \(value)")
-      }else {
-        log("Error: Value is nil.")
-      }
-    }
-    log("End of logging keys and values.")
+    log("push keys: \(userInfo.keys.map { "\($0)" }.sorted().joined(separator: ", "))")
   }
 }

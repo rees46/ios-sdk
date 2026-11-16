@@ -7,9 +7,9 @@ final public class VideoDownloadManager: NSObject {
     public typealias DownloadProgressBlock = (_ progress : CGFloat) -> Void
     public typealias BackgroundDownloadCompletionHandler = () -> Void
     
-    private var session: URLSession!
+    private(set) var session: URLSession!
     private var ongoingDownloads: [String : VideoDownloadObject] = [:]
-    private var backgroundSession: URLSession!
+    private(set) var backgroundSession: URLSession!
     
     public var backgroundCompletionHandler: BackgroundDownloadCompletionHandler?
     public var showLocalNotificationOnBackgroundDownloadSuccess = true
@@ -27,7 +27,7 @@ final public class VideoDownloadManager: NSObject {
                                        onCompletion completionBlock:@escaping DownloadCompletionBlock) -> String? {
         
         guard let url = request.url else {
-            print("SDK Request url is empty")
+            SdkLogger.area(.stories, .debug, "a video download has no URL")
             return nil
         }
         
@@ -148,7 +148,7 @@ final public class VideoDownloadManager: NSObject {
                                                 content: content, trigger: trigger)
             notificationCenter.add(request, withCompletionHandler: { (error) in
                 if let error = error {
-                    debugPrint("SDK could not schedule notification with error: \(error)")
+                    SdkLogger.area(.stories, .debug, "the download notification was not scheduled: \(SdkLogger.errorKind(error))")
                 }
             })
         }
@@ -156,9 +156,10 @@ final public class VideoDownloadManager: NSObject {
     
     private override init() {
         super.init()
-        let sessionConfiguration = URLSessionConfiguration.default
+        let sessionConfiguration = URLSessionConfiguration.default.withoutCookies()
         self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
         let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
+        backgroundConfiguration.turnCookiesOff()
         self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
     }
 }

@@ -21,12 +21,15 @@ final class HandlePushRoutingTests: XCTestCase {
         super.setUp()
         Rees46.reset()
         registry.reset()
+        CoreFlag.reset(to: false)
     }
 
     override func tearDown() {
         Rees46.reset()
         registry.reset()
         retained.removeAll()
+        UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: "shop-lazy"))
+        CoreFlag.reset()
         super.tearDown()
     }
 
@@ -121,22 +124,22 @@ final class HandlePushRoutingTests: XCTestCase {
         let event: String
         let type: String
         let code: String
+        var deviceId = ""
     }
 
     private func recordPendingTracks(into sink: @escaping (PendingTrack) -> Void) {
-        Rees46.pendingPushTracker = { shopId, _, event, type, code in
-            let name: String
-            switch event {
-            case .delivered: name = "delivered"
-            case .received: name = "received"
-            case .clicked: name = "clicked"
-            }
-            sink(PendingTrack(shopId: shopId, event: name, type: type, code: code))
+        Rees46.pendingPushTracker = { push in
+            sink(PendingTrack(shopId: push.shopId, event: push.route.name, type: push.type, code: push.code, deviceId: push.deviceId))
         }
     }
 
+    /// A pending shop as the old core has always had it: registered, with no device id stored here.
+    private func registerPending(_ shopId: String = "shop-lazy") {
+        Rees46.register(shops: [Rees46Config(shopId: shopId)])
+    }
+
     func test_a_push_for_a_registered_but_pending_shop_is_tracked_without_initializing_it() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")]) // pending, not initialized
+        registerPending() // pending, not initialized
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -151,7 +154,7 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     func test_a_clicked_push_for_a_pending_shop_is_tracked_standalone() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -162,7 +165,7 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     func test_no_shop_id_with_a_single_pending_shop_falls_back_to_it() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -172,7 +175,7 @@ final class HandlePushRoutingTests: XCTestCase {
     }
 
     func test_a_pending_shop_push_without_type_or_code_is_ignored() {
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -183,7 +186,7 @@ final class HandlePushRoutingTests: XCTestCase {
 
     func test_no_shop_id_with_one_live_and_one_pending_shop_is_ambiguous_and_dropped() {
         let a = live("shop-a")
-        Rees46.register(shops: [Rees46Config(shopId: "shop-lazy")])
+        registerPending()
         var tracks: [PendingTrack] = []
         recordPendingTracks { tracks.append($0) }
 
@@ -191,5 +194,21 @@ final class HandlePushRoutingTests: XCTestCase {
 
         XCTAssertTrue(tracks.isEmpty, "a pending shop counts toward ambiguity — no-shop_id must drop")
         XCTAssertTrue(a.deliveredTracks.isEmpty)
+    }
+
+    func test_the_old_core_sends_a_pending_shops_push_with_the_stored_did_or_an_empty_one_as_before() {
+        registerPending()
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+
+        Rees46.handlePush(payload(shopId: "shop-lazy", code: "e1"), event: .delivered)
+        StoragePartition.store(for: "shop-lazy").set("lazy-did", forKey: StoragePartition.deviceIdKey)
+        Rees46.handlePush(payload(shopId: "shop-lazy", code: "e1"), event: .delivered)
+        Rees46.handlePush(payload(shopId: "shop-lazy", code: "e1"), event: .opened)
+
+        XCTAssertEqual(tracks, [
+            PendingTrack(shopId: "shop-lazy", event: "delivered", type: "web", code: "e1", deviceId: ""),
+            PendingTrack(shopId: "shop-lazy", event: "delivered", type: "web", code: "e1", deviceId: "lazy-did"),
+        ], "no did is no reason to drop it, and no once-per-message rule; opened was never the old core's")
     }
 }

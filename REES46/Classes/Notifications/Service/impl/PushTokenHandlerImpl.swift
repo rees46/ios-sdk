@@ -26,16 +26,50 @@ class PushTokenHandlerServiceImpl: PushTokenNotificationServiceProtocol {
         isFirebaseNotification: Bool = false,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
-        
+        setPushToken(token: token, isFirebaseNotification: isFirebaseNotification, waitsQuietly: false, completion: completion)
+    }
+
+    /// The bridges' view: on the old core a token that waits for the device id hears the answer once it
+    /// went, instead of `pushTokenWaitsForDeviceId` at once.
+    func setPushToken(
+        token: String,
+        isFirebaseNotification: Bool,
+        whenSent completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        setPushToken(token: token, isFirebaseNotification: isFirebaseNotification, waitsQuietly: true, completion: completion)
+    }
+
+    private func setPushToken(
+        token: String,
+        isFirebaseNotification: Bool,
+        waitsQuietly: Bool,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
         guard let sdk = sdk else {
             completion(.failure(.custom(error: "setPushToken: SDK is not initialized")))
             return
         }
+        // The new core: the device's token, a week per shop, never without a device id.
+        if let instance = sdk as? SimplePersonalizationSDK, instance.usesCoreV2 {
+            instance.submitPushToken(Rees46.PushToken(token: token, provider: isFirebaseNotification ? .fcm : .apns), completion: completion)
+            return
+        }
         
         sessionQueue.addOperation {
+            // The token never goes out without a device id: the SDK keeps it until /init stores one.
+            let deviceId = sdk.deviceId
+            guard !deviceId.isEmpty else {
+                if waitsQuietly, let instance = sdk as? SimplePersonalizationSDK {
+                    instance.deferPushToken(.direct(token: token, isFirebase: isFirebaseNotification), waiter: completion)
+                    return
+                }
+                (sdk as? SimplePersonalizationSDK)?.deferPushToken(.direct(token: token, isFirebase: isFirebaseNotification))
+                completion(.failure(.pushTokenWaitsForDeviceId))
+                return
+            }
             var params = [
                 Constants.shopId: sdk.shopId,
-                Constants.did: sdk.deviceId,
+                Constants.did: deviceId,
                 Constants.token: token
             ]
             

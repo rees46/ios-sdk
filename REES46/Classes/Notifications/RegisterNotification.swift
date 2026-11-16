@@ -21,15 +21,53 @@ class NotificationRegistrar {
     /// makes each initialized instance register the token independently — the iOS analog of Android's
     /// per-shop `PushTokenManager` throttle, and what implicitly fans the token out across shops.
     private var lastUploadDateKey: String {
-        "\(Constants.mainPushTokenLastUploadDateKey).\(sdk.shopId)"
+        Self.lastUploadDateKey(shopId: sdk.shopId)
+    }
+
+    static func lastUploadDateKey(shopId: String) -> String {
+        "\(Constants.mainPushTokenLastUploadDateKey).\(shopId)"
+    }
+
+    /// Forgets when the token last went to `shopId`, under its key and under the one key every shop
+    /// shared before: the next registration sends it at once — to the new customer after
+    /// `deleteUserCredentials`.
+    static func forgetUpload(shopId: String) {
+        uploadLock.lock()
+        UserDefaults.standard.removeObject(forKey: lastUploadDateKey(shopId: shopId))
+        UserDefaults.standard.removeObject(forKey: Constants.mainPushTokenLastUploadDateKey)
+        uploadLock.unlock()
     }
 
     /// Guards the check and the claim of a shop's weekly upload.
     private static let uploadLock = NSLock()
 
-    func registerWithDeviceToken(deviceToken: Data) {
+    /// Sends the APNs token to the shop by the old core's week; `completion`, when given, hears the
+    /// answer — success also when the week holds it back — once it went, never while it waits for the
+    /// device id.
+    func registerWithDeviceToken(deviceToken: Data, completion: ((Result<Void, SdkError>) -> Void)? = nil) {
+        // The new core: the device's token, a week per shop, never without a device id
+        // (`sdk/core/push.md`).
+        if let instance = sdk as? SimplePersonalizationSDK, instance.usesCoreV2 {
+            instance.submitPushToken(
+                Rees46.PushToken(token: DeviceStore.hex(deviceToken), provider: .apns),
+                apnsData: deviceToken,
+                completion: completion
+            )
+            return
+        }
         // Kept for the next launches: with `autoSendPushToken` every shop sends it after its /init.
-        UserDefaults.standard.set(deviceToken, forKey: SdkConstants.deviceToken)
+        DeviceStore.shared.pushToken = deviceToken
+
+        // Never without a device id — a new device whose /init has not answered, or the customer was
+        // just deleted: the SDK sends it once /init stores one, and the week is not claimed meanwhile.
+        guard !sdk.deviceId.isEmpty else {
+            if let instance = sdk as? SimplePersonalizationSDK {
+                instance.deferPushToken(.device(deviceToken), waiter: completion)
+            } else {
+                SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
+            }
+            return
+        }
 
         // The week's upload is claimed before it goes out, so two calls at once — the app's token
         // callback and the SDK's own send after /init — send the token once. Written after the
@@ -39,9 +77,8 @@ class NotificationRegistrar {
         let lastUpload = UserDefaults.standard.object(forKey: key) as? Date
         if let lastUpload = lastUpload, Date().timeIntervalSince(lastUpload) < Constants.oneWeekInSeconds {
             Self.uploadLock.unlock()
-#if DEBUG
-            print("Push token already sent recently. Next possible send date: \(lastUpload.addingTimeInterval(Constants.oneWeekInSeconds))")
-#endif
+            SdkLogger.forShop(sdk.shopId).debug(LogCode.pushTokenSkipped, "the push token was sent within the last week", ["reason": "sent_recently"])
+            completion?(.success(()))
             return
         }
         UserDefaults.standard.set(Date(), forKey: key)
@@ -51,23 +88,27 @@ class NotificationRegistrar {
         sdk.setPushTokenNotification(token: token) { tokenResponse in
             switch tokenResponse {
             case .success():
-#if DEBUG
-                print("Push token successfully sent.")
-#endif
+                SdkLogger.forShop(self.sdk.shopId).info(LogCode.pushTokenSent, "the push token was sent")
             case .failure(let error):
                 // Not sent: the claim goes back, and the next call tries again.
+                Self.uploadLock.lock()
                 UserDefaults.standard.set(lastUpload, forKey: key)
-                Self.handleRegistrationError(error)
+                Self.uploadLock.unlock()
+                // Held back for want of a device id: it goes once there is one, and that is no failure.
+                guard !error.isPushTokenWaitingForDeviceId else {
+                    if let completion = completion, let instance = self.sdk as? SimplePersonalizationSDK {
+                        instance.deferPushToken(.device(deviceToken), waiter: completion)
+                    }
+                    return
+                }
+                Self.handleRegistrationError(error, shopId: self.sdk.shopId)
             }
+            completion?(tokenResponse)
         }
     }
     
-    private static func handleRegistrationError(_ error: SdkError) {
-        switch error {
-        case let .custom(customError):
-            print("SDK Push Token Error:", customError)
-        default:
-            print("SDK Push Token server error: \(error.description)\n")
-        }
+    /// The server's message is not logged: it may repeat the request data.
+    private static func handleRegistrationError(_ error: SdkError, shopId: String) {
+        SdkLogger.forShop(shopId).warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
     }
 }

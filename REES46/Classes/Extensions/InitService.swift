@@ -7,9 +7,15 @@ enum KeychainError: LocalizedError {
 }
 
 public let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
-public let instanceKeychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
+public let instanceKeychainService = Bundle(for: KeychainServiceAnchor.self).bundleIdentifier ?? "com.bundle.ident.sdk-instanceKeychainService"
 
 public struct InitService {
+
+    /// `SecItemCopyMatching`; tests put another one here to hand back an item that is not data.
+    static var copyMatching: (CFDictionary, UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus = SecItemCopyMatching
+    /// `SecItemDelete`; tests put another one here to play a keychain that does not answer — a locked
+    /// device.
+    static var deleteItem: (CFDictionary) -> OSStatus = SecItemDelete
     
     static func insertKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
         let attributes = [
@@ -36,8 +42,8 @@ public struct InitService {
                 kSecReturnData: true
         ] as CFDictionary
 
-        var res: AnyObject?
-        let status = SecItemCopyMatching(query, &res)
+        var res: CFTypeRef?
+        let status = copyMatching(query, &res)
 
         guard status == errSecSuccess else {
             if status == errSecItemNotFound {
@@ -46,7 +52,12 @@ public struct InitService {
             throw KeychainError.unexpectedStatus(status)
         }
         
-        return res as! Data
+        // The item was force-cast to `Data`: anything else in the keychain under this account (a
+        // string an app wrote there, say) crashed the app on launch.
+        guard let data = res as? Data else {
+            throw KeychainError.unexpectedStatus(errSecDecode)
+        }
+        return data
     }
     
     static func updateKeychainDidToken(_ token: Data, identifier: String, instanceKeychainService: String = instanceKeychainService) throws {
@@ -85,13 +96,7 @@ public struct InitService {
             kSecAttrAccount: identifier
         ] as CFDictionary
 
-        let status = SecItemDelete(query)
-        
-        if status == errSecItemNotFound {
-            print ("SDK Keychain errSecItemNotFound")
-        } else if status == errSecNoSuchKeychain {
-            print ("SDK Keychain errSecNoSuchKeychain")
-        }
+        let status = deleteItem(query)
         
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)

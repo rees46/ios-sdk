@@ -39,7 +39,7 @@ public class RequestOperation: SessionOperation {
     private(set) public var completionHandler: RequestClosure?
     
     internal var session: URLSession {
-        return URLSession.shared
+        return SdkURLSession.shared
     }
     
     private(set) public var request: URLRequest!

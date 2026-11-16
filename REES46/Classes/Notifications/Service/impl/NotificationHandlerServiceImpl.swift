@@ -217,6 +217,11 @@ class NotificationHandlerServiceImpl: NotificationHandlerServiceProtocol {
         completion: @escaping (Result<Void, SdkError>) -> Void
     ){
         guard let sdk = sdk else { return }
+        // The new core: through the queue, once per message (`sdk/core/push.md`).
+        if let instance = sdk as? SimplePersonalizationSDK, instance.usesCoreV2 {
+            instance.trackPushEvent(path: path, type: type, code: code, completion: completion)
+            return
+        }
         
         sessionQueue.addOperation {
             let params: [String: String] = [

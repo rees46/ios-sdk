@@ -449,7 +449,6 @@ public struct PersonalizationStorySlide {
 
     /// Тема слайда: медиа — тёмная тема кита (светлая шапка и текст поверх фото),
     /// остальные — тема приложения на Background/Card.
-    @available(iOS 12.0, *)
     public var interfaceStyle: UIUserInterfaceStyle {
         isMedia ? .dark : .unspecified
     }

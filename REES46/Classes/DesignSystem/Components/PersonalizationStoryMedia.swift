@@ -165,13 +165,13 @@ final class PersonalizationStoryImages {
     }
 
     private let cache: PersonalizationStoryMediaCache
-    private let session: URLSession
+    let session: URLSession
     private let memory = NSCache<NSString, Entry>()
     private let queue = DispatchQueue(label: "personalization.stories.images", qos: .userInitiated)
     /// Кто ждёт адрес; трогается только на главном потоке.
     private var waiting: [String: [(PersonalizationStoryPicture?) -> Void]] = [:]
 
-    init(cache: PersonalizationStoryMediaCache = .shared, session: URLSession = .shared) {
+    init(cache: PersonalizationStoryMediaCache = .shared, session: URLSession = SdkURLSession.shared) {
         self.cache = cache
         self.session = session
     }
@@ -237,10 +237,7 @@ final class PersonalizationStoryImages {
             return PersonalizationStoryGif(data: data).map { .gif($0) }
         }
         guard let image = UIImage(data: data) else { return nil }
-        if #available(iOS 15.0, *) {
-            return .image(image.preparingForDisplay() ?? image)
-        }
-        return .image(image)
+        return .image(image.preparingForDisplay() ?? image)
     }
 }
 

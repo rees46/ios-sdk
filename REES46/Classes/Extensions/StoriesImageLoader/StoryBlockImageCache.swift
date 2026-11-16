@@ -10,10 +10,10 @@ public struct StoryBlockImageCache {
     
     public static var imageURLProvider: StoryImageURLProviding?
 
-    fileprivate static var urlSession: URLSession = createUrlSession()
+    private(set) static var urlSession: URLSession = createUrlSession()
     
     fileprivate static func createUrlSession() -> URLSession {
-        let config = URLSessionConfiguration.default
+        let config = URLSessionConfiguration.default.withoutCookies()
         config.timeoutIntervalForRequest = 3
         config.waitsForConnectivity = true
         let session = URLSession(configuration: config)
@@ -42,7 +42,7 @@ public struct StoryBlockImageCache {
                         dispatchCompletionOnMain(image)
                     } else {
                         if let error = error, (error as NSError).code != -999 {
-                            print("SDK Error downloading image for block")
+                            SdkLogger.area(.stories, .debug, "a block image was not downloaded: \(SdkLogger.errorKind(error))")
                         }
                         dispatchCompletionOnMain(nil)
                     }

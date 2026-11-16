@@ -53,7 +53,6 @@ public final class PersonalizationStoriesController {
 /// ```swift
 /// PersonalizationStoriesWidget(code: "stories_code", communicationDelegate: router, controller: stories)
 /// ```
-@available(iOS 13.0, *)
 public struct PersonalizationStoriesWidget: UIViewRepresentable {
 
     public var code: String

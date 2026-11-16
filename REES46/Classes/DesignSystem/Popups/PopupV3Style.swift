@@ -26,14 +26,10 @@ enum PopupV3Fonts {
         let lower = family?.lowercased() ?? ""
         var font: UIFont
         if lower.contains("mono") {
-            if #available(iOS 13.0, *) {
-                font = .monospacedSystemFont(ofSize: size, weight: weight)
-            } else {
-                font = UIFont(name: "Menlo", size: size) ?? .systemFont(ofSize: size, weight: weight)
-            }
+            font = .monospacedSystemFont(ofSize: size, weight: weight)
         } else {
             font = .systemFont(ofSize: size, weight: weight)
-            if lower.contains("serif"), !lower.contains("sans"), #available(iOS 13.0, *),
+            if lower.contains("serif"), !lower.contains("sans"),
                let descriptor = font.fontDescriptor.withDesign(.serif) {
                 font = UIFont(descriptor: descriptor, size: size)
             }
@@ -216,7 +212,6 @@ enum PopupV3KitTheme {
     }
 
     /// Тема кита на фоне `background`; при равном контрасте — светлая.
-    @available(iOS 13.0, *)
     static func style(on background: CSSColor, text: UIColor = PersonalizationColor.textPrimary) -> UIUserInterfaceStyle {
         func contrast(_ style: UIUserInterfaceStyle) -> Double {
             CSSColor(text.resolvedColor(with: UITraitCollection(userInterfaceStyle: style))).over(background).contrast(with: background)
@@ -224,9 +219,8 @@ enum PopupV3KitTheme {
         return contrast(.dark) > contrast(.light) ? .dark : .light
     }
 
-    /// Вью кита со всем поддеревом — в тему по фону под элементом `box`. До iOS 13 тема одна.
+    /// Вью кита со всем поддеревом — в тему по фону под элементом `box`.
     static func apply(to view: UIView, element box: PopupV3Box, context: PopupV3RenderContext) {
-        guard #available(iOS 13.0, *) else { return }
         view.overrideUserInterfaceStyle = style(on: background(element: box.background, frame: context.background))
     }
 }

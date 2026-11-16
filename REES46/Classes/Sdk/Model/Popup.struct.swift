@@ -23,7 +23,7 @@ public struct Popup: Codable {
             let actions = try decoder.decode(PopupActions.self, from: data)
             return actions
         } catch {
-            print("[getParsedPopupActions] Error decoding popup actions: \(error)")
+            SdkLogger.process.warning(LogCode.decodingFailed, "the popup actions did not parse")
             return nil
         }
     }

@@ -162,7 +162,7 @@ final class MultiInstanceViewController: UIViewController {
     private func routePush(shopId: String?, note: String) {
         var payload: [AnyHashable: Any] = ["type": "bulk", "id": "demo"]
         if let shopId = shopId { payload["shop_id"] = shopId }
-        Rees46.handlePush(payload, event: .received)
+        Rees46.handlePush(payload, event: .delivered)
         log("push shop_id=\(shopId ?? "—") → \(note)")
     }
 

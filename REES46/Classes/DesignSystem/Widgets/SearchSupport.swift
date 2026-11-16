@@ -26,8 +26,17 @@ final class RecentSearches {
     private let defaults = UserDefaults.standard
 
     init(shopKey: String, limit: Int) {
-        key = "personalization.ui.recentSearches.\(shopKey)"
+        key = Self.key(shopKey: shopKey)
         self.limit = limit
+    }
+
+    static func key(shopKey: String) -> String {
+        "personalization.ui.recentSearches.\(shopKey)"
+    }
+
+    /// `deleteUserCredentials`: the shop's history belongs to the customer who was deleted.
+    static func forget(shopKey: String, defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key(shopKey: shopKey))
     }
 
     func load() -> [String] {
@@ -100,7 +109,7 @@ final class SearchImages {
         }
         imageView.image = nil
         // Замыкание не держит `load`: иначе он не ушёл бы вместе с view до конца загрузки.
-        let task = URLSession.shared.dataTask(with: link) { [weak self, weak imageView] data, _, _ in
+        let task = SdkURLSession.shared.dataTask(with: link) { [weak self, weak imageView] data, _, _ in
             guard let self, let data, let image = UIImage(data: data) else { return }
             self.cache.setObject(image, forKey: url as NSString)
             DispatchQueue.main.async {

@@ -1,0 +1,35 @@
+# Lint of the SDK core: nothing reachable from the public API may crash the app on a force operation
+# (documentation-unified sdk/core/resilience.md). UI, stories and the design system are not covered yet.
+only_rules:
+  - force_unwrapping
+  - force_try
+  - force_cast
+
+included:
+  - REES46/Classes/Core
+  - REES46/Classes/Sdk
+  - REES46/Classes/Notifications
+  - REES46/Classes/Tracking
+  - REES46/Classes/Search
+  - REES46/Classes/Profile
+  - REES46/Classes/Subscription
+  - REES46/Classes/Infrastructure
+  - REES46/Classes/Domain
+  - REES46/Classes/Errors
+  - REES46/Classes/Regex
+  - REES46/Classes/Application
+  - REES46/Classes/Config
+  - REES46/Classes/AppSettings
+  - REES46/Classes/Shared
+  - REES46/Classes/Model
+  - REES46/Classes/Extensions/NetworkStatus
+  - REES46/Classes/Extensions/SessionQueue
+  - REES46/Classes/Extensions/InitService.swift
+  - REES46/Classes/Extensions/UserDefaultsExtension.swift
+
+excluded:
+  - REES46/Classes/Model/Stories.swift
+
+force_unwrapping: error
+force_try: error
+force_cast: error

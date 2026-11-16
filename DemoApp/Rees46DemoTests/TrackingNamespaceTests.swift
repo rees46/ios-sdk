@@ -505,12 +505,12 @@ final class TrackingSourceStoreTests: XCTestCase {
         XCTAssertEqual(freshInstance.currentSource()?.code, "block-a")
     }
 
-    /// A host passing its own `storageKey` opts out of per-shop partitioning. Pinned so the opt-out
-    /// stays visible — two shops on one key deliberately share a store.
-    func test_aHostSuppliedStorageKey_isUsedVerbatim() {
-        let hostKey = "host_own_key_\(UUID().uuidString)"
-        suiteNames.append(hostKey)
+    /// A host passing its own `storageKey` gets its own prefix of the shop's partition (decision 5):
+    /// the source lands there, not in the default partition.
+    func test_aHostSuppliedStorageKey_prefixesThePartition() {
+        let hostKey = "host_own_key_\(UUID().uuidString)_"
         let shop = uniqueShop("shop-a")
+        suiteNames.append(StoragePartition.suiteName(for: shop, storageKey: hostKey))
 
         TrackingSourceStoreImpl(
             store: StoragePartition.store(for: shop, storageKey: hostKey),

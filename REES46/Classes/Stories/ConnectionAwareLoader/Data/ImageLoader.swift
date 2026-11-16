@@ -8,7 +8,7 @@ protocol ImageLoadingProtocol {
 class DefaultImageLoader: ImageLoadingProtocol {
     
     func loadImage(from url: URL, completion: @escaping (Result<UIImage, Error>) -> Void) {
-        let task = URLSession.shared.dataTask(with: url) { data, response, error in
+        let task = SdkURLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     completion(.failure(ImageLoaderError.networkError(error)))

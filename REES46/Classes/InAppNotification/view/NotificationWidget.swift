@@ -203,11 +203,12 @@ public class NotificationWidget: InAppNotificationProtocol {
         }
     }
 
+    /// The outcome only: the link carries what the shop put in it.
     private func logLinkOpeningResult(success: Bool, urlString: String?) {
         if success {
-            print("Link opened: \(urlString ?? "unknown")")
+            SdkLogger.area(.ui, .debug, "the popup link was opened")
         } else {
-            print("Unable to open link: \(urlString ?? "unknown")")
+            SdkLogger.area(.ui, .warning, "the popup link could not be opened")
         }
     }
     

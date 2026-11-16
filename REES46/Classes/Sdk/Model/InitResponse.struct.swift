@@ -81,11 +81,11 @@ public func convertToDictionary(from response: InitResponse) -> [String: Any]? {
         if let jsonObject = try JSONSerialization.jsonObject(with: jsonData, options: []) as? [String: Any] {
             return jsonObject
         } else {
-            print("[ConvertToDictionary] Failed to convert JSON Data to dictionary")
+            SdkLogger.process.warning(LogCode.decodingFailed, "the init answer is not a JSON object")
             return nil
         }
     } catch {
-        print("[ConvertToDictionary] Error: \(error)")
+        SdkLogger.process.warning(LogCode.decodingFailed, "the init answer could not be converted")
         return nil
     }
 }

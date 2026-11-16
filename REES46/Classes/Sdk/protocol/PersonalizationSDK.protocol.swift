@@ -38,14 +38,22 @@ public protocol PersonalizationSDK {
     func generateString(array : [String]) -> String
     
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?,  advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(itemId:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.purchase(request).")
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.setSource(TrackingSource(type:code:)).")
     func trackSource(source: RecommendedByCase, code: String)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
     /// Instant search. `excludedMerchants` applies only together with non-empty `locations`: the server
@@ -80,8 +88,14 @@ public protocol PersonalizationSDK {
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SdkError>) -> Void)
     /// Full search. `excludedMerchants` applies only together with non-empty `locations`, as in `suggest`.
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
+    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// was sent — up to seven days, the time an event lives — or failed for good.
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func subscribeForBackInStock(
         id: String,
@@ -108,7 +122,43 @@ public protocol PersonalizationSDK {
     func manageSubscription(email: String?, phone: String?, userExternalId: String?, userLoyaltyId: String?, telegramId: String?, emailBulk: Bool?, emailChain: Bool?, emailTransactional: Bool?, smsBulk: Bool?, smsChain: Bool?, smsTransactional: Bool?, webPushBulk: Bool?, webPushChain: Bool?, webPushTransactional: Bool?, mobilePushBulk: Bool?, mobilePushChain: Bool?, mobilePushTransactional: Bool?, telegramBulk: Bool?, telegramChain: Bool?, telegramTransactional: Bool?, whatsappBulk: Bool?, whatsappChain: Bool?, whatsappTransactional: Bool?, maxBulk: Bool?, maxChain: Bool?, maxTransactional: Bool?, walletBulk: Bool?, completion: @escaping(Result<Void, SdkError>) -> Void)
     func configuration() -> SdkConfiguration.Type
     func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void)
+    /// Forgets the customer: the device id, the session, the saved init answer, the source and what
+    /// the SDK sent for them; the device's push token, A/B group and advertising id stay. The instance
+    /// stays usable and gets a new device id from `/init`; requests made meanwhile wait for it.
     func deleteUserCredentials()
+
+    /// Where the instance's initialization is (`Rees46.SdkState`). On the old core an instance is
+    /// `initializing` until `/init` gives it a device id, `ready` with one, and `notInitialized` once
+    /// released. Has a default implementation, so conforming types keep compiling.
+    var state: Rees46.SdkState { get }
+
+    /// Calls `listener` on the main thread at once with the current `state`, then once for every
+    /// change, until the handle is cancelled. Has a default implementation, so conforming types keep
+    /// compiling.
+    @discardableResult
+    func onStateChange(_ listener: @escaping (Rees46.SdkState) -> Void) -> Cancellable
+
+    /// The session id (`sid`) of the instance; `nil` while it has none. Has a default implementation,
+    /// so conforming types keep compiling.
+    var sessionId: String? { get }
+
+    /// Stops the instance: it leaves the registry, `Rees46.instance(for:)` no longer finds it, and every
+    /// later call on it fails as not initialized — the old methods with `.initializationFailed`. The
+    /// next `Rees46.initialize` for the shop makes a new instance. The events it has not sent stay on
+    /// the device and go on the next launch. Has a default implementation, so conforming types keep
+    /// compiling.
+    func release()
+
+    /// Sends the queued events now, without waiting for the SDK's own triggers: `completion` is called
+    /// on the main thread once every event queued at the call was tried — sent, or kept for later
+    /// because there is no network or the server asked to wait; an instance that is not ready yet is
+    /// waited for, at most a request's read timeout. With `Rees46Config.coreV2 = false`, which keeps no
+    /// queue, it is called at once; after `release()` with `notInitialized`. Has a default
+    /// implementation, so conforming types keep compiling.
+    func flush(completion: @escaping (Rees46.SdkError?) -> Void)
+
+    /// `flush(completion:)` for `async` code: throws `Rees46.SdkError.notInitialized` after `release()`.
+    func flush() async throws
 }
 
 public extension PersonalizationSDK {
@@ -224,9 +274,13 @@ public extension PersonalizationSDK {
         guard priceMin != nil || priceMax != nil || sortBy != nil || sortDir != nil else {
             return getCategory(category: category, limit: limit, page: page, brands: brands, locations: locations, filters: filters, completion: completion)
         }
-        let params = categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
-        getRequest(path: "category/\(category)", params: params, false) { result in
-            completion(result.map { CategoryResponse(json: $0) })
+        switch categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir) {
+        case let .success(params):
+            getRequest(path: "category/\(category)", params: params, false) { result in
+                completion(result.map { CategoryResponse(json: $0) })
+            }
+        case let .failure(error):
+            completion(.failure(error))
         }
     }
 
@@ -423,6 +477,49 @@ public extension PersonalizationSDK {
             deleteUserCredentials()
         })
     }
+
+    /// A conformer without states: `initializing` without a device id, `ready` with one.
+    var state: Rees46.SdkState {
+        deviceId.isEmpty ? .initializing : .ready
+    }
+
+    /// A conformer without states tells its state once and has no change to tell.
+    @discardableResult
+    func onStateChange(_ listener: @escaping (Rees46.SdkState) -> Void) -> Cancellable {
+        let current = state
+        let subscription = Cancellable {}
+        DispatchQueue.main.async {
+            guard !subscription.isCancelled else { return }
+            listener(current)
+        }
+        return subscription
+    }
+
+    var sessionId: String? {
+        userSeance.isEmpty ? nil : userSeance
+    }
+
+    /// A conformer's release: it leaves the registry.
+    func release() {
+        SdkRegistry.shared.unregister(self)
+    }
+
+    /// A conformer without a queue has nothing to send.
+    func flush(completion: @escaping (Rees46.SdkError?) -> Void) {
+        DispatchQueue.main.async { completion(nil) }
+    }
+
+    func flush() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            flush { error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+    }
     
     // R2: these caches are partitioned per shop — delegate to the shop's [LocalStateRepository] via
     // the internal `localState` bridge instead of scanning the shared `.standard` domain.
@@ -466,8 +563,8 @@ extension PersonalizationSDK {
     }
 
     /// Query of `GET /category/{category}`: the session plus whatever was asked. Shared by the SDK's
-    /// own `getCategory` and the protocol's default one.
-    func categoryParams(limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?) -> [String: String] {
+    /// own `getCategory` and the protocol's default one. Filters that are not JSON fail the call.
+    func categoryParams(limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?) -> Result<[String: String], SdkError> {
         var params: [String: String] = [
             "shop_id": shopId,
             "did": deviceId,
@@ -478,17 +575,18 @@ extension PersonalizationSDK {
         if let page = page { params["page"] = String(page) }
         if let brands = brands { params["brands"] = brands }
         if let locations = locations { params["locations"] = locations }
-        if let filters = filters,
-           let data = try? JSONSerialization.data(withJSONObject: filters, options: []),
-           let text = String(data: data, encoding: .utf8) {
-            params["filters"] = text
+        switch SearchFilterParams.filtersJSON(filters, method: "getCategory", shopId: shopId) {
+        case let .success(json):
+            params["filters"] = json
+        case let .failure(error):
+            return .failure(error)
         }
         // The same wire format as the search sends.
         if let priceMin = priceMin { params[SdkConstants.priceMin] = String(describing: priceMin) }
         if let priceMax = priceMax { params[SdkConstants.priceMax] = String(describing: priceMax) }
         if let sortBy = sortBy { params[SdkConstants.sortBy] = sortBy }
         if let sortDir = sortDir { params[SdkConstants.sortDir] = sortDir }
-        return params
+        return .success(params)
     }
 }
 
@@ -536,11 +634,9 @@ public func createPersonalizationSDK(
 
 /**
  Builds a `SimplePersonalizationSDK`, resets its per-shop stories cache, and registers it so it can be
- resolved by `shop_id` and joins the push fan-out set.
-
- The single construction path shared by the (soon-deprecated) `createPersonalizationSDK` and the
- `Rees46` facade — keeping registration and cache-reset in one place. The registry holds the instance
- weakly, so this does not extend its lifetime; it drops out on dealloc or `deleteUserCredentials`.
+ resolved by `shop_id` and joins the push fan-out set — a new instance every time, replacing the shop's
+ registration, as `createPersonalizationSDK` always has. `Rees46.initialize` returns the shop's instance
+ when it has one instead. The registry holds the instance until `release()`.
  */
 internal func makeRegisteredSDK(
     shopId: String,
@@ -550,34 +646,38 @@ internal func makeRegisteredSDK(
     apiDomain: String = "api.rees46.ru",
     stream: String = "ios",
     enableLogs: Bool = false,
+    logLevel: Rees46.LogLevel = .warning,
     autoSendPushToken: Bool = true,
     sendAdvertisingId: Bool = false,
     parentViewController: UIViewController? = nil,
     enableAutoPopupPresentation: Bool = true,
     needReInitialization: Bool = false,
     storageKey: String? = nil,
+    coreV2: Bool = false,
     completion: ((SdkError?) -> Void)? = nil
 ) -> PersonalizationSDK {
-    let sdk = SimplePersonalizationSDK(
-        shopId: shopId,
-        userEmail: userEmail,
-        userPhone: userPhone,
-        userLoyaltyId: userLoyaltyId,
-        apiDomain: apiDomain,
-        stream: stream,
-        enableLogs: enableLogs,
-        autoSendPushToken: autoSendPushToken,
-        sendAdvertisingId: sendAdvertisingId,
-        parentViewController: parentViewController,
-        enableAutoPopupPresentation: enableAutoPopupPresentation,
-        needReInitialization: needReInitialization,
-        storageKey: storageKey,
-        completion: completion
-    )
-
-    sdk.resetSdkCache()
-    SdkRegistry.shared.register(shopId: shopId, sdk: sdk)
-    return sdk
+    Rees46.withCreationLock {
+        let sdk = SimplePersonalizationSDK(
+            shopId: shopId,
+            userEmail: userEmail,
+            userPhone: userPhone,
+            userLoyaltyId: userLoyaltyId,
+            apiDomain: apiDomain,
+            stream: stream,
+            enableLogs: enableLogs,
+            logLevel: logLevel,
+            autoSendPushToken: autoSendPushToken,
+            sendAdvertisingId: sendAdvertisingId,
+            parentViewController: parentViewController,
+            enableAutoPopupPresentation: enableAutoPopupPresentation,
+            needReInitialization: needReInitialization,
+            storageKey: storageKey,
+            coreV2: coreV2,
+            completion: completion
+        )
+        sdk.resetSdkCache()
+        return (sdk, SdkRegistry.shared.registerDeferringAwaiters(shopId: shopId, sdk: sdk))
+    }
 }
 
 /**
@@ -613,7 +713,7 @@ enum ProtocolDefault {
     static func forward(_ method: String = #function, on sdk: PersonalizationSDK, to call: () -> Void) {
         let key = runningKey(method, sdk)
         guard enter(key) else {
-            print("\(method) is not implemented by this PersonalizationSDK")
+            SdkLogger.process.error(LogCode.notImplemented, "\(method) is not implemented by this PersonalizationSDK")
             return
         }
         defer { leave(key) }

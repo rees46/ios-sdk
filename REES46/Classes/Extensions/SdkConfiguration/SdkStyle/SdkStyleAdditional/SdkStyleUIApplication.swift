@@ -125,10 +125,7 @@ public extension UIApplication {
     
     var sdkCurrentKeyWindow: UIWindow? {
         get {
-            if #available(iOS 13.0, *) {
-                return UIApplication.shared.windows.filter({ $0.isKeyWindow }).first
-            }
-            return UIApplication.shared.keyWindow ?? UIApplication.shared.windows.first
+            return UIApplication.shared.windows.filter({ $0.isKeyWindow }).first
         }
     }
     

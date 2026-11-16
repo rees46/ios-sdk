@@ -29,6 +29,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         static let actionsKey: String = "ACTIONS_IS_RUNNING"
         static let actionsPositiveValue: String = "true"
         static let actionsNegativeValue: String = "false"
+        static let cleanProcessKey: String = "CLEAN_PROCESS"
     }
     
     var window: UIWindow?
@@ -41,6 +42,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
+
+        // Tests that need a process the demo has not touched: the first initialization of a process
+        // decides its core (`Rees46Config.coreV2`), so with `CLEAN_PROCESS=true` — xcodebuild's
+        // `TEST_RUNNER_CLEAN_PROCESS=true` — the demo initializes nothing and shows an empty screen.
+        if ProcessInfo.processInfo.environment[Constants.cleanProcessKey] == "true" {
+            window?.rootViewController = UIViewController()
+            return true
+        }
 
         #if SHOP_ONLY
         installShop()

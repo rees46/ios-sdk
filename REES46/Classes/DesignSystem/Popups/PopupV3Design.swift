@@ -24,18 +24,14 @@ enum PopupV3VAlign: String, Equatable {
     }
 }
 
-/// Лог попапов v3: в отладочной сборке — консоль, в любой — при `debug` движка.
+/// The log of popups v3: `debug` of the SDK's log under `popups_v3`. With `debug` of the engine on
+/// (`verbose`), its lines are written whatever `Rees46Config.logLevel` says, as on Android: the app
+/// asked for them. Lines carry ids, events, screens and HTTP codes — no links, answers or error texts.
 enum PopupsV3Log {
     static var verbose = false
 
     static func log(_ message: @autoclosure () -> String) {
-        if verbose {
-            NSLog("Popups v3: %@", message())
-        } else {
-            #if DEBUG
-            print("Popups v3: \(message())")
-            #endif
-        }
+        SdkLogger.area(.popupsV3, .debug, message(), force: verbose)
     }
 }
 

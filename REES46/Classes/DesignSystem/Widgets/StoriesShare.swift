@@ -75,9 +75,9 @@ struct StoriesApiV3 {
     /// Сколько ждать `did`, пока SDK инициализируется.
     static var deviceIdTimeout: TimeInterval = 15
 
-    /// Отправка запроса; подменяется в тестах.
+    /// Отправка запроса — сессией SDK без cookies (`SdkURLSession`); подменяется в тестах.
     static var transport: (URLRequest, @escaping (Data?, URLResponse?, Error?) -> Void) -> Void = { request, completion in
-        URLSession.shared.dataTask(with: request, completionHandler: completion).resume()
+        SdkURLSession.shared.dataTask(with: request, completionHandler: completion).resume()
     }
 
     // MARK: - Адреса и тело события
@@ -179,13 +179,14 @@ struct StoriesApiV3 {
     /// Событие `POST …/events`. Ответ не ждём: событие — не повод мешать просмотру.
     func track(sdk: PersonalizationSDK, code: String, event: Event, storyId: String, slideId: String) {
         let body = { did in Self.eventBody(shopId: sdk.shopId, did: did, event: event, storyId: storyId, slideId: slideId) }
+        let shopId = sdk.shopId
         post(sdk: sdk, url: eventsURL(code: code), body: body) { _, response, error in
-            #if DEBUG
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             if error != nil || !(200..<300).contains(status) {
-                print("Stories v3: \(event.rawValue) event failed (\(error.map { "\($0)" } ?? "HTTP \(status)"))")
+                // The kind of the error or the HTTP code: an error's text repeats the URL and its query.
+                let reason = error.map { SdkLogger.errorKind($0) } ?? "HTTP \(status)"
+                SdkLogger.area(.storiesV3, .warning, "\(event.rawValue) event failed: \(reason)", shopId: shopId)
             }
-            #endif
         }
     }
 
@@ -224,6 +225,7 @@ struct StoriesApiV3 {
             }
             var request = URLRequest(url: address, timeoutInterval: PersonalizationStories.loadTimeout)
             request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.httpShouldHandleCookies = false
             Self.transport(request) { data, response, error in
                 completion(Self.payload(data: data, response: response, error: error))
             }

@@ -3,6 +3,7 @@ import Foundation
 import AdSupport
 import AppTrackingTransparency
 
+@available(*, deprecated, message: "Has no effect: set Rees46Config.logLevel.")
 public var global_EL: Bool = true
 
 // MARK: - SimplePersonalizationSDK
@@ -13,7 +14,6 @@ private enum ProbabilityToPurchaseNetworkConstants {
 }
 
 class SimplePersonalizationSDK: PersonalizationSDK {
-    private var global_EL: Bool = false
     
     var parentViewController: UIViewController?
     
@@ -23,13 +23,27 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var storiesCode: String?
     var shopId: String
     var deviceId: String
-    var userSeance: String
+    /// The session id (`sid`): the new core's is the server's (`SessionWindow`), the old core's the one
+    /// `SessionManager` made for this launch.
+    var userSeance: String {
+        if let session = sessionWindow {
+            return session.sid
+        }
+        seanceLock.lock(); defer { seanceLock.unlock() }
+        return legacySeance
+    }
+    /// The old core's session id, under `seanceLock`.
+    private var legacySeance = ""
+    private let seanceLock = NSLock()
+    /// Listeners of the old core's session: it changes only on `deleteUserCredentials`.
+    private let legacySessionListeners = SessionListeners()
     var stream: String
     var baseURL: String
-    let baseInitJsonFileName = ".json"
     let autoSendPushToken: Bool
     let needReInitialization: Bool
     let sendAdvertisingId: Bool
+    /// The app's prefix of the shop's storage (`Rees46Config.storageKey`).
+    let storageKey: String?
 
     /// This shop's identity/session storage (R2): `device_id` / `seance` / `IDFA` are read and written
     /// through this typed port, backed by a per-shop partition so two shops in one app do not share
@@ -40,9 +54,45 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// reinstall belongs to this shop only. See [KeychainInitStore].
     let keychainStore: KeychainInitStore
 
+    /// This shop's partition and files: the saved `/init` answer, `refused`, the queue's folder, the
+    /// migration flags. See [ShopStorage].
+    let storage: ShopStorage
+
     /// Owns the session id with a rolling 2h TTL, persisted per shop and reused across cold starts —
     /// aligned with Android/RN. See [SessionManager].
     let sessionManager: SessionManager
+
+    /// This instance's logger: its `logLevel`, its shop on every message.
+    let logger: SdkLogger
+
+    /// Whether the device is online; a failed request offline is `networkOfflineError`.
+    let connectivity: ConnectivityMonitor
+
+    /// Whether this instance runs the new core: the process's `Rees46Config.coreV2` (`CoreFlag`).
+    let usesCoreV2: Bool
+
+    /// The configuration the instance was made with: a later `Rees46.initialize` of the shop compares.
+    let config: Rees46Config
+
+    /// The instance's state (`Rees46.SdkState`) and its listeners.
+    let instanceState = InstanceState()
+
+    /// The completion of `Rees46.initialize`, also of later calls for the shop: once, with the outcome
+    /// of the first initialization.
+    let initCompletion: InitCompletion
+
+    /// The new core's seams: time, pauses, the app's lifecycle.
+    let environment: CoreEnvironment
+
+    /// Where this instance's requests go: the old paths (`LegacyCore`) or the new client (`CoreV2`).
+    /// Made at the end of `init`, before any request can reach it.
+    lazy var core: Core = makeCore()
+
+    /// The new core's event queue (`EventQueue`), shared with the other instances of the shop; `nil` on
+    /// the old core, which sends its events at once.
+    private(set) var eventQueue: EventQueue?
+    /// What sends the queue: the app's lifecycle and the network.
+    private var queueTriggers: [Cancellable] = []
 
     /// Per-shop stories UI state (viewed slides / downloaded media / cart / favourites). Reached from
     /// the stories views through the `PersonalizationSDK.localState` bridge. See [LocalStateRepository].
@@ -51,6 +101,13 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Per-shop attribution set through `tracking.setSource(_:)`. Reached from the tracking services
     /// through the `PersonalizationSDK.trackingSourceStore` bridge. See [TrackingSourceStore].
     let sourceStore: TrackingSourceStore
+
+    /// Where the new core keeps the device's push token (`sdk/core/push.md`): the device's store, one
+    /// for every shop; the old core goes on reading and writing `DeviceStore.shared`.
+    let deviceStore: DeviceStore
+
+    /// The instance's own push callbacks: they win over the facade's (`Rees46.setPushCallbacks`).
+    let pushCallbackBox = PushCallbackBox()
     
     let sdkBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
     let appBundleId = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier
@@ -59,10 +116,36 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var userPhone: String?
     var userLoyaltyId: String?
     var segment: String
-    /// The session every request goes through. Each request carries its own timeout.
-    var urlSession: URLSession
-    /// For stories reloaded by hand: without network a request fails at once.
-    let sessionWithoutWaiting: URLSession
+    /// The session of the old core's requests; each request carries its own timeout. Made on first
+    /// use: an instance on the new core sends through its own client and never makes it. A session
+    /// the app sets gives the new core its configuration, not its delegate (see `Rees46Config.coreV2`).
+    var urlSession: URLSession {
+        get {
+            sessionLock.lock(); defer { sessionLock.unlock() }
+            if let session = legacySession {
+                return session
+            }
+            let session = URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: true))
+            legacySession = session
+            return session
+        }
+        set {
+            sessionLock.lock()
+            legacySession = newValue
+            sessionLock.unlock()
+            guard usesCoreV2 else { return }
+            if newValue.delegate != nil {
+                logger.warning(
+                    LogCode.invalidConfig,
+                    "coreV2 sends with the configuration of the app's URLSession, not with its delegate: pinning set there does not apply",
+                    ["reason": "url_session_delegate"]
+                )
+            }
+            core.use(newValue.configuration)
+        }
+    }
+    private var legacySession: URLSession?
+    private let sessionLock = NSLock()
     var userInfo: InitResponse = InitResponse()
     
     /// This shop's requests: another shop's wait for its device id does not hold them.
@@ -70,8 +153,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     var sessionQueue: SessionQueue { requestQueue }
     private var requestOperation: RequestOperation?
     let bodyMutableData = NSMutableData()
-    private let initSemaphore = DispatchSemaphore(value: 0)
-    private let serialSemaphore = DispatchSemaphore(value: 0)
     
     lazy var trackEventService: TrackEventServiceProtocol = {
         return TrackEventServiceImpl(sdk: self)
@@ -138,46 +219,84 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         apiDomain: String,
         stream: String = "ios",
         enableLogs: Bool = false,
+        logLevel: Rees46.LogLevel = .warning,
         autoSendPushToken: Bool = true,
         sendAdvertisingId: Bool = false,
         parentViewController: UIViewController? = nil,
         enableAutoPopupPresentation: Bool = true,
         needReInitialization: Bool = false,
         storageKey: String? = nil,
+        coreV2: Bool = false,
+        deviceId configuredDeviceId: String? = nil,
+        environment: CoreEnvironment? = nil,
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
+        shopStorage: ShopStorage? = nil,
         sessionManager: SessionManager? = nil,
         localState: LocalStateRepository? = nil,
+        connectivity: ConnectivityMonitor? = nil,
+        deviceStore: DeviceStore? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) {
         self.shopId = shopId
+        self.deviceStore = deviceStore ?? .shared
+        self.storageKey = storageKey
+        // Code that has only the shop at hand (stories, popups v3) opens the same partition.
+        StoragePartition.remember(storageKey: storageKey, forShop: shopId)
+        self.connectivity = connectivity ?? SystemConnectivityMonitor.shared
+        // `enableLogs` is the old switch: on, it means everything (`debug`), as in `Rees46Config`.
+        self.logger = SdkLogger(shopId: shopId, level: enableLogs && logLevel == .warning ? .debug : logLevel)
+        self.usesCoreV2 = CoreFlag.resolve(requested: coreV2)
+        CoreFlag.reportMismatch(requested: coreV2, active: usesCoreV2, logger: logger)
+        self.config = Rees46Config(
+            shopId: shopId,
+            apiDomain: apiDomain,
+            stream: stream,
+            deviceId: configuredDeviceId,
+            enableLogs: enableLogs,
+            logLevel: logLevel,
+            autoSendPushToken: autoSendPushToken,
+            sendAdvertisingId: sendAdvertisingId,
+            enableAutoPopupPresentation: enableAutoPopupPresentation,
+            needReInitialization: needReInitialization,
+            storageKey: storageKey,
+            coreV2: coreV2
+        )
+        self.initCompletion = InitCompletion(onMain: usesCoreV2)
+        self.environment = environment ?? CoreEnvironment()
         self.requestQueue = ShopSessionQueue(name: "com.personalization.sdk.requests.\(shopId)")
 
-        // R2: identity/session live in this shop's partition. The default repository migrates the
-        // pre-partition identity in once (existing installs keep their did); an injected repository
+        // The shop's partition — `storageKey` is the app's prefix of it — and its files.
+        let storage = shopStorage ?? ShopStorage(shopId: shopId, storageKey: storageKey, logger: logger)
+        self.storage = storage
+
+        // R2: identity/session live in this shop's partition. The default repository runs the identity
+        // migrations once, before /init (existing installs keep their did); an injected repository
         // (tests) is used verbatim.
         let identity = userIdentity ?? UserIdentityRepositoryImpl(shopId: shopId, storageKey: storageKey)
         self.userIdentity = identity
 
         // R2: stories UI state (viewed/downloaded/cart/favourites) shares this shop's partition suite.
-        self.localStateStore = localState
-            ?? LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId, storageKey: storageKey))
+        self.localStateStore = localState ?? LocalStateRepositoryImpl(store: storage.partition)
 
         // R2: the attribution `tracking.setSource(_:)` stores is shop-scoped too — a source set for one
         // shop must not colour another shop's events. Reads still fall back to the legacy shared keys
         // so an install upgrading mid-window keeps its source.
-        self.sourceStore = TrackingSourceStoreImpl(
-            store: StoragePartition.store(for: shopId, storageKey: storageKey)
-        )
+        self.sourceStore = TrackingSourceStoreImpl(store: storage.partition)
+
+        // The saved init answer leaves Documents for the SDK's folder, once.
+        StorageMigrations.once(.savedInitFile, in: storage.partition, scope: storage.keyScope) { storage.moveLegacySavedInitAnswer() }
 
         // R2: the keychain init-secret backup is keyed per shop, adopting the legacy item once so a
         // reinstall keeps this shop's did — also the one a CocoaPods build kept under the framework's
-        // bundle id, for an app now linking the SDK through SwiftPM. Injected (tests) is used verbatim.
-        let keychainService = Bundle(for: SimplePersonalizationSDK.self).bundleIdentifier ?? "com.rees46.sdk"
+        // bundle id, for an app now linking the SDK through SwiftPM. The service is pinned
+        // (`KeychainPartition.service`). Injected (tests) is used verbatim.
         self.keychainStore = keychainStore ?? KeychainInitStoreImpl(
             shopId: shopId,
-            service: keychainService,
-            previousServices: [KeychainPartition.cocoaPodsFrameworkService]
+            service: KeychainPartition.service,
+            previousServices: KeychainPartition.previousServices,
+            partition: storage.partition,
+            flagScope: storage.keyScope
         )
 
         // Session (aligned with Android/RN): a rolling 2h client session over the per-shop partition.
@@ -187,7 +306,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.parentViewController = parentViewController
         self.enableAutoPopupPresentation = enableAutoPopupPresentation
         
-        global_EL = enableLogs
         self.baseURL = "https://" + apiDomain + "/"
         self.userEmail = userEmail
         self.userPhone = userPhone
@@ -197,30 +315,208 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.needReInitialization = needReInitialization
         self.sendAdvertisingId = sendAdvertisingId
         
-        // Resolve the session (reuse the persisted one within the 2h window, else start a new one)
-        // and the device's A/B segment.
-        userSeance = self.sessionManager.currentSessionId()
+        // The old core resolves its session (the persisted one within the 2h window, else a new one it
+        // makes); the new core never makes one: its `sid` is the server's (`SessionWindow`). Then the
+        // device's A/B segment.
+        legacySeance = usesCoreV2 ? "" : self.sessionManager.currentSessionId()
         segment = Self.abSegment(of: identity)
         
-        // Fetch user session (permanent user Id)
-        if !needReInitialization {
+        if needReInitialization {
+            // The new core forgets the customer's device id, the saved answer and its keychain backup
+            // once, before /init; the old one drops the device id on its /init, as it always has.
+            if usesCoreV2 {
+                identity.removeDeviceId()
+                // The session was the dropped device id's: the new one comes with the new did.
+                identity.seance = nil
+                identity.seanceLastActTime = nil
+                storage.removeSavedInitAnswer()
+                self.keychainStore.clear()
+                // The token's week was the dropped device id's: the new one gets the token at once.
+                PushTokenWeek.forget(storage)
+                logger.info(LogCode.deviceIdReset, "the stored device id was removed to get a new one", ["reason": "re_initialization"])
+            }
+        } else {
+            // The shop's own device id; the one the app brought when it has none — once: after
+            // deleteUserCredentials it does not come back —; the one the keychain kept through a reinstall.
+            Self.adoptConfiguredDeviceId(configuredDeviceId, into: identity, partition: storage.partition, scope: storage.keyScope, logger: logger)
             Self.restoreDeviceId(into: identity, from: self.keychainStore)
         }
         // A forced re-initialization drops the stored device id: requests wait for the new one.
         deviceId = needReInitialization ? "" : (self.userIdentity.deviceId ?? "")
-        urlSession = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: true))
-        sessionWithoutWaiting = URLSession(configuration: Self.sessionConfiguration(waitsForConnectivity: false))
+        // Code without the instance at hand (push routing, UI) logs at this instance's level while it lives.
+        SdkLogger.register(logger, owner: self)
+        _ = core
         _ = popupsV3
+        // A lazy property is not safe to make from two threads at once: an app that tracks from several
+        // threads right after making the instance would make two and release one twice. The services
+        // the public methods go through are made here, once, before anybody can call them.
+        _ = tracking
+        _ = subscriptionService
+        _ = notificationService
+        _ = pushTokenService
+        _ = searchService
+        _ = profileData
+        _ = popupPresenter
+
+        initCompletion.add(completion)
+        if let machine = initMachine {
+            Self.instances.add(self)
+            // The queue is there before /init can say ready.
+            startEventQueue()
+            machine.delegate = self
+            machine.start()
+        } else {
+            // The old core is ready with a device id, and initializing until /init brings one.
+            instanceState.set(deviceId.isEmpty ? .initializing : .ready)
+            // Requests made before the device id is known wait for /init and go out with its id.
+            if deviceId.isEmpty {
+                requestQueue.close()
+            }
+            startInit(generation: currentInitGeneration()) { [initCompletion] error in
+                // Called inside the answer's completion: the whole error of `/init` is the current one.
+                initCompletion.finish(error, full: CurrentError.current ?? error.map(Self.newCoreError))
+            }
+        }
         
+        initializeNotificationRegistrar()
+    }
+
+    /// The device id the app brought (`Rees46Config.deviceId`), taken only when the shop has none, and
+    /// looked at once: a migration of the shop, flagged in its partition. After `deleteUserCredentials`
+    /// the configured one does not come back, and a shop that keeps its own says so once.
+    static func adoptConfiguredDeviceId(
+        _ configured: String?,
+        into identity: UserIdentityRepository,
+        partition: UserDefaults,
+        scope: String?,
+        logger: SdkLogger
+    ) {
+        guard let configured = configured, !configured.isEmpty else { return }
+        StorageMigrations.once(.configuredDeviceId, in: partition, scope: scope) {
+            let stored = identity.deviceId ?? ""
+            if stored.isEmpty {
+                identity.deviceId = configured
+            } else if stored != configured {
+                logger.warning(LogCode.invalidConfig, "the shop keeps its own device id: the configured one was not taken", ["reason": "device_id_kept"])
+            }
+            return true
+        }
+    }
+
+    /// The new core's `/init`; `nil` on the old core.
+    var initMachine: InitMachine? {
+        (core as? CoreV2)?.machine
+    }
+
+    // MARK: - State
+
+    var state: Rees46.SdkState {
+        instanceState.current
+    }
+
+    @discardableResult
+    func onStateChange(_ listener: @escaping (Rees46.SdkState) -> Void) -> Cancellable {
+        instanceState.observe(listener)
+    }
+
+    /// The current `sid`; on the new core `nil` once its window ended, until `/init` brings a new one.
+    var sessionId: String? {
+        if let session = sessionWindow {
+            return session.liveSid
+        }
+        return userSeance.isEmpty ? nil : userSeance
+    }
+
+    /// The new core's session; `nil` on the old core.
+    var sessionWindow: SessionWindow? {
+        (core as? CoreV2)?.session
+    }
+
+    /// Calls `listener` on the main thread with every new session id until the handle is cancelled —
+    /// for the bridges, which tell their apps instead of asking for the `sid` on a timer. The new core
+    /// tells each `sid` `/init` brings; the old core the one it makes on `deleteUserCredentials`.
+    @discardableResult
+    func onSessionChange(_ listener: @escaping (String) -> Void) -> Cancellable {
+        if let session = sessionWindow {
+            return session.observe(listener)
+        }
+        return legacySessionListeners.add(listener)
+    }
+
+    /// Calls `completion` once the first initialization settled, or now if it has.
+    func whenInitialized(_ completion: ((SdkError?) -> Void)?) {
+        initCompletion.add(completion)
+    }
+
+    // MARK: - /init
+
+    /// Counts the instance's `/init`s: `deleteUserCredentials` starts another, and a late answer to an
+    /// earlier one changes nothing. `initLock` guards the count and everything an `/init` answer writes
+    /// — the device id in storage and here, the saved answer, the opening of the request queue — and
+    /// `deleteUserCredentials` and `release()` hold it while they raise the count, so an earlier answer
+    /// lands before the wipe or not at all.
+    private var initGeneration = 0
+    private let initLock = NSLock()
+    /// Set by `release()`: every later call is `notInitialized`.
+    private var released = false
+    /// The new core: whether `/init` answered since the instance was made or its customer deleted.
+    private var serverAnswered = false
+
+    /// The live instances of the new core. Instances of one shop share its storage: what one of them
+    /// deletes (`deleteUserCredentials()`), the others forget too.
+    static let instances = LiveInstances()
+
+    func currentInitGeneration() -> Int {
+        initLock.lock(); defer { initLock.unlock() }
+        return initGeneration
+    }
+
+    /// Whether `release()` stopped the instance.
+    var isReleased: Bool {
+        initLock.lock(); defer { initLock.unlock() }
+        return released
+    }
+
+    /// Runs `write` under `initLock` when `generation` is still the instance's `/init` and the instance
+    /// was not released; `false`, and nothing written, otherwise.
+    @discardableResult
+    private func ifCurrentInit(_ generation: Int, _ write: () -> Void = {}) -> Bool {
+        initLock.lock(); defer { initLock.unlock() }
+        guard generation == initGeneration, !released else { return false }
+        write()
+        return true
+    }
+
+    /// Queues `/init` of `generation`. Requests made while the queue is closed wait for its answer and
+    /// go out with the id it brings; once a device id is stored the push token goes to the shop.
+    private func startInit(generation: Int, completion: ((SdkError?) -> Void)?) {
         let initOperation = BlockOperation {
-            self.sendInitRequest { initResult in
+            self.sendInitRequest(generation: generation) { initResult, isCurrent in
+                // A later /init took over (`deleteUserCredentials`), or the instance was released:
+                // this answer belonged to the customer that was deleted, and changes nothing. The app
+                // still hears once.
+                guard isCurrent else {
+                    if case let .failure(error) = initResult {
+                        completion?(error)
+                    } else {
+                        completion?(nil)
+                    }
+                    return
+                }
                 switch initResult {
                 case .success(let response):
-                    self.userInfo = response
-                    // Session is client-owned (see SessionManager) — the server-assigned seance is
-                    // intentionally not adopted, matching Android/RN.
-                    self.deviceId = response.deviceId
-
+                    // The old core is ready once /init gave the shop a device id — under the lock and
+                    // only while this /init is the instance's: a release() or deleteUserCredentials()
+                    // that came after it does not end in ready, and nothing below runs for it.
+                    let current = self.ifCurrentInit(generation) {
+                        if !self.deviceId.isEmpty {
+                            self.instanceState.set(.ready)
+                        }
+                    }
+                    guard current else {
+                        completion?(nil)
+                        return
+                    }
                     // The contacts given at creation identify the user: they go to the profile.
                     if self.userEmail != nil || self.userPhone != nil || self.userLoyaltyId != nil {
                         self.setProfileData(
@@ -229,27 +525,23 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                             userLoyaltyId: self.userLoyaltyId
                         ) { _ in }
                     }
-                    
                     if let popup = response.popup {
                         self.popupPresenter.presentPopup(popup)
                     }
                     self.popupsV3.initFinished(flag: response.popupsV3)
-                    
-                    // Handle push token if autoSendPushToken is true
-                    if self.autoSendPushToken {
-                        self.handleAutoSendPushToken()
-                    }
+
+                    // The push token goes once the device has an id: with autoSendPushToken, or when one
+                    // came while the device had none.
+                    self.sendPushTokenIfDeviceIdIsKnown()
 
                     if self.sendAdvertisingId {
                         self.updateAdvertisingIdUseCase.execute { result in
-                            #if DEBUG
                             switch result {
-                            case .success(let advertisingId):
-                                print("Advertising ID sent successfully: \(advertisingId.value)")
+                            case .success:
+                                self.logger.debug(LogCode.advertisingIdSent, "the advertising id was sent")
                             case .failure(let error):
-                                print("Failed to send Advertising ID: \(error.localizedDescription)")
+                                self.logger.warning(LogCode.advertisingIdFailed, "the advertising id was not sent", ["error": SdkLogger.errorKind(error)])
                             }
-                            #endif
                         }
                     }
                     
@@ -258,19 +550,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 case .failure(let error):
                     completion?(error)
                 }
-                
-                self.initSemaphore.signal()
             }
         }
-        // Requests made before the device id is known wait for /init and go out with its id.
-        if deviceId.isEmpty {
-            requestQueue.hold(until: initOperation)
-        }
-        sessionQueue.addOperation(initOperation)
-        
-        initializeNotificationRegistrar()
+        // The init operation itself is never held: it is what opens the queue.
+        requestQueue.addInitOperation(initOperation)
     }
-    
+
     func getDeviceId() -> String {
         return deviceId
     }
@@ -296,16 +581,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     }
 
     /// The device's A/B segment: assigned once, then kept across launches, as Android and React
-    /// Native do. Picked anew on every launch, it moved the device between A and B, and a block under
-    /// an A/B test showed products on one launch and nothing on the next.
+    /// Native do, and the same for every shop of the app (decision 4). Picked anew on every launch, it
+    /// moved the device between A and B, and a block under an A/B test showed products on one launch
+    /// and nothing on the next.
     static func abSegment(of identity: UserIdentityRepository) -> String {
-        let segments = ["A", "B"]
-        if let stored = identity.abSegment, segments.contains(stored) {
-            return stored
-        }
-        let assigned = segments.randomElement() ?? "A"
-        identity.abSegment = assigned
-        return assigned
+        identity.resolveAbSegment()
     }
     
     func getShopId() -> String {
@@ -320,34 +600,179 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if autoSendPushToken {
             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { [weak self] granted, error in
                 guard let self = self else { return }
+                if error == nil {
+                    self.logger.info(LogCode.pushPermission, "the notification permission was answered", ["granted": String(granted)])
+                }
                 
                 if granted {
                     DispatchQueue.main.async {
                         UIApplication.shared.registerForRemoteNotifications()
                     }
                     
-                    // Attempt to send the push token if available
-                    if let deviceToken = UserDefaults.standard.data(forKey: SdkConstants.deviceToken) {
+                    // Attempt to send the push token if available: where the old core has always read it.
+                    if let deviceToken = self.deviceStore.legacyPushToken {
                         let notificationRegistrar = NotificationRegistrar(sdk: self)
                         notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
                     }
                 } else if let error = error {
-#if DEBUG
-                    print("Error requesting notification authorization: \(error.localizedDescription)")
-#endif
+                    self.logger.warning(LogCode.pushPermissionFailed, "the notification permission request failed", ["error": SdkLogger.errorKind(error)])
                 }
             }
-        } else {
-#if DEBUG
-            print("Auto-send push token is disabled.")
-#endif
         }
     }
     
     private func handleAutoSendPushToken() {
-        if let deviceToken = UserDefaults.standard.data(forKey: SdkConstants.deviceToken) {
+        if let deviceToken = deviceStore.legacyPushToken {
             let notificationRegistrar = NotificationRegistrar(sdk: self)
             notificationRegistrar.registerWithDeviceToken(deviceToken: deviceToken)
+        }
+    }
+
+    // MARK: - The push token waits for the device id
+
+    /// A push token given while the device had no id. It never goes out without one: it goes once
+    /// `/init` stores one.
+    enum DeferredPushToken: Equatable {
+        /// The APNs token the registrar was handed.
+        case device(Data)
+        /// A token given to `setPushTokenNotification` — an FCM one, say.
+        case direct(token: String, isFirebase: Bool)
+
+        /// The provider the token is of: each provider waits in a slot of its own.
+        var provider: Rees46.PushProvider {
+            switch self {
+            case .device: return .apns
+            case .direct(_, let isFirebase): return isFirebase ? .fcm : .apns
+            }
+        }
+    }
+
+    /// One waiting token per provider — APNs and FCM —, with who waits to hear its answer: the new core's
+    /// callers, a bridge's on the old core. An app that hands the SDK both tokens before the first
+    /// device id gets both to the shop once `/init` stores one.
+    private var deferredPushTokens: [Rees46.PushProvider: DeferredPushToken] = [:]
+    private var deferredPushTokenWaiters: [Rees46.PushProvider: [(Result<Void, SdkError>) -> Void]] = [:]
+    private let pushTokenLock = NSLock()
+
+    /// Keeps `token` until the device has an id; a later one of the same provider replaces it, and
+    /// `waiter` — with those of the token it replaced — hears the answer of the one that goes. A token
+    /// of the other provider waits in its own slot. A device id stored meanwhile — `/init` answered
+    /// between the check and here, and already looked for a deferred token — sends it now instead of
+    /// leaving it until the next `/init`.
+    func deferPushToken(_ token: DeferredPushToken, waiter: ((Result<Void, SdkError>) -> Void)? = nil) {
+        pushTokenLock.lock()
+        deferredPushTokens[token.provider] = token
+        if let waiter = waiter {
+            deferredPushTokenWaiters[token.provider, default: []].append(waiter)
+        }
+        pushTokenLock.unlock()
+        logger.debug(LogCode.pushTokenSkipped, "the push token waits for the device id", ["reason": "no_device_id"])
+        if !deviceId.isEmpty {
+            sendDeferredPushTokens()
+        }
+    }
+
+    /// The push token deferred for want of a device id — the last one given, of either provider —; for
+    /// tests.
+    var pendingPushToken: DeferredPushToken? {
+        pushTokenLock.lock(); defer { pushTokenLock.unlock() }
+        return lastDeferredProvider.flatMap { deferredPushTokens[$0] } ?? deferredPushTokens.values.first
+    }
+
+    /// The push tokens deferred for want of a device id, by provider; for tests.
+    var pendingPushTokens: [Rees46.PushProvider: DeferredPushToken] {
+        pushTokenLock.lock(); defer { pushTokenLock.unlock() }
+        return deferredPushTokens
+    }
+
+    /// The provider of the token deferred last; under `pushTokenLock`.
+    private var lastDeferredProvider: Rees46.PushProvider? {
+        Rees46.PushProvider.allCases.last { deferredPushTokens[$0] != nil }
+    }
+
+    /// After `/init` stored a device id: the push token goes with `autoSendPushToken`, and so do the
+    /// ones that came while the device had none. The new core sends each of the device's tokens after
+    /// every `/init` answer, whoever gave it — the week of each provider holds a second one back
+    /// (`sdk/core/push.md`).
+    private func sendPushTokenIfDeviceIdIsKnown() {
+        guard !deviceId.isEmpty, !isReleased else { return }
+        if usesCoreV2 {
+            // A deferred token is the device's last one of its provider: sent, it is the device's token
+            // anyway. A provider with none waiting sends the device's.
+            let sent = sendDeferredPushTokens()
+            sendDevicePushToken(except: sent)
+            return
+        }
+        if autoSendPushToken {
+            handleAutoSendPushToken()
+        } else if deviceStore.legacyPushToken != nil {
+            // The device has a token the old core sends only with `autoSendPushToken`.
+            logger.debug(LogCode.pushTokenSkipped, "the SDK does not send the push token by itself", ["reason": "auto_send_off"])
+        }
+        sendDeferredPushTokens()
+    }
+
+    /// The tokens deferred for want of a device id, taken under the lock: once, whoever takes them.
+    /// Hands back the providers whose token went.
+    @discardableResult
+    private func sendDeferredPushTokens() -> Set<Rees46.PushProvider> {
+        guard !deviceId.isEmpty, !isReleased else { return [] }
+        pushTokenLock.lock()
+        let deferred = deferredPushTokens
+        deferredPushTokens.removeAll()
+        let waiters = deferredPushTokenWaiters
+        deferredPushTokenWaiters.removeAll()
+        pushTokenLock.unlock()
+        for provider in Rees46.PushProvider.allCases {
+            guard let token = deferred[provider] else { continue }
+            sendDeferredPushToken(token, waiters: waiters[provider] ?? [])
+        }
+        return Set(deferred.keys)
+    }
+
+    private func sendDeferredPushToken(_ deferred: DeferredPushToken, waiters: [(Result<Void, SdkError>) -> Void]) {
+        // Called inside the answer's completion: the whole error is the current one there.
+        let heard: ((Result<Void, SdkError>) -> Void)? = waiters.isEmpty ? nil : { result in waiters.forEach { $0(result) } }
+        if usesCoreV2 {
+            // The new core's token: its own rules, its own log.
+            switch deferred {
+            case .device(let token):
+                submitPushToken(Rees46.PushToken(token: DeviceStore.hex(token), provider: .apns), apnsData: token, completion: heard)
+            case let .direct(token, isFirebase):
+                submitPushToken(Rees46.PushToken(token: token, provider: isFirebase ? .fcm : .apns), completion: heard)
+            }
+            return
+        }
+        switch deferred {
+        case .device(let token):
+            // With autoSendPushToken the device's token just went: the registrar's weekly claim holds a
+            // second one back anyway.
+            NotificationRegistrar(sdk: self).registerWithDeviceToken(deviceToken: token, completion: heard)
+        case let .direct(token, isFirebase):
+            setPushTokenNotification(token: token, isFirebaseNotification: isFirebase) { result in
+                switch result {
+                case .success:
+                    self.logger.info(LogCode.pushTokenSent, "the push token was sent")
+                case .failure(let error):
+                    self.logger.warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
+                }
+                heard?(result)
+            }
+        }
+    }
+
+    /// `release()`: a deferred token is not sent any more, and who waits for it hears `notInitialized`.
+    private func failDeferredPushToken() {
+        pushTokenLock.lock()
+        deferredPushTokens.removeAll()
+        let waiters = deferredPushTokenWaiters.values.flatMap { $0 }
+        deferredPushTokenWaiters.removeAll()
+        pushTokenLock.unlock()
+        guard !waiters.isEmpty else { return }
+        DispatchQueue.global(qos: .utility).async {
+            CurrentError.with(.notInitialized) {
+                waiters.forEach { $0(.failure(.legacy(.notInitialized))) }
+            }
         }
     }
     
@@ -378,8 +803,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         )
     }
     
+    /// The old core sends through a session of this configuration; the new core gives it to its own
+    /// client. Either way the SDK's session keeps no cookies and sends none.
     func configureURLSession(configuration: URLSessionConfiguration) {
-        self.urlSession = URLSession(configuration: configuration)
+        guard !usesCoreV2 else {
+            core.use(configuration)
+            return
+        }
+        self.urlSession = URLSession(configuration: configuration.withoutCookies())
     }
     
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
@@ -713,14 +1144,12 @@ class SimplePersonalizationSDK: PersonalizationSDK {
             if let page = page {
                 params["page"] = String(page)
             }
-            if let filters = filters {
-                if let theJSONData = try? JSONSerialization.data(
-                    withJSONObject: filters,
-                    options: []) {
-                    let theJSONText = String(data: theJSONData,
-                                             encoding: .utf8)
-                    params["filters"] = theJSONText
-                }
+            switch SearchFilterParams.filtersJSON(filters, method: "getProductsList", shopId: self.shopId) {
+            case let .success(json):
+                params["filters"] = json
+            case let .failure(error):
+                completion(.failure(error))
+                return
             }
             
             self.getRequest(path: path, params: params, timeout: nil) { result in
@@ -924,7 +1353,14 @@ class SimplePersonalizationSDK: PersonalizationSDK {
 
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping (Result<CategoryResponse, SdkError>) -> Void) {
         sessionQueue.addOperation {
-            let params = self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir)
+            let params: [String: String]
+            switch self.categoryParams(limit: limit, page: page, brands: brands, locations: locations, filters: filters, priceMin: priceMin, priceMax: priceMax, sortBy: sortBy, sortDir: sortDir) {
+            case let .success(built):
+                params = built
+            case let .failure(error):
+                completion(.failure(error))
+                return
+            }
 
             self.getRequest(path: "category/\(category)", params: params, timeout: nil) { result in
                 switch result {
@@ -1178,36 +1614,93 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// written by `sendIDFARequest` — stands in only when no answer came: an answer, a refused shop
     /// among them, is the server's word. The saved answer used to replace `/init` for good: the file
     /// and the keychain took turns answering every launch, and the server never saw the device again.
+    ///
+    /// What the answer brings — the device id, in storage and here — is taken under `initLock`, and
+    /// only while `generation` is the instance's `/init`; the request queue opens with it. `completion`
+    /// says whether it was.
     private func sendInitRequest(
-        completion: @escaping (Result<InitResponse, SdkError>) -> Void
+        generation: Int,
+        completion: @escaping (Result<InitResponse, SdkError>, _ isCurrent: Bool) -> Void
     ) {
         let params = prepareRequestParameters()
+        // The operation waits for its own answer: two /init at once (one after deleteUserCredentials)
+        // must not wake each other.
+        let answered = DispatchSemaphore(value: 0)
         // With a saved answer to stand in, /init does not wait for the network: offline it fails at
         // once and the saved answer takes over. Without one, /init waits for the network, as before.
         let saved = needReInitialization ? nil : savedInitResponse()
         sendGet(
             path: "init",
             params: params,
-            timeout: Self.initRequestTimeout,
-            session: saved == nil ? nil : sessionWithoutWaiting
+            timeout: NetworkClient.initTimeout,
+            waitsForNetwork: saved == nil
         ) { status, result in
+            defer { answered.signal() }
+            let outcome: Result<InitResponse, SdkError>
             switch result.flatMap(Self.jsonObject) {
             case let .success(json):
-                let resultResponse = InitResponse(json: json)
-                self.storeSuccessInit(result: resultResponse)
-                print("[SDK INIT Response] Successfully received server response: \(resultResponse)")
-                completion(.success(resultResponse))
+                outcome = .success(InitResponse(json: json))
             case let .failure(error):
                 if status == nil, let saved = saved {
-                    print("[SDK INIT Response] No answer from the server, the saved init answer stands in")
-                    completion(.success(saved))
+                    outcome = .success(saved)
                 } else {
-                    completion(.failure(error))
+                    outcome = .failure(error)
                 }
             }
-            self.serialSemaphore.signal()
+            // The answer to an /init that a later one replaced stores nothing: its device id is the
+            // deleted customer's. The queue opens with the current one, whatever it brought.
+            let isCurrent = self.ifCurrentInit(generation) {
+                if case let .success(response) = outcome {
+                    if case .success = result {
+                        self.storeSuccessInit(result: response)
+                    }
+                    self.userInfo = response
+                    // Session is client-owned (see SessionManager) — the server-assigned seance is
+                    // intentionally not adopted, matching Android/RN. An answer without a device id
+                    // keeps the one the shop has: an empty one would go out with every request.
+                    if !response.deviceId.isEmpty {
+                        self.deviceId = response.deviceId
+                    } else if self.deviceId.isEmpty {
+                        self.deviceId = self.userIdentity.deviceId ?? ""
+                    }
+                }
+            }
+            guard isCurrent else {
+                completion(outcome, false)
+                return
+            }
+            // The requests that waited go once the answer was taken — the profile, the popup, the push
+            // token and the app's completion first, as they always have —, whatever it brought. Only
+            // while this /init is still the instance's: the next one opens the queue for its customer.
+            defer {
+                self.initLock.lock()
+                if generation == self.initGeneration, !self.released {
+                    self.requestQueue.open()
+                }
+                self.initLock.unlock()
+            }
+            switch outcome {
+            case .success:
+                if case .success = result {
+                    self.logger.info(LogCode.initSucceeded, "initialization finished")
+                } else {
+                    self.logger.warning(LogCode.initSavedAnswer, "no answer to /init: the saved init answer stands in")
+                }
+            case .failure:
+                // A shop that refused (`4xx`) is an error; no answer or a server error is a warning.
+                let refused = status.map { (400..<500).contains($0) } ?? false
+                self.logger.log(refused ? .error : .warning, LogCode.initFailed, "initialization failed", status.map { ["status": String($0)] } ?? [:])
+            }
+            completion(outcome, true)
         }
-        serialSemaphore.wait()
+        answered.wait()
+    }
+
+    /// The session an `/init` carries: the new core's only while its window is open — an install of an
+    /// older SDK sends the `sid` it made once, then the server's —; the old core's always.
+    private var sessionForInit: String {
+        guard let session = sessionWindow else { return userSeance }
+        return session.sidForInit ?? ""
     }
 
     /// The session `/init` comes in. Without one the server starts its "new session" chain on every
@@ -1228,7 +1721,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         if needReInitialization {
             userIdentity.removeDeviceId()
-            print("USER DEVICE ID WAS REMOVED")
+            // The token's week was the dropped device id's: the new one gets the token at once.
+            NotificationRegistrar.forgetUpload(shopId: shopId)
+            logger.info(LogCode.deviceIdReset, "the stored device id was removed to get a new one", ["reason": "re_initialization"])
         }
 
         if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
@@ -1251,9 +1746,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// The init answer saved on this device, for a launch without network. Its popup was shown when
     /// it came and is not shown again; the device id is the one this shop keeps now.
     private func savedInitResponse() -> InitResponse? {
-        let savedFile = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory()
-            .appendingPathComponent(shopId + baseInitJsonFileName)
-        guard let data = (try? Data(contentsOf: savedFile)) ?? keychainStore.readInitData(),
+        guard let data = storage.readSavedInitAnswer() ?? keychainStore.readInitData(),
               let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
             return nil
         }
@@ -1277,19 +1770,6 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         identity.deviceId = deviceId
     }
     
-    func saveDataToJsonFile(_ data: Data, jsonInitFileName: String = "sdkinit.json") throws {
-        let jsonFileURL = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(jsonInitFileName)
-        do {
-            let fileExists = (try? jsonFileURL.checkResourceIsReachable()) ?? false
-            if !fileExists {
-                try data.write(to: jsonFileURL)
-            }
-        } catch {
-            print(error)
-            try data.write(to: jsonFileURL)
-        }
-    }
-    
     public func sendIDFARequest(idfa: UUID, completion: @escaping (Result<InitResponse, SdkError>) -> Void) {
         let path = "init"
         var secondsFromGMT: Int { return TimeZone.current.secondsFromGMT() }
@@ -1304,7 +1784,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if dId != "" {
             params[SdkConstants.did] = dId
         }
-        Self.addSession(userSeance, to: &params)
+        Self.addSession(sessionForInit, to: &params)
 
         let advId = idfa.uuidString
         if advId == "00000000-0000-0000-0000-000000000000" || advId == "" {
@@ -1313,7 +1793,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         params["ios_advertising_id"] = advId
         userIdentity.advertisingId = advId
         
-        sendGet(path: path, params: params, isInit: true, timeout: Self.initRequestTimeout) { _, result in
+        // Its answer is saved only while no deleteUserCredentials came after it: a late one would write
+        // the deleted customer to the saved answer and the keychain.
+        sendGet(path: path, params: params, savesAnswerOf: currentInitGeneration(), timeout: NetworkClient.initTimeout) { _, result in
             switch result.flatMap(Self.jsonObject) {
             case let .success(successResult):
                 let resJSON = successResult
@@ -1325,25 +1807,193 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
     
+    /// Forgets the customer (`sdk/core/storage.md`): the did, the session and its last activity — in
+    /// storage and in this instance, and in the places an older SDK kept them (`.standard`, the suite
+    /// `storageKey` named in full) — the saved init answer and its keychain backup, `refused`, the
+    /// source the app set, the dates the push token last went to the shop, the shop's recent searches,
+    /// and on the new core the queue of their events. The device's push token, A/B group and advertising
+    /// id stay, and so do the stories state and the migration flags.
+    ///
+    /// The instance stays registered and sends `/init` again, without a device id: requests made
+    /// meanwhile — and the ones already queued — wait for the new one instead of going out without it,
+    /// the push token goes to the shop once the new id is stored, and a late answer to the earlier
+    /// `/init` changes nothing. After `release()` nothing is wiped or sent.
+    ///
+    /// On the new core no event goes with the deleted device id, a push's neither: the events of the
+    /// deleted customer leave the queue, and one accepted afterwards waits for the new id. A push of a
+    /// message the deleted customer got that comes afterwards goes with the new id: the push names no
+    /// customer, only the shop.
     public func deleteUserCredentials() {
-        let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
-        let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-        try? FileManager.default.removeItem(at: initFileNamePath)
-
+        guard !isReleased else {
+            logger.warning(LogCode.invalidArgument, "deleteUserCredentials on a released instance: nothing was deleted", ["reason": "not_initialized"])
+            return
+        }
+        // The new core's /init first: an answer it is taking lands before the wipe, a later one is
+        // stale; calls wait for the new device id from here on. The other instances of the shop share
+        // its storage: theirs too, so none of them sends with the deleted did or without one.
+        let machine = initMachine
+        let siblings = machine == nil ? [] : Self.instances.others(of: self)
+        machine?.reset()
+        siblings.forEach { $0.initMachine?.reset() }
+        // The deleted customer's events: none goes from here on — the one on its way is cancelled —,
+        // and their files go on the queue's thread, before any event taken after this call.
+        eventQueue?.clear(error: .cancelled, reason: "delete_user_credentials")
+        initLock.lock()
+        guard !released else {
+            initLock.unlock()
+            return
+        }
+        // Before the wipe: an answer to an earlier /init or sendIDFARequest finds itself stale from here
+        // on and writes nothing back.
+        initGeneration += 1
+        let generation = initGeneration
+        serverAnswered = false
+        if machine == nil {
+            // Before the device id is cleared: nothing leaves the queue without one until the new /init.
+            requestQueue.close()
+            instanceState.set(.initializing)
+        }
         userIdentity.clearIdentity()
-        // Also drop the keychain backup — otherwise a re-init would restore the very did we just
-        // deleted from its reinstall-surviving copy.
+        deviceId = ""
+        storage.removeSavedInitAnswer()
+        // The keychain backup too: otherwise the next launch would restore the very did just deleted
+        // from its reinstall-surviving copy.
         keychainStore.clear()
+        storage.refused = false
+        sourceStore.clear()
+        NotificationRegistrar.forgetUpload(shopId: shopId)
+        // A token send on its way is the deleted customer's: it writes no week, and holds no send back.
+        PushTokenWeek.forget(storage)
+        // Where an older SDK kept the customer, so neither a downgrade nor a pending shop's push finds it.
+        StorageMigrations.forgetCustomer(storageKey: storageKey, partitionName: StoragePartition.suiteName(for: shopId, storageKey: storageKey))
+        RecentSearches.forget(shopKey: shopId)
+        // The contacts given at creation were the deleted customer's: the next /init does not send
+        // them to the profile of the new device id.
+        userEmail = nil
+        userPhone = nil
+        userLoyaltyId = nil
+        // The new customer's session: the old core makes one; the new core's comes with the next /init,
+        // the wipe took the old one.
+        var newLegacySeance: String?
+        if !usesCoreV2 {
+            let seance = sessionManager.currentSessionId()
+            seanceLock.lock()
+            legacySeance = seance
+            seanceLock.unlock()
+            newLegacySeance = seance
+        }
+        initLock.unlock()
+        if let seance = newLegacySeance {
+            legacySessionListeners.notify(seance)
+        }
+        if let queue = eventQueue {
+            // Their files are gone when this returns: a process that ends right after it would keep them,
+            // and its next launch would send them with the next customer's device id.
+            queue.awaitClear()
+        } else if usesCoreV2 {
+            storage.removeQueueDirectory()
+        }
+        logger.info(LogCode.deviceIdReset, "the device id and the saved init answer were deleted", ["reason": "delete_user_credentials"])
+        siblings.forEach { $0.customerDeletedElsewhere() }
+        if let machine = machine {
+            machine.resume()
+        } else {
+            startInit(generation: generation, completion: nil)
+        }
+    }
 
-        // Multi-instance groundwork (R1): this instance is torn down — drop it from push routing so a
-        // superseded object is not fed push tokens or resolved by `shop_id`.
-        SdkRegistry.shared.unregister(self)
+    /// Another instance of the shop deleted its customer (`deleteUserCredentials()`), whose storage
+    /// this one shares: its machine was reset before the wipe; now it forgets the customer it held in
+    /// memory and asks `/init` for the next device id — the one the other instance's `/init` stores, if
+    /// that came first.
+    private func customerDeletedElsewhere() {
+        guard let machine = initMachine else { return }
+        initLock.lock()
+        guard !released else {
+            initLock.unlock()
+            return
+        }
+        initGeneration += 1
+        serverAnswered = false
+        deviceId = ""
+        userEmail = nil
+        userPhone = nil
+        userLoyaltyId = nil
+        initLock.unlock()
+        machine.resume()
+    }
+
+    /// Stops this instance: it leaves the registry and push routing, its log level stops counting, and
+    /// every later call is `notInitialized` — the old methods get `.initializationFailed` — on both
+    /// cores; the new core also cancels the requests in flight. An `/init` on its way changes nothing
+    /// when it answers, and requests waiting for it go on to fail.
+    func release() {
+        // Under the lock `Rees46.initialize` looks the shop up with, and out of the registry before it
+        // counts as released: an initialize never hands out a released instance.
+        let first: Bool = Rees46.withCreationLock {
+            SdkRegistry.shared.unregister(self)
+            initLock.lock()
+            let first = !released
+            if first {
+                released = true
+                initGeneration += 1
+            }
+            initLock.unlock()
+            return (first, {})
+        }
+        guard first else { return }
+        SdkLogger.unregister(owner: self)
+        Self.instances.remove(self)
+        // The queue stops sending; its events stay on disk for the next launch.
+        stopEventQueue()
+        core.release()
+        // What waits for a device id runs now, and fails.
+        requestQueue.open()
+        failDeferredPushToken()
+        instanceState.set(.notInitialized)
+        // An initialize still waiting for its outcome hears it once.
+        initCompletion.finish(.legacy(.notInitialized), full: .notInitialized)
     }
 
     deinit {
-        // Weak registry (see SdkRegistry): a host-released instance deallocs here — purge its routing
-        // slots eagerly instead of waiting for the next compaction.
-        SdkRegistry.shared.unregister(self)
+        // Registered, an instance is held by the registry: one that deinits is no longer registered.
+        SdkLogger.unregister(owner: self)
+        queueTriggers.forEach { $0.cancel() }
+        eventQueue?.detach(nil)
+        core.release()
+    }
+
+    private func makeCore() -> Core {
+        guard usesCoreV2 else {
+            return LegacyCore(
+                baseURL: baseURL,
+                stream: stream,
+                logger: logger,
+                connectivity: connectivity,
+                session: { [weak self] in self?.urlSession ?? SdkURLSession.shared },
+                // For stories reloaded by hand: without network a request fails at once.
+                sessionWithoutWaiting: URLSession(configuration: LegacyCore.sessionConfiguration(waitsForConnectivity: false))
+            )
+        }
+        let client = NetworkClient(baseURL: baseURL, connectivity: connectivity, logger: logger) { [weak self] in
+            guard let self = self else {
+                return CommonFields(shopId: "", deviceId: "", sessionId: "", stream: "", segment: "")
+            }
+            // The device id the shop has stored when the request goes: a deleted one never goes out.
+            return CommonFields(shopId: self.shopId, deviceId: self.userIdentity.deviceId ?? "", sessionId: self.userSeance, stream: self.stream, segment: self.segment)
+        }
+        let machine = InitMachine(
+            state: instanceState,
+            storage: storage,
+            identity: userIdentity,
+            keychain: keychainStore,
+            logger: logger,
+            environment: environment,
+            connectivity: connectivity
+        ) { request in
+            await client.send(request)
+        }
+        return CoreV2(client: client, machine: machine, connectivity: connectivity, label: shopId, logger: logger)
     }
     
     func getStories(code: String, completion: @escaping (Result<StoryContent, SdkError>) -> Void) {
@@ -1360,7 +2010,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 path: path,
                 params: params,
                 timeout: manualReload ? SdkConfiguration.stories.storiesSlideReloadTimeoutInterval : 5,
-                session: manualReload ? self.sessionWithoutWaiting : nil
+                waitsForNetwork: !manualReload
             ) { _, result in
                 switch result.flatMap(Self.jsonObject) {
                 case let .success(successResult):
@@ -1399,14 +2049,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         return SdkConfiguration.self
     }
     
-    /// Idle timeout of a request that does not ask for its own: the read timeout of the Android SDK.
-    static let defaultRequestTimeout: TimeInterval = 10
-
-    /// Timeout of `/init`: the server itself gives up after five seconds.
-    static let initRequestTimeout: TimeInterval = 5
-
     func getRequest(path: String, params: [String: String], _ isInit: Bool = false, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
-        sendGet(path: path, params: params, isInit: isInit, timeout: nil) { _, result in
+        sendGet(path: path, params: params, savesAnswerOf: isInit ? currentInitGeneration() : nil, timeout: nil) { _, result in
             completion(result.flatMap(Self.jsonObject))
         }
     }
@@ -1432,190 +2076,103 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         (json as? [String: Any]).map { .success($0) } ?? .failure(.decodeError)
     }
 
-    /// One GET of `path` with the call's own timeout. Hands back the answer's HTTP status — nil when
-    /// no answer came — and its decoded JSON.
+    /// One GET of `path` with the call's own timeout, through the instance's core. Hands back the
+    /// answer's HTTP status — nil when no answer came — and its decoded JSON. With `savesAnswerOf`, an
+    /// `/init` that saves its answer: only while that init generation is the instance's, under the lock
+    /// `deleteUserCredentials` takes.
     func sendGet(
         path: String,
         params: [String: String],
-        isInit: Bool = false,
+        savesAnswerOf initGeneration: Int? = nil,
         timeout: TimeInterval?,
-        session: URLSession? = nil,
+        waitsForNetwork: Bool = true,
         forgetsSavedInit: Bool = true,
         completion: @escaping (_ status: Int?, _ result: Result<Any, SdkError>) -> Void
     ) {
-        let urlString = baseURL + path
-    #if DEBUG
-        print("LOG: getRequest to: \(urlString)")
-    #endif
-
-        var url = URLComponents(string: urlString)
-
-        var queryItems = [URLQueryItem]()
-        for item in params {
-            queryItems.append(URLQueryItem(name: item.key, value: item.value))
+        // The old core forgets the saved answer on every request of a forced re-initialization, as it
+        // always has; the new one did once, before its /init, and keeps the answer that /init brings.
+        if forgetsSavedInit && needReInitialization && !usesCoreV2 {
+            removeSavedInitAnswer()
         }
-
-        queryItems.append(URLQueryItem(name: "stream", value: stream))
-        url?.queryItems = queryItems
-
-        if forgetsSavedInit && needReInitialization {
-            print("Reinitialization needed. Clearing saved data...")
-            let convertedInitJsonFileName = self.shopId + baseInitJsonFileName
-            let initFileNamePath = SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(convertedInitJsonFileName)
-            do {
-                if FileManager.default.fileExists(atPath: initFileNamePath.path) {
-                    try FileManager.default.removeItem(at: initFileNamePath)
-                    print("Saved data deleted successfully.")
+        let request = CoreRequest(method: .get, path: path, query: params, timeout: timeout, waitsForNetwork: waitsForNetwork)
+        core.send(request) { response in
+            if let generation = initGeneration, case .success = response.result {
+                self.ifCurrentInit(generation) {
+                    self.saveInitAnswer(response.body)
                 }
-            } catch {
-                print("Error deleting saved data: \(error)")
+            }
+            // The whole error goes with the old one, for the bridges (`Rees46.BridgeErrors`).
+            CurrentError.with(response.error) {
+                completion(response.status, response.result)
             }
         }
+    }
 
-        guard let endUrl = url?.url else {
-            completion(nil, .failure(.invalidResponse))
-            return
+    /// A forced re-initialization forgets the saved init answer: it belongs to the device id being
+    /// dropped.
+    private func removeSavedInitAnswer() {
+        storage.removeSavedInitAnswer()
+    }
+
+    /// Whether `data` may stand in for `/init` later: a JSON object with a device id. An empty or
+    /// unparsable answer never replaces the saved one or its keychain backup.
+    static func isSavableInitAnswer(_ data: Data) -> Bool {
+        guard !data.isEmpty,
+              let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let deviceId = json["did"] as? String else {
+            return false
         }
-        (session ?? urlSession).postTask(with: request(for: endUrl, timeout: timeout)) { result in
-            switch result {
-            case .success(let (response, data)):
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                guard 200 ..< 299 ~= statusCode else {
-                    let json = try? JSONSerialization.jsonObject(with: data)
-                    if let jsonObject = json as? [String: Any] {
-                        let statusMessage = jsonObject["message"] as? String ?? ""
-                        print("\nStatus message: ", statusMessage)
-                    }
-                    completion(statusCode, .failure(.invalidResponse))
-                    return
-                }
-                do {
-                    if isInit {
-                        let convertedInitJsonFileName = self.shopId + self.baseInitJsonFileName
-                        try self.saveDataToJsonFile(data, jsonInitFileName: convertedInitJsonFileName)
-                        self.keychainStore.writeInitData(data)
-                    }
-                    completion(statusCode, .success(try JSONSerialization.jsonObject(with: data)))
-                } catch {
-                    completion(statusCode, .failure(.decodeError))
-                }
-            case .failure:
-                completion(nil, .failure(Self.transportError()))
-            }
-        }.resume()
+        return !deviceId.isEmpty
     }
 
-    /// A request with the call's own timeout. The session is shared: a call that swapped in a session
-    /// with its own timeout changed it for every call in flight on the session queue.
-    private func request(for url: URL, timeout: TimeInterval?) -> URLRequest {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = timeout ?? Self.defaultRequestTimeout
-        return request
-    }
-
-    /// A request that got no answer: offline, or the connection failed or timed out.
-    private static func transportError() -> SdkError {
-        NetworkStatus.nManager.connectionStatus == .Offline ? .networkOfflineError : .invalidResponse
-    }
-
-    /// The configuration of the SDK's sessions. Waiting for connectivity, a request starts its timeout
-    /// once the network is back.
-    static func sessionConfiguration(waitsForConnectivity: Bool) -> URLSessionConfiguration {
-        let configuration = URLSessionConfiguration.default
-        configuration.waitsForConnectivity = waitsForConnectivity
-        configuration.shouldUseExtendedBackgroundIdleMode = waitsForConnectivity
-        return configuration
+    /// Saves an init answer and its keychain backup, as the old core always has: the file keeps the
+    /// first answer, the keychain the last. A file that cannot be written is `storage_failed`: the
+    /// answer itself is good, and `/init` goes on with it.
+    private func saveInitAnswer(_ data: Data) {
+        guard Self.isSavableInitAnswer(data) else { return }
+        storage.writeSavedInitAnswerIfAbsent(data)
+        keychainStore.writeInitData(data)
+        // The new core falls back on it from now on, as on an answer of its own `/init`.
+        initMachine?.savedAnswerWritten()
     }
 
     func postRequest(path: String, params: [String: Any], completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         postRequest(path: path, params: params, timeout: nil, completion: completion)
     }
 
-    /// `postRequest` with the call's own timeout.
+    /// `postRequest` with the call's own timeout, through the instance's core.
     func postRequest(path: String, params: [String: Any], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
-#if DEBUG
-        print("LOG: postRequest to: \(self.baseURL + path)")
-#endif
-        var requestParams : [String: Any] = [
-            "stream": stream
-        ]
-        for (key, value) in params {
-            requestParams[key] = value
-        }
+        var requestParams = params
         // A request made before the device id was known waited for /init on the queue; when /init
-        // failed, the stored id is the best there is.
+        // failed, the stored id is the best there is, and it wins over the caller's, as it always has.
         if self.deviceId == "" {
             let dId = self.userIdentity.deviceId ?? ""
             self.deviceId = dId
             requestParams["did"] = dId
         }
-        if let url = URL(string: baseURL + path) {
-            var request = self.request(for: url, timeout: timeout)
-            request.httpMethod = "POST"
-            
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: requestParams, options: .prettyPrinted)
-            } catch let error {
-                completion(.failure(.custom(error: "00001: \(error.localizedDescription)")))
-                return
+        // App data (custom fields, profile properties) may hold values that are not JSON; writing
+        // them would raise an exception Swift cannot catch.
+        guard SafeJSON.isValid(requestParams) else {
+            logger.warning(LogCode.invalidArgument, "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path, "reason": "invalid_json"])
+            let what = "\(path): the request parameters are not valid JSON"
+            CurrentError.with(.invalidArgument(what)) {
+                completion(.failure(.custom(error: what)))
             }
-            
-            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.addValue("application/json", forHTTPHeaderField: "Accept")
-            
-            urlSession.postTask(with: request) { result in
-                switch result {
-                case .success(let (response, data)):
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    guard 200 ..< 299 ~= statusCode else {
-#if DEBUG
-                        let errorBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body, \(data.count) bytes>"
-                        print("LOG: postRequest HTTP \(statusCode) path=\(path) response=\(errorBody)")
-#endif
-                        if let json = try? JSONSerialization.jsonObject(with: data) {
-                            if let jsonObject = json as? [String:Any] {
-                                if let status = jsonObject["status"] as? String, status == "error" {
-                                    if let errorMessage = jsonObject["message"] as? String {
-                                        completion(.failure(.custom(error: errorMessage)))
-                                        return
-                                    }
-                                }
-                            }
-                        }
-                        completion(.failure(.invalidResponse))
-                        return
-                    }
-#if DEBUG
-                    let successBody = data.isEmpty
-                        ? "<empty>"
-                        : (String(data: data, encoding: .utf8) ?? "<non-utf8 body, \(data.count) bytes>")
-                    print("LOG: postRequest HTTP \(statusCode) path=\(path) response=\(successBody)")
-#endif
-                    do {
-                        if data.isEmpty {
-                            if path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") {
-                                completion(.success([:]))
-                                return
-                            }
-                        }
-                        let json = try JSONSerialization.jsonObject(with: data)
-                        if let jsonObject = json as? [String: Any] {
-                            completion(.success(jsonObject))
-                        } else {
-                            completion(.failure(.decodeError))
-                        }
-                    } catch {
-                        completion(.failure(.decodeError))
-                    }
-                case .failure:
-                    completion(.failure(Self.transportError()))
-                }
-            }.resume()
-        } else {
-            completion(.failure(.invalidResponse))
+            return
+        }
+        core.send(CoreRequest(method: .post, path: path, body: requestParams, timeout: timeout)) { response in
+            let result = response.result.flatMap(Self.jsonObject)
+            // The whole error goes with the old one, for the bridges (`Rees46.BridgeErrors`).
+            var error = response.error
+            if error == nil, case .failure = result {
+                error = .decoding
+            }
+            CurrentError.with(error) {
+                completion(result)
+            }
         }
     }
-    
+
     func generateString(array : [String]) -> String {
         let mapArray = array.map{ String($0) }
         return mapArray.joined(separator: ",")
@@ -1629,4 +2186,401 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         jsonDecoder.dateDecodingStrategy = .formatted(dateFormatter)
         return jsonDecoder
     }()
+}
+
+// MARK: - The new core's /init
+
+extension SimplePersonalizationSDK: InitMachineDelegate {
+
+    /// `/init` of the new core: the time zone, the device id the shop has, the session, the
+    /// advertising id only with `sendAdvertisingId`, the test mode of popups v3. `shop_id` and `stream`
+    /// come from the client.
+    func initQuery() -> [String: String] {
+        let hours = TimeZone.current.secondsFromGMT() / 3600
+        var params: [String: String] = [SdkConstants.tz: String(hours)]
+        if let deviceId = userIdentity.deviceId, !deviceId.isEmpty {
+            params[SdkConstants.did] = deviceId
+        }
+        Self.addSession(sessionForInit, to: &params)
+        if sendAdvertisingId, let advertisingId = userIdentity.advertisingId, !advertisingId.isEmpty,
+           advertisingId != "00000000-0000-0000-0000-000000000000" {
+            params["ios_advertising_id"] = advertisingId
+        }
+        if popupsV3.testMode {
+            params["testmode"] = "true"
+        }
+        return params
+    }
+
+    func initMachine(adopt response: InitResponse, fromServer: Bool) {
+        userInfo = response
+        if !response.deviceId.isEmpty {
+            deviceId = response.deviceId
+        }
+    }
+
+    func initMachine(didFinish response: InitResponse, fromServer: Bool, generation: Int) {
+        // The queue goes: the instance is ready with a session, and a check of the shop is answered.
+        if fromServer {
+            eventQueue?.initSucceeded()
+        }
+        // Off the cooperative pool the machine answers on: what follows reaches the UI.
+        DispatchQueue.main.async { [weak self] in
+            self?.finishInit(response, fromServer: fromServer, generation: generation)
+        }
+    }
+
+    private func finishInit(_ response: InitResponse, fromServer: Bool, generation: Int) {
+        // An answer that a release() or deleteUserCredentials() overtook shows nothing.
+        guard let machine = initMachine, machine.isCurrent(generation) else { return }
+        guard fromServer else {
+            // The saved answer stands in: its flags, not its popup, nor what goes to the shop.
+            popupsV3.initFinished(flag: response.popupsV3)
+            return
+        }
+        // The contacts given at creation and the advertising id go with the first answer for the
+        // customer; a later /init (back from the background, a check of the shop) repeats neither.
+        guard let first = takeFirstServerAnswer(of: generation, machine: machine) else { return }
+        if first, userEmail != nil || userPhone != nil || userLoyaltyId != nil {
+            setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId) { _ in }
+        }
+        if let popup = response.popup {
+            popupPresenter.presentPopup(popup)
+        }
+        popupsV3.initFinished(flag: response.popupsV3)
+        sendPushTokenIfDeviceIdIsKnown()
+        if first, sendAdvertisingId {
+            updateAdvertisingIdUseCase.execute { result in
+                switch result {
+                case .success:
+                    self.logger.debug(LogCode.advertisingIdSent, "the advertising id was sent")
+                case .failure(let error):
+                    self.logger.warning(LogCode.advertisingIdFailed, "the advertising id was not sent", ["error": SdkLogger.errorKind(error)])
+                }
+            }
+        }
+    }
+
+    func initMachine(didSettle error: Rees46.SdkError?) {
+        initCompletion.finish(error.map { SdkError.legacy($0) }, full: error)
+        if error == nil {
+            // Usable: the queue goes, if the session lives; a pause after a failure stands.
+            eventQueue?.kick(explicit: false)
+        } else if error == .shopBlocked, initMachine?.isRefused == true {
+            // The shop refused: its events are not sent, and the queue keeps none.
+            eventQueue?.clear(error: .cancelled, reason: "refused")
+        }
+    }
+
+    /// Whether this is the first server answer since the instance was made or its customer deleted;
+    /// `nil` when `generation` is no longer the machine's `/init`: a stale answer takes nothing.
+    /// `deleteUserCredentials` resets the machine before it clears the flag under this lock, so an
+    /// answer checked here before it is undone by it, and one checked after it is stale.
+    private func takeFirstServerAnswer(of generation: Int, machine: InitMachine) -> Bool? {
+        initLock.lock(); defer { initLock.unlock() }
+        guard !released, machine.isCurrent(generation) else { return nil }
+        let first = !serverAnswered
+        serverAnswered = true
+        return first
+    }
+}
+
+// MARK: - The new core's event queue
+
+extension SimplePersonalizationSDK: EventQueueHost {
+
+    /// A popup in the answer to an event shows only when the event went out this soon after it was
+    /// made (decision 2 of the core's brief): one queued offline would pop up out of context.
+    static let eventPopupFreshness: TimeInterval = 10
+    /// The name of the background task that sends the queue on the way to the background.
+    static let queueBackgroundTask = "com.rees46.sdk.queue"
+
+    /// Joins the shop's queue and what sends it: the foreground, the background — with a background
+    /// task, so the queue gets its time — and the network coming back.
+    fileprivate func startEventQueue() {
+        let queue = EventQueue.attach(self, storage: storage, logger: logger)
+        eventQueue = queue
+        let lifecycle = environment.lifecycle
+        let onLifecycle = lifecycle.observe { [weak queue] event in
+            guard let queue = queue else { return }
+            switch event {
+            case .willEnterForeground:
+                queue.kick(explicit: true)
+            case .didEnterBackground:
+                let task = lifecycle.beginBackgroundTask(Self.queueBackgroundTask) {}
+                queue.flush { task.cancel() }
+            }
+        }
+        let onNetwork = connectivity.observe { [weak queue] online in
+            if online {
+                queue?.kick(explicit: false)
+            }
+        }
+        queueTriggers = [onLifecycle, onNetwork]
+    }
+
+    fileprivate func stopEventQueue() {
+        queueTriggers.forEach { $0.cancel() }
+        queueTriggers.removeAll()
+        eventQueue?.detach(self)
+    }
+
+    /// The new core's queue takes an event of the tracking methods (`sdk/core/queue.md`): an error of
+    /// the state — released, refused — or of its body comes back at once and nothing is queued;
+    /// otherwise `completion` hears the server's answer once the event went out, or why it never will,
+    /// as the old methods always heard it. `false` on the old core: the caller sends it as before.
+    /// `accepted` hears the contract's result (`sdk/core/queue.md`): `nil` once the event is on disk,
+    /// the refusal at once, or — the disk refused it — the outcome of the one request it goes as.
+    func enqueueEvent(
+        path: String,
+        body: [String: Any],
+        accepted: ((Rees46.SdkError?) -> Void)? = nil,
+        completion: @escaping (Result<[String: Any], SdkError>) -> Void
+    ) -> Bool {
+        guard let queue = eventQueue else { return false }
+        let refusal: Rees46.SdkError?
+        if isReleased {
+            refusal = .notInitialized
+        } else if initMachine?.isRefused == true {
+            refusal = .shopBlocked
+        } else if !SafeJSON.isValid(body) {
+            logger.warning(LogCode.invalidArgument, "the parameters of \(SdkLogger.requestLine("POST", path)) are not valid JSON", ["path": path, "reason": "invalid_json"])
+            refusal = .invalidArgument("\(path): the request parameters are not valid JSON")
+        } else {
+            refusal = nil
+        }
+        if let refusal = refusal {
+            DispatchQueue.global(qos: .utility).async {
+                // `accepted` first: it frees a push's reservation, so the same push routed once the
+                // caller heard the refusal is not taken for a repeat.
+                accepted?(refusal)
+                CurrentError.with(refusal) {
+                    completion(.failure(.legacy(refusal)))
+                }
+            }
+            return true
+        }
+        let request = CoreRequest(method: .post, path: path)
+        // Accepted: a tracking event extends a live session now, not when it goes. Of the events of
+        // pushes only `track/clicked` does, as on the server: a push delivered, shown or closed in the
+        // background starts no visit (`sdk/core/session.md`).
+        if Self.extendsSession(path) {
+            sessionWindow?.touch()
+        }
+        // The customer the event was made for: a disk-refused event sent once goes as them or not at all.
+        let generation = currentInitGeneration()
+        queue.enqueue(
+            path: path,
+            body: body,
+            createdAt: environment.clock.now(),
+            accepted: accepted,
+            completion: { outcome in
+                switch outcome {
+                case .sent(let response):
+                    let result = CoreV2.legacyResponse(response, for: request).result.flatMap(Self.jsonObject)
+                    var error: Rees46.SdkError?
+                    if case .failure = result {
+                        error = .decoding
+                    }
+                    CurrentError.with(error) {
+                        completion(result)
+                    }
+                case .failed(let error, let errorBody):
+                    CurrentError.with(error) {
+                        completion(.failure(.legacy(error, serverMessage: SdkError.serverMessage(in: errorBody))))
+                    }
+                }
+            },
+            unstored: { [weak self] stamped in
+                // The disk refused it: sent once, as a plain request, with no queue behind it — after
+                // the instance is usable, and only for the customer it was made for.
+                guard let self = self else {
+                    accepted?(.notInitialized)
+                    completion(.failure(.legacy(.notInitialized)))
+                    return
+                }
+                let needsSession = !EventQueue.sessionlessPaths.contains(path)
+                // A tracking event whose session ended in the background: no session starts from the
+                // background (`sdk/core/queue.md`), and with no queue to hold it the event is not taken.
+                if needsSession, !self.environment.lifecycle.isInForeground, self.sessionWindow?.isAlive == false {
+                    accepted?(.cancelled)
+                    CurrentError.with(.cancelled) {
+                        completion(.failure(.legacy(.cancelled)))
+                    }
+                    return
+                }
+                var once = CoreRequest(method: .post, path: path, body: stamped)
+                once.identity = { [weak self] in self?.identity(ifCurrent: generation) }
+                // An event of a push by the rules of its lane: no session renewed, no `/init`.
+                once.needsSession = needsSession
+                self.core.send(once) { response in
+                    accepted?(response.error)
+                    CurrentError.with(response.error) {
+                        completion(response.result.flatMap(Self.jsonObject))
+                    }
+                }
+            }
+        )
+        return true
+    }
+
+    /// Whether an event of `path` accepted into the queue extends a live session: every tracking event,
+    /// and of the events of pushes only `track/clicked` (`sdk/core/session.md`).
+    static func extendsSession(_ path: String) -> Bool {
+        !EventQueue.sessionlessPaths.contains(path) || path == "track/clicked"
+    }
+
+    /// Sends the queued events now; `completion` on the main thread once each event queued at the call
+    /// was tried, or none can go: no network, the server's `Retry-After` not over. An instance that is
+    /// not usable yet is waited for, at most a read timeout. On the old core, which keeps no queue, at
+    /// once; after `release()` with `notInitialized`.
+    func flush(completion: @escaping (Rees46.SdkError?) -> Void) {
+        guard !isReleased else {
+            DispatchQueue.main.async { completion(.notInitialized) }
+            return
+        }
+        guard let queue = eventQueue else {
+            DispatchQueue.main.async { completion(nil) }
+            return
+        }
+        queue.flush { DispatchQueue.main.async { completion(nil) } }
+    }
+
+    /// The device id and session of the customer of `generation`; `nil` once a `deleteUserCredentials()`
+    /// or `release()` came after it. Taken under the lock they wipe under.
+    func identity(ifCurrent generation: Int) -> CommonFields.Identity? {
+        initLock.lock(); defer { initLock.unlock() }
+        guard generation == initGeneration, !released else { return nil }
+        return CommonFields.Identity(deviceId: userIdentity.deviceId ?? "", sessionId: sessionWindow?.sid ?? "")
+    }
+
+    // MARK: EventQueueHost
+
+    func queueGate(for path: String) -> EventQueue.Gate {
+        guard !isReleased, let machine = initMachine, let session = sessionWindow else { return .closed }
+        if machine.isRefused {
+            return .refused
+        }
+        // Usable first, in both lanes: from `deleteUserCredentials()` on, the machine waits for the next
+        // customer's `/init`, and no event goes with the deleted did meanwhile — a push's neither.
+        guard machine.isUsable else { return .wait }
+        // The events of pushes need a stored device id and nothing else: no session, no `/init`.
+        if EventQueue.sessionlessPaths.contains(path) {
+            return (userIdentity.deviceId ?? "").isEmpty ? .wait : .open
+        }
+        // A window without a `sid` — the answer that opened it brought none, or it was another device
+        // id's — is no session for a tracking event: the API refuses an event with a did and no sid
+        // (decision 0001), and the event would be dropped. It waits for an `/init` that brings one.
+        guard session.isAlive, !session.sid.isEmpty else {
+            // An event after the window ran out goes with the next sid (`sdk/core/session.md`). In the
+            // background no session starts: the foreground renews it, and the tracking waits for that.
+            guard environment.lifecycle.isInForeground else { return .held }
+            machine.renewSession()
+            return .wait
+        }
+        return .open
+    }
+
+    func queueSend(_ request: NetworkClient.Request) async -> NetworkClient.Response {
+        guard let core = core as? CoreV2 else { return .failure(.cancelled) }
+        return await core.sendEvent(request)
+    }
+
+    func queueCheckShop() -> InitMachine.ShopCheck {
+        initMachine?.askShop() ?? .notAsked
+    }
+
+    func queueSource() -> [String: String]? {
+        sourceStore.currentSource().map { ["from": $0.type, "code": $0.code] }
+    }
+
+    func queueIdentity() -> CommonFields.Identity {
+        CommonFields.Identity(deviceId: userIdentity.deviceId ?? "", sessionId: sessionWindow?.sid ?? "")
+    }
+
+    /// An event went out: a popup in a fresh answer shows. The session's window moved when the event
+    /// was accepted.
+    func queueDelivered(_ event: EventQueue.Delivered) {
+        guard event.path == "push" || event.path == "push/custom",
+              case .success(let json) = event.response.result,
+              let answer = json as? [String: Any], answer["status"] as? String == "success",
+              let popup = answer["popup"] as? [String: Any], !popup.isEmpty else { return }
+        guard event.sentAt.timeIntervalSince(event.createdAt) <= Self.eventPopupFreshness else {
+            logger.debug(LogCode.popupNotShown, "the popup of a late event is not shown", ["reason": "late_event"])
+            return
+        }
+        guard environment.lifecycle.isInForeground else {
+            logger.debug(LogCode.popupNotShown, "the popup of an event is not shown in the background", ["reason": "app_in_background"])
+            return
+        }
+        popupPresenter.presentPopup(Popup(json: popup))
+    }
+
+    var queueEnvironment: CoreEnvironment { environment }
+
+    var queueConnectivity: ConnectivityMonitor { connectivity }
+}
+
+/// The live instances of the new core, weakly held.
+final class LiveInstances {
+    private let lock = NSLock()
+    private let table = NSHashTable<SimplePersonalizationSDK>.weakObjects()
+
+    func add(_ sdk: SimplePersonalizationSDK) {
+        lock.lock(); defer { lock.unlock() }
+        table.add(sdk)
+    }
+
+    func remove(_ sdk: SimplePersonalizationSDK) {
+        lock.lock(); defer { lock.unlock() }
+        table.remove(sdk)
+    }
+
+    /// The other live instances of `sdk`'s shop: the same shop in the same storage.
+    func others(of sdk: SimplePersonalizationSDK) -> [SimplePersonalizationSDK] {
+        lock.lock(); defer { lock.unlock() }
+        return table.allObjects.filter {
+            $0 !== sdk && $0.shopId == sdk.shopId && $0.storage.directory == sdk.storage.directory
+        }
+    }
+}
+
+// MARK: - The session of the SDK's own requests
+
+extension PersonalizationSDK {
+
+    /// The session a request the SDK builds itself goes with — popups v3, the polls of stories v3 —,
+    /// as every request of the funnel: on the new core the current `sid` after the window check — an
+    /// ended window is renewed first, and its `/init` waited for, at most `timeout`. The thread waits:
+    /// call it on the session queue, where those requests wait for the device id already. On the old
+    /// core, its `sid`.
+    func sessionIdForRequest(timeout: TimeInterval = NetworkClient.defaultTimeout) -> String {
+        guard let instance = self as? SimplePersonalizationSDK else { return userSeance }
+        return instance.sessionId(waiting: timeout)
+    }
+
+    /// The session of the moment, without waiting: on the new core the current `sid`, empty once its
+    /// window ended; on the old core, its `sid`.
+    var currentSessionId: String {
+        guard let instance = self as? SimplePersonalizationSDK, instance.usesCoreV2 else { return userSeance }
+        return instance.sessionId ?? ""
+    }
+}
+
+extension SimplePersonalizationSDK {
+
+    /// `sessionIdForRequest`.
+    func sessionId(waiting timeout: TimeInterval) -> String {
+        guard let session = sessionWindow, let machine = initMachine else { return userSeance }
+        if !session.isAlive, connectivity.isOnline {
+            machine.renewSession()
+            let renewed = DispatchSemaphore(value: 0)
+            _Concurrency.Task {
+                _ = await machine.awaitUsable(timeout: timeout, needsSession: true)
+                renewed.signal()
+            }
+            _ = renewed.wait(timeout: .now() + timeout)
+        }
+        return session.sid
+    }
 }

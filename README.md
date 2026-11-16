@@ -14,7 +14,7 @@ This SDK can be used to integrate in your own app for iOS in few steps.
 
 ## Installation
 
-The SDK supports iOS 12.0 and later.
+The SDK supports iOS 15.0 and later. Apps with a lower deployment target stay on 3.37.x, the last release for iOS 12–14.
 
 ### Swift Package Manager
 

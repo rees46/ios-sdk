@@ -122,7 +122,7 @@ final class PopupV3EmailView: PopupV3BoxView, UITextFieldDelegate {
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.returnKeyType = .send
-        if #available(iOS 11.0, *) { field.textContentType = .emailAddress }
+        field.textContentType = .emailAddress
         field.delegate = self
         field.accessibilityIdentifier = "popupV3.email"
         submit.setContentHuggingPriority(.required, for: .horizontal)
@@ -285,19 +285,19 @@ final class PopupV3FormView: PopupV3BoxView, UITextFieldDelegate {
             textField.keyboardType = .emailAddress
             textField.autocapitalizationType = .none
             textField.autocorrectionType = .no
-            if #available(iOS 11.0, *) { textField.textContentType = .emailAddress }
+            textField.textContentType = .emailAddress
         case .phone:
             textField.keyboardType = .phonePad
-            if #available(iOS 11.0, *) { textField.textContentType = .telephoneNumber }
+            textField.textContentType = .telephoneNumber
         case .firstName:
-            if #available(iOS 11.0, *) { textField.textContentType = .givenName }
+            textField.textContentType = .givenName
         case .lastName:
-            if #available(iOS 11.0, *) { textField.textContentType = .familyName }
+            textField.textContentType = .familyName
         case .birthday:
             let picker = UIDatePicker()
             picker.datePickerMode = .date
             picker.maximumDate = Date()
-            if #available(iOS 13.4, *) { picker.preferredDatePickerStyle = .wheels }
+            picker.preferredDatePickerStyle = .wheels
             picker.addTarget(self, action: #selector(dateChanged(_:)), for: .valueChanged)
             textField.inputView = picker
             textField.inputAccessoryView = PopupV3FormKit.doneBar(for: textField)

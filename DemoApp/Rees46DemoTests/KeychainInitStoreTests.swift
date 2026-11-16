@@ -21,7 +21,8 @@ final class KeychainInitStoreTests: XCTestCase {
         return service
     }
 
-    private func blob(_ s: String) -> Data { Data(s.utf8) }
+    /// What the SDK keeps in the keychain: the init answer, with its device id.
+    private func blob(_ s: String) -> Data { Data(#"{"did":"\#(s)"}"#.utf8) }
 
     override func tearDown() {
         for service in services {
@@ -127,6 +128,33 @@ final class KeychainInitStoreTests: XCTestCase {
             instanceKeychainService: previous
         )
         XCTAssertNil(source)
+    }
+
+    func test_an_item_of_the_app_under_the_same_service_and_account_is_neither_adopted_nor_deleted() {
+        let service = uniqueService()
+        let previous = uniqueService()
+        // The app's own item: service = account = its bundle id, and not an init answer.
+        let own = Data("the app's own secret".utf8)
+        for source in [service, previous] {
+            try? InitService.upsertKeychainDidToken(own, identifier: KeychainPartition.legacyAccount(service: source), instanceKeychainService: source)
+        }
+        let notJSONObject = Data(#"["did"]"#.utf8)
+        try? InitService.upsertKeychainDidToken(notJSONObject, identifier: KeychainPartition.account(shopId: "A", service: previous), instanceKeychainService: previous)
+        defer {
+            try? InitService.deleteKeychainDidToken(identifier: KeychainPartition.account(shopId: "A", service: previous), instanceKeychainService: previous)
+        }
+
+        let store = KeychainInitStoreImpl(shopId: "A", service: service, previousServices: [previous])
+
+        XCTAssertNil(store.readInitData(), "nothing of the app's is taken for a device id")
+        for source in [service, previous] {
+            XCTAssertEqual(try? InitService.getKeychainDidToken(identifier: KeychainPartition.legacyAccount(service: source), instanceKeychainService: source), own,
+                           "the app's item stays where it was")
+        }
+        XCTAssertEqual(try? InitService.getKeychainDidToken(identifier: KeychainPartition.account(shopId: "A", service: previous), instanceKeychainService: previous), notJSONObject)
+        XCTAssertTrue(KeychainInitStoreImpl.isInitAnswer(Data(#"{"did":"d"}"#.utf8)))
+        XCTAssertFalse(KeychainInitStoreImpl.isInitAnswer(Data(#"{"did":""}"#.utf8)))
+        XCTAssertFalse(KeychainInitStoreImpl.isInitAnswer(Data(#"{"seance":"s"}"#.utf8)))
     }
 
     func test_adopts_the_pre_partition_item_left_under_a_previous_service_once() {

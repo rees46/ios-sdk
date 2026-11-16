@@ -15,36 +15,84 @@ import XCTest
 struct StubReply {
     let status: Int
     let body: Data
+    /// Response headers, `Retry-After` say.
+    let headers: [String: String]
+    /// Sends only the first `cutAfter` bytes of the body, then fails with `cutWith`: a dropped
+    /// connection by default, `.timedOut` for a body cut by the read timeout.
+    let cutAfter: Int?
+    let cutWith: URLError.Code
+    /// Holds the answer back this many seconds; one held past the request's timeout fails as timed out.
+    let delay: TimeInterval
 
-    init(_ status: Int = 200, json: String = "{}") {
+    init(
+        _ status: Int = 200,
+        json: String = "{}",
+        headers: [String: String] = [:],
+        cutAfter: Int? = nil,
+        cutWith: URLError.Code = .networkConnectionLost,
+        delay: TimeInterval = 0
+    ) {
         self.status = status
         self.body = Data(json.utf8)
+        self.headers = headers
+        self.cutAfter = cutAfter
+        self.cutWith = cutWith
+        self.delay = delay
     }
 
-    /// No answer: the connection fails as a timed-out one.
+    /// No answer: the connection is never made — a connect that timed out. The new client calls it
+    /// `network`; a held or cut answer reached the server and is `timeout`.
     static let noAnswer: StubReply? = nil
 }
 
 /// A request as the stub server saw it.
 struct StubRequest {
     let method: String
+    let url: URL?
     let path: String
     let query: [String: String]
     let body: [String: Any]
+    /// The headers as the session sent them: a `Cookie` the session added from its store included.
+    let headers: [String: String]
     let timeout: TimeInterval
     let time: Date
+
+    /// A header by its name, in any case.
+    func header(_ name: String) -> String? {
+        headers.first { $0.key.caseInsensitiveCompare(name) == .orderedSame }?.value
+    }
 }
 
 /// Serves every session the SDK builds from `URLSessionConfiguration.default` (and `URLSession.shared`)
-/// while installed. The handler runs off the loading thread, so it may block to hold an answer back.
+/// while installed; `SdkURLSession.shared` is made again from the stubbed `default` on install. The
+/// handler runs off the loading thread, so it may block to hold an answer back.
 final class StubURLProtocol: URLProtocol {
 
     private static let lock = NSLock()
     private static var recorded: [StubRequest] = []
+    /// Requests whose answer the stub handed to the client in full.
+    private static var finished: [StubRequest] = []
     private static var installed = false
+    /// The shops `StubSDK.shopId()` gave in the running test, and the ones it gave in the tests before.
+    /// An SDK an earlier test left may still send for an earlier shop: its requests get the default answer,
+    /// never the running test's handler — a reply or a hold meant for the running test is not theirs.
+    private static var currentShops: Set<String> = []
+    private static var staleShops: Set<String> = []
+
+    /// A shop of the running test.
+    static func note(shop: String) {
+        lock.lock(); defer { lock.unlock() }
+        currentShops.insert(shop)
+    }
+
+    private static var currentHandler: (StubRequest) -> StubReply? = defaultHandler
 
     /// Answers a request; `nil` fails it as a timed-out connection. `/init` gets a device id by default.
-    static var handler: (StubRequest) -> StubReply? = defaultHandler
+    /// Set by the test, read on the loading threads: under the lock.
+    static var handler: (StubRequest) -> StubReply? {
+        get { lock.lock(); defer { lock.unlock() }; return currentHandler }
+        set { lock.lock(); currentHandler = newValue; lock.unlock() }
+    }
 
     static let defaultHandler: (StubRequest) -> StubReply? = { request in
         request.path == "/init" ? StubReply(json: #"{"did":"stub-did","seance":"stub-seance"}"#) : StubReply()
@@ -65,15 +113,31 @@ final class StubURLProtocol: URLProtocol {
         requests(to: path).filter { ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == shopId }
     }
 
+    /// How many answers of `shop` to `path` the stub handed to the client in full: what a test waits
+    /// for instead of sleeping.
+    static func answered(to path: String, shop shopId: String) -> Int {
+        lock.lock(); defer { lock.unlock() }
+        return finished.filter { $0.path == path && ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == shopId }.count
+    }
+
     static func install() {
         lock.lock()
         recorded.removeAll()
+        finished.removeAll()
+        // A new test: the shops of the tests before are stale.
+        staleShops.formUnion(currentShops)
+        currentShops.removeAll()
         lock.unlock()
         handler = defaultHandler
         guard !installed else { return }
         installed = true
         URLProtocol.registerClass(StubURLProtocol.self)
         swapDefaultConfiguration()
+        SdkURLSession.reset()
+        // A URL protocol has no metrics of the request's phases: the stub says which reached it.
+        NetworkClient.reachedServerOverride = { task, _ in
+            StubURLProtocol.reached(task) ? true : nil
+        }
     }
 
     static func uninstall() {
@@ -82,6 +146,16 @@ final class StubURLProtocol: URLProtocol {
         installed = false
         URLProtocol.unregisterClass(StubURLProtocol.self)
         swapDefaultConfiguration()
+        SdkURLSession.reset()
+        NetworkClient.reachedServerOverride = nil
+    }
+
+    /// Tasks the stub server answered or held: their request reached it.
+    private static let reachedTasks = NSHashTable<URLSessionTask>.weakObjects()
+
+    static func reached(_ task: URLSessionTask) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return reachedTasks.contains(task)
     }
 
     /// Sessions the SDK builds itself do not see `registerClass`: their configuration has to list
@@ -98,29 +172,95 @@ final class StubURLProtocol: URLProtocol {
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
     override func startLoading() {
-        let seen = Self.describe(request)
+        let cookies = cookieStores()
+        var sent = request
+        if let store = cookies.sent, let url = request.url, sent.value(forHTTPHeaderField: "Cookie") == nil {
+            HTTPCookie.requestHeaderFields(with: store.cookies(for: url) ?? []).forEach {
+                sent.setValue($0.value, forHTTPHeaderField: $0.key)
+            }
+        }
+        let seen = Self.describe(sent)
         Self.lock.lock()
         Self.recorded.append(seen)
+        let stale = (seen.query["shop_id"] ?? seen.body["shop_id"] as? String).map { Self.staleShops.contains($0) } ?? false
         Self.lock.unlock()
 
-        let handler = Self.handler
+        let handler = stale ? Self.defaultHandler : Self.handler
         DispatchQueue.global().async { [weak self] in
             let reply = handler(seen)
             guard let self = self, let client = self.client else { return }
+            if reply != nil, let task = self.task {
+                Self.lock.lock()
+                Self.reachedTasks.add(task)
+                Self.lock.unlock()
+            }
             guard let reply = reply else {
                 client.urlProtocol(self, didFailWithError: URLError(.timedOut))
                 return
             }
+            if reply.delay > 0 {
+                // An answer held past the request's timeout fails as the session would fail it.
+                let timedOut = seen.timeout > 0 && reply.delay >= seen.timeout
+                Thread.sleep(forTimeInterval: timedOut ? seen.timeout : reply.delay)
+                guard !self.isStopped else { return }
+                if timedOut {
+                    client.urlProtocol(self, didFailWithError: URLError(.timedOut))
+                    return
+                }
+            }
             let response = HTTPURLResponse(
-                url: self.request.url!, statusCode: reply.status, httpVersion: "HTTP/1.1", headerFields: nil
+                url: self.request.url!, statusCode: reply.status, httpVersion: "HTTP/1.1", headerFields: reply.headers
             )!
+            if let store = cookies.kept, let url = self.request.url {
+                let set = HTTPCookie.cookies(withResponseHeaderFields: reply.headers, for: url)
+                store.setCookies(set, for: url, mainDocumentURL: self.request.mainDocumentURL ?? url)
+            }
             client.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            if let cut = reply.cutAfter {
+                client.urlProtocol(self, didLoad: reply.body.prefix(cut))
+                client.urlProtocol(self, didFailWithError: URLError(reply.cutWith))
+                return
+            }
             client.urlProtocol(self, didLoad: reply.body)
             client.urlProtocolDidFinishLoading(self)
+            Self.lock.lock()
+            Self.finished.append(seen)
+            Self.lock.unlock()
         }
     }
 
-    override func stopLoading() {}
+    /// A URL protocol gets no cookies from the URL loading system, and the cookies of its answer are
+    /// not kept: the stub does with them what the HTTP stack would, by the request's
+    /// `httpShouldHandleCookies` and its session's configuration — which a task names only privately,
+    /// `CookieTests` checking that it is found. `sent`: the store the request's cookies come from;
+    /// `kept`: the store the answer's go into; `nil` when there are none.
+    private func cookieStores() -> (sent: HTTPCookieStorage?, kept: HTTPCookieStorage?) {
+        guard request.httpShouldHandleCookies, let configuration = sessionConfiguration(),
+              let store = configuration.httpCookieStorage else { return (nil, nil) }
+        return (
+            configuration.httpShouldSetCookies ? store : nil,
+            configuration.httpCookieAcceptPolicy == .never ? nil : store
+        )
+    }
+
+    private func sessionConfiguration() -> URLSessionConfiguration? {
+        guard let task = task, task.responds(to: NSSelectorFromString("session")) else { return nil }
+        return (task.value(forKey: "session") as? URLSession)?.configuration
+    }
+
+    private let stopLock = NSLock()
+    private var stopped = false
+    /// The session gave up on the request: cancelled or timed out. Nothing more goes to its client.
+    private var isStopped: Bool {
+        stopLock.lock(); defer { stopLock.unlock() }
+        return stopped
+    }
+
+    override func stopLoading() {
+        stopLock.lock()
+        stopped = true
+        stopLock.unlock()
+    }
 
     private static func describe(_ request: URLRequest) -> StubRequest {
         let components = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }
@@ -133,9 +273,11 @@ final class StubURLProtocol: URLProtocol {
         let body = bodyData.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
         return StubRequest(
             method: request.httpMethod ?? "GET",
+            url: request.url,
             path: components?.path ?? "",
             query: query,
             body: body,
+            headers: request.allHTTPHeaderFields ?? [:],
             timeout: request.timeoutInterval,
             time: Date()
         )
@@ -177,29 +319,63 @@ final class InMemoryKeychainInitStore: KeychainInitStore {
 /// A real SDK over the stub server, with in-memory identity and keychain.
 enum StubSDK {
 
-    static func shopId() -> String { "stub-\(UUID().uuidString.prefix(8))" }
+    static func shopId() -> String {
+        let shop = "stub-\(UUID().uuidString.prefix(8))"
+        StubURLProtocol.note(shop: shop)
+        return shop
+    }
 
     static func make(
         shopId: String = StubSDK.shopId(),
         identity: UserIdentityRepository = InMemoryUserIdentityRepository(),
         keychain: KeychainInitStore = InMemoryKeychainInitStore(),
         needReInitialization: Bool = false,
+        logLevel: Rees46.LogLevel = .warning,
+        connectivity: ConnectivityMonitor? = nil,
+        coreV2: Bool = false,
+        sendAdvertisingId: Bool = false,
+        deviceId: String? = nil,
+        environment: CoreEnvironment? = nil,
+        shopStorage: ShopStorage? = nil,
+        deviceStore: DeviceStore? = nil,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
-        SimplePersonalizationSDK(
+        // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
+        CoreFlag.reset(to: coreV2)
+        InitSettles.install()
+        let sdk = SimplePersonalizationSDK(
             shopId: shopId,
             apiDomain: "stub.test",
+            logLevel: logLevel,
             autoSendPushToken: false,
+            sendAdvertisingId: sendAdvertisingId,
             enableAutoPopupPresentation: false,
             needReInitialization: needReInitialization,
+            coreV2: coreV2,
+            deviceId: deviceId,
+            environment: environment,
             userIdentity: identity,
             keychainStore: keychain,
+            shopStorage: shopStorage,
             localState: LocalStateRepositoryImpl(store: UserDefaults(suiteName: "test-\(shopId)")!),
+            connectivity: connectivity,
+            // The new core's push token: the shop's own device, not the push token other tests left.
+            deviceStore: deviceStore ?? StubSDK.deviceStore(shopId: shopId),
             completion: completion
         )
+        // The core asked for is the one that runs: a loop over both cores never runs one twice.
+        XCTAssertEqual(sdk.usesCoreV2, coreV2, "the stub SDK runs the core it asked for")
+        XCTAssertEqual(sdk.core.kind, coreV2 ? .v2 : .legacy)
+        return sdk
     }
 
-    /// The saved init answer of `shopId` in the SDK's documents folder.
+    /// A device store of its own for `shopId`'s test.
+    static func deviceStore(shopId: String) -> DeviceStore {
+        let suite = UserDefaults(suiteName: "test-device-\(shopId)") ?? .standard
+        return DeviceStore(defaults: suite, pushTokenDefaults: suite)
+    }
+
+    /// Where earlier SDK versions saved the init answer of `shopId`: the app's Documents.
     static func savedInitFile(shopId: String) -> URL {
         SdkGlobalHelper.sharedInstance.getSdkDocumentsDirectory().appendingPathComponent(shopId + ".json")
     }
@@ -207,10 +383,68 @@ enum StubSDK {
     static func removeSavedInit(shopId: String) {
         try? FileManager.default.removeItem(at: savedInitFile(shopId: shopId))
         UserDefaults.standard.removePersistentDomain(forName: "test-\(shopId)")
+        UserDefaults.standard.removePersistentDomain(forName: "test-device-\(shopId)")
+        // The shop's partition and its folder in Application Support.
+        if let folder = ShopStorage(shopId: shopId, logger: SdkLogger(shopId: shopId, level: .none)).directory {
+            try? FileManager.default.removeItem(at: folder)
+        }
+        UserDefaults.standard.removePersistentDomain(forName: StoragePartition.suiteName(for: shopId))
     }
 }
 
+/// How often each instance's `/init` settled, counted through the core's test seam
+/// (`InitMachine.settleObserver`): what the tests wait for instead of sleeping.
+enum InitSettles {
+    private static let lock = NSLock()
+    /// Weak keys: a machine that is gone takes its count with it.
+    private static let counts = NSMapTable<AnyObject, NSNumber>(keyOptions: [.weakMemory, .objectPointerPersonality], valueOptions: .strongMemory)
+
+    static func install() {
+        guard InitMachine.settleObserver == nil else { return }
+        InitMachine.settleObserver = { machine in
+            lock.lock(); defer { lock.unlock() }
+            counts.setObject(NSNumber(value: (counts.object(forKey: machine)?.intValue ?? 0) + 1), forKey: machine)
+        }
+    }
+
+    static func count(of machine: InitMachine?) -> Int {
+        guard let machine = machine else { return 0 }
+        lock.lock(); defer { lock.unlock() }
+        return counts.object(forKey: machine)?.intValue ?? 0
+    }
+}
+
+extension SimplePersonalizationSDK {
+    /// How many times this instance's `/init` settled (`initMachine(didSettle:)`).
+    var settledInitCount: Int { InitSettles.count(of: initMachine) }
+}
+
 extension XCTestCase {
+    /// Runs `trigger` and fails if a request of `shop` to `path` reaches the stub server within
+    /// `timeout`: an inverted expectation, not a sleep and a count.
+    func expectNoRequest(to path: String, shop: String, within timeout: TimeInterval = 0.5, after trigger: () -> Void = {}) {
+        let none = expectation(description: "no request to \(path)")
+        none.isInverted = true
+        let previous = StubURLProtocol.handler
+        StubURLProtocol.handler = { request in
+            if request.path == path, (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop {
+                none.fulfill()
+            }
+            return previous(request)
+        }
+        trigger()
+        wait(for: [none], timeout: timeout)
+        StubURLProtocol.handler = previous
+    }
+
+    /// Runs what the main queue holds so far: whatever the SDK dispatched there before the call has run
+    /// when it returns.
+    func drainMainQueue() {
+        let drained = expectation(description: "the main queue")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 5)
+    }
+
     /// Spins the run loop until `condition` holds or `timeout` passes; returns the last answer.
     @discardableResult
     func eventually(timeout: TimeInterval = 5, _ condition: () -> Bool) -> Bool {

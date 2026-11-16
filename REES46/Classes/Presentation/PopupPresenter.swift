@@ -81,21 +81,22 @@ public class PopupPresenter {
     
     // MARK: - Private Methods
     
+    /// Shows `popup` on the main thread: the view controller is looked up there, and the app's delegate
+    /// asked there, without making the caller's thread wait for the main one.
     private func showPopupNow(_ popup: Popup) {
-        // Check if popup was shown in the last 60 seconds
-        if let shownDate = popupShownFlags[popup.id] {
-            let timeSinceShown = Date().timeIntervalSince(shownDate)
-            if timeSinceShown < 60 {
-                return // Popup was already shown, skip
-            }
-        }
-        
-        guard let presentingVC = getPresentingViewController(for: popup) else {
-            return // No VC available or delegate prevented presentation
-        }
-        
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
+            // A released instance shows nothing: its answers may still come in.
+            if let instance = self.sdk as? SimplePersonalizationSDK, instance.isReleased {
+                return
+            }
+            // Check if popup was shown in the last 60 seconds
+            if let shownDate = self.popupShownFlags[popup.id], Date().timeIntervalSince(shownDate) < 60 {
+                return // Popup was already shown, skip
+            }
+            guard let presentingVC = self.getPresentingViewController(for: popup) else {
+                return // No VC available or delegate prevented presentation
+            }
             let widget = NotificationWidget(
                 parentViewController: presentingVC,
                 popup: popup,
@@ -134,12 +135,19 @@ public class PopupPresenter {
         // 1. Check delegate first (if set, delegate has full control)
         if let sdk = sdk as? PersonalizationSDK,
            let delegate = sdk.popupPresentationDelegate {
-            return delegate.sdk(sdk, shouldPresentPopup: popup)
+            let controller = delegate.sdk(sdk, shouldPresentPopup: popup)
+            if controller == nil {
+                SdkLogger.forShop(sdk.shopId).debug(LogCode.popupNotShown, "the app's delegate declined the popup", ["reason": "app_declined"])
+            }
+            return controller
         }
         
         // 2. Check if auto-presentation is enabled
         guard let sdk = sdk as? PersonalizationSDK,
               sdk.enableAutoPopupPresentation == true else {
+            if let sdk = sdk as? PersonalizationSDK {
+                SdkLogger.forShop(sdk.shopId).debug(LogCode.popupNotShown, "the popup is not shown: auto-presentation is off and no delegate is set", ["reason": "auto_presentation_off"])
+            }
             return nil // Auto-presentation disabled, no delegate = no presentation
         }
         
@@ -148,32 +156,18 @@ public class PopupPresenter {
             return parentVC
         }
         
-        // 4. Auto-discover from window hierarchy (must be on main thread)
-        var topVC: UIViewController?
-        DispatchQueue.main.sync {
-            topVC = getTopViewController()
-        }
-        return topVC
+        // 4. Auto-discover from window hierarchy: `showPopupNow` asks on the main thread.
+        return getTopViewController()
     }
     
     private func getTopViewController() -> UIViewController? {
-        // Get key window's root view controller
-        if #available(iOS 13.0, *) {
-            // iOS 13+ approach using UIWindowScene
-            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let window = windowScene.windows.first(where: { $0.isKeyWindow }),
-                  let rootViewController = window.rootViewController else {
-                return nil
-            }
-            return findTopViewController(from: rootViewController)
-        } else {
-            // iOS 12 and earlier approach using UIApplication.shared.keyWindow
-            guard let window = UIApplication.shared.keyWindow,
-                  let rootViewController = window.rootViewController else {
-                return nil
-            }
-            return findTopViewController(from: rootViewController)
+        // The key window's root view controller, through the window scene
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+              let rootViewController = window.rootViewController else {
+            return nil
         }
+        return findTopViewController(from: rootViewController)
     }
     
     private func findTopViewController(from viewController: UIViewController) -> UIViewController {

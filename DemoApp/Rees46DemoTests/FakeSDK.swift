@@ -7,8 +7,8 @@
 //  The registry never calls into an instance — it only stores and resolves references by identity —
 //  so every method here is a no-op and every getter returns a stored/placeholder value. This is the
 //  iOS analog of the Android `SdkRegistryTest` using bare `SDK()` instances, but offline and with no
-//  background retention (a real `SimplePersonalizationSDK` would spawn an init request that keeps the
-//  instance alive, defeating the weak-reference / dealloc tests).
+//  background work (a real `SimplePersonalizationSDK` would spawn an init request that keeps the
+//  instance alive, defeating the release / dealloc tests).
 //
 
 import Foundation
@@ -227,5 +227,9 @@ final class RecordingSourceStore: TrackingSourceStore {
 
     func currentSource() -> (type: String, code: String)? {
         sources.last
+    }
+
+    func clear() {
+        sources.removeAll()
     }
 }

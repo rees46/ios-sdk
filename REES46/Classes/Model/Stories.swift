@@ -97,7 +97,7 @@ class Slide {
     /// Slide ids are not unique across shops, so this state must be per shop.
     private let shopId: String
     private lazy var localState: LocalStateRepository =
-        LocalStateRepositoryImpl(store: StoragePartition.store(for: shopId))
+        LocalStateRepositoryImpl(store: StoragePartition.store(ofShop: shopId))
 
     public init(json: [String: Any], shopId: String = "") {
         self.shopId = shopId
@@ -120,7 +120,7 @@ class Slide {
             if preview != nil {
                 setImage(imageURL: preview!, isPreview: true)
             } else {
-                print("SDK Success video preview for \(self.id) is downloaded")
+                SdkLogger.area(.stories, .debug, "a video slide has no preview")
             }
             
             downloadVideo { result in
@@ -129,7 +129,7 @@ class Slide {
                     self.videoURL = url
                     self.completionCached(slideWithId: self.id, actualSlideUrl: "")
                 case .failure(let error):
-                    print("SDK Video for \(self.id) is not downloaded with error \(error.localizedDescription)")
+                    SdkLogger.area(.stories, .warning, "a slide video was not downloaded: \(SdkLogger.errorKind(error))")
                 }
             }
             
@@ -165,7 +165,7 @@ class Slide {
                                                         onProgress: {(progress) in
         }) {(error, url) in
             if let error = error {
-                print("Error is \(error as NSError)")
+                SdkLogger.area(.stories, .warning, "a slide video was not downloaded: \(SdkLogger.errorKind(error))")
             } else {
                 if let url = url {
                     do {
@@ -194,7 +194,7 @@ class Slide {
             let videoData = try Data(contentsOf: fileURL)
             return videoData
         } catch {
-            print("SDK Error reading video data: \(error)")
+            SdkLogger.area(.stories, .warning, "a slide video could not be read: \(SdkLogger.errorKind(error))")
             return nil
         }
     }
@@ -216,7 +216,7 @@ class Slide {
                 self.completionCached(slideWithId: self.id, actualSlideUrl: "")
                 //print("SDK Load cached image for story id = \(String(describing: self.id))")
             } else {
-                let task = URLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
+                let task = SdkURLSession.shared.dataTask(with: url, completionHandler: { data, _, error in
                     if error == nil {
                         guard let unwrappedData = data, let image = UIImage(data: unwrappedData) else {
                             return

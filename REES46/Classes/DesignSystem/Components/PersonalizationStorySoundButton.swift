@@ -30,11 +30,6 @@ public final class PersonalizationStorySoundButton: UIControl {
         didSet { apply() }
     }
 
-    /// Кнопка на медиа-слайде: тёмные токены и на iOS 12.
-    var forcesDarkTokens = false {
-        didSet { icon.tintColor = PersonalizationStoryColors.token(PersonalizationColor.textSecondary, forcingDark: forcesDarkTokens) }
-    }
-
     public override var isHighlighted: Bool {
         didSet { icon.alpha = isHighlighted ? 0.5 : 1 }
     }

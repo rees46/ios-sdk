@@ -93,11 +93,6 @@ public final class PersonalizationStoryTextBlock: UIView {
     /// Промокод скопирован в буфер обмена.
     public var onPromoCopied: ((String) -> Void)?
 
-    /// Блок на медиа-слайде: тёмные токены и на iOS 12, где тему поддерева не переопределить.
-    var forcesDarkTokens = false {
-        didSet { applyText() }
-    }
-
     private lazy var promoTap = UITapGestureRecognizer(target: self, action: #selector(promoTapped))
 
     /// Блок с заливкой: рамка кита — поля и скругление.
@@ -204,10 +199,7 @@ public final class PersonalizationStoryTextBlock: UIView {
         paragraph.minimumLineHeight = style.lineHeight
         paragraph.maximumLineHeight = style.lineHeight
         paragraph.alignment = alignment
-        let color = textColor ?? PersonalizationStoryColors.token(
-            isSolid ? PersonalizationColor.textLightPrimary : PersonalizationColor.textPrimary,
-            forcingDark: forcesDarkTokens
-        )
+        let color = textColor ?? (isSolid ? PersonalizationColor.textLightPrimary : PersonalizationColor.textPrimary)
         label.attributedText = NSAttributedString(string: text, attributes: [
             .font: font,
             .paragraphStyle: paragraph,
@@ -227,8 +219,7 @@ public final class PersonalizationStoryTextBlock: UIView {
             font = PersonalizationTheme.current.font(style.size, weight)
         case .serif, .monospaced:
             let system = UIFont.systemFont(ofSize: style.size, weight: weight)
-            if #available(iOS 13.0, *),
-               let descriptor = system.fontDescriptor.withDesign(family == .serif ? .serif : .monospaced) {
+            if let descriptor = system.fontDescriptor.withDesign(family == .serif ? .serif : .monospaced) {
                 font = UIFont(descriptor: descriptor, size: style.size)
             } else {
                 font = UIFont(name: family == .serif ? "Georgia" : "Menlo", size: style.size) ?? system

@@ -30,6 +30,12 @@ public final class Cancellable {
         self.onCancel = onCancel
     }
 
+    /// Whether `cancel()` was called.
+    var isCancelled: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return cancelled
+    }
+
     public func cancel() {
         lock.lock()
         let alreadyCancelled = cancelled

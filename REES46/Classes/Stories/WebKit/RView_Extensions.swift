@@ -20,7 +20,7 @@ extension UIView {
   
   func bindFrameToSuperviewBounds() {
       guard let superview = self.superview else {
-          print("Error! `superview` was nil – call `addSubview(view: UIView)`")
+          SdkLogger.area(.ui, .debug, "a view has no superview to fill")
           return
       }
     

@@ -33,6 +33,8 @@ final class UpgradeMigrationTests: XCTestCase {
         StoragePartition.legacyConsumedFlag
     ]
     private var standardSnapshot: [String: Any] = [:]
+    /// The device's store is shared by the process: the host app's is put back after each test.
+    private var deviceSnapshot: [String: Any]?
     private var partitionShops: [String] = []
     private var keychainServices: [String] = []
     /// Real SDKs built by the assembled-upgrade tests, retained against the registry's weak reference.
@@ -43,6 +45,8 @@ final class UpgradeMigrationTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // A class of the new core that ran before left the process's core as it found it.
+        XCTAssertNotEqual(CoreFlag.current, true, "the old core's tests start on the old core")
         // The multi-instance registry is process-global (the test host registers its own shop at
         // launch); reset it so the assembled-SDK upgrade tests observe only the shop they build.
         Rees46.reset()
@@ -56,6 +60,7 @@ final class UpgradeMigrationTests: XCTestCase {
             }
             UserDefaults.standard.removeObject(forKey: key)
         }
+        deviceSnapshot = UserDefaults.standard.persistentDomain(forName: DeviceStore.suiteName)
     }
 
     override func tearDown() {
@@ -81,6 +86,11 @@ final class UpgradeMigrationTests: XCTestCase {
             }
         }
         standardSnapshot = [:]
+        if let deviceSnapshot = deviceSnapshot {
+            UserDefaults.standard.setPersistentDomain(deviceSnapshot, forName: DeviceStore.suiteName)
+        } else {
+            UserDefaults.standard.removePersistentDomain(forName: DeviceStore.suiteName)
+        }
         super.tearDown()
     }
 
@@ -97,7 +107,8 @@ final class UpgradeMigrationTests: XCTestCase {
         return service
     }
 
-    private func blob(_ s: String) -> Data { Data(s.utf8) }
+    /// What the SDK keeps in the keychain: the init answer, with its device id.
+    private func blob(_ s: String) -> Data { Data(#"{"did":"\#(s)"}"#.utf8) }
 
     @discardableResult
     private func retain(_ sdk: PersonalizationSDK) -> PersonalizationSDK {

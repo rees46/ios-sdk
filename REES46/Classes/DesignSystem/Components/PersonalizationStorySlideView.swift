@@ -164,7 +164,6 @@ final class PersonalizationStorySlideView: UIView {
             let button = PersonalizationStorySoundButton(isMuted: isMuted)
             button.soundOnLabel = texts.soundOn
             button.soundOffLabel = texts.soundOff
-            button.forcesDarkTokens = true
             button.onToggle = { [weak self] muted in self?.onMuteToggle?(muted) }
             soundButton = button
         }
@@ -635,7 +634,6 @@ extension PersonalizationStorySlideView {
     /// Текстовый блок; с промокодом нажатие копирует код и показывает тост сверху.
     private func textBlockView(_ block: PersonalizationStorySlide.TextBlock) -> PersonalizationStoryTextBlock {
         let view = PersonalizationStoryTextBlock()
-        view.forcesDarkTokens = slide.isMedia
         view.apply(block)
         view.copiedText = texts.promoCopied
         view.onPromoCopied = { [weak self] code in self?.onPromoCopied?(code) }
@@ -674,7 +672,6 @@ extension PersonalizationStorySlideView {
             }
             used.onToggle = { [weak self] expanded in self?.onProductsToggle?(expanded) }
             used.leadingView = soundButton
-            used.forcesDarkTokens = slide.isMedia
             usedProducts = used
             row = used
         } else if let soundButton {

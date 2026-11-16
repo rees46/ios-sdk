@@ -189,16 +189,13 @@ public final class PersonalizationToast: UIView {
 
     private static let fadeDuration: TimeInterval = 0.2
 
-    /// Ключевое окно активной сцены; до iOS 13 сцен нет — окно делегата приложения.
+    /// Ключевое окно активной сцены.
     private static var keyWindow: UIWindow? {
-        if #available(iOS 13.0, *) {
-            let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
-            let active = scenes.filter { $0.activationState == .foregroundActive }
-            for scene in active + scenes {
-                if let window = scene.windows.first(where: { $0.isKeyWindow }) { return window }
-            }
-            return active.first?.windows.first
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let active = scenes.filter { $0.activationState == .foregroundActive }
+        for scene in active + scenes {
+            if let window = scene.windows.first(where: { $0.isKeyWindow }) { return window }
         }
-        return UIApplication.shared.delegate?.window ?? nil
+        return active.first?.windows.first
     }
 }

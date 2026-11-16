@@ -3,11 +3,11 @@ import WebKit
 
 public class RWebViewManager {
   
-  private var urlSession: URLSession
+  private(set) var urlSession: URLSession
   private var urlHandler: URLHandler
   
   public init() {
-    let configuration = URLSessionConfiguration.default
+    let configuration = URLSessionConfiguration.default.withoutCookies()
     self.urlSession = URLSession(configuration: configuration)
     self.urlHandler = UIApplicationHandler()
   }
@@ -35,7 +35,8 @@ public class RWebViewManager {
   }
   
   private func openInWebView(_ url: URL, from viewController: UIViewController) {
-    print("Opening in WebView: \(url)")
+    // The link is not logged: it carries what the shop put in it.
+    SdkLogger.area(.stories, .debug, "a link opens in the web view")
     viewController.presentWebKit(urlRequest: URLRequest(url: url))
   }
 }

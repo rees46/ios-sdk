@@ -42,9 +42,7 @@ public class SlideViewController: UIViewController, SlideView {
         imageView.contentMode = .scaleAspectFit
         view.addSubview(imageView)
         
-        if #available(iOS 13.0, *) {
-            loadingIndicator = UIActivityIndicatorView(style: .large)
-        }
+        loadingIndicator = UIActivityIndicatorView(style: .large)
         loadingIndicator.center = view.center
         view.addSubview(loadingIndicator)
         
@@ -109,7 +107,7 @@ public class SlideViewController: UIViewController, SlideView {
         showLoadingIndicator()
         startLoadingTimeout()
         
-        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        let task = SdkURLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.loadTimer?.invalidate()
