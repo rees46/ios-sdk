@@ -7,6 +7,7 @@
 //  next to this repository), never from a list of the tests' own.
 //
 
+import UIKit
 import XCTest
 @_spi(Bridge) @testable import REES46
 
@@ -49,9 +50,10 @@ enum LogContract {
                 // The reasons follow the span that names them; `…` after them leaves the list open.
                 reasons.formUnion(spans[(index + 1)...])
                 open = rest.range(of: "context.reason").map { rest[$0.upperBound...].contains("…") } ?? false
-            } else if cells[2].contains("(`") {
+            }
+            if cells[2].contains("(`") {
                 // `popup_not_shown`: the reasons it lists in its level column.
-                reasons.formUnion(ticked(cells[2]).filter { $0 != "debug" && $0 != "warning" })
+                reasons.formUnion(ticked(cells[2]).filter { !["debug", "info", "warning", "error"].contains($0) })
             }
             rows[code] = Row(code: code, reasons: reasons, openReasons: open)
         }
@@ -164,6 +166,37 @@ final class LogContractTests: CoreScenarioTestCase {
         XCTAssertTrue(LogContract.reasons(of: "invalid_config").isSuperset(of: ["device_id_kept", "already_initialized", "url_session_delegate"]))
         assertInTable(shop)
         first.release()
+    }
+
+    func test_a_popup_the_app_declines_or_does_not_present_is_popup_not_shown_with_its_reason() {
+        final class Declining: PopupPresentationDelegate {
+            let asked = Locked(0)
+            func sdk(_ sdk: PersonalizationSDK, shouldPresentPopup popup: Popup) -> UIViewController? {
+                asked.mutate { $0 += 1 }
+                return nil
+            }
+        }
+        PopupV3Slots.shared.reset()
+        let shop = newShop()
+        let popup = #"{"did":"d","seance":"s-1","popup":{"id":7,"html":"<p>x</p>"}}"#
+        answer("/init", StubReply(json: popup))
+        let declining = Declining()
+        hold("/init")
+        let sdk = makeV2(shop, identity: InMemoryUserIdentityRepository(), settled: false)
+        sdk.popupPresentationDelegate = declining
+        release("/init")
+        XCTAssertTrue(waitForLog(shop, "popup_not_shown", reason: "app_declined"))
+        XCTAssertEqual(logged(shop, "popup_not_shown").first?.level, .debug)
+        sdk.release()
+
+        // No delegate, and the stub SDK does not present popups by itself.
+        let other = newShop()
+        answer("/init", StubReply(json: popup))
+        let quiet = makeV2(other, identity: InMemoryUserIdentityRepository())
+        XCTAssertTrue(waitForLog(other, "popup_not_shown", reason: "auto_presentation_off"))
+        assertInTable(shop)
+        assertInTable(other)
+        quiet.release()
     }
 
     /// Every message the handler heard for `shop` has a code and a reason of the table.

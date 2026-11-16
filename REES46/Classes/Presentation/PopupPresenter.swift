@@ -135,12 +135,19 @@ public class PopupPresenter {
         // 1. Check delegate first (if set, delegate has full control)
         if let sdk = sdk as? PersonalizationSDK,
            let delegate = sdk.popupPresentationDelegate {
-            return delegate.sdk(sdk, shouldPresentPopup: popup)
+            let controller = delegate.sdk(sdk, shouldPresentPopup: popup)
+            if controller == nil {
+                SdkLogger.forShop(sdk.shopId).debug(LogCode.popupNotShown, "the app's delegate declined the popup", ["reason": "app_declined"])
+            }
+            return controller
         }
         
         // 2. Check if auto-presentation is enabled
         guard let sdk = sdk as? PersonalizationSDK,
               sdk.enableAutoPopupPresentation == true else {
+            if let sdk = sdk as? PersonalizationSDK {
+                SdkLogger.forShop(sdk.shopId).debug(LogCode.popupNotShown, "the popup is not shown: auto-presentation is off and no delegate is set", ["reason": "auto_presentation_off"])
+            }
             return nil // Auto-presentation disabled, no delegate = no presentation
         }
         

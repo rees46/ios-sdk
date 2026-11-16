@@ -957,9 +957,10 @@ final class CoreQueueTests: XCTestCase {
         shown.isInverted = true
         wait(for: [shown], timeout: 0.5)
         XCTAssertEqual(delegate.asked.current, [1])
-        XCTAssertTrue(eventually { self.heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.count == 2 })
+        XCTAssertTrue(eventually { self.heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.count == 3 })
+        // The app's delegate declined the fresh one; the late and the background ones were not offered.
         XCTAssertEqual(heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.map { $0.context["reason"] },
-                       ["late_event", "app_in_background"])
+                       ["app_declined", "late_event", "app_in_background"])
         XCTAssertTrue(heard.filter { $0.shopId == shop && $0.code == "popup_not_shown" }.allSatisfy { $0.level == .debug })
     }
 
