@@ -68,8 +68,9 @@ struct LoyaltyAPIImpl: LoyaltyAPI {
         guard !ApiArguments.isBlank(phone) else {
             throw Rees46.SdkError.invalidArgument("the phone must not be empty")
         }
-        if let birthday = birthday, !isDate(birthday) {
-            throw Rees46.SdkError.invalidArgument("the birthday must be a date as YYYY-MM-DD")
+        // A birthday the server cannot read erases the one it has: only an existing date goes.
+        if let birthday = birthday, !ApiArguments.isCalendarDate(birthday) {
+            throw Rees46.SdkError.invalidArgument("the birthday must be an existing date as YYYY-MM-DD")
         }
         var body: [String: Any] = ["phone": phone]
         body["first_name"] = ApiArguments.given(firstName)
@@ -118,18 +119,6 @@ struct LoyaltyAPIImpl: LoyaltyAPI {
     }
 
     // MARK: - Arguments
-
-    /// `YYYY-MM-DD`, and a day of the calendar.
-    static func isDate(_ text: String) -> Bool {
-        guard text.range(of: #"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"#, options: .regularExpression) != nil else { return false }
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.isLenient = false
-        return formatter.date(from: text).map(formatter.string(from:)) == text
-    }
 
     /// `HH:MM` of a day: `00:00` to `23:59`.
     static func isTime(_ text: String) -> Bool {

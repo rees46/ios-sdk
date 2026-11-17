@@ -37,8 +37,8 @@ public protocol LoyaltyAPI {
      identifier; the server then updates the name, gender and birthday it has. The server finds or makes
      the customer by the phone, not by the device.
 
-     `invalidArgument` for an empty `phone` or a `birthday` that is not `YYYY-MM-DD`. An empty name is
-     not sent.
+     `invalidArgument` for an empty `phone` or a `birthday` that is not an existing date `YYYY-MM-DD`:
+     a birthday the server cannot read erases the one it has. An empty name is not sent.
      */
     func join(
         phone: String,
@@ -144,7 +144,7 @@ public struct LoyaltyStatus {
     public let level: LoyaltyLevel?
 }
 
-/// A promotion of the loyalty program.
+/// A promotion of the loyalty program; `id` is 64-bit, as the server's ids of promotions.
 @_spi(Bridge)
 public struct LoyaltyPromotion {
     public let id: Int

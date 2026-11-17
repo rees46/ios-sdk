@@ -50,12 +50,13 @@ final class LoyaltyPackageTests: XCTestCase {
 
     // MARK: - Arguments
 
-    func test_a_birthday_is_a_day_of_the_calendar_as_yyyy_mm_dd() {
-        for date in ["1990-05-17", "2024-02-29", "2000-12-31"] {
-            XCTAssertTrue(LoyaltyAPIImpl.isDate(date), date)
+    func test_a_birthday_is_an_existing_day_of_the_calendar_as_yyyy_mm_dd() {
+        for date in ["1990-05-17", "2024-02-29", "2000-12-31", "0999-12-31", "3000-01-01"] {
+            XCTAssertTrue(ApiArguments.isCalendarDate(date), date)
         }
-        for date in ["2023-02-29", "1990-13-01", "1990-5-17", "17.05.1990", "1990-05-17T00:00:00Z", "", "１９９０-05-17"] {
-            XCTAssertFalse(LoyaltyAPIImpl.isDate(date), date)
+        for date in ["2023-02-29", "1900-02-29", "1990-02-30", "1990-13-01", "1990-00-10", "1990-05-00", "1990-5-17",
+                     "17.05.1990", "1990-05-17T00:00:00Z", " 1990-05-17", "", "１９９０-05-17"] {
+            XCTAssertFalse(ApiArguments.isCalendarDate(date), date)
         }
     }
 

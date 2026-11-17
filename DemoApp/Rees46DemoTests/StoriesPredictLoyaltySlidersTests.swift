@@ -142,7 +142,7 @@ final class StoriesPredictLoyaltySlidersTests: CoreScenarioTestCase {
         let shop = newShop()
         let sdk = makeV2(shop)
         let cases = try cases().filter { $0.item.expectedError != nil && $0.item.response == nil }
-        XCTAssertEqual(cases.count, 12)
+        XCTAssertEqual(cases.count, 14)
         for (item, _) in cases {
             let call = try XCTUnwrap(item.call, item.name)
             let result = run(call, on: sdk)
