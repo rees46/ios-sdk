@@ -13,3 +13,6 @@ is removed.
   cases. In `call.args`, a request model is an object by the contract's field names, a value of a set by its name in
   code (`salesRate`). A `result`, and a request's own fields in `query` or `body`, are compared whole, as the Android
   SDK compares them: a field without a value counts as missing on either side.
+- `profile.json`, `subscriptions.json`, `segments.json` — the client (`sdk/contract/profile.md`, `subscriptions.md`,
+  `segments.md`): the Android SDK's files as they are, compared as the catalog's. A method without a value expects
+  `"result": null`.
