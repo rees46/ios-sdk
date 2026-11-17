@@ -8,3 +8,7 @@ is removed.
 - `cart.json` — `cart.get` (`sdk/contract/cart.md`), the same cases the Android SDK tests by. In `expect`, `result`
   is the method's value by the contract's field names; `response.status: null` is no answer, which the tests play as a
   connection that is never made (`network`).
+- `stories.json` — `stories.get` (`sdk/contract/stories.md`). In `expect.result` an element of a slide is an object with
+  its `type` — `button`, `product`, `products`, `textBlock` — and its fields.
+
+In `expect.result` an object lists the fields the case checks; `null` is a field without a value.

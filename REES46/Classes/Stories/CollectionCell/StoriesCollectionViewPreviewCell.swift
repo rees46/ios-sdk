@@ -95,7 +95,7 @@ class StoriesCollectionViewPreviewCell: UICollectionViewCell {
         self.storyImage.load.request(with: url)
     }
     
-    public func configure(story: Story) {
+    public func configure(story: LegacyStory) {
         setImage(imagePathSdk: story.avatar)
         if SdkConfiguration.stories.storiesBlockCharWrapping {
             storyAuthorNameLabel.text = "\(story.name)".truncWords(length: SdkConfiguration.stories.storiesBlockCharCountWrap)
