@@ -76,6 +76,31 @@ extension KeyedDecodingContainer {
         return value
     }
 
+    /// The string at `key` for a field a model cannot do without: an empty one is a value here, a missing
+    /// one, `null` or one that is not a scalar the error that makes the object not a model.
+    func requiredText(_ key: Key) throws -> String {
+        if let value = lenientString(key) ?? (try? decodeIfPresent(String.self, forKey: key)) {
+            return value
+        }
+        throw DecodingError.keyNotFound(key, DecodingError.Context(codingPath: codingPath, debugDescription: "no \(key.stringValue)"))
+    }
+
+    /// The number at `key` for a field a model cannot do without.
+    func requiredDouble(_ key: Key) throws -> Double {
+        guard let value = lenientDouble(key) else {
+            throw DecodingError.keyNotFound(key, DecodingError.Context(codingPath: codingPath, debugDescription: "no \(key.stringValue)"))
+        }
+        return value
+    }
+
+    /// The integer at `key` for a field a model cannot do without.
+    func requiredInt(_ key: Key) throws -> Int {
+        guard let value = lenientInt(key) else {
+            throw DecodingError.keyNotFound(key, DecodingError.Context(codingPath: codingPath, debugDescription: "no \(key.stringValue)"))
+        }
+        return value
+    }
+
     /// The model at `key`; `nil` when it is missing or not one.
     func model<Value: AnswerReadable>(_ type: Value.Type, _ key: Key) -> Value? {
         lenient(Readable<Value>.self, key)?.value
@@ -117,12 +142,16 @@ extension KeyedDecodingContainer {
         lenientMap(key) { $0.model(type, $1) }
     }
 
-    /// The object at `key`, each of its values read by `value`; a value it cannot read is left out.
+    /// The object at `key`, each of its values read by `value`; a value it cannot read is left out. An
+    /// empty list is an empty object: the server writes an empty object so (PHP).
     private func lenientMap<Value>(
         _ key: Key,
         _ value: (KeyedDecodingContainer<AnswerKey>, AnswerKey) -> Value?
     ) -> [String: Value]? {
-        guard let object = try? nestedContainer(keyedBy: AnswerKey.self, forKey: key) else { return nil }
+        guard let object = try? nestedContainer(keyedBy: AnswerKey.self, forKey: key) else {
+            let list = try? nestedUnkeyedContainer(forKey: key)
+            return list?.count == 0 ? [:] : nil
+        }
         var map: [String: Value] = [:]
         for name in object.allKeys {
             map[name.stringValue] = value(object, name)
@@ -143,18 +172,18 @@ extension Rees46.Product: AnswerReadable {
     init(answer: KeyedDecodingContainer<AnswerKey>, preferringUniqid: Bool) throws {
         id = try (preferringUniqid ? answer.lenientString("uniqid") : nil) ?? answer.requiredString("id")
         groupId = answer.lenientString("group_id")
-        name = answer.lenientString("name") ?? ""
+        name = try answer.requiredText("name")
         brand = answer.lenientString("brand")
         model = answer.lenientString("model")
         description = answer.lenientString("description")
         barcode = answer.lenientString("barcode")
-        url = answer.lenientString("url") ?? ""
+        url = try answer.requiredText("url")
         deeplinkAndroid = answer.lenientString("deeplink_android")
         deeplinkIos = answer.lenientString("deeplink_ios")
         imageUrl = answer.lenientString("image_url")
         picture = answer.lenientString("picture")
         resizedImages = answer.lenientStringMap("image_url_resized")
-        price = answer.lenientDouble("price") ?? 0
+        price = try answer.requiredDouble("price")
         priceFormatted = answer.lenientString("price_formatted")
         priceFull = answer.lenientDouble("price_full")
         priceFullFormatted = answer.lenientString("price_full_formatted")
@@ -163,7 +192,7 @@ extension Rees46.Product: AnswerReadable {
         oldPriceFormatted = answer.lenientString("oldprice_formatted")
         oldPriceFull = answer.lenientDouble("oldprice_full").flatMap { $0 > 0 ? $0 : nil }
         oldPriceFullFormatted = answer.lenientString("oldprice_full_formatted")
-        currency = answer.lenientString("currency") ?? ""
+        currency = try answer.requiredText("currency")
         // `discount` is a flag in the card, a number elsewhere: a flag reads as no integer.
         discountPercent = answer.lenientInt("discount_percent") ?? answer.lenientInt("discount")
         discountFormatted = answer.lenientString("discount_formatted")
@@ -202,18 +231,20 @@ extension Rees46.ProductParam: AnswerReadable {
 
 extension Rees46.Location: AnswerReadable {
 
+    /// A location without an id or a name is left out.
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
         id = try answer.requiredString("id")
-        name = answer.lenientString("name")
+        name = try answer.requiredText("name")
         type = answer.lenientString("type")
     }
 }
 
 extension Rees46.Brand: AnswerReadable {
 
+    /// A brand without a name or a count is left out.
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        name = try answer.requiredString("name")
-        count = answer.lenientInt("count")
+        name = try answer.requiredText("name")
+        count = try answer.requiredInt("count")
     }
 }
 
@@ -240,16 +271,16 @@ extension Rees46.IndustrialFilters: AnswerReadable {
 extension Rees46.ColorFilter: AnswerReadable {
 
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        color = try answer.requiredString("color")
-        count = answer.lenientInt("count")
+        color = try answer.requiredText("color")
+        count = try answer.requiredInt("count")
     }
 }
 
 extension Rees46.SizeFilter: AnswerReadable {
 
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        size = try answer.requiredString("size")
-        count = answer.lenientInt("count")
+        size = try answer.requiredText("size")
+        count = try answer.requiredInt("count")
     }
 }
 
@@ -267,7 +298,7 @@ extension Rees46.PriceRange: AnswerReadable {
 extension Rees46.PriceInterval: AnswerReadable {
 
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        from = answer.lenientDouble("from")
+        from = answer.lenientDouble("from") ?? 0
         to = answer.lenientDouble("to")
         count = answer.lenientInt("count")
     }

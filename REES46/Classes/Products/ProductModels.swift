@@ -19,9 +19,9 @@ extension Rees46 {
     /// A product in every answer of the catalog: the card, a listing, a category, a collection,
     /// recommendations, search.
     ///
-    /// `id`, `name`, `url`, `price` and `currency` are always there: a product without an id is left out
-    /// of its answer, and a missing name, link or currency is empty, a missing price 0. The other fields
-    /// are `nil` when the answer does not have them.
+    /// `id`, `name`, `url`, `price` and `currency` are always there: a product without one of them is left
+    /// out of its answer. The other fields are `nil` when the answer does not have them, and so is an
+    /// empty text.
     public struct Product: Equatable {
         /// `id`; `uniqid` in the answer of `products.getInfo` when it has one: the shop's own id.
         public let id: String
@@ -96,14 +96,14 @@ extension Rees46 {
     /// A location of the shop: a store, a city.
     public struct Location: Equatable {
         public let id: String
-        public let name: String?
+        public let name: String
         public let type: String?
     }
 
     /// A brand in the facets, with how many products were found of it.
     public struct Brand: Equatable {
         public let name: String
-        public let count: Int?
+        public let count: Int
     }
 
     /// A facet: one parameter of the products in a sidebar of filters. A list facet has `values`, a
@@ -129,12 +129,12 @@ extension Rees46 {
 
     public struct ColorFilter: Equatable {
         public let color: String
-        public let count: Int?
+        public let count: Int
     }
 
     public struct SizeFilter: Equatable {
         public let size: String
-        public let count: Int?
+        public let count: Int
     }
 
     /// The lowest and highest price of the products found.
@@ -145,8 +145,8 @@ extension Rees46 {
 
     /// One interval of prices with how many products are in it.
     public struct PriceInterval: Equatable {
-        /// `nil`: from 0.
-        public let from: Double?
+        /// 0 when the answer has none.
+        public let from: Double
         /// `nil`: no upper bound.
         public let to: Double?
         public let count: Int?
