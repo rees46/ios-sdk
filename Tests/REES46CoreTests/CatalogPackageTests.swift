@@ -137,6 +137,25 @@ final class CatalogPackageTests: XCTestCase {
                 page: Fixtures.int(json["page"])
             )
             return ErasedRequest(try SearchAPIImpl.fullRequest(query: Fixtures.string(args["query"]) ?? "", request), call: call.name)
+        case "agentDialog":
+            return ErasedRequest(SearchAPIImpl.agentDialogRequest(
+                sessionId: Fixtures.int(args["sessionId"]),
+                locations: Fixtures.strings(args["locations"])
+            ), call: call.name)
+        case "agent":
+            return ErasedRequest(try SearchAPIImpl.agentRequest(
+                message: Fixtures.string(args["message"]) ?? "",
+                sessionId: Fixtures.int(args["sessionId"]),
+                locations: Fixtures.strings(args["locations"])
+            ), call: call.name)
+        case "agentEnabled":
+            // Not a request: the answer of `/init` the instance adopts, and the value it then has.
+            return ErasedRequest(ApiRequest<Bool>(method: .get, path: "init") { body in
+                let object = try JSONSerialization.jsonObject(with: body) as? [String: Any] ?? [:]
+                let agent = AgentSearchSwitch()
+                agent.adopt(blankMode: InitResponse(json: object).search.blankMode)
+                return agent.isOn
+            }, call: call.name)
         default:
             throw Unknown(call: call.name)
         }

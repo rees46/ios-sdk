@@ -147,6 +147,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var legacySession: URLSession?
     private let sessionLock = NSLock()
     var userInfo: InitResponse = InitResponse()
+    /// Whether the last `/init` answer of the new core turned the search agent on (`search.agentEnabled`).
+    let agentSearch = AgentSearchSwitch()
     
     /// This shop's requests: another shop's wait for its device id does not hold them.
     private let requestQueue: ShopSessionQueue
@@ -2249,6 +2251,7 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
 
     func initMachine(adopt response: InitResponse, fromServer: Bool) {
         userInfo = response
+        agentSearch.adopt(blankMode: response.search.blankMode)
         if !response.deviceId.isEmpty {
             deviceId = response.deviceId
         }

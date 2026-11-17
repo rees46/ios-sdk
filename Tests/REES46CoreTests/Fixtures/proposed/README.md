@@ -30,6 +30,8 @@ In `expect.result` an object lists the fields the case checks; `null` is a field
   cases. In `call.args`, a request model is an object by the contract's field names, a value of a set by its name in
   code (`salesRate`). A `result`, and a request's own fields in `query` or `body`, are compared whole, as the Android
   SDK compares them: a field without a value counts as missing on either side.
+- `search.json` here is the Android SDK's file with the search agent (`agentDialog`, `agent`; DEV-4620) after the
+  catalog's cases. The agent's path is on the host of API v3, `appDomain`, which the format does not name.
 - `profile.json`, `subscriptions.json`, `segments.json` — the client (`sdk/contract/profile.md`, `subscriptions.md`,
   `segments.md`): the Android SDK's files as they are, compared as the catalog's. A method without a value expects
   `"result": null`.

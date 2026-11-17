@@ -8,6 +8,8 @@ import Foundation
 struct SearchAPIImpl: SearchAPI {
 
     let requests: NamespaceRequests
+    /// The instance whose `/init` says whether the agent is on.
+    weak var instance: SimplePersonalizationSDK?
 
     func blank(completion: @escaping (Result<Rees46.SearchBlankResponse, Rees46.SdkError>) -> Void) {
         requests.call("search.blank", completion: completion) { Self.blankRequest }
@@ -50,6 +52,40 @@ struct SearchAPIImpl: SearchAPI {
 
     func full(query: String, request: Rees46.SearchFullRequest) async throws -> Rees46.SearchFullResponse {
         try await requests.value("search.full") { try Self.fullRequest(query: query, request) }
+    }
+
+    var agentEnabled: Bool {
+        guard let instance = instance, instance.core is CoreV2 else { return false }
+        return instance.agentSearch.isOn
+    }
+
+    func agentDialog(
+        sessionId: Int?,
+        locations: [String]?,
+        completion: @escaping (Result<Rees46.AgentDialogResponse, Rees46.SdkError>) -> Void
+    ) {
+        requests.call("search.agentDialog", completion: completion) { Self.agentDialogRequest(sessionId: sessionId, locations: locations) }
+    }
+
+    func agentDialog(sessionId: Int?, locations: [String]?) async throws -> Rees46.AgentDialogResponse {
+        try await requests.value("search.agentDialog") { Self.agentDialogRequest(sessionId: sessionId, locations: locations) }
+    }
+
+    func agent(
+        message: String,
+        sessionId: Int?,
+        locations: [String]?,
+        completion: @escaping (Result<Rees46.AgentResponse, Rees46.SdkError>) -> Void
+    ) {
+        requests.call("search.agent", completion: completion) {
+            try Self.agentRequest(message: message, sessionId: sessionId, locations: locations)
+        }
+    }
+
+    func agent(message: String, sessionId: Int?, locations: [String]?) async throws -> Rees46.AgentResponse {
+        try await requests.value("search.agent") {
+            try Self.agentRequest(message: message, sessionId: sessionId, locations: locations)
+        }
     }
 
     // MARK: - Requests
@@ -113,6 +149,45 @@ struct SearchAPIImpl: SearchAPI {
         return ApiRequest(method: .get, path: "search", query: fields.fields) { body in
             try Readable<Rees46.SearchFullResponse>.read(body)
         }
+    }
+
+    /// The path of the agent on the host of API v3.
+    static let agentPath = "api/v3/storefront/search/agent"
+    /// The server gives the agent up to 40 seconds and two more tries of its model: the read timeout of a
+    /// message (`sdk/contract/search.md`). The dialog has the common one.
+    static let agentTimeout: TimeInterval = 60
+    /// The longest message the server takes.
+    static let agentMessageLimit = 500
+
+    /// `GET api/v3/storefront/search/agent` on `appDomain`. An answer without a body has no session.
+    static func agentDialogRequest(sessionId: Int?, locations: [String]?) -> ApiRequest<Rees46.AgentDialogResponse> {
+        var fields = CatalogQuery()
+        fields.set("session_id", int: sessionId)
+        fields.set("location", list: locations)
+        var request = ApiRequest(method: .get, path: agentPath, query: fields.fields) { body in
+            try Readable<Rees46.AgentDialogResponse>.read(body.isEmpty ? Data("{}".utf8) : body)
+        }
+        request.host = .app
+        return request
+    }
+
+    /// `POST api/v3/storefront/search/agent` on `appDomain`, a JSON body, read timeout 60 seconds. The
+    /// message is counted in characters as the server counts them, by Unicode scalars.
+    static func agentRequest(message: String, sessionId: Int?, locations: [String]?) throws -> ApiRequest<Rees46.AgentResponse> {
+        let text = try CatalogQuery.identifier(message, "message")
+        guard text.unicodeScalars.count <= agentMessageLimit else {
+            throw Rees46.SdkError.invalidArgument("message is longer than \(agentMessageLimit) characters")
+        }
+        var body: [String: Any] = ["message": text]
+        body["session_id"] = sessionId
+        if let locations = locations, !locations.isEmpty {
+            body["location"] = locations.joined(separator: ",")
+        }
+        var request = ApiRequest(method: .post, path: agentPath, body: body, timeout: agentTimeout) { body in
+            try Readable<Rees46.AgentResponse>.read(body)
+        }
+        request.host = .app
+        return request
     }
 
     /// The merchants to leave out, only with locations: the server looks for them inside the locations,
