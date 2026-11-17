@@ -1,6 +1,7 @@
 import Foundation
 
-/// Optional query parameters for `getProbabilityToPurchase`. `shop_id`, `did`, session and `stream` are set by the SDK.
+/// The contacts `getProbabilityToPurchase` once sent. They are no longer sent: the server finds the customer by
+/// the device id, which wins over any contact. `shop_id`, `did`, session and `stream` are set by the SDK.
 public struct PurchasePredictParams {
     public var email: String?
     public var phone: String?

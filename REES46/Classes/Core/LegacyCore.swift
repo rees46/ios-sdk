@@ -75,7 +75,7 @@ final class LegacyCore: Core {
 
     private func get(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         let path = request.path
-        var url = URLComponents(string: baseURL + path)
+        var url = URLComponents(string: base(of: request) + path)
         var queryItems = request.query.map { URLQueryItem(name: $0.key, value: $0.value) }
         queryItems.append(URLQueryItem(name: "stream", value: stream))
         url?.queryItems = queryItems
@@ -114,7 +114,7 @@ final class LegacyCore: Core {
 
     private func post(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
         let path = request.path
-        guard let url = URL(string: baseURL + path) else {
+        guard let url = URL(string: base(of: request) + path) else {
             logger.error(LogCode.requestBuildFailed, "\(SdkLogger.requestLine("POST", path)) could not be built", ["method": "POST", "path": path])
             completion(CoreResponse(status: nil, body: Data(), result: .failure(.invalidResponse), error: .invalidArgument("the path \(path) is not a URL path")))
             return
@@ -172,6 +172,11 @@ final class LegacyCore: Core {
     }
 
     // MARK: - Helpers
+
+    /// The URL `request`'s path goes under: the API host, or the request's own (`CoreRequest.host`).
+    private func base(of request: CoreRequest) -> String {
+        request.host.map { "https://\($0)/" } ?? baseURL
+    }
 
     /// A request with the call's own timeout. The session is shared: a call that swapped in a session
     /// with its own timeout changed it for every call in flight on the session queue. It neither sends

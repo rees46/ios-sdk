@@ -30,8 +30,9 @@ public protocol PredictAPI {
      inactive or restricted one, `404` for an unknown one —, `decoding` for an answer without a numeric
      `probability`, `cancelled` for a call `release()` ended. Nothing is repeated: the app decides.
 
-     The released SDKs ask `predict/probability-to-purchase` on the API host, which answers `503`: the
-     service is no longer deployed there (question 42 of `sdk/questions.md`).
+     The SDKs up to 3.39.0 asked `predict/probability-to-purchase` on the API host, which answers `503`:
+     the service is no longer deployed there (question 42 of `sdk/questions.md`). The root method
+     `getProbabilityToPurchase(params:completion:)` now asks the same path as this one, on either core.
      */
     func getProbabilityToPurchase(completion: @escaping (Result<PurchaseProbability, Rees46.SdkError>) -> Void)
 

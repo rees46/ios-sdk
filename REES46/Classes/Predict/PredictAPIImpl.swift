@@ -50,4 +50,12 @@ struct ProbabilityAnswer: Decodable {
         }
         value = PurchaseProbability(probability: probability, clientId: payload?.lenientString("client_id"))
     }
+
+    /// The forecast in an answer the old methods got as JSON; `nil` when it is none.
+    static func forecast(in json: Any) -> PurchaseProbability? {
+        guard JSONSerialization.isValidJSONObject(json), let data = try? JSONSerialization.data(withJSONObject: json) else {
+            return nil
+        }
+        return (try? JSONDecoder().decode(ProbabilityAnswer.self, from: data))?.value
+    }
 }

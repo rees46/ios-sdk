@@ -99,6 +99,7 @@
 		035807D5C47B5617327F47D1 /* AgentSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BAE8CAA1C23AD95B3A659DB /* AgentSearchTests.swift */; };
 		EE982672942F5A449BD9638A /* SubscriptionContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9603C298AB34B96D5A8DFC /* SubscriptionContractTests.swift */; };
 		D3AE962D3B176281495DE5D5 /* LoyaltyAndOrdersContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C0DF3B30B0FE718D4EF061 /* LoyaltyAndOrdersContractTests.swift */; };
+		34E845DAF87173E0BF25FAB9 /* PredictContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 062EA46B15C13F384C2591CE /* PredictContractTests.swift */; };
 		6844E30F231FF22F293ABDC0 /* ClientNamespaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7C9148EBDAEAFFE3F6B662 /* ClientNamespaceTests.swift */; };
 		AADD17FBB7174736D09B40FA /* CatalogContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6373AE16A13EA446ECFA658A /* CatalogContractTests.swift */; };
 		2D62BB4EF7EDEC67BEFDB85A /* CatalogNamespaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD942DCBA67544649FFB028 /* CatalogNamespaceTests.swift */; };
@@ -379,6 +380,7 @@
 		5BAE8CAA1C23AD95B3A659DB /* AgentSearchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AgentSearchTests.swift; sourceTree = "<group>"; };
 		1B9603C298AB34B96D5A8DFC /* SubscriptionContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionContractTests.swift; sourceTree = "<group>"; };
 		50C0DF3B30B0FE718D4EF061 /* LoyaltyAndOrdersContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoyaltyAndOrdersContractTests.swift; sourceTree = "<group>"; };
+		062EA46B15C13F384C2591CE /* PredictContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PredictContractTests.swift; sourceTree = "<group>"; };
 		CB7C9148EBDAEAFFE3F6B662 /* ClientNamespaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ClientNamespaceTests.swift; sourceTree = "<group>"; };
 		6373AE16A13EA446ECFA658A /* CatalogContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogContractTests.swift; sourceTree = "<group>"; };
 		BAD942DCBA67544649FFB028 /* CatalogNamespaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogNamespaceTests.swift; sourceTree = "<group>"; };
@@ -604,6 +606,7 @@
 				5BAE8CAA1C23AD95B3A659DB /* AgentSearchTests.swift */,
 				1B9603C298AB34B96D5A8DFC /* SubscriptionContractTests.swift */,
 				50C0DF3B30B0FE718D4EF061 /* LoyaltyAndOrdersContractTests.swift */,
+				062EA46B15C13F384C2591CE /* PredictContractTests.swift */,
 				CB7C9148EBDAEAFFE3F6B662 /* ClientNamespaceTests.swift */,
 				6373AE16A13EA446ECFA658A /* CatalogContractTests.swift */,
 				BAD942DCBA67544649FFB028 /* CatalogNamespaceTests.swift */,
@@ -1228,6 +1231,7 @@
 				035807D5C47B5617327F47D1 /* AgentSearchTests.swift in Sources */,
 				EE982672942F5A449BD9638A /* SubscriptionContractTests.swift in Sources */,
 				D3AE962D3B176281495DE5D5 /* LoyaltyAndOrdersContractTests.swift in Sources */,
+				34E845DAF87173E0BF25FAB9 /* PredictContractTests.swift in Sources */,
 				6844E30F231FF22F293ABDC0 /* ClientNamespaceTests.swift in Sources */,
 				AADD17FBB7174736D09B40FA /* CatalogContractTests.swift in Sources */,
 				2D62BB4EF7EDEC67BEFDB85A /* CatalogNamespaceTests.swift in Sources */,
