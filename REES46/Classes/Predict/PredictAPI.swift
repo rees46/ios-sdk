@@ -19,18 +19,19 @@ import Foundation
 public protocol PredictAPI {
 
     /**
-     The probability that the customer of this device buys (`GET predict/probability-to-purchase`). The
-     customer is the device id: the method takes no contacts, and it waits for the instance to have one.
-     A customer the server does not know, or one without events, is a success with probability 0.
+     The probability that the customer of this device buys (`GET api/v3/cdp/users/probability-to-purchase`
+     on `Rees46Config.appDomain`). The customer is the device id: the method takes no contacts, and it
+     waits for the instance to have one. A customer the server does not know, or one without events, is a
+     success with probability 0.
 
      `completion` is called once, on the main thread, with the forecast or the error: `notInitialized`
      on the old core or after `release()`, `shopBlocked`, `network`, `timeout`, `http(code:serverCode:)`
-     — `400` for an unknown shop, `402` for one without the `cdp` service, `500` —, `decoding` for an
-     answer without a numeric `probability`, `cancelled` for a call `release()` ended. Nothing is
-     repeated: the app decides.
+     — `400` without a device id, `402` for a shop that does not pay or has no `cdp` service, `403` for an
+     inactive or restricted one, `404` for an unknown one —, `decoding` for an answer without a numeric
+     `probability`, `cancelled` for a call `release()` ended. Nothing is repeated: the app decides.
 
-     The path is the one of the released mobile SDKs, which the contract keeps until the backend
-     decides (question 42 of `sdk/questions.md`): on 2026-11-13 it answered `503` to any request.
+     The released SDKs ask `predict/probability-to-purchase` on the API host, which answers `503`: the
+     service is no longer deployed there (question 42 of `sdk/questions.md`).
      */
     func getProbabilityToPurchase(completion: @escaping (Result<PurchaseProbability, Rees46.SdkError>) -> Void)
 

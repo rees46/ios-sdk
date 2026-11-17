@@ -77,7 +77,7 @@ final class StoriesPredictLoyaltySlidersTests: CoreScenarioTestCase {
     private func sent(_ shop: String) -> [StubRequest] {
         StubURLProtocol.requests.filter { request in
             (request.query["shop_id"] ?? request.body["shop_id"] as? String) == shop
-                && ["/stories/", "/predict/", "/loyalty/", "/slider", "/track/slider"].contains { request.path.hasPrefix($0) }
+                && ["/stories/", "/api/v3/cdp/", "/predict/", "/loyalty/", "/slider", "/track/slider"].contains { request.path.hasPrefix($0) }
         }
     }
 
@@ -131,6 +131,9 @@ final class StoriesPredictLoyaltySlidersTests: CoreScenarioTestCase {
                 XCTAssertNil(request.body[field], "\(item.name): no \(field)")
             }
             XCTAssertNil(request.query["phone"], "\(item.name): no phone")
+            if call.name == "predict.getProbabilityToPurchase" {
+                XCTAssertEqual(request.url?.host, Rees46Config.defaultAppDomain, "\(item.name): on the host of API v3")
+            }
         }
         sdk.release()
     }
@@ -185,7 +188,7 @@ final class StoriesPredictLoyaltySlidersTests: CoreScenarioTestCase {
     private static func path(of call: ContractCase.Call) -> String? {
         switch call.name {
         case "stories.get": return "/stories/\(call.args["code"] as? String ?? "")"
-        case "predict.getProbabilityToPurchase": return "/predict/probability-to-purchase"
+        case "predict.getProbabilityToPurchase": return "/api/v3/cdp/users/probability-to-purchase"
         case "loyalty.join": return "/loyalty/members/join"
         case "loyalty.getStatus": return "/loyalty/members/status"
         case "loyalty.getPromotions": return "/loyalty/promos/for-client"
@@ -284,7 +287,7 @@ final class StoriesPredictLoyaltySlidersTests: CoreScenarioTestCase {
         let shop = newShop()
         let sdk = makeV2(shop)
         answer("/stories/abc", StubReply(json: #"{"id":35,"stories":[{"id":39,"slides":[]}]}"#))
-        answer("/predict/probability-to-purchase", StubReply(json: #"{"probability":0.42,"client_id":null}"#))
+        answer("/api/v3/cdp/users/probability-to-purchase", StubReply(json: #"{"status":"success","payload":{"probability":0.42,"client_id":null}}"#))
         answer("/loyalty/members/join", StubReply(json: #"{"status":"success","payload":{"identifier":"79991234567"}}"#))
         answer("/loyalty/members/status", StubReply(json: #"{"status":"success","payload":{"member":false,"level":null}}"#))
         answer("/loyalty/promos/for-client", StubReply(json: #"{"status":"success","payload":{"promotions":[{"id":3,"name":"P"}]}}"#))
