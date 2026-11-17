@@ -18,8 +18,12 @@ included:
   - REES46/Classes/Sliders
   - REES46/Classes/Reviews
   - REES46/Classes/Search
+  - REES46/Classes/Products
+  - REES46/Classes/Collections
+  - REES46/Classes/Recommendations
   - REES46/Classes/Profile
   - REES46/Classes/Subscription
+  - REES46/Classes/Segments
   - REES46/Classes/Infrastructure
   - REES46/Classes/Domain
   - REES46/Classes/Errors
