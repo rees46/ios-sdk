@@ -121,6 +121,20 @@ final class NamespaceRequestTests: CoreScenarioTestCase {
         sdk.release()
     }
 
+    func test_an_answer_without_a_body_is_an_empty_cart_and_an_empty_object_is_decoding() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        answer("/products/cart", StubReply(200, json: ""))
+        XCTAssertEqual(try? get(sdk)?.get().count, 0)
+        answer("/products/cart", StubReply(204, json: ""))
+        XCTAssertEqual(try? get(sdk)?.get().count, 0)
+        answer("/products/cart", StubReply(200, json: "{}"))
+        XCTAssertEqual(error(of: get(sdk)), .decoding)
+        XCTAssertTrue(waitForLog(shop, "decoding_failed"))
+        XCTAssertEqual(logged(shop, "decoding_failed").last?.context["call"], "cart.get")
+        sdk.release()
+    }
+
     // MARK: - Errors without an answer
 
     func test_without_network_the_call_fails_at_once_with_network_and_sends_nothing() {

@@ -31,16 +31,22 @@ struct ApiRequest<Value> {
 
 extension ApiRequest {
 
-    /// A `GET` whose answer reads as `Answer` (`LenientDecoding`), made into the value by `value`.
+    /// A `GET` whose answer reads as `Answer` (`LenientDecoding`), made into the value by `value`. An
+    /// answer without a body is `whenEmpty` — a `2xx` without one is a success with an empty result
+    /// (`sdk/core/network.md`) —, or `decoding` for a method that has no empty value.
     static func get<Answer: Decodable>(
         _ path: String,
         query: [String: String] = [:],
         timeout: TimeInterval? = nil,
         answer: Answer.Type,
+        whenEmpty: Value? = nil,
         value: @escaping (Answer) -> Value
     ) -> ApiRequest {
         ApiRequest(method: .get, path: path, query: query, timeout: timeout) { body in
-            value(try JSONDecoder().decode(Answer.self, from: body))
+            if body.isEmpty, let empty = whenEmpty {
+                return empty
+            }
+            return value(try JSONDecoder().decode(Answer.self, from: body))
         }
     }
 }

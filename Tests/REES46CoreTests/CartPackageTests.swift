@@ -48,12 +48,15 @@ final class CartPackageTests: XCTestCase {
             let answer = NetworkClient.Response(status: 200, body: body, retryAfter: nil, result: NetworkClient.classify(status: 200, body: body))
             return try? NamespaceRequests.value(of: answer, for: CartAPIImpl.cartRequest, call: "cart.get", logger: logger).get()
         }
-        XCTAssertNil(items(""), "an empty 2xx is not a cart")
-        XCTAssertEqual(items(#"{"data": {}}"#)?.count, 0, "no lines: an empty cart")
-        XCTAssertEqual(items(#"{"data": {"items": null}}"#)?.count, 0)
-        XCTAssertNil(items(#"{"data": {"items": "37"}}"#), "lines that are not a list are not a cart")
+        XCTAssertEqual(items("")?.count, 0, "a 2xx without a body is an empty cart")
+        XCTAssertNil(items("{}"), "an empty object is not a cart")
+        XCTAssertNil(items(#"{"data": {}}"#), "no list of lines: not a cart")
+        XCTAssertNil(items(#"{"data": {"items": null}}"#))
+        XCTAssertNil(items(#"{"data": {"items": "37"}}"#))
         XCTAssertNil(items(#"[]"#))
         XCTAssertEqual(items(#"{"data": {"items": [{"uniqid": "1"}]}, "payload": {"cart_items": []}}"#)?.map(\.id), ["1"], "today's shape first")
+        XCTAssertEqual(items(#"{"data": {"items": "37"}, "payload": {"cart_items": [{"uniqid": "2"}]}}"#)?.map(\.id), ["2"], "else the documented one")
+        XCTAssertEqual(items(#"{"data": {"items": [{"uniqid": "  "}, {"uniqid": "3"}]}}"#)?.map(\.id), ["3"], "a blank id is none")
     }
 
     func test_the_cart_fixture_is_proposed_until_the_contract_has_one() throws {

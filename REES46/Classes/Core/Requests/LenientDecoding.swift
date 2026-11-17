@@ -40,11 +40,12 @@ private enum LenientScalar: Decodable {
         }
     }
 
-    /// A string: a number as its digits — an integral one without a fraction —; an empty string is none.
+    /// A string: a number as its digits — an integral one without a fraction —; an empty or blank string
+    /// is none.
     var string: String? {
         switch self {
         case .string(let value):
-            return value.isEmpty ? nil : value
+            return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
         case .int(let value):
             return String(value)
         case .double(let value):
@@ -122,7 +123,7 @@ private struct Lossy<Element: Decodable>: Decodable {
 
 extension KeyedDecodingContainer {
 
-    /// The string at `key`; a number is its digits. Missing, `null`, empty or not a scalar: `nil`.
+    /// The string at `key`; a number is its digits. Missing, `null`, empty, blank or not a scalar: `nil`.
     func lenientString(_ key: Key) -> String? {
         scalar(key)?.string
     }

@@ -98,6 +98,8 @@ final class NamespacePackageTests: XCTestCase {
         XCTAssertNil(unfit.list)
 
         XCTAssertNil(try sample(#"{"string": ""}"#).string, "an empty string is no value")
+        XCTAssertNil(try sample(#"{"string": " \n"}"#).string, "nor is a blank one")
+        XCTAssertEqual(try sample(#"{"string": " a "}"#).string, " a ", "a string is kept as it came")
         XCTAssertNil(try sample(#"{"int": "", "double": "1e999"}"#).int)
         XCTAssertNil(try sample(#"{"double": "1e999"}"#).double, "not a finite number")
     }

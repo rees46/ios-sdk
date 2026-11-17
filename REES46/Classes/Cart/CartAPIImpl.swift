@@ -18,46 +18,31 @@ struct CartAPIImpl: CartAPI {
     }
 
     /// `GET products/cart` with nothing but the common fields the core adds: the API finds the cart by the
-    /// device id.
+    /// device id. An answer without a body is an empty cart.
     static var cartRequest: ApiRequest<[CartItem]> {
-        .get("products/cart", answer: CartAnswer.self) { $0.items }
+        .get("products/cart", answer: CartAnswer.self, whenEmpty: []) { $0.items }
     }
 }
 
-/// The answer of `GET products/cart` in either of its shapes (`sdk/contract/cart.md`): today's
-/// `{"status": "success", "data": {"items": [...]}}` and the documented
+/// The answer of `GET products/cart` in either of its shapes (`sdk/contract/cart.md`), as Android reads it:
+/// today's `{"status": "success", "data": {"items": [...]}}`, else the documented
 /// `{"status": "success", "payload": {"cart_items": [...]}}`, so the server's move to the second one
-/// breaks nothing. Anything else is not a cart.
+/// breaks nothing. Without a list in either place it is not a cart (`decoding`).
 struct CartAnswer: Decodable {
 
     let items: [CartItem]
 
     init(from decoder: Decoder) throws {
         let root = try decoder.container(keyedBy: AnswerKey.self)
-        if let data = try? root.nestedContainer(keyedBy: AnswerKey.self, forKey: "data") {
-            items = try Self.lines(in: data, "items")
-        } else if let payload = try? root.nestedContainer(keyedBy: AnswerKey.self, forKey: "payload") {
-            items = try Self.lines(in: payload, "cart_items")
-        } else {
+        let lines = (try? root.nestedContainer(keyedBy: AnswerKey.self, forKey: "data"))?.lenientList(Line.self, "items")
+            ?? (try? root.nestedContainer(keyedBy: AnswerKey.self, forKey: "payload"))?.lenientList(Line.self, "cart_items")
+        guard let lines = lines else {
             throw DecodingError.dataCorrupted(DecodingError.Context(
                 codingPath: decoder.codingPath,
-                debugDescription: "neither data.items nor payload.cart_items"
+                debugDescription: "neither data.items nor payload.cart_items is a list"
             ))
         }
-    }
-
-    /// The lines at `key`; missing or `null` is an empty cart, anything but a list is not a cart.
-    private static func lines(in container: KeyedDecodingContainer<AnswerKey>, _ key: AnswerKey) throws -> [CartItem] {
-        if let lines = container.lenientList(Line.self, key) {
-            return lines.compactMap(\.item)
-        }
-        guard container.contains(key), (try? container.decodeNil(forKey: key)) != true else {
-            return []
-        }
-        throw DecodingError.typeMismatch([Line].self, DecodingError.Context(
-            codingPath: container.codingPath + [key as CodingKey],
-            debugDescription: "the lines of the cart are not a list"
-        ))
+        items = lines.compactMap(\.item)
     }
 
     /// One line: a product without an id is left out, one without a quantity is one of it.
