@@ -53,15 +53,11 @@ struct ClientBody {
 
     // MARK: - Values
 
-    /// `value` as `YYYY-MM-DD` of a day of the calendar, or `invalidArgument`.
-    static func date(_ value: String, _ name: String) throws -> String {
-        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
-        let digits = parts.allSatisfy { $0.allSatisfy { $0.isASCII && $0.isNumber } }
-        guard parts.count == 3, digits, parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
-              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
-              DateComponents(year: year, month: month, day: day).isValidDate(in: Calendar(identifier: .gregorian))
-        else {
-            throw Rees46.SdkError.invalidArgument("\(name) is not a date YYYY-MM-DD")
+    /// `value` as a birthday `profile/set` takes — an existing day `YYYY-MM-DD` of the years 1000 to
+    /// 2999 (`ApiArguments.isBirthday`) —, or `invalidArgument`: the server would ignore it in silence.
+    static func birthday(_ value: String, _ name: String) throws -> String {
+        guard ApiArguments.isBirthday(value) else {
+            throw Rees46.SdkError.invalidArgument("\(name) is not a date YYYY-MM-DD of the years 1000 to 2999")
         }
         return value
     }

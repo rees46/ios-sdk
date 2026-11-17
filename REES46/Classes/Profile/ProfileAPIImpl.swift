@@ -51,22 +51,24 @@ struct ProfileAPIImpl: ProfileAPI {
         }
     }
 
-    /// `POST profile/set` with the fields the request gives, its custom properties at the top level.
+    /// `POST profile/set` with the fields the request gives, its custom properties at the top level. An
+    /// empty `externalId`, `telegramId` or `birthday` goes as `""`: the server erases them so. It does not
+    /// erase `email`, `phone` or `loyalty_id` so: an empty one is refused. Any other text goes as it is.
     static func setRequest(_ request: Rees46.ProfileUpdateRequest) throws -> ApiRequest<Void> {
         var body = ClientBody()
         try body.identifier("email", request.email, "email")
         try body.identifier("phone", request.phone, "phone")
-        try body.identifier("id", request.externalId, "externalId")
+        body.set("id", request.externalId)
         body.set("external_id", request.externalId)
         try body.identifier("loyalty_id", request.loyaltyId, "loyaltyId")
-        try body.identifier("telegram_id", request.telegramId, "telegramId")
+        body.set("telegram_id", request.telegramId)
         body.set("fb_id", request.fbId)
         body.set("vk_id", request.vkId)
         body.set("first_name", request.firstName)
         body.set("last_name", request.lastName)
         body.set("gender", request.gender?.wire)
         if let birthday = request.birthday {
-            body.set("birthday", try ClientBody.date(birthday, "birthday"))
+            body.set("birthday", birthday.isEmpty ? birthday : try ClientBody.birthday(birthday, "birthday"))
         }
         if let age = request.age {
             guard age >= 0 else { throw Rees46.SdkError.invalidArgument("age is negative") }
@@ -77,7 +79,7 @@ struct ProfileAPIImpl: ProfileAPI {
             body.set("kids", try kids.map { kid -> [String: Any] in
                 var fields: [String: Any] = [:]
                 fields["gender"] = kid.gender?.wire
-                fields["birthday"] = try kid.birthday.map { try ClientBody.date($0, "the birthday of a kid") }
+                fields["birthday"] = try kid.birthday.map { try ClientBody.birthday($0, "the birthday of a kid") }
                 return fields
             })
         }

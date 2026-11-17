@@ -32,14 +32,20 @@ public protocol ProfileAPI {
     func get() async throws -> Rees46.Profile
 
     /**
-     Writes the properties of the profile (`POST profile/set`): only the fields given change.
+     Writes the properties of the profile (`POST profile/set`): only the fields given change. An empty
+     text erases `externalId`, `telegramId`, `birthday`, `fbId` and `vkId`, and leaves `location`,
+     `firstName` and `lastName` empty; `age` 0 erases the age. The server does not erase `email`,
+     `phone` or `loyaltyId` with an empty text, so an empty one is refused. `gender` has no empty value:
+     `set` cannot erase it.
 
      An identifier of another customer — `email`, `phone`, `externalId`, `loyaltyId`, `telegramId` —
      moves the device to that customer's profile: a sign-in, or another user on the same device. Call it
      on sign-in, when the city changes, and on every launch with the current identifier and city.
 
-     Refused before anything is sent (`invalidArgument`): a request without a field, an empty
-     identifier, a `birthday` — a kid's too — not in `YYYY-MM-DD`, a negative `age`, a key of
+     Refused before anything is sent (`invalidArgument`): a request without a field, an empty `email`,
+     `phone` or `loyaltyId`, a `birthday` — a kid's too — that is not an existing day `YYYY-MM-DD` of
+     the years 1000 to 2999 (the server would ignore it in silence; an empty one erases it, but not a
+     kid's), a negative `age`, a key of
      `customProperties` not of `[a-z0-9_]` or one of the request's own or the SDK's fields, a value of
      it that is not a string, a number, a boolean, `NSNull`, or a list or map of them. The server checks
      the email and the phone.
@@ -89,9 +95,10 @@ extension Rees46 {
         public var firstName: String?
         public var lastName: String?
         public var gender: Gender?
-        /// `YYYY-MM-DD`: a date, not a moment, so no time zone moves it a day.
+        /// `YYYY-MM-DD` of the years 1000 to 2999: a date, not a moment, so no time zone moves it a day.
+        /// An empty one erases it.
         public var birthday: String?
-        /// From 0.
+        /// From 0; 0 erases the age.
         public var age: Int?
         /// The city: an id of a location of the shop's feed.
         public var location: String?

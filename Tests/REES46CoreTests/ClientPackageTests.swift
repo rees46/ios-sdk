@@ -224,13 +224,20 @@ final class ClientPackageTests: XCTestCase {
         XCTAssertNotNil(SafeJSON.data(body ?? [:]))
     }
 
-    func test_a_birthday_is_a_day_of_the_calendar() {
-        XCTAssertNoThrow(try ClientBody.date("2000-02-29", "birthday"))
-        XCTAssertThrowsError(try ClientBody.date("2001-02-29", "birthday"))
-        XCTAssertThrowsError(try ClientBody.date("2001-2-01", "birthday"))
-        XCTAssertThrowsError(try ClientBody.date("+201-02-01", "birthday"))
-        XCTAssertThrowsError(try ClientBody.date("２００１-02-01", "birthday"), "digits of another script")
-        XCTAssertThrowsError(try ClientBody.date("", "birthday"))
+    func test_a_birthday_is_an_existing_day_of_the_years_1000_to_2999() {
+        XCTAssertNoThrow(try ClientBody.birthday("2000-02-29", "birthday"))
+        XCTAssertNoThrow(try ClientBody.birthday("1000-01-01", "birthday"))
+        XCTAssertNoThrow(try ClientBody.birthday("2999-12-31", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("2001-02-29", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("1900-02-29", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("2001-04-31", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("2001-13-01", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("2001-2-01", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("+201-02-01", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("２００１-02-01", "birthday"), "digits of another script")
+        XCTAssertThrowsError(try ClientBody.birthday("0999-12-31", "birthday"), "the server takes the years 1000 to 2999")
+        XCTAssertThrowsError(try ClientBody.birthday("3000-01-01", "birthday"))
+        XCTAssertThrowsError(try ClientBody.birthday("", "birthday"))
     }
 
     func test_the_comparison_with_a_fixture_finds_what_differs() {
