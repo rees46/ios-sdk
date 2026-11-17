@@ -1,5 +1,5 @@
 import XCTest
-@testable import REES46
+@_spi(Bridge) @testable import REES46
 
 /// Covers the `tracking` namespace: that every method maps onto the event the API expects, and
 /// that the two fields added with the namespace (cart price, search results) reach the wire.

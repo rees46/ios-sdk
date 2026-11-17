@@ -1,5 +1,5 @@
 import XCTest
-@testable import REES46
+@_spi(Bridge) @testable import REES46
 
 /// Guards the upgrade path: everything the `tracking` namespace touched has to keep working for
 /// code written against the previous release — conformers of `PersonalizationSDK`, the old
