@@ -30,6 +30,9 @@ actor NetworkClient {
         /// it — an event of the queue — instead of the ones stored when the request is built: a
         /// `deleteUserCredentials()` in between does not move it to the next customer's did.
         var identity: CommonFields.Identity?
+        /// The host of this request alone, without a scheme: the host of API v3 (`appDomain`). `nil` is
+        /// the client's, the API host.
+        var host: String?
     }
 
     struct Response {
@@ -294,6 +297,7 @@ actor NetworkClient {
             fields = fields.with(identity)
         }
         var urlRequest: URLRequest
+        let baseURL = request.host.map { "https://\($0)/" } ?? self.baseURL
         switch request.method {
         case .get:
             let query = fields.apply(to: request.query, path: request.path)

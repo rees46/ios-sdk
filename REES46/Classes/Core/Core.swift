@@ -40,6 +40,9 @@ struct CoreRequest {
     /// event of a push carries none (`EventQueue.sessionlessPaths`): it renews no session and asks no
     /// `/init`, the one it is sent once as when the disk refused it included.
     var needsSession = true
+    /// `CoreV2`: the host of this request alone, without a scheme — the host of API v3,
+    /// `Rees46Config.appDomain`; `nil` is the API host, `apiDomain`.
+    var host: String?
 
     /// `/init`: its own timeout, and in `CoreV2` the only request that may wait for the network.
     var isInit: Bool { path == "init" }
