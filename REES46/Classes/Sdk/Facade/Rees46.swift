@@ -113,6 +113,7 @@ public enum Rees46 {
                 needReInitialization: config.needReInitialization,
                 storageKey: config.storageKey,
                 coreV2: config.coreV2,
+                appDomain: config.appDomain,
                 deviceId: config.deviceId,
                 segment: segment,
                 completion: completion

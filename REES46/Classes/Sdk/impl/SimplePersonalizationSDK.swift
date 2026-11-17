@@ -227,6 +227,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         needReInitialization: Bool = false,
         storageKey: String? = nil,
         coreV2: Bool = false,
+        appDomain: String = Rees46Config.defaultAppDomain,
         deviceId configuredDeviceId: String? = nil,
         segment broughtSegment: String? = nil,
         environment: CoreEnvironment? = nil,
@@ -252,6 +253,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.config = Rees46Config(
             shopId: shopId,
             apiDomain: apiDomain,
+            appDomain: appDomain,
             stream: stream,
             deviceId: configuredDeviceId,
             enableLogs: enableLogs,
