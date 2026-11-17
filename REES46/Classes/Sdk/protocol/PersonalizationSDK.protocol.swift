@@ -38,21 +38,21 @@ public protocol PersonalizationSDK {
     func generateString(array : [String]) -> String
     
     func setProfileData(userEmail: String?, userPhone: String?, userLoyaltyId: String?, birthday: Date?, age: Int?, firstName: String?, lastName: String?, location: String?, gender: Gender?,  advertisingId: String?, fbID: String?, vkID: String?, telegramId: String?, loyaltyCardLocation: String?, loyaltyStatus: String?, loyaltyBonuses: Int?, loyaltyBonusesToNextLevel: Int?, boughtSomething: Bool?, userId: String?, customProperties: [String: Any?]?, completion: @escaping (Result<Void, SdkError>) -> Void)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.productView(itemId:), .addToCart(item:), .storyView(storyId:slideId:) and the rest.")
     func track(event: Event, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.purchase(request).")
     func trackPurchase(_ request: PurchaseTrackingRequest, recommendedBy: RecomendedBy?, completion: @escaping (Result<Void, SdkError>) -> Void)
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.setSource(TrackingSource(type:code:)).")
     func trackSource(source: RecommendedByCase, code: String)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     @available(*, deprecated, message: "Use the tracking namespace: sdk.tracking.custom(event:).")
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
     func recommend(blockId: String, currentProductId: String?, currentCategoryId: String?, locations: String?, imageSize: String?,timeOut: Double?, withLocations: Bool, extended: Bool, completion: @escaping (Result<RecommenderResponse, SdkError>) -> Void)
@@ -88,13 +88,13 @@ public protocol PersonalizationSDK {
     func searchBlank(completion: @escaping(Result<SearchBlankResponse, SdkError>) -> Void)
     /// Full search. `excludedMerchants` applies only together with non-empty `locations`, as in `suggest`.
     func search(query: String, limit: Int?, offset: Int?, categoryLimit: Int?,brandLimit: Int?, categories: [Int]?, extended: String?, sortBy: String?, sortDir: String?, locations: String?, excludedMerchants: [String]?, excludedBrands: [String]?, brands: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, colors: [String]?, fashionSizes: [String]?, exclude: String?, email: String?, timeOut: Double?, disableClarification: Bool?, completion: @escaping(Result<SearchResponse, SdkError>) -> Void)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     func notificationClicked(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     func notificationDelivered(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
-    /// With `Rees46Config.coreV2` the event goes through the shop's queue: `completion` is kept until it
+    /// On the new core, the bridges', the event goes through the shop's queue: `completion` is kept until it
     /// was sent — up to seven days, the time an event lives — or failed for good.
     func notificationReceived(type: String, code: String, completion: @escaping (Result<Void, SdkError>) -> Void)
     func subscribeForBackInStock(
@@ -152,8 +152,8 @@ public protocol PersonalizationSDK {
     /// Sends the queued events now, without waiting for the SDK's own triggers: `completion` is called
     /// on the main thread once every event queued at the call was tried — sent, or kept for later
     /// because there is no network or the server asked to wait; an instance that is not ready yet is
-    /// waited for, at most a request's read timeout. With `Rees46Config.coreV2 = false`, which keeps no
-    /// queue, it is called at once; after `release()` with `notInitialized`. Has a default
+    /// waited for, at most a request's read timeout. On the old core, which keeps no queue, it is
+    /// called at once; after `release()` with `notInitialized`. Has a default
     /// implementation, so conforming types keep compiling.
     func flush(completion: @escaping (Rees46.SdkError?) -> Void)
 

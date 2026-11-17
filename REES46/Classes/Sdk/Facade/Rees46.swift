@@ -77,21 +77,30 @@ public enum Rees46 {
      A shop that has an instance gets that instance back: no second one is made. A different `config`
      does not change it — the log says `invalid_config` with the reason `already_initialized` — and
      `completion` is still called once: with the outcome of the instance's initialization, or when it
-     settles. `release()` lets the next call make a new instance. Without `Rees46Config.coreV2`, as it
-     always has, a call after the instance's `/init` failed, or with `needReInitialization`, makes a new
-     instance of the shop with a new `/init`.
+     settles. `release()` lets the next call make a new instance. On the old core, as it always has, a
+     call after the instance's `/init` failed, or with `needReInitialization`, makes a new instance of
+     the shop with a new `/init`.
      */
     @discardableResult
     public static func initialize(
         _ config: Rees46Config,
         completion: ((LegacySdkError?) -> Void)? = nil
     ) -> PersonalizationSDK {
+        initialize(config, segment: nil, completion: completion)
+    }
+
+    /// `initialize(_:completion:)` with the device's A/B group a bridge kept (`initializeBridge`).
+    static func initialize(
+        _ config: Rees46Config,
+        segment: String?,
+        completion: ((LegacySdkError?) -> Void)?
+    ) -> PersonalizationSDK {
         withCreationLock {
             lock.lock()
             pending[config.shopId] = nil
             lock.unlock()
             if let existing = SdkRegistry.shared.byShopId(config.shopId), !makesNewLegacyInstance(over: existing, config: config) {
-                return (existing, joinExisting(existing, config: config, completion: completion))
+                return (existing, joinExisting(existing, config: config, segment: segment, completion: completion))
             }
             let sdk = SimplePersonalizationSDK(
                 shopId: config.shopId,
@@ -105,6 +114,7 @@ public enum Rees46 {
                 storageKey: config.storageKey,
                 coreV2: config.coreV2,
                 deviceId: config.deviceId,
+                segment: segment,
                 completion: completion
             )
             sdk.resetSdkCache()
@@ -125,6 +135,7 @@ public enum Rees46 {
     private static func joinExisting(
         _ existing: PersonalizationSDK,
         config: Rees46Config,
+        segment: String?,
         completion: ((LegacySdkError?) -> Void)?
     ) -> () -> Void {
         guard let instance = existing as? SimplePersonalizationSDK else {
@@ -138,6 +149,9 @@ public enum Rees46 {
                 ["reason": "already_initialized"]
             )
         }
+        // The device's group was settled when the instance was made: a bridge's other one is not taken.
+        let brought = SimplePersonalizationSDK.validBroughtSegment(segment, logger: instance.logger)
+        SimplePersonalizationSDK.checkBroughtSegment(brought, against: instance.segment, logger: instance.logger)
         return { instance.whenInitialized(completion) }
     }
 
@@ -313,12 +327,12 @@ public enum Rees46 {
      counting it to another shop. `type` and `code` are the top-level `type` and `id` of FCM, or
      `src.type` and `src.id` of APNs.
 
-     - With `Rees46Config.coreV2`, each event goes once per message in the process — a repeat sends
-       nothing and calls no callback —, through the shop's queue: `track/delivered`, `track/opened`,
-       `track/clicked`, `track/closed`. A click stores the push as the source of the shop's `/push`
-       events for 48 hours.
-     - Without it the events go at once, as they always have — `delivered` and `clicked`; `opened` and
-       `closed`, which that core never had, send nothing there and only call the callbacks.
+     - On the new core, the one the Flutter and React Native bridges run, each event goes once per
+       message in the process — a repeat sends nothing and calls no callback —, through the shop's
+       queue: `track/delivered`, `track/opened`, `track/clicked`, `track/closed`. A click stores the
+       push as the source of the shop's `/push` events for 48 hours.
+     - On the old core the events go at once, as they always have — `delivered` and `clicked`; `opened`
+       and `closed`, which that core never had, send nothing there and only call the callbacks.
 
      A shop that is registered but not created (`register` without `eagerInit`, the app launched by the
      push) is not created: the event goes with the device id the shop has stored, without `/init` — and
@@ -344,9 +358,9 @@ public enum Rees46 {
     /**
      The push events of earlier versions; `handlePush(_:event:)` with `Rees46.PushEvent` replaces it.
      `delivered` and `clicked` are the same events there. `received` — a push that came while the app
-     was in the background, which the server counts as one more open — is `delivered` with
-     `Rees46Config.coreV2`, sent once with the `delivered` of the same push; without it,
-     `track/received` as before.
+     was in the background, which the server counts as one more open — is `delivered` on the new core,
+     the bridges', sent once with the `delivered` of the same push; on the old core `track/received` as
+     before.
      */
     @_disfavoredOverload
     public static func handlePush(_ payload: [AnyHashable: Any], event: LegacyPushEvent) {

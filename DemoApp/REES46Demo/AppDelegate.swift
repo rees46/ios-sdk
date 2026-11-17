@@ -49,8 +49,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
 
         // Under the tests the demo initializes nothing and shows an empty screen: no test reaches a
-        // server, and the first initialization of a process decides its core (`Rees46Config.coreV2`),
-        // which is the tests' to choose.
+        // server, and the first initialization of a process decides its core — the old one for an app,
+        // the new one for a bridge's `Rees46.initializeBridge` —, which is the tests' to choose.
         if Self.isRunningTests {
             window?.rootViewController = UIViewController()
             return true

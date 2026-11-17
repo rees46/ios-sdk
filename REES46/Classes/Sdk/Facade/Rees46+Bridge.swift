@@ -16,6 +16,29 @@ import Foundation
 @_spi(Bridge)
 extension Rees46 {
 
+    /**
+     `initialize(_:completion:)` on the new core: the bridges' way in, the only one to that core. It
+     makes or finds the shop's instance as `initialize` does, with the same `completion`. The core is
+     still the process's, decided by its first `initialize`, `initializeBridge` or `register`: after an
+     app's own `initialize` or `register` the instance runs the old core, and the log says
+     `core_flag_mismatch`.
+
+     `segment` is the device's A/B group the bridge kept in its own storage from before — React Native
+     kept one per shop. The device takes it only while it has no group of its own, neither in the
+     device's store nor in the shop's partition; otherwise its own stays and the log says
+     `invalid_config` with the reason `segment_kept`. Only a group the SDK makes itself — `A` or `B` —
+     is taken: another is refused, the log says `invalid_config` with the reason `segment_invalid`, and
+     the device keeps or gets its own as without one. `nil` or empty is none.
+     */
+    @discardableResult
+    public static func initializeBridge(
+        _ config: Rees46Config,
+        segment: String? = nil,
+        completion: ((LegacySdkError?) -> Void)? = nil
+    ) -> PersonalizationSDK {
+        initialize(config.onNewCore(), segment: segment, completion: completion)
+    }
+
     /// `listener` hears every push event the SDK handles, of every shop, on the main thread, beside the
     /// app's `PushCallbacks` and whatever they are: once per event of a message, like them, with the
     /// shop the push went to in `PushPayload.shopId`. Until the handle is cancelled.
@@ -88,9 +111,9 @@ extension Rees46 {
 extension PersonalizationSDK {
 
     /// Calls `listener` on the main thread with every new session id (`sid`) until the handle is
-    /// cancelled, so a bridge tells its app instead of asking for `sessionId` on a timer. With
-    /// `Rees46Config.coreV2` each `sid` an `/init` brings; on the old core the one
-    /// `deleteUserCredentials()` makes. Another conformer of the protocol tells nothing.
+    /// cancelled, so a bridge tells its app instead of asking for `sessionId` on a timer. On the new
+    /// core each `sid` an `/init` brings; on the old core the one `deleteUserCredentials()` makes.
+    /// Another conformer of the protocol tells nothing.
     @discardableResult
     public func onSessionChange(_ listener: @escaping (String) -> Void) -> Cancellable {
         guard let instance = self as? SimplePersonalizationSDK else { return .noop }
@@ -115,7 +138,7 @@ extension PersonalizationSDK {
      goes — the device's token changed — hears the answer of the newer one.
 
      The old `setPushTokenNotification` keeps telling the app at once that the token waits for the
-     device id, as it always has; on `Rees46Config.coreV2` it, too, hears the answer once it went.
+     device id, as it always has; on the new core it, too, hears the answer once it went.
      */
     public func setPushToken(_ token: Rees46.PushToken, completion: @escaping (Result<Void, Rees46.SdkError>) -> Void) {
         let finish: (Result<Void, LegacySdkError>) -> Void = { result in
@@ -149,8 +172,8 @@ extension PersonalizationSDK {
 
      `completion` hears once, on the main thread: success once the event is accepted — on disk, the way
      the contract's tracking methods complete —, or `invalidArgument` for an event of a push, another
-     path or a body that is not JSON, `notInitialized`, `shopBlocked`. With `Rees46Config.coreV2 =
-     false`, which keeps no queue, the event goes at once and `completion` hears the server's answer.
+     path or a body that is not JSON, `notInitialized`, `shopBlocked`. On the old core, which keeps no
+     queue, the event goes at once and `completion` hears the server's answer.
      */
     public func queueEvent(path: String, body: [String: Any], completion: @escaping (Result<Void, Rees46.SdkError>) -> Void) {
         let finish: (Rees46.SdkError?) -> Void = { error in

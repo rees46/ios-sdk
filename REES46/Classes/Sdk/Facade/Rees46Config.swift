@@ -56,17 +56,19 @@ public struct Rees46Config {
     /// itself is the shop's storage, shared with the app's extensions as before (shops on one group key
     /// share it); the shop's files still get a folder of their own.
     public let storageKey: String?
-    /// Runs the shop on the new core of the SDK (`false` by default): its network client first,
-    /// with init, session, queue and pushes to follow. The first `Rees46.initialize` or
-    /// `Rees46.register` of the process decides for every shop until the app restarts; a shop that
-    /// asks otherwise gets the process's core, and the log says `core_flag_mismatch`.
+    /// Runs the shop on the new core of the SDK: its network client, `/init`, session, queue and
+    /// pushes. Not the app's to choose: a configuration an app makes runs the old core, and only the
+    /// Flutter and React Native bridges ask for the new one, through `Rees46.initializeBridge`
+    /// (`@_spi(Bridge)`). The first `Rees46.initialize`, `Rees46.initializeBridge` or `Rees46.register`
+    /// of the process decides for every shop until the app restarts; a shop that asks otherwise gets
+    /// the process's core, and the log says `core_flag_mismatch`.
     ///
     /// The new core sends through a session of its own. `configureURLSession(configuration:)` and a
     /// `urlSession` the app sets give it their configuration — proxy, headers, protocols, TLS settings
     /// — but not a session's delegate: certificate pinning done in a delegate does not apply, and the
     /// log says `invalid_config` with the reason `url_session_delegate`. A request still fails at once
     /// without network and keeps its own timeout. On either core the SDK sends and keeps no cookies.
-    public let coreV2: Bool
+    private(set) var coreV2: Bool
 
     public init(
         shopId: String,
@@ -79,8 +81,38 @@ public struct Rees46Config {
         sendAdvertisingId: Bool = false,
         enableAutoPopupPresentation: Bool = true,
         needReInitialization: Bool = false,
+        storageKey: String? = nil
+    ) {
+        self.init(
+            shopId: shopId,
+            apiDomain: apiDomain,
+            stream: stream,
+            deviceId: deviceId,
+            enableLogs: enableLogs,
+            logLevel: logLevel,
+            autoSendPushToken: autoSendPushToken,
+            sendAdvertisingId: sendAdvertisingId,
+            enableAutoPopupPresentation: enableAutoPopupPresentation,
+            needReInitialization: needReInitialization,
+            storageKey: storageKey,
+            coreV2: false
+        )
+    }
+
+    /// The configuration with the core it asks for: the SDK's own, its bridges' and its tests'.
+    init(
+        shopId: String,
+        apiDomain: String = "api.rees46.ru",
+        stream: String = "ios",
+        deviceId: String? = nil,
+        enableLogs: Bool = false,
+        logLevel: Rees46.LogLevel = .warning,
+        autoSendPushToken: Bool = true,
+        sendAdvertisingId: Bool = false,
+        enableAutoPopupPresentation: Bool = true,
+        needReInitialization: Bool = false,
         storageKey: String? = nil,
-        coreV2: Bool = false
+        coreV2: Bool
     ) {
         self.shopId = shopId
         self.apiDomain = apiDomain
@@ -95,6 +127,13 @@ public struct Rees46Config {
         self.needReInitialization = needReInitialization
         self.storageKey = storageKey
         self.coreV2 = coreV2
+    }
+
+    /// This configuration on the new core: what `Rees46.initializeBridge` makes of a bridge's one.
+    func onNewCore() -> Rees46Config {
+        var config = self
+        config.coreV2 = true
+        return config
     }
 
     /// Whether an instance made with `other` behaves as one made with this configuration.

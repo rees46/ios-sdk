@@ -73,8 +73,8 @@ public extension TrackingSourceType {
 ///
 /// Reached through an SDK instance: `Rees46.instance().tracking.productView(itemId: "sku-1")`.
 ///
-/// With `Rees46Config.coreV2` an event goes through the shop's queue (`sdk/core/queue.md`): it is kept
-/// on the device and sent when it can be, also after no network or a restart. Its `completion` is
+/// On the new core, the bridges', an event goes through the shop's queue (`sdk/core/queue.md`): it is
+/// kept on the device and sent when it can be, also after no network or a restart. Its `completion` is
 /// called when the event was sent — or failed for good, or was refused at once —, and is kept until
 /// then: up to seven days, the time an event lives, and not past the instance (`release()`) or the
 /// process. Do not hold a screen or another short-lived object in it.

@@ -16,7 +16,7 @@ import Foundation
    running app.
  - `received` tracks a background arrival (`track/received`) — the push landed while the app was
    backgrounded, with no interaction. Deprecated (decision 0004): the server counts `track/received` as
-   an open, not a delivery. With `Rees46Config.coreV2` it goes as `delivered`.
+   an open, not a delivery. On the new core, the bridges', it goes as `delivered`.
  - `clicked` tracks the tap (`track/clicked`).
 
  Navigation (opening the product/category/web the push points to) stays with the host — see

@@ -228,6 +228,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         storageKey: String? = nil,
         coreV2: Bool = false,
         deviceId configuredDeviceId: String? = nil,
+        segment broughtSegment: String? = nil,
         environment: CoreEnvironment? = nil,
         userIdentity: UserIdentityRepository? = nil,
         keychainStore: KeychainInitStore? = nil,
@@ -317,9 +318,9 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         
         // The old core resolves its session (the persisted one within the 2h window, else a new one it
         // makes); the new core never makes one: its `sid` is the server's (`SessionWindow`). Then the
-        // device's A/B segment.
+        // device's A/B segment, the one a bridge brought when the device has none.
         legacySeance = usesCoreV2 ? "" : self.sessionManager.currentSessionId()
-        segment = Self.abSegment(of: identity)
+        segment = Self.abSegment(of: identity, brought: broughtSegment, logger: logger)
         
         if needReInitialization {
             // The new core forgets the customer's device id, the saved answer and its keychain backup
@@ -584,8 +585,40 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// Native do, and the same for every shop of the app (decision 4). Picked anew on every launch, it
     /// moved the device between A and B, and a block under an A/B test showed products on one launch
     /// and nothing on the next.
-    static func abSegment(of identity: UserIdentityRepository) -> String {
-        identity.resolveAbSegment()
+    ///
+    /// `brought` is the group a bridge kept from before (`Rees46.initializeBridge`): taken only while
+    /// the device has none of its own, as `Rees46Config.deviceId` is; one the SDK does not make is
+    /// refused.
+    static func abSegment(of identity: UserIdentityRepository, brought: String? = nil, logger: SdkLogger = .process) -> String {
+        let candidate = validBroughtSegment(brought, logger: logger)
+        let segment = identity.resolveAbSegment(candidate: candidate)
+        checkBroughtSegment(candidate, against: segment, logger: logger)
+        return segment
+    }
+
+    /// The A/B group a bridge brought when it is one the SDK makes itself (`DeviceStore.abGroups`);
+    /// another is refused, and the log says so. `nil` or empty is none.
+    static func validBroughtSegment(_ brought: String?, logger: SdkLogger) -> String? {
+        guard let brought = brought, !brought.isEmpty else { return nil }
+        guard DeviceStore.abGroups.contains(brought) else {
+            logger.warning(
+                LogCode.invalidConfig,
+                "the A/B group a bridge brought is not one the SDK makes: the device keeps or gets its own",
+                ["reason": "segment_invalid"]
+            )
+            return nil
+        }
+        return brought
+    }
+
+    /// Says in the log when the device keeps its own A/B group rather than the one a bridge brought.
+    static func checkBroughtSegment(_ brought: String?, against segment: String, logger: SdkLogger) {
+        guard let brought = brought, brought != segment else { return }
+        logger.warning(
+            LogCode.invalidConfig,
+            "the device keeps its own A/B group: the one a bridge brought was not taken",
+            ["reason": "segment_kept"]
+        )
     }
     
     func getShopId() -> String {
