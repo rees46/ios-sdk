@@ -12,3 +12,12 @@ is removed.
   Android SDK tests by. A case with `platform` (`ios`, `android`) is of that platform only: the platforms send a push
   token with different `platform` and `push_provider`, and each refuses the other's provider. `expect.result: null` is a
   success without a value.
+- `stories.json` — `stories.get` (`sdk/contract/stories.md`). In `expect.result` an element of a slide is an object with
+  its `type` — `button`, `product`, `products`, `textBlock` — and its fields.
+- `predict.json` — `predict.getProbabilityToPurchase` (`sdk/contract/predict.md`).
+- `loyalty.json` — `loyalty.join`, `getStatus`, `getPromotions` (`sdk/contract/loyalty.md`). A query field whose value
+  is a list goes as a list of Rails: `promo_codes[]=A&promo_codes[]=B`.
+- `sliders.json` — `sliders.get` (`sdk/contract/sliders.md`) and the banner events of `tracking` that go with it,
+  `bannerView` and `bannerClick`, until the contract's `tracking.json` has them.
+
+In `expect.result` an object lists the fields the case checks; `null` is a field without a value.

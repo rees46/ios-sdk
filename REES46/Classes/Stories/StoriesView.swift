@@ -78,7 +78,7 @@ public class StoriesView: UIView, UINavigationControllerDelegate {
         return collectionView
     }()
     
-    private var stories: [Story]?
+    private var stories: [LegacyStory]?
     private var settings: StoriesSettings?
     private var sdk: PersonalizationSDK?
 
@@ -413,14 +413,14 @@ extension StoriesView: UICollectionViewDelegate, UICollectionViewDataSource, UIC
 
     /// The loaded list and the cells the collection asks for can disagree for a moment (see
     /// `numberOfItemsInSection`), so every read of it goes through a bounds check.
-    private func story(at index: Int) -> Story? {
+    private func story(at index: Int) -> LegacyStory? {
         guard let stories = stories, stories.indices.contains(index) else {
             return nil
         }
         return stories[index]
     }
     
-    private func showStories(at index: Int, for story: Story) {
+    private func showStories(at index: Int, for story: LegacyStory) {
         let storyVC = StoryViewController()
         storyVC.sdkLinkDelegate = self
         storyVC.sdk = sdk

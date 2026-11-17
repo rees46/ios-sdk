@@ -884,3 +884,12 @@ final class TrackingSourceStoreImpl: TrackingSourceStore {
         return (type: type, code: code)
     }
 }
+
+extension TrackEventServiceImpl {
+
+    /// The SDK's own instance the events go through: the events only its new core sends
+    /// (`TrackingAPI.bannerView`, `bannerClick`) need it. `nil` for another conformer of the protocol.
+    var instance: SimplePersonalizationSDK? {
+        sdk as? SimplePersonalizationSDK
+    }
+}

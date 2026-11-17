@@ -6,7 +6,7 @@ public class StoryContent {
     var id: String
     let ids: Int
     let settings: StoriesSettings
-    let stories: [Story]
+    let stories: [LegacyStory]
     
     public init(json: [String: Any], shopId: String = "") {
         self.id = json["id"] as? String ?? "-1"
@@ -14,7 +14,7 @@ public class StoryContent {
         let _settings = json["settings"] as? [String: Any] ?? [:]
         self.settings = StoriesSettings(json: _settings)
         let _stories = json["stories"] as? [[String: Any]] ?? []
-        self.stories = _stories.map({ Story(json: $0, shopId: shopId) })
+        self.stories = _stories.map({ LegacyStory(json: $0, shopId: shopId) })
 
         if let ids = json["id"] as? Int {
             self.id = String(ids)
@@ -47,8 +47,9 @@ public class StoriesSettings {
 }
 
 
-// MARK: - Story
-class Story {
+// MARK: - LegacyStory
+/// A story of the old stories view (`StoriesView`). The name `Story` is the model of `stories.get`.
+class LegacyStory {
     var id: String
     let ids: Int
     let avatar: String
