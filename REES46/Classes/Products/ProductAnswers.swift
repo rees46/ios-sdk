@@ -169,7 +169,8 @@ extension Rees46.Product: AnswerReadable {
     }
 
     /// `preferringUniqid`: the card's answer (`products/get`), where `uniqid` is the shop's id.
-    init(answer: KeyedDecodingContainer<AnswerKey>, preferringUniqid: Bool) throws {
+    /// `paramOrder`: the names of `params` in the answer's order, when it is an object (`productParams`).
+    init(answer: KeyedDecodingContainer<AnswerKey>, preferringUniqid: Bool, paramOrder: [String] = []) throws {
         id = try (preferringUniqid ? answer.lenientString("uniqid") : nil) ?? answer.requiredString("id")
         groupId = answer.lenientString("group_id")
         name = try answer.requiredText("name")
@@ -203,7 +204,7 @@ extension Rees46.Product: AnswerReadable {
         stockQuantity = answer.lenientInt("stock_quantity")
         categoryIds = answer.lenientStrings("category_ids")
         categories = answer.models(Rees46.ProductCategory.self, "categories")
-        params = answer.models(Rees46.ProductParam.self, "params")
+        params = answer.models(Rees46.ProductParam.self, "params") ?? answer.productParams("params", order: paramOrder)
         locationIds = answer.lenientStrings("location_ids")
     }
 }
@@ -227,6 +228,158 @@ extension Rees46.ProductParam: AnswerReadable {
         key = try answer.requiredString("key")
         values = answer.lenientStrings("values") ?? []
     }
+}
+
+extension KeyedDecodingContainer where Key == AnswerKey {
+
+    /// The parameters at `key` when they are an object, as the card's answer (`products/get`) writes them
+    /// — name → `{"searchable": true, "value": [...]}` —, where the other answers have a list of
+    /// `{"key", "values"}`. In the order of `order`, the answer's own, which the decoder does not keep;
+    /// by name for one `order` does not have. `nil` when `key` is not an object.
+    func productParams(_ key: Key, order: [String]) -> [Rees46.ProductParam]? {
+        guard let object = try? nestedContainer(keyedBy: AnswerKey.self, forKey: key) else { return nil }
+        var rank: [String: Int] = [:]
+        for (position, name) in order.enumerated() where rank[name] == nil {
+            rank[name] = position
+        }
+        let names = object.allKeys.map(\.stringValue).sorted {
+            (rank[$0] ?? Int.max, $0) < (rank[$1] ?? Int.max, $1)
+        }
+        return names.map { name in
+            let field = AnswerKey(name)
+            let entry = try? object.nestedContainer(keyedBy: AnswerKey.self, forKey: field)
+            let values = entry?.lenientStrings("value")
+                ?? entry?.lenientString("value").map { [$0] }
+                ?? object.lenientStrings(field)
+                ?? object.lenientString(field).map { [$0] }
+            return Rees46.ProductParam(key: name, values: values ?? [])
+        }
+    }
+}
+
+/// The order of the keys of an object in an answer, which `JSONDecoder` does not keep: the order the shop
+/// gave the parameters of a product in the card's answer (`products/get`).
+struct AnswerKeyOrder {
+
+    private let bytes: [UInt8]
+    private var index = 0
+
+    /// The keys of the object at `key` of the object at the top of `data`, in the answer's order; `nil`
+    /// when the answer is not an object of JSON or `key` is not an object in it.
+    static func keys(ofObjectAt key: String, in data: Data) -> [String]? {
+        var scanner = AnswerKeyOrder(bytes: [UInt8](data))
+        guard scanner.consume("{"), !scanner.consume("}") else { return nil }
+        repeat {
+            guard let name = scanner.member() else { return nil }
+            if name == key {
+                return scanner.objectKeys()
+            }
+            guard scanner.skipValue() else { return nil }
+        } while scanner.consume(",")
+        return nil
+    }
+
+    /// The keys of the object at the index, in their order; the index after it.
+    private mutating func objectKeys() -> [String]? {
+        guard consume("{") else { return nil }
+        var keys: [String] = []
+        if consume("}") {
+            return keys
+        }
+        repeat {
+            guard let name = member(), skipValue() else { return nil }
+            keys.append(name)
+        } while consume(",")
+        return consume("}") ? keys : nil
+    }
+
+    /// The key of a member and its colon.
+    private mutating func member() -> String? {
+        guard let name = string(), consume(":") else { return nil }
+        return name
+    }
+
+    /// Moves past the value at the index; `false` when there is none.
+    private mutating func skipValue() -> Bool {
+        skipSpace()
+        guard index < bytes.count else { return false }
+        switch bytes[index] {
+        case UInt8(ascii: "\""):
+            return string() != nil
+        case UInt8(ascii: "{"), UInt8(ascii: "["):
+            var depth = 0
+            while index < bytes.count {
+                switch bytes[index] {
+                case UInt8(ascii: "\""):
+                    guard string() != nil else { return false }
+                    continue
+                case UInt8(ascii: "{"), UInt8(ascii: "["):
+                    depth += 1
+                case UInt8(ascii: "}"), UInt8(ascii: "]"):
+                    depth -= 1
+                    if depth == 0 {
+                        index += 1
+                        return true
+                    }
+                default:
+                    break
+                }
+                index += 1
+            }
+            return false
+        default:
+            let start = index
+            while index < bytes.count, !Self.ends.contains(bytes[index]) {
+                index += 1
+            }
+            return index > start
+        }
+    }
+
+    /// What ends a number, `true`, `false` or `null`.
+    private static let ends = Set(",}] \t\r\n".utf8)
+
+    /// The string at the index, its escapes read; the index after its closing quote.
+    private mutating func string() -> String? {
+        skipSpace()
+        guard index < bytes.count, bytes[index] == UInt8(ascii: "\"") else { return nil }
+        let start = index
+        var escaped = false
+        index += 1
+        while index < bytes.count {
+            switch bytes[index] {
+            case UInt8(ascii: "\\"):
+                escaped = true
+                index += 2
+            case UInt8(ascii: "\""):
+                index += 1
+                let token = Data(bytes[start..<index])
+                guard escaped else {
+                    return String(decoding: token.dropFirst().dropLast(), as: UTF8.self)
+                }
+                return (try? JSONSerialization.jsonObject(with: token, options: .fragmentsAllowed)) as? String
+            default:
+                index += 1
+            }
+        }
+        return nil
+    }
+
+    /// Moves past `character` at the index, after any white space; `false` when it is not there.
+    private mutating func consume(_ character: Unicode.Scalar) -> Bool {
+        skipSpace()
+        guard index < bytes.count, bytes[index] == UInt8(ascii: character) else { return false }
+        index += 1
+        return true
+    }
+
+    private mutating func skipSpace() {
+        while index < bytes.count, Self.space.contains(bytes[index]) {
+            index += 1
+        }
+    }
+
+    private static let space = Set(" \t\r\n".utf8)
 }
 
 extension Rees46.Location: AnswerReadable {

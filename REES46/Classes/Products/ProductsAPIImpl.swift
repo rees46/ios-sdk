@@ -53,7 +53,7 @@ struct ProductsAPIImpl: ProductsAPI {
         let id = try CatalogQuery.identifier(itemId, "itemId")
         return ApiRequest(method: .get, path: "products/get", query: ["item_id": id]) { body in
             guard !body.isEmpty else { return nil }
-            return try Readable<ProductCard>.read(body).product
+            return try ProductCard.read(body)
         }
     }
 
@@ -111,11 +111,26 @@ struct ProductsAPIImpl: ProductsAPI {
     }
 }
 
-/// The answer of `products/get`: the product itself, its id `uniqid`; `{}` is no product.
-private struct ProductCard: AnswerReadable {
+/// The answer of `products/get`: the product itself, its id `uniqid`; `{}` is no product. Its `params` is
+/// an object of name → values, read in the answer's order (`AnswerKeyOrder`).
+private struct ProductCard: Decodable {
     let product: Rees46.Product?
 
-    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        product = answer.allKeys.isEmpty ? nil : try Rees46.Product(answer: answer, preferringUniqid: true)
+    init(from decoder: Decoder) throws {
+        let answer = try decoder.container(keyedBy: AnswerKey.self)
+        let order = Self.paramOrder.flatMap { decoder.userInfo[$0] as? [String] } ?? []
+        product = answer.allKeys.isEmpty ? nil : try Rees46.Product(answer: answer, preferringUniqid: true, paramOrder: order)
     }
+
+    /// The product of `body`, or `decoding`.
+    static func read(_ body: Data) throws -> Rees46.Product? {
+        let decoder = JSONDecoder()
+        if let key = paramOrder {
+            decoder.userInfo[key] = AnswerKeyOrder.keys(ofObjectAt: "params", in: body) ?? []
+        }
+        return try decoder.decode(ProductCard.self, from: body).product
+    }
+
+    /// Where `read` hands the decoder the names of `params` in the answer's order.
+    private static let paramOrder = CodingUserInfoKey(rawValue: "REES46.ProductCard.paramOrder")
 }

@@ -42,8 +42,19 @@ enum ContractFixtures {
         return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
     }
 
+    /// The cases of `name`; the `response` of each holds the bytes of its `body` as the file writes them
+    /// (`FixtureBodies`).
     static func cases(_ name: String, from source: Source = .contract) throws -> [[String: Any]] {
-        try load(name, from: source)["cases"] as? [[String: Any]] ?? []
+        let data = try Data(contentsOf: url(name, from: source))
+        var cases = (try JSONSerialization.jsonObject(with: data) as? [String: Any])?["cases"] as? [[String: Any]] ?? []
+        let bodies = FixtureBodies.bodies(in: data)
+        guard bodies.count == cases.count else { return cases }
+        for (index, body) in bodies.enumerated() {
+            guard let body = body, var response = cases[index]["response"] as? [String: Any] else { continue }
+            response[FixtureBodies.key] = body
+            cases[index]["response"] = response
+        }
+        return cases
     }
 
     /// The cases of `name`, typed.
@@ -86,7 +97,7 @@ struct ContractCase {
 
     struct Response {
         let status: Int?
-        /// The body as JSON; empty for `null` or none.
+        /// The body as JSON, as the file writes it (`FixtureBodies`); empty for `null` or none.
         let body: Data
     }
 
@@ -133,7 +144,8 @@ struct ContractCase {
             let body = response["body"].flatMap { $0 is NSNull ? nil : $0 }
             self.response = Response(
                 status: response["status"] as? Int,
-                body: body.flatMap { try? JSONSerialization.data(withJSONObject: $0, options: .fragmentsAllowed) } ?? Data()
+                body: body.flatMap { _ in response[FixtureBodies.key] as? Data }
+                    ?? body.flatMap { try? JSONSerialization.data(withJSONObject: $0, options: .fragmentsAllowed) } ?? Data()
             )
         } else {
             response = nil
@@ -154,6 +166,117 @@ struct ContractCase {
         case .http: return "http"
         case .decoding: return "decoding"
         case .cancelled: return "cancelled"
+        }
+    }
+}
+
+/// The bytes of each case's `response.body` as the file writes them. A body read into a dictionary loses
+/// the order of its keys, and the SDK keeps the order of some: a product card's `params` is an object of
+/// the parameters in the shop's order.
+final class FixtureBodies {
+
+    /// Where `ContractFixtures.cases` puts a body's bytes in its `response`.
+    static let key = "__body_bytes"
+
+    private let bytes: [UInt8]
+    private var index = 0
+
+    private init(_ data: Data) {
+        bytes = [UInt8](data)
+    }
+
+    /// One element per case of the file's `cases`, `nil` for a case without a body; empty when the file
+    /// does not read.
+    static func bodies(in data: Data) -> [Data?] {
+        let reader = FixtureBodies(data)
+        var bodies: [Data?] = []
+        let read = reader.object { key in
+            guard key == "cases" else { return reader.skipValue() }
+            return reader.array {
+                var body: Data?
+                let read = reader.object { key in
+                    guard key == "response" else { return reader.skipValue() }
+                    return reader.object { key in
+                        guard key == "body" else { return reader.skipValue() }
+                        reader.skipSpace()
+                        let start = reader.index
+                        guard reader.skipValue() else { return false }
+                        body = Data(reader.bytes[start..<reader.index])
+                        return true
+                    }
+                }
+                bodies.append(body)
+                return read
+            }
+        }
+        return read ? bodies : []
+    }
+
+    private func object(_ member: (String) -> Bool) -> Bool {
+        guard consume("{") else { return false }
+        if consume("}") { return true }
+        repeat {
+            guard let key = string(), consume(":"), member(key) else { return false }
+        } while consume(",")
+        return consume("}")
+    }
+
+    private func array(_ element: () -> Bool) -> Bool {
+        guard consume("[") else { return false }
+        if consume("]") { return true }
+        repeat {
+            guard element() else { return false }
+        } while consume(",")
+        return consume("]")
+    }
+
+    private func skipValue() -> Bool {
+        skipSpace()
+        guard index < bytes.count else { return false }
+        switch bytes[index] {
+        case UInt8(ascii: "{"):
+            return object { _ in skipValue() }
+        case UInt8(ascii: "["):
+            return array { skipValue() }
+        case UInt8(ascii: "\""):
+            return string() != nil
+        default:
+            let start = index
+            while index < bytes.count, !",}] \t\r\n".utf8.contains(bytes[index]) {
+                index += 1
+            }
+            return index > start
+        }
+    }
+
+    private func string() -> String? {
+        skipSpace()
+        guard index < bytes.count, bytes[index] == UInt8(ascii: "\"") else { return nil }
+        let start = index
+        index += 1
+        while index < bytes.count {
+            if bytes[index] == UInt8(ascii: "\\") {
+                index += 2
+            } else if bytes[index] == UInt8(ascii: "\"") {
+                index += 1
+                return (try? JSONSerialization.jsonObject(with: Data(bytes[start..<index]), options: .fragmentsAllowed)) as? String
+            } else {
+                index += 1
+            }
+        }
+        return nil
+    }
+
+    private func consume(_ character: Unicode.Scalar) -> Bool {
+        skipSpace()
+        guard index < bytes.count, bytes[index] == UInt8(ascii: character) else { return false }
+        index += 1
+        return true
+    }
+
+    private func skipSpace() {
+        while index < bytes.count, " \t\r\n".utf8.contains(bytes[index]) {
+            index += 1
         }
     }
 }

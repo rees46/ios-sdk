@@ -258,6 +258,81 @@ final class CatalogPackageTests: XCTestCase {
         XCTAssertEqual(product.categoryIds, ["1", "2"])
     }
 
+    /// The card's answer (`products/get`) writes `params` as an object, name → `{"searchable", "value"}`,
+    /// where every other answer has a list of `{"key", "values"}`: the shape of the demo shop's answer.
+    func test_the_cards_params_object_is_the_list_of_parameters_in_the_answers_order() throws {
+        let read = try value(ProductsAPIImpl.infoRequest(itemId: "37"), #"""
+        {"uniqid": "37", "id": "37", "name": "Наушники", "url": "https://shop.example/p/37", "price": 4990,
+         "currency": "₽", "locations": {"7": {"price": 4990, "stock_quantity": 9}}, "tags": ["a", "{b}"],
+         "params": {
+           "merchant": {"searchable": true, "value": ["Shop"]},
+           "stickers": {"searchable": true, "value": ["{\"slug\": \"0_0_24\", \"title\": \"0-0-24\"}"]},
+           "\u0426вет": {"searchable": true, "value": ["белый"]},
+           "Акции": {"searchable": true, "value": ["Товары со скидкой", "Комплектом дешевле"]},
+           "is_preorder": {"searchable": true, "value": ["False"]},
+           "Время работы, ч": {"searchable": false, "value": [20, 7.5]},
+           "Бренд": {"searchable": true, "value": "Apple"},
+           "Особенности": ["Изоляция голоса", "Адаптивный эквалайзер"],
+           "Пустой": {"searchable": true, "value": []},
+           "a \"quoted\" name": {"searchable": true, "value": ["x"]}
+         },
+         "barcode": "300252"}
+        """#).get()
+        let product = try XCTUnwrap(read)
+        XCTAssertEqual(product.params, [
+            Rees46.ProductParam(key: "merchant", values: ["Shop"]),
+            Rees46.ProductParam(key: "stickers", values: [#"{"slug": "0_0_24", "title": "0-0-24"}"#]),
+            Rees46.ProductParam(key: "Цвет", values: ["белый"]),
+            Rees46.ProductParam(key: "Акции", values: ["Товары со скидкой", "Комплектом дешевле"]),
+            Rees46.ProductParam(key: "is_preorder", values: ["False"]),
+            Rees46.ProductParam(key: "Время работы, ч", values: ["20", "7.5"]),
+            Rees46.ProductParam(key: "Бренд", values: ["Apple"]),
+            Rees46.ProductParam(key: "Особенности", values: ["Изоляция голоса", "Адаптивный эквалайзер"]),
+            Rees46.ProductParam(key: "Пустой", values: []),
+            Rees46.ProductParam(key: #"a "quoted" name"#, values: ["x"]),
+        ], "every parameter, in the order of the answer")
+        XCTAssertEqual(product.barcode, "300252", "the fields after params are read")
+    }
+
+    func test_a_params_object_of_another_answer_is_read_by_name() throws {
+        let block = try value(RecommendationsAPIImpl.blockRequest(code: "b", Rees46.RecommendationRequest()), """
+        {"id": 1, "recommends": [{"id": "37", "name": "n", "url": "u", "price": 1, "currency": "c",
+          "params": {"Цвет": {"value": ["белый"]}, "merchant": {"value": ["Shop"]}}}]}
+        """).get()
+        XCTAssertEqual(block.products.first?.params, [
+            Rees46.ProductParam(key: "merchant", values: ["Shop"]),
+            Rees46.ProductParam(key: "Цвет", values: ["белый"]),
+        ])
+    }
+
+    func test_the_fixtures_answers_are_their_bodies_as_the_file_writes_them() throws {
+        for name in ["products", "collections", "recommendations", "search"] {
+            let cases = try ContractFixtures.cases(name, from: .proposed).compactMap { $0["response"] as? [String: Any] }
+            for response in cases where !(response["body"] is NSNull) && response["body"] != nil {
+                let bytes = try XCTUnwrap(response[FixtureBodies.key] as? Data, name)
+                let read = try JSONSerialization.jsonObject(with: bytes, options: .fragmentsAllowed)
+                XCTAssertEqual(read as? NSObject, response["body"] as? NSObject, name)
+            }
+        }
+        let card = try ContractFixtures.fixture("products", from: .proposed).first { $0.name.contains("params словарём") }
+        let body = String(decoding: try XCTUnwrap(card?.response?.body), as: UTF8.self)
+        XCTAssertNotNil(body.range(of: #""Цвет": { "value": [ "графит" ]"#), "the card's params as the file has them")
+    }
+
+    func test_the_order_of_an_objects_keys_is_read_from_the_answer() {
+        func keys(_ json: String) -> [String]? {
+            AnswerKeyOrder.keys(ofObjectAt: "params", in: Data(json.utf8))
+        }
+        XCTAssertEqual(keys(#"{"params": {"b": 1, "a": [1, {"z": "}"}], "c": null}}"#), ["b", "a", "c"])
+        XCTAssertEqual(keys(#" { "x" : {"params": {"no": 1}} , "y": "params", "params" : { "\"q\"": true, "\u0430": -1.5e3 } } "#), [#""q""#, "а"])
+        XCTAssertEqual(keys(#"{"params": {}}"#), [])
+        XCTAssertNil(keys(#"{"params": [{"key": "a"}]}"#), "a list")
+        XCTAssertNil(keys(#"{"other": {"a": 1}}"#), "no params")
+        XCTAssertNil(keys(#"[{"params": {"a": 1}}]"#), "not an object at the top")
+        XCTAssertNil(keys(#"{"params": {"a": 1"#), "cut")
+        XCTAssertNil(keys(""))
+    }
+
     func test_a_product_without_a_field_every_product_has_is_left_out() throws {
         let fields = [#""id": "1""#, #""name": "a""#, #""url": "u""#, #""price": 1"#, #""currency": "c""#]
         for (index, name) in ["id", "name", "url", "price", "currency"].enumerated() {
