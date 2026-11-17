@@ -10,5 +10,6 @@ is removed.
   connection that is never made (`network`).
 - `stories.json` — `stories.get` (`sdk/contract/stories.md`). In `expect.result` an element of a slide is an object with
   its `type` — `button`, `product`, `products`, `textBlock` — and its fields.
+- `predict.json` — `predict.getProbabilityToPurchase` (`sdk/contract/predict.md`).
 
 In `expect.result` an object lists the fields the case checks; `null` is a field without a value.
