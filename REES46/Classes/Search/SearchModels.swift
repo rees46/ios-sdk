@@ -91,8 +91,8 @@ extension Rees46 {
 
     /// What an empty search field shows.
     public struct SearchBlankResponse: Equatable {
-        /// The products the customer viewed last (`lastProducts`), or popular ones.
-        public let products: [Product]?
+        /// The products the customer viewed last (`lastProducts`), or popular ones; none is an empty list.
+        public let products: [Product]
         /// Whether `products` are the ones the customer viewed last; missing is `false`.
         public let lastProducts: Bool
         public let lastQueries: [Query]?
@@ -149,7 +149,7 @@ extension Rees46 {
     /// A popular category, brand or link.
     public struct PopularItem: Equatable {
         public let name: String
-        public let url: String?
+        public let url: String
     }
 
     /// A query for which the shop opens a page instead of results (`search_query_redirects`).
@@ -167,7 +167,7 @@ extension Rees46 {
 extension Rees46.SearchBlankResponse: AnswerReadable {
 
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        products = answer.models(Rees46.Product.self, "products")
+        products = answer.models(Rees46.Product.self, "products") ?? []
         lastProducts = answer.lenientBool("last_products") ?? false
         lastQueries = answer.models(Rees46.Query.self, "last_queries")
         suggests = answer.models(Rees46.Query.self, "suggests")
@@ -224,9 +224,10 @@ extension Rees46.Query: AnswerReadable {
 
 extension Rees46.PopularItem: AnswerReadable {
 
+    /// An item without a name or a link is left out.
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        name = try answer.requiredString("name")
-        url = answer.lenientString("url")
+        name = try answer.requiredText("name")
+        url = try answer.requiredText("url")
     }
 }
 

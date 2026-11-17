@@ -54,10 +54,14 @@ struct SearchAPIImpl: SearchAPI {
 
     // MARK: - Requests
 
-    /// `GET search/blank` with the common fields alone. An answer without a body has nothing to show.
+    /// `GET search/blank` with the common fields alone. An answer without a body, or an empty list — the
+    /// server's empty object (PHP) —, has nothing to show.
     static var blankRequest: ApiRequest<Rees46.SearchBlankResponse> {
         ApiRequest(method: .get, path: "search/blank") { body in
-            try Readable<Rees46.SearchBlankResponse>.read(body.isEmpty ? Data("{}".utf8) : body)
+            if body.isEmpty || ((try? JSONSerialization.jsonObject(with: body)) as? [Any])?.isEmpty == true {
+                return try Readable<Rees46.SearchBlankResponse>.read(Data("{}".utf8))
+            }
+            return try Readable<Rees46.SearchBlankResponse>.read(body)
         }
     }
 
