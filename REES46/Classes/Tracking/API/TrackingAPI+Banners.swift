@@ -88,7 +88,7 @@ enum BannerEvent: String {
         guard bannerId.allSatisfy({ ("0"..."9").contains($0) }), let id = Int(bannerId), (1...Self.maxBannerId).contains(id) else {
             throw Rees46.SdkError.invalidArgument("the banner id must be a positive whole number")
         }
-        guard !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !ApiArguments.isBlank(code) else {
             throw Rees46.SdkError.invalidArgument("the code of the slider must not be empty")
         }
         return ["event": rawValue, "banner_id": id, "recommended_code": code]
@@ -100,17 +100,8 @@ enum BannerEvent: String {
         let finish: (Rees46.SdkError?) -> Void = { error in
             DispatchQueue.main.async { completion(error.map { .failure($0) } ?? .success(())) }
         }
-        guard let instance = (api as? TrackingAPIImpl)?.instance else {
-            SdkLogger.process.error(LogCode.notImplemented, "\(call) is not implemented by this TrackingAPI", ["call": call])
-            finish(.notInitialized)
-            return
-        }
-        guard instance.usesCoreV2 else {
-            instance.logger.warning(
-                LogCode.coreFlagMismatch,
-                "\(call) runs on the new core only: start the shop with Rees46.initializeBridge",
-                ["call": call]
-            )
+        let ours = (api as? TrackingAPIImpl)?.instance
+        guard let instance = NamespaceRequests.onTheNewCore(ours, isTheSdks: false, call: call, owner: "TrackingAPI") else {
             finish(.notInitialized)
             return
         }

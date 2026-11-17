@@ -35,18 +35,9 @@ struct NamespaceRequests {
     /// request once the instance takes the call; it throws `Rees46.SdkError.invalidArgument` for an
     /// argument the contract refuses, and then nothing is sent. Cancelling the task cancels the call.
     func result<Value>(_ name: String, _ make: () throws -> ApiRequest<Value>) async -> Result<Value, Rees46.SdkError> {
-        guard let instance = instance else {
-            if !isTheSdks {
-                SdkLogger.process.error(LogCode.notImplemented, "\(name) is not implemented by this PersonalizationSDK", ["call": name])
-            }
-            return .failure(.notInitialized)
-        }
-        guard let core = instance.core as? CoreV2 else {
-            instance.logger.warning(
-                LogCode.coreFlagMismatch,
-                "\(name) runs on the new core only: start the shop with Rees46.initializeBridge",
-                ["call": name]
-            )
+        // `usesCoreV2` is what makes the core a `CoreV2` (`makeCore`).
+        guard let instance = Self.onTheNewCore(instance, isTheSdks: isTheSdks, call: name),
+              let core = instance.core as? CoreV2 else {
             return .failure(.notInitialized)
         }
         let request: ApiRequest<Value>
@@ -63,6 +54,33 @@ struct NamespaceRequests {
         }
         let response = await core.response(to: coreRequest)
         return Self.value(of: response, for: request, call: name, logger: instance.logger)
+    }
+
+    /// `instance` when the method `name` may run on it: the SDK's own, on the new core. Otherwise `nil`
+    /// — the method ends as `notInitialized` — and the log says why: `not_implemented` for a conformer of
+    /// `owner` other than the SDK's own (`isTheSdks` `false`), `core_flag_mismatch` on the old core;
+    /// nothing for the SDK's instance that is gone.
+    static func onTheNewCore(
+        _ instance: SimplePersonalizationSDK?,
+        isTheSdks: Bool,
+        call name: String,
+        owner: String = "PersonalizationSDK"
+    ) -> SimplePersonalizationSDK? {
+        guard let instance = instance else {
+            if !isTheSdks {
+                SdkLogger.process.error(LogCode.notImplemented, "\(name) is not implemented by this \(owner)", ["call": name])
+            }
+            return nil
+        }
+        guard instance.usesCoreV2 else {
+            instance.logger.warning(
+                LogCode.coreFlagMismatch,
+                "\(name) runs on the new core only: start the shop with Rees46.initializeBridge",
+                ["call": name]
+            )
+            return nil
+        }
+        return instance
     }
 
     /// `result` for a method's `completion`: called exactly once, on the main thread.

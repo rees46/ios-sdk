@@ -83,10 +83,10 @@ struct NotificationsAPIImpl: NotificationsAPI {
 
     /// Why the event of `code` and `type` is not sent: either is blank (`sdk/contract/notifications.md`).
     static func refusal(code: String, type: String) -> Rees46.SdkError? {
-        if isBlank(code) {
+        if ApiArguments.isBlank(code) {
             return .invalidArgument("the code of the push must not be empty")
         }
-        if isBlank(type) {
+        if ApiArguments.isBlank(type) {
             return .invalidArgument("the type of the push must not be empty")
         }
         return nil
@@ -158,25 +158,7 @@ struct NotificationsAPIImpl: NotificationsAPI {
 
     /// The instance, when the method `name` may run on it: the SDK's own, on the new core.
     private func onTheNewCore(_ name: String) -> SimplePersonalizationSDK? {
-        guard let instance = instance else {
-            if !isTheSdks {
-                SdkLogger.process.error(LogCode.notImplemented, "\(name) is not implemented by this PersonalizationSDK", ["call": name])
-            }
-            return nil
-        }
-        guard instance.usesCoreV2 else {
-            instance.logger.warning(
-                LogCode.coreFlagMismatch,
-                "\(name) runs on the new core only: start the shop with Rees46.initializeBridge",
-                ["call": name]
-            )
-            return nil
-        }
-        return instance
-    }
-
-    private static func isBlank(_ value: String) -> Bool {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        NamespaceRequests.onTheNewCore(instance, isTheSdks: isTheSdks, call: name)
     }
 
     // MARK: - completion and async

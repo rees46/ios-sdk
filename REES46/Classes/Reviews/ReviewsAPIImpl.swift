@@ -158,7 +158,7 @@ extension ReviewsAPIImpl {
         try required(subject, poll.subject)
         var body: [String: Any] = ["rate": rate, "channel": channel, poll.subject: subject]
         for (key, value) in [("order_id", orderId), ("comment", comment), ("label", label)] {
-            if let value = given(value) {
+            if let value = ApiArguments.given(value) {
                 body[key] = value
             }
         }
@@ -217,14 +217,8 @@ extension ReviewsAPIImpl {
 
     /// Throws `invalidArgument` for an empty or blank `value` of the argument `name`.
     private static func required(_ value: String, _ name: String) throws {
-        if value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if ApiArguments.isBlank(value) {
             throw Rees46.SdkError.invalidArgument("\(name) must not be empty")
         }
-    }
-
-    /// An optional argument as it is sent: `nil`, empty and blank are not sent.
-    private static func given(_ value: String?) -> String? {
-        guard let value = value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-        return value
     }
 }

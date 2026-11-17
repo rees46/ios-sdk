@@ -20,7 +20,7 @@ struct StoriesAPIImpl: StoriesAPI {
     /// `GET stories/{code}`, the code made safe for one segment of the path; the core adds the shop,
     /// the device id and the rest of the common fields. An answer without a body is not a block.
     static func getRequest(code: String) throws -> ApiRequest<StoriesBlock> {
-        guard !code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !ApiArguments.isBlank(code) else {
             throw Rees46.SdkError.invalidArgument("the code of the stories block must not be empty")
         }
         guard let segment = code.addingPercentEncoding(withAllowedCharacters: pathSegment) else {

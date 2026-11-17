@@ -65,15 +65,15 @@ struct LoyaltyAPIImpl: LoyaltyAPI {
         gender: Gender?,
         birthday: String?
     ) throws -> ApiRequest<LoyaltyMember> {
-        guard !isBlank(phone) else {
+        guard !ApiArguments.isBlank(phone) else {
             throw Rees46.SdkError.invalidArgument("the phone must not be empty")
         }
         if let birthday = birthday, !isDate(birthday) {
             throw Rees46.SdkError.invalidArgument("the birthday must be a date as YYYY-MM-DD")
         }
         var body: [String: Any] = ["phone": phone]
-        body["first_name"] = given(firstName)
-        body["last_name"] = given(lastName)
+        body["first_name"] = ApiArguments.given(firstName)
+        body["last_name"] = ApiArguments.given(lastName)
         body["gender"] = gender.map { $0 == .male ? "m" : "f" }
         body["birthday"] = birthday
         return ApiRequest(method: .post, path: "loyalty/members/join", body: body) { data in
@@ -83,7 +83,7 @@ struct LoyaltyAPIImpl: LoyaltyAPI {
 
     /// `GET loyalty/members/status` for the member `phone`, sent as it is: the server keeps its digits.
     static func statusRequest(phone: String) throws -> ApiRequest<LoyaltyStatus> {
-        guard !isBlank(phone) else {
+        guard !ApiArguments.isBlank(phone) else {
             throw Rees46.SdkError.invalidArgument("the phone must not be empty")
         }
         return .get("loyalty/members/status", query: ["identifier": phone], answer: LoyaltyStatusAnswer.self) { $0.status }
@@ -101,11 +101,11 @@ struct LoyaltyAPIImpl: LoyaltyAPI {
         if let time = currentTime, !isTime(time) {
             throw Rees46.SdkError.invalidArgument("the current time must be HH:MM")
         }
-        if promoCodes?.contains(where: isBlank) == true {
+        if promoCodes?.contains(where: ApiArguments.isBlank) == true {
             throw Rees46.SdkError.invalidArgument("a promo code must not be empty")
         }
         var query: [String: String] = [:]
-        query["location_id"] = given(locationId)
+        query["location_id"] = ApiArguments.given(locationId)
         query["charge_bonuses"] = chargeBonuses.map { $0 ? "true" : "false" }
         query["current_time"] = currentTime
         var request = ApiRequest<[LoyaltyPromotion]>.get(
@@ -118,15 +118,6 @@ struct LoyaltyAPIImpl: LoyaltyAPI {
     }
 
     // MARK: - Arguments
-
-    private static func isBlank(_ text: String) -> Bool {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    /// An optional text to send: `nil` or blank is none.
-    private static func given(_ text: String?) -> String? {
-        text.flatMap { isBlank($0) ? nil : $0 }
-    }
 
     /// `YYYY-MM-DD`, and a day of the calendar.
     static func isDate(_ text: String) -> Bool {

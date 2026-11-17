@@ -20,24 +20,20 @@ struct SlidersAPIImpl: SlidersAPI {
     /// `GET slider` for the customer of the device id: the tags joined by commas, the location as
     /// `location`. No contacts: the device id is the customer, a contact goes to it through `profile`.
     static func getRequest(code: String, tags: [String]?, locationId: String?) throws -> ApiRequest<Slider> {
-        guard !isBlank(code) else {
+        guard !ApiArguments.isBlank(code) else {
             throw Rees46.SdkError.invalidArgument("the code of the slider must not be empty")
         }
-        if tags?.contains(where: { isBlank($0) || $0.contains(",") }) == true {
+        if tags?.contains(where: { ApiArguments.isBlank($0) || $0.contains(",") }) == true {
             throw Rees46.SdkError.invalidArgument("a tag must not be empty or have a comma")
         }
         var query = ["code": code]
         if let tags = tags, !tags.isEmpty {
             query["tags"] = tags.joined(separator: ",")
         }
-        if let location = locationId, !isBlank(location) {
+        if let location = locationId, !ApiArguments.isBlank(location) {
             query["location"] = location
         }
         return .get("slider", query: query, answer: SliderAnswer.self) { $0.slider }
-    }
-
-    private static func isBlank(_ text: String) -> Bool {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 

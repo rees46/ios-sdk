@@ -72,7 +72,7 @@ extension SimplePersonalizationSDK {
         let later: (Result<Void, SdkError>, Rees46.SdkError?) -> Void = { result, error in
             DispatchQueue.global(qos: .utility).async { CurrentError.with(error) { completion(result) } }
         }
-        guard !Self.isBlank(code), !Self.isBlank(type) else {
+        guard !ApiArguments.isBlank(code), !ApiArguments.isBlank(type) else {
             let what = "\(event.path): the code and the type of the push must not be empty"
             logger.warning(LogCode.invalidArgument, what, ["reason": "empty"])
             later(.failure(.legacy(.invalidArgument(what))), .invalidArgument(what))
@@ -133,10 +133,6 @@ extension SimplePersonalizationSDK {
         _ = enqueueEvent(path: event.path, body: ["code": code, "type": type], accepted: accepted) { result in
             completion?(result.map { _ in () })
         }
-    }
-
-    private static func isBlank(_ value: String) -> Bool {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Callbacks
