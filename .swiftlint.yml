@@ -18,6 +18,7 @@ included:
   - REES46/Classes/Recommendations
   - REES46/Classes/Profile
   - REES46/Classes/Subscription
+  - REES46/Classes/Segments
   - REES46/Classes/Infrastructure
   - REES46/Classes/Domain
   - REES46/Classes/Errors
