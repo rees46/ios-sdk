@@ -11,5 +11,7 @@ is removed.
 - `stories.json` — `stories.get` (`sdk/contract/stories.md`). In `expect.result` an element of a slide is an object with
   its `type` — `button`, `product`, `products`, `textBlock` — and its fields.
 - `predict.json` — `predict.getProbabilityToPurchase` (`sdk/contract/predict.md`).
+- `loyalty.json` — `loyalty.join`, `getStatus`, `getPromotions` (`sdk/contract/loyalty.md`). A query field whose value
+  is a list goes as a list of Rails: `promo_codes[]=A&promo_codes[]=B`.
 
 In `expect.result` an object lists the fields the case checks; `null` is a field without a value.

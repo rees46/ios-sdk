@@ -40,6 +40,9 @@ struct CoreRequest {
     /// event of a push carries none (`EventQueue.sessionlessPaths`): it renews no session and asks no
     /// `/init`, the one it is sent once as when the disk refused it included.
     var needsSession = true
+    /// Query fields that repeat, the way Rails reads a list: `promo_codes[]` with `A` and `B` goes as
+    /// `promo_codes[]=A&promo_codes[]=B`. Only the new core sends them: the namespaces' methods run on it.
+    var queryLists: [String: [String]] = [:]
 
     /// `/init`: its own timeout, and in `CoreV2` the only request that may wait for the network.
     var isInit: Bool { path == "init" }

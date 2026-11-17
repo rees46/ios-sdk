@@ -17,6 +17,8 @@ struct ApiRequest<Value> {
     var query: [String: String] = [:]
     /// The JSON body of a `POST`, without the common fields.
     var body: [String: Any] = [:]
+    /// Query fields that repeat, as Rails reads a list: `promo_codes[]=A&promo_codes[]=B`.
+    var queryLists: [String: [String]] = [:]
     /// The read timeout of this request alone; `nil` is the default one (`sdk/core/network.md`).
     var timeout: TimeInterval?
     /// The method's value of a `2xx` answer's body — empty when the answer had none; throws when the
@@ -25,7 +27,7 @@ struct ApiRequest<Value> {
 
     /// The request as the core sends it.
     var coreRequest: CoreRequest {
-        CoreRequest(method: method, path: path, query: query, body: body, timeout: timeout)
+        CoreRequest(method: method, path: path, query: query, body: body, timeout: timeout, queryLists: queryLists)
     }
 }
 

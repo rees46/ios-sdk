@@ -14,6 +14,7 @@ included:
   - REES46/Classes/Cart
   - REES46/Classes/Stories/API
   - REES46/Classes/Predict
+  - REES46/Classes/Loyalty
   - REES46/Classes/Search
   - REES46/Classes/Profile
   - REES46/Classes/Subscription

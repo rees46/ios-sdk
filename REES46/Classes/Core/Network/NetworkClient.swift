@@ -30,6 +30,8 @@ actor NetworkClient {
         /// it — an event of the queue — instead of the ones stored when the request is built: a
         /// `deleteUserCredentials()` in between does not move it to the next customer's did.
         var identity: CommonFields.Identity?
+        /// Query fields that repeat (`CoreRequest.queryLists`): after the others.
+        var queryLists: [String: [String]] = [:]
     }
 
     struct Response {
@@ -301,6 +303,9 @@ actor NetworkClient {
                 return .failure(.invalidArgument("the path \(request.path) is not a URL path"))
             }
             components.queryItems = query.keys.sorted().map { URLQueryItem(name: $0, value: query[$0]) }
+                + request.queryLists.keys.sorted().flatMap { name in
+                    (request.queryLists[name] ?? []).map { URLQueryItem(name: name, value: $0) }
+                }
             // URLComponents leaves "+" as it is, and the server reads it as a space: a phone number
             // "+7…" would lose its plus.
             components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
