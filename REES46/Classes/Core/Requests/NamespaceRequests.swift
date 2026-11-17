@@ -57,7 +57,11 @@ struct NamespaceRequests {
             instance.logger.warning(LogCode.invalidArgument, "\(name): \(refusal.message)", ["call": name])
             return .failure(refusal)
         }
-        let response = await core.response(to: request.coreRequest)
+        var coreRequest = request.coreRequest
+        if request.host == .app {
+            coreRequest.host = instance.config.appDomain
+        }
+        let response = await core.response(to: coreRequest)
         return Self.value(of: response, for: request, call: name, logger: instance.logger)
     }
 
