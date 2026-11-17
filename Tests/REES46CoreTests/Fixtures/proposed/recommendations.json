@@ -1,0 +1,112 @@
+{
+  "contract": "0",
+  "cases": [
+    {
+      "name": "get по умолчанию — extended, без resize_image",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "request": { "method": "GET", "path": "recommend/block-1",
+                   "query": { "extended": "true", "with_locations": null, "resize_image": null, "limit": null } }
+    },
+    {
+      "name": "get с контекстом: item_id и category, списки через запятую",
+      "call": { "namespace": "recommendations", "method": "get",
+                "args": { "code": "block-1",
+                          "request": { "itemId": "37", "categoryId": "15", "searchQuery": "phone", "excludedItemIds": [ "1", "2" ],
+                                       "brands": [ "Apple", "Samsung" ], "locations": [ "10" ], "limit": 8, "withLocations": true } } },
+      "request": { "method": "GET", "path": "recommend/block-1",
+                   "query": { "item_id": "37", "category": "15", "search_query": "phone", "exclude": "1,2",
+                              "brands": "Apple,Samsung", "locations": "10", "limit": "8", "extended": "true",
+                              "with_locations": "true", "item": null, "categories": null } }
+    },
+    {
+      "name": "get без extended — поле не уходит",
+      "call": { "namespace": "recommendations", "method": "get",
+                "args": { "code": "block-1", "request": { "extended": false } } },
+      "request": { "method": "GET", "path": "recommend/block-1", "query": { "extended": null, "with_locations": null } }
+    },
+    {
+      "name": "get: код блока кодируется в пути",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "a b/c" } },
+      "request": { "method": "GET", "path": "recommend/a%20b%2Fc", "query": { "extended": "true" } }
+    },
+    {
+      "name": "get с пустым кодом",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "" } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "get с limit 0",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1", "request": { "limit": 0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "get: withLocations без extended",
+      "call": { "namespace": "recommendations", "method": "get",
+                "args": { "code": "block-1", "request": { "extended": false, "withLocations": true } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "get: расширенный ответ — товары и их id",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "response": { "status": 200,
+                    "body": { "id": 12, "title": "Похожие товары", "link": "https://shop.example/similar",
+                              "recommends": [
+                                { "id": "1", "name": "Телефон", "url": "https://shop.example/1?recommended_by=dynamic", "price": 999,
+                                  "currency": "₽", "picture": "https://shop.example/1/180.jpg", "discount_percent": 10 },
+                                { "id": 2, "name": "Чехол", "url": "https://shop.example/2", "price": "150", "currency": "₽" },
+                                { "name": "без id" } ] } },
+      "expect": { "result": { "id": 12, "title": "Похожие товары", "link": "https://shop.example/similar",
+                              "products": [ { "id": "1", "name": "Телефон", "price": 999, "discountPercent": 10,
+                                              "picture": "https://shop.example/1/180.jpg" },
+                                            { "id": "2", "name": "Чехол", "price": 150 } ],
+                              "itemIds": [ "1", "2" ] } }
+    },
+    {
+      "name": "get: с withLocations у товаров есть locationIds",
+      "call": { "namespace": "recommendations", "method": "get",
+                "args": { "code": "block-1", "request": { "withLocations": true } } },
+      "response": { "status": 200,
+                    "body": { "id": 12, "title": "Похожие товары",
+                              "recommends": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999,
+                                                "currency": "₽", "location_ids": [ "10", "global" ] } ] } },
+      "expect": { "result": { "products": [ { "id": "1", "locationIds": [ "10", "global" ] } ], "itemIds": [ "1" ] } }
+    },
+    {
+      "name": "get: простой ответ без extended — только артикулы",
+      "call": { "namespace": "recommendations", "method": "get",
+                "args": { "code": "block-1", "request": { "extended": false } } },
+      "response": { "status": 200, "body": { "id": 12, "title": "Похожие товары", "recommends": [ "1", 2, "3" ] } },
+      "expect": { "result": { "id": 12, "title": "Похожие товары", "link": null, "products": [], "itemIds": [ "1", "2", "3" ] } }
+    },
+    {
+      "name": "get: блок на паузе — пустой список, а не decoding",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "response": { "status": 200, "body": { "state": "paused" } },
+      "expect": { "result": { "products": [], "itemIds": [] } }
+    },
+    {
+      "name": "get: recommends не список",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "response": { "status": 200, "body": { "id": 12, "recommends": "1,2" } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "get: неизвестный код блока — 404",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "unknown" } },
+      "response": { "status": 404, "body": { "status": "error", "message": "Recommender block not found" } },
+      "expect": { "error": { "type": "http", "code": 404 } }
+    },
+    {
+      "name": "get: услуга не оплачена — 402",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "response": { "status": 402, "body": null },
+      "expect": { "error": { "type": "http", "code": 402 } }
+    },
+    {
+      "name": "get: 2xx со status error",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "response": { "status": 200, "body": { "status": "error", "message": "Something went wrong" } },
+      "expect": { "error": { "type": "decoding" } }
+    }
+  ]
+}

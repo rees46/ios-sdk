@@ -1,0 +1,61 @@
+{
+  "contract": "0",
+  "cases": [
+    {
+      "name": "get — без контактов покупателя и location",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "12" } },
+      "request": { "method": "GET", "path": "collection/12",
+                   "query": { "email": null, "phone": null, "external_id": null, "loyalty_id": null, "telegram_id": null,
+                              "location": null } }
+    },
+    {
+      "name": "get: идентификатор кодируется в пути",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "a/b c" } },
+      "request": { "method": "GET", "path": "collection/a%2Fb%20c", "query": {} }
+    },
+    {
+      "name": "get с пустым collectionId",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "" } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "get: товары коллекции",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "12" } },
+      "response": { "status": 200,
+                    "body": { "products": [
+                      { "id": "1", "group_id": "_1_", "name": "Телефон", "url": "https://shop.example/1", "price": 999,
+                        "oldprice": 1200, "currency": "₽", "deeplink_ios": "app://p/1",
+                        "image_url_resized": { "180": "https://shop.example/1/180.jpg" },
+                        "categories": [ { "id": "15", "name": "Телефоны" } ] },
+                      { "id": "2", "name": "Чехол", "url": "https://shop.example/2", "price": 150, "oldprice": 0, "currency": "₽" } ] } },
+      "expect": { "result": { "products": [
+        { "id": "1", "groupId": "_1_", "name": "Телефон", "price": 999, "oldPrice": 1200, "deeplinkIos": "app://p/1",
+          "resizedImages": { "180": "https://shop.example/1/180.jpg" }, "categories": [ { "id": "15", "name": "Телефоны" } ] },
+        { "id": "2", "name": "Чехол", "price": 150, "oldPrice": null } ] } }
+    },
+    {
+      "name": "get: пустая коллекция",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "12" } },
+      "response": { "status": 200, "body": { "products": [] } },
+      "expect": { "result": { "products": [] } }
+    },
+    {
+      "name": "get: неизвестная или неактивная коллекция — 400",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "999" } },
+      "response": { "status": 400, "body": { "status": "error", "message": "Collection with id 999 was not found" } },
+      "expect": { "error": { "type": "http", "code": 400 } }
+    },
+    {
+      "name": "get: ответ без products",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "12" } },
+      "response": { "status": 200, "body": {} },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "get: 2xx со status error",
+      "call": { "namespace": "collections", "method": "get", "args": { "collectionId": "12" } },
+      "response": { "status": 200, "body": { "status": "error", "message": "Something went wrong" } },
+      "expect": { "error": { "type": "decoding" } }
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "contract": "0",
+  "cases": [
+    {
+      "name": "getInfo",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "37" } },
+      "request": { "method": "GET", "path": "products/get", "query": { "item_id": "37" } }
+    },
+    {
+      "name": "getInfo с пустым itemId",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "" } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getInfo с itemId из пробелов",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "  " } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getList без запроса — первая страница каталога, extended не уходит",
+      "call": { "namespace": "products", "method": "getList", "args": {} },
+      "request": { "method": "GET", "path": "products",
+                   "query": { "extended": null, "categories": null, "limit": null, "page": null } }
+    },
+    {
+      "name": "getList со всеми полями запроса",
+      "call": { "namespace": "products", "method": "getList",
+                "args": { "request": { "categoryIds": [ "1", "2" ], "brands": [ "Apple", "Samsung" ], "merchants": [ "m1" ],
+                                       "locations": [ "10", "11" ], "priceMin": 100.0, "priceMax": 999.5,
+                                       "filters": { "color": [ "red", "blue" ] },
+                                       "sortBy": "salesRate", "sortDir": "asc", "limit": 20, "page": 2 } } },
+      "request": { "method": "GET", "path": "products",
+                   "query": { "categories": "1,2", "brands": "Apple,Samsung", "merchants": "m1", "locations": "10,11",
+                              "price_min": "100", "price_max": "999.5", "filters": "{\"color\":[\"red\",\"blue\"]}",
+                              "sort_by": "sales_rate", "sort_dir": "asc", "limit": "20", "page": "2" } }
+    },
+    {
+      "name": "getList: пустые списки и пустые фильтры не уходят",
+      "call": { "namespace": "products", "method": "getList",
+                "args": { "request": { "categoryIds": [], "brands": [], "filters": {} } } },
+      "request": { "method": "GET", "path": "products", "query": { "categories": null, "brands": null, "filters": null } }
+    },
+    {
+      "name": "getList с limit 0",
+      "call": { "namespace": "products", "method": "getList", "args": { "request": { "limit": 0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getList с page 0",
+      "call": { "namespace": "products", "method": "getList", "args": { "request": { "page": 0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getList с отрицательной ценой",
+      "call": { "namespace": "products", "method": "getList", "args": { "request": { "priceMin": -1.0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getList: priceMin больше priceMax",
+      "call": { "namespace": "products", "method": "getList", "args": { "request": { "priceMin": 500.0, "priceMax": 100.0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getList: сортировка relevance только для поиска",
+      "call": { "namespace": "products", "method": "getList", "args": { "request": { "sortBy": "relevance" } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getCounters",
+      "call": { "namespace": "products", "method": "getCounters", "args": { "itemId": "37" } },
+      "request": { "method": "GET", "path": "products/counters", "query": { "item": "37", "item_id": null } }
+    },
+    {
+      "name": "getCounters с пустым itemId",
+      "call": { "namespace": "products", "method": "getCounters", "args": { "itemId": "" } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getCategory — делегат getList с одной категорией",
+      "call": { "namespace": "products", "method": "getCategory",
+                "args": { "categoryId": "15",
+                          "request": { "brands": [ "Apple" ], "priceMin": 10.0, "sortBy": "price", "sortDir": "desc", "limit": 30 } } },
+      "request": { "method": "GET", "path": "products",
+                   "query": { "categories": "15", "brands": "Apple", "price_min": "10", "sort_by": "price", "sort_dir": "desc",
+                              "limit": "30" } }
+    },
+    {
+      "name": "getCategory с пустым categoryId",
+      "call": { "namespace": "products", "method": "getCategory", "args": { "categoryId": "" } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getCategory: сортировка relevance только для поиска",
+      "call": { "namespace": "products", "method": "getCategory",
+                "args": { "categoryId": "15", "request": { "sortBy": "relevance" } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "getInfo: карточка — id из uniqid, цены строками, discount — флаг, пустое описание — null",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "SKU-9922" } },
+      "response": { "status": 200,
+                    "body": { "name": "Скамья Жасмин", "is_available": true, "description": "",
+                              "price": "10760.0", "price_full": 10760.5, "price_formatted": "10 760 ₽",
+                              "price_full_formatted": "10 760.50 ₽", "currency": "₽",
+                              "url": "https://shop.example/catalog/skamya/", "picture": "https://shop.example/p/180.webp",
+                              "image_url": "https://shop.example/p.webp", "image_url_resized": {},
+                              "category_ids": [], "brand": "БРВ Мебель", "sales_rate": null, "relative_sales_rate": null,
+                              "categories": [ { "id": "23", "name": "Прихожие", "url": "https://shop.example/catalog/23/", "level": 1 },
+                                              { "parent_id": "23", "id": "12023", "name": "Скамьи", "level": "2" } ],
+                              "params": [ { "key": "Цвет", "values": [ "графит" ] }, { "key": "Вес", "values": [ 12, 12.5 ] } ],
+                              "group_id": "9921", "id": "9922", "uniqid": "SKU-9922", "model": "LAK", "barcode": "УТ-70041501",
+                              "oldprice": "13450", "discount": true, "discount_percent": 20 } },
+      "expect": { "result": { "id": "SKU-9922", "groupId": "9921", "name": "Скамья Жасмин", "description": null,
+                              "brand": "БРВ Мебель", "model": "LAK", "barcode": "УТ-70041501",
+                              "url": "https://shop.example/catalog/skamya/", "picture": "https://shop.example/p/180.webp",
+                              "imageUrl": "https://shop.example/p.webp", "resizedImages": {},
+                              "price": 10760, "priceFull": 10760.5, "priceFormatted": "10 760 ₽", "priceFullFormatted": "10 760.50 ₽",
+                              "oldPrice": 13450, "oldPriceFull": null, "currency": "₽", "discountPercent": 20,
+                              "salesRate": null, "relativeSalesRate": null, "rating": null, "isNew": false,
+                              "deeplinkIos": null, "stockQuantity": null, "locationIds": null, "categoryIds": [],
+                              "categories": [ { "id": "23", "name": "Прихожие", "level": 1, "parentId": null },
+                                              { "id": "12023", "name": "Скамьи", "level": 2, "parentId": "23" } ],
+                              "params": [ { "key": "Цвет", "values": [ "графит" ] }, { "key": "Вес", "values": [ "12", "12.5" ] } ] } }
+    },
+    {
+      "name": "getInfo: без uniqid id берётся из id, старая цена 0 — null",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "37" } },
+      "response": { "status": 200,
+                    "body": { "id": "37", "name": "Товар", "url": "https://shop.example/37", "price": 100, "currency": "₽",
+                              "oldprice": 0, "oldprice_full": 0.0 } },
+      "expect": { "result": { "id": "37", "price": 100, "oldPrice": null, "oldPriceFull": null, "discountPercent": null } }
+    },
+    {
+      "name": "getInfo: неизвестный товар — 200 {}",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "unknown" } },
+      "response": { "status": 200, "body": {} },
+      "expect": { "result": null }
+    },
+    {
+      "name": "getInfo: непустой ответ без uniqid и id",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "37" } },
+      "response": { "status": 200, "body": { "name": "Товар", "price": 100 } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "getInfo: 2xx со status error",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "37" } },
+      "response": { "status": 200, "body": { "status": "error", "message": "Something went wrong" } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "getInfo: 500",
+      "call": { "namespace": "products", "method": "getInfo", "args": { "itemId": "37" } },
+      "response": { "status": 500, "body": null },
+      "expect": { "error": { "type": "http", "code": 500 } }
+    },
+    {
+      "name": "getList: листинг с фасетами; товар без id пропускается, числа строкой читаются как числа",
+      "call": { "namespace": "products", "method": "getList", "args": {} },
+      "response": { "status": 200,
+                    "body": { "products_total": "42",
+                              "products": [
+                                { "id": "1", "group_id": "_1_", "name": "Телефон", "url": "https://shop.example/1", "price": 999.9,
+                                  "currency": "₽", "oldprice": 1200, "discount": 17, "discount_formatted": "17%",
+                                  "rating": 4, "is_new": true, "stock_quantity": "5", "sales_rate": 80, "relative_sales_rate": 0.5,
+                                  "deeplink_android": "app://p/1", "deeplink_ios": "app://p/1",
+                                  "image_url_resized": { "120": "https://shop.example/1/120.jpg", "original": "https://shop.example/1.jpg" },
+                                  "category_ids": [ "15", 16 ], "unknown_field": { "x": 1 } },
+                                { "name": "Без id", "price": 1 },
+                                { "id": 2, "name": "Чехол", "url": "https://shop.example/2", "price": "150", "currency": "₽" } ],
+                              "categories": [ { "id": "15", "name": "Телефоны", "parent": "10", "alias": "phones", "count": 2, "url": "https://shop.example/c/15" } ],
+                              "brands": [ { "name": "Apple", "count": 1 }, { "count": 3 } ],
+                              "locations": [ { "id": "10", "name": "Москва", "type": "city" } ],
+                              "filters": { "Цвет": { "count": 2, "priority": 1, "values": { "red": 1, "blue": "1" } },
+                                           "Вес": { "count": 2, "ranges": { "min": 0.1, "max": "2.5" } } },
+                              "price_range": { "min": 150, "max": 999.9 },
+                              "price_ranges": [ { "to": 500, "count": 1 }, { "from": 500, "to": 1000, "count": 1 }, { "from": 1000, "count": 0 } ],
+                              "price_median": 575 } },
+      "expect": { "result": { "productsTotal": 42,
+                              "products": [
+                                { "id": "1", "groupId": "_1_", "name": "Телефон", "price": 999.9, "currency": "₽", "oldPrice": 1200,
+                                  "discountPercent": 17, "discountFormatted": "17%", "rating": 4, "isNew": true, "stockQuantity": 5,
+                                  "salesRate": 80, "relativeSalesRate": 0.5, "deeplinkAndroid": "app://p/1", "deeplinkIos": "app://p/1",
+                                  "resizedImages": { "120": "https://shop.example/1/120.jpg", "original": "https://shop.example/1.jpg" },
+                                  "categoryIds": [ "15", "16" ], "categories": null, "params": null },
+                                { "id": "2", "name": "Чехол", "price": 150, "oldPrice": null, "isNew": false, "rating": null } ],
+                              "categories": [ { "id": "15", "name": "Телефоны", "parentId": "10", "alias": "phones", "count": 2, "level": null } ],
+                              "brands": [ { "name": "Apple", "count": 1 } ],
+                              "locations": [ { "id": "10", "name": "Москва", "type": "city" } ],
+                              "filters": { "Цвет": { "count": 2, "priority": 1, "values": { "red": 1, "blue": 1 }, "min": null },
+                                           "Вес": { "count": 2, "min": 0.1, "max": 2.5, "values": null } },
+                              "industrialFilters": null,
+                              "priceRange": { "min": 150, "max": 999.9 },
+                              "priceRanges": [ { "from": null, "to": 500, "count": 1 }, { "from": 500, "to": 1000, "count": 1 },
+                                               { "from": 1000, "to": null, "count": 0 } ],
+                              "priceMedian": 575 } }
+    },
+    {
+      "name": "getList: пустой каталог",
+      "call": { "namespace": "products", "method": "getList", "args": {} },
+      "response": { "status": 200, "body": { "products_total": 0, "products": [] } },
+      "expect": { "result": { "productsTotal": 0, "products": [], "categories": null, "filters": null, "priceRange": null } }
+    },
+    {
+      "name": "getList: ответ без products",
+      "call": { "namespace": "products", "method": "getList", "args": {} },
+      "response": { "status": 200, "body": { "products_total": 0 } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "getList: нет ответа",
+      "call": { "namespace": "products", "method": "getList", "args": {} },
+      "response": { "status": null },
+      "expect": { "error": { "type": "network" } }
+    },
+    {
+      "name": "getCounters: счётчики, числа строкой",
+      "call": { "namespace": "products", "method": "getCounters", "args": { "itemId": "37" } },
+      "response": { "status": 200,
+                    "body": { "daily": { "view": 120, "cart": "8", "purchase": 2 }, "now": { "view": 3, "cart": 0, "purchase": 0 },
+                              "triggers": { "back_in_stock": 4, "price_drop": 11 } } },
+      "expect": { "result": { "daily": { "view": 120, "cart": 8, "purchase": 2 }, "now": { "view": 3, "cart": 0, "purchase": 0 },
+                              "triggers": { "backInStock": 4, "priceDrop": 11 } } }
+    },
+    {
+      "name": "getCounters: 404",
+      "call": { "namespace": "products", "method": "getCounters", "args": { "itemId": "37" } },
+      "response": { "status": 404, "body": { "status": "error", "message": "Item not found" } },
+      "expect": { "error": { "type": "http", "code": 404 } }
+    },
+    {
+      "name": "getCategory: ответ листинга без локаций и industrial_filters",
+      "call": { "namespace": "products", "method": "getCategory", "args": { "categoryId": "15" } },
+      "response": { "status": 200,
+                    "body": { "products_total": 1,
+                              "products": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999, "currency": "₽" } ],
+                              "brands": [ { "name": "Apple", "count": 1 } ],
+                              "filters": { "Цвет": { "count": 1, "values": { "red": 1 } } },
+                              "price_range": { "min": 999, "max": 999 }, "price_median": 999 } },
+      "expect": { "result": { "productsTotal": 1, "products": [ { "id": "1", "name": "Телефон", "price": 999 } ],
+                              "brands": [ { "name": "Apple", "count": 1 } ],
+                              "filters": { "Цвет": { "count": 1, "values": { "red": 1 } } },
+                              "priceRange": { "min": 999, "max": 999 }, "priceRanges": null, "priceMedian": 999 } }
+    },
+    {
+      "name": "getCategory: ответ без products",
+      "call": { "namespace": "products", "method": "getCategory", "args": { "categoryId": "15" } },
+      "response": { "status": 200, "body": { "status": "success" } },
+      "expect": { "error": { "type": "decoding" } }
+    }
+  ]
+}

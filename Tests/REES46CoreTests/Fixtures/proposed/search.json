@@ -1,0 +1,183 @@
+{
+  "contract": "0",
+  "cases": [
+    {
+      "name": "blank",
+      "call": { "namespace": "search", "method": "blank", "args": {} },
+      "request": { "method": "GET", "path": "search/blank", "query": {} }
+    },
+    {
+      "name": "instant",
+      "call": { "namespace": "search", "method": "instant", "args": { "query": "phone" } },
+      "request": { "method": "GET", "path": "search",
+                   "query": { "type": "instant_search", "search_query": "phone", "locations": null, "excluded_merchants": null,
+                              "excluded_brands": null, "extended": null } }
+    },
+    {
+      "name": "instant со списками — через запятую без пробелов",
+      "call": { "namespace": "search", "method": "instant",
+                "args": { "query": "phone", "locations": [ "10", "11" ], "excludedMerchants": [ "m1", "m2" ],
+                          "excludedBrands": [ "Noname", "Other" ] } },
+      "request": { "method": "GET", "path": "search",
+                   "query": { "type": "instant_search", "search_query": "phone", "locations": "10,11",
+                              "excluded_merchants": "m1,m2", "excluded_brands": "Noname,Other" } }
+    },
+    {
+      "name": "instant: excludedMerchants без locations не уходит",
+      "call": { "namespace": "search", "method": "instant", "args": { "query": "phone", "excludedMerchants": [ "m1" ] } },
+      "request": { "method": "GET", "path": "search",
+                   "query": { "type": "instant_search", "search_query": "phone", "excluded_merchants": null } }
+    },
+    {
+      "name": "instant с пустым запросом",
+      "call": { "namespace": "search", "method": "instant", "args": { "query": "" } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "full без запроса — имена документации",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone" } },
+      "request": { "method": "GET", "path": "search",
+                   "query": { "type": "full_search", "search_query": "phone", "extended": null, "sort_dir": null,
+                              "offset": null, "exclude_brands": null, "no_clarification": null, "email": null } }
+    },
+    {
+      "name": "full со всеми полями запроса",
+      "call": { "namespace": "search", "method": "full",
+                "args": { "query": "phone",
+                          "request": { "categoryIds": [ "1", "a-2" ], "brands": [ "Apple" ], "excludedBrands": [ "Noname" ],
+                                       "merchants": [ "m1" ], "excludedMerchants": [ "m2" ], "locations": [ "10" ],
+                                       "priceMin": 100.0, "priceMax": 2000.5, "colors": [ "red", "black" ],
+                                       "fashionSizes": [ "M", "L" ], "excludedItemIds": [ "5", "6" ],
+                                       "filters": { "memory": [ "128" ] }, "sortBy": "relevance", "sortDir": "desc",
+                                       "disableClarification": true, "categoryLimit": 5, "brandLimit": 50,
+                                       "limit": 24, "page": 3 } } },
+      "request": { "method": "GET", "path": "search",
+                   "query": { "type": "full_search", "search_query": "phone", "categories": "1,a-2", "brands": "Apple",
+                              "excluded_brands": "Noname", "merchants": "m1", "excluded_merchants": "m2", "locations": "10",
+                              "price_min": "100", "price_max": "2000.5", "colors": "red,black", "fashion_sizes": "M,L",
+                              "exclude": "5,6", "filters": "{\"memory\":[\"128\"]}", "sort_by": "relevance", "order": "desc",
+                              "no_clarification": "true", "category_limit": "5", "brand_limit": "50", "limit": "24",
+                              "page": "3", "sort_dir": null, "offset": null } }
+    },
+    {
+      "name": "full: excludedMerchants без locations не уходит",
+      "call": { "namespace": "search", "method": "full",
+                "args": { "query": "phone", "request": { "excludedMerchants": [ "m2" ] } } },
+      "request": { "method": "GET", "path": "search", "query": { "excluded_merchants": null } }
+    },
+    {
+      "name": "full с пустым запросом",
+      "call": { "namespace": "search", "method": "full", "args": { "query": " " } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "full с limit 0",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone", "request": { "limit": 0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "full с brandLimit 0",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone", "request": { "brandLimit": 0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "full: priceMin больше priceMax",
+      "call": { "namespace": "search", "method": "full",
+                "args": { "query": "phone", "request": { "priceMin": 500.0, "priceMax": 100.0 } } },
+      "error": { "type": "invalidArgument" }
+    },
+    {
+      "name": "blank: недавние запросы, просмотренные товары, популярное",
+      "call": { "namespace": "search", "method": "blank", "args": {} },
+      "response": { "status": 200,
+                    "body": { "last_queries": [ { "name": "телефон", "url": "https://shop.example/search?q=телефон" } ],
+                              "suggests": [ { "name": "чехол", "url": "https://shop.example/search?q=чехол" }, { "url": "без имени" } ],
+                              "last_products": true,
+                              "products": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999, "currency": "₽" } ],
+                              "popular_categories": [ { "name": "Телефоны", "url": "https://shop.example/c/15" } ],
+                              "popular_brands": [ { "name": "Apple", "url": "https://shop.example/b/apple" } ],
+                              "popular_links": [ { "name": "Акции", "url": "https://shop.example/sale" } ] } },
+      "expect": { "result": { "lastProducts": true, "products": [ { "id": "1", "name": "Телефон" } ],
+                              "lastQueries": [ { "name": "телефон", "url": "https://shop.example/search?q=телефон", "score": null } ],
+                              "suggests": [ { "name": "чехол" } ],
+                              "popularCategories": [ { "name": "Телефоны", "url": "https://shop.example/c/15" } ],
+                              "popularBrands": [ { "name": "Apple" } ], "popularLinks": [ { "name": "Акции" } ] } }
+    },
+    {
+      "name": "blank: нет last_products — false, нет раздела — null",
+      "call": { "namespace": "search", "method": "blank", "args": {} },
+      "response": { "status": 200,
+                    "body": { "products": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999, "currency": "₽" } ] } },
+      "expect": { "result": { "lastProducts": false, "products": [ { "id": "1" } ], "lastQueries": null, "suggests": null,
+                              "popularCategories": null } }
+    },
+    {
+      "name": "instant: товары, подсказки, исправленный запрос и редирект",
+      "call": { "namespace": "search", "method": "instant", "args": { "query": "ntktajy" } },
+      "response": { "status": 200,
+                    "body": { "search_query": "телефон", "search_query_original": "ntktajy", "clarification": false,
+                              "products_total": 2,
+                              "products": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999, "currency": "₽",
+                                              "discount_percent": 5 } ],
+                              "categories": [ { "id": "15", "name": "Телефоны", "url": "https://shop.example/c/15" } ],
+                              "queries": [ { "name": "телефон apple", "url": "https://shop.example/search?q=телефон+apple", "score": 0.9 } ],
+                              "locations": [ { "id": "10", "name": "Москва" } ],
+                              "search_query_redirects": { "query": "доставка", "redirect_link": "https://shop.example/delivery",
+                                                          "deep_link": null } } },
+      "expect": { "result": { "searchQuery": "телефон", "searchQueryOriginal": "ntktajy", "clarification": false,
+                              "productsTotal": 2, "products": [ { "id": "1", "discountPercent": 5 } ],
+                              "categories": [ { "id": "15", "name": "Телефоны" } ],
+                              "queries": [ { "name": "телефон apple", "score": 0.9 } ],
+                              "locations": [ { "id": "10", "name": "Москва", "type": null } ],
+                              "redirect": { "query": "доставка", "url": "https://shop.example/delivery", "deeplink": null } } }
+    },
+    {
+      "name": "instant: ответ без products",
+      "call": { "namespace": "search", "method": "instant", "args": { "query": "phone" } },
+      "response": { "status": 200, "body": { "queries": [] } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "full: результаты с фасетами",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone" } },
+      "response": { "status": 200,
+                    "body": { "search_query": "phone", "clarification": true, "products_total": 1,
+                              "products": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999, "currency": "₽" } ],
+                              "categories": [ { "id": "15", "name": "Телефоны", "parent": "10", "count": 1 } ],
+                              "brands": [ { "name": "Apple", "count": 1 } ],
+                              "filters": { "Память": { "count": 1, "priority": 2, "values": { "128": 1 } } },
+                              "industrial_filters": { "colors": [ { "color": "black", "count": 1 } ],
+                                                      "fashion_sizes": [ { "size": "M", "count": 1 } ] },
+                              "price_range": { "min": 999, "max": 999 },
+                              "price_ranges": [ { "from": 0, "to": 1000, "count": 1 } ],
+                              "price_median": 999 } },
+      "expect": { "result": { "searchQuery": "phone", "searchQueryOriginal": null, "clarification": true, "productsTotal": 1,
+                              "products": [ { "id": "1", "name": "Телефон", "price": 999 } ],
+                              "categories": [ { "id": "15", "parentId": "10", "count": 1 } ],
+                              "brands": [ { "name": "Apple", "count": 1 } ],
+                              "filters": { "Память": { "count": 1, "priority": 2, "values": { "128": 1 } } },
+                              "industrialFilters": { "colors": [ { "color": "black", "count": 1 } ],
+                                                     "fashionSizes": [ { "size": "M", "count": 1 } ] },
+                              "priceRange": { "min": 999, "max": 999 },
+                              "priceRanges": [ { "from": 0, "to": 1000, "count": 1 } ], "priceMedian": 999 } }
+    },
+    {
+      "name": "full: ответ без products",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone" } },
+      "response": { "status": 200, "body": { "products_total": 0 } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "full: 2xx со status error",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone" } },
+      "response": { "status": 200, "body": { "status": "error", "message": "Something went wrong" } },
+      "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "full: 500",
+      "call": { "namespace": "search", "method": "full", "args": { "query": "phone" } },
+      "response": { "status": 500, "body": null },
+      "expect": { "error": { "type": "http", "code": 500 } }
+    }
+  ]
+}
