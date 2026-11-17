@@ -1,0 +1,334 @@
+//
+//  ProductAnswers.swift
+//  REES46
+//
+//  How the catalog's answers become its models, by the rules of `LenientDecoding`: a model reads itself
+//  from the answer's object (`AnswerReadable`) and stays out of `Decodable`, which would hand its
+//  decoding to the app as API.
+//
+
+import Foundation
+
+/// A model the namespaces read from an object of an answer. It throws when the object is not one of
+/// it — a product without an id —: an element of a list is then left out, a whole answer is `decoding`.
+protocol AnswerReadable {
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws
+}
+
+/// `Value` read from an answer, as a `Decodable`.
+struct Readable<Value: AnswerReadable>: Decodable {
+    let value: Value
+
+    init(from decoder: Decoder) throws {
+        value = try Value(answer: decoder.container(keyedBy: AnswerKey.self))
+    }
+
+    /// The method's value of a whole answer: `body` is an object of `Value`, or `decoding`.
+    static func read(_ body: Data) throws -> Value {
+        try JSONDecoder().decode(Readable.self, from: body).value
+    }
+
+    /// The method's value of an answer that is a list of `Value` at its top, without the elements that
+    /// are not one; an answer that is not a list is `decoding`.
+    static func readList(_ body: Data) throws -> [Value] {
+        try JSONDecoder().decode([Element].self, from: body).compactMap(\.value)
+    }
+
+    /// An element of a list at the top of an answer: `nil` when it is not a `Value`.
+    private struct Element: Decodable {
+        let value: Value?
+
+        init(from decoder: Decoder) throws {
+            value = try? Value(answer: decoder.container(keyedBy: AnswerKey.self))
+        }
+    }
+}
+
+/// One element of a list of strings: a string, or a number as its digits. Anything else, and an empty
+/// or blank string, is left out.
+private struct AnswerString: Decodable {
+    let value: String
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let text = try? container.decode(String.self) {
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "an empty string")
+            }
+            value = text
+        } else if let number = try? container.decode(Int.self) {
+            value = String(number)
+        } else if let number = try? container.decode(Double.self), number.isFinite {
+            value = CatalogQuery.number(number)
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "not a string")
+        }
+    }
+}
+
+extension KeyedDecodingContainer {
+
+    /// The string at `key`, or the error that makes the object not a model.
+    func requiredString(_ key: Key) throws -> String {
+        guard let value = lenientString(key) else {
+            throw DecodingError.keyNotFound(key, DecodingError.Context(codingPath: codingPath, debugDescription: "no \(key.stringValue)"))
+        }
+        return value
+    }
+
+    /// The model at `key`; `nil` when it is missing or not one.
+    func model<Value: AnswerReadable>(_ type: Value.Type, _ key: Key) -> Value? {
+        lenient(Readable<Value>.self, key)?.value
+    }
+
+    /// The models of the list at `key`, without the elements that are not one; `nil` when it is missing
+    /// or not a list.
+    func models<Value: AnswerReadable>(_ type: Value.Type, _ key: Key) -> [Value]? {
+        lenientList(Readable<Value>.self, key)?.map(\.value)
+    }
+
+    /// The models of the list at `key`, or the error that makes the answer not one of the method: the
+    /// main list of an answer.
+    func requiredModels<Value: AnswerReadable>(_ type: Value.Type, _ key: Key) throws -> [Value] {
+        guard let list = models(type, key) else {
+            throw DecodingError.keyNotFound(key, DecodingError.Context(codingPath: codingPath, debugDescription: "no list \(key.stringValue)"))
+        }
+        return list
+    }
+
+    /// The strings of the list at `key`, numbers as their digits; `nil` when it is missing or not a list.
+    func lenientStrings(_ key: Key) -> [String]? {
+        lenientList(AnswerString.self, key)?.map(\.value)
+    }
+
+    /// The object at `key` as a map of names to strings, numbers as their digits; `nil` when it is
+    /// missing or not an object.
+    func lenientStringMap(_ key: Key) -> [String: String]? {
+        lenientMap(key) { $0.lenientString($1) }
+    }
+
+    /// The object at `key` as a map of names to integers; `nil` when it is missing or not an object.
+    func lenientIntMap(_ key: Key) -> [String: Int]? {
+        lenientMap(key) { $0.lenientInt($1) }
+    }
+
+    /// The object at `key` as a map of names to models; `nil` when it is missing or not an object.
+    func modelMap<Value: AnswerReadable>(_ type: Value.Type, _ key: Key) -> [String: Value]? {
+        lenientMap(key) { $0.model(type, $1) }
+    }
+
+    /// The object at `key`, each of its values read by `value`; a value it cannot read is left out.
+    private func lenientMap<Value>(
+        _ key: Key,
+        _ value: (KeyedDecodingContainer<AnswerKey>, AnswerKey) -> Value?
+    ) -> [String: Value]? {
+        guard let object = try? nestedContainer(keyedBy: AnswerKey.self, forKey: key) else { return nil }
+        var map: [String: Value] = [:]
+        for name in object.allKeys {
+            map[name.stringValue] = value(object, name)
+        }
+        return map
+    }
+}
+
+// MARK: - Products
+
+extension Rees46.Product: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        try self.init(answer: answer, preferringUniqid: false)
+    }
+
+    /// `preferringUniqid`: the card's answer (`products/get`), where `uniqid` is the shop's id.
+    init(answer: KeyedDecodingContainer<AnswerKey>, preferringUniqid: Bool) throws {
+        id = try (preferringUniqid ? answer.lenientString("uniqid") : nil) ?? answer.requiredString("id")
+        groupId = answer.lenientString("group_id")
+        name = answer.lenientString("name") ?? ""
+        brand = answer.lenientString("brand")
+        model = answer.lenientString("model")
+        description = answer.lenientString("description")
+        barcode = answer.lenientString("barcode")
+        url = answer.lenientString("url") ?? ""
+        deeplinkAndroid = answer.lenientString("deeplink_android")
+        deeplinkIos = answer.lenientString("deeplink_ios")
+        imageUrl = answer.lenientString("image_url")
+        picture = answer.lenientString("picture")
+        resizedImages = answer.lenientStringMap("image_url_resized")
+        price = answer.lenientDouble("price") ?? 0
+        priceFormatted = answer.lenientString("price_formatted")
+        priceFull = answer.lenientDouble("price_full")
+        priceFullFormatted = answer.lenientString("price_full_formatted")
+        // No old price is 0 in the answer.
+        oldPrice = answer.lenientDouble("oldprice").flatMap { $0 > 0 ? $0 : nil }
+        oldPriceFormatted = answer.lenientString("oldprice_formatted")
+        oldPriceFull = answer.lenientDouble("oldprice_full").flatMap { $0 > 0 ? $0 : nil }
+        oldPriceFullFormatted = answer.lenientString("oldprice_full_formatted")
+        currency = answer.lenientString("currency") ?? ""
+        // `discount` is a flag in the card, a number elsewhere: a flag reads as no integer.
+        discountPercent = answer.lenientInt("discount_percent") ?? answer.lenientInt("discount")
+        discountFormatted = answer.lenientString("discount_formatted")
+        salesRate = answer.lenientInt("sales_rate")
+        relativeSalesRate = answer.lenientDouble("relative_sales_rate")
+        rating = answer.lenientInt("rating")
+        isNew = answer.lenientBool("is_new") ?? false
+        stockQuantity = answer.lenientInt("stock_quantity")
+        categoryIds = answer.lenientStrings("category_ids")
+        categories = answer.models(Rees46.ProductCategory.self, "categories")
+        params = answer.models(Rees46.ProductParam.self, "params")
+        locationIds = answer.lenientStrings("location_ids")
+    }
+}
+
+extension Rees46.ProductCategory: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        id = try answer.requiredString("id")
+        name = answer.lenientString("name")
+        url = answer.lenientString("url")
+        parentId = answer.lenientString("parent_id") ?? answer.lenientString("parent")
+        level = answer.lenientInt("level")
+        count = answer.lenientInt("count")
+        alias = answer.lenientString("alias")
+    }
+}
+
+extension Rees46.ProductParam: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        key = try answer.requiredString("key")
+        values = answer.lenientStrings("values") ?? []
+    }
+}
+
+extension Rees46.Location: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        id = try answer.requiredString("id")
+        name = answer.lenientString("name")
+        type = answer.lenientString("type")
+    }
+}
+
+extension Rees46.Brand: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        name = try answer.requiredString("name")
+        count = answer.lenientInt("count")
+    }
+}
+
+extension Rees46.SearchFilter: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        count = answer.lenientInt("count")
+        priority = answer.lenientInt("priority")
+        values = answer.lenientIntMap("values")
+        let ranges = try? answer.nestedContainer(keyedBy: AnswerKey.self, forKey: "ranges")
+        min = ranges?.lenientDouble("min")
+        max = ranges?.lenientDouble("max")
+    }
+}
+
+extension Rees46.IndustrialFilters: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        colors = answer.models(Rees46.ColorFilter.self, "colors")
+        fashionSizes = answer.models(Rees46.SizeFilter.self, "fashion_sizes")
+    }
+}
+
+extension Rees46.ColorFilter: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        color = try answer.requiredString("color")
+        count = answer.lenientInt("count")
+    }
+}
+
+extension Rees46.SizeFilter: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        size = try answer.requiredString("size")
+        count = answer.lenientInt("count")
+    }
+}
+
+extension Rees46.PriceRange: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        guard let min = answer.lenientDouble("min"), let max = answer.lenientDouble("max") else {
+            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: answer.codingPath, debugDescription: "no min or max"))
+        }
+        self.min = min
+        self.max = max
+    }
+}
+
+extension Rees46.PriceInterval: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        from = answer.lenientDouble("from")
+        to = answer.lenientDouble("to")
+        count = answer.lenientInt("count")
+    }
+}
+
+extension Rees46.ProductsListResponse: AnswerReadable {
+
+    /// Without a list of products it is not a listing (`decoding`).
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        products = try answer.requiredModels(Rees46.Product.self, "products")
+        productsTotal = answer.lenientInt("products_total")
+        categories = answer.models(Rees46.ProductCategory.self, "categories")
+        brands = answer.models(Rees46.Brand.self, "brands")
+        locations = answer.models(Rees46.Location.self, "locations")
+        filters = answer.modelMap(Rees46.SearchFilter.self, "filters")
+        industrialFilters = answer.model(Rees46.IndustrialFilters.self, "industrial_filters")
+        priceRange = answer.model(Rees46.PriceRange.self, "price_range")
+        priceRanges = answer.models(Rees46.PriceInterval.self, "price_ranges")
+        priceMedian = answer.lenientDouble("price_median")
+    }
+}
+
+extension Rees46.CategoryResponse {
+
+    /// The listing of the category: the same answer without what a category has not.
+    init(_ list: Rees46.ProductsListResponse) {
+        productsTotal = list.productsTotal
+        products = list.products
+        categories = list.categories
+        brands = list.brands
+        filters = list.filters
+        priceRange = list.priceRange
+        priceRanges = list.priceRanges
+        priceMedian = list.priceMedian
+    }
+}
+
+extension ProductCountersResponse: AnswerReadable {
+
+    /// The released model, read leniently: a counter the answer does not have is 0, as the old
+    /// `getProductCounters` reads it.
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        daily = answer.model(ProductCounter.self, "daily")
+        now = answer.model(ProductCounter.self, "now")
+        triggers = answer.model(ProductCounterTriggers.self, "triggers")
+    }
+}
+
+extension ProductCounter: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        view = answer.lenientInt("view") ?? 0
+        cart = answer.lenientInt("cart") ?? 0
+        purchase = answer.lenientInt("purchase") ?? 0
+    }
+}
+
+extension ProductCounterTriggers: AnswerReadable {
+
+    init(answer: KeyedDecodingContainer<AnswerKey>) throws {
+        backInStock = answer.lenientInt("back_in_stock") ?? 0
+        priceDrop = answer.lenientInt("price_drop") ?? 0
+    }
+}
