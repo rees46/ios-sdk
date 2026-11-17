@@ -28,7 +28,7 @@ extension Rees46 {
         public let message: AgentMessage
     }
 
-    /// A session of the dialog.
+    /// A session of the dialog; `id` is 64-bit, as the server's ids of sessions.
     public struct AgentSession: Equatable {
         public let id: Int
         /// The start of the customer's first message.
@@ -40,7 +40,7 @@ extension Rees46 {
         public let messages: [AgentMessage]
     }
 
-    /// A message of the dialog.
+    /// A message of the dialog; `id` is 64-bit, as the server's ids of messages.
     public struct AgentMessage: Equatable {
         public let id: Int?
         public let role: AgentMessageRole?

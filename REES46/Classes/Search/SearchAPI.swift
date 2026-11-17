@@ -71,10 +71,12 @@ public protocol SearchAPI {
     /// The customer's dialog with the agent (`GET api/v3/storefront/search/agent` on `appDomain`): their
     /// sessions and the messages of `sessionId`, or of the latest session. Call it when the agent's
     /// window opens. `locations` — the customer's, else the profile's — go as one value joined by `,`.
+    /// `sessionId` is 64-bit, as the server's ids of sessions: Swift's `Int` on every supported device.
     ///
     /// The server's refusals are `http(code:serverCode:)`: `400` without a device id yet, `402` for
-    /// search not paid, `404` for a session of another customer, `429` over its limit, `503` for an agent
-    /// that is not available — show the empty search (`blank`) then.
+    /// search not paid, `403` for an inactive shop, `404` for a session of another customer, `429` over
+    /// its limit, `503` for an agent that is not available or a customer in the control group of search
+    /// — show the empty search (`blank`) then.
     func agentDialog(
         sessionId: Int?,
         locations: [String]?,
