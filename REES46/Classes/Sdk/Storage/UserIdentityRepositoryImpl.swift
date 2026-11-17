@@ -90,14 +90,15 @@ final class UserIdentityRepositoryImpl: UserIdentityRepository {
 
     /// The shop's group. A shop that has one keeps it — `LegacyCore` reads exactly what it read before
     /// — and gives it to the device when the device has none: the first shop's group is the device's
-    /// (decision 4). A shop without one takes the device's, or a new one the device keeps.
-    func resolveAbSegment() -> String {
-        guard let device = device else { return resolveOwnAbSegment() }
+    /// (decision 4). A shop without one takes the device's; with none there either, `candidate` — the
+    /// group a bridge kept from before — or a new one, which the device keeps.
+    func resolveAbSegment(candidate: String?) -> String {
+        guard let device = device else { return resolveOwnAbSegment(candidate: candidate) }
         if let own = abSegment, DeviceStore.abGroups.contains(own) {
             _ = device.resolveAbGroup(candidate: own)
             return own
         }
-        let group = device.resolveAbGroup(candidate: nil)
+        let group = device.resolveAbGroup(candidate: candidate)
         abSegment = group
         return group
     }

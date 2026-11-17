@@ -8,7 +8,7 @@
 //
 
 import XCTest
-@testable import REES46
+@_spi(Bridge) @testable import REES46
 
 final class CoreNetworkTests: XCTestCase {
 
@@ -451,7 +451,7 @@ final class CoreNetworkTests: XCTestCase {
         let legacy = createPersonalizationSDK(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false)
         XCTAssertEqual(CoreFlag.current, false)
 
-        let later = Rees46.initialize(Rees46Config(shopId: "\(shop)-2", apiDomain: "stub.test", autoSendPushToken: false, coreV2: true))
+        let later = Rees46.initializeBridge(Rees46Config(shopId: "\(shop)-2", apiDomain: "stub.test", autoSendPushToken: false))
         XCTAssertEqual((later as? SimplePersonalizationSDK)?.usesCoreV2, false, "the process keeps the old core")
         withExtendedLifetime([legacy, later] as [AnyObject]) {}
         StubSDK.removeSavedInit(shopId: shop)
@@ -460,7 +460,7 @@ final class CoreNetworkTests: XCTestCase {
 
     func test_the_old_core_is_the_default() {
         XCTAssertFalse(Rees46Config(shopId: "a").coreV2)
-        XCTAssertTrue(Rees46Config(shopId: "a", coreV2: true).coreV2)
+        XCTAssertTrue(Rees46Config(shopId: "a").onNewCore().coreV2, "the bridges' configuration")
         let ready = expectation(description: "init")
         let sdk = StubSDK.make(shopId: shopId) { _ in ready.fulfill() }
         wait(for: [ready], timeout: 5)

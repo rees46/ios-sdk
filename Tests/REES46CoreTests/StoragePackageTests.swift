@@ -203,6 +203,65 @@ final class StoragePackageTests: XCTestCase {
         XCTAssertTrue(DeviceStore.abGroups.contains(fresh.resolveAbGroup(candidate: "C")), "an unknown group is replaced")
     }
 
+    /// The reasons of `invalid_config` the log handler heard for `shop`.
+    private func configReasons(_ shop: String) -> [String] {
+        SdkLogger.awaitDelivery()
+        logLock.lock(); defer { logLock.unlock() }
+        return logged.filter { $0.code == "invalid_config" && $0.shopId == shop }.compactMap { $0.context["reason"] }
+    }
+
+    func test_the_group_a_bridge_brought_is_the_devices_only_while_the_device_has_none() {
+        let device = DeviceStore(defaults: suite(), pushTokenDefaults: suite())
+        let shop = "shop-\(UUID().uuidString)"
+        let logger = SdkLogger(shopId: shop, level: .warning)
+        func shopWith(_ own: String?) -> (UserDefaults, UserIdentityRepositoryImpl) {
+            let partition = suite()
+            partition.set(own, forKey: StoragePartition.abSegmentKey)
+            return (partition, UserIdentityRepositoryImpl(store: partition, device: device))
+        }
+
+        let (first, firstRepo) = shopWith(nil)
+        XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: firstRepo, brought: "B", logger: logger), "B", "the device had none")
+        XCTAssertEqual(device.abGroup, "B")
+        XCTAssertEqual(first.string(forKey: StoragePartition.abSegmentKey), "B", "and the shop keeps it, for the old core")
+        XCTAssertEqual(configReasons(shop), [])
+
+        XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: shopWith(nil).1, brought: "A", logger: logger), "B", "the device keeps its own")
+        XCTAssertEqual(configReasons(shop), ["segment_kept"])
+        XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: shopWith(nil).1, brought: "B", logger: logger), "B")
+        XCTAssertEqual(configReasons(shop), ["segment_kept"], "the same group is no news")
+
+        // A shop that has a group of its own from an older SDK keeps it, and gives it to a device without one.
+        let fresh = DeviceStore(defaults: suite(), pushTokenDefaults: suite())
+        let own = suite()
+        own.set("A", forKey: StoragePartition.abSegmentKey)
+        XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: UserIdentityRepositoryImpl(store: own, device: fresh), brought: "B", logger: logger), "A")
+        XCTAssertEqual(fresh.abGroup, "A")
+        XCTAssertEqual(configReasons(shop), ["segment_kept", "segment_kept"])
+
+        // Without the device's store the shop's own segment takes it the same way.
+        XCTAssertEqual(SimplePersonalizationSDK.abSegment(of: UserIdentityRepositoryImpl(store: suite()), brought: "A", logger: logger), "A")
+    }
+
+    func test_a_group_the_sdk_does_not_make_is_refused_and_the_device_gets_its_own() {
+        let shop = "shop-\(UUID().uuidString)"
+        let logger = SdkLogger(shopId: shop, level: .warning)
+        let refused = ["a", "b", "C", " A", "B ", "AB", "0", "segment"]
+        for brought in refused {
+            let device = DeviceStore(defaults: suite(), pushTokenDefaults: suite())
+            let group = SimplePersonalizationSDK.abSegment(of: UserIdentityRepositoryImpl(store: suite(), device: device), brought: brought, logger: logger)
+            XCTAssertTrue(DeviceStore.abGroups.contains(group), brought)
+            XCTAssertEqual(device.abGroup, group, brought)
+        }
+        XCTAssertEqual(configReasons(shop), Array(repeating: "segment_invalid", count: refused.count))
+
+        for none in [nil, ""] as [String?] {
+            let group = SimplePersonalizationSDK.abSegment(of: UserIdentityRepositoryImpl(store: suite(), device: DeviceStore(defaults: suite(), pushTokenDefaults: suite())), brought: none, logger: logger)
+            XCTAssertTrue(DeviceStore.abGroups.contains(group))
+        }
+        XCTAssertEqual(configReasons(shop).count, refused.count, "none is not refused")
+    }
+
     func test_shops_made_at_once_get_one_group() {
         let device = DeviceStore(defaults: suite(), pushTokenDefaults: suite())
         let lock = NSLock()

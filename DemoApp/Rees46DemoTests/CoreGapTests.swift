@@ -761,11 +761,14 @@ final class CoreGapTests: CoreScenarioTestCase {
             let heard = Locked<[Rees46.SdkError?]>([])
             let done = expectation(description: "init")
             done.expectedFulfillmentCount = 2
-            let config = Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false, coreV2: coreV2)
-            let sdk = Rees46.initialize(config, completion: Rees46.BridgeErrors.completion { error in heard.mutate { $0.append(error) }; done.fulfill() })
+            let config = Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false)
+            let start: (@escaping (LegacySdkError?) -> Void) -> PersonalizationSDK = { completion in
+                coreV2 ? Rees46.initializeBridge(config, completion: completion) : Rees46.initialize(config, completion: completion)
+            }
+            let sdk = start(Rees46.BridgeErrors.completion { error in heard.mutate { $0.append(error) }; done.fulfill() })
             if coreV2 {
                 // The same shop again: its outcome, once more.
-                _ = Rees46.initialize(config, completion: Rees46.BridgeErrors.completion { error in heard.mutate { $0.append(error) }; done.fulfill() })
+                _ = start(Rees46.BridgeErrors.completion { error in heard.mutate { $0.append(error) }; done.fulfill() })
             } else {
                 (sdk as? SimplePersonalizationSDK)?.whenInitializedForTests { error in heard.mutate { $0.append(error) }; done.fulfill() }
             }
@@ -773,6 +776,69 @@ final class CoreGapTests: CoreScenarioTestCase {
             XCTAssertEqual(heard.current, [expected, expected], "coreV2 = \(coreV2), \(String(describing: reply?.status))")
             sdk.release()
         }
+    }
+
+    // MARK: - The bridges' way in: the new core and the A/B group they kept
+
+    private func bridgeConfig(_ shop: String) -> Rees46Config {
+        Rees46Config(shopId: shop, apiDomain: "stub.test", autoSendPushToken: false)
+    }
+
+    func test_initialize_bridge_runs_the_new_core_and_an_apps_initialize_the_old_one() {
+        CoreFlag.reset()
+        let bridged = newShop()
+        let sdk = Rees46.initializeBridge(bridgeConfig(bridged)) as? SimplePersonalizationSDK
+        XCTAssertEqual(sdk?.usesCoreV2, true)
+        XCTAssertEqual(sdk?.core.kind, .v2)
+        XCTAssertEqual(CoreFlag.current, true, "the bridge decided the process's core")
+        sdk?.release()
+
+        CoreFlag.reset()
+        let app = newShop()
+        let legacy = Rees46.initialize(bridgeConfig(app)) as? SimplePersonalizationSDK
+        XCTAssertEqual(legacy?.usesCoreV2, false, "an app's configuration runs the old core")
+        XCTAssertEqual(legacy?.core.kind, .legacy)
+        XCTAssertEqual(legacy?.config.coreV2, false)
+
+        // A bridge after the app: the process keeps the core the app decided, and says so.
+        let late = newShop()
+        let after = Rees46.initializeBridge(bridgeConfig(late)) as? SimplePersonalizationSDK
+        XCTAssertEqual(after?.usesCoreV2, false)
+        XCTAssertTrue(waitForLog(late, "core_flag_mismatch"))
+        XCTAssertEqual(CoreFlag.current, false)
+        legacy?.release()
+        after?.release()
+    }
+
+    func test_initialize_bridge_brings_its_ab_group_only_to_a_device_that_has_none() {
+        let deviceSuite = UserDefaults(suiteName: DeviceStore.suiteName) ?? .standard
+        let before = deviceSuite.string(forKey: DeviceStore.abGroupKey)
+        defer { deviceSuite.set(before, forKey: DeviceStore.abGroupKey) }
+        deviceSuite.removeObject(forKey: DeviceStore.abGroupKey)
+        CoreFlag.reset()
+
+        let first = newShop()
+        let a = Rees46.initializeBridge(bridgeConfig(first), segment: "B")
+        XCTAssertEqual(a.segment, "B", "the device had no group: it takes the bridge's")
+        XCTAssertEqual(DeviceStore.shared.abGroup, "B")
+        XCTAssertEqual(StoragePartition.store(for: first).string(forKey: StoragePartition.abSegmentKey), "B", "and the shop, for the old core")
+        XCTAssertTrue(logged(first, "invalid_config").isEmpty)
+
+        let second = newShop()
+        let b = Rees46.initializeBridge(bridgeConfig(second), segment: "A")
+        XCTAssertEqual(b.segment, "B", "the device keeps its own")
+        XCTAssertTrue(waitForLog(second, "invalid_config", reason: "segment_kept"))
+
+        let third = newShop()
+        let c = Rees46.initializeBridge(bridgeConfig(third), segment: "a")
+        XCTAssertEqual(c.segment, "B", "only a group the SDK makes is taken")
+        XCTAssertTrue(waitForLog(third, "invalid_config", reason: "segment_invalid"))
+
+        // The shop's instance is there: its group stays, whatever the bridge brings.
+        XCTAssertTrue((Rees46.initializeBridge(bridgeConfig(first), segment: "A") as AnyObject) === (a as AnyObject))
+        XCTAssertTrue(waitForLog(first, "invalid_config", reason: "segment_kept"))
+        XCTAssertEqual(DeviceStore.shared.abGroup, "B")
+        [a, b, c].forEach { $0.release() }
     }
 
     func test_queue_event_of_a_refused_or_released_instance_fails_on_main_and_queues_nothing() {
@@ -1006,10 +1072,10 @@ final class CoreGapTests: CoreScenarioTestCase {
     func test_the_process_keeps_its_core_after_a_release_and_a_pending_shop_of_the_other_core_takes_the_process_one() {
         CoreFlag.reset()
         let first = newShop()
-        let a = Rees46.initialize(Rees46Config(shopId: first, apiDomain: "stub.test", autoSendPushToken: false, coreV2: true))
+        let a = Rees46.initializeBridge(Rees46Config(shopId: first, apiDomain: "stub.test", autoSendPushToken: false))
         a.release()
         let second = newShop()
-        let b = Rees46.initialize(Rees46Config(shopId: second, apiDomain: "stub.test", autoSendPushToken: false, coreV2: false))
+        let b = Rees46.initialize(Rees46Config(shopId: second, apiDomain: "stub.test", autoSendPushToken: false))
         XCTAssertEqual((b as? SimplePersonalizationSDK)?.usesCoreV2, true, "decided by the first, until the process ends")
         XCTAssertTrue(waitForLog(second, "core_flag_mismatch"))
         b.release()
@@ -1020,7 +1086,7 @@ final class CoreGapTests: CoreScenarioTestCase {
         let tracked = Locked<[PendingPush]>([])
         Rees46.pendingPushTracker = { push in tracked.mutate { $0.append(push) } }
         Rees46.register(shops: [
-            Rees46Config(shopId: legacy, apiDomain: "stub.test", coreV2: false),
+            Rees46Config(shopId: legacy, apiDomain: "stub.test"),
             Rees46Config(shopId: pending, apiDomain: "stub.test", coreV2: true),
         ])
         StoragePartition.store(for: pending).set("d", forKey: StoragePartition.deviceIdKey)

@@ -4,8 +4,9 @@
 //
 //  The engine under one SDK instance. Two of them run side by side while the new one is built:
 //  `LegacyCore` — the request paths the SDK has always had — and `CoreV2`, the core of
-//  `sdk/core/*.md`, behind `Rees46Config.coreV2`. The SDK's request funnel (`sendGet`,
-//  `postRequest`, `getRequest`) asks the instance's core, so no namespace is written twice.
+//  `sdk/core/*.md`, behind `Rees46Config.coreV2`, which only the bridges' `Rees46.initializeBridge`
+//  sets. The SDK's request funnel (`sendGet`, `postRequest`, `getRequest`) asks the instance's core,
+//  so no namespace is written twice.
 //
 
 import Foundation

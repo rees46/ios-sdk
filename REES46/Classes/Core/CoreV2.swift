@@ -2,10 +2,10 @@
 //  CoreV2.swift
 //  REES46
 //
-//  The new core, behind `Rees46Config.coreV2`: the requests of the funnel go through the new client
-//  (`NetworkClient`), `/init` is the new core's own (`InitMachine`) and so is the session
-//  (`SessionWindow`): a call waits until the instance is usable, at most its own timeout, and goes with
-//  the current `sid`.
+//  The new core, behind `Rees46Config.coreV2` (`Rees46.initializeBridge`): the requests of the funnel
+//  go through the new client (`NetworkClient`), `/init` is the new core's own (`InitMachine`) and so
+//  is the session (`SessionWindow`): a call waits until the instance is usable, at most its own
+//  timeout, and goes with the current `sid`.
 //
 
 import Foundation

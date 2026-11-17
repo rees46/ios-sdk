@@ -40,8 +40,9 @@ protocol UserIdentityRepository: AnyObject {
     /// keeps it: the segment belongs to the device, not to the user.
     var abSegment: String? { get set }
 
-    /// The shop's A/B segment, assigned once: its own, or the device's when it has none.
-    func resolveAbSegment() -> String
+    /// The shop's A/B segment, assigned once: its own, or the device's when it has none; with neither,
+    /// `candidate` — a valid group a bridge kept from before (`Rees46.initializeBridge`) — or a new one.
+    func resolveAbSegment(candidate: String?) -> String
 
     /// Removes only the device id — used by the forced re-initialization path.
     func removeDeviceId()
@@ -52,17 +53,23 @@ protocol UserIdentityRepository: AnyObject {
 
 extension UserIdentityRepository {
 
-    /// A repository without the device's store: the segment is the shop's own.
+    /// The shop's A/B segment with no group brought from before.
     func resolveAbSegment() -> String {
-        resolveOwnAbSegment()
+        resolveAbSegment(candidate: nil)
     }
 
-    /// The shop's own segment, assigned once and kept across launches.
-    func resolveOwnAbSegment() -> String {
+    /// A repository without the device's store: the segment is the shop's own.
+    func resolveAbSegment(candidate: String?) -> String {
+        resolveOwnAbSegment(candidate: candidate)
+    }
+
+    /// The shop's own segment, assigned once — `candidate` when it is valid — and kept across launches.
+    func resolveOwnAbSegment(candidate: String? = nil) -> String {
         if let stored = abSegment, DeviceStore.abGroups.contains(stored) {
             return stored
         }
-        let assigned = DeviceStore.abGroups.randomElement() ?? "A"
+        let assigned = candidate.flatMap { DeviceStore.abGroups.contains($0) ? $0 : nil }
+            ?? DeviceStore.abGroups.randomElement() ?? "A"
         abSegment = assigned
         return assigned
     }

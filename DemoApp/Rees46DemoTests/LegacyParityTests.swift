@@ -2,7 +2,7 @@
 //  LegacyParityTests.swift
 //  REES46Tests
 //
-//  The old core (`Rees46Config.coreV2 = false`) behaves as 3.37.3 did, but for the fixes named for both
+//  The old core (an app's `Rees46.initialize`) behaves as 3.37.3 did, but for the fixes named for both
 //  cores: a repeated `initialize` after a failed `/init` or with `needReInitialization`, the request
 //  queue the app sees while `/init` is on its way and the order its requests leave in, the push token it
 //  reads, `enableLogs`, the tracking and push wire, the decoding rules, the error types of `/init`, the
@@ -81,10 +81,10 @@ final class LegacyParityTests: CoreScenarioTestCase {
         CoreFlag.reset(to: true)
         let v2 = newShop()
         answer("/init", StubReply(500))
-        let v2Config = Rees46Config(shopId: v2, apiDomain: "stub.test", autoSendPushToken: false, coreV2: true)
-        let made = Rees46.initialize(v2Config)
-        XCTAssertTrue(same(Rees46.initialize(v2Config), made), "the new core repeats its /init itself")
-        XCTAssertTrue(same(Rees46.initialize(Rees46Config(shopId: v2, apiDomain: "stub.test", autoSendPushToken: false, needReInitialization: true, coreV2: true)), made))
+        let v2Config = Rees46Config(shopId: v2, apiDomain: "stub.test", autoSendPushToken: false)
+        let made = Rees46.initializeBridge(v2Config)
+        XCTAssertTrue(same(Rees46.initializeBridge(v2Config), made), "the new core repeats its /init itself")
+        XCTAssertTrue(same(Rees46.initializeBridge(Rees46Config(shopId: v2, apiDomain: "stub.test", autoSendPushToken: false, needReInitialization: true)), made))
         made.release()
     }
 
