@@ -19,5 +19,8 @@ is removed.
   is a list goes as a list of Rails: `promo_codes[]=A&promo_codes[]=B`.
 - `sliders.json` — `sliders.get` (`sdk/contract/sliders.md`) and the banner events of `tracking` that go with it,
   `bannerView` and `bannerClick`, until the contract's `tracking.json` has them.
+- `reviews.json` — the nine methods of `reviews` (`sdk/contract/reviews.md`): the request of each call, or the
+  argument it refuses, and what each answer ends with. A path under `api/v3/` goes to `appDomain`, any other to
+  `apiDomain`, as the contract's table of methods says; the format has no field for the host.
 
 In `expect.result` an object lists the fields the case checks; `null` is a field without a value.

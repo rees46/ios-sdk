@@ -21,6 +21,8 @@ struct ApiRequest<Value> {
     var queryLists: [String: [String]] = [:]
     /// The read timeout of this request alone; `nil` is the default one (`sdk/core/network.md`).
     var timeout: TimeInterval?
+    /// The host it goes to: the API's, or API v3's for the methods the contract puts there.
+    var host: ApiHost = .api
     /// The method's value of a `2xx` answer's body — empty when the answer had none; throws when the
     /// body is not one (`decoding`).
     let decode: (Data) throws -> Value
@@ -29,6 +31,15 @@ struct ApiRequest<Value> {
     var coreRequest: CoreRequest {
         CoreRequest(method: method, path: path, query: query, body: body, timeout: timeout, queryLists: queryLists)
     }
+}
+
+/// The host of a namespace's request (`sdk/core/network.md`, "Хосты"): the namespace's file of the
+/// contract names the methods that do not go to the API host.
+enum ApiHost: Equatable {
+    /// `Rees46Config.apiDomain`: the API.
+    case api
+    /// `Rees46Config.appDomain`: API v3, on the host of the shop's account.
+    case app
 }
 
 extension ApiRequest {

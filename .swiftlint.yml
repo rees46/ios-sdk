@@ -16,6 +16,7 @@ included:
   - REES46/Classes/Predict
   - REES46/Classes/Loyalty
   - REES46/Classes/Sliders
+  - REES46/Classes/Reviews
   - REES46/Classes/Search
   - REES46/Classes/Profile
   - REES46/Classes/Subscription

@@ -78,6 +78,8 @@
 		99279C14206F92436874AAF2 /* NamespaceRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2594C3E42C2DED097333738A /* NamespaceRequestTests.swift */; };
 		B848252E6A7B409E541A0448 /* NotificationsNamespaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BEED1DF803C0BFAAA2076B5 /* NotificationsNamespaceTests.swift */; };
 		A484DC14FFC3DBEE88C44402 /* StoriesPredictLoyaltySlidersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F9A6D6CEF6BF5A0DFE5E7F5 /* StoriesPredictLoyaltySlidersTests.swift */; };
+		BA2C8CBC07DA3021B357CFBC /* ReviewsFixtureCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA5AE7365436E9358EAC2AC /* ReviewsFixtureCalls.swift */; };
+		0D3AA528DCB53AF45AC77B9B /* ReviewsRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F14F2D81655D203B087AA1 /* ReviewsRequestTests.swift */; };
 		AD0C7CD9B2C94E6C92EBD76F /* CoreDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3DA0647150D46F59A45438E /* CoreDecisionTests.swift */; };
 		185F659CDBE840968B74E646 /* CoreScenarioHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D6FEB5A43445D6A6B07DF7 /* CoreScenarioHarness.swift */; };
 		F82D9C817E27477A8B593D7E /* CoreSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44D8CA2308D2429180F2E4D5 /* CoreSessionTests.swift */; };
@@ -353,6 +355,8 @@
 		2594C3E42C2DED097333738A /* NamespaceRequestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NamespaceRequestTests.swift; sourceTree = "<group>"; };
 		9BEED1DF803C0BFAAA2076B5 /* NotificationsNamespaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NotificationsNamespaceTests.swift; sourceTree = "<group>"; };
 		5F9A6D6CEF6BF5A0DFE5E7F5 /* StoriesPredictLoyaltySlidersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StoriesPredictLoyaltySlidersTests.swift; sourceTree = "<group>"; };
+		4CA5AE7365436E9358EAC2AC /* ReviewsFixtureCalls.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ReviewsFixtureCalls.swift; path = ../Tests/REES46CoreTests/ReviewsFixtureCalls.swift; sourceTree = SOURCE_ROOT; };
+		66F14F2D81655D203B087AA1 /* ReviewsRequestTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReviewsRequestTests.swift; sourceTree = "<group>"; };
 		D3DA0647150D46F59A45438E /* CoreDecisionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreDecisionTests.swift; sourceTree = "<group>"; };
 		72D6FEB5A43445D6A6B07DF7 /* CoreScenarioHarness.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreScenarioHarness.swift; sourceTree = "<group>"; };
 		44D8CA2308D2429180F2E4D5 /* CoreSessionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoreSessionTests.swift; sourceTree = "<group>"; };
@@ -573,6 +577,8 @@
 				2594C3E42C2DED097333738A /* NamespaceRequestTests.swift */,
 				9BEED1DF803C0BFAAA2076B5 /* NotificationsNamespaceTests.swift */,
 				5F9A6D6CEF6BF5A0DFE5E7F5 /* StoriesPredictLoyaltySlidersTests.swift */,
+				4CA5AE7365436E9358EAC2AC /* ReviewsFixtureCalls.swift */,
+				66F14F2D81655D203B087AA1 /* ReviewsRequestTests.swift */,
 				D3DA0647150D46F59A45438E /* CoreDecisionTests.swift */,
 				72D6FEB5A43445D6A6B07DF7 /* CoreScenarioHarness.swift */,
 				44D8CA2308D2429180F2E4D5 /* CoreSessionTests.swift */,
@@ -1192,6 +1198,8 @@
 				99279C14206F92436874AAF2 /* NamespaceRequestTests.swift in Sources */,
 				B848252E6A7B409E541A0448 /* NotificationsNamespaceTests.swift in Sources */,
 				A484DC14FFC3DBEE88C44402 /* StoriesPredictLoyaltySlidersTests.swift in Sources */,
+				BA2C8CBC07DA3021B357CFBC /* ReviewsFixtureCalls.swift in Sources */,
+				0D3AA528DCB53AF45AC77B9B /* ReviewsRequestTests.swift in Sources */,
 				AD0C7CD9B2C94E6C92EBD76F /* CoreDecisionTests.swift in Sources */,
 				185F659CDBE840968B74E646 /* CoreScenarioHarness.swift in Sources */,
 				F82D9C817E27477A8B593D7E /* CoreSessionTests.swift in Sources */,

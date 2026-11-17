@@ -32,6 +32,9 @@ actor NetworkClient {
         var identity: CommonFields.Identity?
         /// Query fields that repeat (`CoreRequest.queryLists`): after the others.
         var queryLists: [String: [String]] = [:]
+        /// The host of this request alone, without a scheme: the host of API v3 (`appDomain`). `nil` is
+        /// the client's, the API host.
+        var host: String?
     }
 
     struct Response {
@@ -296,6 +299,7 @@ actor NetworkClient {
             fields = fields.with(identity)
         }
         var urlRequest: URLRequest
+        let baseURL = request.host.map { "https://\($0)/" } ?? self.baseURL
         switch request.method {
         case .get:
             let query = fields.apply(to: request.query, path: request.path)
