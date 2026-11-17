@@ -174,9 +174,9 @@ struct SubscriptionsAPIImpl: SubscriptionsAPI {
         let id = try CatalogQuery.identifier(itemId, "itemId")
         var body = ClientBody(["item_id": id])
         var variant = ClientBody()
-        variant.set("fashion_size", properties?.fashionSize.flatMap(Self.nonEmpty))
-        variant.set("fashion_color", properties?.fashionColor.flatMap(Self.nonEmpty))
-        variant.set("barcode", properties?.barcode.flatMap(Self.nonEmpty))
+        variant.set("fashion_size", ApiArguments.given(properties?.fashionSize))
+        variant.set("fashion_color", ApiArguments.given(properties?.fashionColor))
+        variant.set("barcode", ApiArguments.given(properties?.barcode))
         if !variant.fields.isEmpty {
             body.set("properties", variant.fields)
         }
@@ -188,17 +188,13 @@ struct SubscriptionsAPIImpl: SubscriptionsAPI {
     /// A request of `path` that unsubscribes from the products of `itemIds`, one value joined by `,` —
     /// the only form the server reads —; an empty list is every product.
     static func unsubscribeRequest(_ path: String, itemIds: [String], email: String?, phone: String?) throws -> ApiRequest<Void> {
-        guard itemIds.allSatisfy({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+        guard !itemIds.contains(where: ApiArguments.isBlank) else {
             throw Rees46.SdkError.invalidArgument("itemIds has an empty id")
         }
         var body = ClientBody(["item_ids": itemIds.joined(separator: ",")])
         try body.identifier("email", email, "email")
         try body.identifier("phone", phone, "phone")
         return ApiRequest(method: .post, path: path, body: body.fields) { _ in () }
-    }
-
-    private static func nonEmpty(_ value: String) -> String? {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
     }
 }
 

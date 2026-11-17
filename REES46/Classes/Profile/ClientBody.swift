@@ -26,7 +26,7 @@ struct ClientBody {
     /// A contact or an identifier of the customer: none is not sent, an empty or blank one is refused.
     mutating func identifier(_ name: String, _ value: String?, _ argument: String) throws {
         guard let value = value else { return }
-        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !ApiArguments.isBlank(value) else {
             throw Rees46.SdkError.invalidArgument("\(argument) is empty")
         }
         fields[name] = value

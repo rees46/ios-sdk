@@ -72,7 +72,7 @@ struct CatalogQuery {
 
     /// A required identifier: `invalidArgument` when it is empty or blank.
     static func identifier(_ value: String, _ name: String) throws -> String {
-        guard !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard !ApiArguments.isBlank(value) else {
             throw Rees46.SdkError.invalidArgument("\(name) is empty")
         }
         return value
