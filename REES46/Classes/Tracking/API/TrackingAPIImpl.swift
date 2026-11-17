@@ -217,3 +217,12 @@ private extension TrackingItem {
         CartItem(productId: id, quantity: quantity, price: price)
     }
 }
+
+extension TrackingAPIImpl {
+
+    /// The SDK's own instance behind the services, for the events only its new core sends
+    /// (`bannerView`, `bannerClick`); `nil` when the services are another's.
+    var instance: SimplePersonalizationSDK? {
+        (trackService as? TrackEventServiceImpl)?.instance
+    }
+}
