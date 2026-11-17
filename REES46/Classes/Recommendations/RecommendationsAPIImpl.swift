@@ -40,48 +40,34 @@ struct RecommendationsAPIImpl: RecommendationsAPI {
         query.set("limit", int: request.limit)
         query.set("extended", request.extended ? "true" : nil)
         query.set("with_locations", request.withLocations ? "true" : nil)
-        let extended = request.extended
         return ApiRequest(method: .get, path: "recommend/\(CatalogQuery.pathSegment(code))", query: query.fields) { body in
             // A block on pause may answer without a body too: no products.
-            let answer = try Readable<RecommendationAnswer>.read(body.isEmpty ? Data("{}".utf8) : body)
-            return answer.response(extended: extended)
+            try Readable<RecommendationAnswer>.read(body.isEmpty ? Data(#"{"state": "paused"}"#.utf8) : body).response
         }
     }
 }
 
-/// The answer of `recommend/{code}`, its `recommends` either products or their ids. A block on pause
-/// answers `{"state": "paused"}`, without them: no products. `recommends` that is not a list is not the
-/// block's answer (`decoding`).
+/// The answer of `recommend/{code}`: its `recommends` are whole products or their ids, whatever was asked.
+/// A block on pause answers `{"state": "paused"}` without them: no products. Without a list of them and
+/// not on pause it is not the block's answer (`decoding`).
 private struct RecommendationAnswer: AnswerReadable {
-    let id: Int?
-    let title: String?
-    let link: String?
-    let products: [Rees46.Product]
-    let itemIds: [String]
+    let response: Rees46.RecommendationResponse
 
     init(answer: KeyedDecodingContainer<AnswerKey>) throws {
-        id = answer.lenientInt("id")
-        title = answer.lenientString("title")
-        link = answer.lenientString("link")
-        let present = answer.contains("recommends") && !((try? answer.decodeNil(forKey: "recommends")) ?? true)
-        // Objects make products; strings or numbers, the ids of the simple answer.
         let products = answer.models(Rees46.Product.self, "recommends")
         let ids = answer.lenientStrings("recommends")
-        if present, products == nil, ids == nil {
-            throw DecodingError.typeMismatch([String].self, DecodingError.Context(codingPath: answer.codingPath, debugDescription: "recommends is not a list"))
+        let paused = answer.lenientString("state") == "paused"
+        guard products != nil || ids != nil || paused else {
+            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: answer.codingPath, debugDescription: "no list recommends"))
         }
-        self.products = products ?? []
-        self.itemIds = ids ?? []
-    }
-
-    /// The method's value: the products with `extended`, their ids without it.
-    func response(extended: Bool) -> Rees46.RecommendationResponse {
-        Rees46.RecommendationResponse(
-            id: id,
-            title: title,
-            link: link,
-            products: extended ? products : [],
-            itemIds: extended ? products.map(\.id) : itemIds
+        let whole = products ?? []
+        response = Rees46.RecommendationResponse(
+            id: answer.lenientInt("id"),
+            title: answer.lenientString("title"),
+            link: answer.lenientString("link"),
+            products: whole,
+            // The products' ids, or the ids of the simple answer.
+            itemIds: whole.isEmpty ? (ids ?? []) : whole.map(\.id)
         )
     }
 }
