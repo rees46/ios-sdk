@@ -8,3 +8,7 @@ is removed.
 - `cart.json` — `cart.get` (`sdk/contract/cart.md`), the same cases the Android SDK tests by. In `expect`, `result`
   is the method's value by the contract's field names; `response.status: null` is no answer, which the tests play as a
   connection that is never made (`network`).
+- `notifications.json` — the events of pushes and `setPushToken` (`sdk/contract/notifications.md`), the same cases the
+  Android SDK tests by. A case with `platform` (`ios`, `android`) is of that platform only: the platforms send a push
+  token with different `platform` and `push_provider`, and each refuses the other's provider. `expect.result: null` is a
+  success without a value.
