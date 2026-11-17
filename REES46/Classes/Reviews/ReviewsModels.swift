@@ -12,7 +12,8 @@ import Foundation
 @_spi(Bridge)
 public struct PollReview: Equatable {
     /// The id of the review saved, or of the one updated: a score sent again the same day for the same
-    /// channel, category or campaign, order and label replaces the earlier one.
+    /// channel, category or campaign, order and label replaces the earlier one. 64-bit, as the server's
+    /// ids of reviews.
     public let id: Int
 
     public init(id: Int) {
@@ -162,7 +163,7 @@ public struct ProductRatingSummary: Equatable {
     }
 }
 
-/// A published review of a product.
+/// A published review of a product; `id` is 64-bit, as the server's ids of reviews.
 @_spi(Bridge)
 public struct ProductReview: Equatable {
     public let id: Int
@@ -184,7 +185,7 @@ public struct ProductReview: Equatable {
     }
 }
 
-/// A review the customer of this device left in an order (`getClientReviews`).
+/// A review the customer of this device left in an order (`getClientReviews`); `id` is 64-bit.
 @_spi(Bridge)
 public struct ClientReview: Equatable {
     public let id: Int

@@ -42,12 +42,15 @@ public protocol ReviewsAPI {
        - category: the code of the category — what is scored; not empty.
        - orderId: the order scored, if one is. Another customer's order is `http(404)`; an order the
          server does not know it drops, and keeps the score without it. `nil` or empty is not sent.
-       - comment: `nil` or empty is not sent; a score sent again the same day without one wipes the
-         earlier comment.
+       - comment: `nil` or empty is not sent. A score sent again the same day without one keeps the
+         earlier comment if the score is the same, and clears it if the score changed.
        - label: a mark that groups the reviews in the report; `nil` or empty is not sent.
 
      The same channel, category, order and label scored again the same day (in the shop's time zone)
-     makes no new review: the server updates the earlier one, and `PollReview.id` is its id. `http(400)`
+     makes no new review: the server updates the earlier one, and `PollReview.id` is its id. A score
+     with a comment — the answer to the question after the score — goes to the latest review of the
+     last 90 days with the same channel, category, order, label and score and no comment, if there is
+     one, rather than making another. `http(400)`
      is a score the server refused, `http(404)` a shop, customer, channel or category it does not know,
      `http(429)` more than 30 scores a minute from the device.
      */
