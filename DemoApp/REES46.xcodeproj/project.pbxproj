@@ -92,6 +92,7 @@
 		95300191D926BCFFE887810F /* StubServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B4279E67656DEE2726F5841 /* StubServer.swift */; };
 		7009DFFB0CC821D8EC72C77F /* LiveServerGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9781E60804825F760ADE3929 /* LiveServerGuard.swift */; };
 		BACD7D59FBD148E5323B1DF8 /* SearchContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44467285AA63CD86B8846549 /* SearchContractTests.swift */; };
+		035807D5C47B5617327F47D1 /* AgentSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BAE8CAA1C23AD95B3A659DB /* AgentSearchTests.swift */; };
 		EE982672942F5A449BD9638A /* SubscriptionContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9603C298AB34B96D5A8DFC /* SubscriptionContractTests.swift */; };
 		D3AE962D3B176281495DE5D5 /* LoyaltyAndOrdersContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C0DF3B30B0FE718D4EF061 /* LoyaltyAndOrdersContractTests.swift */; };
 		AADD17FBB7174736D09B40FA /* CatalogContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6373AE16A13EA446ECFA658A /* CatalogContractTests.swift */; };
@@ -366,6 +367,7 @@
 		1B4279E67656DEE2726F5841 /* StubServer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StubServer.swift; sourceTree = "<group>"; };
 		9781E60804825F760ADE3929 /* LiveServerGuard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LiveServerGuard.swift; sourceTree = "<group>"; };
 		44467285AA63CD86B8846549 /* SearchContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SearchContractTests.swift; sourceTree = "<group>"; };
+		5BAE8CAA1C23AD95B3A659DB /* AgentSearchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AgentSearchTests.swift; sourceTree = "<group>"; };
 		1B9603C298AB34B96D5A8DFC /* SubscriptionContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SubscriptionContractTests.swift; sourceTree = "<group>"; };
 		50C0DF3B30B0FE718D4EF061 /* LoyaltyAndOrdersContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LoyaltyAndOrdersContractTests.swift; sourceTree = "<group>"; };
 		6373AE16A13EA446ECFA658A /* CatalogContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CatalogContractTests.swift; sourceTree = "<group>"; };
@@ -585,6 +587,7 @@
 				1B4279E67656DEE2726F5841 /* StubServer.swift */,
 				9781E60804825F760ADE3929 /* LiveServerGuard.swift */,
 				44467285AA63CD86B8846549 /* SearchContractTests.swift */,
+				5BAE8CAA1C23AD95B3A659DB /* AgentSearchTests.swift */,
 				1B9603C298AB34B96D5A8DFC /* SubscriptionContractTests.swift */,
 				50C0DF3B30B0FE718D4EF061 /* LoyaltyAndOrdersContractTests.swift */,
 				6373AE16A13EA446ECFA658A /* CatalogContractTests.swift */,
@@ -1203,6 +1206,7 @@
 				95300191D926BCFFE887810F /* StubServer.swift in Sources */,
 				7009DFFB0CC821D8EC72C77F /* LiveServerGuard.swift in Sources */,
 				BACD7D59FBD148E5323B1DF8 /* SearchContractTests.swift in Sources */,
+				035807D5C47B5617327F47D1 /* AgentSearchTests.swift in Sources */,
 				EE982672942F5A449BD9638A /* SubscriptionContractTests.swift in Sources */,
 				D3AE962D3B176281495DE5D5 /* LoyaltyAndOrdersContractTests.swift in Sources */,
 				AADD17FBB7174736D09B40FA /* CatalogContractTests.swift in Sources */,
