@@ -4,9 +4,9 @@
 //
 //  Runs a namespace's fixture without a server: the request each call builds, the error a refused one
 //  ends with before anything is sent, and what the request path makes of each answer. A fixture's
-//  `result` is the method's value by the contract's field names, compared as a part of it: the fields
-//  it lists must match, `null` is a field without a value; in `request.query` and `request.body` a
-//  `null` is a field that must not be sent.
+//  `result` is the method's value by the contract's field names, and `request.query` or `request.body`
+//  the request's own fields; both are compared whole, as the Android SDK compares them: a field without
+//  a value is left out on either side.
 //
 
 import XCTest
@@ -59,12 +59,11 @@ enum NamespaceFixtures {
                 }
                 XCTAssertEqual(request.method, expected["method"] as? String, item.name, file: file, line: line)
                 XCTAssertEqual(request.path, expected["path"] as? String, item.name, file: file, line: line)
-                let fields = ["query": request.query as [String: Any], "body": request.body]
-                for part in ["query", "body"] {
-                    guard let wanted = expected[part] as? [String: Any] else { continue }
-                    for problem in ContractJSON.mismatches(fields[part] ?? [:], wanted, at: part, absentIsNull: true) {
-                        XCTFail("\(item.name): \(problem)", file: file, line: line)
-                    }
+                // The request's own fields, all of them: the core adds the common ones.
+                let own: [String: Any] = request.method == "GET" ? request.query : request.body
+                let wanted = expected[request.method == "GET" ? "query" : "body"] as? [String: Any] ?? [:]
+                for problem in ContractJSON.mismatches(ContractJSON.of(own), wanted, at: "request") {
+                    XCTFail("\(item.name): \(problem)", file: file, line: line)
                 }
             } else if let error = item.expectedError {
                 checked += 1
@@ -167,17 +166,22 @@ enum ContractJSON {
     /// fields —, a list a list, a map an object, `nil` `NSNull`, a value of an open or closed set its
     /// raw value.
     static func of(_ value: Any) -> Any {
-        switch value {
-        case let text as String:
+        if let text = value as? String {
             return text
-        case let flag as Bool:
-            return flag
-        case let number as Int:
-            return number
-        case let number as Double:
-            return number
-        default:
-            break
+        }
+        // A boolean, Swift's or JSON's, is one; any other number — `Int`, `Double`, `NSNumber` — its value.
+        if let number = value as? NSNumber {
+            return CFGetTypeID(number) == CFBooleanGetTypeID() ? number.boolValue as Any : number.doubleValue
+        }
+        if value is NSNull {
+            return NSNull()
+        }
+        // Lists and maps, Swift's or JSON's.
+        if let list = value as? [Any] {
+            return list.map(of)
+        }
+        if let map = value as? [String: Any] {
+            return map.mapValues(of)
         }
         let mirror = Mirror(reflecting: value)
         switch mirror.displayStyle {
@@ -211,10 +215,10 @@ enum ContractJSON {
         }
     }
 
-    /// Where `actual` differs from `expected`: the fields `expected` lists, `null` for none. A list is
-    /// compared element by element, an empty object only with an empty one. `absentIsNull`: a field
-    /// `actual` does not have is the `null` of `expected` — a request's field that is not sent.
-    static func mismatches(_ actual: Any, _ expected: Any, at path: String, absentIsNull: Bool = false) -> [String] {
+    /// Where `actual` differs from `expected`, as the Android SDK compares them: an object has the same
+    /// fields with a value — a field whose value is `null` counts as missing on either side —, each the
+    /// same; a list the same elements in order; a number the same value, `19990` as `19990.0`.
+    static func mismatches(_ actual: Any, _ expected: Any, at path: String) -> [String] {
         switch expected {
         case is NSNull:
             return actual is NSNull ? [] : ["\(path): \(actual), expected null"]
@@ -222,15 +226,16 @@ enum ContractJSON {
             guard let actualObject = actual as? [String: Any] else {
                 return ["\(path): \(actual), expected an object"]
             }
-            if object.isEmpty, !absentIsNull, !actualObject.isEmpty {
-                return ["\(path): \(actualObject), expected an empty object"]
+            let wanted = Set(object.filter { !($0.value is NSNull) }.keys)
+            let got = Set(actualObject.filter { !($0.value is NSNull) }.keys)
+            var problems: [String] = []
+            if wanted != got {
+                problems.append("\(path): fields \(got.sorted()), expected \(wanted.sorted())")
             }
-            return object.keys.sorted().flatMap { key -> [String] in
-                guard let value = actualObject[key] else {
-                    return absentIsNull && object[key] is NSNull ? [] : ["\(path).\(key): missing"]
-                }
-                return mismatches(value, object[key] ?? NSNull(), at: "\(path).\(key)", absentIsNull: absentIsNull)
+            for key in wanted.intersection(got).sorted() {
+                problems += mismatches(actualObject[key] ?? NSNull(), object[key] ?? NSNull(), at: "\(path).\(key)")
             }
+            return problems
         case let list as [Any]:
             guard let actualList = actual as? [Any] else {
                 return ["\(path): \(actual), expected a list"]
@@ -239,7 +244,7 @@ enum ContractJSON {
                 return ["\(path): \(actualList.count) elements, expected \(list.count): \(actualList)"]
             }
             return zip(actualList, list).enumerated().flatMap { index, pair in
-                mismatches(pair.0, pair.1, at: "\(path)[\(index)]", absentIsNull: absentIsNull)
+                mismatches(pair.0, pair.1, at: "\(path)[\(index)]")
             }
         case let text as String:
             return actual as? String == text ? [] : ["\(path): \(actual), expected \"\(text)\""]

@@ -194,7 +194,8 @@ final class CatalogPackageTests: XCTestCase {
         let block = try value(RecommendationsAPIImpl.blockRequest(code: "b", Rees46.RecommendationRequest()), "").get()
         XCTAssertEqual(block.products, [])
         XCTAssertEqual(block.itemIds, [])
-        XCTAssertNil(try value(SearchAPIImpl.blankRequest, "").get().products)
+        XCTAssertEqual(try value(SearchAPIImpl.blankRequest, "").get().products, [])
+        XCTAssertEqual(try value(SearchAPIImpl.blankRequest, "[]").get().products, [], "the server's empty object")
         // A listing, a collection and a search have no empty value: a body without products is not one.
         XCTAssertThrowsError(try value(ProductsAPIImpl.listRequest(Rees46.ProductsListRequest()), "").get())
         XCTAssertThrowsError(try value(CollectionsAPIImpl.collectionRequest(collectionId: "1"), "").get())
@@ -217,7 +218,7 @@ final class CatalogPackageTests: XCTestCase {
 
     func test_a_product_reads_whatever_shape_its_fields_come_in() throws {
         let read = try value(ProductsAPIImpl.infoRequest(itemId: "37"), """
-        {"id": 37, "name": 5, "url": null, "price": "abc", "currency": "",
+        {"id": 37, "name": 5, "url": "", "price": "12.5", "currency": "", "brand": "",
          "discount": "12", "is_new": "1", "rating": 4.5, "categories": {"id": "1"},
          "params": [{"values": ["x"]}, {"key": "k"}, 7], "image_url_resized": {"120": 120, "x": {"a": 1}},
          "category_ids": ["1", null, "", 2.0, true]}
@@ -225,9 +226,10 @@ final class CatalogPackageTests: XCTestCase {
         let product = try XCTUnwrap(read)
         XCTAssertEqual(product.id, "37", "a number is its digits")
         XCTAssertEqual(product.name, "5")
-        XCTAssertEqual(product.url, "", "a required string the answer does not have is empty")
-        XCTAssertEqual(product.price, 0, "a price that is not a number is 0")
+        XCTAssertEqual(product.url, "", "an empty required text is a value")
+        XCTAssertEqual(product.price, 12.5)
         XCTAssertEqual(product.currency, "")
+        XCTAssertNil(product.brand, "an empty optional text is none")
         XCTAssertEqual(product.discountPercent, 12, "discount as a number when there is no discount_percent")
         XCTAssertTrue(product.isNew)
         XCTAssertNil(product.rating, "not an integer")
@@ -237,28 +239,49 @@ final class CatalogPackageTests: XCTestCase {
         XCTAssertEqual(product.categoryIds, ["1", "2"])
     }
 
+    func test_a_product_without_a_field_every_product_has_is_left_out() throws {
+        let fields = [#""id": "1""#, #""name": "a""#, #""url": "u""#, #""price": 1"#, #""currency": "c""#]
+        for (index, name) in ["id", "name", "url", "price", "currency"].enumerated() {
+            var rest = fields
+            rest.remove(at: index)
+            let partial = "{" + rest.joined(separator: ", ") + "}"
+            let whole = "{" + fields.joined(separator: ", ") + "}"
+            let list = try value(ProductsAPIImpl.listRequest(Rees46.ProductsListRequest()), #"{"products": ["# + whole + ", " + partial + "]}").get()
+            XCTAssertEqual(list.products.count, 1, name)
+            XCTAssertEqual(value(try ProductsAPIImpl.infoRequest(itemId: "1"), partial).failure, .decoding, "the card without \(name)")
+        }
+        let priceless = try value(ProductsAPIImpl.listRequest(Rees46.ProductsListRequest()), #"{"products": [{"id": "1", "name": "a", "url": "u", "price": "free", "currency": "c"}]}"#).get()
+        XCTAssertEqual(priceless.products, [], "a price that is not a number")
+    }
+
     func test_a_listing_reads_brands_filters_and_prices_leniently() throws {
         let list = try value(ProductsAPIImpl.listRequest(Rees46.ProductsListRequest()), """
-        {"products": [], "brands": "Apple", "filters": {"a": {"values": {"x": "2", "y": "many"}}, "b": 3},
-         "price_range": {"min": 1}, "price_ranges": [{"from": "1", "to": "2", "count": "3"}], "price_median": "7.5"}
+        {"products": [], "brands": [{"name": "A", "count": "2"}, {"name": "B"}], "filters": {"a": {"values": {"x": "2", "y": "many"}}, "b": 3},
+         "locations": [{"id": "1", "name": "M"}, {"id": "2"}], "price_range": {"min": 1},
+         "price_ranges": [{"from": "1", "to": "2", "count": "3"}, {"to": 5}], "price_median": "7.5"}
         """).get()
-        XCTAssertNil(list.brands)
+        XCTAssertEqual(list.brands, [Rees46.Brand(name: "A", count: 2)], "a brand without a count is left out")
+        XCTAssertEqual(list.locations?.map(\.id), ["1"], "a location without a name is left out")
         XCTAssertEqual(list.filters?["a"]?.values, ["x": 2])
         XCTAssertNil(list.filters?["b"], "not a facet")
         XCTAssertNil(list.priceRange, "a range without its max is none")
-        XCTAssertEqual(list.priceRanges, [Rees46.PriceInterval(from: 1, to: 2, count: 3)])
+        XCTAssertEqual(list.priceRanges, [Rees46.PriceInterval(from: 1, to: 2, count: 3), Rees46.PriceInterval(from: 0, to: 5, count: nil)])
         XCTAssertEqual(list.priceMedian, 7.5)
+        let empty = try value(ProductsAPIImpl.listRequest(Rees46.ProductsListRequest()), #"{"products": [], "filters": [], "brands": {}}"#).get()
+        XCTAssertEqual(empty.filters, [:], "an empty list is the server's empty object")
+        XCTAssertNil(empty.brands)
     }
 
-    func test_recommendations_by_the_requests_extended() throws {
+    func test_recommendations_by_what_recommends_holds() throws {
         let objects = #"{"recommends": [{"id": "1", "name": "a", "url": "u", "price": 1, "currency": "c"}]}"#
-        let ids = #"{"recommends": ["1", 2]}"#
-        let whole = Rees46.RecommendationRequest()
-        let simple = Rees46.RecommendationRequest(extended: false)
-        XCTAssertEqual(try value(RecommendationsAPIImpl.blockRequest(code: "b", whole), objects).get().itemIds, ["1"])
-        XCTAssertEqual(try value(RecommendationsAPIImpl.blockRequest(code: "b", simple), ids).get().itemIds, ["1", "2"])
-        XCTAssertEqual(try value(RecommendationsAPIImpl.blockRequest(code: "b", simple), ids).get().products, [])
-        XCTAssertEqual(try value(RecommendationsAPIImpl.blockRequest(code: "b", whole), #"{"recommends": null}"#).get().products, [])
+        let ids = #"{"recommends": ["1", 2, ""]}"#
+        let request = { try RecommendationsAPIImpl.blockRequest(code: "b", Rees46.RecommendationRequest()) }
+        XCTAssertEqual(try value(request(), objects).get().itemIds, ["1"])
+        XCTAssertEqual(try value(request(), ids).get().itemIds, ["1", "2"])
+        XCTAssertEqual(try value(request(), ids).get().products, [])
+        XCTAssertEqual(try value(request(), #"{"state": "paused", "recommends": "x"}"#).get().products, [], "on pause")
+        XCTAssertEqual(value(try request(), #"{"recommends": null}"#).failure, .decoding, "neither a list nor on pause")
+        XCTAssertEqual(value(try request(), #"{"state": "test"}"#).failure, .decoding)
     }
 
     func test_numbers_go_without_a_needless_fraction() {
@@ -291,5 +314,13 @@ final class CatalogPackageTests: XCTestCase {
         let request = try ProductsAPIImpl.listRequest(Rees46.ProductsListRequest(sortBy: Rees46.SortBy(rawValue: "popular")))
         XCTAssertEqual(request.query["sort_by"], "popular")
         XCTAssertEqual(try SearchAPIImpl.fullRequest(query: "q", Rees46.SearchFullRequest(sortBy: .relevance)).query["sort_by"], "relevance")
+    }
+}
+
+private extension Result {
+
+    var failure: Failure? {
+        if case .failure(let error) = self { return error }
+        return nil
     }
 }

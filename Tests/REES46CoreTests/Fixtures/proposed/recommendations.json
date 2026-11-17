@@ -2,32 +2,30 @@
   "contract": "0",
   "cases": [
     {
-      "name": "get по умолчанию — extended, без resize_image",
+      "name": "get без запроса — товары целиком",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
-      "request": { "method": "GET", "path": "recommend/block-1",
-                   "query": { "extended": "true", "with_locations": null, "resize_image": null, "limit": null } }
+      "request": { "method": "GET", "path": "recommend/block-1", "query": { "extended": "true" } }
     },
     {
-      "name": "get с контекстом: item_id и category, списки через запятую",
+      "name": "get со всеми полями",
       "call": { "namespace": "recommendations", "method": "get",
                 "args": { "code": "block-1",
-                          "request": { "itemId": "37", "categoryId": "15", "searchQuery": "phone", "excludedItemIds": [ "1", "2" ],
-                                       "brands": [ "Apple", "Samsung" ], "locations": [ "10" ], "limit": 8, "withLocations": true } } },
+                          "request": { "itemId": "37", "categoryId": "5", "searchQuery": "кроссовки", "excludedItemIds": [ "1", "2" ],
+                                       "brands": [ "Nike", "Adidas" ], "locations": [ "msk" ], "limit": 10,
+                                       "extended": true, "withLocations": true } } },
       "request": { "method": "GET", "path": "recommend/block-1",
-                   "query": { "item_id": "37", "category": "15", "search_query": "phone", "exclude": "1,2",
-                              "brands": "Apple,Samsung", "locations": "10", "limit": "8", "extended": "true",
-                              "with_locations": "true", "item": null, "categories": null } }
+                   "query": { "item_id": "37", "category": "5", "search_query": "кроссовки", "exclude": "1,2",
+                              "brands": "Nike,Adidas", "locations": "msk", "limit": "10", "extended": "true", "with_locations": "true" } }
     },
     {
-      "name": "get без extended — поле не уходит",
-      "call": { "namespace": "recommendations", "method": "get",
-                "args": { "code": "block-1", "request": { "extended": false } } },
-      "request": { "method": "GET", "path": "recommend/block-1", "query": { "extended": null, "with_locations": null } }
+      "name": "get только артикулы: extended не уходит",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1", "request": { "extended": false } } },
+      "request": { "method": "GET", "path": "recommend/block-1", "query": {} }
     },
     {
-      "name": "get: код блока кодируется в пути",
-      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "a b/c" } },
-      "request": { "method": "GET", "path": "recommend/a%20b%2Fc", "query": { "extended": "true" } }
+      "name": "get: код блока в пути URL-кодирован",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "a/b" } },
+      "request": { "method": "GET", "path": "recommend/a%2Fb", "query": { "extended": "true" } }
     },
     {
       "name": "get с пустым кодом",
@@ -46,67 +44,62 @@
       "error": { "type": "invalidArgument" }
     },
     {
-      "name": "get: расширенный ответ — товары и их id",
+      "name": "расширенный ответ: товары целиком, itemIds — их id",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
       "response": { "status": 200,
                     "body": { "id": 12, "title": "Похожие товары", "link": "https://shop.example/similar",
-                              "recommends": [
-                                { "id": "1", "name": "Телефон", "url": "https://shop.example/1?recommended_by=dynamic", "price": 999,
-                                  "currency": "₽", "picture": "https://shop.example/1/180.jpg", "discount_percent": 10 },
-                                { "id": 2, "name": "Чехол", "url": "https://shop.example/2", "price": "150", "currency": "₽" },
-                                { "name": "без id" } ] } },
+                              "recommends": [ { "id": "37", "name": "Кроссовки", "url": "https://shop.example/p/37?recommended_by=dynamic",
+                                                "price": 4990, "currency": "₽", "location_ids": [ "global" ] },
+                                              { "id": "38", "name": "Кеды", "url": "https://shop.example/p/38", "price": "2990", "currency": "₽",
+                                                "location_ids": [ "msk", "spb" ] } ] } },
       "expect": { "result": { "id": 12, "title": "Похожие товары", "link": "https://shop.example/similar",
-                              "products": [ { "id": "1", "name": "Телефон", "price": 999, "discountPercent": 10,
-                                              "picture": "https://shop.example/1/180.jpg" },
-                                            { "id": "2", "name": "Чехол", "price": 150 } ],
-                              "itemIds": [ "1", "2" ] } }
+                              "products": [ { "id": "37", "name": "Кроссовки", "url": "https://shop.example/p/37?recommended_by=dynamic",
+                                              "price": 4990, "currency": "₽", "isNew": false, "locationIds": [ "global" ] },
+                                            { "id": "38", "name": "Кеды", "url": "https://shop.example/p/38", "price": 2990, "currency": "₽",
+                                              "isNew": false, "locationIds": [ "msk", "spb" ] } ],
+                              "itemIds": [ "37", "38" ] } }
     },
     {
-      "name": "get: с withLocations у товаров есть locationIds",
-      "call": { "namespace": "recommendations", "method": "get",
-                "args": { "code": "block-1", "request": { "withLocations": true } } },
-      "response": { "status": 200,
-                    "body": { "id": 12, "title": "Похожие товары",
-                              "recommends": [ { "id": "1", "name": "Телефон", "url": "https://shop.example/1", "price": 999,
-                                                "currency": "₽", "location_ids": [ "10", "global" ] } ] } },
-      "expect": { "result": { "products": [ { "id": "1", "locationIds": [ "10", "global" ] } ], "itemIds": [ "1" ] } }
+      "name": "простой ответ: только артикулы",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1", "request": { "extended": false } } },
+      "response": { "status": 200, "body": { "id": 12, "title": "Похожие товары", "recommends": [ "37", "38" ] } },
+      "expect": { "result": { "id": 12, "title": "Похожие товары", "products": [], "itemIds": [ "37", "38" ] } }
     },
     {
-      "name": "get: простой ответ без extended — только артикулы",
-      "call": { "namespace": "recommendations", "method": "get",
-                "args": { "code": "block-1", "request": { "extended": false } } },
-      "response": { "status": 200, "body": { "id": 12, "title": "Похожие товары", "recommends": [ "1", 2, "3" ] } },
-      "expect": { "result": { "id": 12, "title": "Похожие товары", "link": null, "products": [], "itemIds": [ "1", "2", "3" ] } }
-    },
-    {
-      "name": "get: блок на паузе — пустой список, а не decoding",
+      "name": "блок на паузе — пусто, а не decoding",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
       "response": { "status": 200, "body": { "state": "paused" } },
       "expect": { "result": { "products": [], "itemIds": [] } }
     },
     {
-      "name": "get: recommends не список",
+      "name": "ответ без recommends и не на паузе",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
-      "response": { "status": 200, "body": { "id": 12, "recommends": "1,2" } },
+      "response": { "status": 200, "body": { "id": 12, "title": "Похожие товары" } },
       "expect": { "error": { "type": "decoding" } }
     },
     {
-      "name": "get: неизвестный код блока — 404",
+      "name": "404 — неизвестный код блока",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "unknown" } },
       "response": { "status": 404, "body": { "status": "error", "message": "Recommender block not found" } },
       "expect": { "error": { "type": "http", "code": 404 } }
     },
     {
-      "name": "get: услуга не оплачена — 402",
+      "name": "402 — услуга не оплачена",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
-      "response": { "status": 402, "body": null },
+      "response": { "status": 402, "body": { "status": "error", "message": "Payment required" } },
       "expect": { "error": { "type": "http", "code": 402 } }
     },
     {
-      "name": "get: 2xx со status error",
+      "name": "2xx со status error",
       "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
       "response": { "status": 200, "body": { "status": "error", "message": "Something went wrong" } },
       "expect": { "error": { "type": "decoding" } }
+    },
+    {
+      "name": "нет ответа",
+      "call": { "namespace": "recommendations", "method": "get", "args": { "code": "block-1" } },
+      "response": { "status": null },
+      "expect": { "error": { "type": "network" } }
     }
   ]
 }

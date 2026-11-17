@@ -9,7 +9,7 @@ is removed.
   is the method's value by the contract's field names; `response.status: null` is no answer, which the tests play as a
   connection that is never made (`network`).
 - `products.json`, `collections.json`, `recommendations.json`, `search.json` — the catalog (`sdk/contract/products.md`,
-  `collections.md`, `recommendations.md`, `search.md`). In `call.args`, a request model is an object by the contract's
-  field names, a value of a set by its name in code (`salesRate`). In `request.query`, `null` is a field that must not
-  be sent. In `expect.result`, only the fields listed count, `null` is a field without a value, and `{}` is an empty
-  map.
+  `collections.md`, `recommendations.md`, `search.md`): the Android SDK's files as they are, so both SDKs test the same
+  cases. In `call.args`, a request model is an object by the contract's field names, a value of a set by its name in
+  code (`salesRate`). A `result`, and a request's own fields in `query` or `body`, are compared whole, as the Android
+  SDK compares them: a field without a value counts as missing on either side.
