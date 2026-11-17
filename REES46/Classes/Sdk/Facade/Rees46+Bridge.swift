@@ -110,6 +110,21 @@ extension Rees46 {
 @_spi(Bridge)
 extension PersonalizationSDK {
 
+    /// `deleteUserCredentials()` for `async` code (`deleteUserCredentials` of the contract): it returns,
+    /// as the synchronous one does, once the customer's data — the queue's files too — is wiped, and the
+    /// wipe holds no thread of the caller, the main one included. On either core.
+    ///
+    /// For the bridges only: beside the synchronous method an `async` one would take over every call of
+    /// that method an app makes from `async` code, which then would not compile without `await`.
+    public func deleteUserCredentials() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.deleteUserCredentials()
+                continuation.resume()
+            }
+        }
+    }
+
     /// Calls `listener` on the main thread with every new session id (`sid`) until the handle is
     /// cancelled, so a bridge tells its app instead of asking for `sessionId` on a timer. On the new
     /// core each `sid` an `/init` brings; on the old core the one `deleteUserCredentials()` makes.
