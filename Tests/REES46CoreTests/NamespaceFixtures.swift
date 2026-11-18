@@ -6,7 +6,8 @@
 //  ends with before anything is sent, and what the request path makes of each answer. A fixture's
 //  `result` is the method's value by the contract's field names, and `request.query` or `request.body`
 //  the request's own fields; both are compared whole, as the Android SDK compares them: a field without
-//  a value is left out on either side.
+//  a value is left out on either side. A server method's case lists the common fields its request
+//  carries (`request.commonFields`); they are the ones the client adds to the request it built.
 //
 
 import XCTest
@@ -19,6 +20,8 @@ struct ErasedRequest {
     let query: [String: String]
     let body: [String: Any]
     let timeout: TimeInterval?
+    /// A server method's request (`SecretQuery`): the client adds `shop_id` alone.
+    let secret: Bool
     /// What the request path makes of `response`: the value as JSON by the contract's names, or the
     /// error.
     let answer: (NetworkClient.Response, SdkLogger) -> Result<Any, Rees46.SdkError>
@@ -29,6 +32,7 @@ struct ErasedRequest {
         query = request.query
         body = request.body
         timeout = request.timeout
+        secret = request.secret
         answer = { response, logger in
             NamespaceRequests.value(of: response, for: request, call: call, logger: logger).map { ContractJSON.of($0) }
         }
@@ -40,10 +44,28 @@ enum NamespaceFixtures {
     /// Builds the request of a fixture's call; throws what the method refuses.
     typealias Build = (ContractCase.Call) throws -> ErasedRequest
 
+    /// The common fields of every request (`sdk/core/network.md`).
+    static let commonFieldNames: Set<String> = ["shop_id", "did", "sid", "seance", "segment", "stream"]
+
+    /// The common fields of a device the shop knows, each with a value: what the client adds shows.
+    private static let commonFields = CommonFields(shopId: "shop-1", deviceId: "did-1", sessionId: "sid-1", stream: "ios", segment: "B")
+
+    /// Whether `json`, a case of a fixture, is for iOS and calls one of `methods` (any, when `nil`).
+    private static func takes(_ json: [String: Any], _ methods: Set<String>?) -> Bool {
+        let method = (json["call"] as? [String: Any])?["method"] as? String ?? ""
+        return (json["platform"] as? String ?? "ios") == "ios" && methods.map { $0.contains(method) } ?? true
+    }
+
     /// Every case of `name` with a request or an error instead of one: the call builds that request, or
-    /// throws that error.
-    static func checkRequests(_ name: String, file: StaticString = #filePath, line: UInt = #line, build: Build) throws {
-        let raw = try ContractFixtures.cases(name, from: .proposed)
+    /// throws that error. `methods`: the cases of these methods alone.
+    static func checkRequests(
+        _ name: String,
+        methods: Set<String>? = nil,
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        build: Build
+    ) throws {
+        let raw = try ContractFixtures.cases(name, from: .proposed).filter { takes($0, methods) }
         let cases = raw.map(ContractCase.init)
         var checked = 0
         for (json, item) in zip(raw, cases) {
@@ -65,6 +87,9 @@ enum NamespaceFixtures {
                 for problem in ContractJSON.mismatches(ContractJSON.of(own), wanted, at: "request") {
                     XCTFail("\(item.name): \(problem)", file: file, line: line)
                 }
+                if let common = item.request?.commonFields {
+                    checkCommonFields(of: request, are: Set(common), listed: wanted, item.name, file: file, line: line)
+                }
             } else if let error = item.expectedError {
                 checked += 1
                 do {
@@ -78,11 +103,53 @@ enum NamespaceFixtures {
         XCTAssertGreaterThan(checked, 0, "\(name) has calls", file: file, line: line)
     }
 
+    /// Of the common fields, `request` goes with `common` alone once the client adds them, as
+    /// `NetworkClient` does; a common field the case lists among the request's own (`listed`) is the
+    /// method's, given by the caller, and keeps its value.
+    private static func checkCommonFields(
+        of request: ErasedRequest,
+        are common: Set<String>,
+        listed: [String: Any],
+        _ name: String,
+        file: StaticString,
+        line: UInt
+    ) {
+        let sent: [String: Any]
+        if request.method == "GET" {
+            sent = commonFields.apply(to: request.query, path: request.path, onlyShop: request.secret)
+        } else {
+            sent = commonFields.apply(to: request.body, path: request.path, onlyShop: request.secret)
+        }
+        let mine = Set(listed.keys)
+        XCTAssertEqual(
+            Set(sent.keys).intersection(commonFieldNames).subtracting(mine), common.subtracting(mine),
+            "\(name): the common fields", file: file, line: line
+        )
+        for key in mine.intersection(commonFieldNames) {
+            for problem in ContractJSON.mismatches(ContractJSON.of(sent[key] ?? NSNull()), listed[key] ?? NSNull(), at: key) {
+                XCTFail("\(name): \(problem)", file: file, line: line)
+            }
+        }
+    }
+
     /// Every case of `name` with an answer: the request of its call ends with the case's result or error,
-    /// as the client classifies the answer and the request path reads it.
-    static func checkAnswers(_ name: String, file: StaticString = #filePath, line: UInt = #line, build: Build) throws {
+    /// as the client classifies the answer and the request path reads it. `methods`: the cases of these
+    /// methods alone. The result of a method of `listed` is held to the fields its case lists
+    /// (`FixtureMatching`): a file compared whole names the methods whose released model the platforms
+    /// name differently (`profile.getOrders`).
+    static func checkAnswers(
+        _ name: String,
+        methods: Set<String>? = nil,
+        listed: Set<String> = [],
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        build: Build
+    ) throws {
         let logger = SdkLogger(shopId: "package-\(UUID().uuidString)", level: .none)
-        let cases = try ContractFixtures.fixture(name, from: .proposed).filter { $0.response != nil }
+        let cases = try ContractFixtures.cases(name, from: .proposed)
+            .filter { takes($0, methods) }
+            .map(ContractCase.init)
+            .filter { $0.response != nil }
         XCTAssertFalse(cases.isEmpty, "\(name) has answers", file: file, line: line)
         for item in cases {
             guard let call = item.call, let response = item.response else { continue }
@@ -108,7 +175,10 @@ enum NamespaceFixtures {
                     XCTFail("\(item.name): the case has no result", file: file, line: line)
                     continue
                 }
-                for problem in ContractJSON.mismatches(value, expected, at: "result") {
+                let problems = listed.contains(call.method)
+                    ? FixtureMatching.mismatches(value, expected, at: "result")
+                    : ContractJSON.mismatches(value, expected, at: "result")
+                for problem in problems {
                     XCTFail("\(item.name): \(problem)", file: file, line: line)
                 }
             case .failure(let error):

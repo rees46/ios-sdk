@@ -71,7 +71,8 @@ final class NamespaceRequestTests: CoreScenarioTestCase {
     func test_cart_get_sends_the_fixtures_request_with_the_common_fields() throws {
         let shop = newShop()
         let sdk = makeV2(shop)
-        let cases = try ContractFixtures.fixture("cart", from: .proposed).filter { $0.request != nil }
+        // `cart.clear`, a server method, is the package tests' (`CartPackageTests`).
+        let cases = try ContractFixtures.fixture("cart", from: .proposed).filter { $0.request != nil && $0.call?.method == "get" }
         XCTAssertFalse(cases.isEmpty)
         for item in cases {
             let expected = try XCTUnwrap(item.request)
@@ -96,7 +97,7 @@ final class NamespaceRequestTests: CoreScenarioTestCase {
     func test_cart_get_ends_as_the_fixture_says_for_each_answer_without_a_repeat() throws {
         let shop = newShop()
         let sdk = makeV2(shop)
-        let cases = try ContractFixtures.fixture("cart", from: .proposed).filter { $0.response != nil }
+        let cases = try ContractFixtures.fixture("cart", from: .proposed).filter { $0.response != nil && $0.call?.method == "get" }
         XCTAssertFalse(cases.isEmpty)
         for item in cases {
             let response = try XCTUnwrap(item.response)

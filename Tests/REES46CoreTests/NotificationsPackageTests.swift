@@ -3,7 +3,9 @@
 //  REES46CoreTests
 //
 //  `notifications` without a server: which calls of the proposed fixture are refused before anything
-//  goes and where the others go, and the `async` form of a method with `completion`.
+//  goes and where the others go, the request `getHistory` builds — the shop's secret, `shop_id` alone of
+//  the common fields — and what it makes of each answer, and the `async` form of a method with
+//  `completion`.
 //
 
 import XCTest
@@ -28,7 +30,7 @@ final class NotificationsPackageTests: XCTestCase {
         let cases = try Self.iosCases()
         XCTAssertEqual(Set(cases.compactMap { $0.call?.name }), [
             "notifications.trackDelivered", "notifications.trackOpened", "notifications.trackClicked",
-            "notifications.trackClosed", "notifications.setPushToken",
+            "notifications.trackClosed", "notifications.setPushToken", "notifications.getHistory",
         ])
         XCTAssertFalse(
             FileManager.default.fileExists(atPath: ContractFixtures.url("notifications").path),
@@ -77,6 +79,36 @@ final class NotificationsPackageTests: XCTestCase {
             XCTAssertEqual(request.body["platform"] as? String, provider.iosPlatform, item.name)
             XCTAssertNil(request.body["push_provider"], "\(item.name): iOS sends none")
         }
+    }
+
+    func test_get_history_builds_the_fixtures_requests_and_refuses_its_arguments() throws {
+        try NamespaceFixtures.checkRequests("notifications", methods: ["getHistory"], build: Self.history)
+    }
+
+    /// The answer's model is the released `UserPayloadResponse`: the case of Android names its own.
+    func test_get_history_ends_as_the_fixture_says_for_each_answer() throws {
+        try NamespaceFixtures.checkAnswers("notifications", methods: ["getHistory"], listed: ["getHistory"], build: Self.history)
+    }
+
+    /// The request of a fixture's `notifications.getHistory`.
+    private static func history(_ call: ContractCase.Call) throws -> ErasedRequest {
+        let args = call.args
+        return ErasedRequest(
+            try NotificationsAPIImpl.historyRequest(
+                shopSecret: NamespaceFixtures.string(args["shopSecret"]) ?? "",
+                type: NamespaceFixtures.string(args["type"]) ?? "",
+                phone: NamespaceFixtures.string(args["phone"]),
+                email: NamespaceFixtures.string(args["email"]),
+                externalId: NamespaceFixtures.string(args["externalId"]),
+                loyaltyId: NamespaceFixtures.string(args["loyaltyId"]),
+                channel: NamespaceFixtures.string(args["channel"]),
+                limit: NamespaceFixtures.int(args["limit"]),
+                page: NamespaceFixtures.int(args["page"]),
+                dateFrom: NamespaceFixtures.string(args["dateFrom"]),
+                did: NamespaceFixtures.string(args["did"])
+            ),
+            call: call.name
+        )
     }
 
     // MARK: - completion and async

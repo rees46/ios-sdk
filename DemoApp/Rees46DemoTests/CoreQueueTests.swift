@@ -1073,21 +1073,28 @@ final class CoreQueueTests: XCTestCase {
 
     // MARK: - Contract fixtures
 
+    /// The paths of the events: a case's `response` is the answer to its event.
+    private static let eventPaths = ["/push", "/push/custom", "/track/stories", "/popup/showed"]
+
     func test_the_shared_tracking_fixtures_pass_on_the_new_core() throws {
         for item in try ContractFixtures.cases("tracking") {
-            let name = item["name"] as? String ?? "?"
+            let typed = ContractCase(item)
+            let name = typed.name
             let call = item["call"] as? [String: Any] ?? [:]
             let args = call["args"] as? [String: Any] ?? [:]
             let shop = newShop()
+            // The server's answer to the case's event.
+            if let response = typed.response {
+                let reply = response.status.map { StubReply($0, json: String(decoding: response.body, as: UTF8.self)) } ?? StubReply.noAnswer
+                Self.eventPaths.forEach { answer($0, reply) }
+            }
             let sdk = make(shop)
             let done = expectation(description: name)
-            let result = Locked<Result<Void, SdkError>?>(nil)
-            let completion: (Result<Void, SdkError>) -> Void = { result.current = $0; done.fulfill() }
+            let result = Locked<Result<Void, Error>?>(nil)
+            let completion: (Result<Void, SdkError>) -> Void = { result.current = $0.mapError { $0 as Error }; done.fulfill() }
+            let source = Self.source(args["source"])
             switch call["method"] as? String {
             case "productView":
-                let source = (args["source"] as? [String: String]).flatMap { raw in
-                    Self.sourceType(raw["type"]).map { TrackingSource(type: $0, code: raw["code"] ?? "") }
-                }
                 sdk.tracking.productView(itemId: args["itemId"] as? String ?? "", source: source, completion: completion)
             case "categoryView":
                 sdk.tracking.categoryView(categoryId: args["categoryId"] as? String ?? "", completion: completion)
@@ -1095,7 +1102,9 @@ final class CoreQueueTests: XCTestCase {
                 let raw = args["item"] as? [String: Any] ?? [:]
                 let trackingItem = TrackingItem(id: raw["id"] as? String ?? "", quantity: raw["quantity"] as? Int ?? 1,
                                                 price: raw["price"] as? Double, fashionSize: raw["fashionSize"] as? String)
-                sdk.tracking.addToCart(item: trackingItem, completion: completion)
+                sdk.tracking.addToCart(item: trackingItem, source: source, completion: completion)
+            case "addToFavorites":
+                sdk.tracking.addToFavorites(itemId: args["itemId"] as? String ?? "", source: source, completion: completion)
             case "syncCart":
                 let items = (args["items"] as? [[String: Any]] ?? []).map {
                     TrackingItem(id: $0["id"] as? String ?? "", quantity: $0["quantity"] as? Int ?? 1, price: $0["price"] as? Double)
@@ -1110,33 +1119,70 @@ final class CoreQueueTests: XCTestCase {
                 }
                 let request = PurchaseTrackingRequest(orderId: raw["orderId"] as? String ?? "", orderPrice: raw["orderPrice"] as? Double ?? 0,
                                                       items: items, isTaxFree: raw["isTaxFree"] as? Bool ?? false)
-                sdk.tracking.purchase(request, completion: completion)
+                sdk.tracking.purchase(request, source: source, completion: completion)
             case "storyView":
                 sdk.tracking.storyView(storyId: args["storyId"] as? String ?? "", slideId: args["slideId"] as? String ?? "",
                                        code: args["code"] as? String, completion: completion)
             case "custom":
                 sdk.tracking.custom(event: args["event"] as? String ?? "", category: args["category"] as? String,
                                     customFields: args["customFields"] as? [String: Any], completion: completion)
+            case "popupShown":
+                // The contract's method: its completion hears when the queue took the event.
+                sdk.tracking.popupShown(popupId: args["popupId"] as? Int ?? 0) { result.current = $0.mapError { $0 as Error }; done.fulfill() }
             default:
                 XCTFail("\(name): a method the test does not know")
                 continue
             }
             wait(for: [done], timeout: 5)
 
+            // The requests of this shop but `/init`.
+            let ofShop = { StubURLProtocol.requests.filter { ($0.query["shop_id"] ?? $0.body["shop_id"] as? String) == shop && $0.path != "/init" } }
             if item["error"] != nil {
-                guard case .failure(.custom)? = result.current else { XCTFail("\(name): \(String(describing: result.current))"); continue }
-                XCTAssertTrue(StubURLProtocol.requests.filter { ($0.body["shop_id"] as? String) == shop && $0.path != "/init" }.isEmpty, name)
+                guard case .failure(let error)? = result.current, Self.isRefusal(error) else { XCTFail("\(name): \(String(describing: result.current))"); continue }
+                XCTAssertTrue(ofShop().isEmpty, name)
+                continue
+            }
+            if typed.response != nil || typed.sendsNothing {
+                // An answer to the event the queue sent, or no event at all: the case expects a success.
+                XCTAssertTrue(typed.expect["result"] is NSNull, "\(name): the test reads a success")
+                guard case .success? = result.current else { XCTFail("\(name): \(String(describing: result.current))"); continue }
+                sdk.eventQueue?.settle()
+                if typed.sendsNothing {
+                    expectNoRequest(to: "/track/stories", shop: shop, within: 0.3)
+                    XCTAssertTrue(ofShop().isEmpty, "\(name): \(ofShop().map(\.path))")
+                } else {
+                    XCTAssertEqual(ofShop().count, 1, "\(name): the event went once")
+                    XCTAssertTrue(files(sdk).isEmpty, "\(name): the server took it")
+                }
+                Self.eventPaths.forEach { answer($0) }
+                sdk.release()
                 continue
             }
             let expected = item["request"] as? [String: Any] ?? [:]
             let path = "/" + (expected["path"] as? String ?? "")
-            guard let sent = requests(path, shop).first else { XCTFail("\(name): nothing sent to \(path)"); continue }
+            // The contract's methods hear when the queue took the event, which goes a moment later.
+            XCTAssertTrue(eventually { !self.requests(path, shop).isEmpty }, "\(name): nothing sent to \(path)")
+            guard let sent = requests(path, shop).first else { continue }
             XCTAssertEqual(sent.method, expected["method"] as? String, name)
             for (key, value) in expected["body"] as? [String: Any] ?? [:] {
                 XCTAssertTrue((sent.body[key] as AnyObject?)?.isEqual(value) ?? false, "\(name): \(key) = \(String(describing: sent.body[key])), expected \(value)")
             }
             sdk.release()
         }
+    }
+
+    /// A fixture's source: its type by the contract's name (`webPushDigest`), its code.
+    private static func source(_ raw: Any?) -> TrackingSource? {
+        (raw as? [String: String]).flatMap { raw in
+            sourceType(raw["type"]).map { TrackingSource(type: $0, code: raw["code"] ?? "") }
+        }
+    }
+
+    /// A call refused before anything went: the old completion's `custom`, the contract's `invalidArgument`.
+    private static func isRefusal(_ error: Error) -> Bool {
+        if case .custom? = error as? SdkError { return true }
+        if case .invalidArgument? = error as? Rees46.SdkError { return true }
+        return false
     }
 
     private static func sourceType(_ raw: String?) -> TrackingSourceType? {
