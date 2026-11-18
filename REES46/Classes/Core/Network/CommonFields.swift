@@ -37,7 +37,8 @@ struct CommonFields {
     /// - Any other request goes with the device id the shop has stored when the request is sent, not
     ///   the one its caller put in earlier: after `deleteUserCredentials` the deleted one must not go
     ///   out. The caller's stands only while the shop has none, as in the old core.
-    func values(forPath path: String, own: [String: Any]) -> [String: String?] {
+    /// - `onlyShop`: a server method of a namespace (`SecretQuery`) gets `shop_id` alone.
+    func values(forPath path: String, own: [String: Any], onlyShop: Bool = false) -> [String: String?] {
         func present(_ key: String) -> String? {
             guard let value = own[key] else { return nil }
             let text = (value as? String) ?? "\(value)"
@@ -48,6 +49,7 @@ struct CommonFields {
         // Typed first: assigned straight into `[String: String?]`, `a ?? b` would wrap `a` and never
         // reach `b`.
         let shop: String? = present("shop_id") ?? nonEmpty(shopId)
+        guard !onlyShop else { return ["shop_id": shop] }
         let source: String? = present("stream") ?? nonEmpty(stream)
         var values: [String: String?] = ["shop_id": shop, "stream": source]
         guard path != "init", own["shop_secret"] == nil else { return values }
@@ -64,18 +66,18 @@ struct CommonFields {
     }
 
     /// `query` with the common fields filled in.
-    func apply(to query: [String: String], path: String) -> [String: String] {
+    func apply(to query: [String: String], path: String, onlyShop: Bool = false) -> [String: String] {
         var result = query
-        for (key, value) in values(forPath: path, own: query) {
+        for (key, value) in values(forPath: path, own: query, onlyShop: onlyShop) {
             result[key] = value
         }
         return result
     }
 
     /// `body` with the common fields filled in.
-    func apply(to body: [String: Any], path: String) -> [String: Any] {
+    func apply(to body: [String: Any], path: String, onlyShop: Bool = false) -> [String: Any] {
         var result = body
-        for (key, value) in values(forPath: path, own: body) {
+        for (key, value) in values(forPath: path, own: body, onlyShop: onlyShop) {
             if let value = value {
                 result[key] = value
             } else {

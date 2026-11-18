@@ -18,10 +18,13 @@ struct NotificationsAPIImpl: NotificationsAPI {
     private weak var instance: SimplePersonalizationSDK?
     /// Whether it was made for the SDK's own instance: once that is gone, a call is `notInitialized`.
     private let isTheSdks: Bool
+    /// The requests of the server method `getHistory`.
+    let requests: NamespaceRequests
 
     init(_ sdk: PersonalizationSDK) {
         instance = sdk as? SimplePersonalizationSDK
         isTheSdks = instance != nil
+        requests = NamespaceRequests(sdk)
     }
 
     // MARK: - Events

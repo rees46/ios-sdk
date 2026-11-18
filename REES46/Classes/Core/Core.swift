@@ -46,6 +46,9 @@ struct CoreRequest {
     /// The host of this request alone, without a scheme — the host of API v3, `Rees46Config.appDomain`;
     /// `nil` is the API host, `apiDomain`. Both cores send it there.
     var host: String?
+    /// `CoreV2`: a server method's request, with the shop's secret: it goes with `shop_id` and none of
+    /// the device's fields, `stream` included.
+    var secret = false
 
     /// `/init`: its own timeout, and in `CoreV2` the only request that may wait for the network.
     var isInit: Bool { path == "init" }

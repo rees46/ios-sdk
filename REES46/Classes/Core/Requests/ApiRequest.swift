@@ -23,13 +23,17 @@ struct ApiRequest<Value> {
     var timeout: TimeInterval?
     /// The host it goes to: the API's, or API v3's for the methods the contract puts there.
     var host: ApiHost = .api
+    /// A server method's request (`SecretQuery`): it goes with `shop_id` and none of the device's fields.
+    var secret = false
     /// The method's value of a `2xx` answer's body — empty when the answer had none; throws when the
     /// body is not one (`decoding`).
     let decode: (Data) throws -> Value
 
     /// The request as the core sends it.
     var coreRequest: CoreRequest {
-        CoreRequest(method: method, path: path, query: query, body: body, timeout: timeout, queryLists: queryLists)
+        var request = CoreRequest(method: method, path: path, query: query, body: body, timeout: timeout, queryLists: queryLists)
+        request.secret = secret
+        return request
     }
 }
 

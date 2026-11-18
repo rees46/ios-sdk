@@ -272,3 +272,207 @@ private extension Result {
         return nil
     }
 }
+
+/// The server methods with the shop's secret — `profile.getOrders`, `cart.clear`,
+/// `notifications.getHistory` — end to end over the stub server: the verb, the path and the query —
+/// `shop_id` and the method's own fields, none of the device's —, the answers the live API gives and
+/// its errors, the old core, and a secret that never reaches the log. The cases of each request and
+/// answer are the package's (`SecretMethodsPackageTests`).
+final class SecretMethodsNamespaceTests: CoreScenarioTestCase {
+
+    private let secret = "the-shop-secret-7f3c"
+
+    private struct Method {
+        let name: String
+        let path: String
+        /// The query it sends for its arguments, beside `shop_id`.
+        let sends: [String: String]
+        let answer: String
+        let call: (PersonalizationSDK, String, @escaping (Rees46.SdkError?) -> Void) -> Void
+        let callAsync: (PersonalizationSDK, String) async throws -> Void
+    }
+
+    private lazy var methods: [Method] = [
+        Method(
+            name: "profile.getOrders", path: "/orders/by_user",
+            sends: ["shop_secret": secret, "did": "given-did", "date_from": "2026-11-01"],
+            answer: #"{"status": "success", "data": {"orders": [{"_id": 1, "id": "o-1", "value": "69990.0", "items": [], "history": []}]}}"#,
+            call: { sdk, secret, done in sdk.profile.getOrders(shopSecret: secret, did: "given-did", dateFrom: "2026-11-01") { done($0.failure) } },
+            callAsync: { sdk, secret in _ = try await sdk.profile.getOrders(shopSecret: secret, did: "given-did", dateFrom: "2026-11-01") }
+        ),
+        Method(
+            name: "cart.clear", path: "/products/cart/clear",
+            sends: ["shop_secret": secret, "external_id": "x-1"],
+            answer: #"{"status": "success"}"#,
+            call: { sdk, secret, done in sdk.cart.clear(shopSecret: secret, externalId: "x-1") { done($0.failure) } },
+            callAsync: { sdk, secret in try await sdk.cart.clear(shopSecret: secret, externalId: "x-1") }
+        ),
+        Method(
+            name: "notifications.getHistory", path: "/notifications",
+            sends: ["shop_secret": secret, "type": "bulk", "channel": "mobile_push", "date_from": "2026-10-01", "email": "e@example.com"],
+            answer: #"{"status": "success", "payload": {"messages": []}}"#,
+            call: { sdk, secret, done in
+                sdk.notifications.getHistory(shopSecret: secret, type: "bulk", email: "e@example.com", channel: "mobile_push", dateFrom: "2026-10-01") { done($0.failure) }
+            },
+            callAsync: { sdk, secret in
+                _ = try await sdk.notifications.getHistory(shopSecret: secret, type: "bulk", email: "e@example.com", channel: "mobile_push", dateFrom: "2026-10-01")
+            }
+        ),
+    ]
+
+    private func outcome(_ method: Method, _ sdk: PersonalizationSDK, secret: String? = nil) -> Rees46.SdkError? {
+        let done = expectation(description: method.name)
+        let error = Locked<Rees46.SdkError?>(nil)
+        method.call(sdk, secret ?? self.secret) { failure in
+            XCTAssertTrue(Thread.isMainThread, method.name)
+            error.current = failure
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+        return error.current
+    }
+
+    private func asyncOutcome(_ method: Method, _ sdk: PersonalizationSDK) -> Rees46.SdkError? {
+        let done = expectation(description: "async \(method.name)")
+        let error = Locked<Rees46.SdkError?>(nil)
+        let secret = self.secret
+        _Concurrency.Task {
+            do {
+                try await method.callAsync(sdk, secret)
+            } catch let failure as Rees46.SdkError {
+                error.current = failure
+            } catch {
+                XCTFail("\(method.name): \(error)")
+            }
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+        return error.current
+    }
+
+    func test_each_method_sends_get_with_shop_id_and_its_own_fields_alone() throws {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        for method in methods {
+            answer(method.path, StubReply(json: method.answer))
+            XCTAssertNil(outcome(method, sdk), method.name)
+            XCTAssertNil(asyncOutcome(method, sdk), method.name)
+            let sent = requests(method.path, shop)
+            XCTAssertEqual(sent.count, 2, method.name)
+            let request = try XCTUnwrap(sent.last)
+            XCTAssertEqual(request.method, "GET", method.name)
+            var expected = method.sends
+            expected["shop_id"] = shop
+            XCTAssertEqual(request.query, expected, "\(method.name): no did, sid, seance, segment or stream of the device")
+            XCTAssertTrue(request.body.isEmpty, method.name)
+        }
+        sdk.release()
+    }
+
+    func test_the_answers_are_read_into_the_released_models() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        answer("/orders/by_user", StubReply(json: #"""
+        {"status": "success", "data": {"orders": [{"_id": 61, "id": "sdk-test-ios-1", "date": "2026-11-18", "value": "85980.0",
+         "cash_value": "0.0", "tax_free": false, "delivery_type": "pickup", "payment_type": "card", "gift_package": false,
+         "custom_properties": {}, "history": [], "items": [{"amount": 1, "price": "69990.0", "item": {"id": "284730"}}]}]}}
+        """#))
+        answer("/notifications", StubReply(json: #"{"status": "success", "payload": {"messages": [{"type": "bulk", "code": "c-1", "subject": "Sale"}]}}"#))
+        let done = expectation(description: "answers")
+        done.expectedFulfillmentCount = 2
+        let orders = Locked<[Order]>([])
+        let history = Locked<UserPayloadResponse?>(nil)
+        sdk.profile.getOrders(shopSecret: secret, externalId: "x") { orders.current = (try? $0.get()) ?? []; done.fulfill() }
+        sdk.notifications.getHistory(shopSecret: secret, type: "bulk", channel: "mobile_push", dateFrom: "2026-10-01", did: "d") {
+            history.current = try? $0.get()
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+        XCTAssertEqual(orders.current.map(\.id), ["sdk-test-ios-1"])
+        XCTAssertEqual(orders.current.first?.value, "85980.0")
+        XCTAssertEqual(orders.current.first?.items.first?.item?.id, "284730")
+        XCTAssertEqual(history.current?.notifications.map(\.codeId), ["c-1"])
+        sdk.release()
+    }
+
+    func test_the_errors_of_the_server_are_its_http_codes_and_other_answers_decoding() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        let errors: [(String, StubReply, Rees46.SdkError)] = [
+            ("/orders/by_user", StubReply(403, json: #"{"status": "error", "message": "Shop secret is missing"}"#), .http(code: 403, serverCode: nil)),
+            ("/products/cart/clear", StubReply(400, json: #"{"status": "error", "message": "Client not found"}"#), .http(code: 400, serverCode: nil)),
+            ("/notifications", StubReply(404, json: #"{"status": "error", "message": "User is not found"}"#), .http(code: 404, serverCode: nil)),
+        ]
+        for (index, (path, reply, error)) in errors.enumerated() {
+            answer(path, reply)
+            XCTAssertEqual(outcome(methods[index], sdk), error, path)
+        }
+        answer("/orders/by_user", StubReply(json: #"{"status": "success"}"#))
+        answer("/products/cart/clear", StubReply(json: #"{"cleared": true}"#))
+        answer("/notifications", StubReply(json: #"{"status": "success", "messages": []}"#))
+        for method in methods {
+            XCTAssertEqual(outcome(method, sdk), .decoding, method.name)
+        }
+        sdk.release()
+    }
+
+    func test_a_refused_argument_sends_nothing() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        let done = expectation(description: "refused")
+        done.expectedFulfillmentCount = 4
+        let errors = Locked<[Rees46.SdkError]>([])
+        let orders: (Result<[Order], Rees46.SdkError>) -> Void = { if case .failure(let error) = $0 { errors.mutate { $0.append(error) } }; done.fulfill() }
+        let cleared: (Result<Void, Rees46.SdkError>) -> Void = { if case .failure(let error) = $0 { errors.mutate { $0.append(error) } }; done.fulfill() }
+        let history: (Result<UserPayloadResponse, Rees46.SdkError>) -> Void = { if case .failure(let error) = $0 { errors.mutate { $0.append(error) } }; done.fulfill() }
+        sdk.profile.getOrders(shopSecret: secret, completion: orders)
+        sdk.profile.getOrders(shopSecret: "", did: "d", completion: orders)
+        sdk.cart.clear(shopSecret: secret, completion: cleared)
+        sdk.notifications.getHistory(shopSecret: secret, type: "bulk", did: "d", completion: history)
+        wait(for: [done], timeout: 5)
+        XCTAssertEqual(errors.current.count, 4)
+        XCTAssertTrue(errors.current.allSatisfy { if case .invalidArgument = $0 { return true } else { return false } }, "\(errors.current)")
+        for method in methods {
+            XCTAssertTrue(requests(method.path, shop).isEmpty, method.name)
+        }
+        sdk.release()
+    }
+
+    func test_the_secret_never_reaches_the_log() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        for method in methods {
+            answer(method.path, StubReply(403, json: #"{"status": "error", "message": "Shop secret is missing"}"#))
+            _ = outcome(method, sdk)
+            answer(method.path, StubReply(json: "not json"))
+            _ = outcome(method, sdk)
+        }
+        sdk.profile.getOrders(shopSecret: secret, did: " ") { _ in }
+        XCTAssertTrue(eventually { self.logged(shop, "request").count + self.logged(shop, "request_failed").count >= 3 })
+        drainMainQueue()
+        let lines = heard.flatMap { [$0.message] + $0.context.values }
+        XCTAssertFalse(lines.isEmpty)
+        XCTAssertFalse(lines.contains { $0.contains(secret) }, "the secret is not in the log")
+        sdk.release()
+    }
+
+    func test_on_the_old_core_each_method_is_not_initialized_sends_nothing_and_logs_its_name() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        for method in methods {
+            XCTAssertEqual(outcome(method, sdk), .notInitialized, method.name)
+            XCTAssertEqual(asyncOutcome(method, sdk), .notInitialized, method.name)
+            XCTAssertTrue(requests(method.path, shop).isEmpty, method.name)
+        }
+        let names = Set(methods.map(\.name))
+        XCTAssertTrue(eventually { Set(self.logged(shop, "core_flag_mismatch").compactMap { $0.context["call"] }) == names })
+        sdk.release()
+    }
+
+    func test_another_conformer_of_the_protocol_is_not_initialized() {
+        let fake = FakeSDK(shopId: "fake-\(UUID().uuidString)")
+        for method in methods {
+            XCTAssertEqual(outcome(method, fake), .notInitialized, method.name)
+        }
+    }
+}

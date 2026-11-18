@@ -110,7 +110,8 @@ final class CoreV2: Core {
             timeout: request.timeout,
             waitsForNetwork: request.isInit && request.waitsForNetwork,
             queryLists: request.queryLists,
-            host: request.host
+            host: request.host,
+            secret: request.secret
         )
         let wait = request.isInit ? nil : (request.timeout ?? NetworkClient.defaultTimeout)
         return .pending {

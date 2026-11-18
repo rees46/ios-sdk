@@ -35,6 +35,8 @@ actor NetworkClient {
         /// The host of this request alone, without a scheme: the host of API v3 (`appDomain`). `nil` is
         /// the client's, the API host.
         var host: String?
+        /// A server method's request (`CoreRequest.secret`): `shop_id` is its one common field.
+        var secret = false
     }
 
     struct Response {
@@ -302,7 +304,7 @@ actor NetworkClient {
         let baseURL = request.host.map { "https://\($0)/" } ?? self.baseURL
         switch request.method {
         case .get:
-            let query = fields.apply(to: request.query, path: request.path)
+            let query = fields.apply(to: request.query, path: request.path, onlyShop: request.secret)
             guard var components = URLComponents(string: baseURL + request.path) else {
                 return .failure(.invalidArgument("the path \(request.path) is not a URL path"))
             }
@@ -322,7 +324,7 @@ actor NetworkClient {
             guard let url = URL(string: baseURL + request.path) else {
                 return .failure(.invalidArgument("the path \(request.path) is not a URL path"))
             }
-            guard let body = SafeJSON.data(fields.apply(to: request.body, path: request.path)) else {
+            guard let body = SafeJSON.data(fields.apply(to: request.body, path: request.path, onlyShop: request.secret)) else {
                 return .failure(.invalidArgument("the parameters of \(request.path) are not valid JSON"))
             }
             urlRequest = URLRequest(url: url)
