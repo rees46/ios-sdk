@@ -177,7 +177,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             }
             Self.storeStoriesSource(built.storiesCode, sdk: sdk)
             _ = enqueue(sdk, path: built.path, body: body, accepted: accepted) { result in
-                self.finish(result, showsPopup: false, completion: completion)
+                self.finish(result, path: built.path, showsPopup: false, completion: completion)
             }
             return
         }
@@ -217,7 +217,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             }
 
             sdk.postRequest(path: built.path, params: params) { result in
-                self.finish(result, showsPopup: true, completion: completion)
+                self.finish(result, path: built.path, showsPopup: true, completion: completion)
             }
         }
     }
@@ -263,13 +263,19 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }
 
     /// The answer as the tracking methods have always taken it: `status: success` is a success —
-    /// with its popup, on the old core; the new core's queue shows popups itself (decision 2) —
-    /// anything else `.responseError`.
-    private func finish(_ result: Result<[String: Any], SdkError>, showsPopup: Bool, completion: (Result<Void, SdkError>) -> Void) {
+    /// with its popup, on the old core; the new core's queue shows popups itself (decision 2) —;
+    /// anything else `.responseError`. `path` `track/stories` answers `204` without a body: there an
+    /// empty answer is a success too.
+    private func finish(
+        _ result: Result<[String: Any], SdkError>,
+        path: String = "push",
+        showsPopup: Bool,
+        completion: (Result<Void, SdkError>) -> Void
+    ) {
         switch result {
         case let .success(answer):
             let status = answer[Constants.status] as? String ?? ""
-            if status == Constants.success {
+            if status == Constants.success || (answer.isEmpty && path == Constants.trackStoriesPath) {
                 if showsPopup {
                     showPopup(jsonResult: answer)
                 }

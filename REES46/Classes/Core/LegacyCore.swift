@@ -156,8 +156,10 @@ final class LegacyCore: Core {
         }.resume()
     }
 
+    /// The answer of a `POST`. The events that the server answers with `204` and no body take an empty
+    /// one as an empty answer: the events of pushes, `popup/showed` and `track/stories`.
     private func decodePost(_ data: Data, path: String) -> Result<Any, SdkError> {
-        if data.isEmpty, path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") {
+        if data.isEmpty, path.contains("clicked") || path.contains("closed") || path.contains("received") || path.contains("showed") || path == "track/stories" {
             return .success([String: Any]())
         }
         guard let json = try? JSONSerialization.jsonObject(with: data) else {

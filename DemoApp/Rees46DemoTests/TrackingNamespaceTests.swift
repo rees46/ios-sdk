@@ -1018,6 +1018,32 @@ final class TrackingContractTests: CoreScenarioTestCase {
         XCTAssertEqual(sent.first?.body["event"] as? String, "click")
     }
 
+    /// `track/stories` answers `204` without a body, as the live server does: the old completion hears
+    /// a success, not `responseError`.
+    func test_a_story_event_answered_with_204_and_no_body_is_a_success_on_the_new_core() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        answer("/track/stories", StubReply(204, json: ""))
+        guard case .success? = completion({ sdk.tracking.storyView(storyId: "40", slideId: "36", code: "b", completion: $0) }) else {
+            return XCTFail("the server took it")
+        }
+        guard case .success? = completion({ sdk.tracking.storyClick(storyId: "40", slideId: "36", code: "b", completion: $0) }) else {
+            return XCTFail("the server took it")
+        }
+        XCTAssertEqual(requests("/track/stories", shop).count, 2)
+    }
+
+    func test_a_story_event_answered_with_204_and_no_body_is_a_success_on_the_old_core() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        answer("/track/stories", StubReply(204, json: ""))
+        guard case .success? = completion({ sdk.tracking.storyView(storyId: "40", slideId: "36", code: "b", completion: $0) }) else {
+            return XCTFail("the server took it")
+        }
+        answer("/track/stories", StubReply(json: #"{"status":"error"}"#))
+        XCTAssertEqual(failure(completion { sdk.tracking.storyClick(storyId: "40", slideId: "36", code: "b", completion: $0) }), .decoding, "a body that is not success")
+    }
+
     func test_the_old_core_sends_the_slides_as_it_always_has() {
         let shop = newShop()
         let sdk = makeLegacy(shop)
