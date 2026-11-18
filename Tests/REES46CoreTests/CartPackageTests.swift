@@ -2,8 +2,9 @@
 //  CartPackageTests.swift
 //  REES46CoreTests
 //
-//  `cart.get` without a server: what the request path makes of each answer of the proposed fixture, as
-//  the client classifies it, and which bodies are a cart.
+//  `cart` without a server: what the request path makes of each answer of the proposed fixture to
+//  `cart.get`, as the client classifies it, and which bodies are a cart; the request `cart.clear` builds
+//  — the shop's secret, `shop_id` alone of the common fields —, its refusals and its answers.
 //
 
 import XCTest
@@ -11,10 +12,10 @@ import XCTest
 
 final class CartPackageTests: XCTestCase {
 
-    /// Every answer of the proposed `cart` fixture, as the client classifies it and the path reads it.
+    /// Every answer of the proposed `cart` fixture to `get`, as the client classifies it and the path reads it.
     func test_the_cart_fixture_answers_end_as_the_fixture_says() throws {
         // A case without an answer runs over the stub server (`NamespaceRequestTests`).
-        let cases = try ContractFixtures.fixture("cart", from: .proposed).filter { $0.response?.status != nil }
+        let cases = try ContractFixtures.fixture("cart", from: .proposed).filter { $0.response?.status != nil && $0.call?.method == "get" }
         XCTAssertFalse(cases.isEmpty)
         let logger = SdkLogger(shopId: "package-\(UUID().uuidString)", level: .none)
         for item in cases {
@@ -39,6 +40,30 @@ final class CartPackageTests: XCTestCase {
         case .failure(let error):
             XCTAssertTrue(item.expectedError?.matches(error) == true, "\(item.name): \(error), expected \(String(describing: item.expectedError))", file: file, line: line)
         }
+    }
+
+    func test_clear_builds_the_fixtures_requests_and_refuses_its_arguments() throws {
+        try NamespaceFixtures.checkRequests("cart", methods: ["clear"], build: Self.clear)
+    }
+
+    func test_clear_ends_as_the_fixture_says_for_each_answer() throws {
+        try NamespaceFixtures.checkAnswers("cart", methods: ["clear"], build: Self.clear)
+    }
+
+    /// The request of a fixture's `cart.clear`.
+    private static func clear(_ call: ContractCase.Call) throws -> ErasedRequest {
+        let args = call.args
+        return ErasedRequest(
+            try CartAPIImpl.clearRequest(
+                shopSecret: NamespaceFixtures.string(args["shopSecret"]) ?? "",
+                email: NamespaceFixtures.string(args["email"]),
+                phone: NamespaceFixtures.string(args["phone"]),
+                loyaltyId: NamespaceFixtures.string(args["loyaltyId"]),
+                externalId: NamespaceFixtures.string(args["externalId"]),
+                telegramId: NamespaceFixtures.string(args["telegramId"])
+            ),
+            call: call.name
+        )
     }
 
     func test_the_body_of_a_cart_is_its_value_whatever_else_the_body_holds() {

@@ -15,11 +15,14 @@ final class NotificationsNamespaceTests: CoreScenarioTestCase {
 
     // MARK: - The fixture's cases
 
-    /// The cases of the proposed `notifications` fixture for iOS: those of no platform and of iOS.
+    /// The cases of the proposed `notifications` fixture for iOS: those of no platform and of iOS. Not
+    /// those of `getHistory`, a server method the package tests hold to the fixture
+    /// (`NotificationsPackageTests`).
     private static func iosCases() throws -> [ContractCase] {
         try ContractFixtures.cases("notifications", from: .proposed)
             .filter { ($0["platform"] as? String ?? "ios") == "ios" }
             .map(ContractCase.init)
+            .filter { $0.call?.method != "getHistory" }
     }
 
     /// The event of a `track…` method of the fixture.

@@ -20,8 +20,10 @@ final class ClientPackageTests: XCTestCase {
         try Fixtures.checkRequests("profile", build: Self.profile)
     }
 
+    /// `getOrders` returns the released `Order`, whose product the platforms name apart: its case lists
+    /// the fields both name alike.
     func test_profile_ends_as_the_fixture_says_for_each_answer() throws {
-        try Fixtures.checkAnswers("profile", build: Self.profile)
+        try Fixtures.checkAnswers("profile", listed: ["getOrders"], build: Self.profile)
     }
 
     func test_subscriptions_build_the_fixtures_requests_and_refuse_its_arguments() throws {
@@ -61,6 +63,20 @@ final class ClientPackageTests: XCTestCase {
             return ErasedRequest(try ProfileAPIImpl.setRequest(profileRequest(call.args["request"])), call: call.name)
         case "getLastOrder":
             return ErasedRequest(ProfileAPIImpl.lastOrderRequest, call: call.name)
+        case "getOrders":
+            let args = call.args
+            return ErasedRequest(
+                try ProfileAPIImpl.ordersRequest(
+                    shopSecret: Fixtures.string(args["shopSecret"]) ?? "",
+                    did: Fixtures.string(args["did"]),
+                    email: Fixtures.string(args["email"]),
+                    phone: Fixtures.string(args["phone"]),
+                    loyaltyId: Fixtures.string(args["loyaltyId"]),
+                    externalId: Fixtures.string(args["externalId"]),
+                    dateFrom: Fixtures.string(args["dateFrom"])
+                ),
+                call: call.name
+            )
         default:
             throw Unknown(call: call.name)
         }

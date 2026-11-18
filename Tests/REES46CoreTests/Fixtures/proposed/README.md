@@ -7,11 +7,14 @@ is removed.
 
 - `cart.json` — `cart.get` (`sdk/contract/cart.md`), the same cases the Android SDK tests by. In `expect`, `result`
   is the method's value by the contract's field names; `response.status: null` is no answer, which the tests play as a
-  connection that is never made (`network`).
+  connection that is never made (`network`). Then `cart.clear`, a server method with the shop's secret (decision 0006
+  of the contract): its request lists the common fields it carries, `request.commonFields: ["shop_id"]`, and none of
+  the device's.
 - `notifications.json` — the events of pushes and `setPushToken` (`sdk/contract/notifications.md`), the same cases the
   Android SDK tests by. A case with `platform` (`ios`, `android`) is of that platform only: the platforms send a push
   token with different `platform` and `push_provider`, and each refuses the other's provider. `expect.result: null` is a
-  success without a value.
+  success without a value. `getHistory` is a server method as `cart.clear` is; its result is the released model, which
+  the platforms name apart (`UserPayloadResponse` here), so each platform has its own case of a history.
 - `stories.json` — `stories.get` (`sdk/contract/stories.md`). In `expect.result` an element of a slide is an object with
   its `type` — `button`, `product`, `products`, `textBlock` — and its fields.
 - `predict.json` — `predict.getProbabilityToPurchase` (`sdk/contract/predict.md`).
@@ -34,4 +37,5 @@ In `expect.result` an object lists the fields the case checks; `null` is a field
   catalog's cases. The agent's path is on the host of API v3, `appDomain`, which the format does not name.
 - `profile.json`, `subscriptions.json`, `segments.json` — the client (`sdk/contract/profile.md`, `subscriptions.md`,
   `segments.md`): the Android SDK's files as they are, compared as the catalog's. A method without a value expects
-  `"result": null`.
+  `"result": null`. `profile.getOrders`, a server method as `cart.clear` is, returns the released `Order`, whose product
+  the platforms name apart: its result is held to the fields its case lists.

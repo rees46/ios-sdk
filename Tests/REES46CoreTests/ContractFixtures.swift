@@ -72,6 +72,9 @@ struct ContractCase {
     let call: Call?
     /// The request the call sends; only the fields listed count.
     let request: Request?
+    /// `"request": null`: the call sends nothing and ends with `expect.result` — a virtual slide of
+    /// `tracking.storyView`.
+    let sendsNothing: Bool
     /// The answer of the server; `status` `nil` is none (no network, a timeout).
     let response: Response?
     /// What the method ends with: `error` (`expectedError`), `result`, or a state of the core.
@@ -93,6 +96,9 @@ struct ContractCase {
         let path: String
         let query: [String: String]
         let body: [String: Any]
+        /// The common fields the request carries, when not all of them: a server method's `shop_id` alone.
+        /// A common field of `query` or `body` is the method's own, given by the caller.
+        let commonFields: [String]?
     }
 
     struct Response {
@@ -135,11 +141,13 @@ struct ContractCase {
                 method: request["method"] as? String ?? "",
                 path: request["path"] as? String ?? "",
                 query: (request["query"] as? [String: Any] ?? [:]).mapValues { "\($0)" },
-                body: request["body"] as? [String: Any] ?? [:]
+                body: request["body"] as? [String: Any] ?? [:],
+                commonFields: request["commonFields"] as? [String]
             )
         } else {
             request = nil
         }
+        sendsNothing = json["request"] is NSNull
         if let response = json["response"] as? [String: Any] {
             let body = response["body"].flatMap { $0 is NSNull ? nil : $0 }
             self.response = Response(
