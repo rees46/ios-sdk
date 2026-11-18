@@ -723,3 +723,380 @@ final class StoredSourceOnFollowingRequestsTests: XCTestCase {
         XCTAssertEqual(perCall["recommended_code"] as? String, "call-block")
     }
 }
+
+/// The contract's additions to `tracking` (`sdk/contract/tracking.md`) over the stub server, on both cores:
+/// `popupShown`, the `async` forms under `tracking.async`, the sources of a mailing an event refuses, and
+/// the slides `track/stories` takes.
+final class TrackingContractTests: CoreScenarioTestCase {
+
+    // MARK: - Helpers
+
+    /// Runs `body` in a task while this thread waits: what it threw, `.some(nil)` when nothing.
+    private func run(timeout: TimeInterval = 5, _ body: @escaping () async throws -> Void) -> Error?? {
+        let done = expectation(description: "async call")
+        let outcome = Locked<Error??>(nil)
+        _Concurrency.Task {
+            do {
+                try await body()
+                outcome.current = .some(nil)
+            } catch {
+                outcome.current = .some(error)
+            }
+            done.fulfill()
+        }
+        wait(for: [done], timeout: timeout)
+        return outcome.current
+    }
+
+    private func popupShown(_ tracking: TrackingAPI, _ popupId: Int) -> Result<Void, Rees46.SdkError>? {
+        let done = expectation(description: "popupShown")
+        let outcome = Locked<Result<Void, Rees46.SdkError>?>(nil)
+        tracking.popupShown(popupId: popupId) { result in
+            XCTAssertTrue(Thread.isMainThread)
+            outcome.current = result
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 5)
+        return outcome.current
+    }
+
+    private func failure(_ result: Result<Void, Rees46.SdkError>?) -> Rees46.SdkError? {
+        guard case .failure(let error)? = result else { return nil }
+        return error
+    }
+
+    /// What the old completion of a call heard, with the whole error behind it.
+    private func completion(_ call: (@escaping (Result<Void, SdkError>) -> Void) -> Void) -> Result<Void, Rees46.SdkError>? {
+        let done = expectation(description: "completion")
+        let outcome = Locked<Result<Void, Rees46.SdkError>?>(nil)
+        call(Rees46.BridgeErrors.completion { outcome.current = $0; done.fulfill() })
+        wait(for: [done], timeout: 5)
+        return outcome.current
+    }
+
+    // MARK: - popupShown
+
+    func test_popupShown_queues_popup_showed_and_completes_on_the_main_thread_once_the_queue_took_it() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        hold("/popup/showed")
+
+        guard case .success? = popupShown(sdk.tracking, 7) else { return XCTFail("the queue took it") }
+        XCTAssertEqual(files(sdk.storage).count, 1, "accepted: on disk, its answer still held")
+
+        release("/popup/showed")
+        XCTAssertTrue(eventually { self.requests("/popup/showed", shop).count == 1 })
+        let body = requests("/popup/showed", shop).first?.body ?? [:]
+        XCTAssertEqual(body["popup"] as? Int, 7)
+        XCTAssertEqual(body["did"] as? String, "d")
+        XCTAssertNotNil(body["sid"])
+        XCTAssertNil(body["source"], "popup/showed reads no source")
+        XCTAssertTrue(eventually { self.files(sdk.storage).isEmpty })
+    }
+
+    func test_popupShown_of_a_released_instance_is_notInitialized_and_sends_nothing() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        sdk.release()
+
+        XCTAssertEqual(failure(popupShown(sdk.tracking, 7)), .notInitialized)
+        XCTAssertEqual(run { try await sdk.tracking.async.popupShown(popupId: 7) } as? Rees46.SdkError, .notInitialized)
+        XCTAssertTrue(requests("/popup/showed", shop).isEmpty)
+    }
+
+    func test_popupShown_on_the_old_core_sends_at_once_and_hears_the_servers_answer() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+
+        guard case .success? = popupShown(sdk.tracking, 9) else { return XCTFail("the server took it") }
+        let body = requests("/popup/showed", shop).last?.body ?? [:]
+        XCTAssertEqual(body["popup"] as? Int, 9)
+        XCTAssertEqual(body["shop_id"] as? String, shop)
+
+        answer("/popup/showed", StubReply(500, json: #"{"status":"error","message":"boom"}"#))
+        XCTAssertEqual(failure(popupShown(sdk.tracking, 9)), .http(code: 500, serverCode: nil))
+    }
+
+    func test_popupShown_of_a_tracking_the_sdk_did_not_make_is_notInitialized() {
+        XCTAssertEqual(failure(popupShown(AppTracking(), 7)), .notInitialized)
+    }
+
+    // MARK: - The async forms
+
+    func test_an_async_form_returns_once_the_queue_took_the_event_not_once_it_was_sent() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        hold("/push")
+
+        XCTAssertNil(run { try await sdk.tracking.async.productView(itemId: "37") } ?? .some(TestError.noOutcome), "returned while its request is held")
+        XCTAssertNil(run { try await sdk.tracking.async.custom(event: "flutter_example", category: "c") } ?? .some(TestError.noOutcome))
+        XCTAssertNil(run { try await sdk.tracking.async.storyView(storyId: "12", slideId: "34", code: "main") } ?? .some(TestError.noOutcome))
+
+        release("/push")
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 && self.requests("/push/custom", shop).count == 1 })
+        XCTAssertTrue(eventually { self.requests("/track/stories", shop).count == 1 })
+        XCTAssertEqual(itemIds(requests("/push", shop)), ["37"])
+        XCTAssertEqual(requests("/push/custom", shop).first?.body["event"] as? String, "flutter_example")
+    }
+
+    func test_every_async_form_sends_its_event() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        let tracking = sdk.tracking.async
+        let purchase = PurchaseTrackingRequest(orderId: "o-1", orderPrice: 10, items: [PurchaseItemRequest(id: "1", amount: 1, price: 10)])
+        let calls: [() async throws -> Void] = [
+            { try await tracking.productView(itemId: "1", source: TrackingSource(type: .dynamic, code: "b")) },
+            { try await tracking.categoryView(categoryId: "c-1") },
+            { try await tracking.search(query: "boots") },
+            { try await tracking.addToCart(item: TrackingItem(id: "2", quantity: 2)) },
+            { try await tracking.syncCart(items: []) },
+            { try await tracking.removeFromCart(itemId: "2") },
+            { try await tracking.addToFavorites(itemId: "3") },
+            { try await tracking.syncFavorites(itemIds: ["3"]) },
+            { try await tracking.removeFromFavorites(itemId: "3") },
+            { try await tracking.purchase(purchase) },
+            { try await tracking.storyClick(storyId: "12", slideId: "34") },
+            { try await tracking.popupShown(popupId: 5) },
+        ]
+        for call in calls {
+            XCTAssertNil(run(call) ?? .some(TestError.noOutcome))
+        }
+
+        XCTAssertTrue(queueIdle(sdk))
+        let events = requests("/push", shop).compactMap { $0.body["event"] as? String }
+        XCTAssertEqual(events, ["view", "category", "search", "cart", "cart", "remove_from_cart", "wish", "wish", "remove_wish", "purchase"])
+        XCTAssertEqual(requests("/track/stories", shop).first?.body["event"] as? String, "click")
+        XCTAssertEqual(requests("/popup/showed", shop).first?.body["popup"] as? Int, 5)
+    }
+
+    func test_an_async_form_throws_the_refusal_and_sends_nothing() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        let empty = PurchaseTrackingRequest(orderId: "o-1", orderPrice: 10, items: [])
+
+        guard case .invalidArgument? = run({ try await sdk.tracking.async.productView(itemId: " ") }) as? Rees46.SdkError else {
+            return XCTFail("an empty item id")
+        }
+        guard case .invalidArgument? = run({ try await sdk.tracking.async.purchase(empty) }) as? Rees46.SdkError else {
+            return XCTFail("a purchase without items")
+        }
+        guard case .invalidArgument? = run({ try await sdk.tracking.async.custom(event: "e", customFields: ["did": "x"]) }) as? Rees46.SdkError else {
+            return XCTFail("a reserved key")
+        }
+        XCTAssertNil(run { try await sdk.tracking.async.storyView(storyId: "12_1", slideId: "1") } ?? .some(TestError.noOutcome), "a virtual slide is no error")
+
+        sdk.release()
+        XCTAssertEqual(run { try await sdk.tracking.async.categoryView(categoryId: "c") } as? Rees46.SdkError, .notInitialized)
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertTrue(requests("/push", shop).isEmpty)
+        XCTAssertTrue(requests("/push/custom", shop).isEmpty)
+        XCTAssertTrue(requests("/track/stories", shop).isEmpty)
+    }
+
+    func test_an_async_form_on_the_old_core_returns_once_the_server_answered() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        hold("/push")
+        let returned = Locked(false)
+        let done = expectation(description: "returned")
+        _Concurrency.Task {
+            try? await sdk.tracking.async.addToFavorites(itemId: "5")
+            returned.current = true
+            done.fulfill()
+        }
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+        XCTAssertFalse(eventually(timeout: 0.3) { returned.current }, "no queue: it waits for the answer")
+        release("/push")
+        wait(for: [done], timeout: 5)
+
+        answer("/push", StubReply(json: #"{"status":"error"}"#))
+        XCTAssertEqual(run { try await sdk.tracking.async.removeFromFavorites(itemId: "5") } as? Rees46.SdkError, .decoding, "an answer that is not success")
+    }
+
+    func test_an_async_form_of_a_tracking_the_sdk_did_not_make_hears_its_completion() {
+        let app = AppTracking()
+        XCTAssertNil(run { try await app.async.categoryView(categoryId: "c") } ?? .some(TestError.noOutcome))
+        XCTAssertEqual(app.calls, ["categoryView c"])
+        app.refusal = .custom(error: "no such category")
+        XCTAssertEqual(run { try await app.async.categoryView(categoryId: "x") } as? Rees46.SdkError, .invalidArgument("no such category"))
+        app.refusal = .networkOfflineError
+        XCTAssertEqual(run { try await app.async.categoryView(categoryId: "y") } as? Rees46.SdkError, .network)
+    }
+
+    /// The calls an app made before the `async` forms came still compile from `async` code, without
+    /// `await`: a form by the same name beside them would take them over.
+    func test_the_calls_without_a_completion_still_compile_from_async_code() async {
+        let tracking: TrackingAPI = AppTracking()
+        tracking.productView(itemId: "1")
+        tracking.productView(itemId: "1", source: TrackingSource(type: .dynamic, code: "b"))
+        tracking.categoryView(categoryId: "c")
+        tracking.search(query: "q")
+        tracking.search(query: "q", results: ["1"])
+        tracking.addToCart(item: TrackingItem(id: "1"))
+        tracking.syncCart(items: [])
+        tracking.removeFromCart(itemId: "1")
+        tracking.addToFavorites(itemId: "1")
+        tracking.syncFavorites(itemIds: [])
+        tracking.removeFromFavorites(itemId: "1")
+        tracking.storyView(storyId: "1", slideId: "2")
+        tracking.storyClick(storyId: "1", slideId: "2", code: "c")
+        tracking.purchase(PurchaseTrackingRequest(orderId: "o", orderPrice: 1, items: []))
+        tracking.custom(event: "e")
+        tracking.popupShown(popupId: 1)
+        tracking.setSource(TrackingSource(type: .chain, code: "c"))
+        XCTAssertEqual((tracking as? AppTracking)?.calls.count, 15)
+    }
+
+    // MARK: - A source of a mailing
+
+    func test_an_event_with_a_source_of_a_mailing_is_refused_and_setSource_takes_it_on_the_new_core() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        let request = PurchaseTrackingRequest(orderId: "o-1", orderPrice: 10, items: [PurchaseItemRequest(id: "1", amount: 1, price: 10)])
+        for type in [TrackingSourceType.transactional, .webPushDigest] {
+            let source = TrackingSource(type: type, code: "m-1")
+            let refusals = [
+                completion { sdk.tracking.productView(itemId: "1", source: source, completion: $0) },
+                completion { sdk.tracking.addToCart(item: TrackingItem(id: "1"), source: source, completion: $0) },
+                completion { sdk.tracking.addToFavorites(itemId: "1", source: source, completion: $0) },
+                completion { sdk.tracking.purchase(request, source: source, completion: $0) },
+            ]
+            for refusal in refusals {
+                guard case .invalidArgument(let what)? = failure(refusal) else { return XCTFail("\(String(describing: refusal))") }
+                XCTAssertTrue(what.contains(type.rawValue), what)
+            }
+            guard case .invalidArgument? = run({ try await sdk.tracking.async.productView(itemId: "1", source: source) }) as? Rees46.SdkError else {
+                return XCTFail("the async form throws it")
+            }
+        }
+        XCTAssertTrue(waitForLog(shop, "invalid_argument"))
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertTrue(requests("/push", shop).isEmpty, "nothing sent")
+
+        sdk.tracking.setSource(TrackingSource(type: .webPushDigest, code: "d-1"))
+        XCTAssertNil(run { try await sdk.tracking.async.productView(itemId: "2", source: TrackingSource(type: .dynamic, code: "b")) } ?? .some(TestError.noOutcome))
+        XCTAssertTrue(eventually { self.requests("/push", shop).count == 1 })
+        let body = requests("/push", shop).first?.body ?? [:]
+        XCTAssertEqual(body["recommended_by"] as? String, "dynamic")
+        XCTAssertEqual((body["source"] as? [String: Any])?["from"] as? String, "web_push_digest", "the stored one goes as before")
+    }
+
+    func test_an_event_with_a_source_of_a_mailing_is_refused_on_the_old_core_too() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        let refused = completion { sdk.tracking.productView(itemId: "1", source: TrackingSource(type: .transactional, code: "m-1"), completion: $0) }
+        guard case .invalidArgument? = failure(refused) else { return XCTFail("\(String(describing: refused))") }
+        guard case .success? = completion({ sdk.tracking.productView(itemId: "1", source: TrackingSource(type: .bulk, code: "m-1"), completion: $0) }) else {
+            return XCTFail("a bulk mailing is a source of an event")
+        }
+        XCTAssertEqual(requests("/push", shop).count, 1)
+        XCTAssertEqual(requests("/push", shop).first?.body["recommended_by"] as? String, "bulk")
+    }
+
+    // MARK: - Slides
+
+    func test_track_stories_takes_a_story_and_a_slide_that_are_positive_whole_numbers_on_the_new_core() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        let skipped = [("12_1", "1"), ("+12", "1"), (" 12", "1"), ("012", "1"), ("0", "1"), ("12", "+5"), ("12", " 5"), ("12", "0"), ("12", "5a")]
+        for (story, slide) in skipped {
+            guard case .success? = completion({ sdk.tracking.storyView(storyId: story, slideId: slide, code: "b", completion: $0) }) else {
+                return XCTFail("\(story)/\(slide): not sent, and no error")
+            }
+        }
+        guard case .invalidArgument? = failure(completion({ sdk.tracking.storyClick(storyId: "12", slideId: "", completion: $0) })) else {
+            return XCTFail("an empty slide id")
+        }
+        guard case .success? = completion({ sdk.tracking.storyClick(storyId: "12", slideId: "007", code: "b", completion: $0) }) else {
+            return XCTFail("sent")
+        }
+        XCTAssertTrue(queueIdle(sdk))
+        let sent = requests("/track/stories", shop)
+        XCTAssertEqual(sent.count, 1)
+        XCTAssertEqual(sent.first?.body["story_id"] as? Int, 12)
+        XCTAssertEqual(sent.first?.body["slide_id"] as? String, "007", "digits, as given")
+        XCTAssertEqual(sent.first?.body["event"] as? String, "click")
+    }
+
+    func test_the_old_core_sends_the_slides_as_it_always_has() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        guard case .success? = completion({ sdk.tracking.storyView(storyId: "12_1", slideId: "+5", code: "b", completion: $0) }) else {
+            return XCTFail("sent")
+        }
+        XCTAssertEqual(requests("/track/stories", shop).first?.body["story_id"] as? String, "12_1")
+    }
+}
+
+private enum TestError: Error {
+    case noOutcome
+}
+
+/// A conformer of ``TrackingAPI`` an app writes — a test double —, which the SDK did not make.
+private final class AppTracking: TrackingAPI {
+
+    var calls: [String] = []
+    var refusal: SdkError?
+
+    private func done(_ call: String, _ completion: (Result<Void, SdkError>) -> Void) {
+        calls.append(call)
+        completion(refusal.map { .failure($0) } ?? .success(()))
+    }
+
+    func productView(itemId: String, source: TrackingSource?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("productView \(itemId)", completion)
+    }
+
+    func categoryView(categoryId: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("categoryView \(categoryId)", completion)
+    }
+
+    func search(query: String, results: [String]?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("search", completion)
+    }
+
+    func addToCart(item: TrackingItem, source: TrackingSource?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("addToCart", completion)
+    }
+
+    func syncCart(items: [TrackingItem], completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("syncCart", completion)
+    }
+
+    func removeFromCart(itemId: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("removeFromCart", completion)
+    }
+
+    func addToFavorites(itemId: String, source: TrackingSource?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("addToFavorites", completion)
+    }
+
+    func syncFavorites(itemIds: [String], completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("syncFavorites", completion)
+    }
+
+    func removeFromFavorites(itemId: String, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("removeFromFavorites", completion)
+    }
+
+    func storyView(storyId: String, slideId: String, code: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("storyView", completion)
+    }
+
+    func storyClick(storyId: String, slideId: String, code: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("storyClick", completion)
+    }
+
+    func purchase(_ request: PurchaseTrackingRequest, source: TrackingSource?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        done("purchase", completion)
+    }
+
+    func custom(
+        event: String, time: Int?, category: String?, label: String?, value: Int?,
+        customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
+        done("custom", completion)
+    }
+
+    func setSource(_ source: TrackingSource) {}
+}

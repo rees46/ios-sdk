@@ -78,4 +78,65 @@ protocol TrackEventServiceProtocol {
     func trackPurchase(_ request: PurchaseTrackingRequest, source: TrackingSourceWire?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, completion: @escaping (Result<Void, SdkError>) -> Void)
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void)
+
+    // The same events with the contract's result beside the old one: what the `tracking` namespace's
+    // `popupShown` and `async` forms return.
+
+    func track(event: Event, source: TrackingSourceWire?, details: TrackEventDetails, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    func trackPurchase(_ request: PurchaseTrackingRequest, source: TrackingSourceWire?, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void)
+    func trackPopupShown(popupId: Int, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void)
+}
+
+/**
+ The result of an event as the contract has it (`sdk/core/queue.md`): `nil` once the new core's queue
+ took the event — on disk —, or the `Rees46.SdkError` it was refused with. The old core keeps no queue:
+ there it is the server's answer. Called once, on any thread.
+ */
+typealias TrackingAccepted = (Rees46.SdkError?) -> Void
+
+/// A service that keeps no queue — another conformer, a test's — tells the contract's result from the
+/// answer the old completion hears.
+extension TrackEventServiceProtocol {
+
+    func track(event: Event, source: TrackingSourceWire?, details: TrackEventDetails, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        track(event: event, source: source, details: details, completion: TrackingAnswer.telling(accepted, completion))
+    }
+
+    func trackPurchase(_ request: PurchaseTrackingRequest, source: TrackingSourceWire?, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackPurchase(request, source: source, completion: TrackingAnswer.telling(accepted, completion))
+    }
+
+    func trackEvent(event: String, time: Int?, category: String?, label: String?, value: Int?, customFields: [String: Any]?, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackEvent(
+            event: event, time: time, category: category, label: label, value: value, customFields: customFields,
+            completion: TrackingAnswer.telling(accepted, completion)
+        )
+    }
+
+    func trackPopupShown(popupId: Int, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackPopupShown(popupId: popupId, completion: TrackingAnswer.telling(accepted, completion))
+    }
+}
+
+/// The contract's result of an event from the old answer.
+enum TrackingAnswer {
+
+    /// A completion that tells `accepted` the answer — the whole error the SDK had behind the old one
+    /// when it is known on this thread — and then hands it to `completion`.
+    static func telling(
+        _ accepted: TrackingAccepted?,
+        _ completion: @escaping (Result<Void, SdkError>) -> Void
+    ) -> (Result<Void, SdkError>) -> Void {
+        guard let accepted = accepted else { return completion }
+        return { result in
+            switch result {
+            case .success:
+                accepted(nil)
+            case .failure(let legacy):
+                accepted(CurrentError.current ?? SimplePersonalizationSDK.newCoreError(legacy))
+            }
+            completion(result)
+        }
+    }
 }
