@@ -134,7 +134,18 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         details: TrackEventDetails,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
+        track(event: event, source: source, details: details, accepted: nil, completion: completion)
+    }
+
+    func track(
+        event: Event,
+        source: TrackingSourceWire?,
+        details: TrackEventDetails,
+        accepted: TrackingAccepted?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
         guard let sdk = sdk else {
+            accepted?(.notInitialized)
             completion(.failure(.custom(error: "track: SDK is not initialized")))
             return
         }
@@ -143,16 +154,18 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         if Self.queues(sdk) {
             if let problem = Self.invalidArgument(of: event) {
                 SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "track: \(problem)", ["reason": "empty"])
-                Self.later(completion, .failure(.custom(error: "track: \(problem)")))
+                Self.refuse(completion, accepted, "track: \(problem)")
                 return
             }
             let built = Self.fields(of: event, details: details, sdk: sdk, contract: true)
-            // A virtual slide of a product campaign (`{story_id}_{index}`): `track/stories` takes only a
-            // story and a slide that are positive whole numbers, so the event does not go — and that is
-            // no error (`sdk/contract/tracking.md`). The slide still makes its block the stored source.
+            // A slide `track/stories` does not take — a story id that is not a positive whole number (a
+            // virtual slide of a product campaign, `{story_id}_{index}`), or a slide id that is not one in
+            // digits — does not go, and that is no error (`sdk/contract/tracking.md`). The slide still
+            // makes its block the stored source.
             if Self.isVirtualSlide(event) {
                 Self.storeStoriesSource(built.storiesCode, sdk: sdk)
                 SdkLogger.area(.stories, .debug, "the slide of a virtual story is not sent", shopId: sdk.shopId)
+                Self.later { accepted?(nil) }
                 Self.later(completion, .success(Void()))
                 return
             }
@@ -163,12 +176,13 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 }
             }
             Self.storeStoriesSource(built.storiesCode, sdk: sdk)
-            _ = enqueue(sdk, path: built.path, body: body) { result in
-                self.finish(result, showsPopup: false, completion: completion)
+            _ = enqueue(sdk, path: built.path, body: body, accepted: accepted) { result in
+                self.finish(result, path: built.path, showsPopup: false, completion: completion)
             }
             return
         }
 
+        let completion = TrackingAnswer.telling(accepted, completion)
         sessionQueue.addOperation {
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
@@ -203,7 +217,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             }
 
             sdk.postRequest(path: built.path, params: params) { result in
-                self.finish(result, showsPopup: true, completion: completion)
+                self.finish(result, path: built.path, showsPopup: true, completion: completion)
             }
         }
     }
@@ -219,24 +233,49 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         DispatchQueue.global(qos: .utility).async { completion(result) }
     }
 
-    /// Hands an event to the new core's queue; `false` when there is none.
+    private static func later(_ body: @escaping () -> Void) {
+        DispatchQueue.global(qos: .utility).async(execute: body)
+    }
+
+    /// An argument the new core refuses before the queue: `accepted` hears `invalidArgument`, the old
+    /// completion the text, later.
+    private static func refuse(_ completion: @escaping (Result<Void, SdkError>) -> Void, _ accepted: TrackingAccepted?, _ problem: String) {
+        later {
+            accepted?(.invalidArgument(problem))
+            completion(.failure(.custom(error: problem)))
+        }
+    }
+
+    /// Hands an event to the new core's queue; `false` when there is none. `accepted` hears when the
+    /// queue took it, or why not.
     private func enqueue(
         _ sdk: PersonalizationSDK,
         path: String,
         body: [String: Any],
+        accepted: TrackingAccepted? = nil,
         completion: @escaping (Result<[String: Any], SdkError>) -> Void
     ) -> Bool {
-        (sdk as? SimplePersonalizationSDK)?.enqueueEvent(path: path, body: body, completion: completion) ?? false
+        let queued = (sdk as? SimplePersonalizationSDK)?.enqueueEvent(path: path, body: body, accepted: accepted, completion: completion) ?? false
+        if !queued {
+            accepted?(.notInitialized)
+        }
+        return queued
     }
 
     /// The answer as the tracking methods have always taken it: `status: success` is a success —
-    /// with its popup, on the old core; the new core's queue shows popups itself (decision 2) —
-    /// anything else `.responseError`.
-    private func finish(_ result: Result<[String: Any], SdkError>, showsPopup: Bool, completion: (Result<Void, SdkError>) -> Void) {
+    /// with its popup, on the old core; the new core's queue shows popups itself (decision 2) —;
+    /// anything else `.responseError`. `path` `track/stories` answers `204` without a body: there an
+    /// empty answer is a success too.
+    private func finish(
+        _ result: Result<[String: Any], SdkError>,
+        path: String = "push",
+        showsPopup: Bool,
+        completion: (Result<Void, SdkError>) -> Void
+    ) {
         switch result {
         case let .success(answer):
             let status = answer[Constants.status] as? String ?? ""
-            if status == Constants.success {
+            if status == Constants.success || (answer.isEmpty && path == Constants.trackStoriesPath) {
                 if showsPopup {
                     showPopup(jsonResult: answer)
                 }
@@ -273,19 +312,28 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
     }
 
-    /// A slide whose story id or slide id is not a positive whole number: the virtual slide of a
-    /// product campaign, which `track/stories` does not take.
-    private static func isVirtualSlide(_ event: Event) -> Bool {
+    /// A slide `track/stories` does not take: a story id that is not a positive whole number as such —
+    /// the virtual slide of a product campaign, `{story_id}_{index}` —, or a slide id that is not a
+    /// positive whole number in digits (`sdk/contract/tracking.md`). As on Android: no sign, no spaces,
+    /// and a story id without leading zeros, since it goes as a number.
+    static func isVirtualSlide(_ event: Event) -> Bool {
         switch event {
         case let .slideView(storyId, slideId), let .slideClick(storyId, slideId):
-            return !isPositiveNumber(storyId) || !isPositiveNumber(slideId)
+            return storyNumber(storyId) == nil || !isPositiveDigits(slideId)
         default:
             return false
         }
     }
 
-    private static func isPositiveNumber(_ value: String) -> Bool {
-        guard let number = Int(value.trimmingCharacters(in: .whitespacesAndNewlines)) else { return false }
+    /// The story id as the number `track/stories` takes: a positive whole number written as one.
+    static func storyNumber(_ value: String) -> Int? {
+        guard let number = Int(value), number > 0, String(number) == value else { return nil }
+        return number
+    }
+
+    /// Digits only, and above zero.
+    private static func isPositiveDigits(_ value: String) -> Bool {
+        guard !value.isEmpty, value.allSatisfy({ ("0"..."9").contains($0) }), let number = Int(value) else { return false }
         return number > 0
     }
 
@@ -309,7 +357,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         /// Set by the story branches so the block can be stored as the attribution source.
         var storiesBlockCode: String?
         func storyId(_ id: String) -> Any {
-            guard contract, let number = Int(id), number > 0 else { return id }
+            guard contract, let number = storyNumber(id) else { return id }
             return number
         }
         let fullValue: Any = contract ? true : Constants.fullCartValue
@@ -420,14 +468,25 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }
 
     func trackPurchase(_ request: PurchaseTrackingRequest, source: TrackingSourceWire?, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackPurchase(request, source: source, accepted: nil, completion: completion)
+    }
+
+    func trackPurchase(
+        _ request: PurchaseTrackingRequest,
+        source: TrackingSourceWire?,
+        accepted: TrackingAccepted?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
         guard let sdk = sdk else {
+            accepted?(.notInitialized)
             completion(.failure(.custom(error: "trackPurchase: SDK is not initialized")))
             return
         }
         if let problem = Self.validatePurchaseRequest(request) ?? Self.validatePurchaseCustomFields(request.custom) {
             if Self.queues(sdk) {
-                Self.later(completion, .failure(.custom(error: problem)))
+                Self.refuse(completion, accepted, problem)
             } else {
+                accepted?(.invalidArgument(problem))
                 completion(.failure(.custom(error: problem)))
             }
             return
@@ -443,7 +502,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                     body[item.key] = item.value
                 }
             }
-            _ = enqueue(sdk, path: "push", body: body) { result in
+            _ = enqueue(sdk, path: "push", body: body, accepted: accepted) { result in
                 self.finish(result, showsPopup: false) { outcome in
                     if case .success = outcome {
                         // Popups v3: a purchase changes the audience — the list is fetched again.
@@ -455,6 +514,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             return
         }
 
+        let completion = TrackingAnswer.telling(accepted, completion)
         sessionQueue.addOperation {
             let path = "push"
             var params: [String: Any] = [
@@ -627,7 +687,24 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         customFields: [String: Any]?,
         completion: @escaping (Result<Void, SdkError>) -> Void
     ) {
+        trackEvent(
+            event: event, time: time, category: category, label: label, value: value, customFields: customFields,
+            accepted: nil, completion: completion
+        )
+    }
+
+    func trackEvent(
+        event: String,
+        time: Int?,
+        category: String?,
+        label: String?,
+        value: Int?,
+        customFields: [String: Any]?,
+        accepted: TrackingAccepted?,
+        completion: @escaping (Result<Void, SdkError>) -> Void
+    ) {
         guard let sdk = sdk else {
+            accepted?(.notInitialized)
             completion(.failure(.custom(error: "trackEvent: SDK is not initialized")))
             return
         }
@@ -640,7 +717,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             let logger = SdkLogger.forShop(sdk.shopId)
             guard !Self.blank(event) else {
                 logger.warning(LogCode.invalidArgument, "trackEvent: the event must not be empty", ["reason": "empty"])
-                Self.later(completion, .failure(.custom(error: "trackEvent: the event must not be empty")))
+                Self.refuse(completion, accepted, "trackEvent: the event must not be empty")
                 return
             }
             var body: [String: Any] = [Constants.event: event]
@@ -652,13 +729,13 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 let collisions = Set(customFields.keys).intersection(Self.reservedCustomEventKeys)
                 guard collisions.isEmpty else {
                     logger.warning(LogCode.invalidArgument, "trackEvent: customFields use reserved keys", ["reason": "reserved_keys"])
-                    Self.later(completion, .failure(.custom(error: "trackEvent: customFields contains reserved keys: \(collisions.sorted().joined(separator: ", "))")))
+                    Self.refuse(completion, accepted, "trackEvent: customFields contains reserved keys: \(collisions.sorted().joined(separator: ", "))")
                     return
                 }
                 // NaN, infinity, a date or an object of the app cannot be written: refused here.
                 guard SafeJSON.isValid(customFields) else {
                     logger.warning(LogCode.invalidArgument, "trackEvent: customFields are not valid JSON", ["reason": "invalid_json"])
-                    Self.later(completion, .failure(.custom(error: "trackEvent: customFields are not valid JSON")))
+                    Self.refuse(completion, accepted, "trackEvent: customFields are not valid JSON")
                     return
                 }
                 for (key, value) in customFields {
@@ -666,12 +743,13 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 }
                 body[Constants.payload] = customFields
             }
-            _ = enqueue(sdk, path: Constants.trackCustomEventPath, body: body) { result in
+            _ = enqueue(sdk, path: Constants.trackCustomEventPath, body: body, accepted: accepted) { result in
                 self.finish(result, showsPopup: false, completion: completion)
             }
             return
         }
-        
+
+        let completion = TrackingAnswer.telling(accepted, completion)
         sessionQueue.addOperation {
             
             var params: [String: Any] = [
@@ -748,19 +826,25 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
     }
     
     func trackPopupShown(popupId: Int, completion: @escaping (Result<Void, SdkError>) -> Void) {
+        trackPopupShown(popupId: popupId, accepted: nil, completion: completion)
+    }
+
+    func trackPopupShown(popupId: Int, accepted: TrackingAccepted?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         guard let sdk = sdk else {
+            accepted?(.notInitialized)
             completion(.failure(.custom(error: "trackPopupShown: SDK is not initialized")))
             return
         }
 
         // The new core: queued; `did` and `sid` go when it is sent, after ready.
         if Self.queues(sdk) {
-            _ = enqueue(sdk, path: Constants.popupShownPath, body: ["popup": popupId]) { result in
+            _ = enqueue(sdk, path: Constants.popupShownPath, body: ["popup": popupId], accepted: accepted) { result in
                 completion(result.map { _ in Void() })
             }
             return
         }
-        
+
+        let completion = TrackingAnswer.telling(accepted, completion)
         sessionQueue.addOperation {
             let params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
@@ -882,5 +966,14 @@ final class TrackingSourceStoreImpl: TrackingSourceStore {
             return nil
         }
         return (type: type, code: code)
+    }
+}
+
+extension TrackEventServiceImpl {
+
+    /// The SDK's own instance the events go through: the events only its new core sends
+    /// (`TrackingAPI.bannerView`, `bannerClick`) need it. `nil` for another conformer of the protocol.
+    var instance: SimplePersonalizationSDK? {
+        sdk as? SimplePersonalizationSDK
     }
 }

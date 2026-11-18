@@ -72,7 +72,7 @@ extension SimplePersonalizationSDK {
         let later: (Result<Void, SdkError>, Rees46.SdkError?) -> Void = { result, error in
             DispatchQueue.global(qos: .utility).async { CurrentError.with(error) { completion(result) } }
         }
-        guard !Self.isBlank(code), !Self.isBlank(type) else {
+        guard !ApiArguments.isBlank(code), !ApiArguments.isBlank(type) else {
             let what = "\(event.path): the code and the type of the push must not be empty"
             logger.warning(LogCode.invalidArgument, what, ["reason": "empty"])
             later(.failure(.legacy(.invalidArgument(what))), .invalidArgument(what))
@@ -85,30 +85,46 @@ extension SimplePersonalizationSDK {
         enqueuePushEvent(event, type: type, code: code, completion: completion)
     }
 
+    /// An event of `notifications.track…` (`sdk/contract/notifications.md`), its arguments checked by
+    /// the caller: through the queue, once per message in the process, a click storing the source — as
+    /// `receivePush` sends it, without a callback: the app knows of the event. `accepted` hears the
+    /// contract's result once: `nil` once the queue took the event, and for a repeat, which sends
+    /// nothing; otherwise why it was not taken — `notInitialized`, `shopBlocked`.
+    func queuePushEvent(_ event: Rees46.PushEvent, type: String, code: String, accepted: @escaping (Rees46.SdkError?) -> Void) {
+        guard PushCenter.reserve(event, code: code, shopId: shopId) else {
+            logger.debug(LogCode.pushReceived, "the push event was handled already in this launch", ["event": event.rawValue, "repeat": "true"])
+            accepted(nil)
+            return
+        }
+        enqueuePushEvent(event, type: type, code: code, completion: nil, onAccepted: { accepted(nil) }, onRefused: { accepted($0) })
+    }
+
     /// The event into the shop's queue (`sdk/core/queue.md`), its message reserved by the caller
     /// (`PushCenter.reserve`): it counts as sent once the queue accepted it, and `onAccepted` runs
     /// then; a queue that does not take it — a released instance, a refused shop — frees it, so the
-    /// event may go when it comes again, and `notTaken` hears a released instance's. A click stores the
-    /// push as the source of the `/push` events of the next 48 hours, when its type is a source
-    /// (`TrackingSourceType`).
+    /// event may go when it comes again, `onRefused` hears why, and `notTaken` hears a released
+    /// instance's. A click stores the push as the source of the `/push` events of the next 48 hours,
+    /// when its type is a source (`TrackingSourceType`).
     private func enqueuePushEvent(
         _ event: Rees46.PushEvent,
         type: String,
         code: String,
         completion: ((Result<Void, SdkError>) -> Void)?,
         notTaken: (() -> Void)? = nil,
-        onAccepted: @escaping () -> Void = {}
+        onAccepted: @escaping () -> Void = {},
+        onRefused: ((Rees46.SdkError) -> Void)? = nil
     ) {
         if event == .clicked, let source = TrackingSourceType(rawValue: type) {
             sourceStore.store(type: source.rawValue, code: code)
         }
         let shopId = self.shopId
         let accepted: (Rees46.SdkError?) -> Void = { error in
-            guard error == nil else {
+            if let error = error {
                 PushCenter.release(event, code: code, shopId: shopId)
                 if error == .notInitialized {
                     notTaken?()
                 }
+                onRefused?(error)
                 return
             }
             PushCenter.confirm(event, code: code, shopId: shopId)
@@ -117,10 +133,6 @@ extension SimplePersonalizationSDK {
         _ = enqueueEvent(path: event.path, body: ["code": code, "type": type], accepted: accepted) { result in
             completion?(result.map { _ in () })
         }
-    }
-
-    private static func isBlank(_ value: String) -> Bool {
-        value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     // MARK: - Callbacks
@@ -207,22 +219,26 @@ extension SimplePersonalizationSDK {
         request.identity = { [weak self] in self?.identity(ifCurrent: generation) }
         let logger = self.logger
         core.send(request) { response in
+            // A `2xx` whose body says it failed took no token: `decoding`, as the namespaces read such an
+            // answer (`sdk/contract/README.md`, "Ответы"), and the week stays free.
+            let saysError = ((try? response.result.get()) as? [String: Any])?["status"] as? String == "error"
+            let result: Result<Void, SdkError> = saysError ? .failure(.legacy(.decoding)) : response.result.map { _ in () }
+            let error: Rees46.SdkError? = saysError ? .decoding : response.error
             let sent: Bool
-            if case .success = response.result {
+            if case .success = result {
                 sent = true
             } else {
                 sent = false
             }
             let joined = PushTokenWeek.finish(claim, sent: sent, at: clock.now())
-            let result: Result<Void, SdkError> = response.result.map { _ in () }
-            switch response.result {
+            switch result {
             case .success:
                 logger.info(LogCode.pushTokenSent, "the push token was sent")
-            case .failure(let error):
-                logger.warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": error.logKind])
+            case .failure(let failure):
+                logger.warning(LogCode.pushTokenFailed, "the push token was not sent", ["error": failure.logKind])
             }
-            completion(result, response.error)
-            joined.forEach { $0(result, response.error) }
+            completion(result, error)
+            joined.forEach { $0(result, error) }
         }
     }
 }

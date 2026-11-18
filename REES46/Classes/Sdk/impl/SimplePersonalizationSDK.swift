@@ -147,6 +147,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     private var legacySession: URLSession?
     private let sessionLock = NSLock()
     var userInfo: InitResponse = InitResponse()
+    /// Whether the last `/init` answer of the new core turned the search agent on (`search.agentEnabled`).
+    let agentSearch = AgentSearchSwitch()
     
     /// This shop's requests: another shop's wait for its device id does not hold them.
     private let requestQueue: ShopSessionQueue
@@ -227,6 +229,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         needReInitialization: Bool = false,
         storageKey: String? = nil,
         coreV2: Bool = false,
+        appDomain: String = Rees46Config.defaultAppDomain,
         deviceId configuredDeviceId: String? = nil,
         segment broughtSegment: String? = nil,
         environment: CoreEnvironment? = nil,
@@ -252,6 +255,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         self.config = Rees46Config(
             shopId: shopId,
             apiDomain: apiDomain,
+            appDomain: appDomain,
             stream: stream,
             deviceId: configuredDeviceId,
             enableLogs: enableLogs,
@@ -1070,37 +1074,35 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         }
     }
 
+    /// `GET api/v3/cdp/users/probability-to-purchase` on `Rees46Config.appDomain`, on either core: the
+    /// API host's `predict/probability-to-purchase` answers `503`, its service is no longer deployed there
+    /// (question 42 of `sdk/questions.md`). The contacts of `params` are not sent: the server finds the
+    /// customer by the device id, which wins over any contact (question 44). The answer's `payload` is the
+    /// forecast `predict.getProbabilityToPurchase` reads; a customer the server does not know has an empty
+    /// `clientId`. Errors as before: any answer but a `2xx` is `invalidResponse`, one without a numeric
+    /// probability `decodeError`.
     func getProbabilityToPurchase(
         params: PurchasePredictParams,
         completion: @escaping (Result<ProbabilityToPurchaseResponse, SdkError>) -> Void
     ) {
         sessionQueue.addOperation {
-            let path = "predict/probability-to-purchase"
-            var queryParams: [String: String] = [
+            let queryParams: [String: String] = [
                 "shop_id": self.shopId,
                 "did": self.deviceId,
                 "seance": self.userSeance,
                 "sid": self.userSeance,
                 "segment": self.segment
             ]
-            if let email = params.email, !email.isEmpty {
-                queryParams["email"] = email
-            }
-            if let phone = params.phone, !phone.isEmpty {
-                queryParams["phone"] = phone
-            }
-            if let telegramId = params.telegramId, !telegramId.isEmpty {
-                queryParams["telegram_id"] = telegramId
-            }
-            if let loyaltyId = params.loyaltyId, !loyaltyId.isEmpty {
-                queryParams["loyalty_id"] = loyaltyId
-            }
-
-            self.getRequest(path: path, params: queryParams, timeout: ProbabilityToPurchaseNetworkConstants.requestTimeoutIntervalSeconds) { result in
+            self.sendGet(
+                path: PredictAPIImpl.probabilityPath,
+                params: queryParams,
+                timeout: ProbabilityToPurchaseNetworkConstants.requestTimeoutIntervalSeconds,
+                host: self.config.appDomain
+            ) { _, result in
                 switch result {
                 case let .success(json):
-                    if let parsed = ProbabilityToPurchaseResponse(json: json) {
-                        completion(.success(parsed))
+                    if let forecast = ProbabilityAnswer.forecast(in: json) {
+                        completion(.success(ProbabilityToPurchaseResponse(forecast)))
                     } else {
                         completion(.failure(.decodeError))
                     }
@@ -2112,7 +2114,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     /// One GET of `path` with the call's own timeout, through the instance's core. Hands back the
     /// answer's HTTP status — nil when no answer came — and its decoded JSON. With `savesAnswerOf`, an
     /// `/init` that saves its answer: only while that init generation is the instance's, under the lock
-    /// `deleteUserCredentials` takes.
+    /// `deleteUserCredentials` takes. `host` is a host other than the API's (`CoreRequest.host`).
     func sendGet(
         path: String,
         params: [String: String],
@@ -2120,6 +2122,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         timeout: TimeInterval?,
         waitsForNetwork: Bool = true,
         forgetsSavedInit: Bool = true,
+        host: String? = nil,
         completion: @escaping (_ status: Int?, _ result: Result<Any, SdkError>) -> Void
     ) {
         // The old core forgets the saved answer on every request of a forced re-initialization, as it
@@ -2127,7 +2130,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         if forgetsSavedInit && needReInitialization && !usesCoreV2 {
             removeSavedInitAnswer()
         }
-        let request = CoreRequest(method: .get, path: path, query: params, timeout: timeout, waitsForNetwork: waitsForNetwork)
+        var request = CoreRequest(method: .get, path: path, query: params, timeout: timeout, waitsForNetwork: waitsForNetwork)
+        request.host = host
         core.send(request) { response in
             if let generation = initGeneration, case .success = response.result {
                 self.ifCurrentInit(generation) {
@@ -2247,6 +2251,7 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
 
     func initMachine(adopt response: InitResponse, fromServer: Bool) {
         userInfo = response
+        agentSearch.adopt(blankMode: response.search.blankMode)
         if !response.deviceId.isEmpty {
             deviceId = response.deviceId
         }

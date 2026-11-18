@@ -119,6 +119,15 @@ final class InitPackageTests: XCTestCase {
         XCTAssertTrue(Rees46Config(shopId: "a", enableLogs: true).hasSameSettings(as: Rees46Config(shopId: "a", logLevel: .debug)))
     }
 
+    func test_the_app_domain_is_app_rees46_ru_unless_the_config_gives_another() {
+        XCTAssertEqual(Rees46Config(shopId: "a").appDomain, "app.rees46.ru")
+        XCTAssertEqual(Rees46Config(shopId: "a", appDomain: " app.cluster.example \n").appDomain, "app.cluster.example")
+        XCTAssertEqual(Rees46Config(shopId: "a", appDomain: "").appDomain, "app.rees46.ru", "empty is the default")
+        XCTAssertEqual(Rees46Config(shopId: "a", appDomain: "app.cluster.example").onNewCore().appDomain, "app.cluster.example")
+        XCTAssertFalse(Rees46Config(shopId: "a").hasSameSettings(as: Rees46Config(shopId: "a", appDomain: "app.cluster.example")))
+        XCTAssertTrue(Rees46Config(shopId: "a").hasSameSettings(as: Rees46Config(shopId: "a", appDomain: "app.rees46.ru")))
+    }
+
     // MARK: - The machine over a transport the test answers
 
     func test_the_machine_retries_with_a_pause_and_lets_waiting_calls_through_once_ready() async throws {

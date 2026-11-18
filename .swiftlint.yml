@@ -11,9 +11,19 @@ included:
   - REES46/Classes/Sdk
   - REES46/Classes/Notifications
   - REES46/Classes/Tracking
+  - REES46/Classes/Cart
+  - REES46/Classes/Stories/API
+  - REES46/Classes/Predict
+  - REES46/Classes/Loyalty
+  - REES46/Classes/Sliders
+  - REES46/Classes/Reviews
   - REES46/Classes/Search
+  - REES46/Classes/Products
+  - REES46/Classes/Collections
+  - REES46/Classes/Recommendations
   - REES46/Classes/Profile
   - REES46/Classes/Subscription
+  - REES46/Classes/Segments
   - REES46/Classes/Infrastructure
   - REES46/Classes/Domain
   - REES46/Classes/Errors

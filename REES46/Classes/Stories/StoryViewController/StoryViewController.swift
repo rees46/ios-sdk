@@ -68,7 +68,7 @@ class StoryViewController: UINavigationController, UINavigationControllerDelegat
         return view
     }()
     
-    public var stories: [Story] = []
+    public var stories: [LegacyStory] = []
     
     public var startWithIndexPath: IndexPath? = .init(item: 1, section: 0)
     public var currentPosition: IndexPath = IndexPath()

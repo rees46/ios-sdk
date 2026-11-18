@@ -30,6 +30,13 @@ actor NetworkClient {
         /// it — an event of the queue — instead of the ones stored when the request is built: a
         /// `deleteUserCredentials()` in between does not move it to the next customer's did.
         var identity: CommonFields.Identity?
+        /// Query fields that repeat (`CoreRequest.queryLists`): after the others.
+        var queryLists: [String: [String]] = [:]
+        /// The host of this request alone, without a scheme: the host of API v3 (`appDomain`). `nil` is
+        /// the client's, the API host.
+        var host: String?
+        /// A server method's request (`CoreRequest.secret`): `shop_id` is its one common field.
+        var secret = false
     }
 
     struct Response {
@@ -294,13 +301,17 @@ actor NetworkClient {
             fields = fields.with(identity)
         }
         var urlRequest: URLRequest
+        let baseURL = request.host.map { "https://\($0)/" } ?? self.baseURL
         switch request.method {
         case .get:
-            let query = fields.apply(to: request.query, path: request.path)
+            let query = fields.apply(to: request.query, path: request.path, onlyShop: request.secret)
             guard var components = URLComponents(string: baseURL + request.path) else {
                 return .failure(.invalidArgument("the path \(request.path) is not a URL path"))
             }
             components.queryItems = query.keys.sorted().map { URLQueryItem(name: $0, value: query[$0]) }
+                + request.queryLists.keys.sorted().flatMap { name in
+                    (request.queryLists[name] ?? []).map { URLQueryItem(name: name, value: $0) }
+                }
             // URLComponents leaves "+" as it is, and the server reads it as a space: a phone number
             // "+7…" would lose its plus.
             components.percentEncodedQuery = components.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
@@ -313,7 +324,7 @@ actor NetworkClient {
             guard let url = URL(string: baseURL + request.path) else {
                 return .failure(.invalidArgument("the path \(request.path) is not a URL path"))
             }
-            guard let body = SafeJSON.data(fields.apply(to: request.body, path: request.path)) else {
+            guard let body = SafeJSON.data(fields.apply(to: request.body, path: request.path, onlyShop: request.secret)) else {
                 return .failure(.invalidArgument("the parameters of \(request.path) are not valid JSON"))
             }
             urlRequest = URLRequest(url: url)

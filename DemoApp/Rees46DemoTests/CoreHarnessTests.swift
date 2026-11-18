@@ -198,29 +198,9 @@ final class Locked<Value> {
 
 // MARK: - Contract fixtures
 
-/// The contract fixtures shared by every SDK, from `Tests/REES46CoreTests/Fixtures/contract-<version>`.
-/// Read from the source tree (the simulator reads the Mac's file system), so the copy is one for the
-/// demo-app tests and the package tests.
-enum ContractFixtures {
-    static let version = "0"
-
-    static func url(_ name: String, sourceFile: StaticString = #filePath) -> URL {
-        URL(fileURLWithPath: "\(sourceFile)")
-            .deletingLastPathComponent()   // Rees46DemoTests
-            .deletingLastPathComponent()   // DemoApp
-            .deletingLastPathComponent()   // repository root
-            .appendingPathComponent("Tests/REES46CoreTests/Fixtures/contract-\(version)/\(name).json")
-    }
-
-    static func load(_ name: String) throws -> [String: Any] {
-        let data = try Data(contentsOf: url(name))
-        return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-    }
-
-    static func cases(_ name: String) throws -> [[String: Any]] {
-        try load(name)["cases"] as? [[String: Any]] ?? []
-    }
-}
+// `ContractFixtures`, the loader of the contract's shared fixtures, is the package tests' own file
+// (`Tests/REES46CoreTests/ContractFixtures.swift`), which this target compiles too: the simulator reads
+// the Mac's file system, so the copy of the fixtures is one for both.
 
 // MARK: - Tests
 

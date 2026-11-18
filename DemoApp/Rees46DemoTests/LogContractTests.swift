@@ -22,8 +22,8 @@ enum LogContract {
         let openReasons: Bool
     }
 
-    static func url(sourceFile: StaticString = #filePath) -> URL {
-        ContractFixtures.url("logging", sourceFile: sourceFile).deletingPathExtension().appendingPathExtension("md")
+    static func url() -> URL {
+        ContractFixtures.url("logging", extension: "md")
     }
 
     /// The contract's own file, when the contract is checked out next to this repository.

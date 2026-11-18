@@ -810,6 +810,42 @@ final class CoreGapTests: CoreScenarioTestCase {
         after?.release()
     }
 
+    func test_the_shops_instance_keeps_the_app_domain_of_its_config() {
+        CoreFlag.reset()
+        let shop = newShop()
+        let config = Rees46Config(shopId: shop, apiDomain: "stub.test", appDomain: "app.cluster.test", autoSendPushToken: false)
+        let sdk = Rees46.initializeBridge(config) as? SimplePersonalizationSDK
+        XCTAssertEqual(sdk?.config.appDomain, "app.cluster.test")
+        XCTAssertEqual(sdk?.usesCoreV2, true)
+
+        // The same shop with another host keeps the one it was made with, and says so.
+        _ = Rees46.initializeBridge(Rees46Config(shopId: shop, apiDomain: "stub.test", appDomain: "app.other.test", autoSendPushToken: false))
+        XCTAssertTrue(waitForLog(shop, "invalid_config", reason: "already_initialized"))
+        XCTAssertEqual(sdk?.config.appDomain, "app.cluster.test")
+        sdk?.release()
+    }
+
+    func test_the_bridges_async_delete_user_credentials_returns_once_the_customer_is_wiped_on_both_cores() {
+        for coreV2 in [true, false] {
+            let shop = newShop()
+            let identity = knownIdentity(did: "deleted")
+            let sdk = coreV2 ? makeV2(shop, identity: identity) : makeLegacy(shop, identity: identity)
+            XCTAssertEqual(sdk.deviceId, "deleted")
+            let bridge: PersonalizationSDK = sdk
+            let done = expectation(description: "deleteUserCredentials, coreV2 = \(coreV2)")
+            _Concurrency.Task {
+                await bridge.deleteUserCredentials()
+                done.fulfill()
+            }
+            wait(for: [done], timeout: 5)
+            XCTAssertNotEqual(identity.deviceId, "deleted", "coreV2 = \(coreV2)")
+            XCTAssertNotEqual(sdk.deviceId, "deleted", "coreV2 = \(coreV2)")
+            // The next /init asks for a new device id.
+            XCTAssertTrue(eventually { self.inits(shop).contains { $0.query["did"] == nil } }, "coreV2 = \(coreV2)")
+            sdk.release()
+        }
+    }
+
     func test_initialize_bridge_brings_its_ab_group_only_to_a_device_that_has_none() {
         let deviceSuite = UserDefaults(suiteName: DeviceStore.suiteName) ?? .standard
         let before = deviceSuite.string(forKey: DeviceStore.abGroupKey)

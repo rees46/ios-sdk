@@ -49,20 +49,50 @@ final class CoreV2: Core {
     /// the session: it fails at once, as any request does offline. One that needs no session — an event
     /// of a push — neither renews nor waits for it.
     func send(_ request: CoreRequest, completion: @escaping (CoreResponse) -> Void) {
+        let callbacks = self.callbacks
+        switch flight(of: request) {
+        case .settled(let response):
+            callbacks.async { completion(Self.legacyResponse(response, for: request)) }
+        case .pending(let fly):
+            _Concurrency.Task {
+                let response = await fly()
+                callbacks.async { completion(Self.legacyResponse(response, for: request)) }
+            }
+        }
+    }
+
+    /// `send` for the methods of the namespaces (`NamespaceRequests`): the same path, answered with the
+    /// new core's result, in the caller's task — cancelling the task cancels the request, also while it
+    /// waits for the instance to be usable, and it ends as `cancelled`.
+    func response(to request: CoreRequest) async -> NetworkClient.Response {
+        switch flight(of: request) {
+        case .settled(let response):
+            return response
+        case .pending(let fly):
+            return await fly()
+        }
+    }
+
+    /// A request's way out: settled at once, or the work that waits for the instance and sends it.
+    private enum Flight {
+        case settled(NetworkClient.Response)
+        case pending(() async -> NetworkClient.Response)
+    }
+
+    /// What `send` and `response(to:)` do with `request`: the checks and the session's renewal at the
+    /// call, the wait and the request in the work it hands back.
+    private func flight(of request: CoreRequest) -> Flight {
         lock.lock()
         let isReleased = released
         lock.unlock()
-        let callbacks = self.callbacks
         // A call after `release()` is `notInitialized`; the ones in flight end as `cancelled`.
         guard !isReleased else {
-            callbacks.async { completion(Self.legacyResponse(.failure(.notInitialized), for: request)) }
-            return
+            return .settled(.failure(.notInitialized))
         }
         // A refused shop sends nothing, its own `/init` of the funnel (`sendIDFARequest`) included: only
         // the machine's `/init` of the next launch asks again.
         if request.isInit, machine.isRefused {
-            callbacks.async { completion(Self.legacyResponse(.failure(.shopBlocked), for: request)) }
-            return
+            return .settled(.failure(.shopBlocked))
         }
         let client = self.client
         let machine = self.machine
@@ -72,22 +102,25 @@ final class CoreV2: Core {
         if needsSession, !session.isAlive {
             machine.renewSession()
         }
-        var clientRequest = NetworkClient.Request(
+        let clientRequest = NetworkClient.Request(
             method: request.method,
             path: request.path,
             query: request.query,
             body: request.body,
             timeout: request.timeout,
-            waitsForNetwork: request.isInit && request.waitsForNetwork
+            waitsForNetwork: request.isInit && request.waitsForNetwork,
+            queryLists: request.queryLists,
+            host: request.host,
+            secret: request.secret
         )
         let wait = request.isInit ? nil : (request.timeout ?? NetworkClient.defaultTimeout)
-        _Concurrency.Task {
+        return .pending {
+            var clientRequest = clientRequest
             if let wait = wait, let refusal = await machine.awaitUsable(timeout: wait, needsSession: needsSession) {
                 if refusal == .cancelled {
                     logger.requestCancelled(request.method.rawValue, request.path)
                 }
-                callbacks.async { completion(Self.legacyResponse(.failure(refusal), for: request)) }
-                return
+                return .failure(refusal)
             }
             if needsSession {
                 Self.stampSession(session.sid, on: &clientRequest)
@@ -96,13 +129,11 @@ final class CoreV2: Core {
                 // The customer it was made for, checked and taken together after the wait.
                 guard let taken = identity() else {
                     logger.requestCancelled(request.method.rawValue, request.path)
-                    callbacks.async { completion(Self.legacyResponse(.failure(.cancelled), for: request)) }
-                    return
+                    return .failure(.cancelled)
                 }
                 clientRequest.identity = taken
             }
-            let response = await client.send(clientRequest)
-            callbacks.async { completion(Self.legacyResponse(response, for: request)) }
+            return await client.send(clientRequest)
         }
     }
 

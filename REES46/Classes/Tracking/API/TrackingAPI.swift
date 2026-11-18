@@ -78,6 +78,13 @@ public extension TrackingSourceType {
 /// called when the event was sent — or failed for good, or was refused at once —, and is kept until
 /// then: up to seven days, the time an event lives, and not past the instance (`release()`) or the
 /// process. Do not hold a screen or another short-lived object in it.
+///
+/// A `source` of a mailing — `transactional`, `webPushDigest` — is refused with an event: the server
+/// refuses the whole event with it in `recommended_by`. The event is not sent, and `completion` hears
+/// the refusal; `setSource(_:)` takes these types.
+///
+/// `popupShown(popupId:completion:)` and the `async` forms under ``async`` return the contract's
+/// result instead: that the queue took the event.
 public protocol TrackingAPI {
 
     /// Product page opened (`view`).
@@ -310,5 +317,38 @@ public extension TrackingAPI {
             customFields: customFields,
             completion: completion
         )
+    }
+}
+
+/// `popupShown` of the contract. An extension, not a requirement: the app's own conformers of
+/// ``TrackingAPI`` keep compiling.
+public extension TrackingAPI {
+
+    /**
+     A popup was shown (`POST popup/showed`): the app calls it for a popup it shows with its own
+     interface; the SDK tells the popups it shows itself. `popupId` is the popup's id.
+
+     `completion` is called once, on the main thread. On the new core, the bridges', the event goes
+     through the shop's queue and is sent once the device and its session are known: `completion` hears
+     when the queue took it — not when it was sent —, or why it did not: `notInitialized` after
+     `release()`, `shopBlocked`. On the old core the event is sent at once and `completion` hears the
+     server's answer: `network`, `timeout`, `decoding`. An instance the SDK did not make sends nothing:
+     `notInitialized`.
+     */
+    func popupShown(popupId: Int, completion: @escaping (Result<Void, Rees46.SdkError>) -> Void = { _ in }) {
+        let finish: TrackingAccepted = { error in
+            DispatchQueue.main.async { completion(error.map { .failure($0) } ?? .success(())) }
+        }
+        guard let ours = self as? TrackingAPIImpl else {
+            SdkLogger.process.error(LogCode.notImplemented, "tracking.popupShown is not implemented by this TrackingAPI", ["call": "tracking.popupShown"])
+            finish(.notInitialized)
+            return
+        }
+        ours.sendPopupShown(popupId: popupId, accepted: finish)
+    }
+
+    /// The `async` forms of these methods: `try await sdk.tracking.async.productView(itemId: id)`.
+    var async: TrackingAsyncAPI {
+        TrackingAsyncAPI(tracking: self)
     }
 }

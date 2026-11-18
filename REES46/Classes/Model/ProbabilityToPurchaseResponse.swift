@@ -1,26 +1,15 @@
 import Foundation
 
+/// The forecast of `getProbabilityToPurchase(params:completion:)`.
 public struct ProbabilityToPurchaseResponse {
+    /// From 0 to 1.
     public let probability: Double
+    /// The customer the server found by the device id; empty when it found none.
     public let clientId: String
 
-    init?(json: [String: Any]) {
-        guard let probVal = json["probability"] else { return nil }
-        let probability: Double
-        if let d = probVal as? Double {
-            probability = d
-        } else if let n = probVal as? NSNumber {
-            probability = n.doubleValue
-        } else {
-            return nil
-        }
-        if let cid = json["client_id"] as? String {
-            self.clientId = cid
-        } else if let cidNum = json["client_id"] as? NSNumber {
-            self.clientId = cidNum.stringValue
-        } else {
-            return nil
-        }
-        self.probability = probability
+    /// The old model of the forecast `predict.getProbabilityToPurchase` reads.
+    init(_ forecast: PurchaseProbability) {
+        probability = forecast.probability
+        clientId = forecast.clientId ?? ""
     }
 }

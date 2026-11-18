@@ -405,28 +405,38 @@ final class InitMachine {
 
     /// Waits until calls may go out, at most `timeout`: `nil` once they may; `shopBlocked` when the
     /// shop refused; `timeout` when the instance did not get there in time; `notInitialized` after
-    /// `release()`, and `cancelled` for a call `release()` ended while it waited. With `needsSession`, a
-    /// call to a `ready` instance whose session's window ran out waits for the `/init` on its way — the
-    /// one of the launch, say —, so it goes with the new `sid`.
+    /// `release()`, and `cancelled` for a call `release()` ended while it waited, or whose task was
+    /// cancelled. With `needsSession`, a call to a `ready` instance whose session's window ran out waits
+    /// for the `/init` on its way — the one of the launch, say —, so it goes with the new `sid`.
     func awaitUsable(timeout: TimeInterval, needsSession: Bool = false) async -> Rees46.SdkError? {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Rees46.SdkError?, Never>) in
-            lock.lock()
-            switch gateLocked(needsSession: needsSession) {
-            case .pass:
-                lock.unlock()
-                continuation.resume(returning: nil)
-            case .fail(let error):
-                lock.unlock()
-                continuation.resume(returning: error)
-            case .wait:
-                let id = UUID()
-                let waiter = Waiter(continuation, needsSession: needsSession)
-                waiters[id] = waiter
-                waiter.timeout = environment.scheduler.schedule(after: timeout) { [weak self] in
-                    self?.expire(id)
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Rees46.SdkError?, Never>) in
+                lock.lock()
+                switch gateLocked(needsSession: needsSession) {
+                case .pass:
+                    lock.unlock()
+                    continuation.resume(returning: nil)
+                case .fail(let error):
+                    lock.unlock()
+                    continuation.resume(returning: error)
+                case .wait:
+                    // Cancelled before it waits — `abandon` found nothing to end —, the call does not wait.
+                    guard !_Concurrency.Task.isCancelled else {
+                        lock.unlock()
+                        continuation.resume(returning: .cancelled)
+                        return
+                    }
+                    let waiter = Waiter(continuation, needsSession: needsSession)
+                    waiters[id] = waiter
+                    waiter.timeout = environment.scheduler.schedule(after: timeout) { [weak self] in
+                        self?.expire(id)
+                    }
+                    lock.unlock()
                 }
-                lock.unlock()
             }
+        } onCancel: { [weak self] in
+            self?.abandon(id)
         }
     }
 
@@ -467,6 +477,15 @@ final class InitMachine {
         let waiter = waiters.removeValue(forKey: id)
         lock.unlock()
         waiter?.continuation.resume(returning: .timeout)
+    }
+
+    /// A call whose task was cancelled while it waited ends as `cancelled`.
+    private func abandon(_ id: UUID) {
+        lock.lock()
+        let waiter = waiters.removeValue(forKey: id)
+        lock.unlock()
+        waiter?.timeout?.cancel()
+        waiter?.continuation.resume(returning: .cancelled)
     }
 
     /// Lets through or fails every waiting call the state now decides. Under `lock`.

@@ -338,6 +338,7 @@ enum StubSDK {
         environment: CoreEnvironment? = nil,
         shopStorage: ShopStorage? = nil,
         deviceStore: DeviceStore? = nil,
+        appDomain: String = Rees46Config.defaultAppDomain,
         completion: ((SdkError?) -> Void)? = nil
     ) -> SimplePersonalizationSDK {
         // The core a stub SDK asks for is the one it gets: the process's flag is the test's to set.
@@ -352,6 +353,7 @@ enum StubSDK {
             enableAutoPopupPresentation: false,
             needReInitialization: needReInitialization,
             coreV2: coreV2,
+            appDomain: appDomain,
             deviceId: deviceId,
             environment: environment,
             userIdentity: identity,

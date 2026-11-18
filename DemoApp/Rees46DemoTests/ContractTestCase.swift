@@ -33,20 +33,20 @@ class ContractTestCase: XCTestCase {
     }
 
     /// Runs `body` with a ready SDK of a new shop on each core: the contract is the same on both.
-    func onBothCores(_ body: (SimplePersonalizationSDK) -> Void) {
+    func onBothCores(appDomain: String = Rees46Config.defaultAppDomain, _ body: (SimplePersonalizationSDK) -> Void) {
         for coreV2 in [false, true] {
             XCTContext.runActivity(named: coreV2 ? "the new core" : "the old core") { _ in
-                body(readySDK(coreV2: coreV2))
+                body(readySDK(coreV2: coreV2, appDomain: appDomain))
             }
         }
     }
 
     /// A ready SDK of a new shop over the stub server: its `/init` answered with the stub's device id.
-    func readySDK(coreV2: Bool) -> SimplePersonalizationSDK {
+    func readySDK(coreV2: Bool, appDomain: String = Rees46Config.defaultAppDomain) -> SimplePersonalizationSDK {
         let shop = StubSDK.shopId()
         shops.append(shop)
         let ready = expectation(description: "init")
-        let sdk = StubSDK.make(shopId: shop, coreV2: coreV2) { _ in ready.fulfill() }
+        let sdk = StubSDK.make(shopId: shop, coreV2: coreV2, appDomain: appDomain) { _ in ready.fulfill() }
         made.append(sdk)
         wait(for: [ready], timeout: 5)
         return sdk

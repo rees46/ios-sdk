@@ -1,0 +1,37 @@
+# Proposed fixtures
+
+Cases the SDK is tested by for a namespace the contract has no fixture file for yet, written in the format of the
+contract's fixtures (`sdk/fixtures/README.md`) and marked with the contract version they follow. They are not the
+contract's: when `sdk/fixtures` gets the namespace's file, its copy goes into `contract-<version>/` and the file here
+is removed.
+
+- `cart.json` — `cart.get` (`sdk/contract/cart.md`), the same cases the Android SDK tests by. In `expect`, `result`
+  is the method's value by the contract's field names; `response.status: null` is no answer, which the tests play as a
+  connection that is never made (`network`).
+- `notifications.json` — the events of pushes and `setPushToken` (`sdk/contract/notifications.md`), the same cases the
+  Android SDK tests by. A case with `platform` (`ios`, `android`) is of that platform only: the platforms send a push
+  token with different `platform` and `push_provider`, and each refuses the other's provider. `expect.result: null` is a
+  success without a value.
+- `stories.json` — `stories.get` (`sdk/contract/stories.md`). In `expect.result` an element of a slide is an object with
+  its `type` — `button`, `product`, `products`, `textBlock` — and its fields.
+- `predict.json` — `predict.getProbabilityToPurchase` (`sdk/contract/predict.md`).
+- `loyalty.json` — `loyalty.join`, `getStatus`, `getPromotions` (`sdk/contract/loyalty.md`). A query field whose value
+  is a list goes as a list of Rails: `promo_codes[]=A&promo_codes[]=B`.
+- `sliders.json` — `sliders.get` (`sdk/contract/sliders.md`) and the banner events of `tracking` that go with it,
+  `bannerView` and `bannerClick`, until the contract's `tracking.json` has them.
+- `reviews.json` — the nine methods of `reviews` (`sdk/contract/reviews.md`): the request of each call, or the
+  argument it refuses, and what each answer ends with. A path under `api/v3/` goes to `appDomain`, any other to
+  `apiDomain`, as the contract's table of methods says; the format has no field for the host.
+
+In `expect.result` an object lists the fields the case checks; `null` is a field without a value.
+
+- `products.json`, `collections.json`, `recommendations.json`, `search.json` — the catalog (`sdk/contract/products.md`,
+  `collections.md`, `recommendations.md`, `search.md`): the Android SDK's files as they are, so both SDKs test the same
+  cases. In `call.args`, a request model is an object by the contract's field names, a value of a set by its name in
+  code (`salesRate`). A `result`, and a request's own fields in `query` or `body`, are compared whole, as the Android
+  SDK compares them: a field without a value counts as missing on either side.
+- `search.json` here is the Android SDK's file with the search agent (`agentDialog`, `agent`; DEV-4620) after the
+  catalog's cases. The agent's path is on the host of API v3, `appDomain`, which the format does not name.
+- `profile.json`, `subscriptions.json`, `segments.json` — the client (`sdk/contract/profile.md`, `subscriptions.md`,
+  `segments.md`): the Android SDK's files as they are, compared as the catalog's. A method without a value expects
+  `"result": null`.
