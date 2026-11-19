@@ -25,6 +25,9 @@ extension NotificationsAPI {
      `externalId`, `loyaltyId` or `did` — one of them is needed. On the new core only, as the other
      methods of `notifications`.
 
+     The history is the released `UserPayloadResponse`: the answer's `status` and its messages, each with
+     the mailing's `campaignId`, its `channel` and its `statistics`, the one object the server sends.
+
      `completion` is called once, on the main thread, with the history or the error: `invalidArgument` —
      an empty `shopSecret`, `type`, `channel` or id, no id at all, no `dateFrom` or one that is not
      `YYYY-MM-DD` (the server needs it), `limit` or `page` below 1 — before anything is sent,
@@ -90,7 +93,8 @@ extension NotificationsAPIImpl {
     static let getHistoryCall = "notifications.getHistory"
 
     /// `GET notifications` under the root method's names. The answer is
-    /// `{"status": "success", "payload": {"messages": [...]}}`; without the list it is `decoding`.
+    /// `{"status": "success", "payload": {"messages": [...]}}`; without the list it is `decoding`. The
+    /// model reads the whole answer: its `status` and the messages under `payload`.
     static func historyRequest(
         shopSecret: String,
         type: String,
@@ -121,10 +125,11 @@ extension NotificationsAPIImpl {
         try query.positive("limit", limit, "limit")
         try query.positive("page", page, "page")
         var request = ApiRequest<UserPayloadResponse>(method: .get, path: "notifications", query: query.fields) { body in
-            guard let payload = try SecretMethods.object(body)["payload"] as? [String: Any], payload["messages"] is [Any] else {
+            let answer = try SecretMethods.object(body)
+            guard let payload = answer["payload"] as? [String: Any], payload["messages"] is [Any] else {
                 throw Rees46.SdkError.decoding
             }
-            return UserPayloadResponse(json: payload)
+            return UserPayloadResponse(json: answer)
         }
         request.secret = true
         return request

@@ -163,6 +163,122 @@ final class SecretMethodsPackageTests: XCTestCase {
         }
     }
 
+    /// The answer of `GET notifications` as the API documents it: `campaign_id` a number, `channel`,
+    /// `statistics` one object with the keys in snake case.
+    private static let historyAnswer = #"""
+    {"status": "success", "payload": {"messages": [
+      {"type": "bulk", "campaign_id": 4511, "channel": "email", "code": "c-1", "date": "2026-11-01",
+       "sent_at": "2026-11-01T14:25:21.000Z", "subject": "Sale", "body": "Today", "url": "https://shop.example/sale",
+       "icon": "https://shop.example/icon.png", "picture": "https://shop.example/picture.png",
+       "statistics": {"opened": true, "clicked": true, "hard_bounced": false, "soft_bounced": true,
+                      "complained": false, "unsubscribed": false, "purchased": true}},
+      {"type": "trigger", "campaign_id": 12, "channel": "mobile_push", "code": "c-2", "date": "2026-11-02",
+       "sent_at": "2026-11-02T08:00:00.000Z", "subject": null, "body": "Back in stock", "url": null, "icon": null,
+       "picture": null,
+       "statistics": {"opened": false, "clicked": false, "hard_bounced": true, "soft_bounced": false,
+                      "complained": true, "unsubscribed": true, "purchased": false}}
+    ]}}
+    """#
+
+    /// Every field of `historyAnswer`, as the model reads it.
+    private func assertReadsTheHistoryAnswer(_ history: UserPayloadResponse, file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(history.status, "success", file: file, line: line)
+        XCTAssertEqual(history.notifications.count, 2, file: file, line: line)
+        guard history.notifications.count == 2 else { return }
+        let sale = history.notifications[0]
+        XCTAssertEqual(sale.type, "bulk", file: file, line: line)
+        XCTAssertEqual(sale.campaignId, 4511, file: file, line: line)
+        XCTAssertNil(sale.campaignsIds, "the old list of names, which the server does not send", file: file, line: line)
+        XCTAssertEqual(sale.channel, "email", file: file, line: line)
+        XCTAssertEqual(sale.codeId, "c-1", file: file, line: line)
+        XCTAssertEqual(sale.dateString, "2026-11-01", file: file, line: line)
+        XCTAssertEqual(sale.dateSentAt, "2026-11-01T14:25:21.000Z", file: file, line: line)
+        XCTAssertEqual(sale.subject, "Sale", file: file, line: line)
+        XCTAssertEqual(sale.bodyData, "Today", file: file, line: line)
+        XCTAssertEqual(sale.url, "https://shop.example/sale", file: file, line: line)
+        XCTAssertEqual(sale.icon, "https://shop.example/icon.png", file: file, line: line)
+        XCTAssertEqual(sale.picture, "https://shop.example/picture.png", file: file, line: line)
+        XCTAssertEqual(sale.statistics.count, 1, "the one object of the answer", file: file, line: line)
+        let read = sale.statistics.first
+        XCTAssertEqual(read?.opened, true, file: file, line: line)
+        XCTAssertEqual(read?.clicked, true, file: file, line: line)
+        XCTAssertEqual(read?.hardBounced, false, file: file, line: line)
+        XCTAssertEqual(read?.softBounced, true, file: file, line: line)
+        XCTAssertEqual(read?.complained, false, file: file, line: line)
+        XCTAssertEqual(read?.unsubscribed, false, file: file, line: line)
+        XCTAssertEqual(read?.purchased, true, file: file, line: line)
+
+        let push = history.notifications[1]
+        XCTAssertEqual(push.campaignId, 12, file: file, line: line)
+        XCTAssertEqual(push.channel, "mobile_push", file: file, line: line)
+        XCTAssertEqual(push.subject, "", "a null string reads as before", file: file, line: line)
+        let pushRead = push.statistics.first
+        XCTAssertEqual(pushRead?.hardBounced, true, file: file, line: line)
+        XCTAssertEqual(pushRead?.softBounced, false, file: file, line: line)
+        XCTAssertEqual(pushRead?.complained, true, file: file, line: line)
+        XCTAssertEqual(pushRead?.unsubscribed, true, file: file, line: line)
+    }
+
+    func test_getHistory_reads_the_status_and_every_field_of_a_message_the_server_sends() throws {
+        let request = try history()
+        let body = Data(Self.historyAnswer.utf8)
+        let answer = NetworkClient.Response(
+            status: 200, body: body, retryAfter: nil, result: NetworkClient.classify(status: 200, body: body, path: request.path)
+        )
+        let logger = SdkLogger(shopId: "package-\(UUID().uuidString)", level: .none)
+        let read = NamespaceRequests.value(of: answer, for: request, call: NotificationsAPIImpl.getHistoryCall, logger: logger)
+        assertReadsTheHistoryAnswer(try read.get())
+    }
+
+    /// The root `getAllNotifications(shopSecret:…)` hands the model the whole answer, as
+    /// `NotificationHandlerServiceImpl` gets it.
+    func test_the_root_getAllNotifications_reads_the_same_answer_whole() throws {
+        let answer = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(Self.historyAnswer.utf8)) as? [String: Any])
+        assertReadsTheHistoryAnswer(UserPayloadResponse(json: answer))
+    }
+
+    func test_the_history_model_still_reads_the_shapes_it_read_before() {
+        let old = UserPayloadResponse(json: [
+            "messages": [[
+                "type": "bulk",
+                "campaign_id": [["name": "Sale"], ["name": "Autumn"], ["id": 1]],
+                "statistics": [
+                    ["opened": true, "hardBounced": true, "softBounced": false],
+                    ["clicked": true],
+                ],
+            ]],
+        ])
+        XCTAssertNil(old.status)
+        let message = old.notifications.first
+        XCTAssertEqual(message?.campaignsIds, ["Sale", "Autumn"])
+        XCTAssertNil(message?.campaignId)
+        XCTAssertNil(message?.channel)
+        XCTAssertEqual(message?.statistics.count, 2)
+        XCTAssertEqual(message?.statistics.first?.opened, true)
+        XCTAssertEqual(message?.statistics.first?.hardBounced, true)
+        XCTAssertEqual(message?.statistics.first?.softBounced, false)
+        XCTAssertNil(message?.statistics.first?.clicked)
+        XCTAssertEqual(message?.statistics.last?.clicked, true)
+    }
+
+    func test_the_history_model_leaves_out_what_is_missing_or_not_a_whole_number() throws {
+        let answer = #"""
+        {"status": "success", "payload": {"messages": [
+          {"code": "none"},
+          {"code": "boolean", "campaign_id": true, "statistics": "opened"},
+          {"code": "fraction", "campaign_id": 1.5},
+          {"code": "text", "campaign_id": "77"}
+        ]}}
+        """#
+        let json = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(answer.utf8)) as? [String: Any])
+        let read = UserPayloadResponse(json: json)
+        XCTAssertEqual(read.notifications.map(\.codeId), ["none", "boolean", "fraction", "text"])
+        XCTAssertEqual(read.notifications.map(\.campaignId), [nil, nil, nil, 77])
+        XCTAssertEqual(read.notifications.map(\.statistics.count), [0, 0, 0, 0])
+        XCTAssertEqual(read.notifications.map(\.channel), [nil, nil, nil, nil])
+        XCTAssertEqual(UserPayloadResponse(json: [:]).notifications.count, 0)
+    }
+
     // MARK: - The common fields
 
     func test_a_server_methods_request_gets_shop_id_alone() {
