@@ -33,7 +33,19 @@ final class InitPackageTests: XCTestCase {
         XCTAssertEqual(InitMachine.pause(afterFailures: 1, random: 0), 0.8, accuracy: 0.0001)
         XCTAssertEqual(InitMachine.pause(afterFailures: 1, random: 0.999_999), 1.2, accuracy: 0.0001)
         XCTAssertEqual(InitMachine.pause(afterFailures: 40, random: 0), 240, accuracy: 0.0001)
-        XCTAssertEqual(InitMachine.pause(afterFailures: 40, random: 0.999_999), 360, accuracy: 0.001)
+        XCTAssertEqual(InitMachine.pause(afterFailures: 40, random: 0.999_999), 300, accuracy: 0.001, "the spread never goes past five minutes")
+        XCTAssertEqual(InitMachine.pause(afterFailures: 9, random: 0.999_999), 300, accuracy: 0.001, "256 s spread up is held to the cap")
+        XCTAssertEqual(InitMachine.pause(afterFailures: 9, random: 0), 204.8, accuracy: 0.001)
+        for failures in 1...40 {
+            for random in [0, 0.25, 0.5, 0.75, 0.999_999] {
+                XCTAssertLessThanOrEqual(RetryPolicy.pause(afterFailures: failures, random: random), 300)
+            }
+        }
+        // A server's Retry-After is held between one second and five minutes.
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: 0), 1)
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: -5), 1)
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: 42), 42)
+        XCTAssertEqual(RetryPolicy.pause(retryAfter: 86_400), 300)
     }
 
     // MARK: - State
