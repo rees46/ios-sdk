@@ -33,17 +33,21 @@ struct SlidersAPIImpl: SlidersAPI {
         if let location = locationId, !ApiArguments.isBlank(location) {
             query["location"] = location
         }
-        return .get("slider", query: query, answer: SliderAnswer.self) { $0.slider }
+        return .get("slider", query: query, answer: SliderAnswer.self) { $0.slider(requested: code) }
     }
 }
 
 /// `{"status": "success", "payload": {"properties": {"code", "width", "height"}, "slides": [...]}}`: the
-/// banners are `payload.slides`. A banner without a `banner_id` cannot be tracked and is left out; one
-/// without a `recommended_code` takes the slider's. `content_type` and `content` are the server's own.
-/// Without `payload` it is not a slider (`decoding`).
+/// banners are `payload.slides`; a payload without them has none. An answer without `properties.code`
+/// is the slider the request asked for: its code is the requested one. A banner without a `banner_id`
+/// cannot be tracked and is left out; one without a `recommended_code` takes the slider's. `content_type`
+/// and `content` are the server's own. Without `payload` it is not a slider (`decoding`).
 struct SliderAnswer: Decodable {
 
-    let slider: Slider
+    private let code: String?
+    private let width: Int
+    private let height: Int
+    private let banners: [BannerAnswer]
 
     init(from decoder: Decoder) throws {
         let root = try decoder.container(keyedBy: AnswerKey.self)
@@ -51,13 +55,16 @@ struct SliderAnswer: Decodable {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "no payload"))
         }
         let properties = try? payload.nestedContainer(keyedBy: AnswerKey.self, forKey: "properties")
-        let code = properties?.lenientString("code") ?? ""
-        slider = Slider(
-            code: code,
-            width: properties?.lenientInt("width") ?? 0,
-            height: properties?.lenientInt("height") ?? 0,
-            banners: (payload.lenientList(BannerAnswer.self, "slides") ?? []).map { $0.banner(of: code) }
-        )
+        code = properties?.lenientString("code").flatMap { ApiArguments.isBlank($0) ? nil : $0 }
+        width = properties?.lenientInt("width") ?? 0
+        height = properties?.lenientInt("height") ?? 0
+        banners = payload.lenientList(BannerAnswer.self, "slides") ?? []
+    }
+
+    /// The slider of the answer to the request for the slider `requested`.
+    func slider(requested: String) -> Slider {
+        let code = self.code ?? requested
+        return Slider(code: code, width: width, height: height, banners: banners.map { $0.banner(of: code) })
     }
 
     private struct BannerAnswer: Decodable {
