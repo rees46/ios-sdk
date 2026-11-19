@@ -229,7 +229,7 @@ struct TrackingAPIImpl: TrackingAPI {
     }
 
     func setSource(_ source: TrackingSource) {
-        sourceService.trackSource(type: source.type.rawValue, code: source.code)
+        sourceService.trackSource(type: source.rawType, code: source.code)
     }
 
     /// `tracking.popupShown`: `popup/showed` as the root `trackPopupShown` sends it, through the queue on
@@ -246,8 +246,8 @@ struct TrackingAPIImpl: TrackingAPI {
     /// Whether `source` may go with an event. An event with a source of a mailing is not sent: the old
     /// completion and `accepted` hear `invalidArgument` later, as of the core's other refusals.
     private func admits(_ source: TrackingSource?, call: String, _ completion: @escaping (Result<Void, SdkError>) -> Void) -> Bool {
-        guard let type = source?.type, Self.notOfAnEvent.contains(type) else { return true }
-        let problem = "\(call): \(type.rawValue) is not a source of an event, setSource takes it"
+        guard let raw = source?.rawType, Self.notOfAnEvent.contains(where: { $0.rawValue == raw }) else { return true }
+        let problem = "\(call): \(raw) is not a source of an event, setSource takes it"
         instance?.logger.warning(LogCode.invalidArgument, problem, ["call": call])
         let accepted = self.accepted
         DispatchQueue.global(qos: .utility).async {
@@ -258,9 +258,10 @@ struct TrackingAPIImpl: TrackingAPI {
     }
 }
 
-private extension TrackingSource {
+extension TrackingSource {
+    /// The source as it goes: `recommended_by` is `rawType`, also for a value only the bridges pass.
     var wire: TrackingSourceWire {
-        TrackingSourceWire(type: type.rawValue, code: code)
+        TrackingSourceWire(type: rawType, code: code)
     }
 }
 
