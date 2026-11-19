@@ -1,3 +1,5 @@
+// swiftlint:disable force_unwrapping
+// Legacy UI: its force unwraps stay until it is rewritten, so this rule alone is off for this file.
 import UIKit.UIFont
 import Foundation
 

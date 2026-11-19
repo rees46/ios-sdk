@@ -75,7 +75,7 @@ final public class VideoDownloadManager: NSObject {
         if presence {
             if let download = downloadStatus.1 {
                 download.downloadTask.cancel()
-                self.ongoingDownloads.removeValue(forKey: key!)
+                if let key = key { self.ongoingDownloads.removeValue(forKey: key) }
             }
         }
     }
@@ -158,7 +158,7 @@ final public class VideoDownloadManager: NSObject {
         super.init()
         let sessionConfiguration = URLSessionConfiguration.default.withoutCookies()
         self.session = URLSession(configuration: sessionConfiguration, delegate: self, delegateQueue: nil)
-        let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier!)
+        let backgroundConfiguration = URLSessionConfiguration.background(withIdentifier: Bundle.main.bundleIdentifier ?? "com.rees46.sdk.video-downloads")
         backgroundConfiguration.turnCookiesOff()
         self.backgroundSession = URLSession(configuration: backgroundConfiguration, delegate: self, delegateQueue: OperationQueue())
     }
@@ -169,10 +169,10 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                              downloadTask: URLSessionDownloadTask,
                              didFinishDownloadingTo location: URL) {
         
-        let key = (downloadTask.originalRequest?.url?.absoluteString)!
+        guard let key = downloadTask.originalRequest?.url?.absoluteString else { return }
         if let download = self.ongoingDownloads[key] {
             if let response = downloadTask.response {
-                let statusCode = (response as! HTTPURLResponse).statusCode
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 200
                 
                 guard statusCode < 400 else {
                     let error = NSError(domain:"HttpError", code:statusCode, userInfo:[NSLocalizedDescriptionKey : HTTPURLResponse.localizedString(forStatusCode: statusCode)])
@@ -181,7 +181,7 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                     })
                     return
                 }
-                let fileName = download.fileName ?? downloadTask.response?.suggestedFilename ?? (downloadTask.originalRequest?.url?.lastPathComponent)!
+                let fileName = download.fileName ?? downloadTask.response?.suggestedFilename ?? downloadTask.originalRequest?.url?.lastPathComponent ?? key
                 let directoryName = download.directoryName
                 
                 let fileMovingResult = VideoFileUtils.moveFile(fromUrl: location, toDirectory: directoryName, withName: fileName)
@@ -221,8 +221,8 @@ extension VideoDownloadManager : URLSessionDelegate, URLSessionDownloadDelegate 
                              didCompleteWithError error: Error?) {
         
         if let error = error {
-            let downloadTask = task as! URLSessionDownloadTask
-            let key = (downloadTask.originalRequest?.url?.absoluteString)!
+            guard let downloadTask = task as? URLSessionDownloadTask,
+                  let key = downloadTask.originalRequest?.url?.absoluteString else { return }
             if let download = self.ongoingDownloads[key] {
                 OperationQueue.main.addOperation({
                     download.completionBlock(error, nil)

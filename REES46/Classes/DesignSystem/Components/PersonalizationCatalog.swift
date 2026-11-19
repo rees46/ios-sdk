@@ -333,14 +333,18 @@ public final class PersonalizationCatalog: UIView {
         guard let section = Section(rawValue: indexPath.section), section != .products else {
             return productCell(collectionView, at: indexPath)
         }
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RowCell.reuseId, for: indexPath) as! RowCell
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RowCell.reuseId, for: indexPath) as? RowCell else {
+            return UICollectionViewCell()
+        }
         cell.show(rowViews(in: section)[indexPath.item])
         cell.onLayout = { [weak self] view in self?.rowDidLayout(view) }
         return cell
     }
 
     private func productCell(_ collectionView: UICollectionView, at indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProductCell.reuseId, for: indexPath) as! ProductCell
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProductCell.reuseId, for: indexPath) as? ProductCell else {
+            return UICollectionViewCell()
+        }
         let product = products[indexPath.item]
         let card = cell.card
         if card.type != cardType { card.type = cardType }

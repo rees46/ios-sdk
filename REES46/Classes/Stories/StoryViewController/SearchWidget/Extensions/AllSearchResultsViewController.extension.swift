@@ -7,7 +7,9 @@ extension AllSearchResultsViewController: UICollectionViewDataSource, UICollecti
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecommendationsWidgetViewCell.reuseRecommCellId, for: indexPath) as! RecommendationsWidgetViewCell
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecommendationsWidgetViewCell.reuseRecommCellId, for: indexPath) as? RecommendationsWidgetViewCell else {
+            return UICollectionViewCell()
+        }
         
         guard let result = searchResults?[indexPath.item] else { return cell }
         

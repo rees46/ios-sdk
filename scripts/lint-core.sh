@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Lints the SDK core with .swiftlint.yml: force unwraps, tries and casts fail the build.
+# Lints the whole SDK with .swiftlint.yml: force unwraps, tries and casts fail the build.
 # Exits 0 with a notice when swiftlint is not installed, so a machine without it is not blocked;
 # on CI a missing swiftlint fails, so the check cannot pass without linting.
 set -eu

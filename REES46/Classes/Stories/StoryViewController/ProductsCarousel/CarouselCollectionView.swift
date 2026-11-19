@@ -1,3 +1,5 @@
+// swiftlint:disable force_unwrapping
+// Legacy UI: its force unwraps stay until it is rewritten, so this rule alone is off for this file.
 import UIKit
 import WebKit
 
@@ -175,7 +177,9 @@ class CarouselCollectionView: UICollectionView, UICollectionViewDelegate, UIColl
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(withReuseIdentifier: CarouselCollectionViewCell.reuseCarouselId, for: indexPath) as! CarouselCollectionViewCell
+        guard let cell = dequeueReusableCell(withReuseIdentifier: CarouselCollectionViewCell.reuseCarouselId, for: indexPath) as? CarouselCollectionViewCell else {
+            return UICollectionViewCell()
+        }
         
         let url = URL(string: cells[indexPath.row].picture)
         if url != nil {

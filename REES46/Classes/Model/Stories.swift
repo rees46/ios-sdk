@@ -118,8 +118,8 @@ class Slide {
         }
         
         if type == .video {
-            if preview != nil {
-                setImage(imageURL: preview!, isPreview: true)
+            if let preview = preview {
+                setImage(imageURL: preview, isPreview: true)
             } else {
                 SdkLogger.area(.stories, .debug, "a video slide has no preview")
             }
