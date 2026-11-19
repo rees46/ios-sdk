@@ -29,7 +29,16 @@ public class NotificationService: NotificationServiceProtocol {
     static let srcKey: String = "src"
   }
   
-  public var pushActionDelegate: NotificationActionsProtocol?
+  /// Opens the target of a tapped push. It keeps working until the major; the contract's way is the
+  /// `onClicked` callback of `Rees46.setPushCallbacks(_:)`, which gets the push with its
+  /// `PushPayload.target`.
+  @available(*, deprecated, message: "Use Rees46.setPushCallbacks(_:) and open PushPayload.target in onClicked.")
+  public var pushActionDelegate: NotificationActionsProtocol? {
+    get { actions }
+    set { actions = newValue }
+  }
+  /// What `pushActionDelegate` holds, read without its deprecation.
+  private var actions: NotificationActionsProtocol?
 
   /// Retained for source compatibility. Notification tracking now routes through `Rees46.handlePush`
   /// (which resolves the shop by `shop_id`), so this service no longer drives the delegate — a delegate
@@ -273,19 +282,19 @@ public class NotificationService: NotificationServiceProtocol {
   }
 
   private func openCategory(categoryId: String) {
-    pushActionDelegate?.openCategory(categoryId: categoryId)
+    actions?.openCategory(categoryId: categoryId)
   }
   
   private func openProduct(productId: String) {
-    pushActionDelegate?.openProduct(productId: productId)
+    actions?.openProduct(productId: productId)
   }
   
   private func openWeb(url: String) {
-    pushActionDelegate?.openWeb(url: url)
+    actions?.openWeb(url: url)
   }
   
   private func openCustom(url: String) {
-    pushActionDelegate?.openCustom(url: url)
+    actions?.openCustom(url: url)
   }
   
   private func handleNonSDKPush(userInfo: [AnyHashable: Any]) {

@@ -139,8 +139,9 @@ public protocol TrackingAPI {
 
     /// Search query issued by the user (`search`).
     ///
-    /// Pass `results` when the host runs its own search and knows the ids it showed. They go on the
-    /// wire as one comma-separated field, so ids must not themselves contain a comma.
+    /// `results` goes on the wire as one comma-separated field, but the server does not read it
+    /// (`sdk/contract/tracking.md`): it is deprecated and goes in the major. Call
+    /// `search(query:completion:)`.
     func search(
         query: String,
         results: [String]?,
@@ -258,9 +259,18 @@ public extension TrackingAPI {
         categoryView(categoryId: categoryId, completion: completion)
     }
 
+    /// Search query issued by the user (`search`).
     func search(
         query: String,
-        results: [String]? = nil,
+        completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
+    ) {
+        search(query: query, results: nil, completion: completion)
+    }
+
+    @available(*, deprecated, message: "The server does not read results, and the parameter goes in the major: use search(query:completion:).")
+    func search(
+        query: String,
+        results: [String]?,
         completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
     ) {
         search(query: query, results: results, completion: completion)

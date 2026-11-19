@@ -54,8 +54,8 @@ class SearchServiceImpl: SearchServiceProtocol {
         var params: [String: String] = [
             "shop_id": sdk?.shopId ?? "",
             "did": sdk?.deviceId ?? "",
-            "seance": sdk?.userSeance ?? "",
-            "sid": sdk?.userSeance ?? "",
+            "seance": sdk?.requestSeance ?? "",
+            "sid": sdk?.requestSeance ?? "",
             "type": "full_search",
             "search_query": query,
             "segment": sdk?.segment ?? ""
@@ -97,8 +97,8 @@ class SearchServiceImpl: SearchServiceProtocol {
             let params: [String: String] = [
                 "did": sdk.deviceId,
                 "shop_id": sdk.shopId,
-                "seance": sdk.userSeance,
-                "sid": sdk.userSeance,
+                "seance": sdk.requestSeance,
+                "sid": sdk.requestSeance,
                 "segment": sdk.segment
             ]
             

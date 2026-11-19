@@ -2599,14 +2599,14 @@ extension PersonalizationSDK {
     /// call it on the session queue, where those requests wait for the device id already. On the old
     /// core, its `sid`.
     func sessionIdForRequest(timeout: TimeInterval = NetworkClient.defaultTimeout) -> String {
-        guard let instance = self as? SimplePersonalizationSDK else { return userSeance }
+        guard let instance = self as? SimplePersonalizationSDK else { return requestSeance }
         return instance.sessionId(waiting: timeout)
     }
 
     /// The session of the moment, without waiting: on the new core the current `sid`, empty once its
     /// window ended; on the old core, its `sid`.
     var currentSessionId: String {
-        guard let instance = self as? SimplePersonalizationSDK, instance.usesCoreV2 else { return userSeance }
+        guard let instance = self as? SimplePersonalizationSDK, instance.usesCoreV2 else { return requestSeance }
         return instance.sessionId ?? ""
     }
 }

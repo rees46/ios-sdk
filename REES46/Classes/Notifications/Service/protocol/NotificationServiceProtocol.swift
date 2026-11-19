@@ -12,5 +12,6 @@ public protocol NotificationServiceProtocol {
     func didReceiveRegistrationFCMToken(fcmToken: String?)
     func didReceiveDeepLink(url: URL)
     
+    @available(*, deprecated, message: "Use Rees46.setPushCallbacks(_:) and open PushPayload.target in onClicked.")
     var pushActionDelegate: NotificationActionsProtocol? { get set }
 }

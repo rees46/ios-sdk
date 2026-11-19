@@ -95,8 +95,8 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
     return [
       Constants.shopId: sdk.shopId,
       Constants.did: sdk.deviceId,
-      Constants.seance: sdk.userSeance,
-      Constants.sid: sdk.userSeance,
+      Constants.seance: sdk.requestSeance,
+      Constants.sid: sdk.requestSeance,
       Constants.segment: sdk.segment
     ]
   }

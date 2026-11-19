@@ -14,6 +14,7 @@ import UIKit
 public protocol PersonalizationSDK {
     var shopId: String { get }
     var deviceId: String { get }
+    @available(*, deprecated, message: "Use sessionId: nil, not an empty string, while there is none.")
     var userSeance: String { get }
     var segment: String { get }
     var storiesCode: String? { get }
@@ -76,12 +77,15 @@ public protocol PersonalizationSDK {
     /// implementation below, so types that already conform keep compiling.
     func getCategory(category: String, limit: Int?, page: Int?, brands: String?, locations: String?, filters: [String: Any]?, priceMin: Double?, priceMax: Double?, sortBy: String?, sortDir: String?, completion: @escaping(Result<CategoryResponse, SdkError>) -> Void)
     func getCollection(collectionId: String, location: String?, email: String?, phone: String?, externalId: String?, loyaltyId: String?, completion: @escaping(Result<CollectionResponse, SdkError>) -> Void)
+    @available(*, deprecated, message: "Use deviceId.")
     func getDeviceId() -> String
     @available(*, deprecated, message: "Use enableAutoPopupPresentation or popupPresentationDelegate instead")
     func setParentViewController(controller: UIViewController, completion: @escaping () -> Void)
     func getNotificationWidget() -> NotificationWidget?
+    @available(*, deprecated, message: "Use sessionId: nil, not an empty string, while there is none.")
     func getSession() -> String
     func getCurrentSegment() -> String
+    @available(*, deprecated, message: "Use shopId.")
     func getShopId() -> String
     func setPushTokenNotification(token: String, isFirebaseNotification: Bool, completion: @escaping(Result<Void, SdkError>) -> Void)
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping(Result<Void, SdkError>) -> Void)
@@ -495,6 +499,9 @@ public extension PersonalizationSDK {
         return subscription
     }
 
+    /// The default of a conformer that does not answer `sessionId` itself: its `userSeance`, empty as
+    /// none. Deprecated with it — implement `sessionId`.
+    @available(*, deprecated, message: "Implement sessionId: this default reads the deprecated userSeance.")
     var sessionId: String? {
         userSeance.isEmpty ? nil : userSeance
     }
@@ -543,6 +550,15 @@ public extension PersonalizationSDK {
 
 extension PersonalizationSDK {
 
+    /// The session id the SDK's own requests send as `seance` and `sid`, `userSeance` read without the
+    /// deprecation the app sees: the SDK's instance tells it, another conformer through `sessionId`.
+    var requestSeance: String {
+        if let instance = self as? SimplePersonalizationSDK {
+            return instance.userSeance
+        }
+        return sessionId ?? ""
+    }
+
     /// `getRequest` with the call's own timeout, for the SDK's services. The SDK's own client gives
     /// the timeout to the request; another conformer gets the call as before.
     func getRequest(path: String, params: [String: String], timeout: TimeInterval?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
@@ -568,8 +584,8 @@ extension PersonalizationSDK {
         var params: [String: String] = [
             "shop_id": shopId,
             "did": deviceId,
-            "seance": userSeance,
-            "sid": userSeance
+            "seance": requestSeance,
+            "sid": requestSeance
         ]
         if let limit = limit { params["limit"] = String(limit) }
         if let page = page { params["page"] = String(page) }

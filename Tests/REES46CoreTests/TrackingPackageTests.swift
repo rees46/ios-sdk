@@ -127,6 +127,16 @@ final class TrackingPackageTests: XCTestCase {
         XCTAssertEqual(stored.stored.map(\.type), ["transactional", "web_push_digest"])
     }
 
+    func test_search_without_results_sends_none_and_the_deprecated_results_still_go() async throws {
+        let events = RecordingTrackService()
+        let tracking = TrackingAPIImpl(trackService: events, sourceService: RecordingSourceService())
+        tracking.search(query: "boots")
+        tracking.search(query: "boots") { _ in }
+        try await tracking.async.search(query: "boots")
+        tracking.search(query: "boots", results: ["1", "2"], completion: { _ in })
+        XCTAssertEqual(events.details.map(\.results), [nil, nil, nil, ["1", "2"]])
+    }
+
     func test_the_result_of_a_service_without_a_queue_is_its_answer() {
         var told: [Rees46.SdkError?] = []
         var heard = 0

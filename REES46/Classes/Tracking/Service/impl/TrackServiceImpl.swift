@@ -212,8 +212,8 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
+                Constants.seance: sdk.requestSeance,
+                Constants.sid: sdk.requestSeance,
                 Constants.segment: sdk.segment
             ]
             let built = Self.fields(of: event, details: details, sdk: sdk, contract: false)
@@ -569,8 +569,8 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
+                Constants.seance: sdk.requestSeance,
+                Constants.sid: sdk.requestSeance,
                 Constants.segment: sdk.segment,
             ]
             Self.mergePurchasePayload(request: request, params: &params)
@@ -804,8 +804,8 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             var params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
-                Constants.seance: sdk.userSeance,
-                Constants.sid: sdk.userSeance,
+                Constants.seance: sdk.requestSeance,
+                Constants.sid: sdk.requestSeance,
                 Constants.segment: sdk.segment,
                 Constants.event: event
             ]
@@ -898,7 +898,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             let params: [String: Any] = [
                 Constants.shopId: sdk.shopId,
                 Constants.did: sdk.deviceId,
-                Constants.sid: sdk.userSeance,
+                Constants.sid: sdk.requestSeance,
                 "popup": popupId
             ]
             
