@@ -246,7 +246,11 @@ public struct Product {
     public var isNew: Bool?
     public var params: [[String: Any]]?
     public var discountFormatted: String?
+    /// `discount_percent`, else `discount` when the answer has it as a number (a line of an order has
+    /// only `discount`).
     public var discountPercent: Int?
+    /// `discount` as the answer has it: `nil` when it has none or not a number. `discount` is 0 then.
+    @_spi(Bridge) public var rawDiscount: Int?
     
     init(json: [String: Any]) {
         id = json["id"] as? String ?? ""
@@ -273,11 +277,12 @@ public struct Product {
         isNew = json["is_new"] as? Bool
         params = json["params"] as? [[String: Any]]
         
-        discount = JSONNumber.int(json["discount"]) ?? 0
+        rawDiscount = JSONNumber.int(json["discount"])
+        discount = rawDiscount ?? 0
         salesRate = json["sales_rate"] as? Int ?? 0
         relativeSalesRate = json["relative_sales_rate"] as? Float ?? 0.0
         discountFormatted = json["discount_formatted"] as? String
-        discountPercent = JSONNumber.int(json["discount_percent"])
+        discountPercent = JSONNumber.int(json["discount_percent"]) ?? rawDiscount
     }
 }
 

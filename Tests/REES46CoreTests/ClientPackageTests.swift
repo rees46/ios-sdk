@@ -257,6 +257,15 @@ final class ClientPackageTests: XCTestCase {
         XCTAssertEqual(ContractJSON.of(Gender.female) as? String, "female")
     }
 
+    func test_empty_custom_properties_are_an_empty_map_whichever_way_the_server_writes_them() throws {
+        let request = ProfileAPIImpl.profileRequest
+        XCTAssertEqual(try request.decode(Data(#"{"id":"1","custom_properties":[]}"#.utf8)).customProperties?.count, 0)
+        XCTAssertEqual(try request.decode(Data(#"{"id":"1","custom_properties":{}}"#.utf8)).customProperties?.count, 0)
+        XCTAssertEqual(try request.decode(Data(#"{"id":"1","custom_properties":{"a":1}}"#.utf8)).customProperties?["a"] as? Int, 1)
+        XCTAssertNil(try request.decode(Data(#"{"id":"1"}"#.utf8)).customProperties, "none in the answer")
+        XCTAssertNil(try request.decode(Data(#"{"id":"1","custom_properties":["a"]}"#.utf8)).customProperties, "a list of values is no map")
+    }
+
     func test_the_gender_goes_as_its_letter_and_reads_from_it() {
         XCTAssertEqual(Gender.male.wire, "m")
         XCTAssertEqual(Gender.female.wire, "f")

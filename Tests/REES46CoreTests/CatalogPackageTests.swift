@@ -393,6 +393,31 @@ final class CatalogPackageTests: XCTestCase {
         XCTAssertEqual(CatalogQuery.pathSegment("a+b"), "a%2Bb")
     }
 
+    // MARK: - The old models
+
+    func test_the_old_products_list_counts_the_products_of_each_brand() {
+        let response = ProductsListResponse(json: ["brands": [["name": "Apple", "count": 12], ["name": "Sony", "count": "3"], ["name": "Noname"]], "products": []])
+        XCTAssertEqual(response.brands, ["Apple", "Sony", "Noname"])
+        XCTAssertEqual(response.brandCounts, ["Apple": 12, "Sony": 3], "a brand without a count is left out")
+        XCTAssertNil(ProductsListResponse(json: [:]).brandCounts)
+    }
+
+    func test_an_order_lines_product_takes_its_discount_as_the_percent_and_keeps_it_raw() {
+        let order = Order(json: ["items": [["item": ["id": "1", "discount": 15]], ["item": ["id": "2"]], ["item": ["id": "3", "discount": true]]]])
+        let products = order.items.compactMap(\.item)
+        XCTAssertEqual(products.map(\.discountPercent), [15, nil, nil], "a flag is no percent")
+        XCTAssertEqual(products.map(\.rawDiscount), [15, nil, nil])
+        XCTAssertEqual(products.map(\.discount), [15, 0, 0], "the released field keeps its 0")
+        XCTAssertEqual(Product(json: ["discount": 6, "discount_percent": 5]).discountPercent, 5, "discount_percent wins")
+    }
+
+    func test_the_fields_of_a_cart_line_are_read() {
+        let line = CartItem(json: ["uniqid": "sku-1", "quantity": 2, "price": 9.5])
+        XCTAssertEqual(line.productId, "sku-1")
+        XCTAssertEqual(line.quantity, 2)
+        XCTAssertEqual(line.price, 9.5)
+    }
+
     func test_prices_must_be_finite() {
         XCTAssertThrowsError(try ProductsAPIImpl.listRequest(Rees46.ProductsListRequest(priceMin: .nan)))
         XCTAssertThrowsError(try ProductsAPIImpl.listRequest(Rees46.ProductsListRequest(priceMax: .infinity)))
