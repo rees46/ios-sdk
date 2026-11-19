@@ -205,11 +205,14 @@ final class TrackingBackCompatTests: XCTestCase {
             legacy: { $0.track(event: .synchronizeFavorites(ids: ["sku-1", "sku-2"]), recommendedBy: nil, completion: $1) },
             namespace: { $0.tracking.syncFavorites(itemIds: ["sku-1", "sku-2"], completion: $1) }
         )
+        // A slide goes with the code of the block the SDK loaded: without one it is refused.
         assertSameWire(
+            storiesCode: "loaded_block",
             legacy: { $0.track(event: .slideView(storyId: "42", slideId: "3"), recommendedBy: nil, completion: $1) },
             namespace: { $0.tracking.storyView(storyId: "42", slideId: "3", completion: $1) }
         )
         assertSameWire(
+            storiesCode: "loaded_block",
             legacy: { $0.track(event: .slideClick(storyId: "42", slideId: "3"), recommendedBy: nil, completion: $1) },
             namespace: { $0.tracking.storyClick(storyId: "42", slideId: "3", completion: $1) }
         )
@@ -240,6 +243,7 @@ final class TrackingBackCompatTests: XCTestCase {
     private typealias Call = (PersonalizationSDK, @escaping (Result<Void, SdkError>) -> Void) -> Void
 
     private func assertSameWire(
+        storiesCode: String? = nil,
         legacy: Call,
         namespace: Call,
         file: StaticString = #filePath,
@@ -247,6 +251,8 @@ final class TrackingBackCompatTests: XCTestCase {
     ) {
         let legacySdk = MockPersonalizationSDK()
         let namespaceSdk = MockPersonalizationSDK()
+        legacySdk.storiesCode = storiesCode
+        namespaceSdk.storiesCode = storiesCode
 
         let legacyDone = expectation(description: "legacy")
         legacy(legacySdk) { _ in legacyDone.fulfill() }

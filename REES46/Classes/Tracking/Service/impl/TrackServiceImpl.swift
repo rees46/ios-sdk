@@ -169,6 +169,11 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 Self.later(completion, .success(Void()))
                 return
             }
+            if let problem = Self.missingStoriesCode(event, built.storiesCode) {
+                SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "track: \(problem)", ["reason": "no_stories_code"])
+                Self.refuse(completion, accepted, "track: \(problem)")
+                return
+            }
             var body = built.fields
             if let source = source {
                 for item in source.params() {
@@ -192,6 +197,12 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
                 Constants.segment: sdk.segment
             ]
             let built = Self.fields(of: event, details: details, sdk: sdk, contract: false)
+            // The server refuses a slide without the code of its block (`422`): refused here instead.
+            if let problem = Self.missingStoriesCode(event, built.storiesCode) {
+                SdkLogger.forShop(sdk.shopId).warning(LogCode.invalidArgument, "track: \(problem)", ["reason": "no_stories_code"])
+                completion(.failure(.custom(error: "track: \(problem)")))
+                return
+            }
             for (key, value) in built.fields {
                 params[key] = value
             }
@@ -325,6 +336,24 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         }
     }
 
+    /// Why a slide event cannot go: it has no code of its stories block — none given and no block
+    /// loaded —, and `track/stories` refuses a slide without one (`422`, `sdk/contract/tracking.md`).
+    /// `nil` for a slide with a code and for any other event.
+    static func missingStoriesCode(_ event: Event, _ code: String?) -> String? {
+        switch event {
+        case .slideView, .slideClick:
+            return code == nil ? "a story slide needs the code of its stories block: none was given and no block was loaded" : nil
+        default:
+            return nil
+        }
+    }
+
+    /// The code of the stories block a slide event goes with: the one given, else the code of the block
+    /// the SDK loaded last. A blank one is none.
+    static func storiesBlockCode(given: String?, loaded: String?) -> String? {
+        [given, loaded].lazy.compactMap { $0 }.first { !blank($0) }
+    }
+
     /// The story id as the number `track/stories` takes: a positive whole number written as one.
     static func storyNumber(_ value: String) -> Int? {
         guard let number = Int(value), number > 0, String(number) == value else { return nil }
@@ -363,7 +392,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         let fullValue: Any = contract ? true : Constants.fullCartValue
         switch event {
         case let .slideView(storyId: id, slideId: slideId):
-            let blockCode = details.storiesCode ?? sdk.storiesCode
+            let blockCode = Self.storiesBlockCode(given: details.storiesCode, loaded: sdk.storiesCode)
             params[Constants.storyId] = storyId(id)
             params[Constants.slideId] = slideId
             params[Constants.sourceCode] = blockCode
@@ -371,7 +400,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             storiesBlockCode = blockCode
             paramEvent = Constants.view
         case let .slideClick(storyId: id, slideId: slideId):
-            let blockCode = details.storiesCode ?? sdk.storiesCode
+            let blockCode = Self.storiesBlockCode(given: details.storiesCode, loaded: sdk.storiesCode)
             params[Constants.storyId] = storyId(id)
             params[Constants.slideId] = slideId
             params[Constants.sourceCode] = blockCode

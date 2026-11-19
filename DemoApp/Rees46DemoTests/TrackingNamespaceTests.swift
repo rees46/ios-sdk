@@ -855,7 +855,7 @@ final class TrackingContractTests: CoreScenarioTestCase {
             { try await tracking.syncFavorites(itemIds: ["3"]) },
             { try await tracking.removeFromFavorites(itemId: "3") },
             { try await tracking.purchase(purchase) },
-            { try await tracking.storyClick(storyId: "12", slideId: "34") },
+            { try await tracking.storyClick(storyId: "12", slideId: "34", code: "b") },
             { try await tracking.popupShown(popupId: 5) },
         ]
         for call in calls {
@@ -1042,6 +1042,34 @@ final class TrackingContractTests: CoreScenarioTestCase {
         }
         answer("/track/stories", StubReply(json: #"{"status":"error"}"#))
         XCTAssertEqual(failure(completion { sdk.tracking.storyClick(storyId: "40", slideId: "36", code: "b", completion: $0) }), .decoding, "a body that is not success")
+    }
+
+    func test_a_slide_without_a_code_and_no_block_loaded_is_refused_and_not_sent_on_both_cores() {
+        let shop = newShop()
+        let sdk = makeV2(shop)
+        guard case .invalidArgument? = failure(completion({ sdk.tracking.storyView(storyId: "12", slideId: "34", completion: $0) })) else {
+            return XCTFail("no code and no block: track/stories refuses it with 422")
+        }
+        guard case .invalidArgument? = failure(completion({ sdk.tracking.storyClick(storyId: "12", slideId: "34", code: " ", completion: $0) })) else {
+            return XCTFail("a blank code is none")
+        }
+        guard case .invalidArgument? = run({ try await sdk.tracking.async.storyClick(storyId: "12", slideId: "34") }) as? Rees46.SdkError else {
+            return XCTFail("the async form")
+        }
+        XCTAssertNil(run { try await sdk.tracking.async.storyView(storyId: "12_1", slideId: "1") } ?? .some(TestError.noOutcome), "a virtual slide is not sent either way")
+        XCTAssertTrue(queueIdle(sdk))
+        XCTAssertTrue(requests("/track/stories", shop).isEmpty)
+
+        let old = newShop()
+        let legacy = makeLegacy(old)
+        guard case .invalidArgument? = failure(completion({ legacy.tracking.storyView(storyId: "12", slideId: "34", completion: $0) })) else {
+            return XCTFail("the old core refuses it at once instead of the server's 422")
+        }
+        guard case .success? = completion({ legacy.tracking.storyClick(storyId: "12", slideId: "34", code: "b", completion: $0) }) else {
+            return XCTFail("with a code it goes")
+        }
+        XCTAssertEqual(requests("/track/stories", old).count, 1)
+        XCTAssertEqual(requests("/track/stories", old).first?.body["code"] as? String, "b")
     }
 
     func test_the_old_core_sends_the_slides_as_it_always_has() {

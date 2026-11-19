@@ -29,6 +29,18 @@ final class TrackingPackageTests: XCTestCase {
         XCTAssertNil(TrackEventServiceImpl.storyNumber("12 "))
     }
 
+    func test_a_slide_goes_with_the_code_of_its_block_given_or_loaded_and_without_one_is_refused() {
+        XCTAssertEqual(TrackEventServiceImpl.storiesBlockCode(given: "b", loaded: "l"), "b")
+        XCTAssertEqual(TrackEventServiceImpl.storiesBlockCode(given: nil, loaded: "l"), "l")
+        XCTAssertEqual(TrackEventServiceImpl.storiesBlockCode(given: " ", loaded: "l"), "l", "a blank code is none")
+        XCTAssertNil(TrackEventServiceImpl.storiesBlockCode(given: nil, loaded: nil))
+        XCTAssertNil(TrackEventServiceImpl.storiesBlockCode(given: "", loaded: " "))
+        XCTAssertNotNil(TrackEventServiceImpl.missingStoriesCode(.slideView(storyId: "1", slideId: "2"), nil))
+        XCTAssertNotNil(TrackEventServiceImpl.missingStoriesCode(.slideClick(storyId: "1", slideId: "2"), nil))
+        XCTAssertNil(TrackEventServiceImpl.missingStoriesCode(.slideClick(storyId: "1", slideId: "2"), "b"))
+        XCTAssertNil(TrackEventServiceImpl.missingStoriesCode(.productView(id: "1"), nil), "only a slide has a block")
+    }
+
     func test_the_sources_of_a_mailing_are_not_sources_of_an_event() {
         XCTAssertEqual(TrackingAPIImpl.notOfAnEvent, [.transactional, .webPushDigest])
     }
