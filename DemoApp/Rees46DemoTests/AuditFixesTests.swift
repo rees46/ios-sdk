@@ -187,4 +187,87 @@ final class AuditFixesTests: XCTestCase {
         sdk.popupPresenter.dismissCurrentPopup()
         withExtendedLifetime(host) {}
     }
+
+    // MARK: - Popups
+
+    /// Hands every popup the SDK asks about the screen; presents nothing itself.
+    private final class PopupHost: UIViewController, PopupPresentationDelegate {
+        let asked = Locked(0)
+        override func present(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)? = nil) {}
+        func sdk(_ sdk: PersonalizationSDK, shouldPresentPopup popup: Popup) -> UIViewController? {
+            asked.mutate { $0 += 1 }
+            return self
+        }
+    }
+
+    private static func popup(_ id: Int, drawn: Bool = true, delay: Int = 0) -> Popup {
+        var json: [String: Any] = ["id": id, "position": "centered", "delay": delay, "popup_actions": #"{"close": {"button_text": "Close"}}"#]
+        if drawn {
+            json["components"] = #"{"header": "Title", "text": "Text"}"#
+        }
+        return Popup(json: json)
+    }
+
+    func test_a_popup_with_nothing_to_draw_is_not_counted_as_shown_and_the_same_popup_drawn_shows_at_once() {
+        let sdk = initializedSDK()
+        let host = PopupHost()
+        sdk.popupPresentationDelegate = host
+        PopupV3Slots.shared.reset()
+
+        sdk.popupPresenter.presentPopup(Self.popup(41, drawn: false))
+        XCTAssertTrue(eventually { host.asked.current == 1 })
+        XCTAssertNil(sdk.getNotificationWidget(), "nothing to draw holds no slot")
+
+        sdk.popupPresenter.presentPopup(Self.popup(41))
+        XCTAssertTrue(eventually { sdk.getNotificationWidget() != nil }, "not remembered as shown: it shows within the minute")
+        XCTAssertTrue(eventually { StubURLProtocol.requests(to: "/popup/showed", shop: sdk.shopId).count == 1 })
+        XCTAssertEqual(StubURLProtocol.requests(to: "/popup/showed", shop: sdk.shopId).first?.body["popup"] as? Int, 41, "only the drawn one is sent")
+        sdk.popupPresenter.dismissCurrentPopup()
+        XCTAssertTrue(eventually { sdk.getNotificationWidget() == nil })
+        withExtendedLifetime(host) {}
+    }
+
+    func test_a_popup_of_the_server_waits_its_delay_and_one_handed_back_does_not() {
+        let sdk = initializedSDK()
+        let host = PopupHost()
+        sdk.popupPresentationDelegate = host
+        PopupV3Slots.shared.reset()
+        XCTAssertEqual(Popup(json: ["id": 1, "delay": "2"]).delay, 2, "a number in a string")
+
+        let arrived = Date()
+        sdk.popupPresenter.popupArrived(Self.popup(42, delay: 1))
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+        XCTAssertEqual(host.asked.current, 0, "neither shown nor handed to the delegate before its delay")
+        XCTAssertTrue(eventually { sdk.getNotificationWidget() != nil })
+        XCTAssertGreaterThanOrEqual(Date().timeIntervalSince(arrived), 1)
+        sdk.popupPresenter.dismissCurrentPopup()
+        XCTAssertTrue(eventually { sdk.getNotificationWidget() == nil })
+
+        sdk.popupPresenter.presentPopup(Self.popup(43, delay: 30))
+        XCTAssertTrue(eventually(timeout: 3) { sdk.getNotificationWidget() != nil }, "handed back: shown without its delay")
+        sdk.popupPresenter.dismissCurrentPopup()
+        XCTAssertTrue(eventually { sdk.getNotificationWidget() == nil })
+        withExtendedLifetime(host) {}
+    }
+
+    func test_dismissCurrentPopup_takes_the_popup_off_the_screen() {
+        final class Presenting: PopupPresentationDelegate {
+            let root = UIViewController()
+            func sdk(_ sdk: PersonalizationSDK, shouldPresentPopup popup: Popup) -> UIViewController? { root }
+        }
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let host = Presenting()
+        window.rootViewController = host.root
+        window.isHidden = false
+        let sdk = initializedSDK()
+        sdk.popupPresentationDelegate = host
+        PopupV3Slots.shared.reset()
+
+        sdk.popupPresenter.presentPopup(Self.popup(44))
+        XCTAssertTrue(eventually { host.root.presentedViewController != nil }, "the popup is on screen")
+        sdk.popupPresenter.dismissCurrentPopup()
+        XCTAssertTrue(eventually { host.root.presentedViewController == nil }, "closed from the app's code")
+        XCTAssertNil(sdk.getNotificationWidget())
+        window.isHidden = true
+    }
 }

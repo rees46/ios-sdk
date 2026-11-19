@@ -531,7 +531,7 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                         ) { _ in }
                     }
                     if let popup = response.popup {
-                        self.popupPresenter.presentPopup(popup)
+                        self.popupPresenter.popupArrived(popup)
                     }
                     self.popupsV3.initFinished(flag: response.popupsV3)
 
@@ -2283,7 +2283,7 @@ extension SimplePersonalizationSDK: InitMachineDelegate {
             setProfileData(userEmail: userEmail, userPhone: userPhone, userLoyaltyId: userLoyaltyId) { _ in }
         }
         if let popup = response.popup {
-            popupPresenter.presentPopup(popup)
+            popupPresenter.popupArrived(popup)
         }
         popupsV3.initFinished(flag: response.popupsV3)
         sendPushTokenIfDeviceIdIsKnown()
@@ -2551,7 +2551,7 @@ extension SimplePersonalizationSDK: EventQueueHost {
             logger.debug(LogCode.popupNotShown, "the popup of an event is not shown in the background", ["reason": "app_in_background"])
             return
         }
-        popupPresenter.presentPopup(Popup(json: popup))
+        popupPresenter.popupArrived(Popup(json: popup))
     }
 
     var queueEnvironment: CoreEnvironment { environment }

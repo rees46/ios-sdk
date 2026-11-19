@@ -79,7 +79,7 @@ class SubscriptionServiceImpl: SubscriptionServiceProtocol {
           // Check if response contains popup and show it
           if let popupData = successResult["popup"] as? [String: Any], !popupData.isEmpty {
             let popup = Popup(json: popupData)
-            sdk.popupPresenter.presentPopup(popup)
+            sdk.popupPresenter.popupArrived(popup)
           }
           completion(.success(Void()))
         case let .failure(error):

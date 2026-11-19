@@ -44,8 +44,24 @@ public class PopupPresenter {
     }
     
     // MARK: - Public Interface
-    
-    /// Main entry point - call this to present any popup
+
+    /// A popup that came in an answer of the server: shown — the app's `popupPresentationDelegate` asked
+    /// first — once its `delay` passed, in seconds after it came (`sdk/contract/ui.md`); `0` or none at
+    /// once. `presentPopup(_:)` of a popup the app hands back does not wait again.
+    func popupArrived(_ popup: Popup) {
+        guard popup.delay > 0 else {
+            presentPopup(popup)
+            return
+        }
+        serialQueue.asyncAfter(deadline: .now() + .seconds(popup.delay)) { [weak self] in
+            self?.presentPopup(popup)
+        }
+    }
+
+    /// Shows `popup` as the SDK shows the popups of the server, its `delay` not waited: the
+    /// `popupPresentationDelegate` is asked again, so a popup it declined can be handed back to the SDK
+    /// this way, the delegate then returning the screen. A popup shown in the last minute is not shown
+    /// again; one popup is on screen at a time and the others wait.
     public func presentPopup(_ popup: Popup) {
         serialQueue.async { [weak self] in
             guard let self = self else { return }
@@ -59,11 +75,14 @@ public class PopupPresenter {
         }
     }
     
-    /// Dismiss the current popup and show the next one in queue
+    /// Closes the popup on screen from the app's code and shows the next one in the queue. The popup
+    /// that closed itself — a button, the cross — calls it too.
     public func dismissCurrentPopup() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            if self.currentPopup != nil {
+            if let widget = self.currentPopup {
+                // Still on screen when the app closes it: its dialog goes away without telling it again.
+                widget.close()
                 self.currentPopup = nil
                 PopupPresenter.presentingCount = max(0, PopupPresenter.presentingCount - 1)
                 NotificationCenter.default.post(name: .personalizationLegacyPopupClosed, object: nil)
@@ -104,27 +123,28 @@ public class PopupPresenter {
                     self?.dismissCurrentPopup()
                 }
             )
-            // A popup with nothing to draw never calls `onDismiss`: it must not hold the slot.
-            if widget.isShowingPopup {
-                if self.currentPopup == nil { PopupPresenter.presentingCount += 1 }
-                self.currentPopup = widget
-            } else {
+            // A popup with nothing to draw never calls `onDismiss`: it must not hold the slot. Nor is it
+            // shown: it is neither remembered for the minute nor sent as `popup/showed`, and the server
+            // may send it again (`sdk/contract/ui.md`).
+            guard widget.isShowingPopup else {
+                if let sdk = self.sdk as? PersonalizationSDK {
+                    SdkLogger.forShop(sdk.shopId).warning(LogCode.popupNotShown, "the popup has nothing to draw: no title or no text", ["reason": "nothing_to_draw"])
+                }
                 self.resumeQueue()
+                return
             }
-            
-            // Store popup shown flag in memory for 60 seconds
+            if self.currentPopup == nil { PopupPresenter.presentingCount += 1 }
+            self.currentPopup = widget
+
+            // Not shown again for 60 seconds.
             self.popupShownFlags[popup.id] = Date()
-            
-            // Remove flag after 60 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
                 self?.popupShownFlags.removeValue(forKey: popup.id)
             }
-            
-            // Send popup shown event to server
+
+            // The SDK tells the server of the popup it showed.
             if let sdk = self.sdk as? PersonalizationSDK {
-                sdk.trackPopupShown(popupId: popup.id) { _ in
-                    // Handle result (log if needed)
-                }
+                sdk.trackPopupShown(popupId: popup.id) { _ in }
             }
         }
     }
