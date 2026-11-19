@@ -94,6 +94,35 @@ final class TrackEventCustomFieldsTests: XCTestCase {
         XCTAssertEqual(sdk.postCallCount, 0)
         XCTAssertNil(sdk.lastPostParams)
     }
+
+    /// `from`, `code` and `source` the server reads as a mailing's source, `stream` is the SDK's own: a
+    /// custom event refuses them as it refuses its own fields; a purchase's `custom`, nested, keeps them.
+    func test_trackEvent_refusesTheKeysOfAMailingsSourceAndStream_andAPurchaseKeepsThem() {
+        for key in ["from", "code", "stream", "source", "sid", "seance", "shop_id", "did", "segment", "payload", "time", "category", "label", "value"] {
+            let sdk = MockPersonalizationSDK()
+            let done = expectation(description: key)
+            TrackEventServiceImpl(sdk: sdk).trackEvent(
+                event: "my_event", time: nil, category: nil, label: nil, value: nil, customFields: [key: "x"]
+            ) { result in
+                if case .success = result { XCTFail("\(key) went") }
+                done.fulfill()
+            }
+            wait(for: [done], timeout: 2)
+            XCTAssertEqual(sdk.postCallCount, 0, key)
+        }
+
+        let sdk = MockPersonalizationSDK()
+        let done = expectation(description: "purchase")
+        let request = PurchaseTrackingRequest(
+            orderId: "o-1", orderPrice: 1, items: [PurchaseItemRequest(id: "1", amount: 1, price: 1)], custom: ["code": "c", "from": "f"]
+        )
+        TrackEventServiceImpl(sdk: sdk).trackPurchase(request, recommendedBy: nil) { result in
+            if case .failure(let error) = result { XCTFail("\(error)") }
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 2)
+        XCTAssertEqual((sdk.lastPostParams?["custom"] as? [String: Any])?["code"] as? String, "c")
+    }
 }
 
 /// Shared across the tracking test files in this target (see `TrackingNamespaceTests`).

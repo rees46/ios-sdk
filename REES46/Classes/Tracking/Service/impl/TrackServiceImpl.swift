@@ -78,23 +78,43 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
         static let stream = "stream"
     }
 
-    private static let reservedCustomEventKeys: Set<String> = [
+    /// The keys of `customFields` a custom event refuses: its own fields, the SDK's common ones, and
+    /// `from`, `code` and `source`, which the server reads as the source of a mailing
+    /// (`sdk/contract/tracking.md`).
+    static let reservedCustomEventKeys: Set<String> = [
         Constants.shopId,
         Constants.did,
         Constants.seance,
         Constants.sid,
         Constants.segment,
+        Constants.stream,
         Constants.event,
         Constants.time,
         Constants.category,
         Constants.label,
         Constants.value,
         Constants.source,
+        Constants.sourceFrom,
+        Constants.sourceCode,
         Constants.payload
     ]
 
+    /// The keys of a purchase's `custom` it refuses: unchanged by the custom event's.
     private static let reservedPurchaseCustomKeys: Set<String> = {
-        var s = reservedCustomEventKeys
+        var s: Set<String> = [
+            Constants.shopId,
+            Constants.did,
+            Constants.seance,
+            Constants.sid,
+            Constants.segment,
+            Constants.event,
+            Constants.time,
+            Constants.category,
+            Constants.label,
+            Constants.value,
+            Constants.source,
+            Constants.payload
+        ]
         s.formUnion([
             Constants.items,
             Constants.orderId,
@@ -898,7 +918,7 @@ class TrackEventServiceImpl: TrackEventServiceProtocol {
             return
         }
         let popup = Popup(json: popupData)
-        sdk?.popupPresenter.presentPopup(popup)
+        sdk?.popupPresenter.popupArrived(popup)
     }
 }
 

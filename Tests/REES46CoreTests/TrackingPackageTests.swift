@@ -41,6 +41,11 @@ final class TrackingPackageTests: XCTestCase {
         XCTAssertNil(TrackEventServiceImpl.missingStoriesCode(.productView(id: "1"), nil), "only a slide has a block")
     }
 
+    func test_a_custom_event_refuses_its_own_fields_the_common_ones_and_a_mailings_source_in_custom_fields() {
+        let contract: Set = ["shop_id", "did", "sid", "event", "stream", "segment", "payload", "time", "category", "label", "value"]
+        XCTAssertEqual(TrackEventServiceImpl.reservedCustomEventKeys, contract.union(["seance", "source", "from", "code"]))
+    }
+
     func test_the_sources_of_a_mailing_are_not_sources_of_an_event() {
         XCTAssertEqual(TrackingAPIImpl.notOfAnEvent, [.transactional, .webPushDigest])
     }
