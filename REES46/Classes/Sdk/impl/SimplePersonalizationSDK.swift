@@ -8,11 +8,6 @@ public var global_EL: Bool = true
 
 // MARK: - SimplePersonalizationSDK
 
-private enum ProbabilityToPurchaseNetworkConstants {
-    /// Default `URLSessionConfiguration.timeoutIntervalForRequest` for purchase probability API calls.
-    static let requestTimeoutIntervalSeconds: TimeInterval = 15
-}
-
 class SimplePersonalizationSDK: PersonalizationSDK {
     
     var parentViewController: UIViewController?
@@ -853,18 +848,20 @@ class SimplePersonalizationSDK: PersonalizationSDK {
     func review(rate: Int, channel: String, category: String, orderId: String?, comment: String?, completion: @escaping (Result<Void, SdkError>) -> Void) {
         sessionQueue.addOperation {
             let path = "nps/create"
-            let params: [String : String] = [
+            var params: [String : String] = [
                 "did": self.deviceId,
                 "shop_id": self.shopId,
                 "rate": String(rate),
                 "channel": channel,
-                "category": category,
-                "order_id": orderId ?? "",
-                "comment": comment ?? ""
+                "category": category
             ]
-            if rate < 1 || rate > 10 {
-                completion(.failure(.custom(error: "Error: rating can be between 1 and 10 only")))
-                return // Exit from review
+            // An order or a comment that is not given does not go, not even empty.
+            if let orderId = orderId, !ApiArguments.isBlank(orderId) { params["order_id"] = orderId }
+            if let comment = comment, !ApiArguments.isBlank(comment) { params["comment"] = comment }
+            // The scale of NPS is 0 to 10 (`sdk/contract/reviews.md`).
+            guard (0...10).contains(rate) else {
+                completion(.failure(.custom(error: "Error: rating can be between 0 and 10 only")))
+                return
             }
             
             self.postRequest(path: path, params: params, timeout: nil) { (result) in
@@ -1093,10 +1090,11 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 "sid": self.userSeance,
                 "segment": self.segment
             ]
+            // The client's timeout, as every request: no own one (`sdk/contract/predict.md`).
             self.sendGet(
                 path: PredictAPIImpl.probabilityPath,
                 params: queryParams,
-                timeout: ProbabilityToPurchaseNetworkConstants.requestTimeoutIntervalSeconds,
+                timeout: nil,
                 host: self.config.appDomain
             ) { _, result in
                 switch result {
@@ -1368,6 +1366,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionQueue.addOperation {
             let params: [String: String] = [
                 "shop_id": self.shopId,
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment": self.segment,
                 "item": item
             ]
 
@@ -1397,7 +1399,8 @@ class SimplePersonalizationSDK: PersonalizationSDK {
                 return
             }
 
-            self.getRequest(path: "category/\(category)", params: params, timeout: nil) { result in
+            // The id is one segment of the path, whatever it holds: a slash, a space, a letter of any script.
+            self.getRequest(path: "category/\(CatalogQuery.pathSegment(category))", params: params, timeout: nil) { result in
                 switch result {
                 case let .success(json):
                     completion(.success(CategoryResponse(json: json)))
@@ -1412,7 +1415,10 @@ class SimplePersonalizationSDK: PersonalizationSDK {
         sessionQueue.addOperation {
             var params: [String: String] = [
                 "shop_id": self.shopId,
-                "did": self.deviceId
+                "did": self.deviceId,
+                "seance": self.userSeance,
+                "sid": self.userSeance,
+                "segment": self.segment
             ]
             if let location = location { params["location"] = location }
             if let email = email { params["email"] = email }

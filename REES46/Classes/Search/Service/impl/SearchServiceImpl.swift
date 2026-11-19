@@ -96,7 +96,10 @@ class SearchServiceImpl: SearchServiceProtocol {
         sessionQueue.addOperation {
             let params: [String: String] = [
                 "did": sdk.deviceId,
-                "shop_id": sdk.shopId
+                "shop_id": sdk.shopId,
+                "seance": sdk.userSeance,
+                "sid": sdk.userSeance,
+                "segment": sdk.segment
             ]
             
             self.getRequest(path: "search/blank", params: params, timeout: nil) { (result: Result<[String: Any], SdkError>) in

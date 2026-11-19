@@ -5,8 +5,10 @@ final class ContactValidator {
     func validate(email: String?, phone: String?, completion: ValidationCompletion) {
         var validatedParams: [String: String] = [:]
 
+        // The server checks the format of an email (`sdk/contract/subscriptions.md`): only an empty one
+        // is refused here.
         if let email = email {
-            guard isValid(email: email) else {
+            guard !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 completion(.failure(.invalidEmail))
                 return
             }

@@ -12,6 +12,7 @@ struct ProfileDataConstants{
     static let vkId = "vk_id"
     static let telegramId = "telegram_id"
     static let id = "id"
+    static let externalId = "external_id"
     static let gender = "gender"
     static let maleGender = "m"
     static let femaleGender = "f"
@@ -24,5 +25,4 @@ struct ProfileDataConstants{
     static let birthday = "birthday"
     static let boughtSomething = "bought_something"
     static let calendarYearDateFormat = "yyyy-MM-dd"
-    static let weekYearDateFormat = "YYYY-MM-dd"
 }
