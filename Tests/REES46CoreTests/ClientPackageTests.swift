@@ -250,9 +250,10 @@ final class ClientPackageTests: XCTestCase {
         XCTAssertFalse(ContractJSON.mismatches(["a": 1, "b": 2], ["a": 1], at: "result").isEmpty, "a field more")
         XCTAssertTrue(ContractJSON.mismatches(["b": NSNull()], ["a": NSNull()], at: "result").isEmpty, "a field without a value is none")
         XCTAssertTrue(ContractJSON.mismatches(["a": 19990], ["a": 19990.0], at: "result").isEmpty)
-        let segment = ContractJSON.of(Rees46.Segment(id: 313, type: nil)) as? [String: Any]
-        XCTAssertEqual(segment?["id"] as? Double, 313)
-        XCTAssertTrue(segment?["type"] is NSNull)
+        struct Partial { let id: Int; let type: String? }
+        let partial = ContractJSON.of(Partial(id: 313, type: nil)) as? [String: Any]
+        XCTAssertEqual(partial?["id"] as? Double, 313)
+        XCTAssertTrue(partial?["type"] is NSNull)
         XCTAssertTrue(ContractJSON.of(()) is NSNull)
         XCTAssertEqual(ContractJSON.of(Gender.female) as? String, "female")
     }
@@ -264,6 +265,14 @@ final class ClientPackageTests: XCTestCase {
         XCTAssertEqual(try request.decode(Data(#"{"id":"1","custom_properties":{"a":1}}"#.utf8)).customProperties?["a"] as? Int, 1)
         XCTAssertNil(try request.decode(Data(#"{"id":"1"}"#.utf8)).customProperties, "none in the answer")
         XCTAssertNil(try request.decode(Data(#"{"id":"1","custom_properties":["a"]}"#.utf8)).customProperties, "a list of values is no map")
+    }
+
+    func test_a_segment_without_a_type_has_an_empty_one_as_the_contracts_string() throws {
+        let body = #"[{"id":1},{"id":2,"type":null},{"id":3,"type":"rfm"},{"id":4,"type":7},{"type":"static"}]"#
+        let segments = try SegmentsAPIImpl.listRequest.decode(Data(body.utf8))
+        XCTAssertEqual(segments, [
+            Rees46.Segment(id: 1, type: ""), Rees46.Segment(id: 2, type: ""), Rees46.Segment(id: 3, type: "rfm"), Rees46.Segment(id: 4, type: "7"),
+        ], "one without an id is left out")
     }
 
     func test_the_gender_goes_as_its_letter_and_reads_from_it() {

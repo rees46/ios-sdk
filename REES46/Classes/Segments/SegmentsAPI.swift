@@ -85,8 +85,8 @@ extension Rees46 {
     public struct Segment: Equatable {
         public let id: Int
         /// `dynamic`, `static`, `less_often`, `rfm`, `rfm3`, `unknown`: an open set, a new type the
-        /// server adds comes as it is.
-        public let type: String?
+        /// server adds comes as it is. `""` when the answer gives the segment none.
+        public let type: String
     }
 }
 
@@ -182,6 +182,6 @@ extension Rees46.Segment: AnswerReadable {
             throw DecodingError.keyNotFound(AnswerKey("id"), DecodingError.Context(codingPath: answer.codingPath, debugDescription: "no id"))
         }
         self.id = id
-        type = answer.lenientString("type")
+        type = answer.lenientString("type") ?? ""
     }
 }
