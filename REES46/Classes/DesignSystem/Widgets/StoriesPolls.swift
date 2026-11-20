@@ -165,6 +165,9 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
 
     let api: StoriesApiV3
     let sdk: PersonalizationSDK
+    /// Опросы сторис шлют `stream` и `testmode`, как веб; отзывы опросов попапов v3 — без них, по
+    /// своему контракту.
+    var sendsStream = true
 
     func answerMiniPoll(
         code: String,
@@ -197,10 +200,15 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
         completion: @escaping (Result<PersonalizationStoryPoll.Reply, Error>) -> Void,
         reply: @escaping ([String: Any]) -> PersonalizationStoryPoll.Reply
     ) {
-        let sdk = self.sdk
-        let fields = { (did: String) in
+        let sdk = self.sdk, sendsStream = self.sendsStream
+        let fields = { (did: String) -> [String: Any] in
             // Built on the session queue: the session of the moment, renewed first when it ended.
-            StoriesApiV3.Identity.current(sdk: sdk, did: did).fields(segment: false).merging(body) { _, own in own }
+            var identity = StoriesApiV3.Identity.current(sdk: sdk, did: did).fields(segment: false)
+            if !sendsStream {
+                identity["stream"] = nil
+                identity["testmode"] = nil
+            }
+            return identity.merging(body) { _, own in own }
         }
         api.post(sdk: sdk, url: url, body: fields) { data, response, error in
             let result = StoriesApiV3.response(data: data, response: response, error: error)
