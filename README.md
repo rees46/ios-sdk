@@ -54,30 +54,6 @@ For detailed information on methods, please refer to the documentation available
 
 [Official API references](https://reference.api.rees46.com/#introduction)
 
-## Stories v3: shared links (preview)
-
-Stories on the API v3 are a preview behind `@_spi(PersonalizationV3) import REES46`; this part
-of the SDK is not public yet and may change.
-
-A shared story opens the shop's site: `https://<shop domain>/<any path>?r46_stories=<block code>&r46_story=<story id>[&r46_slide=<slide id>]`.
-To open it in the app instead:
-
-1. Serve `https://<shop domain>/.well-known/apple-app-site-association` listing the app
-   (`<team id>.<bundle id>`) for the paths the links use.
-2. Add `applinks:<shop domain>` to the app's Associated Domains entitlement.
-3. Pass the opened URL to the SDK; it returns `false` for any other link:
-
-```swift
-@_spi(PersonalizationV3) import REES46
-
-func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
-    guard let url = userActivity.webpageURL else { return }
-    if !PersonalizationStories.handleLink(url, apiV3Domain: "app.rees46.ru") {
-        // not a stories link: route it as usual
-    }
-}
-```
-
 ## Author
 
 REES46, <desk@rees46.com>
