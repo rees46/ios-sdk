@@ -67,9 +67,21 @@ extension PersonalizationStory {
             .filter { !$0.slides.isEmpty && ids.insert($0.id).inserted }
     }
 
+    /// У ленты v3 слайд без медиа (`type` не `image` и не `video`) и без элемента `product` веб
+    /// пропускает — его здесь нет; `start_position` на нём — первый следующий оставшийся.
     init?(json: [String: Any], v3: Bool = false) {
         guard let id = StoriesJSON.string(json["id"]) else { return nil }
-        let start = StoriesJSON.number(json["start_position"]).map { Int($0) } ?? 0
+        var start = StoriesJSON.number(json["start_position"]).map { Int($0) } ?? 0
+        var slides: [PersonalizationStorySlide] = []
+        for (index, object) in StoriesJSON.objects(json["slides"]).enumerated() {
+            if let slide = PersonalizationStorySlide(json: object, v3: v3),
+               !(v3 && slide.kind == .content && !Self.hasProduct(object)) {
+                slides.append(slide)
+            } else if v3, index < start {
+                start -= 1
+            }
+        }
+        if v3, !slides.isEmpty { start = min(max(start, 0), slides.count - 1) }
         self.init(
             id: id,
             name: StoriesJSON.string(json["name"]) ?? "",
@@ -77,10 +89,18 @@ extension PersonalizationStory {
             pinned: StoriesJSON.bool(json["pinned"]) ?? false,
             viewed: StoriesJSON.bool(json["viewed"]) ?? false,
             startPosition: start,
-            slides: StoriesJSON.objects(json["slides"]).compactMap { PersonalizationStorySlide(json: $0, v3: v3) },
+            slides: slides,
             shareable: StoriesJSON.bool(json["shareable"]) ?? true,
             shareUrl: StoriesJSON.string(json["share_url"])
         )
+    }
+}
+
+extension PersonalizationStory {
+
+    /// Есть ли у слайда элемент `product` — как `elements.find(x => x.type === 'product')` веба.
+    static func hasProduct(_ slide: [String: Any]) -> Bool {
+        StoriesJSON.objects(slide["elements"]).contains { StoriesJSON.string($0["type"]) == "product" }
     }
 }
 

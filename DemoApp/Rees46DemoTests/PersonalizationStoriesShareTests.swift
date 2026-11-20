@@ -391,7 +391,9 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         let story = """
         {"status":"success","payload":{"id":7,"stories":[{"id":39,"name":"Products","start_position":0,
           "share_url":"https://demo.test/?r46_story=39","slides":[
-            {"id":"39_0","type":""},{"id":"39_1","type":""},{"id":"39_2","type":""}]}]}}
+            {"id":"39_0","type":"","elements":[{"type":"product","item":{"id":"1","name":"A"}}]},
+            {"id":"39_1","type":"","elements":[{"type":"product","item":{"id":"2","name":"B"}}]},
+            {"id":"39_2","type":"","elements":[{"type":"product","item":{"id":"3","name":"C"}}]}]}]}}
         """
         let opened = expectation(description: "shared_open")
         let requests = capture { request in
@@ -415,8 +417,10 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         // (no history here — their `start_position`).
         let story = """
         {"status":"success","payload":{"id":7,"stories":[
-          {"id":40,"name":"Photos","start_position":1,"slides":[{"id":36,"type":""},{"id":37,"type":""}]},
-          {"id":41,"name":"More","start_position":0,"slides":[{"id":50,"type":""},{"id":99,"type":""}]}]}}
+          {"id":40,"name":"Photos","start_position":1,"slides":[{"id":36,"type":"image","background":"https://cdn.test/36.jpg"},
+            {"id":37,"type":"image","background":"https://cdn.test/37.jpg"}]},
+          {"id":41,"name":"More","start_position":0,"slides":[{"id":50,"type":"image","background":"https://cdn.test/50.jpg"},
+            {"id":99,"type":"image","background":"https://cdn.test/99.jpg"}]}]}}
         """
         let opened = expectation(description: "shared_open")
         let requests = capture { request in
@@ -734,21 +738,50 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(sdk.trackedEvents.count, 1, "the old feed still counts it as a click")
     }
 
-    /// `view` on every show of a slide, the first slide shown again from the start too.
+    /// `view` on every show of a v3 slide, the first slide shown again from the start too; the old
+    /// feed sends as on master.
     func testTheFirstSlideShownAgainSendsViewAgain() throws {
-        let story = PersonalizationStory(id: "s", name: "S", slides: [PersonalizationStorySlide(id: "1", kind: .content)])
-        let viewer = PersonalizationStoriesViewController(stories: [story])
-        var shown: [String] = []
-        viewer.onSlideView = { _, slide in shown.append(slide.id) }
-        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
-        window.rootViewController = viewer
-        window.isHidden = false
-        defer { window.isHidden = true }
-        let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
-        viewer.settle(on: page)
-        viewer.apply(viewer.state.previous())
-        viewer.apply(viewer.state.previous())
-        XCTAssertEqual(shown, ["1", "1", "1"], "no client dedupe: the server merges repeats")
+        func shown(v3: Bool) throws -> [String] {
+            var slide = PersonalizationStorySlide(id: "1", kind: .content)
+            slide.isV3 = v3
+            let viewer = PersonalizationStoriesViewController(stories: [PersonalizationStory(id: "s", name: "S", slides: [slide])])
+            var shown: [String] = []
+            viewer.onSlideView = { _, slide in shown.append(slide.id) }
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+            window.rootViewController = viewer
+            window.isHidden = false
+            defer { window.isHidden = true }
+            let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
+            viewer.settle(on: page)
+            viewer.apply(viewer.state.previous())
+            viewer.apply(viewer.state.previous())
+            return shown
+        }
+        XCTAssertEqual(try shown(v3: true), ["1", "1", "1"], "no client dedupe: the server merges repeats")
+        XCTAssertEqual(try shown(v3: false), ["1"], "the old feed: no view on a restart")
+    }
+
+    /// A v3 slide with no media type and no `product` element is skipped, as the web's `next()`;
+    /// `start_position` on a skipped slide is the next one left. The old feed keeps every slide.
+    func testAV3SlideWithoutMediaOrProductIsSkipped() {
+        let json: [String: Any] = ["id": 1, "start_position": 2, "slides": [
+            ["id": 10, "type": "", "elements": [["type": "text_block", "text_input": "Hi"]]],
+            ["id": 11, "type": "image", "background": "https://cdn.test/11.jpg"],
+            ["id": 12, "type": "", "background_color": "#FF0000"],
+            ["id": 13, "type": "", "elements": [["type": "product", "item": ["id": "1", "name": "Pool"]]]],
+            ["id": 14, "type": "video", "background": "https://cdn.test/14.mp4"]
+        ]]
+        let v3 = PersonalizationStory(json: json, v3: true)
+        XCTAssertEqual(v3?.slides.map(\.id), ["11", "13", "14"])
+        XCTAssertEqual(v3?.startPosition, 1, "12 is skipped: the product slide after it")
+        var past = json
+        past["start_position"] = 4
+        XCTAssertEqual(PersonalizationStory(json: past, v3: true)?.startPosition, 2, "the same slide after the skipped ones")
+        let old = PersonalizationStory(json: json)
+        XCTAssertEqual(old?.slides.map(\.id), ["10", "11", "12", "13", "14"])
+        XCTAssertEqual(old?.startPosition, 2)
+        let empty: [String: Any] = ["stories": [["id": 2, "slides": [["id": 20, "type": ""]]]]]
+        XCTAssertTrue(PersonalizationStory.list(json: empty, v3: true).isEmpty, "nothing left to show")
     }
 
     /// A v3 story opens at the feed's `start_position`, whatever slides this device saw.

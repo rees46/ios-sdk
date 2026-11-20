@@ -140,7 +140,7 @@ public final class PersonalizationStoriesViewController: UIViewController {
     // MARK: - События
 
     /// Слайд показан на остановившейся странице — событие `view` для трекинга: на каждый показ,
-    /// и при возврате, и при повторе первого слайда с начала.
+    /// и при возврате; у слайда v3 — и при повторе первого слайда с начала.
     public var onSlideView: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
 
     /// Нажата кнопка слайда.
@@ -472,8 +472,9 @@ extension PersonalizationStoriesViewController {
             state.restart()
             page.slideView?.restart()
             page.navigation.progress.progress = 0
-            // Слайд показан снова — снова `view`: повторы склеивает сервер, как у веба.
-            if let slide = page.currentSlide { onSlideView?(page.story, slide) }
+            // Слайд v3 показан снова — снова `view`: повторы склеивает сервер, как у веба.
+            // Старая лента шлёт как раньше.
+            if let slide = page.currentSlide, slide.isV3 { onSlideView?(page.story, slide) }
         case .close:
             // Досмотрен последний слайд последней сторис.
             onStoryLeftForward?(page.story, true)

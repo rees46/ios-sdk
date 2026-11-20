@@ -15,7 +15,7 @@ import AVFoundation
 /// Слайд с товаром: заголовок (бренд SemiBold 20 и название SemiBold 16, интерлиньяж 140%,
 /// шаг 8), белая карточка картинки (скругление 12, поле 16, квадрат во всю ширину, картинка
 /// вписана), внизу цена и все кнопки слайда Primary LG, шаг 16; без кнопок — одна
-/// `Texts.productButton`, ведущая на товар. Текстовые блоки на нём не рисуются; промокод
+/// `Texts.productButton`, ведущая на товар (у слайда v3 её нет, как в вебе). Текстовые блоки на нём не рисуются; промокод
 /// первого блока с кодом идёт в блок цены, если у товара своего кода нет. Товар открывают
 /// только кнопки: картинка, заголовок и скидка не нажимаются, касание по ним — касание
 /// слайда (листание по третям, удержание — пауза).
@@ -517,9 +517,9 @@ extension PersonalizationStorySlideView {
         price.copiedText = texts.promoCopied
         price.onPromoCopied = { [weak self] code in self?.onPromoCopied?(code) }
 
-        // Все кнопки слайда; без них — одна, ведущая на товар.
+        // Все кнопки слайда; без них — одна, ведущая на товар. У слайда v3 — нет: веб её не рисует.
         var group: [UIView] = [price]
-        if slide.buttons.isEmpty {
+        if slide.buttons.isEmpty, !slide.isV3 {
             let button = PersonalizationButton(text: texts.productButton, size: .lg, view: .primary)
             button.addTarget(self, action: #selector(productButtonTapped), for: .touchUpInside)
             group.append(button)

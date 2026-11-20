@@ -1042,6 +1042,22 @@ final class PersonalizationStoriesV2Tests: XCTestCase {
         XCTAssertEqual(opened, 1, "More info opens the product")
     }
 
+    /// A v3 product slide has no "More info": the web draws none. The old feed keeps it.
+    func testAV3ProductSlideHasNoMoreInfoButton() {
+        func buttons(v3: Bool) -> [PersonalizationButton] {
+            var slide = productSlide("1")
+            slide.isV3 = v3
+            let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+            view.frame = host.bounds
+            host.addSubview(view)
+            defer { view.removeFromSuperview() }
+            host.layoutIfNeeded()
+            return descendants(of: view).compactMap { $0 as? PersonalizationButton }.filter { !$0.isHidden }
+        }
+        XCTAssertEqual(buttons(v3: true).count, 0)
+        XCTAssertEqual(buttons(v3: false).count, 1)
+    }
+
     func testATapOnTheProductPicturePagesAndNeverOpensTheProduct() {
         let story = PersonalizationStory(id: "1", name: "S", slides: [productSlide("1"), productSlide("2", discount: 10), productSlide("3")])
         let delegate = HostDelegate()
