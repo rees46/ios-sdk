@@ -170,29 +170,60 @@ final class PersonalizationStoriesShareTests: XCTestCase {
 
     // MARK: - Requests
 
+    private func identity(sid: String = "s1", segment: String = "B", stream: String = "ios", testMode: Bool = false) -> StoriesApiV3.Identity {
+        StoriesApiV3.Identity(shopId: "shop", did: "d1", sid: sid, segment: segment, stream: stream, testMode: testMode)
+    }
+
+    /// Every request carries the identity of the web's `identity()` and `ajax`: shop, did, session,
+    /// A/B segment and stream, and `testmode=true` only in the test mode.
     func testRequestAddresses() {
         let api = StoriesApiV3(domain: "app.test")
         let base = "https://app.test/api/v3/storefront/stories"
-        XCTAssertEqual(api.feedURL(code: "abc", shopId: "shop", did: "d1")?.absoluteString, "\(base)/abc?shop_id=shop&did=d1")
-        XCTAssertEqual(api.storyURL(StoriesShareLink(code: "abc", storyId: "40", slideId: "37"), shopId: "shop", did: "d1")?.absoluteString,
-                       "\(base)/abc/story/40?shop_id=shop&did=d1&slide_id=37")
-        XCTAssertEqual(api.storyURL(StoriesShareLink(code: "abc", storyId: "40"), shopId: "shop", did: "d1")?.absoluteString,
-                       "\(base)/abc/story/40?shop_id=shop&did=d1")
+        let query = "shop_id=shop&did=d1&sid=s1&segment=B&stream=ios"
+        XCTAssertEqual(api.feedURL(code: "abc", identity: identity())?.absoluteString, "\(base)/abc?\(query)")
+        XCTAssertEqual(api.storyURL(StoriesShareLink(code: "abc", storyId: "40", slideId: "37"), identity: identity())?.absoluteString,
+                       "\(base)/abc/story/40?\(query)&slide_id=37")
+        XCTAssertEqual(api.storyURL(StoriesShareLink(code: "abc", storyId: "40"), identity: identity())?.absoluteString,
+                       "\(base)/abc/story/40?\(query)")
+        XCTAssertEqual(api.feedURL(code: "abc", identity: identity(sid: "", segment: "", stream: "flutter", testMode: true))?.absoluteString,
+                       "\(base)/abc?shop_id=shop&did=d1&sid=&segment=&stream=flutter&testmode=true",
+                       "no session and no group — empty values; the test mode adds testmode=true")
         XCTAssertEqual(api.eventsURL(code: "abc")?.absoluteString, "\(base)/abc/events")
         XCTAssertEqual(api.eventsURL(code: "a/b")?.absoluteString, "\(base)/a%2Fb/events", "the code is one path segment")
     }
 
-    func testTheEventBodyHasANumericCampaignAndAStringSlide() throws {
-        let body = StoriesApiV3.eventBody(shopId: "shop", did: "d1", event: .view, storyId: "40", slideId: "37")
+    func testTheEventBodyHasTheIdentityANumericCampaignAndAStringSlide() throws {
+        let body = StoriesApiV3.eventBody(identity: identity(), event: .view, storyId: "40", slideId: "37")
         let json = try JSONSerialization.data(withJSONObject: body, options: .sortedKeys)
-        XCTAssertEqual(String(data: json, encoding: .utf8), #"{"did":"d1","event":"view","shop_id":"shop","slide_id":"37","story_id":40}"#)
+        XCTAssertEqual(String(data: json, encoding: .utf8),
+                       #"{"did":"d1","event":"view","segment":"B","shop_id":"shop","sid":"s1","slide_id":"37","story_id":40,"stream":"ios"}"#)
 
-        let virtual = StoriesApiV3.eventBody(shopId: "shop", did: "d1", event: .sharedOpen, storyId: "39", slideId: "39_0")
+        let virtual = StoriesApiV3.eventBody(identity: identity(testMode: true), event: .sharedOpen, storyId: "39", slideId: "39_0")
         XCTAssertEqual(virtual["event"] as? String, "shared_open")
         XCTAssertEqual(virtual["story_id"] as? Int, 39)
         XCTAssertEqual(virtual["slide_id"] as? String, "39_0")
-        XCTAssertEqual(StoriesApiV3.eventBody(shopId: "s", did: "d", event: .share, storyId: "x", slideId: "1")["story_id"] as? String, "x",
+        XCTAssertEqual(virtual["testmode"] as? Bool, true)
+        XCTAssertEqual(StoriesApiV3.eventBody(identity: identity(), event: .share, storyId: "x", slideId: "1")["story_id"] as? String, "x",
                        "a host's own non-numeric id goes as is")
+    }
+
+    /// Polls send the identity without the A/B segment, as the web's `PollsApi`.
+    func testTheFieldsOfPollAnswersHaveNoSegment() throws {
+        let json = try JSONSerialization.data(withJSONObject: identity().fields(segment: false), options: .sortedKeys)
+        XCTAssertEqual(String(data: json, encoding: .utf8), #"{"did":"d1","shop_id":"shop","sid":"s1","stream":"ios"}"#)
+        XCTAssertEqual(identity(testMode: true).fields(segment: false)["testmode"] as? Bool, true)
+    }
+
+    /// The identity of the moment: the SDK's session, its A/B group and stream, and the test mode of
+    /// popups v3 — the flag that sends `testmode=true` with `/init`.
+    func testTheCurrentIdentityTakesTheSdkAndThePopupsTestMode() {
+        let sdk = FakeSDK(shopId: "shop")
+        sdk.segment = "B"
+        XCTAssertEqual(StoriesApiV3.Identity.current(sdk: sdk, did: "d1"),
+                       .init(shopId: "shop", did: "d1", sid: "fake-seance", segment: "B", stream: "ios", testMode: false))
+        sdk.popups.testMode = true
+        defer { sdk.popups.testMode = false }
+        XCTAssertTrue(StoriesApiV3.Identity.current(sdk: sdk, did: "d1").testMode)
     }
 
     /// Records what goes to the network and answers with `answer`.
@@ -245,6 +276,10 @@ final class PersonalizationStoriesShareTests: XCTestCase {
             XCTAssertEqual(body(request)["did"] as? String, "fake-device-id")
             XCTAssertEqual(body(request)["story_id"] as? Int, 39)
             XCTAssertEqual(body(request)["slide_id"] as? String, "39_0")
+            XCTAssertEqual(body(request)["sid"] as? String, "fake-seance")
+            XCTAssertEqual(body(request)["segment"] as? String, "A")
+            XCTAssertEqual(body(request)["stream"] as? String, "ios")
+            XCTAssertNil(body(request)["testmode"], "only in the test mode")
         }
         XCTAssertEqual(UserDefaults.standard.string(forKey: "recomendedCode"), "block", "view and click attribute what follows to the block")
         XCTAssertEqual(UserDefaults.standard.string(forKey: "recomendedType"), "stories")
@@ -277,7 +312,7 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { sdk.deviceId = "late-did" }
         wait(for: [loaded], timeout: 5)
         XCTAssertEqual(requests().first?.url?.absoluteString,
-                       "https://app.test/api/v3/storefront/stories/block?shop_id=shop&did=late-did")
+                       "https://app.test/api/v3/storefront/stories/block?shop_id=shop&did=late-did&sid=fake-seance&segment=A&stream=ios")
         XCTAssertEqual(requests().first?.httpMethod, "GET")
     }
 

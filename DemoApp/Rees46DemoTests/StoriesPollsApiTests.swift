@@ -324,7 +324,18 @@ final class StoriesPollsApiTests: XCTestCase {
         XCTAssertFalse(request.httpShouldHandleCookies, "no cookies, like the web")
         let json = try JSONSerialization.data(withJSONObject: body(request), options: .sortedKeys)
         XCTAssertEqual(String(data: json, encoding: .utf8),
-                       #"{"did":"fake-device-id","option_ids":[2],"shop_id":"shop","sid":"fake-seance","slide_id":"101","story_id":5}"#)
+                       #"{"did":"fake-device-id","option_ids":[2],"shop_id":"shop","sid":"fake-seance","slide_id":"101","story_id":5,"stream":"ios"}"#,
+                       "the identity of the web's PollsApi: no segment, the stream of the SDK")
+    }
+
+    func testTheTestModeOfPopupsV3GoesWithAnswers() {
+        let sdk = FakeSDK(shopId: "shop")
+        sdk.popups.testMode = true
+        defer { sdk.popups.testMode = false }
+        let requests = capture { _ in (Data(#"{"status":"success","payload":{}}"#.utf8), 200, nil) }
+        _ = review(.nps, sdk: sdk, body: ["rate": 9])
+        XCTAssertEqual(body(requests().first)["testmode"] as? Bool, true)
+        XCTAssertNil(body(requests().first)["segment"])
     }
 
     func testTheCodeIsOnePathSegment() {

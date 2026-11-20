@@ -153,7 +153,8 @@ extension StoriesApiV3 {
 
 /// Клиент опросов API v3 — транспорт опросов просмотрщика по умолчанию у виджета, `show` и
 /// `handleLink`. Тот же хост, `did` и `URLSession`, что у ленты (`StoriesApiV3.post`); к телу
-/// добавляются `shop_id`, `did` и `sid` сеанса SDK (без сеанса — пустая строка, как в вебе).
+/// добавляется личность запроса без `segment`, как в вебе: `shop_id`, `did`, `sid` сеанса SDK
+/// (без сеанса — пустая строка), `stream` и `testmode` в тестовом режиме.
 /// Ответ — на главной очереди; ошибка — в debug-лог с кодом и `message` сервера.
 struct StoriesPollsApi: PersonalizationStoryPollTransport {
 
@@ -184,11 +185,6 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
         }
     }
 
-    /// `shop_id`, `did` и `sid` — все три всегда, пустые тоже.
-    static func identity(shopId: String, did: String, sid: String) -> [String: Any] {
-        ["shop_id": shopId, "did": did, "sid": sid]
-    }
-
     private func post(
         url: URL?,
         body: [String: Any],
@@ -199,7 +195,7 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
         let sdk = self.sdk
         let fields = { (did: String) in
             // Built on the session queue: the session of the moment, renewed first when it ended.
-            Self.identity(shopId: sdk.shopId, did: did, sid: sdk.sessionIdForRequest()).merging(body) { _, own in own }
+            StoriesApiV3.Identity.current(sdk: sdk, did: did).fields(segment: false).merging(body) { _, own in own }
         }
         api.post(sdk: sdk, url: url, body: fields) { data, response, error in
             let result = StoriesApiV3.response(data: data, response: response, error: error)

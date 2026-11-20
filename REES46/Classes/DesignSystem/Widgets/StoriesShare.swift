@@ -59,10 +59,59 @@ struct StoriesShareLink: Equatable {
 
 /// Сторис API v3 на хосте `apiV3Domain`: лента, кампания по ссылке и события.
 ///
-/// Протокол SDK не расширяется: запросы идут своим `URLSession` с `shopId` и `deviceId` SDK,
-/// в его очереди сессии, как и старые. Без `did` сервер отвечает 400, поэтому запрос ждёт
-/// конца инициализации SDK; `sid` не нужен.
+/// Протокол SDK не расширяется: запросы идут своим `URLSession` в очереди сессии SDK, как и
+/// старые. Каждый несёт личность, как в вебе (`Identity`): `shop_id`, `did`, `sid`, `segment`,
+/// `stream` и `testmode=true` в тестовом режиме — у GET в адресе, у POST в теле. Без `did`
+/// сервер отвечает 400, поэтому запрос ждёт конца инициализации SDK.
 struct StoriesApiV3 {
+
+    /// Кто спрашивает — поля каждого запроса v3, как `identity()` и `ajax` веба: магазин, `did`,
+    /// сеанс (`sid`, без него — пустая строка), A/B-группа устройства (`segment`, неизвестна —
+    /// пустая строка), поток SDK (`stream`) и тестовый режим — флаг попапов v3
+    /// (`sdk.popups.testMode`, тот же, что шлёт `testmode=true` с `/init`).
+    struct Identity: Equatable {
+        let shopId: String
+        let did: String
+        let sid: String
+        let segment: String
+        let stream: String
+        let testMode: Bool
+
+        /// Личность запроса сейчас. Зовётся в очереди сессии SDK: сеанс берётся тот, с которым
+        /// уходят запросы SDK, кончившийся — сначала продлевается (`sessionIdForRequest`).
+        static func current(sdk: PersonalizationSDK, did: String) -> Identity {
+            Identity(
+                shopId: sdk.shopId,
+                did: did,
+                sid: sdk.sessionIdForRequest(),
+                segment: sdk.segment,
+                stream: sdk.requestStream,
+                testMode: sdk.popups.testMode
+            )
+        }
+
+        /// Параметры GET: `shop_id`, `did`, `sid`, `segment`, `stream`, `testmode=true` — только
+        /// в тестовом режиме.
+        var query: [URLQueryItem] {
+            var items = [
+                URLQueryItem(name: "shop_id", value: shopId),
+                URLQueryItem(name: "did", value: did),
+                URLQueryItem(name: "sid", value: sid),
+                URLQueryItem(name: "segment", value: segment),
+                URLQueryItem(name: "stream", value: stream)
+            ]
+            if testMode { items.append(URLQueryItem(name: "testmode", value: "true")) }
+            return items
+        }
+
+        /// Поля тела POST; `segment` — у сторис, у ответов опросов его нет, как в вебе.
+        func fields(segment withSegment: Bool) -> [String: Any] {
+            var body: [String: Any] = ["shop_id": shopId, "did": did, "sid": sid, "stream": stream]
+            if withSegment { body["segment"] = segment }
+            if testMode { body["testmode"] = true }
+            return body
+        }
+    }
 
     enum Event: String {
         case view, click, share
@@ -82,12 +131,12 @@ struct StoriesApiV3 {
 
     // MARK: - Адреса и тело события
 
-    func feedURL(code: String, shopId: String, did: String) -> URL? {
-        url(code: code, suffix: "", query: Self.identity(shopId: shopId, did: did))
+    func feedURL(code: String, identity: Identity) -> URL? {
+        url(code: code, suffix: "", query: identity.query)
     }
 
-    func storyURL(_ link: StoriesShareLink, shopId: String, did: String) -> URL? {
-        var query = Self.identity(shopId: shopId, did: did)
+    func storyURL(_ link: StoriesShareLink, identity: Identity) -> URL? {
+        var query = identity.query
         if let slide = link.slideId { query.append(URLQueryItem(name: "slide_id", value: slide)) }
         return url(code: link.code, suffix: "/story/\(link.storyId)", query: query)
     }
@@ -96,19 +145,14 @@ struct StoriesApiV3 {
         url(code: code, suffix: "/events", query: [])
     }
 
-    /// Тело события: id кампании — числом, как в ленте; id слайда — всегда строкой (`39_0`).
-    static func eventBody(shopId: String, did: String, event: Event, storyId: String, slideId: String) -> [String: Any] {
-        [
-            "shop_id": shopId,
-            "did": did,
+    /// Тело события: личность и событие; id кампании — числом, если он числовой, как в ленте,
+    /// иначе строкой; id слайда — всегда строкой (`39_0`).
+    static func eventBody(identity: Identity, event: Event, storyId: String, slideId: String) -> [String: Any] {
+        identity.fields(segment: true).merging([
             "event": event.rawValue,
             "story_id": Int(storyId).map { $0 as Any } ?? storyId,
             "slide_id": slideId
-        ]
-    }
-
-    private static func identity(shopId: String, did: String) -> [URLQueryItem] {
-        [URLQueryItem(name: "shop_id", value: shopId), URLQueryItem(name: "did", value: did)]
+        ]) { _, own in own }
     }
 
     private func url(code: String, suffix: String, query: [URLQueryItem]) -> URL? {
@@ -162,7 +206,7 @@ struct StoriesApiV3 {
 
     /// Лента блока: `payload` разбирается тем же разбором, что старая лента. Ответ — на главной очереди.
     func feed(sdk: PersonalizationSDK, code: String, completion: @escaping (Result<[PersonalizationStory], SdkError>) -> Void) {
-        get(sdk: sdk, url: { feedURL(code: code, shopId: sdk.shopId, did: $0) }) { result in
+        get(sdk: sdk, url: { feedURL(code: code, identity: $0) }) { result in
             let stories = result.map { PersonalizationStory.list(json: $0) }
             MainThread.run { completion(stories) }
         }
@@ -170,7 +214,7 @@ struct StoriesApiV3 {
 
     /// Одна кампания по ссылке; `start_position` её сторис — слайд ссылки. Ответ — на главной очереди.
     func story(sdk: PersonalizationSDK, link: StoriesShareLink, completion: @escaping (Result<[PersonalizationStory], SdkError>) -> Void) {
-        get(sdk: sdk, url: { storyURL(link, shopId: sdk.shopId, did: $0) }) { result in
+        get(sdk: sdk, url: { storyURL(link, identity: $0) }) { result in
             let stories = result.flatMap { Self.story(payload: $0) }
             MainThread.run { completion(stories) }
         }
@@ -178,7 +222,8 @@ struct StoriesApiV3 {
 
     /// Событие `POST …/events`. Ответ не ждём: событие — не повод мешать просмотру.
     func track(sdk: PersonalizationSDK, code: String, event: Event, storyId: String, slideId: String) {
-        let body = { did in Self.eventBody(shopId: sdk.shopId, did: did, event: event, storyId: storyId, slideId: slideId) }
+        // Built on the session queue: the session of the moment, renewed first when it ended.
+        let body = { did in Self.eventBody(identity: .current(sdk: sdk, did: did), event: event, storyId: storyId, slideId: slideId) }
         let shopId = sdk.shopId
         post(sdk: sdk, url: eventsURL(code: code), body: body) { _, response, error in
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -215,12 +260,14 @@ struct StoriesApiV3 {
         }
     }
 
-    private func get(sdk: PersonalizationSDK, url: @escaping (String) -> URL?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
+    /// `GET` на хост v3 в очереди сессии SDK, без cookies: адрес собирает `url` из личности
+    /// запроса (`Identity.current`).
+    private func get(sdk: PersonalizationSDK, url: @escaping (Identity) -> URL?, completion: @escaping (Result<[String: Any], SdkError>) -> Void) {
         sdk.sessionQueue.addOperation {
             guard let did = Self.awaitDeviceId(sdk) else {
                 return completion(.failure(.custom(error: "Stories v3: no did, the SDK is not initialized")))
             }
-            guard let address = url(did) else {
+            guard let address = url(.current(sdk: sdk, did: did)) else {
                 return completion(.failure(.custom(error: "Stories v3: bad address for the host \(domain)")))
             }
             var request = URLRequest(url: address, timeoutInterval: PersonalizationStories.loadTimeout)
@@ -241,5 +288,14 @@ struct StoriesApiV3 {
             Thread.sleep(forTimeInterval: 0.2)
         }
         return sdk.deviceId
+    }
+}
+
+extension PersonalizationSDK {
+
+    /// Поток запросов SDK (`stream`): настроенный у SDK (`ios`, у мостов — свой); у чужих
+    /// реализаций протокола — `ios`.
+    var requestStream: String {
+        (self as? SimplePersonalizationSDK)?.stream ?? "ios"
     }
 }
