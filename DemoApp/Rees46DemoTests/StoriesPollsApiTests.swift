@@ -204,16 +204,21 @@ final class StoriesPollsApiTests: XCTestCase {
         XCTAssertEqual(PersonalizationStoryPoll.scaleRange(.csat, min: 2, max: nil), [2, 3, 4, 5])
     }
 
-    func testScaleColors() {
-        let nps = (0...10).map { PersonalizationStoryPoll.scaleColor(.nps, value: $0, min: 0, max: 10) }
-        XCTAssertEqual(nps, ["#FCA5A5", "#FCA5A5", "#FCA5A5", "#FDBA74", "#FDBA74", "#FDBA74", "#FCD34D",
-                             "#FDE68A", "#FDE68A", "#86EFAC", "#86EFAC"])
-        XCTAssertEqual((1...5).map { PersonalizationStoryPoll.scaleColor(.csat, value: $0, min: 1, max: 5) },
-                       ["#FCA5A5", "#FCA5A5", "#FDE68A", "#86EFAC", "#86EFAC"], "by thirds: 4 of 1...5 is 0.75")
-        XCTAssertEqual((1...7).map { PersonalizationStoryPoll.scaleColor(.ces, value: $0, min: 1, max: 7) },
-                       ["#FCA5A5", "#FCA5A5", "#FCA5A5", "#FDE68A", "#FDE68A", "#86EFAC", "#86EFAC"])
-        XCTAssertEqual(PersonalizationStoryPoll.scaleColor(.nps, value: 3, min: 1, max: 5), "#FDE68A", "NPS of another range — by thirds")
-        XCTAssertEqual(PersonalizationStoryPoll.scaleColor(.csat, value: 3, min: 3, max: 3), "#86EFAC", "one value")
+    /// The tones of NPS follow the web's colours: 0–2 red, 3–8 orange and yellow, 9–10 green.
+    func testScaleTones() {
+        let nps = (0...10).map { PersonalizationStoryPoll.scaleTone(.nps, value: $0, min: 0, max: 10) }
+        XCTAssertEqual(nps, [.negative, .negative, .negative, .neutral, .neutral, .neutral, .neutral, .neutral, .neutral, .positive, .positive])
+        XCTAssertEqual(PersonalizationStoryPoll.scaleTone(.nps, value: 3, min: 1, max: 5), .neutral, "NPS of another range — by thirds")
+    }
+
+    func testBandsCarryTheirQuestion() throws {
+        let poll = try XCTUnwrap(PersonalizationStoryPoll(json: ["poll_type": "nps", "poll": ["code": "x", "bands": [
+            ["from": 0, "to": 6, "question": " Что не так? ", "success": "Жаль"], ["from": 7, "to": 10, "question": "  ", "success": "Ура"]
+        ]] as [String: Any]]))
+        XCTAssertEqual(poll.bandQuestion(rate: 3), "Что не так?", "trimmed, like the web's bandQuestion")
+        XCTAssertNil(poll.bandQuestion(rate: 8), "spaces are no question")
+        XCTAssertNil(poll.bandQuestion(rate: nil))
+        XCTAssertEqual(PersonalizationStoryPoll.Answer(json: ["rate": 3, "comment": "Долго"]), .init(rate: 3, comment: "Долго"))
     }
 
     func testBandTextFindsTheBandOfTheRate() {

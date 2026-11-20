@@ -229,27 +229,28 @@ extension PersonalizationStoryPoll {
         scale.map { Self.scaleRange($0, min: rateMin, max: rateMax) } ?? []
     }
 
-    private static let npsColors = ["#FCA5A5", "#FCA5A5", "#FCA5A5", "#FDBA74", "#FDBA74", "#FDBA74", "#FCD34D"]
-
-    /// Цвет ячейки: NPS 0–10 — критики красные и оранжевые, нейтральные жёлтые, промоутеры
-    /// зелёные; прочие шкалы — по третям диапазона.
-    public static func scaleColor(_ scale: Scale, value: Int, min: Int, max: Int) -> String {
-        if scale == .nps, min == 0, max == 10 {
-            if (0...6).contains(value) { return npsColors[value] }
-            return value <= 8 ? "#FDE68A" : "#86EFAC"
-        }
-        let position = max > min ? Double(value - min) / Double(max - min) : 1
-        return position < 0.34 ? "#FCA5A5" : (position < 0.68 ? "#FDE68A" : "#86EFAC")
+    /// Тон ячейки шкалы — от плохой оценки к хорошей, как цвета ячеек в вебе (красный →
+    /// оранжевый и жёлтый → зелёный); цвета — семантические кита.
+    public enum Tone: Equatable {
+        case negative, neutral, positive
     }
 
-    /// Заливка выбранной оценки: попала в одну из полос `bands` — цвет шкалы для этой оценки
-    /// (`scaleColor`: критики, нейтральные, довольные); без полос или мимо них — `nil`, карточка
-    /// берёт акцент.
-    func bandColor(of value: Int) -> String? {
+    /// Тон ячейки, как `scaleColor` веба: NPS 0–10 — 0–2 красные, 3–8 оранжевые и жёлтые,
+    /// 9–10 зелёные; прочие шкалы — по третям диапазона.
+    public static func scaleTone(_ scale: Scale, value: Int, min: Int, max: Int) -> Tone {
+        if scale == .nps, min == 0, max == 10 {
+            if value <= 2 { return .negative }
+            return value <= 8 ? .neutral : .positive
+        }
+        let position = max > min ? Double(value - min) / Double(max - min) : 1
+        return position < 0.34 ? .negative : (position < 0.68 ? .neutral : .positive)
+    }
+
+    /// Тон ячейки этой шкалы.
+    func tone(of value: Int) -> Tone {
         let values = scaleValues
-        guard let scale, let low = values.first, let high = values.last,
-              bands.contains(where: { Double(value) >= $0.from && Double(value) <= $0.to }) else { return nil }
-        return Self.scaleColor(scale, value: value, min: low, max: high)
+        guard let scale, let low = values.first, let high = values.last else { return .neutral }
+        return Self.scaleTone(scale, value: value, min: low, max: high)
     }
 
     /// Первая полоса, в которую попала оценка, как `findBand` веба; без оценки или мимо — `nil`.
@@ -279,9 +280,6 @@ extension PersonalizationStoryPoll {
 /// потом свои по первому языку устройства — русские или английские. Перекрывает только непустая
 /// строка. Кнопка комментария после оценки — та же подпись отправки: в русском интерфейсе без
 /// своих текстов она «Отправить», а не английская.
-///
-/// Шапка и подвал итогов («Результаты», «Спасибо! Голос учтён», число голосов) — свои, по
-/// первому языку устройства.
 struct StoryPollTexts: Equatable {
 
     enum Language: Equatable {
@@ -307,40 +305,6 @@ struct StoryPollTexts: Equatable {
         error = pick(labels.error, host.pollErrorText, ru ? "Не удалось отправить ответ. Попробуйте еще раз" : "Failed to send the answer. Please try again")
         submit = pick(labels.submit, host.pollSubmitText, ru ? "Отправить" : "Send")
         self.language = language
-    }
-
-    /// Шапка итогов опроса с выбором (на карточке — прописными).
-    var results: String {
-        language == .ru ? "Результаты" : "Results"
-    }
-
-    /// Подвал итогов без своего `thanks_text`: «Спасибо!» и за ним «Голос учтён».
-    var thanks: String {
-        language == .ru ? "Спасибо!" : "Thank you!"
-    }
-
-    var voteCounted: String {
-        language == .ru ? "Голос учтён" : "Vote counted"
-    }
-
-    /// Число голосов с разрядами и склонением: «1 голос», «3 голоса», «1 248 голосов»;
-    /// «1 vote», «1,248 votes».
-    func votes(_ count: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = true
-        // Разделитель свой, а не из локали: у русского — неразрывный пробел на любой системе.
-        formatter.groupingSeparator = language == .ru ? "\u{00A0}" : ","
-        let number = formatter.string(from: NSNumber(value: count)) ?? String(count)
-        switch language {
-        case .ru:
-            let tens = count % 100, ones = count % 10
-            let word = ones == 1 && tens != 11 ? "голос"
-                : (2...4).contains(ones) && !(12...14).contains(tens) ? "голоса" : "голосов"
-            return "\(number) \(word)"
-        case .en:
-            return "\(number) \(count == 1 ? "vote" : "votes")"
-        }
     }
 }
 

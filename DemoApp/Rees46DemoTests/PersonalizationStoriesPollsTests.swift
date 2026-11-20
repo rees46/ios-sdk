@@ -211,8 +211,6 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(card.optionRows.map { $0.percentLabel.text }, ["40%", "60%", "0%"])
         XCTAssertEqual(card.optionRows[1].percent, 60)
         XCTAssertTrue(card.optionRows.allSatisfy { !$0.isUserInteractionEnabled }, "nothing to tap in the answer")
-        XCTAssertEqual(card.resultsLabel?.text, "RESULTS")
-        XCTAssertEqual(card.votesLabel?.text, "121 votes")
         XCTAssertNil(card.reanswerLink)
     }
 
@@ -319,7 +317,8 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(selectedRows(card), [1, 3])
         XCTAssertTrue(card.optionRows.allSatisfy { !$0.isUserInteractionEnabled }, "nothing to tap in the answer")
         XCTAssertNil(card.submitButton)
-        XCTAssertEqual(card.votesLabel?.text, "2 votes")
+        XCTAssertEqual(card.optionRows.map(\.letterLabel.text), ["A", "B", "C"], "the same rows before and after, like the web")
+        XCTAssertEqual(card.optionRows.map { $0.percentLabel.text }, ["50%", "0%", "50%"])
     }
 
     func testTheButtonStaysOffAfterEveryOptionIsOffAgain() {
@@ -402,10 +401,10 @@ extension PersonalizationStoriesPollsTests {
     func testNpsZeroToTenSendsTheRateOnTap() {
         let (card, transport, _) = mount(scalePoll(.nps))
         XCTAssertEqual(card.cells.map { $0.title.text }, (0...10).map(String.init))
-        XCTAssertEqual(card.cells.map { $0.fillColor as UIColor? }, (0...10).map {
-            PersonalizationStoryColors.parse(PersonalizationStoryPoll.scaleColor(.nps, value: $0, min: 0, max: 10))
-        }, "the capsule of a rate takes the color of its band")
-        XCTAssertFalse(card.cells.contains(where: \.isCapsuleVisible), "plain digits on the track until a pick")
+        XCTAssertEqual(card.cells.map(\.fillColor), (0...10).map {
+            Style.color(of: PersonalizationStoryPoll.scaleTone(.nps, value: $0, min: 0, max: 10))
+        }, "every rate in the tone of its value, red to green, like the web's cells")
+        XCTAssertFalse(card.cells.contains(where: \.isCapsuleVisible), "tinted digits on the track until a pick")
 
         card.cells[9].sendActions(for: .touchUpInside)
         XCTAssertEqual(transport.calls[0].method, "review")
@@ -599,7 +598,6 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(card.layer.borderWidth, 1)
         XCTAssertEqual(card.questionLabel?.font.pointSize, 18)
         XCTAssertEqual(card.questionLabel?.textAlignment, .natural, "every text from the left edge")
-        XCTAssertNil(card.resultsLabel, "no results header in the form")
     }
 
     func testOptionsCarryLettersAndThePickIsChecked() {
@@ -624,56 +622,40 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(PollOptionRow.letter(27), "AB")
     }
 
-    func testTheResultsHeaderAndFooterOfAnAnsweredChoice() {
+    /// After the answer, as the web: the rows with the answer and the percents when results came,
+    /// then `thanks_text` — no header, no default thanks, no count of votes.
+    func testAnAnsweredChoiceShowsWhatTheWebShows() {
         let results = Poll.Results(total: 1248, options: [.init(id: 1, percent: 52), .init(id: 2, percent: 31), .init(id: 3, percent: 17)])
-        let ru = mount(miniPoll(.singleChoice, answer: .init(optionIds: [2]), results: results), language: .ru).card
-        XCTAssertEqual(ru.resultsLabel?.text, "РЕЗУЛЬТАТЫ")
-        XCTAssertEqual(ru.resultsLabel?.accessibilityLabel, "Результаты")
-        XCTAssertEqual(ru.thanksLabel?.text, "Спасибо!", "own thanks_text instead of the pair")
-        XCTAssertEqual(ru.votesLabel?.text, "1\u{00A0}248 голосов")
+        let card = mount(miniPoll(.singleChoice, answer: .init(optionIds: [2]), results: results), language: .ru).card
+        XCTAssertEqual(card.optionRows.map { $0.percentLabel.text }, ["52%", "31%", "17%"])
+        XCTAssertEqual(selectedRows(card), [2])
+        XCTAssertEqual(card.thanksLabel?.text, "Спасибо!", "the poll's thanks_text")
 
-        func plain(total: Int?) -> Poll {
-            Poll(kind: .multipleChoice, code: "c", question: "Q", options: [.init(id: 1, label: "A"), .init(id: 2, label: "B")],
-                 answer: .init(optionIds: [1]), results: total.map { .init(total: $0, options: [.init(id: 1, percent: 100)]) })
-        }
-        let pair = mount(plain(total: 1), language: .ru).card
-        XCTAssertEqual(pair.thanksLabel?.text, "Спасибо! Голос учтён", "no thanks_text — the pair")
-        XCTAssertEqual(pair.votesLabel?.text, "1 голос")
-        let english = mount(plain(total: 1)).card
-        XCTAssertEqual(english.resultsLabel?.text, "RESULTS")
-        XCTAssertEqual(english.thanksLabel?.text, "Thank you! Vote counted")
-        XCTAssertEqual(english.votesLabel?.text, "1 vote")
-
-        XCTAssertNil(mount(plain(total: 0)).card.votesLabel, "no votes — nothing on the right")
-        let noResults = mount(plain(total: nil)).card
-        XCTAssertNil(noResults.votesLabel)
-        XCTAssertNotNil(noResults.resultsLabel, "the header of a choice poll after the answer")
-        XCTAssertNil(mount(scalePoll(.nps, answer: .init(rate: 9))).card.resultsLabel, "not on scales")
-        XCTAssertNil(mount(miniPoll(.text, answer: .init(text: "Да"))).card.resultsLabel, "nor on text")
+        let plain = Poll(kind: .multipleChoice, code: "c", question: "Q", options: [.init(id: 1, label: "A"), .init(id: 2, label: "B")],
+                         answer: .init(optionIds: [1]))
+        let bare = mount(plain).card
+        XCTAssertNil(bare.thanksLabel, "no thanks_text — nothing")
+        XCTAssertTrue(bare.optionRows.allSatisfy { $0.percentLabel.isHidden }, "no results — no percents")
     }
 
-    func testVotesAreDeclined() {
-        let ru = StoryPollTexts(host: .init(), labels: .init(), language: .ru)
-        XCTAssertEqual([0, 1, 2, 4, 5, 11, 12, 14, 21, 22, 25, 101, 111, 112, 1001].map(ru.votes), [
-            "0 голосов", "1 голос", "2 голоса", "4 голоса", "5 голосов", "11 голосов", "12 голосов", "14 голосов",
-            "21 голос", "22 голоса", "25 голосов", "101 голос", "111 голосов", "112 голосов", "1\u{00A0}001 голос"
-        ])
-        let en = StoryPollTexts(host: .init(), labels: .init(), language: .en)
-        XCTAssertEqual([0, 1, 2, 21, 1248].map(en.votes), ["0 votes", "1 vote", "2 votes", "21 votes", "1,248 votes"])
-    }
-
-    func testTheScaleIsATrackOfDigitsAndThePickIsACapsule() throws {
+    /// The tone of a rate, like the web's colours of the cells: red, then orange and yellow, then green.
+    func testTheScaleCellsGoFromRedToGreenInTheKitsColours() throws {
         let (card, _, _) = mount(scalePoll(.nps))
+        XCTAssertEqual(card.cells.map(\.fillColor), [0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2].map {
+            [PersonalizationColor.semanticDanger, PersonalizationColor.semanticWarning, Style.accent][$0]
+        })
+        XCTAssertEqual(card.cells[0].capsuleColor, PersonalizationColor.semanticDanger.withAlphaComponent(PollScaleCell.tintAlpha))
         card.cells[9].sendActions(for: .touchUpInside)
         XCTAssertTrue(card.cells[9].isCapsuleVisible)
-        XCTAssertEqual(card.cells[9].title.textColor, PersonalizationColor.textDarkPrimary, "dark digit on the light green band")
+        XCTAssertEqual(card.cells[9].capsuleColor, Style.accent, "the pick is filled")
+        XCTAssertEqual(card.cells[9].title.textColor, PersonalizationColor.textDarkPrimary, "dark digit on the green")
         XCTAssertEqual(card.cells[0].title.textColor, Style.text)
 
-        let noBands = mount(scalePoll(.csat, bands: [])).card
-        XCTAssertTrue(noBands.cells.allSatisfy { $0.fillColor == Style.accent }, "no bands — the accent")
-        let partial = mount(scalePoll(.nps, bands: [.init(from: 0, to: 6, success: nil)])).card
-        XCTAssertEqual(partial.cells[6].fillColor, PersonalizationStoryColors.parse("#FCD34D"))
-        XCTAssertEqual(partial.cells[7].fillColor, Style.accent, "outside every band — the accent")
+        XCTAssertEqual((1...5).map { PersonalizationStoryPoll.scaleTone(.csat, value: $0, min: 1, max: 5) },
+                       [.negative, .negative, .neutral, .positive, .positive], "by thirds")
+        XCTAssertEqual((1...7).map { PersonalizationStoryPoll.scaleTone(.ces, value: $0, min: 1, max: 7) },
+                       [.negative, .negative, .negative, .neutral, .neutral, .positive, .positive])
+        XCTAssertEqual(PersonalizationStoryPoll.scaleTone(.csat, value: 3, min: 3, max: 3), .positive, "one value")
 
         XCTAssertEqual(Style.contrastingText(on: .black), .white)
         XCTAssertEqual(Style.contrastingText(on: Style.rgb(0x1E3A8A)), .white)
