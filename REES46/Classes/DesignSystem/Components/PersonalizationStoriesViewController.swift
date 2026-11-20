@@ -20,8 +20,9 @@ public struct PersonalizationStoriesTexts {
     public var soundOffLabel: String?
     /// VoiceOver: «Поделиться» (API v3).
     @_spi(PersonalizationV3) public var shareLabel: String?
-    /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи,
-    /// ошибка отправки. Строки `labels` элемента из ленты важнее.
+    /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи
+    /// (и кнопка комментария после оценки), ошибка отправки. Строки `labels` элемента из ленты
+    /// важнее; пустые — свои тексты SDK по языку устройства, русские или английские.
     @_spi(PersonalizationV3) public var pollReanswerText: String
     @_spi(PersonalizationV3) public var pollSubmitText: String
     @_spi(PersonalizationV3) public var pollErrorText: String
@@ -63,9 +64,9 @@ public struct PersonalizationStoriesTexts {
         soundOnLabel: String? = "Sound on",
         soundOffLabel: String? = "Sound off",
         shareLabel: String? = "Share",
-        pollReanswerText: String = "Answer again",
-        pollSubmitText: String = "Send",
-        pollErrorText: String = "Failed to send the answer. Please try again"
+        pollReanswerText: String = "",
+        pollSubmitText: String = "",
+        pollErrorText: String = ""
     ) {
         self.promoCaption = promoCaption
         self.promoCopiedText = promoCopiedText
@@ -171,6 +172,13 @@ public final class PersonalizationStoriesViewController: UIViewController {
 
     /// Магазин ответов опросов этого запуска (общих у всех просмотрщиков); виджет ставит свой.
     @_spi(PersonalizationV3) public var pollShopId = ""
+
+    /// Устройство, под которым ответ опроса сохраняется на устройстве (на момент показа слайда);
+    /// пустое — не сохраняется. Виджет ставит `did` своего SDK.
+    var pollDeviceId: () -> String = { "" }
+
+    /// Хранилище магазина для сохранённых ответов опросов; `nil` — только память запуска.
+    var pollDefaults: UserDefaults?
 
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
@@ -666,8 +674,8 @@ extension PersonalizationStoriesViewController {
 
     // MARK: Опрос
 
-    /// Карточка опроса слайда; без опроса или без транспорта — `nil`. Ответ этого запуска
-    /// (`StoryPollStore`) важнее ответа из ленты.
+    /// Карточка опроса слайда; без опроса или без транспорта — `nil`. Ответ — по
+    /// `StoryPollStore`: этого запуска, иначе из ленты, иначе сохранённый на устройстве.
     func makePollView(story: PersonalizationStory, slide: PersonalizationStorySlide) -> PersonalizationStoryPollView? {
         guard let poll = slide.poll, let pollTransport else { return nil }
         let controller = StoryPollController(
@@ -675,8 +683,10 @@ extension PersonalizationStoriesViewController {
             storyId: story.id,
             slideId: slide.id,
             shopId: pollShopId,
+            did: pollDeviceId(),
             texts: StoryPollTexts(host: texts, labels: poll.labels),
-            transport: pollTransport
+            transport: pollTransport,
+            defaults: pollDefaults
         )
         return PersonalizationStoryPollView(controller: controller)
     }

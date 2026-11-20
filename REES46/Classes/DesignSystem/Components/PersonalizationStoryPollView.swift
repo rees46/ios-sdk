@@ -156,6 +156,10 @@ final class PersonalizationStoryPollView: UIView {
     /// Число голосов в подвале итогов.
     private(set) var votesLabel: UILabel?
     private(set) var doneTextLabel: UILabel?
+    /// Вопрос полосы оценки над полем комментария.
+    private(set) var followupLabel: UILabel?
+    /// Предел поля: `max_length` текстового опроса или 5000 у комментария.
+    private var counterLimit: Int?
     /// Насколько карточка поднята над клавиатурой.
     private(set) var keyboardLift: CGFloat = 0
     private var keyboardTop: CGFloat?
@@ -364,6 +368,8 @@ extension PersonalizationStoryPollView {
         thanksLabel = nil
         votesLabel = nil
         doneTextLabel = nil
+        followupLabel = nil
+        counterLimit = nil
         let answered = controller.mode == .answered
         let choice = poll.kind == .singleChoice || poll.kind == .multipleChoice
 
@@ -380,7 +386,7 @@ extension PersonalizationStoryPollView {
             buildOptions(interactive: true)
             buildSubmit(gap: Style.blockGap)
         case (.text, false):
-            buildInput()
+            buildInput(placeholder: poll.placeholder, limit: poll.maxLength)
             buildSubmit(gap: Style.fieldGap)
         case (.scale, false):
             buildScale(interactive: true)
@@ -388,7 +394,16 @@ extension PersonalizationStoryPollView {
             buildDone()
         case (.scale, true):
             buildScale(interactive: false)
-            addBandText(poll.bandText(rate: controller.answer?.rate))
+            if let question = controller.commentQuestion {
+                // Вопрос полосы оценки: поле комментария без подсказки, со счётчиком до 5000.
+                let label = Self.label(question, font: Style.questionFont, color: Style.text, lineHeight: Style.questionLineHeight)
+                add(label)
+                followupLabel = label
+                buildInput(placeholder: nil, limit: PersonalizationStoryPoll.commentMaxLength)
+                buildSubmit(title: controller.texts.submit, gap: Style.fieldGap)
+            } else {
+                addBandText(poll.bandText(rate: controller.answer?.rate))
+            }
         case (_, true):
             buildOptions(interactive: false)
             buildFooter()
@@ -429,7 +444,7 @@ extension PersonalizationStoryPollView {
         }
         submitButton?.isEnabled = controller.canSubmit && !sending
         input?.isEditable = !sending
-        if let limit = poll.maxLength { counter?.text = "\(controller.text.utf16.count)/\(limit)" }
+        if let limit = counterLimit { counter?.text = "\(controller.fieldText.utf16.count)/\(limit)" }
         reanswerLink?.isEnabled = !sending
         if let errorLabel {
             let show = controller.showsError
@@ -493,21 +508,22 @@ extension PersonalizationStoryPollView {
         add(list)
     }
 
-    private func buildSubmit(gap: CGFloat) {
-        let button = PollSubmitButton(title: poll.submitLabel ?? controller.texts.submit)
+    private func buildSubmit(title: String? = nil, gap: CGFloat) {
+        let button = PollSubmitButton(title: title ?? poll.submitLabel ?? controller.texts.submit)
         button.addTarget(self, action: #selector(submitTapped), for: .touchUpInside)
         add(button, gap: gap)
         submitButton = button
     }
 
-    private func buildInput() {
+    private func buildInput(placeholder: String?, limit: Int?) {
         let field = PollTextView()
-        field.placeholder = poll.placeholder
-        field.text = controller.text
+        field.placeholder = placeholder
+        field.text = controller.fieldText
         field.delegate = self
         add(field)
         input = field
-        guard poll.maxLength != nil else { return }
+        counterLimit = limit
+        guard limit != nil else { return }
         // Счётчик — у конца строки: справа, в RTL слева.
         let rightToLeft = UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
         let label = Self.label("", font: Style.counterFont, color: Style.textSecondary)

@@ -430,6 +430,9 @@ final class StoriesSession {
         if let v3, let sdk {
             viewer.pollTransport = pollTransport ?? StoriesPollsApi(api: v3, sdk: sdk)
             viewer.pollShopId = sdk.shopId
+            viewer.pollDeviceId = { sdk.deviceId }
+            // Ответы — в разделе магазина, рядом с просмотренными слайдами.
+            viewer.pollDefaults = (sdk as? SimplePersonalizationSDK)?.storage.partition
         }
         let seen = seenState
         if let link, let shared = stories.first {

@@ -39,30 +39,38 @@ import UIKit
         }
     }
 
-    /// Полоса шкалы: текст `success` — под отвеченной шкалой, если оценка в `from...to`.
+    /// Полоса шкалы: оценка в `from...to` — после неё вопрос `question` (ответ уходит
+    /// комментарием), потом текст `success`.
     public struct Band: Equatable {
         public let from: Double
         public let to: Double
+        /// Вопрос после оценки; пустой или из пробелов — вопроса нет.
+        public let question: String?
         public let success: String?
 
-        public init(from: Double, to: Double, success: String?) {
+        public init(from: Double, to: Double, question: String? = nil, success: String?) {
             self.from = from
             self.to = to
+            self.question = question
             self.success = success
         }
     }
 
-    /// Ответ клиента: варианты, текст или оценка. Оценка — число как пришло, и дробное (в вебе
-    /// любое число — ответ); ячейка шкалы выделяется, только если оценка с ней совпала.
+    /// Ответ клиента: варианты, текст или оценка с комментарием. Оценка — число как пришло, и
+    /// дробное (в вебе любое число — ответ); ячейка шкалы выделяется, только если оценка с ней
+    /// совпала.
     public struct Answer: Equatable {
         public let optionIds: [Int]?
         public let text: String?
         public let rate: Double?
+        /// Ответ на вопрос полосы шкалы.
+        public let comment: String?
 
-        public init(optionIds: [Int]? = nil, text: String? = nil, rate: Double? = nil) {
+        public init(optionIds: [Int]? = nil, text: String? = nil, rate: Double? = nil, comment: String? = nil) {
             self.optionIds = optionIds
             self.text = text
             self.rate = rate
+            self.comment = comment
         }
     }
 
@@ -244,20 +252,36 @@ extension PersonalizationStoryPoll {
         return Self.scaleColor(scale, value: value, min: low, max: high)
     }
 
-    /// Текст `success` первой полосы, в которую попала оценка; без оценки, мимо полос или у
-    /// полосы нет текста — `nil`.
-    public func bandText(rate: Double?) -> String? {
+    /// Первая полоса, в которую попала оценка, как `findBand` веба; без оценки или мимо — `nil`.
+    public func band(rate: Double?) -> Band? {
         guard let rate else { return nil }
-        guard let success = bands.first(where: { rate >= $0.from && rate <= $0.to })?.success, !success.isEmpty else { return nil }
+        return bands.first { rate >= $0.from && rate <= $0.to }
+    }
+
+    /// Текст `success` полосы оценки; без оценки, мимо полос или у полосы нет текста — `nil`.
+    public func bandText(rate: Double?) -> String? {
+        guard let success = band(rate: rate)?.success, !success.isEmpty else { return nil }
         return success
     }
+
+    /// Вопрос полосы оценки без пробелов по краям, как `bandQuestion` веба; пустой — `nil`.
+    public func bandQuestion(rate: Double?) -> String? {
+        guard let question = band(rate: rate)?.question?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !question.isEmpty else { return nil }
+        return question
+    }
+
+    /// Предел длины комментария к вопросу полосы, как `COMMENT_MAX_LENGTH` веба.
+    public static let commentMaxLength = 5000
 }
 
-/// Тексты карточки опроса: умолчания < тексты хоста (`PersonalizationStoriesTexts`) < `labels`
-/// элемента. Перекрывает только непустая строка.
+/// Тексты карточки опроса: `labels` элемента, потом тексты хоста (`PersonalizationStoriesTexts`),
+/// потом свои по первому языку устройства — русские или английские. Перекрывает только непустая
+/// строка. Кнопка комментария после оценки — та же подпись отправки: в русском интерфейсе без
+/// своих текстов она «Отправить», а не английская.
 ///
 /// Шапка и подвал итогов («Результаты», «Спасибо! Голос учтён», число голосов) — свои, по
-/// первому языку устройства: русские или английские.
+/// первому языку устройства.
 struct StoryPollTexts: Equatable {
 
     enum Language: Equatable {
@@ -275,13 +299,13 @@ struct StoryPollTexts: Equatable {
     let language: Language
 
     init(host: PersonalizationStoriesTexts, labels: PersonalizationStoryPoll.Labels, language: Language = .current) {
-        let defaults = PersonalizationStoriesTexts()
         func pick(_ own: String?, _ host: String, _ fallback: String) -> String {
             [own, host].lazy.compactMap { $0 }.first { !$0.isEmpty } ?? fallback
         }
-        reanswer = pick(labels.reanswer, host.pollReanswerText, defaults.pollReanswerText)
-        error = pick(labels.error, host.pollErrorText, defaults.pollErrorText)
-        submit = pick(labels.submit, host.pollSubmitText, defaults.pollSubmitText)
+        let ru = language == .ru
+        reanswer = pick(labels.reanswer, host.pollReanswerText, ru ? "Ответить заново" : "Answer again")
+        error = pick(labels.error, host.pollErrorText, ru ? "Не удалось отправить ответ. Попробуйте еще раз" : "Failed to send the answer. Please try again")
+        submit = pick(labels.submit, host.pollSubmitText, ru ? "Отправить" : "Send")
         self.language = language
     }
 
@@ -325,11 +349,13 @@ struct StoryPollTexts: Equatable {
 /// Отправка ответов опросов. Виджет `PersonalizationStories` даёт просмотрщику клиент API v3
 /// (`POST /api/v3/polls/...` на хосте ленты); тесты и офлайн-демо подменяют его своим.
 ///
-/// `body` — поля опроса без `shop_id`, `did` и `sid`: их добавляет сам транспорт (`sid` —
-/// всегда, без сеанса пустой строкой).
-/// - мини-опрос: `{option_ids: [Int]}` или `{text: String}`, плюс `story_id` (число) и
-///   `slide_id` (всегда строка);
-/// - шкала: `{channel, category (NPS) | campaign (CSAT, CES), rate}`.
+/// `body` — поля опроса без личности запроса (`shop_id`, `did`, `sid`, `stream`, `testmode`): её
+/// добавляет сам транспорт (`sid` — всегда, без сеанса пустой строкой).
+/// - мини-опрос: `{option_ids: [Int]}` или `{text: String}`;
+/// - шкала: `{channel, category (NPS) | campaign (CSAT, CES), rate}`, с комментарием к вопросу
+///   полосы — та же оценка и `comment`;
+/// - у обоих источник ответа, как в вебе: `source_type: "stories"`, `source_id` (id сторис) и
+///   `source_item_id` (id слайда) — строками; без id сторис источника нет.
 ///
 /// `completion` — один раз, на любой очереди: успех с `answer` / `results` из `payload` или ошибка.
 @_spi(PersonalizationV3) public protocol PersonalizationStoryPollTransport {
@@ -345,11 +371,20 @@ struct StoryPollTexts: Equatable {
     )
 }
 
-// MARK: - Ответы этого запуска
+// MARK: - Сохранённые ответы
 
-/// Ответы опросов, отправленные за этот запуск: одни на все виджеты, `show` и ссылки, по
-/// магазину, виду и коду опроса. Важнее ответа из ленты: лента не перегружается после ответа,
-/// и вернувшийся к слайду должен увидеть свой ответ. На диск не пишутся. Только главная очередь.
+/// Ответы опросов, как `storage.ts` веба: отправленные за этот запуск и сохранённые на устройстве.
+///
+/// - Запись устройства — в хранилище магазина (раздел SDK, где и просмотренные слайды) под
+///   ключом `stories_poll_{did}_{poll_type}_{code}_{id сторис}_{id слайда}`: JSON `{answer,
+///   results, saved_at}` (`saved_at` — миллисекунды). Живёт 90 дней — столько ответ помнит лента;
+///   просроченная или без даты удаляется при чтении. Без `did` ничего не читается и не пишется:
+///   чужой ответ не показывается.
+/// - Ответ этого запуска (в памяти) — то, чем в вебе становится закешированный элемент ленты
+///   после отправки: лента не перегружается, и вернувшийся к слайду видит свой ответ.
+///
+/// Что показать: ответ этого запуска, иначе ответ ленты, иначе запись устройства, иначе ничего.
+/// Только главная очередь.
 final class StoryPollStore {
 
     struct Entry: Equatable {
@@ -357,25 +392,94 @@ final class StoryPollStore {
         let results: PersonalizationStoryPoll.Results?
     }
 
-    private struct Key: Hashable {
+    /// Чей ответ и где: магазин, устройство, опрос и слайд.
+    struct Place: Hashable {
         let shopId: String
-        let type: String
+        let did: String
+        let pollType: String
         let code: String
+        let storyId: String
+        let slideId: String
+
+        init(shopId: String, did: String, poll: PersonalizationStoryPoll, storyId: String, slideId: String) {
+            self.shopId = shopId
+            self.did = did
+            self.pollType = poll.pollType
+            self.code = poll.code
+            self.storyId = storyId
+            self.slideId = slideId
+        }
+
+        /// Ключ записи устройства; без `did` — `nil`.
+        var key: String? {
+            guard !did.isEmpty else { return nil }
+            return ["stories_poll", did, pollType, code, storyId, slideId].joined(separator: "_")
+        }
     }
+
+    /// Сколько живёт запись устройства: столько ответ помнит лента (`STORIES_ANSWER_MEMORY_DAYS`).
+    static let ttl: TimeInterval = 90 * 24 * 60 * 60
 
     static let shared = StoryPollStore()
 
-    private var entries: [Key: Entry] = [:]
+    /// Часы записи устройства; подменяются в тестах.
+    var now: () -> Date = Date.init
 
-    func entry(shopId: String, poll: PersonalizationStoryPoll) -> Entry? {
-        entries[Key(shopId: shopId, type: poll.pollType, code: poll.code)]
+    private var sent: [Place: Entry] = [:]
+
+    /// Ответ, отправленный за этот запуск.
+    func sentEntry(_ place: Place) -> Entry? {
+        sent[place]
     }
 
-    func save(_ entry: Entry, shopId: String, poll: PersonalizationStoryPoll) {
-        entries[Key(shopId: shopId, type: poll.pollType, code: poll.code)] = entry
+    /// Запись устройства: просроченная, без даты или битая удаляется, без `did` — `nil`.
+    func savedEntry(_ place: Place, in defaults: UserDefaults?) -> Entry? {
+        guard let key = place.key, let defaults, let raw = defaults.string(forKey: key) else { return nil }
+        guard let record = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [String: Any],
+              let answer = PersonalizationStoryPoll.Answer(json: record["answer"]) else { return nil }
+        guard let savedAt = StoriesJSON.number(record["saved_at"]),
+              now().timeIntervalSince1970 * 1000 - savedAt <= Self.ttl * 1000 else {
+            defaults.removeObject(forKey: key)
+            return nil
+        }
+        return Entry(answer: answer, results: PersonalizationStoryPoll.Results(json: record["results"]))
     }
 
+    /// Ответ ушёл: в память запуска и, с `did`, на устройство.
+    func save(_ entry: Entry, place: Place, in defaults: UserDefaults?) {
+        sent[place] = entry
+        guard let key = place.key, let defaults else { return }
+        var record: [String: Any] = ["saved_at": (now().timeIntervalSince1970 * 1000).rounded()]
+        record["answer"] = entry.answer?.json ?? [String: Any]()
+        record["results"] = entry.results?.json ?? NSNull()
+        guard let data = try? JSONSerialization.data(withJSONObject: record),
+              let text = String(data: data, encoding: .utf8) else { return }
+        defaults.set(text, forKey: key)
+    }
+
+    /// Забыть ответы этого запуска (записи устройства остаются).
     func removeAll() {
-        entries = [:]
+        sent = [:]
+    }
+}
+
+extension PersonalizationStoryPoll.Answer {
+
+    /// JSON ответа, как его шлёт лента: только заданные поля.
+    var json: [String: Any] {
+        var json: [String: Any] = [:]
+        if let optionIds { json["option_ids"] = optionIds }
+        if let text { json["text"] = text }
+        if let rate { json["rate"] = rate }
+        if let comment { json["comment"] = comment }
+        return json
+    }
+}
+
+extension PersonalizationStoryPoll.Results {
+
+    /// JSON итогов, как их шлёт лента.
+    var json: [String: Any] {
+        ["total": total, "options": options.map { ["id": $0.id, "percent": $0.percent] as [String: Any] }]
     }
 }

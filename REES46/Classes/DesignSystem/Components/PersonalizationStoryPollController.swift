@@ -1,7 +1,14 @@
 import Foundation
 
 /// Логика карточки опроса без UI — как `createPoll` JS SDK: форма и отвеченное состояние,
-/// отправка через транспорт, ошибка с повтором, переответ и удержание слайда.
+/// отправка через транспорт, ошибка с повтором, переответ, вопрос полосы шкалы и удержание слайда.
+///
+/// Ответ при показе — по `StoryPollStore`: отправленный за этот запуск, иначе из ленты, иначе
+/// сохранённый на устройстве. Отправленный пишется туда же — и в память, и на устройство.
+///
+/// Шкала: после оценки, если у её полосы есть вопрос, а комментария ещё нет, — вопрос, поле
+/// (до 5000 символов) и кнопка; комментарий уходит вторым отзывом с той же оценкой. Без вопроса
+/// — сразу текст полосы. Ушли со слайда без комментария — на следующем показе вопрос снова.
 ///
 /// Слайд держится (`onHold(true)`), пока карточку трогают, в её поле курсор или ответ
 /// отправляется: `hold = pressed || focused || sending`. Карточка ушла с экрана
@@ -23,8 +30,11 @@ final class StoryPollController {
     let slideId: String
     let shopId: String
     let texts: StoryPollTexts
+    /// Где лежат ответы опроса: память запуска и запись устройства под `did` показа.
+    let place: StoryPollStore.Place
     private let transport: PersonalizationStoryPollTransport
     private let store: StoryPollStore
+    private let defaults: UserDefaults?
 
     private(set) var answer: PersonalizationStoryPoll.Answer?
     private(set) var results: PersonalizationStoryPoll.Results?
@@ -37,6 +47,8 @@ final class StoryPollController {
     private(set) var pressedRate: Double?
     /// Текст поля, уже обрезанный до `maxLength`.
     private(set) var text = ""
+    /// Комментарий к вопросу полосы шкалы, уже обрезанный до 5000.
+    private(set) var comment = ""
     /// Форма открыта ссылкой «ответить заново»: поле текста получает фокус.
     private(set) var isReanswering = false
 
@@ -55,14 +67,19 @@ final class StoryPollController {
     var onHold: ((Bool) -> Void)?
     var onChange: ((Change) -> Void)?
 
+    /// - Parameters:
+    ///   - did: устройство показа; пустой — ответ на устройстве не читается и не пишется.
+    ///   - defaults: хранилище магазина для записи устройства; `nil` — только память запуска.
     init(
         poll: PersonalizationStoryPoll,
         storyId: String,
         slideId: String,
         shopId: String,
+        did: String = "",
         texts: StoryPollTexts,
         transport: PersonalizationStoryPollTransport,
-        store: StoryPollStore = .shared
+        store: StoryPollStore = .shared,
+        defaults: UserDefaults? = nil
     ) {
         self.poll = poll
         self.storyId = storyId
@@ -71,11 +88,20 @@ final class StoryPollController {
         self.texts = texts
         self.transport = transport
         self.store = store
-        let saved = store.entry(shopId: shopId, poll: poll)
-        answer = saved?.answer ?? poll.answer
-        results = saved == nil ? poll.results : saved?.results
-        // Отправленный за этот запуск ответ — всегда отвеченный вид, даже без вариантов и текста.
-        mode = saved != nil || PersonalizationStoryPoll.hasAnswer(answer) ? .answered : .form
+        self.defaults = defaults
+        place = StoryPollStore.Place(shopId: shopId, did: did, poll: poll, storyId: storyId, slideId: slideId)
+        if let sent = store.sentEntry(place) {
+            // Отправленный за этот запуск ответ — всегда отвеченный вид, даже без вариантов и текста.
+            answer = sent.answer
+            results = sent.results
+            mode = .answered
+        } else {
+            // Ответ ленты важнее сохранённого: сохранённый — для тех, кого лента не знает.
+            let saved = poll.answer == nil ? store.savedEntry(place, in: defaults) : nil
+            answer = saved?.answer ?? poll.answer
+            results = saved == nil ? poll.results : saved?.results
+            mode = PersonalizationStoryPoll.hasAnswer(answer) ? .answered : .form
+        }
         resetForm()
     }
 
@@ -85,13 +111,29 @@ final class StoryPollController {
 
     // MARK: - Форма
 
-    /// Можно отправить кнопкой: несколько вариантов — хоть один выбран, текст — не пустой.
+    /// Можно отправить кнопкой: несколько вариантов — хоть один выбран, текст или комментарий
+    /// к вопросу полосы — не пустые.
     var canSubmit: Bool {
+        if asksComment { return !comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard mode == .form else { return false }
         switch poll.kind {
         case .multipleChoice: return !selected.isEmpty
         case .text: return !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         default: return false
         }
+    }
+
+    /// Вопрос полосы оценки, на который ждут комментарий: шкала отвечена, у полосы оценки есть
+    /// вопрос, а комментария в ответе нет, как в вебе; иначе `nil`.
+    var commentQuestion: String? {
+        guard mode == .answered, poll.scale != nil, let rate = answer?.rate,
+              (answer?.comment ?? "").isEmpty else { return nil }
+        return poll.bandQuestion(rate: rate)
+    }
+
+    /// Отвеченная шкала ждёт комментарий к вопросу полосы.
+    var asksComment: Bool {
+        commentQuestion != nil
     }
 
     /// Один вариант: выделяется сразу и уходит; ошибка возвращает прежнее выделение.
@@ -109,18 +151,34 @@ final class StoryPollController {
         emit(.update)
     }
 
-    /// Текст поля: обрезается до `maxLength` (по UTF-16, как в вебе, не разрывая суррогатную пару).
+    /// Текст поля: обрезается до `maxLength` (по UTF-16, как в вебе, не разрывая суррогатную
+    /// пару). У отвеченной шкалы с вопросом полосы поле — комментарий, до 5000.
     @discardableResult
     func setText(_ value: String) -> String {
+        if asksComment {
+            comment = Self.limit(value, to: PersonalizationStoryPoll.commentMaxLength)
+            emit(.update)
+            return comment
+        }
         guard mode == .form, poll.kind == .text else { return text }
         text = Self.limit(value, to: poll.maxLength)
         emit(.update)
         return text
     }
 
-    /// Кнопка отправки: выбранные варианты в порядке вариантов или текст без пробелов по краям.
+    /// Текст поля сейчас: текст опроса или комментарий к вопросу полосы.
+    var fieldText: String {
+        asksComment ? comment : text
+    }
+
+    /// Кнопка отправки: выбранные варианты в порядке вариантов, текст без пробелов по краям или
+    /// комментарий — с той же оценкой.
     func submit() {
-        guard mode == .form, !isSending, canSubmit else { return }
+        guard !isSending, canSubmit else { return }
+        if asksComment, let rate = answer?.rate {
+            return sendReview(rate: rate, comment: comment.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        guard mode == .form else { return }
         switch poll.kind {
         case .multipleChoice:
             let ids = poll.options.map(\.id).filter { selected.contains($0) }
@@ -133,19 +191,31 @@ final class StoryPollController {
         }
     }
 
-    /// Ячейка шкалы: выделяется сразу и уходит; ошибка возвращает прежнюю оценку.
+    /// Ячейка шкалы: выделяется сразу и уходит без комментария (и при переответе — вопрос
+    /// полосы появится снова); ошибка возвращает прежнюю оценку.
     func tapRate(_ rate: Int) {
-        guard mode == .form, !isSending, let scale = poll.scale else { return }
+        guard mode == .form, !isSending, poll.scale != nil else { return }
         let previous = answer?.rate
         pressedRate = Double(rate)
-        var body: [String: Any] = ["channel": Self.nonEmpty(poll.channel) ?? "stories", "rate": rate]
+        sendReview(rate: Double(rate), comment: nil, revert: { [weak self] in self?.pressedRate = previous })
+    }
+
+    /// Отзыв шкалы: оценка числом, как пришла в ячейке; комментарий — только непустой. Успех —
+    /// ответ `{rate}` или `{rate, comment}`, без итогов, как в вебе.
+    private func sendReview(rate: Double, comment: String?, revert: (() -> Void)? = nil) {
+        guard let scale = poll.scale else { return }
+        var body: [String: Any] = ["channel": Self.nonEmpty(poll.channel) ?? "stories"]
+        body["rate"] = rate == rate.rounded() && abs(rate) < 1e15 ? Int(rate) as Any : rate
         body[scale == .nps ? "category" : "campaign"] = poll.code
-        send(sent: .init(rate: Double(rate)), revert: { [weak self] in self?.pressedRate = previous }) { transport, completion in
-            transport.review(kind: scale, body: body) { completion($0.map { _ in .init() }) }
+        if let comment, !comment.isEmpty { body["comment"] = comment }
+        body.merge(Self.source(storyId: storyId, slideId: slideId)) { _, source in source }
+        let sent = PersonalizationStoryPoll.Answer(rate: rate, comment: Self.nonEmpty(comment))
+        send(sent: sent, keepsServerAnswer: false, revert: revert) { transport, completion in
+            transport.review(kind: scale, body: body, completion: completion)
         }
     }
 
-    /// «Ответить заново»: снова форма, прежний ответ подсвечен (у текста поле пустое).
+    /// «Ответить заново»: снова форма, прежний ответ подсвечен (у текста поле пустое и в фокусе).
     func reanswer() {
         guard mode == .answered, poll.allowReanswer, !isSending else { return }
         mode = .form
@@ -164,23 +234,35 @@ final class StoryPollController {
         selected = previousIds.intersection(ids)
         pressedRate = answer?.rate
         text = ""
+        comment = ""
     }
 
     // MARK: - Отправка
 
+    /// Источник ответа для отчётов опросов, как `sourceParams` веба: сторис и слайд, строками
+    /// (у виртуальных слайдов товарных кампаний id вида `12_0`). Без id сторис источника нет,
+    /// пустой id слайда не уходит.
+    static func source(storyId: String, slideId: String) -> [String: Any] {
+        guard !storyId.isEmpty else { return [:] }
+        var source: [String: Any] = ["source_type": "stories", "source_id": storyId]
+        if !slideId.isEmpty { source["source_item_id"] = slideId }
+        return source
+    }
+
     private func send(miniPoll fields: [String: Any], sent: PersonalizationStoryPoll.Answer, revert: (() -> Void)?) {
-        var body = fields
-        body["story_id"] = Int(storyId).map { $0 as Any } ?? storyId
-        body["slide_id"] = slideId
+        let body = fields.merging(Self.source(storyId: storyId, slideId: slideId)) { _, source in source }
         let code = poll.code
-        send(sent: sent, revert: revert) { transport, completion in
+        send(sent: sent, keepsServerAnswer: true, revert: revert) { transport, completion in
             transport.answerMiniPoll(code: code, body: body, completion: completion)
         }
     }
 
     /// Одна отправка за раз. Ответ пишется в хранилище, даже если карточки уже нет.
+    /// `keepsServerAnswer` — ответ сервера (`answer` и `results` из `payload`) важнее отправленного,
+    /// как у мини-опроса в вебе; у шкалы — отправленный.
     private func send(
         sent: PersonalizationStoryPoll.Answer,
+        keepsServerAnswer: Bool,
         revert: (() -> Void)?,
         request: (PersonalizationStoryPollTransport, @escaping (Result<PersonalizationStoryPoll.Reply, Error>) -> Void) -> Void
     ) {
@@ -189,7 +271,7 @@ final class StoryPollController {
         showsError = false
         syncHold()
         emit(.update)
-        let store = self.store, shopId = self.shopId, poll = self.poll
+        let store = self.store, place = self.place, defaults = self.defaults
         var finished = false
         request(transport) { [weak self] result in
             MainThread.run {
@@ -198,8 +280,10 @@ final class StoryPollController {
                 switch result {
                 case .success(let reply):
                     // Ответ сервера — любой объект `answer`, даже `{id}`; отправленный — только без него.
-                    let entry = StoryPollStore.Entry(answer: reply.answer ?? sent, results: reply.results)
-                    store.save(entry, shopId: shopId, poll: poll)
+                    let entry = keepsServerAnswer
+                        ? StoryPollStore.Entry(answer: reply.answer ?? sent, results: reply.results)
+                        : StoryPollStore.Entry(answer: sent, results: nil)
+                    store.save(entry, place: place, in: defaults)
                     self?.succeeded(entry)
                 case .failure:
                     self?.failed(revert: revert)
@@ -232,7 +316,7 @@ final class StoryPollController {
     /// карточки того же опроса), и текущее удержание.
     func attach() {
         isAttached = true
-        if !isSending, let saved = store.entry(shopId: shopId, poll: poll),
+        if !isSending, let saved = store.sentEntry(place),
            saved != StoryPollStore.Entry(answer: answer, results: results) {
             answer = saved.answer
             results = saved.results
@@ -255,7 +339,7 @@ final class StoryPollController {
         isFocused = false
     }
 
-    /// Поле текста просит фокус один раз — после «ответить заново».
+    /// Поле текста просит фокус один раз — после «ответить заново» (поле пустое).
     func takeFocusRequest() -> Bool {
         defer { isReanswering = false }
         return isReanswering && mode == .form && poll.kind == .text

@@ -121,17 +121,22 @@ final class PersonalizationStoriesPollsTests: XCTestCase {
         _ poll: Poll,
         texts: PersonalizationStoriesTexts = .init(),
         language: StoryPollTexts.Language = .en,
-        slideId: String = "101"
+        storyId: String = "5",
+        slideId: String = "101",
+        did: String = "",
+        defaults: UserDefaults? = nil
     ) -> (card: PersonalizationStoryPollView, transport: FakePollTransport, events: Events) {
         let transport = FakePollTransport()
         let events = Events()
         let controller = StoryPollController(
             poll: poll,
-            storyId: "5",
+            storyId: storyId,
             slideId: slideId,
             shopId: "shop",
+            did: did,
             texts: StoryPollTexts(host: texts, labels: poll.labels, language: language),
-            transport: transport
+            transport: transport,
+            defaults: defaults
         )
         controller.onHold = { events.holds.append($0) }
         return (PersonalizationStoryPollView(controller: controller), transport, events)
@@ -192,7 +197,7 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(transport.calls.count, 1)
         XCTAssertEqual(transport.calls[0].method, "answerMiniPoll")
         XCTAssertEqual(transport.calls[0].code, "gift_recipient")
-        XCTAssertEqual(transport.json(0), #"{"option_ids":[2],"slide_id":"101","story_id":5}"#, "story id a number, slide id a string")
+        XCTAssertEqual(transport.json(0), #"{"option_ids":[2],"source_id":"5","source_item_id":"101","source_type":"stories"}"#, "the source of the answer: the story and the slide, strings")
         XCTAssertTrue(card.optionRows.allSatisfy { !$0.isEnabled }, "controls are disabled while sending")
         XCTAssertEqual(card.alpha, 0.85, accuracy: 0.001)
         XCTAssertEqual(selectedRows(card), [2], "the option is highlighted at once")
@@ -260,11 +265,11 @@ extension PersonalizationStoriesPollsTests {
         card.optionRows[1].sendActions(for: .touchUpInside)
         XCTAssertEqual(transport.calls.count, 2, "and may be retried")
         transport.resolve(1)
-        XCTAssertNotNil(StoryPollStore.shared.entry(shopId: "shop", poll: poll), "stored under the empty code")
+        XCTAssertNotNil(StoryPollStore.shared.sentEntry(card.controller.place), "stored under the empty code")
 
         let scale = mount(Poll(kind: .scale(.nps), code: ""))
         scale.card.cells[3].sendActions(for: .touchUpInside)
-        XCTAssertEqual(scale.transport.json(0), #"{"category":"","channel":"stories","rate":3}"#)
+        XCTAssertEqual(scale.transport.json(0), #"{"category":"","channel":"stories","rate":3,"source_id":"5","source_item_id":"101","source_type":"stories"}"#)
     }
 
     /// Any object of `payload.answer` is the answer, even `{id}` alone; the card is answered anyway.
@@ -282,7 +287,7 @@ extension PersonalizationStoriesPollsTests {
     func testAProductSlideSendsItsIdAsAString() {
         let (card, transport, _) = mount(miniPoll(.singleChoice), slideId: "39_0")
         card.optionRows[0].sendActions(for: .touchUpInside)
-        XCTAssertEqual(transport.json(0), #"{"option_ids":[1],"slide_id":"39_0","story_id":5}"#)
+        XCTAssertEqual(transport.json(0), #"{"option_ids":[1],"source_id":"5","source_item_id":"39_0","source_type":"stories"}"#)
     }
 }
 
@@ -308,7 +313,7 @@ extension PersonalizationStoriesPollsTests {
         card.optionRows[2].sendActions(for: .touchUpInside)
         card.optionRows[2].sendActions(for: .touchUpInside)
         submit.sendActions(for: .touchUpInside)
-        XCTAssertEqual(transport.json(0), #"{"option_ids":[1,3],"slide_id":"101","story_id":5}"#, "the order of the options")
+        XCTAssertEqual(transport.json(0), #"{"option_ids":[1,3],"source_id":"5","source_item_id":"101","source_type":"stories"}"#, "the order of the options")
 
         transport.resolve(0, .init(answer: .init(optionIds: [1, 3]), results: .init(total: 2, options: [.init(id: 1, percent: 50), .init(id: 3, percent: 50)])))
         XCTAssertEqual(selectedRows(card), [1, 3])
@@ -365,7 +370,7 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertTrue(submit.isEnabled)
 
         submit.sendActions(for: .touchUpInside)
-        XCTAssertEqual(transport.json(0), #"{"slide_id":"101","story_id":5,"text":"Мастер и"}"#)
+        XCTAssertEqual(transport.json(0), #"{"source_id":"5","source_item_id":"101","source_type":"stories","text":"Мастер и"}"#)
         XCTAssertFalse(input.isEditable)
 
         transport.resolve(0, .init(answer: .init(text: "Мастер и")))
@@ -405,7 +410,7 @@ extension PersonalizationStoriesPollsTests {
         card.cells[9].sendActions(for: .touchUpInside)
         XCTAssertEqual(transport.calls[0].method, "review")
         XCTAssertEqual(transport.calls[0].kind, .nps)
-        XCTAssertEqual(transport.json(0), #"{"category":"delivery","channel":"stories","rate":9}"#)
+        XCTAssertEqual(transport.json(0), #"{"category":"delivery","channel":"stories","rate":9,"source_id":"5","source_item_id":"101","source_type":"stories"}"#)
         XCTAssertEqual(pressedCells(card), [9])
         transport.resolve(0, .init(answer: .init(rate: 3)))
 
@@ -422,20 +427,20 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(csat.card.cells.count, 5)
         csat.card.cells[0].sendActions(for: .touchUpInside)
         XCTAssertEqual(csat.transport.calls[0].kind, .csat)
-        XCTAssertEqual(csat.transport.json(0), #"{"campaign":"delivery","channel":"stories","rate":1}"#)
+        XCTAssertEqual(csat.transport.json(0), #"{"campaign":"delivery","channel":"stories","rate":1,"source_id":"5","source_item_id":"101","source_type":"stories"}"#)
         csat.transport.resolve(0)
         XCTAssertEqual(csat.card.thanksLabel?.text, "Жаль")
 
         let ces = mount(scalePoll(.ces, channel: nil))
         XCTAssertEqual(ces.card.cells.map(\.value), Array(1...7))
         ces.card.cells[6].sendActions(for: .touchUpInside)
-        XCTAssertEqual(ces.transport.json(0), #"{"campaign":"delivery","channel":"stories","rate":7}"#, "no channel — stories")
+        XCTAssertEqual(ces.transport.json(0), #"{"campaign":"delivery","channel":"stories","rate":7,"source_id":"5","source_item_id":"101","source_type":"stories"}"#, "no channel — stories")
         let blank = mount(scalePoll(.nps, channel: " "))
         blank.card.cells[0].sendActions(for: .touchUpInside)
-        XCTAssertEqual(blank.transport.json(0), #"{"category":"delivery","channel":" ","rate":0}"#, "a channel of spaces goes as is")
+        XCTAssertEqual(blank.transport.json(0), #"{"category":"delivery","channel":" ","rate":0,"source_id":"5","source_item_id":"101","source_type":"stories"}"#, "a channel of spaces goes as is")
         let empty = mount(scalePoll(.nps, channel: ""))
         empty.card.cells[0].sendActions(for: .touchUpInside)
-        XCTAssertEqual(empty.transport.json(0), #"{"category":"delivery","channel":"stories","rate":0}"#, "an empty channel — stories too")
+        XCTAssertEqual(empty.transport.json(0), #"{"category":"delivery","channel":"stories","rate":0,"source_id":"5","source_item_id":"101","source_type":"stories"}"#, "an empty channel — stories too")
     }
 
     func testTheAnsweredScaleOfTheFeed() {
@@ -520,7 +525,7 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(card.submitButton?.isEnabled, true)
         card.optionRows[0].sendActions(for: .touchUpInside)
         card.submitButton?.sendActions(for: .touchUpInside)
-        XCTAssertEqual(transport.json(0), #"{"option_ids":[3],"slide_id":"101","story_id":5}"#)
+        XCTAssertEqual(transport.json(0), #"{"option_ids":[3],"source_id":"5","source_item_id":"101","source_type":"stories"}"#)
     }
 
     func testTextReanswerStartsEmpty() throws {
@@ -552,21 +557,22 @@ extension PersonalizationStoriesPollsTests {
         transport.resolve(0, .init(answer: .init(optionIds: [1])))
         XCTAssertNil(card.controller.results, "no results in the reply — none")
         XCTAssertTrue(card.optionRows.allSatisfy { $0.percentLabel.isHidden })
-        XCTAssertEqual(StoryPollStore.shared.entry(shopId: "shop", poll: card.controller.poll), .init(answer: .init(optionIds: [1]), results: nil))
+        XCTAssertEqual(StoryPollStore.shared.sentEntry(card.controller.place), .init(answer: .init(optionIds: [1]), results: nil))
     }
 
-    func testTextsDefaultsThenTheHostThenLabels() {
+    /// Labels of the element, then the host's texts, then the SDK's own in the device's language.
+    func testTextsLabelsThenTheHostThenBuiltInsOfTheLanguage() {
         let host = PersonalizationStoriesTexts(pollReanswerText: "Ещё", pollSubmitText: "Ок", pollErrorText: "Сбой")
-        XCTAssertEqual(StoryPollTexts(host: .init(), labels: .init()),
-                       StoryPollTexts(host: .init(pollReanswerText: "Answer again", pollSubmitText: "Send",
-                                                  pollErrorText: "Failed to send the answer. Please try again"), labels: .init()))
-        let fromHost = StoryPollTexts(host: host, labels: .init(reanswer: "", error: nil, submit: nil))
+        let english = StoryPollTexts(host: .init(), labels: .init(), language: .en)
+        XCTAssertEqual([english.reanswer, english.submit, english.error], ["Answer again", "Send", "Failed to send the answer. Please try again"])
+        let russian = StoryPollTexts(host: .init(), labels: .init(), language: .ru)
+        XCTAssertEqual([russian.reanswer, russian.submit, russian.error], ["Ответить заново", "Отправить", "Не удалось отправить ответ. Попробуйте еще раз"],
+                       "no English fallback in a Russian interface")
+        XCTAssertEqual(PersonalizationStoriesTexts().pollSubmitText, "", "the host's texts are empty by default: the SDK's own go")
+        let fromHost = StoryPollTexts(host: host, labels: .init(reanswer: "", error: nil, submit: nil), language: .ru)
         XCTAssertEqual([fromHost.reanswer, fromHost.submit, fromHost.error], ["Ещё", "Ок", "Сбой"], "empty labels do not count")
         let fromLabels = StoryPollTexts(host: host, labels: .init(reanswer: "Заново", error: "Не ушло", submit: "Отправить"))
         XCTAssertEqual([fromLabels.reanswer, fromLabels.submit, fromLabels.error], ["Заново", "Отправить", "Не ушло"])
-        let blank = StoryPollTexts(host: .init(pollReanswerText: "", pollSubmitText: "", pollErrorText: ""), labels: .init())
-        XCTAssertEqual([blank.reanswer, blank.submit, blank.error], ["Answer again", "Send", "Failed to send the answer. Please try again"],
-                       "an empty host text — the default")
         let spaces = StoryPollTexts(host: .init(pollReanswerText: " ", pollSubmitText: " ", pollErrorText: " "), labels: .init())
         XCTAssertEqual([spaces.reanswer, spaces.submit, spaces.error], [" ", " ", " "], "a host text of spaces wins")
 
@@ -574,6 +580,8 @@ extension PersonalizationStoriesPollsTests {
                                  texts: .init(pollReanswerText: "Answer again"))
         XCTAssertEqual(card.reanswerLink?.title.text, "Ещё раз")
         XCTAssertEqual(mount(miniPoll(.singleChoice, allowReanswer: true, answer: answered.answer)).card.reanswerLink?.title.text, "Answer again")
+        XCTAssertEqual(mount(miniPoll(.singleChoice, allowReanswer: true, answer: answered.answer), language: .ru).card.reanswerLink?.title.text,
+                       "Ответить заново")
     }
 }
 
@@ -800,7 +808,7 @@ extension PersonalizationStoriesPollsTests {
         transport.resolve(0, .init(answer: .init(optionIds: [2])))
         XCTAssertEqual(events.holds, [true], "no hold change from a card that is gone")
         XCTAssertTrue(card.optionRows.allSatisfy(\.isUserInteractionEnabled), "no redraw either")
-        XCTAssertEqual(StoryPollStore.shared.entry(shopId: "shop", poll: card.controller.poll)?.answer, .init(optionIds: [2]))
+        XCTAssertEqual(StoryPollStore.shared.sentEntry(card.controller.place)?.answer, .init(optionIds: [2]))
 
         card.controller.attach()
         XCTAssertEqual(events.holds, [true, false], "back on screen: the current hold")
@@ -808,7 +816,7 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertFalse(card.optionRows.contains(where: \.isUserInteractionEnabled), "the answer is drawn on return")
     }
 
-    func testTheStoreWinsOverTheFeedAndKeepsAnswersWhenTheCardIsGone() {
+    func testTheAnswerOfThisRunWinsAndIsKeptWhenTheCardIsGone() {
         var transport: FakePollTransport?
         autoreleasepool {
             let mounted = mount(miniPoll(.singleChoice))
@@ -816,17 +824,222 @@ extension PersonalizationStoriesPollsTests {
             transport = mounted.transport
         }
         transport?.resolve(0, .init(answer: .init(optionIds: [1]), results: .init(total: 1, options: [.init(id: 1, percent: 100)])))
-        let saved = StoryPollStore.shared.entry(shopId: "shop", poll: miniPoll(.singleChoice))
-        XCTAssertEqual(saved?.answer, .init(optionIds: [1]), "the card is gone, the answer is kept")
+        let place = StoryPollStore.Place(shopId: "shop", did: "", poll: miniPoll(.singleChoice), storyId: "5", slideId: "101")
+        XCTAssertEqual(StoryPollStore.shared.sentEntry(place)?.answer, .init(optionIds: [1]), "the card is gone, the answer is kept")
 
-        // The feed still says "not answered" (it is not reloaded): the store wins.
-        let again = mount(miniPoll(.singleChoice))
+        // What the web's cached feed element becomes after a send: it is not reloaded.
+        let again = mount(miniPoll(.singleChoice, answer: .init(optionIds: [2])))
         XCTAssertEqual(again.card.controller.mode, .answered)
         XCTAssertEqual(selectedRows(again.card), [1])
         XCTAssertEqual(again.card.optionRows[0].percentLabel.text, "100%")
 
-        XCTAssertNil(StoryPollStore.shared.entry(shopId: "other", poll: miniPoll(.singleChoice)), "per shop")
-        XCTAssertNil(StoryPollStore.shared.entry(shopId: "shop", poll: scalePoll(.nps)), "per type and code")
+        XCTAssertEqual(mount(miniPoll(.singleChoice), slideId: "102").card.controller.mode, .form, "per slide, like the web's key")
+        XCTAssertEqual(mount(miniPoll(.singleChoice), storyId: "6").card.controller.mode, .form, "per story")
+        XCTAssertEqual(mount(miniPoll(.singleChoice), did: "other").card.controller.mode, .form, "per device")
+        XCTAssertEqual(mount(scalePoll(.nps)).card.controller.mode, .form, "per type and code")
+    }
+}
+
+// MARK: - Saved on the device
+
+extension PersonalizationStoriesPollsTests {
+
+    private func suite() -> UserDefaults {
+        let name = "polls-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name) ?? .standard
+        addTeardownBlock { UserDefaults.standard.removePersistentDomain(forName: name) }
+        return defaults
+    }
+
+    private var savedKey: String { "stories_poll_d1_mini_poll_gift_recipient_5_101" }
+
+    /// After a send the answer is saved under `stories_poll_{did}_{type}_{code}_{story}_{slide}` with
+    /// its results and the time, like the web's `writePollAnswer`.
+    func testASentAnswerIsSavedOnTheDeviceUnderTheWebsKey() throws {
+        let defaults = suite()
+        let clock = Date(timeIntervalSince1970: 1_700_000_000)
+        StoryPollStore.shared.now = { clock }
+        defer { StoryPollStore.shared.now = Date.init }
+        let (card, transport, _) = mount(miniPoll(.singleChoice), did: "d1", defaults: defaults)
+        card.optionRows[1].sendActions(for: .touchUpInside)
+        transport.resolve(0, .init(answer: .init(optionIds: [2]), results: .init(total: 3, options: [.init(id: 2, percent: 100)])))
+
+        let raw = try XCTUnwrap(defaults.string(forKey: savedKey))
+        let record = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any])
+        XCTAssertEqual(record["saved_at"] as? Double, 1_700_000_000_000)
+        XCTAssertEqual((record["answer"] as? [String: Any])?["option_ids"] as? [Int], [2])
+        XCTAssertEqual(((record["results"] as? [String: Any])?["options"] as? [[String: Any]])?.first?["percent"] as? Double, 100)
+    }
+
+    /// The feed's answer wins over the saved one; the saved one wins over nothing.
+    func testTheFeedWinsOverTheSavedAnswerAndTheSavedOneOverNothing() throws {
+        let defaults = suite()
+        let now = Date().timeIntervalSince1970 * 1000
+        defaults.set(#"{"answer":{"option_ids":[3]},"results":{"total":2,"options":[{"id":3,"percent":50}]},"saved_at":\#(now)}"#, forKey: savedKey)
+
+        let saved = mount(miniPoll(.singleChoice), did: "d1", defaults: defaults).card
+        XCTAssertEqual(saved.controller.mode, .answered, "the feed knows no answer of an anonymous user — the saved one")
+        XCTAssertEqual(selectedRows(saved), [3])
+        XCTAssertEqual(saved.controller.results?.percent(of: 3), 50)
+
+        let feed = mount(miniPoll(.singleChoice, answer: .init(optionIds: [1]), results: answered.results), did: "d1", defaults: defaults).card
+        XCTAssertEqual(selectedRows(feed), [1], "the feed's answer wins")
+        XCTAssertEqual(feed.controller.results, answered.results)
+
+        XCTAssertEqual(mount(miniPoll(.singleChoice), did: "", defaults: defaults).card.controller.mode, .form,
+                       "without a did nothing is read: the answer of another user must not show")
+    }
+
+    func testAnExpiredOrUndatedRecordIsDroppedOnRead() {
+        let defaults = suite()
+        let now = Date().timeIntervalSince1970 * 1000
+        let day = 24 * 60 * 60 * 1000.0
+        defaults.set(#"{"answer":{"option_ids":[3]},"saved_at":\#(now - 91 * day)}"#, forKey: savedKey)
+        XCTAssertEqual(mount(miniPoll(.singleChoice), did: "d1", defaults: defaults).card.controller.mode, .form, "older than 90 days")
+        XCTAssertNil(defaults.string(forKey: savedKey), "and deleted")
+
+        defaults.set(#"{"answer":{"option_ids":[3]}}"#, forKey: savedKey)
+        XCTAssertEqual(mount(miniPoll(.singleChoice), did: "d1", defaults: defaults).card.controller.mode, .form, "no date")
+        XCTAssertNil(defaults.string(forKey: savedKey))
+
+        defaults.set(#"{"answer":{"option_ids":[3]},"saved_at":\#(now - 89 * day)}"#, forKey: savedKey)
+        XCTAssertEqual(mount(miniPoll(.singleChoice), did: "d1", defaults: defaults).card.controller.mode, .answered, "89 days — still kept")
+    }
+
+    func testNothingIsSavedWithoutADid() {
+        let defaults = suite()
+        let (card, transport, _) = mount(miniPoll(.singleChoice), did: "", defaults: defaults)
+        card.optionRows[0].sendActions(for: .touchUpInside)
+        transport.resolve(0)
+        XCTAssertTrue(defaults.dictionaryRepresentation().keys.allSatisfy { !$0.hasPrefix("stories_poll") })
+    }
+}
+
+// MARK: - The question of the band
+
+extension PersonalizationStoriesPollsTests {
+
+    private var followupBands: [Poll.Band] {
+        [.init(from: 0, to: 6, question: " Что улучшить? ", success: "Спасибо, мы станем лучше"),
+         .init(from: 7, to: 8, question: "  ", success: "Спасибо!"),
+         .init(from: 9, to: 10, success: "Спасибо, рады стараться!")]
+    }
+
+    /// The rate of a band with a question: the question, a field for up to 5000 characters and a
+    /// button; the comment goes with the same rate, then the band's success.
+    func testTheQuestionOfTheBandAsksForACommentWithTheSameRate() throws {
+        let (card, transport, _) = mount(scalePoll(.nps, bands: followupBands), language: .ru)
+        card.cells[3].sendActions(for: .touchUpInside)
+        transport.resolve(0)
+        XCTAssertEqual(card.controller.commentQuestion, "Что улучшить?", "trimmed")
+        XCTAssertEqual(card.followupLabel?.text, "Что улучшить?")
+        let input = try XCTUnwrap(card.input)
+        XCTAssertNil(input.placeholder, "no placeholder")
+        XCTAssertEqual(card.counter?.text, "0/5000")
+        let submit = try XCTUnwrap(card.submitButton)
+        XCTAssertEqual(submit.title.text, "Отправить", "the button's own localized label")
+        XCTAssertFalse(submit.isEnabled)
+        XCTAssertNil(card.thanksLabel, "the success comes after the comment")
+
+        input.text = "  Быстрее  "
+        card.textViewDidChange(input)
+        XCTAssertEqual(card.counter?.text, "11/5000")
+        XCTAssertTrue(submit.isEnabled)
+        submit.sendActions(for: .touchUpInside)
+        XCTAssertEqual(transport.calls.count, 2)
+        XCTAssertEqual(transport.json(1),
+                       #"{"category":"delivery","channel":"stories","comment":"Быстрее","rate":3,"source_id":"5","source_item_id":"101","source_type":"stories"}"#)
+        transport.resolve(1)
+        XCTAssertEqual(card.controller.answer, .init(rate: 3, comment: "Быстрее"))
+        XCTAssertNil(card.input)
+        XCTAssertEqual(card.thanksLabel?.text, "Спасибо, мы станем лучше")
+    }
+
+    func testABandWithoutAQuestionShowsTheSuccessAtOnce() {
+        let (card, transport, _) = mount(scalePoll(.nps, bands: followupBands))
+        card.cells[7].sendActions(for: .touchUpInside)
+        transport.resolve(0)
+        XCTAssertNil(card.controller.commentQuestion, "a question of spaces is none")
+        XCTAssertNil(card.input)
+        XCTAssertEqual(card.thanksLabel?.text, "Спасибо!")
+        XCTAssertEqual(transport.json(0), #"{"category":"delivery","channel":"stories","rate":7,"source_id":"5","source_item_id":"101","source_type":"stories"}"#)
+    }
+
+    func testTheCommentIsLimitedTo5000AndAFailedSendKeepsIt() throws {
+        let (card, transport, _) = mount(scalePoll(.csat, bands: [.init(from: 1, to: 5, question: "Почему?", success: "Ок")], answer: .init(rate: 2)))
+        let input = try XCTUnwrap(card.input, "a rate without a comment asks again")
+        input.text = String(repeating: "я", count: 5005)
+        card.textViewDidChange(input)
+        XCTAssertEqual(input.text.count, 5000)
+        XCTAssertEqual(card.counter?.text, "5000/5000")
+        card.submitButton?.sendActions(for: .touchUpInside)
+        XCTAssertEqual(transport.calls[0].body["rate"] as? Int, 2)
+        XCTAssertEqual(transport.calls[0].body["campaign"] as? String, "delivery")
+        transport.reject(0)
+        XCTAssertFalse(card.errorLabel?.isHidden ?? true)
+        XCTAssertEqual(card.controller.fieldText.count, 5000, "the comment stays for a retry")
+        XCTAssertEqual(card.submitButton?.isEnabled, true)
+    }
+
+    /// Leaving without a comment is allowed: the next show asks again; a comment of the feed ends it.
+    func testTheQuestionComesBackUntilThereIsAComment() {
+        let bands = followupBands
+        var transport: FakePollTransport?
+        autoreleasepool {
+            let mounted = mount(scalePoll(.nps, bands: bands))
+            mounted.card.cells[2].sendActions(for: .touchUpInside)
+            transport = mounted.transport
+        }
+        transport?.resolve(0)
+        let again = mount(scalePoll(.nps, bands: bands)).card
+        XCTAssertEqual(again.controller.answer, .init(rate: 2))
+        XCTAssertNotNil(again.input, "the comment is missing — the question again")
+
+        StoryPollStore.shared.removeAll()
+        let commented = mount(scalePoll(.nps, bands: bands, answer: .init(rate: 2, comment: "Долго"))).card
+        XCTAssertNil(commented.input)
+        XCTAssertEqual(commented.thanksLabel?.text, "Спасибо, мы станем лучше")
+    }
+
+    /// Answering the scale again sends the new rate without a comment, and the question is back.
+    func testAReanswerSendsTheRateWithoutTheCommentAndAsksAgain() throws {
+        let (card, transport, _) = mount(scalePoll(.nps, bands: followupBands, allowReanswer: true, answer: .init(rate: 9, comment: "Всё отлично")))
+        XCTAssertNil(card.input)
+        try XCTUnwrap(card.reanswerLink).sendActions(for: .touchUpInside)
+        card.cells[1].sendActions(for: .touchUpInside)
+        XCTAssertNil(transport.calls[0].body["comment"])
+        transport.resolve(0)
+        XCTAssertEqual(card.controller.answer, .init(rate: 1))
+        XCTAssertNotNil(card.input)
+        XCTAssertNotNil(card.reanswerLink, "re-answer stays under the question")
+    }
+
+    func testTheSlideIsHeldWhileTheCommentIsTypedOrSent() throws {
+        let (card, transport, events) = mount(scalePoll(.nps, bands: followupBands, answer: .init(rate: 1)))
+        let window = try hosted(card)
+        defer {
+            card.dismissKeyboard()
+            window.isHidden = true
+        }
+        events.holds = []
+        let input = try XCTUnwrap(card.input)
+        XCTAssertTrue(input.becomeFirstResponder())
+        XCTAssertEqual(events.holds, [true])
+        input.text = "Ок"
+        card.textViewDidChange(input)
+        card.submitButton?.sendActions(for: .touchUpInside)
+        XCTAssertEqual(events.holds, [true], "the send takes over the hold of the focus")
+        transport.resolve(0)
+        XCTAssertEqual(events.holds, [true, false])
+    }
+
+    /// No story id — no source; an empty slide id is left out.
+    func testTheSourceNeedsAStory() {
+        XCTAssertTrue(StoryPollController.source(storyId: "", slideId: "1").isEmpty)
+        XCTAssertEqual(StoryPollController.source(storyId: "5", slideId: "").count, 2)
+        let (card, transport, _) = mount(miniPoll(.singleChoice), storyId: "", slideId: "")
+        card.optionRows[0].sendActions(for: .touchUpInside)
+        XCTAssertEqual(transport.json(0), #"{"option_ids":[1]}"#)
     }
 }
 
@@ -878,7 +1091,8 @@ extension PersonalizationStoriesPollsTests {
 
         transport.resolve(0)
         XCTAssertFalse(viewer.state.pauses.contains(.poll), "the late answer does not hold the next slide")
-        XCTAssertNotNil(StoryPollStore.shared.entry(shopId: "shop", poll: miniPoll(.singleChoice)), "it is stored")
+        XCTAssertNotNil(StoryPollStore.shared.sentEntry(.init(shopId: "shop", did: "", poll: miniPoll(.singleChoice), storyId: "5", slideId: "1")),
+                        "it is stored")
 
         viewer.apply(.showSlide(0))
         let back = try XCTUnwrap(page.slideView?.pollView)
@@ -915,6 +1129,7 @@ extension PersonalizationStoriesPollsTests {
         let v3 = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "b", v3Domain: "app.test").makeViewer(stories: [story], startIndex: 0)
         XCTAssertTrue(v3.pollTransport is StoriesPollsApi)
         XCTAssertEqual(v3.pollShopId, "shop")
+        XCTAssertEqual(v3.pollDeviceId(), "fake-device-id", "answers are saved under the SDK's did")
         XCTAssertNil(StoriesSession(sdk: FakeSDK(), code: "b").makeViewer(stories: [story], startIndex: 0).pollTransport, "the old API has no polls")
         let old = StoriesSession(sdk: FakeSDK(), code: "b")
         old.pollTransport = FakePollTransport()

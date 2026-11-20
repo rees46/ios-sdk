@@ -5,8 +5,12 @@ import UIKit
 // слайд показывается без опроса. Тексты — как есть, без обрезки пробелов: строка из пробелов
 // тоже текст, как в вебе. Ответы уходят на тот же хост, что и лента:
 //
-//   POST https://<host>/api/v3/polls/mini_polls/<code>/answers   {shop_id, did, sid, story_id, slide_id, option_ids | text}
-//   POST https://<host>/api/v3/polls/<nps|csat|ces>/reviews      {shop_id, did, sid, channel, category | campaign, rate}
+//   POST https://<host>/api/v3/polls/mini_polls/<code>/answers   {shop_id, did, sid, stream[, testmode], option_ids | text, source}
+//   POST https://<host>/api/v3/polls/<nps|csat|ces>/reviews      {shop_id, did, sid, stream[, testmode], channel,
+//                                                                   category | campaign, rate[, comment], source}
+//
+// Источник ответа (`source`) — `source_type: "stories"`, `source_id` (сторис) и `source_item_id`
+// (слайд), строками, как в вебе.
 
 extension PersonalizationStoryPoll {
 
@@ -56,7 +60,7 @@ extension PersonalizationStoryPoll {
             rateMax: Self.int(body["rate_max"]),
             bands: StoriesJSON.objects(body["bands"]).compactMap { band in
                 guard let from = StoriesJSON.number(band["from"]), let to = StoriesJSON.number(band["to"]) else { return nil }
-                return Band(from: from, to: to, success: Self.text(band["success"]))
+                return Band(from: from, to: to, question: Self.text(band["question"]), success: Self.text(band["success"]))
             },
             yOffset: StoriesJSON.number(json["y_offset"]).map { CGFloat($0) },
             allowReanswer: Self.flag(json["allow_reanswer"]),
@@ -116,7 +120,8 @@ extension PersonalizationStoryPoll.Answer {
             // Текст — как есть: отвечен и ответ из одних пробелов, как в вебе. Оценка — любое
             // число, и дробное: отвечено, хоть ячейки под ним и нет.
             text: object["text"] as? String,
-            rate: StoriesJSON.number(object["rate"]).flatMap { $0.isFinite ? $0 : nil }
+            rate: StoriesJSON.number(object["rate"]).flatMap { $0.isFinite ? $0 : nil },
+            comment: object["comment"] as? String
         )
     }
 }
