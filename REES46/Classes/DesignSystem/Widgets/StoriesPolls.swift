@@ -5,8 +5,12 @@ import UIKit
 // слайд показывается без опроса. Тексты — как есть, без обрезки пробелов: строка из пробелов
 // тоже текст, как в вебе. Ответы уходят на тот же хост, что и лента:
 //
-//   POST https://<host>/api/v3/polls/mini_polls/<code>/answers   {shop_id, did, sid, story_id, slide_id, option_ids | text}
-//   POST https://<host>/api/v3/polls/<nps|csat|ces>/reviews      {shop_id, did, sid, channel, category | campaign, rate}
+//   POST https://<host>/api/v3/polls/mini_polls/<code>/answers   {shop_id, did, sid, stream[, testmode], option_ids | text, source}
+//   POST https://<host>/api/v3/polls/<nps|csat|ces>/reviews      {shop_id, did, sid, stream[, testmode], channel,
+//                                                                   category | campaign, rate[, comment], source}
+//
+// Источник ответа (`source`) — `source_type: "stories"`, `source_id` (сторис) и `source_item_id`
+// (слайд), строками, как в вебе.
 
 extension PersonalizationStoryPoll {
 
@@ -56,7 +60,7 @@ extension PersonalizationStoryPoll {
             rateMax: Self.int(body["rate_max"]),
             bands: StoriesJSON.objects(body["bands"]).compactMap { band in
                 guard let from = StoriesJSON.number(band["from"]), let to = StoriesJSON.number(band["to"]) else { return nil }
-                return Band(from: from, to: to, success: Self.text(band["success"]))
+                return Band(from: from, to: to, question: Self.text(band["question"]), success: Self.text(band["success"]))
             },
             yOffset: StoriesJSON.number(json["y_offset"]).map { CGFloat($0) },
             allowReanswer: Self.flag(json["allow_reanswer"]),
@@ -116,7 +120,8 @@ extension PersonalizationStoryPoll.Answer {
             // Текст — как есть: отвечен и ответ из одних пробелов, как в вебе. Оценка — любое
             // число, и дробное: отвечено, хоть ячейки под ним и нет.
             text: object["text"] as? String,
-            rate: StoriesJSON.number(object["rate"]).flatMap { $0.isFinite ? $0 : nil }
+            rate: StoriesJSON.number(object["rate"]).flatMap { $0.isFinite ? $0 : nil },
+            comment: object["comment"] as? String
         )
     }
 }
@@ -153,12 +158,16 @@ extension StoriesApiV3 {
 
 /// Клиент опросов API v3 — транспорт опросов просмотрщика по умолчанию у виджета, `show` и
 /// `handleLink`. Тот же хост, `did` и `URLSession`, что у ленты (`StoriesApiV3.post`); к телу
-/// добавляются `shop_id`, `did` и `sid` сеанса SDK (без сеанса — пустая строка, как в вебе).
+/// добавляется личность запроса без `segment`, как в вебе: `shop_id`, `did`, `sid` сеанса SDK
+/// (без сеанса — пустая строка), `stream` и `testmode` в тестовом режиме.
 /// Ответ — на главной очереди; ошибка — в debug-лог с кодом и `message` сервера.
 struct StoriesPollsApi: PersonalizationStoryPollTransport {
 
     let api: StoriesApiV3
     let sdk: PersonalizationSDK
+    /// Опросы сторис шлют `stream` и `testmode`, как веб; отзывы опросов попапов v3 — без них, по
+    /// своему контракту.
+    var sendsStream = true
 
     func answerMiniPoll(
         code: String,
@@ -184,11 +193,6 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
         }
     }
 
-    /// `shop_id`, `did` и `sid` — все три всегда, пустые тоже.
-    static func identity(shopId: String, did: String, sid: String) -> [String: Any] {
-        ["shop_id": shopId, "did": did, "sid": sid]
-    }
-
     private func post(
         url: URL?,
         body: [String: Any],
@@ -196,10 +200,15 @@ struct StoriesPollsApi: PersonalizationStoryPollTransport {
         completion: @escaping (Result<PersonalizationStoryPoll.Reply, Error>) -> Void,
         reply: @escaping ([String: Any]) -> PersonalizationStoryPoll.Reply
     ) {
-        let sdk = self.sdk
-        let fields = { (did: String) in
+        let sdk = self.sdk, sendsStream = self.sendsStream
+        let fields = { (did: String) -> [String: Any] in
             // Built on the session queue: the session of the moment, renewed first when it ended.
-            Self.identity(shopId: sdk.shopId, did: did, sid: sdk.sessionIdForRequest()).merging(body) { _, own in own }
+            var identity = StoriesApiV3.Identity.current(sdk: sdk, did: did).fields(segment: false)
+            if !sendsStream {
+                identity["stream"] = nil
+                identity["testmode"] = nil
+            }
+            return identity.merging(body) { _, own in own }
         }
         api.post(sdk: sdk, url: url, body: fields) { data, response, error in
             let result = StoriesApiV3.response(data: data, response: response, error: error)

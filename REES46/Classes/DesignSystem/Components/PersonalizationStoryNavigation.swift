@@ -108,3 +108,64 @@ public final class PersonalizationStoryNavigation: UIView {
         onShare?()
     }
 }
+
+/// Шапка слайда — элемент `header` ленты API v3, как в вебе: иконка, заголовок и подзаголовок
+/// в одну строку; нажатие — `click` и ссылка шапки. Вид — кита: круглая иконка 32, заголовок
+/// SM/Emphasized, подзаголовок XS/Default цвета Text/Secondary; цвета — из темы слайда (на
+/// медиа светлые).
+final class PersonalizationStoryHeaderView: UIControl {
+
+    static let iconSide: CGFloat = 32
+
+    let header: PersonalizationStorySlide.Header
+    let icon = UIImageView()
+    let titleLabel = UILabel()
+    let subtitleLabel = UILabel()
+
+    init(header: PersonalizationStorySlide.Header, imageLoader: ((UIImageView, String) -> Void)?) {
+        self.header = header
+        super.init(frame: .zero)
+        icon.contentMode = .scaleAspectFill
+        icon.clipsToBounds = true
+        icon.layer.cornerRadius = Self.iconSide / 2
+        icon.backgroundColor = PersonalizationColor.neutral50
+        icon.isHidden = header.iconUrl == nil
+        PersonalizationStoryImages.load(into: icon, url: header.iconUrl, loader: imageLoader)
+        PersonalizationTypography.smEmphasized.apply(to: titleLabel, text: header.title)
+        titleLabel.textColor = PersonalizationColor.textPrimary
+        titleLabel.isHidden = header.title == nil
+        PersonalizationTypography.xsDefault.apply(to: subtitleLabel, text: header.subtitle)
+        subtitleLabel.textColor = PersonalizationColor.textSecondary
+        subtitleLabel.isHidden = header.subtitle == nil
+        for label in [titleLabel, subtitleLabel] {
+            label.numberOfLines = 1
+            label.lineBreakMode = .byTruncatingTail
+        }
+        let texts = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        texts.axis = .vertical
+        let row = UIStackView(arrangedSubviews: [icon, texts])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = PersonalizationSpacing.md  // 8
+        row.isUserInteractionEnabled = false
+        row.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(row)
+        NSLayoutConstraint.activate([
+            icon.widthAnchor.constraint(equalToConstant: Self.iconSide),
+            icon.heightAnchor.constraint(equalToConstant: Self.iconSide),
+            row.topAnchor.constraint(equalTo: topAnchor),
+            row.bottomAnchor.constraint(equalTo: bottomAnchor),
+            row.leadingAnchor.constraint(equalTo: leadingAnchor),
+            row.trailingAnchor.constraint(equalTo: trailingAnchor)
+        ])
+        isAccessibilityElement = true
+        accessibilityTraits = header.link == nil ? .staticText : .link
+        accessibilityLabel = [header.title, header.subtitle].compactMap { $0 }.joined(separator: ", ")
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    override var isHighlighted: Bool {
+        didSet { alpha = isHighlighted ? 0.6 : 1 }
+    }
+}

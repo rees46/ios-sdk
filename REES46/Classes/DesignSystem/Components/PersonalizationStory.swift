@@ -59,35 +59,22 @@ public struct PersonalizationStory {
         self.shareUrl = shareUrl
     }
 
-    /// Ссылка «Поделиться» слайда: своя ссылка слайда, без неё — кампании с id слайда в
-    /// `r46_slide`. У слайдов товарных кампаний (`39_2`) своих ссылок нет, и без id слайда
-    /// ссылка открыла бы кампанию с начала, а не с того слайда, которым поделились. Только
-    /// `http(s)`; кампания с `shareable: false`, слайд без ссылок или ссылка другой схемы —
-    /// `nil`, и кнопки на слайде нет.
+    /// Ссылка «Поделиться» слайда, как в вебе: своя ссылка слайда (`share_url`), без неё —
+    /// ссылка кампании как есть. Только `http(s)`; кампания с `shareable: false`, слайд без
+    /// ссылок или ссылка другой схемы — `nil`, и кнопки на слайде нет.
     @_spi(PersonalizationV3) public func shareUrl(of slide: PersonalizationStorySlide) -> URL? {
         guard shareable else { return nil }
         let link: String
         if let own = slide.shareUrl, !own.isEmpty {
             link = own
         } else if let campaign = shareUrl, !campaign.isEmpty {
-            link = Self.link(campaign, slideId: slide.id)
+            link = campaign
         } else {
             return nil
         }
         let lowercased = link.lowercased()
         guard lowercased.hasPrefix("http://") || lowercased.hasPrefix("https://") else { return nil }
         return URL(string: link)
-    }
-
-    /// Ссылка кампании с `r46_slide` слайда; уже есть `r46_slide` или id не годится для
-    /// ссылки — как есть. Остальной адрес не перекодируется.
-    static func link(_ campaign: String, slideId: String) -> String {
-        guard StoriesShareLink.isSlideId(slideId), var components = URLComponents(string: campaign) else { return campaign }
-        var items = components.percentEncodedQueryItems ?? []
-        guard !items.contains(where: { $0.name == StoriesShareLink.slideParameter }) else { return campaign }
-        items.append(URLQueryItem(name: StoriesShareLink.slideParameter, value: slideId))
-        components.percentEncodedQueryItems = items
-        return components.string ?? campaign
     }
 }
 
@@ -121,6 +108,23 @@ public struct PersonalizationStorySlide {
             self.title = title
             self.link = link
             self.element = element
+        }
+    }
+
+    /// Шапка слайда — элемент `header` (лента API v3): иконка, заголовок и подзаголовок;
+    /// нажатие — `click` и ссылка, как в вебе. Вид — кита.
+    @_spi(PersonalizationV3) public struct Header: Equatable {
+        public let iconUrl: String?
+        public let title: String?
+        public let subtitle: String?
+        /// Ссылка для iOS: `link_ios`, иначе `link`; без неё нажатие только шлёт `click`.
+        public let link: String?
+
+        public init(iconUrl: String? = nil, title: String? = nil, subtitle: String? = nil, link: String? = nil) {
+            self.iconUrl = iconUrl
+            self.title = title
+            self.subtitle = subtitle
+            self.link = link
         }
     }
 
@@ -354,6 +358,15 @@ public struct PersonalizationStorySlide {
     /// Опрос слайда (элемент `poll`, только API v3); рисуется и на товарном слайде.
     @_spi(PersonalizationV3) public let poll: PersonalizationStoryPoll?
 
+    /// Шапка слайда (элемент `header`, лента API v3); рисуется над содержимым слайда.
+    @_spi(PersonalizationV3) public internal(set) var header: Header?
+
+    /// Слайд ленты API v3: что на нём происходит — как в веб-SDK. Медиа — по `type`;
+    /// `background_color` красит слайд без медиа; кнопка без своей ссылки ничего не открывает;
+    /// у ролика кнопка звука — только при звуковой дорожке. Вид — кита. Ставит разбор ленты v3;
+    /// слайды старой ленты и хоста живут по прежним правилам.
+    var isV3 = false
+
     public init(
         id: String,
         kind: Kind,
@@ -406,10 +419,15 @@ public struct PersonalizationStorySlide {
     public static let defaultDuration: TimeInterval = 10
 
     /// Медиа слайда. Видео — у слайда `video` с адресом; картинка — у любого другого слайда
-    /// с картинкой фона. Без адреса медиа нет.
+    /// с картинкой фона, а у слайда v3 — только у `image`: медиа решает `type`, как в вебе.
+    /// Без адреса медиа нет.
     public var media: Media? {
         guard let url = background?.trimmingCharacters(in: .whitespacesAndNewlines), !url.isEmpty else { return nil }
-        return kind == .video ? .video(url) : .image(url)
+        switch kind {
+        case .video: return .video(url)
+        case .image: return .image(url)
+        case .content: return isV3 ? nil : .image(url)
+        }
     }
 
     /// Медиа-слайд: фото или видео, вписанные в экран.
@@ -447,14 +465,25 @@ public struct PersonalizationStorySlide {
         backgroundColor ?? .black
     }
 
-    /// Тема слайда: медиа — тёмная тема кита (светлая шапка и текст поверх фото),
-    /// остальные — тема приложения на Background/Card.
-    public var interfaceStyle: UIUserInterfaceStyle {
-        isMedia ? .dark : .unspecified
+    /// Фон слайда: у медиа — поля вокруг кадра; без медиа — Background/Card кита, а у слайда
+    /// v3 — `background_color`, если он задан, как в вебе.
+    var fillColor: UIColor {
+        if isMedia { return letterboxColor }
+        return (isV3 ? backgroundColor : nil) ?? PersonalizationColor.backgroundCard
     }
 
-    /// Ссылка кнопки товарного слайда: своя, без неё — ссылка товара.
+    /// Тема слайда: медиа — тёмная тема кита (светлая шапка и текст поверх фото),
+    /// остальные — тема приложения на Background/Card; слайд v3 со своим `background_color` —
+    /// тема под этот цвет (на тёмном — тёмная), чтобы шапка и текст кита читались.
+    public var interfaceStyle: UIUserInterfaceStyle {
+        if isMedia { return .dark }
+        if isV3, let backgroundColor { return PersonalizationStoryColors.isDark(backgroundColor) ? .dark : .light }
+        return .unspecified
+    }
+
+    /// Ссылка кнопки: своя; у товарного слайда без неё — ссылка товара, а у слайда v3 кнопка
+    /// без ссылки ничего не открывает, как в вебе.
     public func link(of button: Button) -> String? {
-        button.link ?? offer?.link
+        isV3 ? button.link : button.link ?? offer?.link
     }
 }

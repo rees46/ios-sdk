@@ -204,16 +204,21 @@ final class StoriesPollsApiTests: XCTestCase {
         XCTAssertEqual(PersonalizationStoryPoll.scaleRange(.csat, min: 2, max: nil), [2, 3, 4, 5])
     }
 
-    func testScaleColors() {
-        let nps = (0...10).map { PersonalizationStoryPoll.scaleColor(.nps, value: $0, min: 0, max: 10) }
-        XCTAssertEqual(nps, ["#FCA5A5", "#FCA5A5", "#FCA5A5", "#FDBA74", "#FDBA74", "#FDBA74", "#FCD34D",
-                             "#FDE68A", "#FDE68A", "#86EFAC", "#86EFAC"])
-        XCTAssertEqual((1...5).map { PersonalizationStoryPoll.scaleColor(.csat, value: $0, min: 1, max: 5) },
-                       ["#FCA5A5", "#FCA5A5", "#FDE68A", "#86EFAC", "#86EFAC"], "by thirds: 4 of 1...5 is 0.75")
-        XCTAssertEqual((1...7).map { PersonalizationStoryPoll.scaleColor(.ces, value: $0, min: 1, max: 7) },
-                       ["#FCA5A5", "#FCA5A5", "#FCA5A5", "#FDE68A", "#FDE68A", "#86EFAC", "#86EFAC"])
-        XCTAssertEqual(PersonalizationStoryPoll.scaleColor(.nps, value: 3, min: 1, max: 5), "#FDE68A", "NPS of another range — by thirds")
-        XCTAssertEqual(PersonalizationStoryPoll.scaleColor(.csat, value: 3, min: 3, max: 3), "#86EFAC", "one value")
+    /// The tones of NPS follow the web's `scaleColor`: detractors 0–6, passives 7–8, promoters 9–10.
+    func testScaleTones() {
+        let nps = (0...10).map { PersonalizationStoryPoll.scaleTone(.nps, value: $0, min: 0, max: 10) }
+        XCTAssertEqual(nps, Array(repeating: .negative, count: 7) + [.neutral, .neutral, .positive, .positive])
+        XCTAssertEqual(PersonalizationStoryPoll.scaleTone(.nps, value: 3, min: 1, max: 5), .neutral, "NPS of another range — by thirds")
+    }
+
+    func testBandsCarryTheirQuestion() throws {
+        let poll = try XCTUnwrap(PersonalizationStoryPoll(json: ["poll_type": "nps", "poll": ["code": "x", "bands": [
+            ["from": 0, "to": 6, "question": " Что не так? ", "success": "Жаль"], ["from": 7, "to": 10, "question": "  ", "success": "Ура"]
+        ]] as [String: Any]]))
+        XCTAssertEqual(poll.bandQuestion(rate: 3), "Что не так?", "trimmed, like the web's bandQuestion")
+        XCTAssertNil(poll.bandQuestion(rate: 8), "spaces are no question")
+        XCTAssertNil(poll.bandQuestion(rate: nil))
+        XCTAssertEqual(PersonalizationStoryPoll.Answer(json: ["rate": 3, "comment": "Долго"]), .init(rate: 3, comment: "Долго"))
     }
 
     func testBandTextFindsTheBandOfTheRate() {
@@ -324,7 +329,18 @@ final class StoriesPollsApiTests: XCTestCase {
         XCTAssertFalse(request.httpShouldHandleCookies, "no cookies, like the web")
         let json = try JSONSerialization.data(withJSONObject: body(request), options: .sortedKeys)
         XCTAssertEqual(String(data: json, encoding: .utf8),
-                       #"{"did":"fake-device-id","option_ids":[2],"shop_id":"shop","sid":"fake-seance","slide_id":"101","story_id":5}"#)
+                       #"{"did":"fake-device-id","option_ids":[2],"shop_id":"shop","sid":"fake-seance","slide_id":"101","story_id":5,"stream":"ios"}"#,
+                       "the identity of the web's PollsApi: no segment, the stream of the SDK")
+    }
+
+    func testTheTestModeOfPopupsV3GoesWithAnswers() {
+        let sdk = FakeSDK(shopId: "shop")
+        sdk.popups.testMode = true
+        defer { sdk.popups.testMode = false }
+        let requests = capture { _ in (Data(#"{"status":"success","payload":{}}"#.utf8), 200, nil) }
+        _ = review(.nps, sdk: sdk, body: ["rate": 9])
+        XCTAssertEqual(body(requests().first)["testmode"] as? Bool, true)
+        XCTAssertNil(body(requests().first)["segment"])
     }
 
     func testTheCodeIsOnePathSegment() {

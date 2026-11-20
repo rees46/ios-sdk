@@ -269,7 +269,7 @@ final class PopupV3SDKActions: PopupV3Actions {
 
     func review(kind: PersonalizationStoryPoll.Scale, body: [String: Any], completion: @escaping (Bool) -> Void) {
         guard let sdk else { return completion(false) }
-        StoriesPollsApi(api: StoriesApiV3(domain: appHost), sdk: sdk).review(kind: kind, body: body) { result in
+        StoriesPollsApi(api: StoriesApiV3(domain: appHost), sdk: sdk, sendsStream: false).review(kind: kind, body: body) { result in
             if case .failure(let error) = result { PopupsV3Log.log("\(kind.rawValue) review failed: \(SdkLogger.errorKind(error))") }
             completion((try? result.get()) != nil)
         }
