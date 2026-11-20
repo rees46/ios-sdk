@@ -139,11 +139,15 @@ public final class PersonalizationStoriesViewController: UIViewController {
 
     // MARK: - События
 
-    /// Слайд стал текущим на остановившейся странице — событие `view` для трекинга.
+    /// Слайд показан на остановившейся странице — событие `view` для трекинга: на каждый показ,
+    /// и при возврате, и при повторе первого слайда с начала.
     public var onSlideView: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
 
     /// Нажата кнопка слайда.
     public var onButtonTap: ((PersonalizationStory, PersonalizationStorySlide, PersonalizationStorySlide.Button) -> Void)?
+
+    /// Нажата шапка слайда (элемент `header`, API v3).
+    @_spi(PersonalizationV3) public var onHeaderTap: ((PersonalizationStory, PersonalizationStorySlide, PersonalizationStorySlide.Header) -> Void)?
 
     /// Нажат товар: кнопка товарного слайда без своих кнопок, карточка карусели. Картинка
     /// товара не нажимается — касание по ней листает слайд.
@@ -182,6 +186,13 @@ public final class PersonalizationStoriesViewController: UIViewController {
 
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
+
+    /// Из сторис ушли вперёд: досмотрели последний слайд (`throughEnd`) — к следующей сторис или
+    /// закрытию — или свайпнули к следующей. Лента v3 по нему считает сторис просмотренной.
+    var onStoryLeftForward: ((PersonalizationStory, _ throughEnd: Bool) -> Void)?
+
+    /// Выбор звука помнится на устройстве, как в вебе (лента v3); иначе — до конца процесса.
+    var remembersMute = false
 
     /// Видео сейчас без звука: так выбрал пользователь (выбор общий на весь запуск) или звук
     /// забрала система — выдернули наушники, прервал звонок.
@@ -235,6 +246,8 @@ extension PersonalizationStoriesViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
+        // Лента v3: звук — как пользователь выбрал на этом устройстве, до первого ролика.
+        if remembersMute { PersonalizationStoryAudio.shared.restoreRemembered() }
 
         pager.dataSource = self
         pager.delegate = self
@@ -263,7 +276,7 @@ extension PersonalizationStoriesViewController {
         }
         if !hasAppeared {
             hasAppeared = true
-            PersonalizationStoryAudio.shared.begin()
+            PersonalizationStoryAudio.shared.begin(remembering: remembersMute)
             startClock()
             if let page = pager.viewControllers?.first as? PersonalizationStoryPageViewController {
                 settle(on: page)
@@ -378,7 +391,7 @@ extension PersonalizationStoriesViewController {
         view.endEditing(true)
         stopClock()
         activePage?.slideView?.pause()
-        if hasAppeared { PersonalizationStoryAudio.shared.end() }
+        if hasAppeared { PersonalizationStoryAudio.shared.end(remembering: remembersMute) }
         onClose?()
     }
 
@@ -452,12 +465,17 @@ extension PersonalizationStoriesViewController {
             state.enter(slide: index, mediaReady: page.slideView?.isMediaReady ?? true)
             slideBecameCurrent()
         case .showStory(let index, let forward):
+            if forward { onStoryLeftForward?(page.story, true) }
             move(to: index, forward: forward)
         case .restartSlide:
             state.restart()
             page.slideView?.restart()
             page.navigation.progress.progress = 0
+            // Слайд показан снова — снова `view`: повторы склеивает сервер, как у веба.
+            if let slide = page.currentSlide { onSlideView?(page.story, slide) }
         case .close:
+            // Досмотрен последний слайд последней сторис.
+            onStoryLeftForward?(page.story, true)
             close()
         case .closeSheet:
             page.slideView?.collapseProducts()
@@ -647,6 +665,11 @@ extension PersonalizationStoriesViewController {
         onProductTap?(story, slide, offer)
     }
 
+    func headerTapped(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide, _ header: PersonalizationStorySlide.Header) {
+        guard !state.isClosing else { return }
+        onHeaderTap?(story, slide, header)
+    }
+
     func promoCopied(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide, _ code: String) {
         guard !state.isClosing else { return }
         onPromoCopied?(story, slide, code)
@@ -804,6 +827,10 @@ extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, 
 
     public func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
         if completed, let page = pageViewController.viewControllers?.first as? PersonalizationStoryPageViewController {
+            if let previous = previousViewControllers.first as? PersonalizationStoryPageViewController,
+               previous.storyIndex < page.storyIndex, !state.isClosing {
+                onStoryLeftForward?(previous.story, false)
+            }
             settle(on: page)
         }
         setPaused(.drag, false)
@@ -975,6 +1002,7 @@ extension PersonalizationStoryPageViewController {
         let story = self.story
         next.onButton = { [weak self] button in self?.viewer?.buttonTapped(story, slide, button) }
         next.onProduct = { [weak self] offer in self?.viewer?.productTapped(story, slide, offer) }
+        next.onHeader = { [weak self] header in self?.viewer?.headerTapped(story, slide, header) }
         next.onPromoCopied = { [weak self] code in self?.viewer?.promoCopied(story, slide, code) }
         next.onProductsToggle = { [weak self] expanded in
             guard let self else { return }

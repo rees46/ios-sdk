@@ -59,14 +59,15 @@ extension PersonalizationStory {
 
     /// Сторис блока. Сторис без слайдов показывать нечем — они отбрасываются. Повтор id тоже:
     /// сервер иногда отдаёт одну сторис дважды; остаётся первая, иначе просмотренность склеивается.
-    static func list(json: [String: Any]) -> [PersonalizationStory] {
+    /// `v3` — лента API v3: слайды живут по правилам веба (`PersonalizationStorySlide.isV3`).
+    static func list(json: [String: Any], v3: Bool = false) -> [PersonalizationStory] {
         var ids = Set<String>()
         return StoriesJSON.objects(json["stories"])
-            .compactMap { PersonalizationStory(json: $0) }
+            .compactMap { PersonalizationStory(json: $0, v3: v3) }
             .filter { !$0.slides.isEmpty && ids.insert($0.id).inserted }
     }
 
-    init?(json: [String: Any]) {
+    init?(json: [String: Any], v3: Bool = false) {
         guard let id = StoriesJSON.string(json["id"]) else { return nil }
         let start = StoriesJSON.number(json["start_position"]).map { Int($0) } ?? 0
         self.init(
@@ -76,7 +77,7 @@ extension PersonalizationStory {
             pinned: StoriesJSON.bool(json["pinned"]) ?? false,
             viewed: StoriesJSON.bool(json["viewed"]) ?? false,
             startPosition: start,
-            slides: StoriesJSON.objects(json["slides"]).compactMap { PersonalizationStorySlide(json: $0) },
+            slides: StoriesJSON.objects(json["slides"]).compactMap { PersonalizationStorySlide(json: $0, v3: v3) },
             shareable: StoriesJSON.bool(json["shareable"]) ?? true,
             shareUrl: StoriesJSON.string(json["share_url"])
         )
@@ -85,7 +86,7 @@ extension PersonalizationStory {
 
 extension PersonalizationStorySlide {
 
-    init?(json: [String: Any]) {
+    init?(json: [String: Any], v3: Bool = false) {
         guard let id = StoriesJSON.string(json["id"]) else { return nil }
         let elements = StoriesJSON.objects(json["elements"])
         func of(_ type: String) -> [[String: Any]] {
@@ -93,7 +94,8 @@ extension PersonalizationStorySlide {
         }
         // Кнопка товарного слайда несёт товар слайда (`item`), если своего у неё нет: делегат
         // получает элемент кнопки, и хост открывает товар по `productId`, а не разбирает ссылку.
-        let item = of("product").lazy.compactMap { StoriesJSON.object($0["item"]) }.first
+        // У слайда v3 — нет: кнопка без ссылки ничего не открывает, как в вебе.
+        let item = v3 ? nil : of("product").lazy.compactMap { StoriesJSON.object($0["item"]) }.first
         let buttons = of("button").map { button -> [String: Any] in
             guard let item, button["item"] == nil else { return button }
             return button.merging(["item": item]) { own, _ in own }
@@ -108,10 +110,13 @@ extension PersonalizationStorySlide {
             buttons: buttons.compactMap { Button(json: $0) },
             offer: of("product").lazy.compactMap { Offer(element: $0) }.first,
             products: of("products").lazy.compactMap { Products(json: $0) }.first,
-            textBlocks: of("text_block").compactMap { TextBlock(json: $0) },
+            textBlocks: of("text_block").compactMap { TextBlock(json: $0, v3: v3) },
             shareUrl: StoriesJSON.string(json["share_url"]),
             poll: of("poll").lazy.compactMap { PersonalizationStoryPoll(json: $0) }.first
         )
+        isV3 = v3
+        // Шапка слайда есть только у ленты v3: старая лента её не рисует.
+        if v3 { header = of("header").lazy.compactMap { Header(json: $0) }.first }
     }
 
     /// Тип слайда API: `image`, `video`, всё прочее (`""`) — слайд без медиа.
@@ -121,6 +126,23 @@ extension PersonalizationStorySlide {
         case "video": return .video
         default: return .content
         }
+    }
+}
+
+extension PersonalizationStorySlide.Header {
+
+    /// Шапка без иконки, заголовка и подзаголовка не рисуется. Ссылка — `link_ios`, иначе `link`.
+    init?(json: [String: Any]) {
+        let icon = StoriesJSON.string(json["icon"])
+        let title = StoriesJSON.string(json["title"])
+        let subtitle = StoriesJSON.string(json["subtitle"])
+        guard icon != nil || title != nil || subtitle != nil else { return nil }
+        self.init(
+            iconUrl: icon,
+            title: title,
+            subtitle: subtitle,
+            link: StoriesJSON.string(json["link_ios"]) ?? StoriesJSON.string(json["link"])
+        )
     }
 }
 
@@ -217,18 +239,32 @@ extension PersonalizationStorySlide.TextBlock {
 
     /// Пустой блок пропускается. Кегль по умолчанию — Small; интерлиньяж в админке —
     /// множитель кегля, без него — интерлиньяж пресета для этого кегля.
-    init?(json: [String: Any]) {
+    ///
+    /// Блок ленты v3 — по одному правилу на всех платформах: кегль по умолчанию — основной текст
+    /// кита (Base/Default 16/24), жирность — `bold` (старое `text_bold` тоже), курсив — `italic`
+    /// (и `text_italic`), гарнитура `sans-serif`, `serif`, `monospace` (и `monospaced`).
+    init?(json: [String: Any], v3: Bool = false) {
         guard let text = StoriesJSON.string(json["text_input"]) else { return nil }
-        let size = CGFloat(StoriesJSON.number(json["font_size"]) ?? Double(PersonalizationStoryTextBlock.Style.small.size))
+        let fontSize = StoriesJSON.number(json["font_size"]).map { CGFloat($0) }
+        let body = PersonalizationTypography.baseDefault
+        let size = fontSize ?? (v3 ? body.size : PersonalizationStoryTextBlock.Style.small.size)
         let spacing = CGFloat(StoriesJSON.number(json["text_line_spacing"]) ?? 0)
-        let lineHeight = spacing > 0
-            ? (size * spacing).rounded()
-            : PersonalizationStoryTextBlock.Style.presetLineHeight(for: size)
+        let lineHeight: CGFloat
+        if spacing > 0 {
+            lineHeight = (size * spacing).rounded()
+        } else if v3, fontSize == nil {
+            lineHeight = body.lineHeight
+        } else {
+            lineHeight = PersonalizationStoryTextBlock.Style.presetLineHeight(for: size)
+        }
+        let bold = v3
+            ? StoriesJSON.bool(json["bold"]) ?? StoriesJSON.bool(json["text_bold"])
+            : StoriesJSON.bool(json["text_bold"]) ?? StoriesJSON.bool(json["bold"])
         self.init(
             text: text,
             style: PersonalizationStoryTextBlock.Style(size: size, lineHeight: lineHeight),
-            fontFamily: Self.family(StoriesJSON.string(json["font_type"])),
-            bold: StoriesJSON.bool(json["text_bold"]) ?? StoriesJSON.bool(json["bold"]) ?? false,
+            fontFamily: Self.family(StoriesJSON.string(json["font_type"]), v3: v3),
+            bold: bold ?? false,
             italic: StoriesJSON.bool(json["italic"]) ?? StoriesJSON.bool(json["text_italic"]) ?? false,
             alignment: Self.alignment(StoriesJSON.string(json["text_align"])),
             textColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["text_color"])),
@@ -248,9 +284,11 @@ extension PersonalizationStorySlide.TextBlock {
         return base.withAlphaComponent(PersonalizationStoryColors.opacity(opacity) ?? 1)
     }
 
-    private static func family(_ type: String?) -> PersonalizationStoryTextBlock.FontFamily {
+    /// Гарнитура: `sans-serif`, `serif`, `monospaced`; у блока v3 и `monospace`, как в вебе.
+    private static func family(_ type: String?, v3: Bool) -> PersonalizationStoryTextBlock.FontFamily {
         switch type {
         case "monospaced": return .monospaced
+        case "monospace" where v3: return .monospaced
         case "serif": return .serif
         case "sans-serif": return .sansSerif
         default: return .default
@@ -342,6 +380,53 @@ struct StoriesSeenState {
     }
 }
 
+/// Сторис ленты API v3 за время жизни загруженной ленты — как веб ведёт свою ленту в памяти:
+/// сторис открывается на `start_position` ленты (продолжение считает сервер), кольцо обложки —
+/// по `viewed` ленты. Сторис, из которой ушли вперёд — досмотрели последний слайд или свайпнули
+/// к следующей, — до перезагрузки ленты считается просмотренной; открывается снова со слайда,
+/// на котором из неё ушли, а досмотренная — с начала. На устройство ничего не пишется.
+final class StoriesFeedProgress {
+
+    private var viewed: Set<String> = []
+    private var positions: [String: Int] = [:]
+
+    /// С какого слайда открыть сторис: где из неё ушли, иначе `start_position` ленты.
+    func startSlide(_ story: PersonalizationStory) -> Int {
+        positions[story.id] ?? story.startPosition
+    }
+
+    /// Слайд показан.
+    func shown(_ slide: PersonalizationStorySlide, of story: PersonalizationStory) {
+        guard let index = story.slides.firstIndex(where: { $0.id == slide.id }) else { return }
+        positions[story.id] = index
+    }
+
+    /// Из сторис ушли вперёд: она просмотрена; досмотренная (`throughEnd`) откроется с начала.
+    func leftForward(_ story: PersonalizationStory, throughEnd: Bool) {
+        viewed.insert(story.id)
+        if throughEnd { positions[story.id] = 0 }
+    }
+
+    func isViewed(_ story: PersonalizationStory) -> Bool {
+        story.viewed || viewed.contains(story.id)
+    }
+
+    /// Обложка ленты: просмотренная — сплошное кольцо, остальные — сегменты без подсветки;
+    /// закреплённая — всегда закреплённая.
+    func barItem(_ story: PersonalizationStory) -> PersonalizationStoriesBar.Item {
+        let viewed = isViewed(story)
+        let state: PersonalizationStoryCover.State = story.pinned ? .pinned : (viewed ? .viewed : .default)
+        return PersonalizationStoriesBar.Item(
+            id: story.id,
+            title: story.name,
+            imageUrl: story.avatarUrl,
+            state: state,
+            segments: viewed ? 0 : story.slides.count,
+            seen: []
+        )
+    }
+}
+
 // MARK: - Загрузка блока
 
 /// Блок сторис с сервера: тот же запрос, что у старых сторис (`stories/{code}`), но без их
@@ -379,8 +464,9 @@ enum StoriesBlockLoader {
 /// не трекаются. Источник `stories` для атрибуции ставит сам трекинг SDK.
 ///
 /// С `v3Domain` события уходят в API v3 (`…/events`), и для виртуальных слайдов товарных
-/// кампаний тоже, как у веба; к `view` и `click` добавляются `share` и `shared_open`.
-/// Источник для атрибуции на `view` и `click` ставится так же, как в старом трекинге.
+/// кампаний тоже, как у веба; к `view` и `click` добавляются `share` и `shared_open`, а
+/// копирование промокода `click` не шлёт. Источник для атрибуции на `view` и `click` ставится
+/// так же, как в старом трекинге.
 ///
 /// Ссылки — как у старых сторис: делегат узнаёт о нажатии и решает в
 /// `shouldOpenLinkBySdk(url:)`, открыть ли ссылку SDK; просмотрщик закрывается до этого
@@ -398,6 +484,9 @@ final class StoriesSession {
     var shareUrlTransform: ((String) -> String)?
     /// Транспорт опросов вместо клиента API v3 (тесты, офлайн-демо). Опросы есть только с v3.
     var pollTransport: PersonalizationStoryPollTransport?
+    /// Ход по ленте v3: с какого слайда открывать и что просмотрено. Виджет даёт свой — на
+    /// время жизни загруженной ленты; у `show` и ссылки — свой на показ.
+    var progress = StoriesFeedProgress()
     /// Слайд просмотрен — лента перерисовывает кольца.
     var onSeen: (() -> Void)?
     /// Открытие ссылки системой; подменяется в тестах.
@@ -435,9 +524,25 @@ final class StoriesSession {
             viewer.pollDefaults = (sdk as? SimplePersonalizationSDK)?.storage.partition
         }
         let seen = seenState
-        if let link, let shared = stories.first {
-            // Слайд ссылки, если он есть в ответе: `start_position` сервер ставит только по
-            // своим слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
+        if v3 != nil {
+            // Лента v3 — как веб: `start_position` ленты, а по ссылке первая сторис — со слайда
+            // ссылки, если он есть в ответе: `start_position` сервер ставит только по своим
+            // слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
+            let progress = self.progress
+            let shared = link.flatMap { _ in stories.first }
+            viewer.startSlide = { story in
+                if let shared, story.id == shared.id,
+                   let index = link?.slideId.flatMap({ id in story.slides.firstIndex { $0.id == id } }) {
+                    return index
+                }
+                return progress.startSlide(story)
+            }
+            viewer.onStoryLeftForward = { [self] story, throughEnd in
+                progress.leftForward(story, throughEnd: throughEnd)
+                onSeen?()
+            }
+            viewer.remembersMute = true
+        } else if let link, let shared = stories.first {
             viewer.startSlide = {
                 StoriesSeenState.startSlide($0, seen: seen.seen($0), shared: shared, linkSlide: link.slideId)
             }
@@ -446,6 +551,7 @@ final class StoriesSession {
         }
         viewer.onSlideView = { [self] story, slide in slideShown(story, slide) }
         viewer.onButtonTap = { [self, weak viewer] story, slide, button in buttonTapped(story, slide, button, in: viewer) }
+        viewer.onHeaderTap = { [self, weak viewer] story, slide, header in headerTapped(story, slide, header, in: viewer) }
         viewer.onProductTap = { [self, weak viewer] story, slide, offer in productTapped(story, slide, offer, in: viewer) }
         viewer.onPromoCopied = { [self] story, slide, code in promoCopied(story, slide, code) }
         viewer.onShare = { [self] story, slide in track(.share, story, slide) }
@@ -460,7 +566,11 @@ final class StoriesSession {
 
     func slideShown(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide) {
         track(.view, story, slide)
-        seenState.markSeen(slide, of: story)
+        if v3 != nil {
+            progress.shown(slide, of: story)
+        } else {
+            seenState.markSeen(slide, of: story)
+        }
         onSeen?()
     }
 
@@ -509,6 +619,17 @@ final class StoriesSession {
         }
     }
 
+    /// Шапка слайда: `click`, потом ссылка шапки, если она есть, как в вебе.
+    func headerTapped(
+        _ story: PersonalizationStory,
+        _ slide: PersonalizationStorySlide,
+        _ header: PersonalizationStorySlide.Header,
+        in viewer: PersonalizationStoriesViewController?
+    ) {
+        trackClick(story, slide)
+        leave(viewer, link: header.link) {}
+    }
+
     /// Товар: кнопка товарного слайда без своих кнопок, карточка карусели. Картинка товара
     /// не нажимается.
     func productTapped(
@@ -527,9 +648,10 @@ final class StoriesSession {
         }
     }
 
-    /// Промокод скопирован — из цены товара или из текстового блока.
+    /// Промокод скопирован — из цены товара или из текстового блока. В API v3 это не `click`:
+    /// клик — только кнопка, шапка и товар карусели, как в вебе.
     func promoCopied(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide, _ code: String) {
-        trackClick(story, slide)
+        if v3 == nil { trackClick(story, slide) }
         delegate?.receiveSelectedPromocodeProductData(promoCodeSlide: Self.promoElement(code, on: slide))
     }
 

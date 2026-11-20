@@ -199,7 +199,7 @@ struct StoriesApiV3 {
     /// Кампания по ссылке: без массива `stories` в `payload` — ошибка, как у веба.
     static func story(payload: [String: Any]) -> Result<[PersonalizationStory], SdkError> {
         guard payload["stories"] is [Any] else { return .failure(.custom(error: "Stories v3: no stories in the response")) }
-        return .success(PersonalizationStory.list(json: payload))
+        return .success(PersonalizationStory.list(json: payload, v3: true))
     }
 
     // MARK: - Запросы
@@ -207,7 +207,7 @@ struct StoriesApiV3 {
     /// Лента блока: `payload` разбирается тем же разбором, что старая лента. Ответ — на главной очереди.
     func feed(sdk: PersonalizationSDK, code: String, completion: @escaping (Result<[PersonalizationStory], SdkError>) -> Void) {
         get(sdk: sdk, url: { feedURL(code: code, identity: $0) }) { result in
-            let stories = result.map { PersonalizationStory.list(json: $0) }
+            let stories = result.map { PersonalizationStory.list(json: $0, v3: true) }
             MainThread.run { completion(stories) }
         }
     }

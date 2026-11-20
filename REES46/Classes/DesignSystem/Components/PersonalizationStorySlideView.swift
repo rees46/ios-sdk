@@ -63,6 +63,7 @@ final class PersonalizationStorySlideView: UIView {
     }
 
     var onButton: ((PersonalizationStorySlide.Button) -> Void)?
+    var onHeader: ((PersonalizationStorySlide.Header) -> Void)?
     var onProduct: ((PersonalizationStorySlide.Offer) -> Void)?
     var onPromoCopied: ((String) -> Void)?
     var onProductsToggle: ((Bool) -> Void)?
@@ -112,6 +113,11 @@ final class PersonalizationStorySlideView: UIView {
     var offsetBottoms: [NSLayoutConstraint] = []
     /// Карточка опроса слайда, см. `attachPoll`.
     private(set) var pollView: PersonalizationStoryPollView?
+    /// Шапка слайда (элемент `header`, API v3).
+    private(set) var headerView: PersonalizationStoryHeaderView?
+    /// Верх содержимого: под шапкой слайда, без неё — верх области содержимого.
+    var contentTop: NSLayoutYAxisAnchor { headerBottom?.anchor ?? contentGuide.topAnchor }
+    private var headerBottom: (anchor: NSLayoutYAxisAnchor, guide: UILayoutGuide)?
 
     init(
         slide: PersonalizationStorySlide,
@@ -135,9 +141,9 @@ final class PersonalizationStorySlideView: UIView {
 
     private func setup(isMuted: Bool) {
         clipsToBounds = true
-        // Слайд без медиа — всегда Background/Card в теме приложения (белый в светлой,
-        // #1A1A1A в тёмной); у медиа фон — поля вокруг вписанного кадра.
-        backgroundColor = slide.isMedia ? slide.letterboxColor : PersonalizationColor.backgroundCard
+        // Слайд без медиа — Background/Card в теме приложения (белый в светлой, #1A1A1A в
+        // тёмной), у слайда v3 — его `background_color`; у медиа фон — поля вокруг кадра.
+        backgroundColor = slide.fillColor
 
         mediaImage.contentMode = .scaleAspectFit
         mediaImage.clipsToBounds = true
@@ -165,9 +171,12 @@ final class PersonalizationStorySlideView: UIView {
             button.soundOnLabel = texts.soundOn
             button.soundOffLabel = texts.soundOff
             button.onToggle = { [weak self] muted in self?.onMuteToggle?(muted) }
+            // Слайд v3, как в вебе: кнопка звука — только у ролика со звуком, видна, когда он готов.
+            button.isHidden = slide.isV3
             soundButton = button
         }
 
+        buildHeader()
         // Текстовые блоки товарного слайда не рисуются, их промокод — в блоке цены карточки.
         if let offer = slide.cardOffer {
             buildProduct(offer)
@@ -349,7 +358,9 @@ extension PersonalizationStorySlideView {
             MainThread.run {
                 guard let self, self.player?.currentItem === item else { return }
                 switch status {
-                case .readyToPlay: self.markReady()
+                case .readyToPlay:
+                    if self.slide.isV3 { self.soundButton?.isHidden = !Self.hasAudio(item) }
+                    self.markReady()
                 case .failed: self.markFailed()
                 default: break
                 }
@@ -382,6 +393,11 @@ extension PersonalizationStorySlideView {
         player?.pause()
         gifPlayer?.pause()
         onMediaFailed?()
+    }
+
+    /// В ролике есть звуковая дорожка.
+    static func hasAudio(_ item: AVPlayerItem) -> Bool {
+        item.tracks.contains { $0.assetTrack?.mediaType == .audio }
     }
 
     /// Сколько ждать, прежде чем счесть паузу плеера делом системы.
@@ -524,7 +540,7 @@ extension PersonalizationStorySlideView {
         productGroupBottom = groupBottom
         offsetLimit = bottom.topAnchor
         NSLayoutConstraint.activate([
-            header.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            header.topAnchor.constraint(equalTo: contentTop),
             header.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
             header.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
             groupBottom,
@@ -627,8 +643,34 @@ extension PersonalizationStorySlideView {
             bottom,
             buttons.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
             buttons.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
-            buttons.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor)
+            buttons.topAnchor.constraint(greaterThanOrEqualTo: contentTop)
         ])
+    }
+
+    /// Шапка слайда (элемент `header`) — вверху области содержимого во всю ширину; остальное
+    /// содержимое — под ней.
+    fileprivate func buildHeader() {
+        guard let header = slide.header else { return }
+        let view = PersonalizationStoryHeaderView(header: header, imageLoader: imageLoader)
+        view.addTarget(self, action: #selector(headerTapped), for: .touchUpInside)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(view)
+        let below = UILayoutGuide()
+        addLayoutGuide(below)
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            view.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
+            view.trailingAnchor.constraint(lessThanOrEqualTo: contentGuide.trailingAnchor),
+            below.topAnchor.constraint(equalTo: view.bottomAnchor, constant: PersonalizationSpacing.xl),
+            below.heightAnchor.constraint(equalToConstant: 0)
+        ])
+        headerView = view
+        headerBottom = (below.topAnchor, below)
+    }
+
+    @objc private func headerTapped() {
+        guard let header = slide.header else { return }
+        onHeader?(header)
     }
 
     /// Текстовый блок; с промокодом нажатие копирует код и показывает тост сверху.
@@ -696,7 +738,7 @@ extension PersonalizationStorySlideView {
             row.leadingAnchor.constraint(equalTo: leadingAnchor),
             row.trailingAnchor.constraint(equalTo: trailingAnchor),
             rowBottom,
-            row.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor)
+            row.topAnchor.constraint(greaterThanOrEqualTo: contentTop)
         ])
     }
 
@@ -784,7 +826,7 @@ extension PersonalizationStorySlideView {
             // сдвиг; карточку, не влезшую совсем, дальше прокрутка.
             view.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(UILayoutPriority(600)),
             // Под шапку и под кнопки элемент не заезжает.
-            view.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor),
+            view.topAnchor.constraint(greaterThanOrEqualTo: contentTop),
             bottom
         ])
     }

@@ -80,22 +80,13 @@ final class PersonalizationStoriesShareTests: XCTestCase {
 
     private let campaign = "https://shop.test/?r46_story=5"
 
-    func testTheSlideLinkWinsAndTheCampaignLinkIsTheFallback() {
+    /// As the web's `stories-share`: the slide's own link, else the campaign's as it is.
+    func testTheSlideLinkWinsAndTheCampaignLinkIsTheFallbackAsItIs() {
         let story = PersonalizationStory(id: "5", name: "S", slides: [], shareUrl: campaign)
         let own = PersonalizationStorySlide(id: "1", kind: .content, shareUrl: "https://shop.test/?r46_slide=1")
         XCTAssertEqual(story.shareUrl(of: own)?.absoluteString, "https://shop.test/?r46_slide=1")
-        XCTAssertEqual(story.shareUrl(of: PersonalizationStorySlide(id: "5_2", kind: .content))?.absoluteString, campaign + "&r46_slide=5_2",
-                       "a product slide has no link of its own: the campaign's, with the slide in it")
-        XCTAssertEqual(PersonalizationStory.link("https://shop.test/p?q=a%20b&r46_story=5#top", slideId: "5_2"),
-                       "https://shop.test/p?q=a%20b&r46_story=5&r46_slide=5_2#top", "the rest of the address stays as it was")
-        XCTAssertEqual(PersonalizationStory.link(campaign + "&r46_slide=7", slideId: "5_2"), campaign + "&r46_slide=7")
-        XCTAssertEqual(PersonalizationStory.link(campaign, slideId: "x"), campaign, "an id a link cannot carry is left out")
-        for id in ["12345678901", "5_12345", "5_", "_2", ""] {
-            XCTAssertEqual(PersonalizationStory.link(campaign, slideId: id), campaign, id)
-        }
-        XCTAssertEqual(PersonalizationStory.link(campaign, slideId: "1234567890_1234"), campaign + "&r46_slide=1234567890_1234")
-        XCTAssertEqual(PersonalizationStory.link("https://shop.test/", slideId: "37"), "https://shop.test/?r46_slide=37",
-                       "a campaign link without a query gets one")
+        XCTAssertEqual(story.shareUrl(of: PersonalizationStorySlide(id: "5_2", kind: .content))?.absoluteString, campaign,
+                       "a product slide has no link of its own: the campaign's, nothing added")
         XCTAssertNotNil(story.shareUrl(of: PersonalizationStorySlide(id: "1", kind: .content, shareUrl: "HTTPS://SHOP.TEST/")),
                         "the scheme is matched in any case")
     }
@@ -131,7 +122,7 @@ final class PersonalizationStoriesShareTests: XCTestCase {
 
     func testTheFeedIsUnwrappedFromThePayloadWithTheOldParser() throws {
         let payload = try StoriesApiV3.payload(data: Data(feed.utf8), response: response(200), error: nil).get()
-        let stories = PersonalizationStory.list(json: payload)
+        let stories = PersonalizationStory.list(json: payload, v3: true)
         XCTAssertEqual(stories.map(\.id), ["39", "40", "41"])
 
         let product = stories[0].slides[0]
@@ -141,8 +132,8 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         XCTAssertNil(product.media)
         XCTAssertNotNil(product.offer)
         XCTAssertNil(product.shareUrl)
-        XCTAssertEqual(stories[0].shareUrl(of: product)?.absoluteString, "https://demo.test/?r46_stories=b&r46_story=39&r46_slide=39_0",
-                       "the campaign's link with the product slide in it")
+        XCTAssertEqual(stories[0].shareUrl(of: product)?.absoluteString, "https://demo.test/?r46_stories=b&r46_story=39",
+                       "the campaign's link as it is")
 
         let photos = stories[1]
         XCTAssertTrue(photos.shareable, "no field — sharing is allowed")
@@ -637,5 +628,230 @@ final class PersonalizationStoriesShareTests: XCTestCase {
     private func reachesNoSlideGesture(_ view: UIView, on page: PersonalizationStoryPageViewController) -> Bool {
         let gestures = (page.view.gestureRecognizers ?? []).filter { $0.delegate === page }
         return !gestures.isEmpty && gestures.allSatisfy { !page.gestureRecognizer($0, shouldReceive: Touch(on: view)) }
+    }
+}
+
+// MARK: - Slides of the v3 feed: what happens is the web's
+
+extension PersonalizationStoriesShareTests {
+
+    private func slide(_ json: [String: Any], v3: Bool = true) throws -> PersonalizationStorySlide {
+        try XCTUnwrap(PersonalizationStorySlide(json: json, v3: v3))
+    }
+
+    /// Media is decided by `type`, as `switch(slide.type)` of the web; the old feed keeps its rule.
+    func testTheMediaOfAV3SlideIsItsType() throws {
+        let content: [String: Any] = ["id": 1, "type": "", "background": "https://cdn.test/1.jpg"]
+        XCTAssertNil(try slide(content).media, "a slide of no media type has no media")
+        XCTAssertEqual(try slide(content, v3: false).media, .image("https://cdn.test/1.jpg"), "the old feed: any background")
+        XCTAssertEqual(try slide(["id": 2, "type": "image", "background": "https://cdn.test/2.jpg"]).media, .image("https://cdn.test/2.jpg"))
+        XCTAssertEqual(try slide(["id": 3, "type": "video", "background": "https://cdn.test/3.mp4"]).media, .video("https://cdn.test/3.mp4"))
+        XCTAssertNil(try slide(["id": 4, "type": "image", "background": NSNull()]).media)
+    }
+
+    /// `background_color` paints a slide without media; the kit's card colour only without it.
+    func testABackgroundColourPaintsAV3SlideWithoutMedia() throws {
+        let red = UIColor(red: 1, green: 0, blue: 0, alpha: 1)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#FF0000"]).fillColor, red)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#FF0000"], v3: false).fillColor, PersonalizationColor.backgroundCard,
+                       "the old feed keeps the kit's card")
+        XCTAssertEqual(try slide(["id": 1, "type": ""]).fillColor, PersonalizationColor.backgroundCard)
+        XCTAssertEqual(try slide(["id": 1, "type": "image", "background": "https://cdn.test/1.jpg", "background_color": "#FF0000"]).fillColor, red,
+                       "around the media too")
+        let view = PersonalizationStorySlideView(slide: try slide(["id": 1, "type": "", "background_color": "#FF0000"]),
+                                                 texts: .init(), isMuted: true, imageLoader: { _, _ in })
+        XCTAssertEqual(view.backgroundColor, red)
+    }
+
+    /// One rule of the text block: the kit's body size, `bold` then `text_bold`, `italic` then
+    /// `text_italic`, opacity as `NN%`, 0–100 or 0–1, and `monospace` or `monospaced`.
+    func testTextBlocksOfV3FollowOneRule() throws {
+        func block(_ json: [String: Any], v3: Bool = true) throws -> PersonalizationStorySlide.TextBlock {
+            try XCTUnwrap(PersonalizationStorySlide.TextBlock(json: json.merging(["text_input": "Привет"]) { own, _ in own }, v3: v3))
+        }
+        XCTAssertEqual(try block([:]).style, .init(size: 16, lineHeight: 24), "the kit's Base/Default")
+        XCTAssertEqual(try block([:], v3: false).style, .small, "the old feed keeps Small")
+        XCTAssertEqual(try block(["font_size": 30]).style, .medium)
+        XCTAssertEqual(try block(["font_size": 20, "text_line_spacing": 1.5]).style, .init(size: 20, lineHeight: 30))
+        XCTAssertTrue(try block(["bold": true, "text_bold": false]).bold, "bold wins")
+        XCTAssertTrue(try block(["text_bold": true]).bold, "the legacy key is read too")
+        XCTAssertFalse(try block(["bold": false, "text_bold": true]).bold)
+        XCTAssertTrue(try block(["text_italic": true]).italic)
+        XCTAssertEqual(try block(["font_type": "monospace"]).fontFamily, .monospaced)
+        XCTAssertEqual(try block(["font_type": "monospaced"]).fontFamily, .monospaced)
+        XCTAssertEqual(try block(["font_type": "serif"]).fontFamily, .serif)
+        XCTAssertEqual(try block(["font_type": "sans-serif"]).fontFamily, .sansSerif)
+        for opacity in ["50%", 50, 0.5] as [Any] {
+            let fill = try block(["text_background_color": "#000000", "text_background_color_opacity": opacity]).fill
+            XCTAssertEqual(fill?.cgColor.alpha ?? 0, 0.5, accuracy: 0.001, "\(opacity)")
+        }
+    }
+
+    /// A button without a link sends `click` and opens nothing, as the web; no product fallback.
+    func testAV3ButtonWithoutALinkOpensNothing() throws {
+        let json: [String: Any] = ["id": "39_0", "type": "", "elements": [
+            ["type": "product", "item": ["id": "1", "name": "Pool", "price": 10, "url": "https://shop.test/pool"]],
+            ["type": "button", "title": "Купить"]
+        ]]
+        let v3 = try slide(json)
+        XCTAssertNil(v3.link(of: v3.buttons[0]))
+        XCTAssertNil(v3.buttons[0].element?.productId, "the slide's product is not put into the button")
+        XCTAssertEqual(try slide(json, v3: false).buttons[0].element?.productId, "1", "the old feed puts it")
+        let old = try slide(json, v3: false)
+        XCTAssertEqual(old.link(of: old.buttons[0]), "https://shop.test/pool", "the old feed opens the product")
+
+        let sent = expectation(description: "click")
+        let requests = capture { request in
+            sent.fulfill()
+            return (Data("{}".utf8), 200)
+        }
+        let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "block", v3Domain: "app.test")
+        var opened: [String] = []
+        session.openURL = { opened.append($0.absoluteString) }
+        let story = PersonalizationStory(id: "39", name: "P", slides: [v3])
+        session.buttonTapped(story, v3, v3.buttons[0], in: nil)
+        wait(for: [sent], timeout: 5)
+        XCTAssertEqual(requests().map { body($0)["event"] as? String }, ["click"])
+        XCTAssertEqual(opened, [])
+    }
+
+    /// `click` is for a button, a header and a carousel product: copying a promo code sends none.
+    func testCopyingAPromoCodeSendsNoClickToV3() {
+        let requests = capture { _ in (Data("{}".utf8), 200) }
+        let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "block", v3Domain: "app.test")
+        let slide = PersonalizationStorySlide(id: "1", kind: .content, textBlocks: [.init(text: "Code", promoCode: "TEXT10")])
+        session.promoCopied(PersonalizationStory(id: "1", name: "S", slides: [slide]), slide, "TEXT10")
+        let settled = expectation(description: "queue")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) { settled.fulfill() }
+        wait(for: [settled], timeout: 2)
+        XCTAssertTrue(requests().isEmpty)
+
+        let sdk = FakeSDK(shopId: "shop")
+        StoriesSession(sdk: sdk, code: "block").promoCopied(PersonalizationStory(id: "1", name: "S", slides: [slide]), slide, "TEXT10")
+        XCTAssertEqual(sdk.trackedEvents.count, 1, "the old feed still counts it as a click")
+    }
+
+    /// `view` on every show of a slide, the first slide shown again from the start too.
+    func testTheFirstSlideShownAgainSendsViewAgain() throws {
+        let story = PersonalizationStory(id: "s", name: "S", slides: [PersonalizationStorySlide(id: "1", kind: .content)])
+        let viewer = PersonalizationStoriesViewController(stories: [story])
+        var shown: [String] = []
+        viewer.onSlideView = { _, slide in shown.append(slide.id) }
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+        window.rootViewController = viewer
+        window.isHidden = false
+        defer { window.isHidden = true }
+        let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
+        viewer.settle(on: page)
+        viewer.apply(viewer.state.previous())
+        viewer.apply(viewer.state.previous())
+        XCTAssertEqual(shown, ["1", "1", "1"], "no client dedupe: the server merges repeats")
+    }
+
+    /// A v3 story opens at the feed's `start_position`, whatever slides this device saw.
+    func testAV3StoryOpensAtTheFeedsStartPosition() {
+        let slides = (0..<3).map { PersonalizationStorySlide(id: "\($0)", kind: .content) }
+        let story = PersonalizationStory(id: "40", name: "S", startPosition: 2, slides: slides)
+        let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "block", v3Domain: "app.test")
+        let viewer = session.makeViewer(stories: [story], startIndex: 0)
+        XCTAssertEqual(viewer.startSlideIndex(of: story), 2)
+        XCTAssertTrue(viewer.remembersMute, "the mute choice is kept on the device, as the web")
+
+        session.progress.shown(slides[1], of: story)
+        XCTAssertEqual(viewer.startSlideIndex(of: story), 1, "where it was left, like the web's feed in memory")
+        session.progress.leftForward(story, throughEnd: true)
+        XCTAssertEqual(viewer.startSlideIndex(of: story), 0, "watched to the end — from the start")
+        XCTAssertFalse(StoriesSession(sdk: FakeSDK(), code: "block").makeViewer(stories: [story], startIndex: 0).remembersMute)
+    }
+
+    /// The ring follows the feed's `viewed`; a story left forward is viewed for the life of the feed.
+    func testTheRingOfAV3StoryFollowsTheFeedAndLeavingForward() {
+        let slides = (0..<2).map { PersonalizationStorySlide(id: "\($0)", kind: .content) }
+        let fresh = PersonalizationStory(id: "1", name: "A", slides: slides)
+        let viewedByFeed = PersonalizationStory(id: "2", name: "B", viewed: true, slides: slides)
+        let progress = StoriesFeedProgress()
+        progress.shown(slides[0], of: fresh)
+        XCTAssertEqual(progress.barItem(fresh).state, .default, "a shown slide does not light the ring")
+        XCTAssertEqual(progress.barItem(fresh).seen, [])
+        XCTAssertEqual(progress.barItem(viewedByFeed).state, .viewed)
+        progress.leftForward(fresh, throughEnd: false)
+        XCTAssertEqual(progress.barItem(fresh).state, .viewed)
+        XCTAssertEqual(progress.startSlide(fresh), 0, "a swipe keeps the slide it was left on")
+    }
+
+    /// The viewer reports leaving forward: the last slide ended into the next story, or the close
+    /// after the last story.
+    func testTheViewerReportsLeavingAStoryForward() throws {
+        let stories = ["a", "b"].map { PersonalizationStory(id: $0, name: $0, slides: [PersonalizationStorySlide(id: "\($0)1", kind: .content)]) }
+        let viewer = PersonalizationStoriesViewController(stories: stories)
+        var left: [String] = []
+        viewer.onStoryLeftForward = { story, throughEnd in left.append(story.id + (throughEnd ? "!" : "")) }
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+        window.rootViewController = viewer
+        window.isHidden = false
+        defer { window.isHidden = true }
+        let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
+        viewer.settle(on: page)
+        viewer.apply(viewer.state.previous())
+        XCTAssertEqual(left, [], "back is not forward")
+        viewer.apply(viewer.state.next())
+        XCTAssertEqual(left, ["a!"])
+    }
+
+    /// The user's mute choice of a v3 viewer is kept on the device; muted by default.
+    func testTheMuteChoiceOfV3IsRememberedOnTheDevice() {
+        let audio = PersonalizationStoryAudio.shared
+        let name = "audio-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name) ?? .standard
+        let saved = audio.defaults
+        audio.defaults = defaults
+        defer {
+            audio.setMuted(true)
+            audio.defaults = saved
+            UserDefaults.standard.removePersistentDomain(forName: name)
+        }
+        audio.restoreRemembered()
+        XCTAssertTrue(audio.isMuted, "muted by default")
+        audio.begin(remembering: true)
+        audio.setMuted(false)
+        audio.end(remembering: true)
+        XCTAssertEqual(defaults.object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false)
+        audio.setMuted(true)
+        XCTAssertEqual(defaults.object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false, "an old-feed viewer does not write")
+        audio.restoreRemembered()
+        XCTAssertFalse(audio.isMuted, "the next v3 viewer starts as the user chose")
+    }
+
+    /// `header`: icon, title and subtitle; a tap sends `click` and opens the link, as the web.
+    func testTheHeaderOfAV3Slide() throws {
+        let json: [String: Any] = ["id": 1, "type": "", "elements": [
+            ["type": "header", "icon": "https://cdn.test/i.png", "title": "Магазин", "subtitle": "Новинки", "link": "https://shop.test/new"]
+        ]]
+        let v3 = try slide(json)
+        XCTAssertEqual(v3.header, .init(iconUrl: "https://cdn.test/i.png", title: "Магазин", subtitle: "Новинки", link: "https://shop.test/new"))
+        XCTAssertNil(try slide(json, v3: false).header, "the old feed does not draw it")
+        XCTAssertNil(try slide(["id": 1, "elements": [["type": "header", "link": "https://shop.test/"]]]).header, "nothing to draw")
+
+        let view = PersonalizationStorySlideView(slide: v3, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+        var tapped: PersonalizationStorySlide.Header?
+        view.onHeader = { tapped = $0 }
+        let header = try XCTUnwrap(view.headerView)
+        XCTAssertEqual(header.titleLabel.text, "Магазин")
+        XCTAssertEqual(header.subtitleLabel.text, "Новинки")
+        header.sendActions(for: .touchUpInside)
+        XCTAssertEqual(tapped?.link, "https://shop.test/new")
+
+        let sent = expectation(description: "click")
+        let requests = capture { _ in
+            sent.fulfill()
+            return (Data("{}".utf8), 200)
+        }
+        let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "block", v3Domain: "app.test")
+        var opened: [String] = []
+        session.openURL = { opened.append($0.absoluteString) }
+        session.headerTapped(PersonalizationStory(id: "5", name: "S", slides: [v3]), v3, try XCTUnwrap(v3.header), in: nil)
+        wait(for: [sent], timeout: 5)
+        XCTAssertEqual(requests().map { body($0)["event"] as? String }, ["click"])
+        XCTAssertEqual(opened, ["https://shop.test/new"])
     }
 }

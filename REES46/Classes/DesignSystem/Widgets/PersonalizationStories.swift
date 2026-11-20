@@ -17,7 +17,9 @@ import UIKit
 ///
 /// Просмотренные слайды хранятся по магазину в общем хранилище SDK — том же, что у старых
 /// сторис. Начатая сторис открывается с первого непросмотренного слайда, досмотренная —
-/// с начала; кольцо обложки подсвечивает просмотренные слайды по их номерам.
+/// с начала; кольцо обложки подсвечивает просмотренные слайды по их номерам. Лента API v3 —
+/// как в вебе: сторис открывается на `start_position` ленты, кольцо — по `viewed` ленты и
+/// сторис, из которых за время жизни ленты ушли вперёд (`StoriesFeedProgress`).
 ///
 /// Нажатия на кнопки, товары и промокоды получает `communicationDelegate` — тот же
 /// `StoriesCommunicationProtocol`, что у старых сторис; ссылку SDK открывает, если делегат
@@ -103,6 +105,8 @@ public final class PersonalizationStories: UIView {
     private weak var viewer: PersonalizationStoriesViewController?
     /// API v3 загруженной ленты: события просмотрщика идут туда же.
     private var loadedV3Domain: String?
+    /// Ход по загруженной ленте v3: с какого слайда открывать сторис и что просмотрено.
+    private var progress = StoriesFeedProgress()
     /// Открыть сторис, когда блок загрузится.
     var pendingOpen: ((PersonalizationStories) -> Void)?
 
@@ -268,6 +272,7 @@ extension PersonalizationStories {
             switch result {
             case .success(let stories):
                 self.loadedV3Domain = v3Domain
+                self.progress = StoriesFeedProgress()
                 self.loaded(stories)
             case .failure(let error):
                 self.fail(error)
@@ -324,7 +329,13 @@ extension PersonalizationStories {
         invalidateIntrinsicContentSize()
     }
 
+    /// Обложки: у ленты v3 — по `viewed` ленты и сторис, из которых ушли вперёд, как в вебе;
+    /// у старой — по просмотренным слайдам на устройстве.
     func renderBar() {
+        if loadedV3Domain != nil {
+            bar.items = stories.map { progress.barItem($0) }
+            return
+        }
         let state = StoriesSeenState(sdk: sdk)
         bar.items = stories.map { state.barItem($0) }
     }
@@ -354,6 +365,7 @@ extension PersonalizationStories {
         session.imageLoader = imageLoader
         session.shareUrlTransform = shareUrlTransform
         session.pollTransport = pollTransport
+        session.progress = progress
         session.onSeen = { [weak self] in self?.renderBar() }
         let viewer = session.makeViewer(stories: stories, startIndex: index)
         self.viewer = viewer
