@@ -1,3 +1,5 @@
+// swiftlint:disable force_unwrapping
+// Legacy UI: its force unwraps stay until it is rewritten, so this rule alone is off for this file.
 import UIKit
 
 open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, RecommendationsWidgetViewCellDelegate {
@@ -73,7 +75,9 @@ open class RecommendationsWidgetView: UICollectionView, UICollectionViewDelegate
     }
     
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(withReuseIdentifier: RecommendationsWidgetViewCell.reuseRecommCellId, for: indexPath) as! RecommendationsWidgetViewCell
+        guard let cell = dequeueReusableCell(withReuseIdentifier: RecommendationsWidgetViewCell.reuseRecommCellId, for: indexPath) as? RecommendationsWidgetViewCell else {
+            return UICollectionViewCell()
+        }
         cell.widgetCellDelegate = self
         
         let url = URL(string: cells[indexPath.row].resizedImageUrl)

@@ -4,7 +4,8 @@ extension Popup {
         self.id = json["id"] as? Int ?? 0
         self.channels = json["channels"] as? [String] ?? []
         self.position = json["position"] as? String ?? ""
-        self.delay = json["delay"] as? Int ?? 0
+        // Seconds after it came; a number in a string too.
+        self.delay = JSONNumber.int(json["delay"]) ?? 0
         self.html = json["html"] as? String ?? ""
         self.web_push_system = json["web_push_system"] as? Bool ?? false
         self.popup_actions = json["popup_actions"] as? String ?? ""

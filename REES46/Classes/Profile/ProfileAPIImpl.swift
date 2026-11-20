@@ -138,7 +138,10 @@ extension Rees46.Profile: AnswerReadable {
         gender = Gender(wire: answer.lenientString("gender"))
         computedGender = Gender(wire: answer.lenientString("computed_gender"))
         boughtSomething = answer.lenientBool("bought_something")
-        customProperties = answer.lenient(AnyJSON.self, "custom_properties")?.value as? [String: Any]
+        // None is an empty map, as the contract's map has it: the server writes an empty one as `[]` too.
+        customProperties = answer.lenient(AnyJSON.self, "custom_properties").flatMap { json in
+            json.value as? [String: Any] ?? ((json.value as? [Any])?.isEmpty == true ? [:] : nil)
+        }
     }
 }
 

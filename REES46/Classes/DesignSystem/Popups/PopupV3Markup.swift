@@ -24,7 +24,8 @@ enum PopupV3Markup {
 
     static let pattern = #"\*\*\*([^*]+)\*\*\*|\*\*([^*]+)\*\*|~~([^~]+)~~|__([^_]+)__|\^\^([^^]+)\^\^|\*([^*]+)\*"#
 
-    private static let regex = try! NSRegularExpression(pattern: pattern)
+    /// `nil` only for a pattern that does not compile: the text then has no markup.
+    private static let regex = try? NSRegularExpression(pattern: pattern)
 
     /// Куски текста по порядку; пустая строка — ни одного.
     static func spans(_ text: String) -> [PopupV3Span] {
@@ -32,7 +33,7 @@ enum PopupV3Markup {
         let source = text as NSString
         var spans: [PopupV3Span] = []
         var cursor = 0
-        for match in regex.matches(in: text, range: NSRange(location: 0, length: source.length)) {
+        for match in regex?.matches(in: text, range: NSRange(location: 0, length: source.length)) ?? [] {
             if match.range.location > cursor {
                 spans.append(PopupV3Span(text: source.substring(with: NSRange(location: cursor, length: match.range.location - cursor))))
             }
@@ -75,7 +76,8 @@ enum PopupV3Variables {
     /// Суффикс платформенных переменных: `{{link}}` на iOS — сначала `link_ios`.
     static let platform = "ios"
 
-    private static let token = try! NSRegularExpression(pattern: #"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}"#)
+    /// `nil` only for a pattern that does not compile: the text then has no tokens.
+    private static let token = try? NSRegularExpression(pattern: #"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}"#)
 
     /// Статические переменные дизайна: объект или старый массив `{key, value}`; значения — строками,
     /// записи без ключа пропускаются, витринные ключи отбрасываются.
@@ -102,7 +104,7 @@ enum PopupV3Variables {
         let source = text as NSString
         var result = ""
         var cursor = 0
-        for match in token.matches(in: text, range: NSRange(location: 0, length: source.length)) {
+        for match in token?.matches(in: text, range: NSRange(location: 0, length: source.length)) ?? [] {
             result += source.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
             let key = source.substring(with: match.range(at: 1))
             let value: String?
@@ -121,7 +123,7 @@ enum PopupV3Variables {
     /// Есть ли в тексте токен `key`.
     static func contains(_ key: String, in text: String) -> Bool {
         let source = text as NSString
-        return token.matches(in: text, range: NSRange(location: 0, length: source.length))
+        return (token?.matches(in: text, range: NSRange(location: 0, length: source.length)) ?? [])
             .contains { source.substring(with: $0.range(at: 1)) == key }
     }
 

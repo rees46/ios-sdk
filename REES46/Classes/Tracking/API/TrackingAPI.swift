@@ -44,12 +44,21 @@ public enum TrackingSourceType: String {
 /// Passed per call to attribute a single event, or stored for subsequent events with
 /// ``TrackingAPI/setSource(_:)``.
 public struct TrackingSource {
+    /// The tool. For a source a bridge made from a value this enum gets only in the major — `slider`,
+    /// `agent_search` (``init(rawType:code:)``) — it is `dynamic`, and `rawType` holds the value.
     public let type: TrackingSourceType
     public let code: String
+    /// `recommended_by` on the wire: the raw value of `type`, or the one a bridge passed.
+    @_spi(Bridge) public let rawType: String
 
     public init(type: TrackingSourceType, code: String) {
+        self.init(type: type, code: code, rawType: type.rawValue)
+    }
+
+    private init(type: TrackingSourceType, code: String, rawType: String) {
         self.type = type
         self.code = code
+        self.rawType = rawType
     }
 
     /// Convenience for hosts holding a ``RecommendedByCase`` — the type recommender responses and the
@@ -57,6 +66,34 @@ public struct TrackingSource {
     /// `type:`: the two enums share every case name, so an overload would make `.dynamic` ambiguous.
     public init(legacy type: RecommendedByCase, code: String) {
         self.init(type: TrackingSourceType(type), code: code)
+    }
+}
+
+@_spi(Bridge)
+extension TrackingSource {
+
+    /// The values of `TrackingSourceType` in the contract (`sdk/contract/tracking.md`) that the public
+    /// enum gets only in the major: a banner of a slider and an answer of the AI search agent.
+    public static let bridgeOnlyRawTypes: Set<String> = ["slider", "agent_search"]
+
+    /**
+     A source by the wire value of its type, for the Flutter and React Native bridges: any value of the
+     contract's `TrackingSourceType` — the cases of the public enum and `slider`, `agent_search`, which it
+     gets with the major. Goes through `tracking` and `tracking.async` as a source of the public type does:
+     `recommended_by` is `rawType`, `setSource(_:)` stores it, and a source of a mailing (`transactional`,
+     `web_push_digest`) is refused with an event.
+
+     Throws `invalidArgument` for a value the contract does not have, also a case name such as
+     `instantSearch`: the wire value is `instant_search`.
+     */
+    public init(rawType: String, code: String) throws {
+        if let type = TrackingSourceType(rawValue: rawType) {
+            self.init(type: type, code: code, rawType: type.rawValue)
+        } else if Self.bridgeOnlyRawTypes.contains(rawType) {
+            self.init(type: .dynamic, code: code, rawType: rawType)
+        } else {
+            throw Rees46.SdkError.invalidArgument("the source type \(rawType) is not one of the contract's TrackingSourceType")
+        }
     }
 }
 
@@ -102,8 +139,9 @@ public protocol TrackingAPI {
 
     /// Search query issued by the user (`search`).
     ///
-    /// Pass `results` when the host runs its own search and knows the ids it showed. They go on the
-    /// wire as one comma-separated field, so ids must not themselves contain a comma.
+    /// `results` goes on the wire as one comma-separated field, but the server does not read it
+    /// (`sdk/contract/tracking.md`): it is deprecated and goes in the major. Call
+    /// `search(query:completion:)`.
     func search(
         query: String,
         results: [String]?,
@@ -221,9 +259,18 @@ public extension TrackingAPI {
         categoryView(categoryId: categoryId, completion: completion)
     }
 
+    /// Search query issued by the user (`search`).
     func search(
         query: String,
-        results: [String]? = nil,
+        completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
+    ) {
+        search(query: query, results: nil, completion: completion)
+    }
+
+    @available(*, deprecated, message: "The server does not read results, and the parameter goes in the major: use search(query:completion:).")
+    func search(
+        query: String,
+        results: [String]?,
         completion: @escaping (Result<Void, SdkError>) -> Void = { _ in }
     ) {
         search(query: query, results: results, completion: completion)

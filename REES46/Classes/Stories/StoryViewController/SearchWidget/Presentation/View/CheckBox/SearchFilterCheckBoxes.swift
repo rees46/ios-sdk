@@ -1,3 +1,5 @@
+// swiftlint:disable force_unwrapping
+// Legacy UI: its force unwraps stay until it is rewritten, so this rule alone is off for this file.
 import UIKit
 
 class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, CheckBoxDelegate {
@@ -204,7 +206,9 @@ class SearchFilterCheckBoxView: UIView, UICollectionViewDataSource, UICollection
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CheckBoxCollectionViewCell.identifier, for: indexPath) as! CheckBoxCollectionViewCell
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CheckBoxCollectionViewCell.identifier, for: indexPath) as? CheckBoxCollectionViewCell else {
+            return UICollectionViewCell()
+        }
         let color = types[indexPath.item]
         cell.configure(with: color)
         cell.delegate = self // Устанавливаем делегата

@@ -58,7 +58,10 @@ class ProfileDataImpl: ProfileDataProtocol {
         addIfNotNil(params: &params, key: ProfileDataConstants.fbId, value: profileData.fbID)
         addIfNotNil(params: &params, key: ProfileDataConstants.vkId, value: profileData.vkID)
         addIfNotNil(params: &params, key: ProfileDataConstants.telegramId, value: profileData.telegramId)
+        // The shop's id of the customer goes as both `id` and `external_id`: the server merges customers
+        // by `id` and sets the profile's attribute from `external_id` (`sdk/contract/profile.md`).
         addIfNotNil(params: &params, key: ProfileDataConstants.id, value: profileData.userId)
+        addIfNotNil(params: &params, key: ProfileDataConstants.externalId, value: profileData.userId)
         
         return params
     }
@@ -71,9 +74,7 @@ class ProfileDataImpl: ProfileDataProtocol {
     private func setBirthdayParam(from profileData: ProfileData) -> RequestParams {
         guard let birthday = profileData.birthday else { return [:] }
         
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = ProfileDataConstants.calendarYearDateFormat
-        return [ProfileDataConstants.birthday: dateFormatter.string(from: birthday)]
+        return [ProfileDataConstants.birthday: Self.dayFormatter().string(from: birthday)]
     }
     
     private func setLoyaltyParams(from profileData: ProfileData) -> RequestParams {
@@ -90,9 +91,7 @@ class ProfileDataImpl: ProfileDataProtocol {
         
         for (key, value) in paramsTemp {
             if let date = value as? Date {
-                let formatter = DateFormatter()
-                formatter.dateFormat = ProfileDataConstants.weekYearDateFormat
-                params[key] = formatter.string(from: date)
+                params[key] = Self.dayFormatter().string(from: date)
             } else if let array = value as? [Any] {
                 params[key] = array
             } else if let jsonObject = value as? RequestParams {
@@ -105,6 +104,17 @@ class ProfileDataImpl: ProfileDataProtocol {
         return params
     }
     
+    /// A day as `yyyy-MM-dd` of the Gregorian calendar, in the device's time zone: the calendar year
+    /// (`YYYY` would be the year of the week, the next one in the last days of December), and Western
+    /// digits whatever the device's locale and calendar.
+    static func dayFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = ProfileDataConstants.calendarYearDateFormat
+        return formatter
+    }
+
     private func setPurchaseParams(from profileData: ProfileData) -> RequestParams {
         guard let boughtSomething = profileData.boughtSomething else { return [:] }
         return [ProfileDataConstants.boughtSomething: boughtSomething ? "1" : "0"]

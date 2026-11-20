@@ -216,7 +216,9 @@ extension PersonalizationProductsList: UICollectionViewDataSource, UICollectionV
     }
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Cell.reuseId, for: indexPath) as! Cell
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: Cell.reuseId, for: indexPath) as? Cell else {
+            return UICollectionViewCell()
+        }
         let product = products[indexPath.item]
         let card = cell.card
         card.type = layout.cardType

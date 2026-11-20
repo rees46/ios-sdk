@@ -678,11 +678,15 @@ final class CoreNetworkTests: XCTestCase {
         return response
     }
 
-    func test_the_old_core_takes_299_for_a_failure() {
+    func test_the_old_core_takes_299_as_a_success_as_any_2xx() {
         reply("/edge", StubReply(299, json: "[1,2]"))
         let response = send(legacyCore(), CoreRequest(method: .get, path: "edge"))
         XCTAssertEqual(response?.status, 299)
-        guard case .failure(.invalidResponse)? = response?.result else { return XCTFail("299 is not a success on the old core") }
+        guard case .success? = response?.result else { return XCTFail("299 is a 2xx: a success on the old core too") }
+        reply("/edge", StubReply(300, json: "[1,2]"))
+        guard case .failure(.invalidResponse)? = send(legacyCore(), CoreRequest(method: .get, path: "edge"))?.result else {
+            return XCTFail("300 is not a success")
+        }
     }
 
     func test_the_old_core_gives_the_error_body_message_of_a_post_as_custom() {

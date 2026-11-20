@@ -8,6 +8,8 @@ public class NotificationWidget: InAppNotificationProtocol {
 
     /// Whether the popup had anything to draw (a title and a text) and is on screen.
     private(set) var isShowingPopup = false
+    /// The dialog of the popup, while it is presented.
+    private weak var dialog: UIViewController?
     
     public init(
         parentViewController: UIViewController,
@@ -125,6 +127,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         )
         let dialog = AlertDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
+        self.dialog = dialog
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
@@ -146,6 +149,7 @@ public class NotificationWidget: InAppNotificationProtocol {
             onDismiss: onDismiss
         )
         let dialog = BottomDialog(viewModel: viewModel)
+        self.dialog = dialog
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
@@ -168,6 +172,7 @@ public class NotificationWidget: InAppNotificationProtocol {
         )
         let dialog = TopDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
+        self.dialog = dialog
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
@@ -190,9 +195,17 @@ public class NotificationWidget: InAppNotificationProtocol {
         )
         let dialog = FullScreenDialog(viewModel: viewModel)
         dialog.modalPresentationStyle = .overFullScreen
+        self.dialog = dialog
         parentViewController.present(dialog, animated: true, completion: nil)
     }
     
+    /// Takes the popup's dialog off the screen without telling `onDismiss`: the presenter that closes it
+    /// from the app's code clears its slot itself. Nothing when it is not presented any more.
+    func close() {
+        guard let dialog = dialog, dialog.presentingViewController != nil, !dialog.isBeingDismissed else { return }
+        dialog.dismiss(animated: true)
+    }
+
     private func handleConfirmButtonClick(link: String?) {
         if let urlString = link, let url = URL(string: urlString), UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url, options: [:]) { success in

@@ -862,5 +862,98 @@ final class LegacyParityTests: CoreScenarioTestCase {
         XCTAssertTrue(eventually { self.logged(passing, "init_succeeded").first?.level == .info })
         d.release()
     }
-}
 
+    // MARK: - The old methods by the contract
+
+    /// What `call`'s completion heard.
+    private func finished<T>(_ call: (@escaping (Result<T, SdkError>) -> Void) -> Void) -> Result<T, SdkError>? {
+        let done = expectation(description: "completion")
+        let outcome = Locked<Result<T, SdkError>?>(nil)
+        call { outcome.current = $0; done.fulfill() }
+        wait(for: [done], timeout: 10)
+        return outcome.current
+    }
+
+    func test_a_299_is_a_success_of_the_old_core_as_any_2xx() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        answer("/products/counters", StubReply(299, json: #"{"view": 3}"#))
+        guard case .success? = finished({ sdk.getProductCounters(item: "1", completion: $0) }) else { return XCTFail("a GET answered 299") }
+        answer("/nps/create", StubReply(299, json: #"{"status":"success"}"#))
+        guard case .success? = finished({ sdk.review(rate: 5, channel: "c", category: "k", orderId: nil, comment: nil, completion: $0) }) else {
+            return XCTFail("a POST answered 299")
+        }
+        answer("/products/counters", StubReply(300, json: "{}"))
+        guard case .failure? = finished({ sdk.getProductCounters(item: "1", completion: $0) }) else { return XCTFail("300 is no success") }
+    }
+
+    func test_counters_a_collection_and_the_blank_search_send_the_device_the_session_and_the_segment_as_the_other_methods() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        _ = finished { sdk.getProductCounters(item: "37", completion: $0) }
+        _ = finished { sdk.getCollection(collectionId: "6", location: nil, email: nil, phone: nil, externalId: nil, loyaltyId: nil, completion: $0) }
+        _ = finished { sdk.searchBlank(completion: $0) }
+        for path in ["/products/counters", "/collection/6", "/search/blank"] {
+            let query = requests(path, shop).first?.query ?? [:]
+            XCTAssertFalse(sdk.deviceId.isEmpty)
+            XCTAssertEqual(query["did"], sdk.deviceId, path)
+            XCTAssertEqual(query["seance"], sdk.userSeance, path)
+            XCTAssertEqual(query["sid"], sdk.userSeance, path)
+            XCTAssertEqual(query["segment"], sdk.segment, path)
+        }
+        XCTAssertEqual(requests("/products/counters", shop).first?.query["item"], "37")
+    }
+
+    func test_get_category_sends_the_id_as_one_segment_of_the_path() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        _ = finished { sdk.getCategory(category: "a/b c", limit: nil, page: nil, brands: nil, locations: nil, filters: nil, completion: $0) }
+        _ = finished { sdk.getCategory(category: "kitchen", limit: nil, page: nil, brands: nil, locations: nil, filters: nil, completion: $0) }
+        XCTAssertEqual(requests("/category/a/b c", shop).last?.url?.absoluteString.contains("/category/a%2Fb%20c?"), true)
+        XCTAssertEqual(requests("/category/kitchen", shop).count, 1)
+    }
+
+    func test_get_probability_to_purchase_waits_the_clients_timeout_not_its_own() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        _ = finished { sdk.getProbabilityToPurchase(params: PurchasePredictParams(), completion: $0) }
+        XCTAssertEqual(requests("/api/v3/cdp/users/probability-to-purchase", shop).first?.timeout, NetworkClient.defaultTimeout)
+    }
+
+    func test_review_takes_a_rate_of_0_to_10_and_leaves_out_an_order_and_a_comment_not_given() {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        answer("/nps/create", StubReply(json: #"{"status":"success"}"#))
+        guard case .success? = finished({ sdk.review(rate: 0, channel: "ios_app", category: "delivery", orderId: nil, comment: " ", completion: $0) }) else {
+            return XCTFail("0 is on the scale of NPS")
+        }
+        guard case .success? = finished({ sdk.review(rate: 10, channel: "ios_app", category: "delivery", orderId: "o-1", comment: "fine", completion: $0) }) else {
+            return XCTFail("10 is on the scale")
+        }
+        for rate in [-1, 11] {
+            guard case .failure(.custom)? = finished({ sdk.review(rate: rate, channel: "ios_app", category: "delivery", orderId: nil, comment: nil, completion: $0) }) else {
+                return XCTFail("\(rate) is off the scale")
+            }
+        }
+        let sent = requests("/nps/create", shop).map(\.body)
+        XCTAssertEqual(sent.count, 2, "nothing off the scale goes")
+        XCTAssertEqual(sent.first?["rate"] as? String, "0")
+        XCTAssertNil(sent.first?["order_id"])
+        XCTAssertNil(sent.first?["comment"])
+        XCTAssertEqual(sent.last?["order_id"] as? String, "o-1")
+        XCTAssertEqual(sent.last?["comment"] as? String, "fine")
+    }
+
+    func test_set_profile_data_sends_the_user_id_as_external_id_too_and_a_date_of_custom_properties_by_its_calendar_year() throws {
+        let shop = newShop()
+        let sdk = makeLegacy(shop)
+        // The last day of 2024 is in the first week of 2025 in every week rule: `YYYY` wrote 2025.
+        let day = try XCTUnwrap(Calendar(identifier: .gregorian).date(from: DateComponents(year: 2024, month: 12, day: 31, hour: 12)))
+        _ = finished { sdk.setProfileData(userId: "u-7", customProperties: ["visit": day], completion: $0) }
+        let body = requests("/profile/set", shop).first?.body ?? [:]
+        XCTAssertEqual(body["id"] as? String, "u-7")
+        XCTAssertEqual(body["external_id"] as? String, "u-7")
+        XCTAssertEqual(body["visit"] as? String, "2024-12-31")
+        XCTAssertEqual(ProfileDataImpl.dayFormatter().string(from: day), "2024-12-31")
+    }
+}

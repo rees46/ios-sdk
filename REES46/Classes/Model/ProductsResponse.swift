@@ -2,6 +2,9 @@ import Foundation
 
 public struct ProductsListResponse {
     public var brands: [String]?
+    /// How many listed products each brand of `brands` has, by name; a brand the response gives no
+    /// count for is left out.
+    public var brandCounts: [String: Int]?
     public var filters: [String: Filter]?
     public var priceRange: PriceRange?
     public var products: [Product]
@@ -13,12 +16,15 @@ public struct ProductsListResponse {
     init(json: [String: Any]) {
         if let brandsJSON = json["brands"] as? [[String: Any]] {
             var brandsResult = [String]()
+            var countsResult = [String: Int]()
             for item in brandsJSON {
                 if let name = item["name"] as? String {
                     brandsResult.append(name)
+                    if let count = JSONNumber.int(item["count"]) { countsResult[name] = count }
                 }
             }
             self.brands = brandsResult
+            self.brandCounts = countsResult
         }
         
         if let filtersJSON = json["filters"] as? [String: Any] {

@@ -53,7 +53,7 @@ public extension UIApplication {
             $0.adjustsImageWhenHighlighted = false
         }(UIButton.appearance())
         
-        if let aClass = NSClassFromString("UICalloutBarButton")! as? UIButton.Type {
+        if let aClass = NSClassFromString("UICalloutBarButton") as? UIButton.Type {
             aClass.appearance().setTitleColor(.white, for: .normal)
         }
         

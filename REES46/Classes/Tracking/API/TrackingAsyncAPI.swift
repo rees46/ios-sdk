@@ -34,7 +34,12 @@ public struct TrackingAsyncAPI {
         try await accepted { $0.categoryView(categoryId: categoryId, completion: $1) }
     }
 
-    public func search(query: String, results: [String]? = nil) async throws {
+    public func search(query: String) async throws {
+        try await accepted { $0.search(query: query, results: nil, completion: $1) }
+    }
+
+    @available(*, deprecated, message: "The server does not read results, and the parameter goes in the major: use search(query:).")
+    public func search(query: String, results: [String]?) async throws {
         try await accepted { $0.search(query: query, results: results, completion: $1) }
     }
 

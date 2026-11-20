@@ -9,6 +9,7 @@
 //  fake is bound to a retained local.
 //
 
+import UserNotifications
 import XCTest
 @testable import REES46
 
@@ -210,5 +211,22 @@ final class HandlePushRoutingTests: XCTestCase {
             PendingTrack(shopId: "shop-lazy", event: "delivered", type: "web", code: "e1", deviceId: ""),
             PendingTrack(shopId: "shop-lazy", event: "delivered", type: "web", code: "e1", deviceId: "lazy-did"),
         ], "no did is no reason to drop it, and no once-per-message rule; opened was never the old core's")
+    }
+
+    // MARK: - The contract's register and the notification centre
+
+    func test_register_takes_the_configs_without_a_label_as_the_contract_names_them() {
+        Rees46.register([Rees46Config(shopId: "shop-unlabeled")])
+        XCTAssertTrue(Rees46.pendingShopIds().contains("shop-unlabeled"))
+        var tracks: [PendingTrack] = []
+        recordPendingTracks { tracks.append($0) }
+        Rees46.handlePush(payload(shopId: "shop-unlabeled", type: "product", code: "p1"), event: .delivered)
+        XCTAssertEqual(tracks.map(\.shopId), ["shop-unlabeled"])
+    }
+
+    func test_a_response_of_the_notification_centre_is_closed_for_a_dismissal_and_clicked_for_any_tap() {
+        XCTAssertEqual(Rees46.pushEvent(ofAction: UNNotificationDismissActionIdentifier), .closed)
+        XCTAssertEqual(Rees46.pushEvent(ofAction: UNNotificationDefaultActionIdentifier), .clicked)
+        XCTAssertEqual(Rees46.pushEvent(ofAction: "open_product"), .clicked, "an action of the app's category is a tap")
     }
 }

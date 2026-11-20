@@ -220,7 +220,7 @@ struct PopupV3EmailSpec {
         successBackground = element.color("emailSuccessBg", CSSColor(red: 0xec, green: 0xfd, blue: 0xf5, alpha: 255))
         successColor = element.color("emailSuccessColor", CSSColor(red: 0x06, green: 0x5f, blue: 0x46, alpha: 255))
         let align = PopupV3HAlign(element.value("emailSuccessAlign"))
-        successAlign = align == .left || align == .right ? align! : .center
+        successAlign = align.flatMap { $0 == .left || $0 == .right ? $0 : nil } ?? .center
         successRadius = element.num("emailSuccessRadius", 12)
         successPaddingX = element.num("emailSuccessPaddingX", 14)
         successPaddingY = element.num("emailSuccessPaddingY", 16)

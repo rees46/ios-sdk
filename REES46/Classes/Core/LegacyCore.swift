@@ -91,7 +91,7 @@ final class LegacyCore: Core {
             case .success(let (response, data)):
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 // The error body is not logged: servers repeat the request data in it.
-                let succeeded = 200 ..< 299 ~= statusCode
+                let succeeded = 200 ..< 300 ~= statusCode
                 self.logger.requestFinished("GET", path, status: statusCode, succeeded: succeeded)
                 guard succeeded else {
                     completion(CoreResponse(status: statusCode, body: data, result: .failure(.invalidResponse), error: .http(code: statusCode, serverCode: nil)))
@@ -136,7 +136,7 @@ final class LegacyCore: Core {
             case .success(let (response, data)):
                 let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
                 // The error body is not logged: servers repeat the request data in it.
-                let succeeded = 200 ..< 299 ~= statusCode
+                let succeeded = 200 ..< 300 ~= statusCode
                 self.logger.requestFinished("POST", path, status: statusCode, succeeded: succeeded)
                 guard succeeded else {
                     let error = SdkError.serverMessage(in: data).map { SdkError.custom(error: $0) } ?? .invalidResponse

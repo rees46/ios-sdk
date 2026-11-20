@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UserNotifications
 
 /**
  Public entry point for the SDK — the unified, multi-instance API.
@@ -157,11 +158,16 @@ public enum Rees46 {
     }
 
     /**
-     Registers `shops` without initializing them. Initialization happens lazily on the first
+     Registers the shops of `configs` without initializing them, as the contract names it. Initialization happens lazily on the first
      `instance(for:)` for a shop — the region case, where only the current region is needed. Pass
      `eagerInit: true` to initialize every shop up front — the super-shop case, where instances must
      stay consistent.
      */
+    public static func register(_ configs: [Rees46Config], eagerInit: Bool = false) {
+        register(shops: configs, eagerInit: eagerInit)
+    }
+
+    /// `register(_:eagerInit:)` by its earlier label.
     public static func register(shops: [Rees46Config], eagerInit: Bool = false) {
         for config in shops {
             // The first registration decides the core of the process, as the first initialization does;
@@ -354,6 +360,33 @@ public enum Rees46 {
     @discardableResult
     public static func handlePush(_ payload: [AnyHashable: Any], event: Rees46.PushEvent) -> String? {
         route(payload, .event(event))
+    }
+
+    /**
+     `handlePush(_:event:)` for an app that is the `UNUserNotificationCenter` delegate, from
+     `userNotificationCenter(_:willPresent:withCompletionHandler:)`: the notification is shown while the app
+     is active — `opened`. Returns the shop the push went to, or `nil` for a push that is not the SDK's.
+     */
+    @discardableResult
+    public static func handleNotification(willPresent notification: UNNotification) -> String? {
+        handlePush(notification.request.content.userInfo, event: .opened)
+    }
+
+    /**
+     `handlePush(_:event:)` for an app that is the `UNUserNotificationCenter` delegate, from
+     `userNotificationCenter(_:didReceive:withCompletionHandler:)`: `closed` for the dismissal
+     (`UNNotificationDismissActionIdentifier`, which the system reports only for a category with
+     `.customDismissAction`), `clicked` for a tap on the notification or one of its actions. Returns the
+     shop the push went to, or `nil` for a push that is not the SDK's. Navigation stays with the app.
+     */
+    @discardableResult
+    public static func handleNotification(response: UNNotificationResponse) -> String? {
+        handlePush(response.notification.request.content.userInfo, event: pushEvent(ofAction: response.actionIdentifier))
+    }
+
+    /// The event of a response to a notification: its dismissal is `closed`, anything else a tap.
+    static func pushEvent(ofAction identifier: String) -> Rees46.PushEvent {
+        identifier == UNNotificationDismissActionIdentifier ? .closed : .clicked
     }
 
     /**

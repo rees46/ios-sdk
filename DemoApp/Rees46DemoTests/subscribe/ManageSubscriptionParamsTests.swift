@@ -81,12 +81,12 @@ final class ManageSubscriptionParamsTests: XCTestCase {
         }
     }
 
-    func test_invalidEmail_failsOnce_andSendsNothing() {
+    func test_emptyEmail_failsOnce_andSendsNothing() {
         var results: [Result<Void, SdkError>] = []
         let calledAgain = expectation(description: "completion called a second time")
         calledAgain.isInverted = true
 
-        service.manageSubscription(email: "not-an-email", telegramBulk: true) { result in
+        service.manageSubscription(email: "  ", telegramBulk: true) { result in
             results.append(result)
             if results.count > 1 { calledAgain.fulfill() }
         }
@@ -99,5 +99,15 @@ final class ManageSubscriptionParamsTests: XCTestCase {
         }
         XCTAssertEqual(message, "manageSubscription: email is not valid")
         XCTAssertEqual(sdk.postCallCount, 0)
+    }
+
+    /// The server checks an email's format: one the old regular expression refused goes as it is.
+    func test_anEmailOfAnyFormat_goesToTheServer() {
+        for email in ["not-an-email", "user@localhost", "a.b+c@sub.example.co.uk", "имя@пример.рф"] {
+            let done = expectation(description: email)
+            service.manageSubscription(email: email, emailBulk: true) { _ in done.fulfill() }
+            wait(for: [done], timeout: 2)
+            XCTAssertEqual(sdk.lastPostParams?["email"] as? String, email)
+        }
     }
 }

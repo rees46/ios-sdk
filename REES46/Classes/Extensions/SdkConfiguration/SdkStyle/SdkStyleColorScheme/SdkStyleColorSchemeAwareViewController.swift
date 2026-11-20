@@ -88,8 +88,8 @@ extension UIView {
 extension UIView {
     var parentViewController: UIViewController? {
         var parentResponder: UIResponder? = self
-        while parentResponder != nil {
-            parentResponder = parentResponder!.next
+        while let responder = parentResponder {
+            parentResponder = responder.next
             if let viewController = parentResponder as? UIViewController {
                 return viewController
             }

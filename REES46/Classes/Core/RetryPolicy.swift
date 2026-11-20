@@ -10,7 +10,7 @@ import Foundation
 
 enum RetryPolicy {
 
-    /// The longest pause between two tries, before its spread; `Retry-After` is held to it too.
+    /// The longest pause between two tries, its spread included; `Retry-After` is held to it too.
     static let maxPause: TimeInterval = 5 * 60
     /// The spread of a pause: ±20 %.
     static let spread = 0.2
@@ -23,12 +23,13 @@ enum RetryPolicy {
     }
 
     /// The pause after `failures` failed tries in a row: 1 s, 2 s, 4 s … 5 min, spread by ±20 % with
-    /// `random` in `0..<1`.
+    /// `random` in `0..<1`. The spread comes before the cap, as on Android: no pause is longer than five
+    /// minutes, and the long ones spread below it.
     static func pause(afterFailures failures: Int, random: Double) -> TimeInterval {
         let exponent = Double(min(max(failures - 1, 0), 16))
         let base = min(pow(2, exponent), maxPause)
         let unit = min(max(random, 0), 1)
-        return base * (1 + spread * (2 * unit - 1))
+        return min(base * (1 + spread * (2 * unit - 1)), maxPause)
     }
 
     /// The pause an answer's `Retry-After` asks for, held between one second and five minutes: as long

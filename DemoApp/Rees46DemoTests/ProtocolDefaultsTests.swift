@@ -75,6 +75,19 @@ final class ProtocolDefaultsTests: XCTestCase {
         XCTAssertTrue(reached, "the inner instance's call was taken for the outer one's loop")
     }
 
+    /// `userSeance`, `getDeviceId()`, `getSession()` and `getShopId()` are deprecated and keep working; the
+    /// SDK's own requests read the session of a conformer through its `sessionId`.
+    func test_the_deprecated_identity_accessors_keep_working_and_the_sdk_reads_the_session_without_them() {
+        XCTAssertEqual(sdk.requestSeance, "bare-seance", "the default sessionId of a conformer is its userSeance")
+        XCTAssertEqual(sdk.sessionId, "bare-seance")
+        sdk.userSeance = ""
+        XCTAssertNil(sdk.sessionId, "an empty one is none")
+        XCTAssertEqual(sdk.requestSeance, "")
+        let instance: PersonalizationSDK = sdk
+        XCTAssertEqual(instance.getDeviceId(), "bare-device-id")
+        XCTAssertEqual(instance.getShopId(), "bare-shop")
+    }
+
     func test_a_conformer_with_a_method_gets_its_own_method() {
         let mock = NotificationsMockSDK()
         mock.getCategory(category: "c") { _ in }

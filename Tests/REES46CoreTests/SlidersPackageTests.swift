@@ -81,6 +81,26 @@ final class SlidersPackageTests: XCTestCase {
         XCTAssertEqual(try request.decode(Data(#"{"payload":{}}"#.utf8)).banners.count, 0)
     }
 
+    func test_an_answer_without_its_code_is_the_requested_slider_and_a_payload_without_slides_has_no_banners() throws {
+        let request = try SlidersAPIImpl.getRequest(code: "homepage", tags: nil, locationId: nil)
+        let slides = #"[{"banner_id":5},{"banner_id":6,"recommended_code":"other"}]"#
+        for payload in [
+            #"{"properties":{"width":320},"slides":\#(slides)}"#,
+            #"{"properties":{"code":" ","width":320},"slides":\#(slides)}"#,
+            #"{"properties":{"code":null,"width":320},"slides":\#(slides)}"#,
+        ] {
+            let slider = try request.decode(Data(#"{"payload":\#(payload)}"#.utf8))
+            XCTAssertEqual(slider.code, "homepage", payload)
+            XCTAssertEqual(slider.banners.map(\.code), ["homepage", "other"], "a banner without its code takes the slider's")
+            XCTAssertEqual(slider.width, 320)
+        }
+        XCTAssertEqual(try request.decode(Data(#"{"payload":{"slides":[{"banner_id":5}]}}"#.utf8)).banners.map(\.code), ["homepage"], "no properties")
+        XCTAssertEqual(try request.decode(Data(#"{"payload":{"properties":{"code":"main"}}}"#.utf8)).code, "main", "the answer's own code wins")
+        for payload in [#"{"properties":{"code":"main"}}"#, #"{"slides":null}"#, #"{"slides":{}}"#, #"{"slides":"x"}"#] {
+            XCTAssertEqual(try request.decode(Data(#"{"payload":\#(payload)}"#.utf8)).banners.count, 0, payload)
+        }
+    }
+
     func test_the_sliders_fixture_is_proposed_until_the_contract_has_one() {
         XCTAssertFalse(
             FileManager.default.fileExists(atPath: ContractFixtures.url("sliders").path),

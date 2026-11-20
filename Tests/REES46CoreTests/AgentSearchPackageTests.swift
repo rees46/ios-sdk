@@ -35,6 +35,19 @@ final class AgentSearchPackageTests: XCTestCase {
         XCTAssertNoThrow(try SearchAPIImpl.agentRequest(message: String(repeating: "🇷🇺", count: 250), sessionId: nil, locations: nil))
     }
 
+    func test_a_message_without_an_id_has_none_and_never_zero() throws {
+        let request = try SearchAPIImpl.agentRequest(message: "hi", sessionId: nil, locations: nil)
+        for message in [#"{"role":"assistant"}"#, #"{"id":null}"#, #"{"id":""}"#, #"{"id":"x"}"#, #"{"id":true}"#, #"{"id":{}}"#] {
+            let answer = try request.decode(Data(#"{"session":{"id":13},"message":\#(message)}"#.utf8))
+            XCTAssertNil(answer.message.id, message)
+        }
+        let dialog = SearchAPIImpl.agentDialogRequest(sessionId: nil, locations: nil)
+        let history = try dialog.decode(Data(#"{"session":{"id":13,"messages":[{"role":"user","content":"a"},{"id":7}]}}"#.utf8))
+        XCTAssertEqual(history.session?.messages.map(\.id), [nil, 7])
+        XCTAssertEqual(try request.decode(Data(#"{"session":{"id":13},"message":{"id":0}}"#.utf8)).message.id, 0, "the server's own 0 stays")
+        XCTAssertEqual(try request.decode(Data(#"{"session":{"id":13},"message":{"id":"3000000012"}}"#.utf8)).message.id, 3_000_000_012)
+    }
+
     func test_the_switch_of_the_agent_follows_blank_mode() {
         let agent = AgentSearchSwitch()
         XCTAssertFalse(agent.isOn, "no answer of /init")
