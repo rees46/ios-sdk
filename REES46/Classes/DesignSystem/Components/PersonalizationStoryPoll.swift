@@ -235,11 +235,12 @@ extension PersonalizationStoryPoll {
         case negative, neutral, positive
     }
 
-    /// Тон ячейки, как `scaleColor` веба: NPS 0–10 — 0–2 красные, 3–8 оранжевые и жёлтые,
-    /// 9–10 зелёные; прочие шкалы — по третям диапазона.
+    /// Тон ячейки, как `scaleColor` веба: NPS 0–10 — критики 0–6, нейтральные 7–8, промоутеры
+    /// 9–10; прочие шкалы и NPS другого диапазона — по третям: доля `(value-min)/(max-min)`
+    /// меньше 0,34 — плохо, меньше 0,68 — средне, иначе хорошо.
     public static func scaleTone(_ scale: Scale, value: Int, min: Int, max: Int) -> Tone {
         if scale == .nps, min == 0, max == 10 {
-            if value <= 2 { return .negative }
+            if value <= 6 { return .negative }
             return value <= 8 ? .neutral : .positive
         }
         let position = max > min ? Double(value - min) / Double(max - min) : 1

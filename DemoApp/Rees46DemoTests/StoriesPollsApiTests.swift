@@ -204,10 +204,10 @@ final class StoriesPollsApiTests: XCTestCase {
         XCTAssertEqual(PersonalizationStoryPoll.scaleRange(.csat, min: 2, max: nil), [2, 3, 4, 5])
     }
 
-    /// The tones of NPS follow the web's colours: 0–2 red, 3–8 orange and yellow, 9–10 green.
+    /// The tones of NPS follow the web's `scaleColor`: detractors 0–6, passives 7–8, promoters 9–10.
     func testScaleTones() {
         let nps = (0...10).map { PersonalizationStoryPoll.scaleTone(.nps, value: $0, min: 0, max: 10) }
-        XCTAssertEqual(nps, [.negative, .negative, .negative, .neutral, .neutral, .neutral, .neutral, .neutral, .neutral, .positive, .positive])
+        XCTAssertEqual(nps, Array(repeating: .negative, count: 7) + [.neutral, .neutral, .positive, .positive])
         XCTAssertEqual(PersonalizationStoryPoll.scaleTone(.nps, value: 3, min: 1, max: 5), .neutral, "NPS of another range — by thirds")
     }
 

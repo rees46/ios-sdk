@@ -473,9 +473,12 @@ public struct PersonalizationStorySlide {
     }
 
     /// Тема слайда: медиа — тёмная тема кита (светлая шапка и текст поверх фото),
-    /// остальные — тема приложения на Background/Card.
+    /// остальные — тема приложения на Background/Card; слайд v3 со своим `background_color` —
+    /// тема под этот цвет (на тёмном — тёмная), чтобы шапка и текст кита читались.
     public var interfaceStyle: UIUserInterfaceStyle {
-        isMedia ? .dark : .unspecified
+        if isMedia { return .dark }
+        if isV3, let backgroundColor { return PersonalizationStoryColors.isDark(backgroundColor) ? .dark : .light }
+        return .unspecified
     }
 
     /// Ссылка кнопки: своя; у товарного слайда без неё — ссылка товара, а у слайда v3 кнопка

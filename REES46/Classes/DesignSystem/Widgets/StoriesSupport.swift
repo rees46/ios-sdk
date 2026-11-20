@@ -541,7 +541,8 @@ final class StoriesSession {
                 progress.leftForward(story, throughEnd: throughEnd)
                 onSeen?()
             }
-            viewer.remembersMute = true
+            // Выбор звука — по магазину, как веб помнит его по сайту.
+            viewer.muteDefaults = sdk.map { ($0 as? SimplePersonalizationSDK)?.storage.partition ?? StoragePartition.store(ofShop: $0.shopId) }
         } else if let link, let shared = stories.first {
             viewer.startSlide = {
                 StoriesSeenState.startSlide($0, seen: seen.seen($0), shared: shared, linkSlide: link.slideId)

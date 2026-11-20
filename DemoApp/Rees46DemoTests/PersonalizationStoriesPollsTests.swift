@@ -641,7 +641,7 @@ extension PersonalizationStoriesPollsTests {
     /// The tone of a rate, like the web's colours of the cells: red, then orange and yellow, then green.
     func testTheScaleCellsGoFromRedToGreenInTheKitsColours() throws {
         let (card, _, _) = mount(scalePoll(.nps))
-        XCTAssertEqual(card.cells.map(\.fillColor), [0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2].map {
+        XCTAssertEqual(card.cells.map(\.fillColor), [0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2].map {
             [PersonalizationColor.semanticDanger, PersonalizationColor.semanticWarning, Style.accent][$0]
         })
         XCTAssertEqual(card.cells[0].capsuleColor, PersonalizationColor.semanticDanger.withAlphaComponent(PollScaleCell.tintAlpha))
@@ -1140,7 +1140,7 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertFalse(card.isEditing, "the keyboard is gone")
     }
 
-    func testTheCardSitsOnItsOffsetBetweenTheHeaderAndTheButtons() throws {
+    func testTheCardSitsOnItsOffsetAndStaysInsideTheSlide() throws {
         func layout(_ poll: PersonalizationStoryPoll, buttons: [PersonalizationStorySlide.Button] = [], width: CGFloat = 402)
             -> (slide: PersonalizationStorySlideView, card: PersonalizationStoryPollView) {
             let slide = PersonalizationStorySlideView(
@@ -1167,16 +1167,15 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertGreaterThan(scale.stack.arrangedSubviews.first?.frame.height ?? 0, 10)
 
         let top = layout(miniPoll(.singleChoice, yOffset: 0)).card
-        XCTAssertEqual(top.frame.minY, 16, accuracy: 0.5, "not above the content area")
-        XCTAssertEqual(layout(miniPoll(.singleChoice, yOffset: nil)).card.frame.minY, 16, accuracy: 0.5, "no y_offset — 0")
-        XCTAssertEqual(layout(miniPoll(.singleChoice, yOffset: -20)).card.frame.minY, 16, accuracy: 0.5, "clamped to 0")
+        XCTAssertEqual(top.frame.minY, 0, accuracy: 0.5, "the top of the slide, under the header if so")
+        XCTAssertEqual(layout(miniPoll(.singleChoice, yOffset: nil)).card.frame.minY, 0, accuracy: 0.5, "no y_offset — 0")
+        XCTAssertEqual(layout(miniPoll(.singleChoice, yOffset: -20)).card.frame.minY, 0, accuracy: 0.5, "clamped to 0")
         XCTAssertEqual(layout(miniPoll(.singleChoice, yOffset: 150)).card.frame.maxY, 874 - 16, accuracy: 0.5, "clamped to 100, inside")
 
         let withButton = layout(miniPoll(.singleChoice, yOffset: 90), buttons: [.init(title: "Buy")])
-        let button = try XCTUnwrap(withButton.slide.subviews.compactMap { $0 as? UIStackView }.first)
-        XCTAssertEqual(withButton.card.frame.maxY, button.frame.minY - 16, accuracy: 0.5, "above the buttons")
+        XCTAssertEqual(withButton.card.frame.maxY, 874 - 16, accuracy: 0.5, "16 above the bottom of the slide, as the web")
 
-        // The share is of the whole slide, then the card moves into the area under the header.
+        // The share is of the whole slide; the safe area keeps the card above the home indicator.
         func inset(_ yOffset: CGFloat) -> PersonalizationStoryPollView {
             let poll = miniPoll(.singleChoice, yOffset: yOffset)
             let slide = PersonalizationStorySlideView(slide: PersonalizationStorySlide(id: "1", kind: .content, poll: poll),
@@ -1189,15 +1188,17 @@ extension PersonalizationStoriesPollsTests {
             return card
         }
         XCTAssertEqual(inset(35).frame.minY, 874 * 0.35, accuracy: 0.5, "of the whole height, not of the area")
-        XCTAssertEqual(inset(5).frame.minY, 116, accuracy: 0.5, "5% is under the header — moved down into the area")
+        XCTAssertEqual(inset(5).frame.minY, 874 * 0.05, accuracy: 0.5, "5% stays under the header: it keeps its offset")
+        XCTAssertEqual(inset(95).frame.maxY, 874 - 34 - 16, accuracy: 0.5, "16 above the safe bottom")
 
         let wide = layout(miniPoll(.singleChoice), width: 1000).card
         XCTAssertEqual(wide.frame.width, 420, "not wider than 420")
         XCTAssertEqual(wide.frame.midX, 500, accuracy: 0.5)
     }
 
-    func testATextBlockAndAPollWithOneOffsetStandAtOneHeight() throws {
-        // One rule for both, as `top: y%` of one slide container on the web.
+    /// The text block keeps to the area between the header and the buttons; the card keeps its
+    /// `y_offset` and only the bottom of the slide, as the web's `fittedTop`.
+    func testATextBlockAndAPollWithOneOffset() throws {
         func layout(_ yOffset: CGFloat, buttons: [PersonalizationStorySlide.Button] = []) throws
             -> (block: CGRect, card: CGRect, buttons: CGRect?) {
             let poll = miniPoll(.singleChoice, yOffset: yOffset)
@@ -1214,20 +1215,18 @@ extension PersonalizationStoriesPollsTests {
             let card = try XCTUnwrap(slide.pollView)
             return (block.frame, card.frame, slide.subviews.compactMap { $0 as? UIStackView }.first?.frame)
         }
-        for offset: CGFloat in [0, 5, 11, 35, 50, 60] {
+        for offset: CGFloat in [35, 50, 60] {
             let both = try layout(offset)
             XCTAssertEqual(both.block.minY, both.card.minY, accuracy: 0.5, "y_offset \(offset)")
         }
-        XCTAssertEqual(try layout(5).block.minY, 116, accuracy: 0.5, "under the header — both at the top of the area")
-        XCTAssertEqual(try layout(50).card.minY, 437, accuracy: 0.5, "both on 50% of the whole slide")
+        let high = try layout(5)
+        XCTAssertEqual(high.block.minY, 116, accuracy: 0.5, "the block moves under the header")
+        XCTAssertEqual(high.card.minY, 874 * 0.05, accuracy: 0.5, "the card keeps its offset")
 
-        let low = try layout(95)
-        XCTAssertEqual(low.block.maxY, 874 - 34 - 16, accuracy: 0.5, "too low — both pressed to the bottom of the area")
-        XCTAssertEqual(low.card.maxY, 874 - 34 - 16, accuracy: 0.5)
         let withButton = try layout(95, buttons: [.init(title: "Buy")])
         let buttons = try XCTUnwrap(withButton.buttons)
-        XCTAssertEqual(withButton.block.maxY, buttons.minY - 16, accuracy: 0.5, "both above the buttons")
-        XCTAssertEqual(withButton.card.maxY, buttons.minY - 16, accuracy: 0.5)
+        XCTAssertEqual(withButton.block.maxY, buttons.minY - 16, accuracy: 0.5, "the block above the buttons")
+        XCTAssertEqual(withButton.card.maxY, 874 - 34 - 16, accuracy: 0.5, "the card 16 above the safe bottom")
     }
 }
 

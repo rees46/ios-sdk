@@ -661,6 +661,9 @@ extension PersonalizationStoriesShareTests {
         let view = PersonalizationStorySlideView(slide: try slide(["id": 1, "type": "", "background_color": "#FF0000"]),
                                                  texts: .init(), isMuted: true, imageLoader: { _, _ in })
         XCTAssertEqual(view.backgroundColor, red)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#1E3A8A"]).interfaceStyle, .dark, "the kit's texts stay readable")
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#FDE68A"]).interfaceStyle, .light)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#1E3A8A"], v3: false).interfaceStyle, .unspecified)
     }
 
     /// One rule of the text block: the kit's body size, `bold` then `text_bold`, `italic` then
@@ -755,13 +758,13 @@ extension PersonalizationStoriesShareTests {
         let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "block", v3Domain: "app.test")
         let viewer = session.makeViewer(stories: [story], startIndex: 0)
         XCTAssertEqual(viewer.startSlideIndex(of: story), 2)
-        XCTAssertTrue(viewer.remembersMute, "the mute choice is kept on the device, as the web")
+        XCTAssertNotNil(viewer.muteDefaults, "the mute choice is kept per shop, as the web keeps it per site")
 
         session.progress.shown(slides[1], of: story)
         XCTAssertEqual(viewer.startSlideIndex(of: story), 1, "where it was left, like the web's feed in memory")
         session.progress.leftForward(story, throughEnd: true)
         XCTAssertEqual(viewer.startSlideIndex(of: story), 0, "watched to the end — from the start")
-        XCTAssertFalse(StoriesSession(sdk: FakeSDK(), code: "block").makeViewer(stories: [story], startIndex: 0).remembersMute)
+        XCTAssertNil(StoriesSession(sdk: FakeSDK(), code: "block").makeViewer(stories: [story], startIndex: 0).muteDefaults)
     }
 
     /// The ring follows the feed's `viewed`; a story left forward is viewed for the life of the feed.
@@ -798,28 +801,27 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(left, ["a!"])
     }
 
-    /// The user's mute choice of a v3 viewer is kept on the device; muted by default.
-    func testTheMuteChoiceOfV3IsRememberedOnTheDevice() {
+    /// The user's mute choice of a v3 viewer is kept in its shop's storage; muted by default.
+    func testTheMuteChoiceOfV3IsRememberedPerShop() {
         let audio = PersonalizationStoryAudio.shared
-        let name = "audio-tests-\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: name) ?? .standard
-        let saved = audio.defaults
-        audio.defaults = defaults
+        let names = ["audio-a-\(UUID().uuidString)", "audio-b-\(UUID().uuidString)"]
+        let shops = names.map { UserDefaults(suiteName: $0) ?? .standard }
         defer {
             audio.setMuted(true)
-            audio.defaults = saved
-            UserDefaults.standard.removePersistentDomain(forName: name)
+            names.forEach { UserDefaults.standard.removePersistentDomain(forName: $0) }
         }
-        audio.restoreRemembered()
+        audio.restoreRemembered(from: shops[0])
         XCTAssertTrue(audio.isMuted, "muted by default")
-        audio.begin(remembering: true)
+        audio.begin(remembering: shops[0])
         audio.setMuted(false)
-        audio.end(remembering: true)
-        XCTAssertEqual(defaults.object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false)
+        audio.end(remembering: shops[0])
+        XCTAssertEqual(shops[0].object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false)
         audio.setMuted(true)
-        XCTAssertEqual(defaults.object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false, "an old-feed viewer does not write")
-        audio.restoreRemembered()
-        XCTAssertFalse(audio.isMuted, "the next v3 viewer starts as the user chose")
+        XCTAssertEqual(shops[0].object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false, "an old-feed viewer does not write")
+        audio.restoreRemembered(from: shops[0])
+        XCTAssertFalse(audio.isMuted, "the next v3 viewer of the shop starts as the user chose")
+        audio.restoreRemembered(from: shops[1])
+        XCTAssertTrue(audio.isMuted, "another shop has its own choice")
     }
 
     /// `header`: icon, title and subtitle; a tap sends `click` and opens the link, as the web.

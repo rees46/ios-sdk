@@ -191,8 +191,9 @@ public final class PersonalizationStoriesViewController: UIViewController {
     /// закрытию — или свайпнули к следующей. Лента v3 по нему считает сторис просмотренной.
     var onStoryLeftForward: ((PersonalizationStory, _ throughEnd: Bool) -> Void)?
 
-    /// Выбор звука помнится на устройстве, как в вебе (лента v3); иначе — до конца процесса.
-    var remembersMute = false
+    /// Раздел магазина, где помнится выбор звука, как веб помнит его по сайту (лента v3); `nil` —
+    /// выбор живёт до конца процесса.
+    var muteDefaults: UserDefaults?
 
     /// Видео сейчас без звука: так выбрал пользователь (выбор общий на весь запуск) или звук
     /// забрала система — выдернули наушники, прервал звонок.
@@ -247,7 +248,7 @@ extension PersonalizationStoriesViewController {
         super.viewDidLoad()
         view.backgroundColor = .black
         // Лента v3: звук — как пользователь выбрал на этом устройстве, до первого ролика.
-        if remembersMute { PersonalizationStoryAudio.shared.restoreRemembered() }
+        if let muteDefaults { PersonalizationStoryAudio.shared.restoreRemembered(from: muteDefaults) }
 
         pager.dataSource = self
         pager.delegate = self
@@ -276,7 +277,7 @@ extension PersonalizationStoriesViewController {
         }
         if !hasAppeared {
             hasAppeared = true
-            PersonalizationStoryAudio.shared.begin(remembering: remembersMute)
+            PersonalizationStoryAudio.shared.begin(remembering: muteDefaults)
             startClock()
             if let page = pager.viewControllers?.first as? PersonalizationStoryPageViewController {
                 settle(on: page)
@@ -391,7 +392,7 @@ extension PersonalizationStoriesViewController {
         view.endEditing(true)
         stopClock()
         activePage?.slideView?.pause()
-        if hasAppeared { PersonalizationStoryAudio.shared.end(remembering: remembersMute) }
+        if hasAppeared { PersonalizationStoryAudio.shared.end(remembering: muteDefaults) }
         onClose?()
     }
 
