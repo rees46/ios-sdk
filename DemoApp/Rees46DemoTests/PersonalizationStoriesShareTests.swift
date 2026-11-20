@@ -380,7 +380,7 @@ final class PersonalizationStoriesShareTests: XCTestCase {
 
         XCTAssertEqual(errors, 0)
         XCTAssertEqual(requests().first?.url?.absoluteString,
-                       "https://app.test/api/v3/storefront/stories/115bd0b67cf5989a1b60c841790b2af6/story/40?shop_id=shop&did=fake-device-id&slide_id=37")
+                       "https://app.test/api/v3/storefront/stories/115bd0b67cf5989a1b60c841790b2af6/story/40?shop_id=shop&did=fake-device-id&sid=fake-seance&segment=A&stream=ios&slide_id=37")
         let viewer = try XCTUnwrap(host.shown.first as? PersonalizationStoriesViewController)
         XCTAssertEqual(viewer.startSlideIndex(of: viewer.stories[0]), 1, "a viewed campaign still opens on the link slide")
         XCTAssertEqual((viewer.shareItem(for: URL(string: "https://demo.test/?r46_story=40")!) as? URL)?.absoluteString,
