@@ -801,6 +801,25 @@ extension PersonalizationStoriesShareTests {
                       === PersonalizationStoryAudio.shared.processChoice, "the old feed shares the choice of the run")
     }
 
+    /// A story opened by a link starts on the link's slide the first time only; then, as any story,
+    /// where it was left in this viewing.
+    func testALinkSetsOnlyTheFirstOpenOfItsStory() throws {
+        let slides = (0..<3).map { PersonalizationStorySlide(id: "\($0)", kind: .content) }
+        let story = PersonalizationStory(id: "40", name: "S", startPosition: 0, slides: slides)
+        let other = PersonalizationStory(id: "41", name: "T", startPosition: 1, slides: slides)
+        let link = try XCTUnwrap(StoriesShareLink(url: URL(string: "https://demo.test/?r46_stories=b&r46_story=40&r46_slide=2")!))
+        let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "b", v3Domain: "app.test")
+        let viewer = session.makeViewer(stories: [story, other], startIndex: 0, link: link)
+        XCTAssertEqual(viewer.startSlideIndex(of: story), 2, "the first open: the link's slide")
+        XCTAssertEqual(viewer.startSlideIndex(of: other), 1)
+
+        session.progress.shown(slides[2], of: story)
+        session.progress.shown(slides[1], of: story)
+        XCTAssertEqual(viewer.startSlideIndex(of: story), 1, "back to it: where it was left")
+        session.progress.leftForward(story, throughEnd: true)
+        XCTAssertEqual(viewer.startSlideIndex(of: story), 0, "watched to the end — from the start, not the link's slide")
+    }
+
     /// The ring follows the feed's `viewed`; a story left forward is viewed for the life of the feed.
     func testTheRingOfAV3StoryFollowsTheFeedAndLeavingForward() {
         let slides = (0..<2).map { PersonalizationStorySlide(id: "\($0)", kind: .content) }

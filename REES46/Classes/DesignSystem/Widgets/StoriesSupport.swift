@@ -415,6 +415,11 @@ final class StoriesFeedProgress {
         positions[story.id] ?? story.startPosition
     }
 
+    /// Сторис уже показывали за этот ход: её слайд был на экране или из неё ушли вперёд.
+    func wasShown(_ story: PersonalizationStory) -> Bool {
+        positions[story.id] != nil
+    }
+
     /// Слайд показан.
     func shown(_ slide: PersonalizationStorySlide, of story: PersonalizationStory) {
         guard let index = story.slides.firstIndex(where: { $0.id == slide.id }) else { return }
@@ -527,8 +532,9 @@ final class StoriesSession {
     }
 
     /// Просмотрщик на сторис блока, связанный с этой сессией. Сторис открываются с первого
-    /// непросмотренного слайда (`StoriesSeenState.startSlide`). `link` — сторис открыты по
-    /// ссылке: первая сторис ответа — со слайда ссылки, если он в ней есть, иначе со
+    /// непросмотренного слайда (`StoriesSeenState.startSlide`), у ленты v3 — со `start_position`
+    /// и дальше по ходу показа (`StoriesFeedProgress`). `link` — сторис открыты по ссылке: первая
+    /// сторис ответа в первый раз — со слайда ссылки, если он в ней есть, иначе со
     /// `start_position` ответа; остальные — как обычно.
     func makeViewer(stories: [PersonalizationStory], startIndex: Int, link: StoriesShareLink? = nil) -> PersonalizationStoriesViewController {
         let viewer = PersonalizationStoriesViewController(stories: stories, startIndex: startIndex)
@@ -545,13 +551,14 @@ final class StoriesSession {
         }
         let seen = seenState
         if v3 != nil {
-            // Лента v3 — как веб: `start_position` ленты, а по ссылке первая сторис — со слайда
-            // ссылки, если он есть в ответе: `start_position` сервер ставит только по своим
-            // слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает.
+            // Лента v3 — как веб: `start_position` ленты, а по ссылке первая сторис в первый раз —
+            // со слайда ссылки, если он есть в ответе: `start_position` сервер ставит только по
+            // своим слайдам, виртуальные слайды товарных кампаний (`39_2`) он не знает. Дальше она,
+            // как любая сторис, — с того места, где из неё ушли.
             let progress = self.progress
             let shared = link.flatMap { _ in stories.first }
             viewer.startSlide = { story in
-                if let shared, story.id == shared.id,
+                if let shared, story.id == shared.id, !progress.wasShown(story),
                    let index = link?.slideId.flatMap({ id in story.slides.firstIndex { $0.id == id } }) {
                     return index
                 }
