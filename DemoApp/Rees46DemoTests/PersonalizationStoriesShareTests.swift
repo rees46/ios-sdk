@@ -671,7 +671,8 @@ extension PersonalizationStoriesShareTests {
     }
 
     /// One rule of the text block: the kit's body size, `bold` then `text_bold`, `italic` then
-    /// `text_italic`, opacity as `NN%`, 0–100 or 0–1, and `monospace` or `monospaced`.
+    /// `text_italic` (true, 1, "true"), opacity as the web's `calculateOpacity` — a number is a
+    /// percent — and `monospace` or `monospaced`.
     func testTextBlocksOfV3FollowOneRule() throws {
         func block(_ json: [String: Any], v3: Bool = true) throws -> PersonalizationStorySlide.TextBlock {
             try XCTUnwrap(PersonalizationStorySlide.TextBlock(json: json.merging(["text_input": "Привет"]) { own, _ in own }, v3: v3))
@@ -684,14 +685,28 @@ extension PersonalizationStoriesShareTests {
         XCTAssertTrue(try block(["text_bold": true]).bold, "the legacy key is read too")
         XCTAssertFalse(try block(["bold": false, "text_bold": true]).bold)
         XCTAssertTrue(try block(["text_italic": true]).italic)
+        XCTAssertFalse(try block(["italic": false, "text_italic": true]).italic, "italic wins")
+        XCTAssertTrue(try block(["bold": 1]).bold)
+        XCTAssertTrue(try block(["bold": "true"]).bold)
+        XCTAssertFalse(try block(["bold": "1"]).bold, "only true, 1 and \"true\"")
+        XCTAssertTrue(try block(["bold": NSNull(), "text_bold": "true"]).bold, "null is no bold: the legacy key")
         XCTAssertEqual(try block(["font_type": "monospace"]).fontFamily, .monospaced)
         XCTAssertEqual(try block(["font_type": "monospaced"]).fontFamily, .monospaced)
         XCTAssertEqual(try block(["font_type": "serif"]).fontFamily, .serif)
         XCTAssertEqual(try block(["font_type": "sans-serif"]).fontFamily, .sansSerif)
-        for opacity in ["50%", 50, 0.5] as [Any] {
-            let fill = try block(["text_background_color": "#000000", "text_background_color_opacity": opacity]).fill
-            XCTAssertEqual(fill?.cgColor.alpha ?? 0, 0.5, accuracy: 0.001, "\(opacity)")
+        func alpha(_ opacity: Any?) throws -> CGFloat? {
+            var json: [String: Any] = ["text_background_color": "#000000"]
+            json["text_background_color_opacity"] = opacity
+            return try block(json).fill?.cgColor.alpha
         }
+        for (opacity, expected) in [("50%", 0.5), (50, 0.5), ("50", 0.5), ("0.5", 0.005), (0.5, 0.005), ("0", 0), ("100%", 1), ("35.5%", 0.355)] as [(Any, CGFloat)] {
+            XCTAssertEqual(try alpha(opacity) ?? -1, expected, accuracy: 0.0001, "\(opacity)")
+        }
+        for opacity in [nil, "", 0, "abc", 150, -5, true] as [Any?] {
+            XCTAssertEqual(try alpha(opacity) ?? -1, 1, accuracy: 0.0001, "\(String(describing: opacity)): no opacity — opaque")
+        }
+        XCTAssertEqual(try block(["text_background_color": "#000000", "text_background_color_opacity": "0.5"], v3: false).fill?.cgColor.alpha ?? -1,
+                       0.5, accuracy: 0.0001, "the old feed keeps its fraction")
     }
 
     /// A button without a link sends `click` and opens nothing, as the web; no product fallback.

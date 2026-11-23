@@ -135,6 +135,34 @@ enum PersonalizationStoryColors {
         return CGFloat(min(max(fraction, 0), 1))
     }
 
+    /// Прозрачность заливки текстового блока ленты v3, как `calculateOpacity` веба: число в начале
+    /// записи (`parseFloat`) — проценты: `"50"`, `"50%"` и `50` — 0,5, `"0.5"` — 0,005. Нет значения,
+    /// пустая строка, `0` числом (у веба — «нет прозрачности»), не число и вне 0…100 — `nil`: цвет
+    /// как есть.
+    static func cssOpacity(_ value: Any?) -> CGFloat? {
+        let number: Double?
+        switch value {
+        case let flag as NSNumber where flag === kCFBooleanTrue || flag === kCFBooleanFalse:
+            return nil
+        case let numeric as NSNumber:
+            number = numeric.doubleValue == 0 ? nil : numeric.doubleValue
+        case let text as String:
+            number = leadingNumber(text)
+        default:
+            number = nil
+        }
+        guard let number, number.isFinite, (0...100).contains(number) else { return nil }
+        return CGFloat(number / 100)
+    }
+
+    /// Число в начале строки, как `parseFloat`: пробелы впереди пропускаются, хвост (`%`, буквы)
+    /// не мешает; числа нет — `nil`.
+    static func leadingNumber(_ text: String) -> Double? {
+        let trimmed = text.drop(while: { $0.isWhitespace })
+        guard let range = trimmed.range(of: #"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?"#, options: .regularExpression) else { return nil }
+        return Double(trimmed[range])
+    }
+
     /// Тёмный ли цвет: по относительной яркости, порог — середина шкалы.
     static func isDark(_ color: UIColor) -> Bool {
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0

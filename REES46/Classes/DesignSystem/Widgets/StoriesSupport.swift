@@ -265,8 +265,10 @@ extension PersonalizationStorySlide.TextBlock {
     /// множитель кегля, без него — интерлиньяж пресета для этого кегля.
     ///
     /// Блок ленты v3 — по одному правилу на всех платформах: кегль по умолчанию — основной текст
-    /// кита (Base/Default 16/24), жирность — `bold` (старое `text_bold` тоже), курсив — `italic`
-    /// (и `text_italic`), гарнитура `sans-serif`, `serif`, `monospace` (и `monospaced`).
+    /// кита (Base/Default 16/24); жирность — `bold`, без него — старое `text_bold`; курсив —
+    /// `italic`, без него — `text_italic` (истина — `true`, `1` и `"true"`); гарнитура
+    /// `sans-serif`, `serif`, `monospace` (и `monospaced`); прозрачность заливки — проценты, как
+    /// `calculateOpacity` веба (`PersonalizationStoryColors.cssOpacity`).
     init?(json: [String: Any], v3: Bool = false) {
         guard let text = StoriesJSON.string(json["text_input"]) else { return nil }
         let fontSize = StoriesJSON.number(json["font_size"]).map { CGFloat($0) }
@@ -282,20 +284,23 @@ extension PersonalizationStorySlide.TextBlock {
             lineHeight = PersonalizationStoryTextBlock.Style.presetLineHeight(for: size)
         }
         let bold = v3
-            ? StoriesJSON.bool(json["bold"]) ?? StoriesJSON.bool(json["text_bold"])
+            ? Self.flag(json["bold"]) ?? Self.flag(json["text_bold"])
             : StoriesJSON.bool(json["text_bold"]) ?? StoriesJSON.bool(json["bold"])
+        let italic = v3
+            ? Self.flag(json["italic"]) ?? Self.flag(json["text_italic"])
+            : StoriesJSON.bool(json["italic"]) ?? StoriesJSON.bool(json["text_italic"])
+        let fill = v3
+            ? Self.fill(css: StoriesJSON.string(json["text_background_color"]), opacity: json["text_background_color_opacity"])
+            : Self.fill(color: StoriesJSON.string(json["text_background_color"]), opacity: StoriesJSON.string(json["text_background_color_opacity"]))
         self.init(
             text: text,
             style: PersonalizationStoryTextBlock.Style(size: size, lineHeight: lineHeight),
             fontFamily: Self.family(StoriesJSON.string(json["font_type"]), v3: v3),
             bold: bold ?? false,
-            italic: StoriesJSON.bool(json["italic"]) ?? StoriesJSON.bool(json["text_italic"]) ?? false,
+            italic: italic ?? false,
             alignment: Self.alignment(StoriesJSON.string(json["text_align"])),
             textColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["text_color"])),
-            fill: Self.fill(
-                color: StoriesJSON.string(json["text_background_color"]),
-                opacity: StoriesJSON.string(json["text_background_color_opacity"])
-            ),
+            fill: fill,
             yOffset: CGFloat(StoriesJSON.number(json["y_offset"]) ?? 0),
             promoCode: StoriesJSON.string(json["promocode"])
         )
@@ -306,6 +311,21 @@ extension PersonalizationStorySlide.TextBlock {
     static func fill(color: String?, opacity: String?) -> UIColor? {
         guard let base = PersonalizationStoryColors.parse(color) else { return nil }
         return base.withAlphaComponent(PersonalizationStoryColors.opacity(opacity) ?? 1)
+    }
+
+    /// Заливка блока ленты v3, как `calculateOpacity` веба: прозрачность — проценты; без неё или
+    /// с негодной — цвет как есть (без своей альфы — непрозрачный).
+    static func fill(css color: String?, opacity: Any?) -> UIColor? {
+        guard let base = PersonalizationStoryColors.parse(color) else { return nil }
+        guard let alpha = PersonalizationStoryColors.cssOpacity(opacity) else { return base }
+        return base.withAlphaComponent(alpha)
+    }
+
+    /// Флаг блока ленты v3: истина — `true`, `1` и `"true"`; прочее заданное — ложь; нет или
+    /// `null` — `nil`, и читается старый ключ.
+    static func flag(_ value: Any?) -> Bool? {
+        guard let value, !(value is NSNull) else { return nil }
+        return PersonalizationStoryPoll.flag(value)
     }
 
     /// Гарнитура: `sans-serif`, `serif`, `monospaced`; у блока v3 и `monospace`, как в вебе.
