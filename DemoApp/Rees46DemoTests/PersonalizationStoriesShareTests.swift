@@ -1064,6 +1064,16 @@ extension PersonalizationStoriesShareTests {
         let header = try XCTUnwrap(view.headerView)
         XCTAssertEqual(header.titleLabel.text, "Магазин")
         XCTAssertEqual(header.subtitleLabel.text, "Новинки")
+        view.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+        view.layoutIfNeeded()
+        XCTAssertEqual(header.icon.frame.size, CGSize(width: 40, height: 40), "the kit's icon of 40, as on the other SDKs")
+        let texts = try XCTUnwrap(header.titleLabel.superview)
+        XCTAssertEqual(texts.convert(texts.bounds, to: header).minX - header.icon.frame.maxX, 12, accuracy: 0.5, "12 to the texts")
+        func size(_ label: UILabel) -> CGFloat? {
+            (label.attributedText?.attribute(.font, at: 0, effectiveRange: nil) as? UIFont)?.pointSize
+        }
+        XCTAssertEqual(size(header.titleLabel), PersonalizationTypography.smEmphasized.size, "the kit's small body")
+        XCTAssertEqual(size(header.subtitleLabel), PersonalizationTypography.xsDefault.size, "the kit's caption")
         header.sendActions(for: .touchUpInside)
         XCTAssertEqual(tapped?.link, "https://shop.test/new")
 
@@ -1079,5 +1089,16 @@ extension PersonalizationStoriesShareTests {
         wait(for: [sent], timeout: 5)
         XCTAssertEqual(requests().map { body($0)["event"] as? String }, ["click"])
         XCTAssertEqual(opened, ["https://shop.test/new"])
+
+        let plain = try XCTUnwrap(try slide(["id": 2, "type": "", "elements": [["type": "header", "title": "Магазин"]]]).header)
+        let second = expectation(description: "click without a link")
+        let more = capture { _ in
+            second.fulfill()
+            return (Data("{}".utf8), 200)
+        }
+        session.headerTapped(PersonalizationStory(id: "5", name: "S", slides: [v3]), v3, plain, in: nil)
+        wait(for: [second], timeout: 5)
+        XCTAssertEqual(more().map { body($0)["event"] as? String }, ["click"])
+        XCTAssertEqual(opened, ["https://shop.test/new"], "a header without a link sends click only")
     }
 }

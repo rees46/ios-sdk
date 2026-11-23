@@ -110,12 +110,15 @@ public final class PersonalizationStoryNavigation: UIView {
 }
 
 /// Шапка слайда — элемент `header` ленты API v3, как в вебе: иконка, заголовок и подзаголовок
-/// в одну строку; нажатие — `click` и ссылка шапки. Вид — кита: круглая иконка 32, заголовок
-/// SM/Emphasized, подзаголовок XS/Default цвета Text/Secondary; цвета — из темы слайда (на
-/// медиа светлые).
+/// в одну строку; нажатие — `click` и ссылка шапки (без ссылки — только `click`). Вид — кита,
+/// одинаковый у четырёх SDK: круглая иконка 40, шаг 12 до текстов, заголовок — мелкий основной
+/// текст кита (SM/Emphasized), подзаголовок — подпись (XS/Default) цвета Text/Secondary; цвета —
+/// из темы слайда (на медиа светлые). Стоит под строкой навигации.
 final class PersonalizationStoryHeaderView: UIControl {
 
-    static let iconSide: CGFloat = 32
+    static let iconSide: CGFloat = 40
+    /// Шаг от иконки до текстов.
+    static let gap = PersonalizationSpacing.lg  // 12
 
     let header: PersonalizationStorySlide.Header
     let icon = UIImageView()
@@ -146,7 +149,7 @@ final class PersonalizationStoryHeaderView: UIControl {
         let row = UIStackView(arrangedSubviews: [icon, texts])
         row.axis = .horizontal
         row.alignment = .center
-        row.spacing = PersonalizationSpacing.md  // 8
+        row.spacing = Self.gap
         row.isUserInteractionEnabled = false
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
