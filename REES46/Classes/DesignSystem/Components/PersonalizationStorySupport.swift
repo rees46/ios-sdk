@@ -155,15 +155,51 @@ extension NSLayoutConstraint {
     }
 }
 
-/// Звук сторис на весь запуск приложения.
+/// Выбор звука просмотрщика сторис: выключен ли звук.
 ///
-/// При первом открытии звук выключен; выбор пользователя помнится до конца процесса и
-/// применяется к следующим открытиям, а у просмотрщиков ленты v3 — в разделе их магазина, как
-/// веб помнит его по сайту (`restoreRemembered`). Пока звук выключен, аудиосессия — `.ambient`:
-/// ролики не прерывают музыку других приложений. Включение переводит её в `.playback`
-/// (звук слышен и в беззвучном режиме). Кнопка громкости вверх, нажатая при открытом
-/// просмотрщике, включает звук. Закрытие возвращает категорию, что была до открытия,
-/// и отпускает сессию, давая другим приложениям продолжить.
+/// Старые просмотрщики (старая лента, данные хоста) делят один выбор на весь запуск —
+/// `PersonalizationStoryAudio.shared.processChoice`: при первом открытии звук выключен, дальше —
+/// как выбрал пользователь, до конца процесса. Просмотрщик ленты v3 держит свой, отдельный от него:
+/// при открытии — сохранённый в разделе магазина (как `<prefix>-stories-mute` веба, который помнит
+/// его по сайту), без записи — без звука. Сохраняет только кнопка звука; громкость вверх включает
+/// звук лишь на этот показ.
+final class PersonalizationStoryMuteChoice {
+
+    /// Звук выключен.
+    private(set) var isMuted: Bool
+    /// Где помнится выбор кнопкой; `nil` — до конца процесса.
+    private let store: (defaults: UserDefaults, key: String)?
+
+    /// Выбор без хранилища: так начинается общий выбор запуска.
+    init(isMuted: Bool = true) {
+        self.isMuted = isMuted
+        store = nil
+    }
+
+    /// Выбор, сохранённый под `key` в `defaults`; без записи — без звука.
+    init(defaults: UserDefaults, key: String) {
+        isMuted = defaults.object(forKey: key) as? Bool ?? true
+        store = (defaults, key)
+    }
+
+    /// Ключ выбора в хранилище, если он есть.
+    var key: String? { store?.key }
+
+    /// Новый выбор; `remember` — выбор кнопкой: он сохраняется, если есть где.
+    func set(_ muted: Bool, remember: Bool) {
+        isMuted = muted
+        if remember, let store { store.defaults.set(muted, forKey: store.key) }
+    }
+}
+
+/// Звук сторис: аудиосессия на время показа и выбор пользователя.
+///
+/// Выбор — у просмотрщика (`PersonalizationStoryMuteChoice`): у старых — общий на весь запуск,
+/// у ленты v3 — свой. Слышно по выбору последнего открытого просмотрщика. Пока звук выключен,
+/// аудиосессия — `.ambient`: ролики не прерывают музыку других приложений. Включение переводит её
+/// в `.playback` (звук слышен и в беззвучном режиме). Кнопка громкости вверх, нажатая при открытом
+/// просмотрщике, включает звук. Закрытие возвращает категорию, что была до открытия, и отпускает
+/// сессию, давая другим приложениям продолжить.
 ///
 /// Звук может забрать и система: выдернули наушники, прервал звонок, Siri или чужое
 /// приложение. Тогда текущий показ идёт дальше без звука (`isSilenced`), а выбор
@@ -173,12 +209,15 @@ final class PersonalizationStoryAudio: NSObject {
 
     static let shared = PersonalizationStoryAudio()
 
-    /// Звук сменился: `object` — `PersonalizationStoryAudio`, читать `isPlaybackMuted`.
+    /// Звук сменился: `object` — `PersonalizationStoryAudio`; просмотрщик читает свой `isMuted`.
     /// Приходит и после вмешательства системы — просмотрщик заново запускает ролик.
     static let didChange = Notification.Name("personalization.stories.muteChanged")
 
-    /// Выбор пользователя: звук выключен. Система его не меняет.
-    private(set) var isMuted = true
+    /// Выбор старых просмотрщиков — один на весь запуск.
+    let processChoice = PersonalizationStoryMuteChoice()
+
+    /// Выбор пользователя последнего открытого просмотрщика: звук выключен. Система его не меняет.
+    var isMuted: Bool { choice.isMuted }
 
     /// Звук забрала система — до конца текущего показа или пока пользователь не включит.
     private(set) var isSilenced = false
@@ -187,12 +226,14 @@ final class PersonalizationStoryAudio: NSObject {
     var isPlaybackMuted: Bool { isMuted || isSilenced }
 
     /// Ключ выбора звука просмотрщиков ленты v3 в разделе магазина — как `<prefix>-stories-mute`
-    /// веба, который помнит его по сайту.
+    /// веба, который помнит его по сайту; в разделе нескольких магазинов — со своим магазином
+    /// (`StoragePartition.keyScope`).
     static let rememberedKey = "personalization_sdk.stories_muted"
 
     private var viewers = 0
-    /// Разделы магазинов открытых просмотрщиков, чей выбор помнится; пишется в последний.
-    private var remembering: [UserDefaults] = []
+    /// Выборы открытых просмотрщиков по порядку открытия: слышно по последнему.
+    private var choices: [PersonalizationStoryMuteChoice] = []
+    private var choice: PersonalizationStoryMuteChoice { choices.last ?? processChoice }
     private var saved: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)?
     private var volumeObservation: NSKeyValueObservation?
     private var sessionObservers: [NSObjectProtocol] = []
@@ -202,22 +243,19 @@ final class PersonalizationStoryAudio: NSObject {
     /// это не нажатие кнопки.
     private var volumeRoute: [String] = []
 
-    /// Выбор, сохранённый в разделе магазина (лента v3): без него — без звука. Зовётся до начала
-    /// показа, чтобы первый ролик сразу шёл как выбрано.
-    func restoreRemembered(from defaults: UserDefaults) {
-        let muted = defaults.object(forKey: Self.rememberedKey) as? Bool ?? true
-        guard muted != isMuted else { return }
-        isMuted = muted
-        isSilenced = false
-        if viewers > 0 { applyCategory() }
-        notify()
-    }
-
-    /// Просмотрщик открылся; `remembering` — раздел магазина, где помнится его выбор звука.
-    func begin(remembering defaults: UserDefaults? = nil) {
-        if let defaults { remembering.append(defaults) }
+    /// Просмотрщик открылся со своим выбором звука; без него — общий выбор запуска.
+    func begin(choice: PersonalizationStoryMuteChoice? = nil) {
+        let choice = choice ?? processChoice
+        let changed = choice !== self.choice
+        choices.append(choice)
         viewers += 1
-        guard viewers == 1 else { return }
+        guard viewers == 1 else {
+            if changed {
+                applyCategory()
+                notify()
+            }
+            return
+        }
         let session = AVAudioSession.sharedInstance()
         saved = (session.category, session.mode, session.categoryOptions)
         applyCategory()
@@ -239,11 +277,20 @@ final class PersonalizationStoryAudio: NSObject {
     }
 
     /// Просмотрщик закрылся: последний возвращает сессию как было.
-    func end(remembering defaults: UserDefaults? = nil) {
-        if let defaults, let index = remembering.lastIndex(where: { $0 === defaults }) { remembering.remove(at: index) }
+    func end(choice: PersonalizationStoryMuteChoice? = nil) {
+        let choice = choice ?? processChoice
+        let before = self.choice
+        if let index = choices.lastIndex(where: { $0 === choice }) { choices.remove(at: index) }
         guard viewers > 0 else { return }
         viewers -= 1
-        guard viewers == 0 else { return }
+        guard viewers == 0 else {
+            // Слышно снова по выбору оставшегося просмотрщика.
+            if self.choice !== before {
+                applyCategory()
+                notify()
+            }
+            return
+        }
         volumeObservation?.invalidate()
         volumeObservation = nil
         sessionObservers.forEach { NotificationCenter.default.removeObserver($0) }
@@ -258,14 +305,24 @@ final class PersonalizationStoryAudio: NSObject {
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    /// Выбор пользователя — кнопкой или громкостью вверх. Снимает и тишину от системы.
-    func setMuted(_ muted: Bool) {
-        remembering.last?.set(muted, forKey: Self.rememberedKey)
-        guard muted != isMuted || isSilenced else { return }
-        isMuted = muted
-        isSilenced = false
-        silencedByInterruption = false
-        if viewers > 0 { applyCategory() }
+    /// Выбор пользователя кнопкой звука: у просмотрщика ленты v3 он сохраняется в разделе магазина.
+    /// `choice` — выбор просмотрщика с кнопкой; без него — последнего открытого. Снимает и тишину
+    /// от системы.
+    func setMuted(_ muted: Bool, choice: PersonalizationStoryMuteChoice? = nil) {
+        choose(muted, choice: choice ?? self.choice, remember: true)
+    }
+
+    /// Выбор кнопкой или громкостью: громкость его не сохраняет.
+    private func choose(_ muted: Bool, choice: PersonalizationStoryMuteChoice, remember: Bool) {
+        let changed = muted != choice.isMuted
+        choice.set(muted, remember: remember)
+        let current = choice === self.choice
+        guard changed || (current && isSilenced) else { return }
+        if current {
+            isSilenced = false
+            silencedByInterruption = false
+            if viewers > 0 { applyCategory() }
+        }
         notify()
     }
 
@@ -332,7 +389,7 @@ final class PersonalizationStoryAudio: NSObject {
         let sameRoute = route == volumeRoute
         volumeRoute = route
         guard viewers > 0, sameRoute, new > old else { return }
-        setMuted(false)
+        choose(false, choice: choice, remember: false)
     }
 
     private static func outputs(of session: AVAudioSession) -> [String] {
@@ -353,8 +410,9 @@ final class PersonalizationStoryAudio: NSObject {
 
     /// Только для тестов: как при новом запуске.
     func resetForTesting() {
-        while viewers > 0 { end() }
-        isMuted = true
+        while viewers > 0 { end(choice: choices.last) }
+        choices = []
+        processChoice.set(true, remember: false)
         isSilenced = false
     }
 }

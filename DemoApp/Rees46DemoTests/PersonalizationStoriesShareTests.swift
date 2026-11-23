@@ -791,13 +791,14 @@ extension PersonalizationStoriesShareTests {
         let session = StoriesSession(sdk: FakeSDK(shopId: "shop"), code: "block", v3Domain: "app.test")
         let viewer = session.makeViewer(stories: [story], startIndex: 0)
         XCTAssertEqual(viewer.startSlideIndex(of: story), 2)
-        XCTAssertNotNil(viewer.muteDefaults, "the mute choice is kept per shop, as the web keeps it per site")
+        XCTAssertEqual(viewer.muteChoice.key, PersonalizationStoryAudio.rememberedKey, "the mute choice is kept per shop, as the web keeps it per site")
 
         session.progress.shown(slides[1], of: story)
         XCTAssertEqual(viewer.startSlideIndex(of: story), 1, "where it was left, like the web's feed in memory")
         session.progress.leftForward(story, throughEnd: true)
         XCTAssertEqual(viewer.startSlideIndex(of: story), 0, "watched to the end — from the start")
-        XCTAssertNil(StoriesSession(sdk: FakeSDK(), code: "block").makeViewer(stories: [story], startIndex: 0).muteDefaults)
+        XCTAssertTrue(StoriesSession(sdk: FakeSDK(), code: "block").makeViewer(stories: [story], startIndex: 0).muteChoice
+                      === PersonalizationStoryAudio.shared.processChoice, "the old feed shares the choice of the run")
     }
 
     /// The ring follows the feed's `viewed`; a story left forward is viewed for the life of the feed.
@@ -834,27 +835,51 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(left, ["a!"])
     }
 
-    /// The user's mute choice of a v3 viewer is kept in its shop's storage; muted by default.
-    func testTheMuteChoiceOfV3IsRememberedPerShop() {
+    /// A v3 viewer has its own mute choice, kept by the sound button in its shop's storage; muted by
+    /// default. The old feed's choice of the run is not touched, and volume up does not save.
+    func testTheMuteChoiceOfV3IsItsOwnAndRememberedPerShop() {
         let audio = PersonalizationStoryAudio.shared
+        audio.resetForTesting()
         let names = ["audio-a-\(UUID().uuidString)", "audio-b-\(UUID().uuidString)"]
         let shops = names.map { UserDefaults(suiteName: $0) ?? .standard }
+        let key = PersonalizationStoryAudio.rememberedKey
         defer {
-            audio.setMuted(true)
+            audio.resetForTesting()
             names.forEach { UserDefaults.standard.removePersistentDomain(forName: $0) }
         }
-        audio.restoreRemembered(from: shops[0])
-        XCTAssertTrue(audio.isMuted, "muted by default")
-        audio.begin(remembering: shops[0])
-        audio.setMuted(false)
-        audio.end(remembering: shops[0])
-        XCTAssertEqual(shops[0].object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false)
+        let first = PersonalizationStoryMuteChoice(defaults: shops[0], key: key)
+        XCTAssertTrue(first.isMuted, "muted by default")
+        audio.begin(choice: first)
+        audio.setMuted(false, choice: first)
+        XCTAssertFalse(audio.isPlaybackMuted)
+        XCTAssertTrue(audio.processChoice.isMuted, "the old feed's choice of the run is untouched")
+        audio.end(choice: first)
+        XCTAssertEqual(shops[0].object(forKey: key) as? Bool, false)
+        XCTAssertTrue(audio.isMuted, "no viewer open: the run's choice again")
+
         audio.setMuted(true)
-        XCTAssertEqual(shops[0].object(forKey: PersonalizationStoryAudio.rememberedKey) as? Bool, false, "an old-feed viewer does not write")
-        audio.restoreRemembered(from: shops[0])
-        XCTAssertFalse(audio.isMuted, "the next v3 viewer of the shop starts as the user chose")
-        audio.restoreRemembered(from: shops[1])
-        XCTAssertTrue(audio.isMuted, "another shop has its own choice")
+        XCTAssertEqual(shops[0].object(forKey: key) as? Bool, false, "an old-feed viewer does not write")
+        XCTAssertFalse(PersonalizationStoryMuteChoice(defaults: shops[0], key: key).isMuted, "the next v3 viewer of the shop starts as the user chose")
+        XCTAssertTrue(PersonalizationStoryMuteChoice(defaults: shops[1], key: key).isMuted, "another shop has its own choice")
+
+        let volume = PersonalizationStoryMuteChoice(defaults: shops[1], key: key)
+        audio.begin(choice: volume)
+        audio.volumeChanged(from: 0.3, to: 0.5, route: [])
+        XCTAssertFalse(volume.isMuted, "volume up turns the sound on for this viewing")
+        audio.end(choice: volume)
+        XCTAssertNil(shops[1].object(forKey: key), "and saves nothing")
+    }
+
+    /// The key is scoped to the shop where several shops share an app group's suite, as the other
+    /// keys of a shop.
+    func testTheMuteKeyIsScopedInASharedPartition() {
+        let shop = "mute-\(UUID().uuidString)"
+        StoragePartition.remember(storageKey: "group.mute.test", forShop: shop)
+        defer { StoragePartition.remember(storageKey: nil, forShop: shop) }
+        let choice = StoriesSession.muteChoice(FakeSDK(shopId: shop))
+        XCTAssertEqual(choice.key, "personalization_sdk.stories_muted.\(StoragePartition.sanitize(shop))")
+        XCTAssertEqual(StoriesSession.muteChoice(FakeSDK(shopId: "own-\(UUID().uuidString)")).key, "personalization_sdk.stories_muted",
+                       "a partition of the shop's own needs no scope")
     }
 
     /// `header`: icon, title and subtitle; a tap sends `click` and opens the link, as the web.

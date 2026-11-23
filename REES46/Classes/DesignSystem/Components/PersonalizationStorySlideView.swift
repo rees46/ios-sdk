@@ -97,6 +97,8 @@ final class PersonalizationStorySlideView: UIView {
     var usedProducts: PersonalizationStoryUsedProducts?
     /// Просмотрщик велел играть и не велел остановиться.
     private(set) var wantsPlayback = false
+    /// Ролик без звука — как велел просмотрщик.
+    private(set) var isMuted: Bool
     private var reportedSystemStop = false
     private var guideTop: NSLayoutConstraint?
     private var guideBottom: NSLayoutConstraint?
@@ -132,6 +134,7 @@ final class PersonalizationStorySlideView: UIView {
         self.texts = texts
         self.imageLoader = imageLoader
         self.retryButton = PersonalizationButton(text: texts.retry, size: .md, view: .primary)
+        self.isMuted = isMuted
         super.init(frame: .zero)
         setup(isMuted: isMuted)
     }
@@ -352,7 +355,7 @@ extension PersonalizationStorySlideView {
         videoLoader = source.loader
         let item = AVPlayerItem(asset: source.asset)
         let player = AVPlayer(playerItem: item)
-        player.isMuted = PersonalizationStoryAudio.shared.isPlaybackMuted
+        player.isMuted = isMuted
         player.actionAtItemEnd = .pause
         videoView.playerLayer.player = player
         self.player = player
@@ -461,6 +464,7 @@ extension PersonalizationStorySlideView {
     }
 
     func setMuted(_ muted: Bool) {
+        isMuted = muted
         player?.isMuted = muted
         soundButton?.isMuted = muted
     }

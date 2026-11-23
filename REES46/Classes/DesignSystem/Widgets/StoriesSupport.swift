@@ -561,8 +561,9 @@ final class StoriesSession {
                 progress.leftForward(story, throughEnd: throughEnd)
                 onSeen?()
             }
-            // Выбор звука — по магазину, как веб помнит его по сайту.
-            viewer.muteDefaults = sdk.map { ($0 as? SimplePersonalizationSDK)?.storage.partition ?? StoragePartition.store(ofShop: $0.shopId) }
+            // Свой выбор звука, отдельный от старых просмотрщиков; кнопкой — в раздел магазина, как
+            // веб помнит его по сайту.
+            viewer.muteChoice = sdk.map(Self.muteChoice) ?? PersonalizationStoryMuteChoice()
         } else if let link, let shared = stories.first {
             viewer.startSlide = {
                 StoriesSeenState.startSlide($0, seen: seen.seen($0), shared: shared, linkSlide: link.slideId)
@@ -578,6 +579,16 @@ final class StoriesSession {
         viewer.onShare = { [self] story, slide in track(.share, story, slide) }
         Self.openViewer = viewer
         return viewer
+    }
+
+    /// Выбор звука просмотрщика ленты v3: в разделе магазина под ключом с магазином, если раздел
+    /// общий у нескольких (`StoragePartition.keyScope`, как у прочих ключей магазина).
+    static func muteChoice(_ sdk: PersonalizationSDK) -> PersonalizationStoryMuteChoice {
+        let storage = (sdk as? SimplePersonalizationSDK)?.storage
+        let partition = storage?.partition ?? StoragePartition.store(ofShop: sdk.shopId)
+        let scope = storage.map(\.keyScope)
+            ?? StoragePartition.keyScope(shopId: sdk.shopId, storageKey: StoragePartition.storageKey(ofShop: sdk.shopId))
+        return PersonalizationStoryMuteChoice(defaults: partition, key: StoragePartition.scoped(PersonalizationStoryAudio.rememberedKey, scope))
     }
 
     /// Старый трекинг шлёт только положительные целые id.

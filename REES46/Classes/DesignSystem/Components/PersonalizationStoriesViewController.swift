@@ -116,7 +116,8 @@ public struct PersonalizationStoriesTexts {
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
 ///   в паузе ролик и GIF стоят на текущем кадре;
 /// - медиа-слайды — в тёмной теме кита, остальные — в теме приложения;
-/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь.
+/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь; у ленты
+///   v3 — свой выбор, кнопкой сохранённый в разделе магазина.
 ///
 /// Сеть, трекинг и ссылки — не его дело: наружу отданы колбэки. Данные SDK подключает
 /// виджет `PersonalizationStories`; хост может показать просмотрщик и со своими данными.
@@ -191,13 +192,13 @@ public final class PersonalizationStoriesViewController: UIViewController {
     /// закрытию — или свайпнули к следующей. Лента v3 по нему считает сторис просмотренной.
     var onStoryLeftForward: ((PersonalizationStory, _ throughEnd: Bool) -> Void)?
 
-    /// Раздел магазина, где помнится выбор звука, как веб помнит его по сайту (лента v3); `nil` —
-    /// выбор живёт до конца процесса.
-    var muteDefaults: UserDefaults?
+    /// Выбор звука этого просмотрщика: общий на весь запуск (старая лента, данные хоста) или
+    /// свой у ленты v3, сохранённый кнопкой в разделе магазина (`StoriesSession`).
+    var muteChoice = PersonalizationStoryAudio.shared.processChoice
 
-    /// Видео сейчас без звука: так выбрал пользователь (выбор общий на весь запуск) или звук
-    /// забрала система — выдернули наушники, прервал звонок.
-    public var isMuted: Bool { PersonalizationStoryAudio.shared.isPlaybackMuted }
+    /// Видео сейчас без звука: так выбрал пользователь (у старой ленты выбор общий на весь запуск,
+    /// у ленты v3 — свой) или звук забрала система — выдернули наушники, прервал звонок.
+    public var isMuted: Bool { muteChoice.isMuted || PersonalizationStoryAudio.shared.isSilenced }
 
     var state: PersonalizationStoriesViewerState
     let pager = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
@@ -247,8 +248,6 @@ extension PersonalizationStoriesViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
-        // Лента v3: звук — как пользователь выбрал на этом устройстве, до первого ролика.
-        if let muteDefaults { PersonalizationStoryAudio.shared.restoreRemembered(from: muteDefaults) }
 
         pager.dataSource = self
         pager.delegate = self
@@ -277,7 +276,7 @@ extension PersonalizationStoriesViewController {
         }
         if !hasAppeared {
             hasAppeared = true
-            PersonalizationStoryAudio.shared.begin(remembering: muteDefaults)
+            PersonalizationStoryAudio.shared.begin(choice: muteChoice)
             startClock()
             if let page = pager.viewControllers?.first as? PersonalizationStoryPageViewController {
                 settle(on: page)
@@ -392,7 +391,7 @@ extension PersonalizationStoriesViewController {
         view.endEditing(true)
         stopClock()
         activePage?.slideView?.pause()
-        if hasAppeared { PersonalizationStoryAudio.shared.end(remembering: muteDefaults) }
+        if hasAppeared { PersonalizationStoryAudio.shared.end(choice: muteChoice) }
         onClose?()
     }
 
@@ -780,7 +779,7 @@ extension PersonalizationStoriesViewController {
         ]
         observers.append(center.addObserver(forName: PersonalizationStoryAudio.didChange, object: nil, queue: .main) { [weak self] _ in
             guard let self else { return }
-            let muted = PersonalizationStoryAudio.shared.isPlaybackMuted
+            let muted = self.isMuted
             self.pages.values.forEach { $0.slideView?.setMuted(muted) }
             // Система могла остановить ролик сама (наушники, прерывание): плеер снова
             // делает то, что велит состояние, и прогресс не расходится с видео.
@@ -998,7 +997,7 @@ extension PersonalizationStoryPageViewController {
         let next = PersonalizationStorySlideView(
             slide: slide,
             texts: viewer?.texts.slideTexts ?? PersonalizationStorySlideView.Texts(),
-            isMuted: PersonalizationStoryAudio.shared.isPlaybackMuted,
+            isMuted: viewer?.isMuted ?? PersonalizationStoryAudio.shared.isPlaybackMuted,
             imageLoader: viewer?.imageLoader
         )
         let story = self.story
@@ -1010,7 +1009,9 @@ extension PersonalizationStoryPageViewController {
             guard let self else { return }
             self.viewer?.productsToggled(expanded, on: self)
         }
-        next.onMuteToggle = { muted in PersonalizationStoryAudio.shared.setMuted(muted) }
+        next.onMuteToggle = { [weak self] muted in
+            PersonalizationStoryAudio.shared.setMuted(muted, choice: self?.viewer?.muteChoice)
+        }
         next.onSystemStop = { [weak self] in
             guard let self else { return }
             self.viewer?.playbackStoppedBySystem(on: self)
