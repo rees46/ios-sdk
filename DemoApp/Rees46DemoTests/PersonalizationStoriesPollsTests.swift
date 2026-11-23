@@ -1200,7 +1200,8 @@ extension PersonalizationStoriesPollsTests {
             return card
         }
         XCTAssertEqual(inset(35).frame.minY, 874 * 0.35, accuracy: 0.5, "of the whole height, not of the area")
-        XCTAssertEqual(inset(5).frame.minY, 874 * 0.05, accuracy: 0.5, "5% stays under the header: it keeps its offset")
+        XCTAssertEqual(inset(5).frame.minY, 100, accuracy: 0.5, "5% (44) would be under the status bar: the safe top")
+        XCTAssertEqual(inset(15).frame.minY, 874 * 0.15, accuracy: 0.5, "15% stays under the header: it keeps its offset")
         XCTAssertEqual(inset(95).frame.maxY, 874 - 34 - 16, accuracy: 0.5, "16 above the safe bottom")
 
         let wide = layout(miniPoll(.singleChoice), width: 1000).card
@@ -1276,7 +1277,9 @@ extension PersonalizationStoriesPollsTests {
         }
         let high = try layout(5)
         XCTAssertEqual(high.block.minY, 116, accuracy: 0.5, "the block moves under the header")
-        XCTAssertEqual(high.card.minY, 874 * 0.05, accuracy: 0.5, "the card keeps its offset")
+        XCTAssertEqual(high.card.minY, 100, accuracy: 0.5, "the card goes no higher than the safe top")
+        let under = try layout(12)
+        XCTAssertEqual(under.card.minY, 874 * 0.12, accuracy: 0.5, "under the header the card keeps its offset")
 
         let withButton = try layout(95, buttons: [.init(title: "Buy")])
         let buttons = try XCTUnwrap(withButton.buttons)

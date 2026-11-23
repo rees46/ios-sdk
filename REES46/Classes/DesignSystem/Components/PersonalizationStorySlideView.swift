@@ -119,6 +119,8 @@ final class PersonalizationStorySlideView: UIView {
     private(set) var headerView: PersonalizationStoryHeaderView?
     /// Низ карточки опроса — на 16 выше видимого ряда внизу, без него — выше безопасной зоны.
     private var pollBottom: NSLayoutConstraint?
+    /// Верх карточки опроса — не выше безопасной зоны (под статус-баром она не встаёт).
+    private var pollTop: NSLayoutConstraint?
     static let pollBottomGap = PersonalizationSpacing.xl  // 16
     /// Верх содержимого: под шапкой слайда, без неё — верх области содержимого.
     var contentTop: NSLayoutYAxisAnchor { headerBottom?.anchor ?? contentGuide.topAnchor }
@@ -230,6 +232,7 @@ final class PersonalizationStorySlideView: UIView {
             bottom.constant = -(safeInsets.bottom + productGroupInset)
         }
         pollBottom?.constant = -pollBottomInset
+        pollTop?.constant = safeInsets.top
     }
 
     /// Отступ низа товарного слайда от безопасной зоны: над рядом товаров и звука — его
@@ -914,13 +917,14 @@ extension PersonalizationStorySlideView {
     /// Карточка опроса, как в вебе (`fittedTop`): верх — `y_offset` процентов высоты слайда
     /// (зажато в 0...100, без него — 0); не влезает ниже — поднимается, чтобы низ был на 16 выше
     /// ряда внизу (переключатель товаров, кнопка звука), когда он виден, иначе — безопасной зоны,
-    /// но не выше верха слайда; не влезает совсем — прокручивается внутри. Пустые места ряда
-    /// касаний не берут: под рядом карточка нажимается. Может уйти под шапку — прогресс, крестик и «Поделиться» остаются
-    /// поверх и нажимаются. По ширине — 12 от краёв слайда (на 4 шире поля содержимого 16 с каждой
+    /// но не выше верха безопасной зоны (под статус-бар не встаёт); не влезает совсем —
+    /// прокручивается внутри. Пустые места ряда касаний не берут: под рядом карточка нажимается.
+    /// Может уйти под шапку — прогресс, крестик и «Поделиться» остаются поверх и нажимаются. По ширине — 12 от краёв слайда (на 4 шире поля содержимого 16 с каждой
     /// стороны), не шире 420, по центру. Лист товаров её накрывает, «Повторить» — над ней.
     func attachPoll(_ card: PersonalizationStoryPollView) {
         if let old = pollView {
             pollBottom = nil
+            pollTop = nil
             old.removeFromSuperview()
         }
         pollView = card
@@ -931,6 +935,8 @@ extension PersonalizationStorySlideView {
         let share = Self.offsetShare(card.controller.poll.yOffset)
         let bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -pollBottomInset)
         pollBottom = bottom
+        let top = card.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: safeInsets.top)
+        pollTop = top
         NSLayoutConstraint.activate([
             offset.topAnchor.constraint(equalTo: topAnchor),
             share > 0
@@ -938,7 +944,7 @@ extension PersonalizationStorySlideView {
                 : offset.heightAnchor.constraint(equalToConstant: 0),
             // Слабее высоты по содержимому (700): сначала сдвиг, не влезшую совсем — прокрутка.
             card.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(UILayoutPriority(600)),
-            card.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+            top,
             bottom
         ])
         let outset = 2 * (PersonalizationSpacing.xl - PersonalizationStoryPollView.Style.margin)
