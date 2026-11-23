@@ -72,6 +72,8 @@ extension PersonalizationStoryPoll {
                 submit: Self.label(labels?["submit"])
             )
         )
+        // Опрос из ленты: её ответ важнее ответов, отправленных до её загрузки.
+        loadedAt = StoryPollStore.clock()
     }
 
     /// Целое из числа или строки (`"120"`); дробное, нечисло и заведомо не id — `nil`.

@@ -279,7 +279,8 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(card.controller.answer, .init(), "not the sent one")
         XCTAssertEqual(selectedRows(card), [], "nothing to highlight")
         XCTAssertEqual(card.thanksLabel?.text, "Спасибо!")
-        XCTAssertEqual(mount(miniPoll(.singleChoice)).card.controller.mode, .answered, "and so it comes back from the store")
+        XCTAssertEqual(mount(miniPoll(.singleChoice)).card.controller.mode, .form,
+                       "shown again it is answered only as the web's hasAnswer says: no options, no text, no rate — the form")
     }
 
     func testAProductSlideSendsItsIdAsAString() {
@@ -870,6 +871,33 @@ extension PersonalizationStoriesPollsTests {
 
         XCTAssertEqual(mount(miniPoll(.singleChoice), did: "", defaults: defaults).card.controller.mode, .form,
                        "without a did nothing is read: the answer of another user must not show")
+    }
+
+    /// A freshly loaded feed's answer wins over an answer sent earlier in this run; the answer sent
+    /// wins over a feed loaded before it (the web's cached element after a send) and over the saved
+    /// record.
+    func testAFreshFeedWinsOverTheSentAnswerWhichWinsOverTheSaved() throws {
+        let defaults = suite()
+        let json: [String: Any] = ["type": "poll", "poll_type": "mini_poll", "y_offset": 40,
+                                   "poll": ["code": "gift_recipient", "kind": "single_choice", "question": "Q",
+                                            "options": [["id": 1, "label": "A"], ["id": 2, "label": "B"], ["id": 3, "label": "C"]]]]
+        func feed(answer: [Int]?) throws -> Poll {
+            var element = json
+            if let answer { element["answer"] = ["option_ids": answer] }
+            return try XCTUnwrap(Poll(json: element))
+        }
+        let stale = try feed(answer: [1])
+        let (card, transport, _) = mount(try feed(answer: nil), did: "d1", defaults: defaults)
+        card.optionRows[1].sendActions(for: .touchUpInside)
+        transport.resolve(0, .init(answer: .init(optionIds: [2])))
+
+        XCTAssertEqual(selectedRows(mount(stale, did: "d1", defaults: defaults).card), [2], "a feed loaded before the send: the sent answer")
+        XCTAssertEqual(selectedRows(mount(try feed(answer: nil), did: "d1", defaults: defaults).card), [2], "a fresh feed without an answer: the sent one")
+        XCTAssertEqual(selectedRows(mount(try feed(answer: [3]), did: "d1", defaults: defaults).card), [3], "a fresh feed's answer wins")
+
+        StoryPollStore.shared.removeAll()
+        XCTAssertEqual(selectedRows(mount(try feed(answer: nil), did: "d1", defaults: defaults).card), [2], "a new run: the saved record")
+        XCTAssertEqual(selectedRows(mount(try feed(answer: [1]), did: "d1", defaults: defaults).card), [1], "the feed's answer over the saved one")
     }
 
     func testAnExpiredOrUndatedRecordIsDroppedOnRead() {

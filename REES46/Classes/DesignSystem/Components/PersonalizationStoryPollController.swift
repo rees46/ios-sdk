@@ -3,8 +3,9 @@ import Foundation
 /// Логика карточки опроса без UI — как `createPoll` JS SDK: форма и отвеченное состояние,
 /// отправка через транспорт, ошибка с повтором, переответ, вопрос полосы шкалы и удержание слайда.
 ///
-/// Ответ при показе — по `StoryPollStore`: отправленный за этот запуск, иначе из ленты, иначе
-/// сохранённый на устройстве. Отправленный пишется туда же — и в память, и на устройство.
+/// Ответ при показе — по `StoryPollStore`: из свежей ленты, иначе отправленный за этот запуск,
+/// иначе из ленты, иначе сохранённый на устройстве; отвечен ли опрос — по `hasAnswer`, как в
+/// вебе. Отправленный пишется туда же — и в память, и на устройство.
 ///
 /// Шкала: после оценки, если у её полосы есть вопрос, а комментария ещё нет, — вопрос, поле
 /// (до 5000 символов) и кнопка; комментарий уходит вторым отзывом с той же оценкой. Без вопроса
@@ -89,19 +90,13 @@ final class StoryPollController {
         self.transport = transport
         self.store = store
         self.defaults = defaults
-        place = StoryPollStore.Place(shopId: shopId, did: did, poll: poll, storyId: storyId, slideId: slideId)
-        if let sent = store.sentEntry(place) {
-            // Отправленный за этот запуск ответ — всегда отвеченный вид, даже без вариантов и текста.
-            answer = sent.answer
-            results = sent.results
-            mode = .answered
-        } else {
-            // Ответ ленты важнее сохранённого: сохранённый — для тех, кого лента не знает.
-            let saved = poll.answer == nil ? store.savedEntry(place, in: defaults) : nil
-            answer = saved?.answer ?? poll.answer
-            results = saved == nil ? poll.results : saved?.results
-            mode = PersonalizationStoryPoll.hasAnswer(answer) ? .answered : .form
-        }
+        let place = StoryPollStore.Place(shopId: shopId, did: did, poll: poll, storyId: storyId, slideId: slideId)
+        self.place = place
+        // Сохранённый на устройстве — для тех, кого лента не знает: только без ответа ленты.
+        let entry = store.entry(for: poll, place: place) { store.savedEntry(place, in: defaults) }
+        answer = entry.answer
+        results = entry.results
+        mode = PersonalizationStoryPoll.hasAnswer(entry.answer) ? .answered : .form
         resetForm()
     }
 
@@ -313,14 +308,14 @@ final class StoryPollController {
     // MARK: - Экран
 
     /// Карточка снова на экране: что пришло, пока её не было (свой ответ или ответ другой
-    /// карточки того же опроса), и текущее удержание.
+    /// карточки того же опроса, если он важнее ответа ленты), и текущее удержание.
     func attach() {
         isAttached = true
-        if !isSending, let saved = store.sentEntry(place),
-           saved != StoryPollStore.Entry(answer: answer, results: results) {
-            answer = saved.answer
-            results = saved.results
-            mode = .answered
+        if !isSending, let sent = store.sentEntry(winningOver: poll, place: place),
+           sent != StoryPollStore.Entry(answer: answer, results: results) {
+            answer = sent.answer
+            results = sent.results
+            mode = PersonalizationStoryPoll.hasAnswer(sent.answer) ? .answered : .form
             resetForm()
             pending = .rebuild
         }

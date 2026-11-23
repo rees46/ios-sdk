@@ -148,10 +148,14 @@ import UIKit
     public let yOffset: CGFloat?
     /// В отвеченном опросе есть ссылка «ответить заново».
     public let allowReanswer: Bool
-    /// Ответ из ленты; ответ этого запуска важнее (см. `StoryPollStore`).
+    /// Ответ из ленты: у свежей ленты он важнее всего, у загруженной до отправки ответа — важнее
+    /// ответ этого запуска (см. `StoryPollStore`).
     public let answer: Answer?
     public let results: Results?
     public let labels: Labels
+
+    /// Когда опрос пришёл с лентой (`StoryPollStore.clock`); `nil` — опрос хоста, не из ленты.
+    var loadedAt: TimeInterval?
 
     public init(
         kind: Kind,
@@ -209,7 +213,7 @@ extension PersonalizationStoryPoll {
         return nil
     }
 
-    /// Отвечен: есть варианты, непустой текст или любая числовая оценка.
+    /// Отвечен, как `hasAnswer` веба: есть варианты, непустой текст или любая числовая оценка.
     public static func hasAnswer(_ answer: Answer?) -> Bool {
         guard let answer else { return false }
         return !(answer.optionIds ?? []).isEmpty || !(answer.text ?? "").isEmpty || answer.rate != nil
@@ -348,8 +352,9 @@ struct StoryPollTexts: Equatable {
 /// - Ответ этого запуска (в памяти) — то, чем в вебе становится закешированный элемент ленты
 ///   после отправки: лента не перегружается, и вернувшийся к слайду видит свой ответ.
 ///
-/// Что показать: ответ этого запуска, иначе ответ ленты, иначе запись устройства, иначе ничего.
-/// Только главная очередь.
+/// Что показать, как в вебе: ответ ленты, загруженной после отправки, — свежей; иначе ответ,
+/// отправленный за этот запуск; иначе ответ ленты; иначе запись устройства; иначе ничего. Отвечен
+/// ли опрос — по `PersonalizationStoryPoll.hasAnswer`. Только главная очередь.
 final class StoryPollStore {
 
     struct Entry: Equatable {
@@ -390,11 +395,32 @@ final class StoryPollStore {
     /// Часы записи устройства; подменяются в тестах.
     var now: () -> Date = Date.init
 
-    private var sent: [Place: Entry] = [:]
+    /// Часы порядка ленты и отправок: монотонные, на весь запуск.
+    static func clock() -> TimeInterval {
+        ProcessInfo.processInfo.systemUptime
+    }
+
+    private var sent: [Place: (entry: Entry, at: TimeInterval)] = [:]
 
     /// Ответ, отправленный за этот запуск.
     func sentEntry(_ place: Place) -> Entry? {
-        sent[place]
+        sent[place]?.entry
+    }
+
+    /// Ответ для показа: ответ свежей ленты (пришла после отправки), иначе отправленный за этот
+    /// запуск, иначе ответ ленты, иначе `saved` — запись устройства.
+    func entry(for poll: PersonalizationStoryPoll, place: Place, saved: () -> Entry?) -> Entry {
+        let feed = poll.answer.map { Entry(answer: $0, results: poll.results) }
+        if let feed, let loadedAt = poll.loadedAt, sent[place].map({ loadedAt > $0.at }) ?? true { return feed }
+        if let sent = sent[place] { return sent.entry }
+        return feed ?? saved() ?? Entry(answer: nil, results: poll.results)
+    }
+
+    /// Ответ, отправленный за этот запуск, если он важнее ответа ленты опроса.
+    func sentEntry(winningOver poll: PersonalizationStoryPoll, place: Place) -> Entry? {
+        guard let sent = sent[place] else { return nil }
+        if poll.answer != nil, let loadedAt = poll.loadedAt, loadedAt > sent.at { return nil }
+        return sent.entry
     }
 
     /// Запись устройства: просроченная, без даты или битая (не JSON, не объект, без объекта
@@ -417,7 +443,7 @@ final class StoryPollStore {
 
     /// Ответ ушёл: в память запуска и, с `did`, на устройство.
     func save(_ entry: Entry, place: Place, in defaults: UserDefaults?) {
-        sent[place] = entry
+        sent[place] = (entry, Self.clock())
         guard let key = place.key, let defaults else { return }
         var record: [String: Any] = ["saved_at": (now().timeIntervalSince1970 * 1000).rounded()]
         record["answer"] = entry.answer?.json ?? [String: Any]()
