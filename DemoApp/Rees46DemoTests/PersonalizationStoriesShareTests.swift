@@ -987,7 +987,9 @@ extension PersonalizationStoriesShareTests {
 
         let volume = PersonalizationStoryMuteChoice(defaults: shops[1], key: key)
         audio.begin(choice: volume)
-        audio.volumeChanged(from: 0.3, to: 0.5, route: [])
+        audio.volumeChanged(from: 0.3, to: 0.4, route: ["test-output"])
+        XCTAssertTrue(volume.isMuted, "a jump to another output is not a key press")
+        audio.volumeChanged(from: 0.4, to: 0.5, route: ["test-output"])
         XCTAssertFalse(volume.isMuted, "volume up turns the sound on for this viewing")
         audio.end(choice: volume)
         XCTAssertNil(shops[1].object(forKey: key), "and saves nothing")
