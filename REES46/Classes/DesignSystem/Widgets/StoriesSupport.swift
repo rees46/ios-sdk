@@ -125,7 +125,9 @@ extension PersonalizationStorySlide {
             id: id,
             kind: Self.kind(of: StoriesJSON.string(json["type"]) ?? ""),
             background: StoriesJSON.string(json["background"]),
-            backgroundColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["background_color"])),
+            backgroundColor: v3
+                ? PersonalizationStoryColors.parse(css: StoriesJSON.string(json["background_color"]))
+                : PersonalizationStoryColors.parse(StoriesJSON.string(json["background_color"])),
             preview: StoriesJSON.string(json["preview"]),
             duration: StoriesJSON.number(json["duration"]) ?? Self.defaultDuration,
             buttons: buttons.compactMap { Button(json: $0) },
@@ -299,7 +301,9 @@ extension PersonalizationStorySlide.TextBlock {
             bold: bold ?? false,
             italic: italic ?? false,
             alignment: Self.alignment(StoriesJSON.string(json["text_align"])),
-            textColor: PersonalizationStoryColors.parse(StoriesJSON.string(json["text_color"])),
+            textColor: v3
+                ? PersonalizationStoryColors.parse(css: StoriesJSON.string(json["text_color"]))
+                : PersonalizationStoryColors.parse(StoriesJSON.string(json["text_color"])),
             fill: fill,
             yOffset: CGFloat(StoriesJSON.number(json["y_offset"]) ?? 0),
             promoCode: StoriesJSON.string(json["promocode"])
@@ -316,7 +320,7 @@ extension PersonalizationStorySlide.TextBlock {
     /// Заливка блока ленты v3, как `calculateOpacity` веба: прозрачность — проценты; без неё или
     /// с негодной — цвет как есть (без своей альфы — непрозрачный).
     static func fill(css color: String?, opacity: Any?) -> UIColor? {
-        guard let base = PersonalizationStoryColors.parse(color) else { return nil }
+        guard let base = PersonalizationStoryColors.parse(css: color) else { return nil }
         guard let alpha = PersonalizationStoryColors.cssOpacity(opacity) else { return base }
         return base.withAlphaComponent(alpha)
     }

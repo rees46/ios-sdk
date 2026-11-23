@@ -124,6 +124,45 @@ enum PersonalizationStoryColors {
         )
     }
 
+    /// Цвет ленты v3 — один разбор на фон слайда, цвет текста и заливку блока: `#RGB`, `#RRGGBB`,
+    /// `#RRGGBBAA` и `rgb()`/`rgba()` (через запятые или пробелы, альфа после `/`, как в CSS).
+    /// Пусто или мусор — `nil`. Старая лента разбирает только hex (`parse(_:)`).
+    static func parse(css value: String?) -> UIColor? {
+        guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+        if text.lowercased().hasPrefix("rgb") { return CSSColor.parse(text)?.uiColor }
+        return parse(text)
+    }
+
+    /// Тема кита для текста на цвете, как правило четырёх SDK: светлый текст кита (тёмная тема) или
+    /// тёмный (светлая) — какой контрастнее с цветом по WCAG. Альфа цвета не учитывается.
+    static func interfaceStyle(on color: UIColor) -> UIUserInterfaceStyle {
+        let text = PersonalizationColor.textPrimary
+        let light = text.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        let dark = text.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        return contrast(light, color) > contrast(dark, color) ? .dark : .light
+    }
+
+    /// Контраст двух цветов по WCAG: от 1 до 21.
+    static func contrast(_ first: UIColor, _ second: UIColor) -> CGFloat {
+        let one = luminance(first), two = luminance(second)
+        return (max(one, two) + 0.05) / (min(one, two) + 0.05)
+    }
+
+    /// Относительная яркость по WCAG.
+    static func luminance(_ color: UIColor) -> CGFloat {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        if !color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            var white: CGFloat = 0
+            color.getWhite(&white, alpha: &alpha)
+            (red, green, blue) = (white, white, white)
+        }
+        func linear(_ value: CGFloat) -> CGFloat {
+            let value = min(max(value, 0), 1)
+            return value <= 0.03928 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+    }
+
     /// Прозрачность из админки: `"0%"`…`"100%"`. Число без процента — доля, если не больше
     /// единицы, иначе те же проценты. Пусто или мусор — `nil`.
     static func opacity(_ value: String?) -> CGFloat? {
@@ -163,16 +202,6 @@ enum PersonalizationStoryColors {
         return Double(trimmed[range])
     }
 
-    /// Тёмный ли цвет: по относительной яркости, порог — середина шкалы.
-    static func isDark(_ color: UIColor) -> Bool {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else {
-            var white: CGFloat = 0
-            color.getWhite(&white, alpha: &a)
-            return white < 0.5
-        }
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5
-    }
 }
 
 extension NSLayoutConstraint {

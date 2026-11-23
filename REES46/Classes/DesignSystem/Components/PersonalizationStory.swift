@@ -485,10 +485,11 @@ public struct PersonalizationStorySlide {
 
     /// Тема слайда: медиа — тёмная тема кита (светлая шапка и текст поверх фото),
     /// остальные — тема приложения на Background/Card; слайд v3 со своим `background_color` —
-    /// тема под этот цвет (на тёмном — тёмная), чтобы шапка и текст кита читались.
+    /// тема, чей текст кита контрастнее с этим цветом по WCAG (светлый — тёмная тема, тёмный —
+    /// светлая), чтобы шапка и текст читались.
     public var interfaceStyle: UIUserInterfaceStyle {
         if isMedia { return .dark }
-        if isV3, let backgroundColor { return PersonalizationStoryColors.isDark(backgroundColor) ? .dark : .light }
+        if isV3, let backgroundColor { return PersonalizationStoryColors.interfaceStyle(on: backgroundColor) }
         return .unspecified
     }
 

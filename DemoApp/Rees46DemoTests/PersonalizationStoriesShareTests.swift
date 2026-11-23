@@ -670,6 +670,34 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#1E3A8A"], v3: false).interfaceStyle, .unspecified)
     }
 
+    /// The scheme of a coloured v3 slide is the kit's text that reads better by WCAG contrast; one
+    /// parser takes `#RGB`, `#RRGGBB`, `#RRGGBBAA`, `rgb()` and `rgba()`, the old feed hex only.
+    func testAColouredV3SlideTakesTheTextOfTheHigherContrast() throws {
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#777777"]).interfaceStyle, .light,
+                       "mid grey: dark text reads a little better (4.7 to 4.5)")
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#666666"]).interfaceStyle, .dark)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "rgb(30, 58, 138)"]).interfaceStyle, .dark)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#FFF"]).interfaceStyle, .light)
+
+        let rgba = try XCTUnwrap(PersonalizationStoryColors.parse(css: "rgba(253, 230, 138, 0.5)"))
+        XCTAssertEqual(rgba.cgColor.alpha, 0.5, accuracy: 0.01)
+        XCTAssertEqual(PersonalizationStoryColors.parse(css: "rgb(255 0 0 / 50%)")?.cgColor.alpha ?? 0, 0.5, accuracy: 0.01)
+        XCTAssertEqual(PersonalizationStoryColors.parse(css: "#00000080")?.cgColor.alpha ?? 0, 128.0 / 255, accuracy: 0.001)
+        XCTAssertNotNil(PersonalizationStoryColors.parse(css: "#ABC"))
+        XCTAssertNil(PersonalizationStoryColors.parse(css: "rgb(1, 2)"))
+        XCTAssertNil(PersonalizationStoryColors.parse(css: ""))
+
+        let red = UIColor(red: 1, green: 0, blue: 0, alpha: 1)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "rgb(255, 0, 0)"]).fillColor, red)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "rgb(255, 0, 0)"], v3: false).backgroundColor, nil,
+                       "the old feed parses hex only")
+        let block = try XCTUnwrap(PersonalizationStorySlide.TextBlock(json: ["text_input": "A", "text_color": "rgb(255, 0, 0)",
+                                                                             "text_background_color": "rgb(0, 0, 0)",
+                                                                             "text_background_color_opacity": "50%"], v3: true))
+        XCTAssertEqual(block.textColor, red)
+        XCTAssertEqual(block.fill?.cgColor.alpha ?? 0, 0.5, accuracy: 0.001)
+    }
+
     /// One rule of the text block: the kit's body size, `bold` then `text_bold`, `italic` then
     /// `text_italic` (true, 1, "true"), opacity as the web's `calculateOpacity` — a number is a
     /// percent — and `monospace` or `monospaced`.
