@@ -925,10 +925,11 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(stepped, ["w!", "u!"])
     }
 
-    /// A back swipe on the first story of a v3 viewer closes it, as the web's `prev` with `i <= 0`;
-    /// the stories before it with nothing to show are watched. A short or a vertical swipe, a later
-    /// story and the old feed do nothing.
-    func testABackSwipeOnTheFirstStoryClosesAV3Viewer() throws {
+    /// A back swipe on the first story of a v3 viewer closes it, as the web's `prev` with `i <= 0`,
+    /// and a forward swipe on the last one too, as its `next`; the stories passed with nothing to
+    /// show are watched. A short or a vertical swipe, a story with a neighbour that way and the old
+    /// feed do nothing.
+    func testASwipeWhereThereIsNoStoryClosesAV3Viewer() throws {
         func story(_ id: String, skipped: Bool, v3: Bool = true) -> PersonalizationStory {
             var slide = PersonalizationStorySlide(id: "\(id)0", kind: skipped ? .content : .image, background: "https://cdn.test/\(id).jpg")
             slide.isV3 = v3
@@ -947,7 +948,7 @@ extension PersonalizationStoriesShareTests {
             defer { window.isHidden = true }
             let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
             viewer.settle(on: page)
-            viewer.backSwipeEnded(translation: swipe)
+            viewer.swipeEnded(translation: swipe)
             return (closed, left)
         }
         let feed = [story("e", skipped: true), story("f", skipped: false), story("g", skipped: false)]
@@ -960,6 +961,36 @@ extension PersonalizationStoriesShareTests {
         XCTAssertFalse(try run(feed, start: 2, swipe: CGPoint(x: 150, y: 0)).closed, "a story before it: the pager goes back")
         let old = [story("h", skipped: false, v3: false), story("i", skipped: false, v3: false)]
         XCTAssertFalse(try run(old, start: 0, swipe: CGPoint(x: 150, y: 0)).closed, "the old feed keeps its rules")
+
+        // Forward on the last story with something to show: watched (not to its end) and closed, as
+        // the web's `next`; stories after it with nothing to show are watched too.
+        let tail = [story("j", skipped: false), story("k", skipped: false), story("l", skipped: true)]
+        let last = try run(tail, start: 1, swipe: CGPoint(x: -150, y: 10))
+        XCTAssertTrue(last.closed)
+        XCTAssertEqual(last.left, ["k", "l!"])
+        XCTAssertFalse(try run(tail, start: 0, swipe: CGPoint(x: -150, y: 0)).closed, "a story after it: the pager goes on")
+        XCTAssertFalse(try run(tail, start: 1, swipe: CGPoint(x: -60, y: 0)).closed, "too short")
+        XCTAssertFalse(try run(old, start: 1, swipe: CGPoint(x: -150, y: 0)).closed, "the old feed keeps its rules")
+    }
+
+    /// A vertical swipe longer than 100, up or down and more vertical than horizontal, closes a v3
+    /// viewer, as the web; the old feed closes on a swipe down only, as before (120 or a fast one).
+    func testAVerticalSwipeClosesAV3ViewerBothWays() {
+        func viewer(v3: Bool) -> PersonalizationStoriesViewController {
+            var slide = PersonalizationStorySlide(id: "1", kind: .content)
+            slide.isV3 = v3
+            return PersonalizationStoriesViewController(stories: [PersonalizationStory(id: "s", name: "S", slides: [slide])])
+        }
+        let v3 = viewer(v3: true), old = viewer(v3: false)
+        let still = CGPoint.zero
+        XCTAssertTrue(v3.closesOnVerticalSwipe(translation: CGPoint(x: 0, y: 110), velocity: still), "down")
+        XCTAssertTrue(v3.closesOnVerticalSwipe(translation: CGPoint(x: 10, y: -110), velocity: still), "up")
+        XCTAssertFalse(v3.closesOnVerticalSwipe(translation: CGPoint(x: 0, y: 90), velocity: CGPoint(x: 0, y: 2000)), "shorter than 100")
+        XCTAssertFalse(v3.closesOnVerticalSwipe(translation: CGPoint(x: 150, y: 120), velocity: still), "more horizontal")
+        XCTAssertFalse(old.closesOnVerticalSwipe(translation: CGPoint(x: 0, y: 110), velocity: still), "the old feed: 120 down")
+        XCTAssertTrue(old.closesOnVerticalSwipe(translation: CGPoint(x: 0, y: 130), velocity: still))
+        XCTAssertTrue(old.closesOnVerticalSwipe(translation: CGPoint(x: 0, y: 40), velocity: CGPoint(x: 0, y: 900)), "or a fast one")
+        XCTAssertFalse(old.closesOnVerticalSwipe(translation: CGPoint(x: 0, y: -300), velocity: still), "never up")
     }
 
     /// A v3 story opens at the feed's `start_position`, whatever slides this device saw.

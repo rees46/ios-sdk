@@ -111,12 +111,13 @@ public struct PersonalizationStoriesTexts {
 /// - нажатие в левой трети — назад, в правой — вперёд, в середине — ничего (в RTL края
 ///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала, у ленты v3 —
 ///   закрыть, как веб (и свайп назад на первой сторис тоже); вперёд после последнего слайда
-///   последней сторис — закрыть;
+///   последней сторис — закрыть (у ленты v3 и свайп вперёд на последней сторис);
 /// - пропущенные слайды ленты v3 (`PersonalizationStorySlide.isSkipped`) не показываются: их
 ///   сегмент прогресса остаётся, вперёд их проходят, назад через них шагают; сторис, где с её
 ///   слайда старта показывать нечего, проходится и досмотрена, как в вебе; пустым просмотрщик
 ///   не бывает (`prepareStart`);
-/// - удержание и свайп — пауза; свайп вниз закрывает, крестик тоже;
+/// - удержание и свайп — пауза; свайп вниз закрывает, у ленты v3 — вверх или вниз длиннее 100,
+///   как веб; крестик тоже;
 /// - открытый лист товаров ставит паузу и не даёт листать, нажатие мимо него его закрывает;
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
 ///   в паузе ролик и GIF стоят на текущем кадре;
@@ -279,7 +280,7 @@ extension PersonalizationStoriesViewController {
         view.addGestureRecognizer(pan)
         // Горизонтальный свайп сторис ждёт, пока не станет ясно, что это не свайп вниз.
         pagerScrollView?.panGestureRecognizer.require(toFail: pan)
-        // Свайп назад на первой сторис — закрыть (лента v3, `backSwipeEnded`).
+        // Свайп назад на первой сторис и вперёд на последней — закрыть (лента v3, `swipeEnded`).
         pagerScrollView?.panGestureRecognizer.addTarget(self, action: #selector(pagerPanned(_:)))
         observeSystem()
     }
@@ -499,23 +500,42 @@ extension PersonalizationStoriesViewController {
         }
     }
 
-    /// Свайп назад кончился: на первой сторис, где есть что показать, у ленты v3 он закрывает
-    /// просмотрщик, как в вебе (`prev` при `i <= 0`); сторис перед ней, где показывать нечего,
-    /// пройдены и досмотрены. `translation` — сдвиг пальца; назад — к началу ленты по направлению
-    /// письма, не короче `backSwipeDistance` и больше по ширине, чем по высоте.
-    func backSwipeEnded(translation: CGPoint) {
+    /// Свайп между сторис кончился там, где листать некуда, — у ленты v3 он закрывает
+    /// просмотрщик, как в вебе. Назад на первой сторис, где есть что показать (`prev` при
+    /// `i <= 0`): сторис перед ней, где показывать нечего, пройдены и досмотрены. Вперёд на
+    /// последней (`next` у последней): она досмотрена (`onStoryLeftForward`, не до конца), сторис
+    /// после неё, где показывать нечего, — тоже. Туда, где сторис есть, листает сам пейджер.
+    /// `translation` — сдвиг пальца: назад — к началу ленты по направлению письма; свайп — не
+    /// короче `swipeDistance` и больше по ширине, чем по высоте.
+    func swipeEnded(translation: CGPoint) {
         guard state.closesFromStart, state.canSwipe, !isTransitioning, !isPollEditing,
               let page = activePage, page.storyIndex == state.story else { return }
         let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
         let back = rightToLeft ? -translation.x : translation.x
-        guard back > Self.backSwipeDistance, back > abs(translation.y),
-              page.storyIndex == 0 || previousStory(from: page.storyIndex - 1) == nil else { return }
-        markPassed(from: 0, to: page.storyIndex - 1)
+        guard abs(back) > Self.swipeDistance, abs(back) > abs(translation.y) else { return }
+        if back > 0 {
+            guard page.storyIndex == 0 || previousStory(from: page.storyIndex - 1) == nil else { return }
+            markPassed(from: 0, to: page.storyIndex - 1)
+        } else {
+            guard nextStory(after: page.storyIndex) == nil else { return }
+            onStoryLeftForward?(page.story, false)
+            markPassed(from: page.storyIndex + 1, to: stories.count - 1)
+        }
         close()
     }
 
-    /// Свайп назад короче этого — не свайп, как `swipeLength` веба.
-    static let backSwipeDistance: CGFloat = 100
+    /// Свайп короче этого — не свайп, как `swipeLength` веба.
+    static let swipeDistance: CGFloat = 100
+
+    /// Закрывает ли вертикальный свайп просмотрщик. Лента v3 — как веб: вверх или вниз длиннее
+    /// `swipeDistance` и больше по высоте, чем по ширине. Старая — как раньше: вниз длиннее
+    /// `closeDistance` или быстрее `closeVelocity`.
+    func closesOnVerticalSwipe(translation: CGPoint, velocity: CGPoint) -> Bool {
+        if state.closesFromStart {
+            return abs(translation.y) > Self.swipeDistance && abs(translation.y) > abs(translation.x)
+        }
+        return max(0, translation.y) > Self.closeDistance || velocity.y > Self.closeVelocity
+    }
 
     /// Решить, с какой сторис начать показ, — до показа: сторис, где показывать нечего, проходятся
     /// вперёд и считаются досмотренными, как в вебе. `false` — показывать нечего: просмотрщик не
@@ -903,19 +923,21 @@ extension PersonalizationStoriesViewController {
 
     @objc func pagerPanned(_ gesture: UIPanGestureRecognizer) {
         guard gesture.state == .ended else { return }
-        backSwipeEnded(translation: gesture.translation(in: view))
+        swipeEnded(translation: gesture.translation(in: view))
     }
 
+    /// Вертикальный свайп: страница идёт за пальцем (у старой ленты — только вниз), отпустили —
+    /// закрыть или вернуть (`closesOnVerticalSwipe`).
     @objc func panned(_ gesture: UIPanGestureRecognizer) {
-        let distance = max(0, gesture.translation(in: view).y)
+        let translation = gesture.translation(in: view)
+        let offset = state.closesFromStart ? translation.y : max(0, translation.y)
         switch gesture.state {
         case .began:
             setPaused(.drag, true)
         case .changed:
-            pager.view.transform = CGAffineTransform(translationX: 0, y: distance)
+            pager.view.transform = CGAffineTransform(translationX: 0, y: offset)
         case .ended, .cancelled, .failed:
-            let velocity = gesture.velocity(in: view).y
-            if gesture.state == .ended, distance > Self.closeDistance || velocity > Self.closeVelocity {
+            if gesture.state == .ended, closesOnVerticalSwipe(translation: translation, velocity: gesture.velocity(in: view)) {
                 close()
             } else {
                 UIView.animate(withDuration: 0.25) { self.pager.view.transform = .identity }
@@ -974,12 +996,15 @@ extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, 
 
 extension PersonalizationStoriesViewController: UIGestureRecognizerDelegate {
 
-    /// Свайп закрытия — только вниз, заметно вертикальный и не при открытом листе товаров.
+    /// Свайп закрытия — заметно вертикальный (у старой ленты только вниз) и не при открытом листе
+    /// товаров.
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let pan = gestureRecognizer as? UIPanGestureRecognizer, pan.view === view else { return true }
         guard state.canSwipe, !isPollEditing else { return false }
         let velocity = pan.velocity(in: view)
-        return velocity.y > 0 && velocity.y > abs(velocity.x)
+        // Лента v3 закрывается свайпом и вверх, как веб; старая — только вниз.
+        let vertical = state.closesFromStart ? abs(velocity.y) : velocity.y
+        return vertical > 0 && vertical > abs(velocity.x)
     }
 
     /// Касание с карточки опроса свайпом закрытия не становится.
