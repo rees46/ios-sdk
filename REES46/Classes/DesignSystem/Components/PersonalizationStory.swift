@@ -367,6 +367,11 @@ public struct PersonalizationStorySlide {
     /// слайды старой ленты и хоста живут по прежним правилам.
     var isV3 = false
 
+    /// Слайд ленты v3, который веб пропускает: без медиа (`type` не `image` и не `video`) и без
+    /// элемента `product`. Его сегмент прогресса остаётся и заполняется сразу; вперёд его
+    /// проходят, назад через него шагают, `view` он не шлёт. Ставит разбор ленты v3.
+    var isSkipped = false
+
     public init(
         id: String,
         kind: Kind,

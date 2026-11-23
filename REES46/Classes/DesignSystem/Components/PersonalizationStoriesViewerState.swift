@@ -45,7 +45,10 @@ struct PersonalizationStoriesViewerState {
         case showStory(Int, forward: Bool)
         /// Текущий слайд с начала: и отсчёт, и видео.
         case restartSlide
+        /// Досмотрен последний слайд последней сторис — закрыть.
         case close
+        /// Назад с первого слайда первой сторис ленты v3 — закрыть, как веб; сторис не досмотрена.
+        case closeFromStart
         case closeSheet
         /// Медиа не дождались — показать «Повторить».
         case mediaFailed
@@ -60,6 +63,12 @@ struct PersonalizationStoriesViewerState {
 
     /// Число слайдов каждой сторис.
     let slideCounts: [Int]
+    /// Пропущенные слайды каждой сторис (`PersonalizationStorySlide.isSkipped`, лента v3): их
+    /// сегменты в прогрессе есть, но показа нет — вперёд их проходят, назад через них шагают.
+    let skipped: [Set<Int>]
+    /// Назад с первого слайда первой сторис — закрыть, как веб (лента v3); иначе — тот же слайд
+    /// с начала.
+    let closesFromStart: Bool
     private(set) var story: Int
     private(set) var slide: Int
     private(set) var pauses: Set<PauseReason> = []
@@ -71,10 +80,32 @@ struct PersonalizationStoriesViewerState {
     /// Сколько висит «Повторить».
     private(set) var failedFor: TimeInterval = 0
 
-    init(slideCounts: [Int], story: Int = 0, slide: Int = 0) {
+    init(slideCounts: [Int], story: Int = 0, slide: Int = 0, skipped: [Set<Int>] = [], closesFromStart: Bool = false) {
         self.slideCounts = slideCounts
         self.story = slideCounts.indices.contains(story) ? story : 0
         self.slide = slide
+        self.skipped = skipped
+        self.closesFromStart = closesFromStart
+    }
+
+    /// Слайд показывается: он есть и не пропущен.
+    func isShown(story: Int, slide: Int) -> Bool {
+        guard slideCounts.indices.contains(story), (0..<slideCounts[story]).contains(slide) else { return false }
+        return !(skipped.indices.contains(story) && skipped[story].contains(slide))
+    }
+
+    /// Первый показываемый слайд сторис с `slide` и дальше; нет — `nil`.
+    func shownSlide(story: Int, from slide: Int) -> Int? {
+        guard slideCounts.indices.contains(story) else { return nil }
+        let start = max(slide, 0), end = slideCounts[story]
+        guard start < end else { return nil }
+        return (start..<end).first { isShown(story: story, slide: $0) }
+    }
+
+    /// Ближайший показываемый слайд сторис перед `slide`; нет — `nil`.
+    func shownSlide(story: Int, before slide: Int) -> Int? {
+        guard slideCounts.indices.contains(story), slide > 0 else { return nil }
+        return (0..<min(slide, slideCounts[story])).reversed().first { isShown(story: story, slide: $0) }
     }
 
     var isRunning: Bool { pauses.isEmpty && !isClosing }
@@ -123,24 +154,22 @@ struct PersonalizationStoriesViewerState {
         }
     }
 
-    /// Следующий слайд, иначе следующая сторис, после последней — закрыть.
+    /// Следующий показываемый слайд (пропущенные проходятся), иначе следующая сторис, после
+    /// последней — закрыть.
     func next() -> Command {
         guard !isClosing else { return .none }
-        if slide + 1 < slideCount { return .showSlide(slide + 1) }
+        if let next = shownSlide(story: story, from: slide + 1) { return .showSlide(next) }
         if story + 1 < slideCounts.count { return .showStory(story + 1, forward: true) }
         return .close
     }
 
-    /// Предыдущий слайд, иначе предыдущая сторис; на первом слайде первой — тот же с начала.
+    /// Предыдущий показываемый слайд (через пропущенные — шагом), иначе предыдущая сторис; на
+    /// первом слайде первой — у ленты v3 закрыть, как веб, у старой — тот же слайд с начала.
     func previous() -> Command {
         guard !isClosing else { return .none }
-        if slide > 0 { return .showSlide(slide - 1) }
+        if let previous = shownSlide(story: story, before: slide) { return .showSlide(previous) }
         if story > 0 { return .showStory(story - 1, forward: false) }
-        return .restartSlide
-    }
-
-    private var slideCount: Int {
-        slideCounts.indices.contains(story) ? slideCounts[story] : 0
+        return closesFromStart ? .closeFromStart : .restartSlide
     }
 }
 
@@ -157,6 +186,12 @@ extension PersonalizationStoriesViewerState {
         failedFor = 0
         pauses.subtract([.sheet, .loading, .error, .poll])
         if !mediaReady { pauses.insert(.loading) }
+    }
+
+    /// Показ начнётся с этой сторис: до первого слайда на экране.
+    mutating func begin(story: Int) {
+        guard slideCounts.indices.contains(story) else { return }
+        self.story = story
     }
 
     /// Остановилась другая сторис.

@@ -368,6 +368,9 @@ extension PersonalizationStories {
         session.progress = progress
         session.onSeen = { [weak self] in self?.renderBar() }
         let viewer = session.makeViewer(stories: stories, startIndex: index)
+        // Показывать нечего (одни пропущенные слайды до конца ленты): сторис просмотрены, как в
+        // вебе, а пустой просмотрщик не показывается.
+        guard viewer.prepareStart() else { return renderBar() }
         self.viewer = viewer
         host.personalizationTopmost.present(viewer, animated: true)
     }
@@ -410,7 +413,8 @@ extension PersonalizationStories {
     ///   - onError: блок не загрузился, пуст, нет инстанса или магазин неоднозначен; за
     ///     `loadTimeout` так и не нашлось, откуда показать.
     ///   - onClose: просмотрщик закрылся — крестиком, свайпом, после последнего слайда,
-    ///     перед переходом по ссылке или убранный хостом.
+    ///     перед переходом по ссылке или убранный хостом; у ленты v3 и без показа, если в сторис
+    ///     до конца ленты одни пропущенные слайды (веб их проходит и закрывается).
     public static func show(
         code: String,
         sdk: PersonalizationSDK? = nil,
@@ -484,6 +488,11 @@ extension PersonalizationStories {
             session.pollTransport = pollTransport
             let start = startStoryId.flatMap { id in stories.firstIndex { $0.id == id } } ?? 0
             let viewer = session.makeViewer(stories: stories, startIndex: start)
+            // Показывать нечего — показ кончился, не начавшись: пустой просмотрщик не показывается.
+            guard viewer.prepareStart() else {
+                onClose?()
+                return
+            }
             viewer.onClose = onClose
             host.personalizationTopmost.present(viewer, animated: true)
         } }
@@ -551,6 +560,12 @@ extension PersonalizationStories {
             session.pollTransport = pollTransport
             let other = StoriesSession.openViewer
             let viewer = session.makeViewer(stories: stories, startIndex: 0, link: link)
+            // Показывать нечего — показ кончился, не начавшись: пустой просмотрщик не показывается.
+            guard viewer.prepareStart() else {
+                release()
+                onClose?()
+                return
+            }
             viewer.onClose = {
                 release()
                 onClose?()

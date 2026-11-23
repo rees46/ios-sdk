@@ -68,20 +68,20 @@ extension PersonalizationStory {
     }
 
     /// У ленты v3 слайд без медиа (`type` не `image` и не `video`) и без элемента `product` веб
-    /// пропускает — его здесь нет; `start_position` на нём — первый следующий оставшийся.
+    /// пропускает: он остаётся в сторис со своим сегментом прогресса (`isSkipped`), а показа у
+    /// него нет — его проходит просмотрщик. Слайд без id отбрасывается, `start_position` за ним
+    /// сдвигается на его место.
     init?(json: [String: Any], v3: Bool = false) {
         guard let id = StoriesJSON.string(json["id"]) else { return nil }
         var start = StoriesJSON.number(json["start_position"]).map { Int($0) } ?? 0
         var slides: [PersonalizationStorySlide] = []
         for (index, object) in StoriesJSON.objects(json["slides"]).enumerated() {
-            if let slide = PersonalizationStorySlide(json: object, v3: v3),
-               !(v3 && slide.kind == .content && !Self.hasProduct(object)) {
+            if let slide = PersonalizationStorySlide(json: object, v3: v3) {
                 slides.append(slide)
             } else if v3, index < start {
                 start -= 1
             }
         }
-        if v3, !slides.isEmpty { start = min(max(start, 0), slides.count - 1) }
         self.init(
             id: id,
             name: StoriesJSON.string(json["name"]) ?? "",
@@ -135,6 +135,8 @@ extension PersonalizationStorySlide {
             poll: of("poll").lazy.compactMap { PersonalizationStoryPoll(json: $0) }.first
         )
         isV3 = v3
+        // Слайд без медиа и без товара веб пропускает (`show()`: `this.next()`).
+        isSkipped = v3 && kind == .content && !PersonalizationStory.hasProduct(json)
         // Шапка слайда есть только у ленты v3: старая лента её не рисует.
         if v3 { header = of("header").lazy.compactMap { Header(json: $0) }.first }
     }

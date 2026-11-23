@@ -109,8 +109,12 @@ public struct PersonalizationStoriesTexts {
 ///   не меньше одного своего круга; отсчёт стартует, когда медиа готово (у GIF — первый кадр
 ///   на экране); не дождались за 10 с или не загрузилось — «Повторить»;
 /// - нажатие в левой трети — назад, в правой — вперёд, в середине — ничего (в RTL края
-///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала; вперёд после
-///   последнего слайда последней сторис — закрыть;
+///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала, у ленты v3 —
+///   закрыть, как веб; вперёд после последнего слайда последней сторис — закрыть;
+/// - пропущенные слайды ленты v3 (`PersonalizationStorySlide.isSkipped`) не показываются: их
+///   сегмент прогресса остаётся, вперёд их проходят, назад через них шагают; сторис, где с её
+///   слайда старта показывать нечего, проходится и досмотрена, как в вебе; пустым просмотрщик
+///   не бывает (`prepareStart`);
 /// - удержание и свайп — пауза; свайп вниз закрывает, крестик тоже;
 /// - открытый лист товаров ставит паузу и не даёт листать, нажатие мимо него его закрывает;
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
@@ -205,6 +209,9 @@ public final class PersonalizationStoriesViewController: UIViewController {
     var pages: [Int: PersonalizationStoryPageViewController] = [:]
     weak var activePage: PersonalizationStoryPageViewController?
     var isTransitioning = false
+    /// С какой сторис начать, уже решено (`prepareStart`); `hasStart` — есть что показать.
+    private(set) var isStartPrepared = false
+    private(set) var hasStart = false
     var hasAppeared = false
     var isDismissed = false
     var closeCompletions: [() -> Void] = []
@@ -221,7 +228,12 @@ public final class PersonalizationStoriesViewController: UIViewController {
         let requested = stories.indices.contains(startIndex) ? stories[startIndex].id : nil
         self.stories = playable
         let start = playable.firstIndex { $0.id == requested } ?? 0
-        self.state = PersonalizationStoriesViewerState(slideCounts: playable.map(\.slides.count), story: start)
+        self.state = PersonalizationStoriesViewerState(
+            slideCounts: playable.map(\.slides.count),
+            story: start,
+            skipped: playable.map { story in Set(story.slides.indices.filter { story.slides[$0].isSkipped }) },
+            closesFromStart: playable.contains { $0.slides.contains(where: \.isV3) }
+        )
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .fullScreen
         modalPresentationCapturesStatusBarAppearance = true
@@ -256,7 +268,8 @@ extension PersonalizationStoriesViewController {
         pager.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(pager.view)
         pager.didMove(toParent: self)
-        if !stories.isEmpty {
+        if !isStartPrepared { hasStart = prepareStart() }
+        if hasStart {
             pager.setViewControllers([page(at: state.story)], direction: .forward, animated: false)
         }
 
@@ -270,7 +283,7 @@ extension PersonalizationStoriesViewController {
 
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        guard !stories.isEmpty else {
+        guard hasStart else {
             close()
             return
         }
@@ -401,10 +414,13 @@ extension PersonalizationStoriesViewController {
         completions.forEach { $0() }
     }
 
-    /// Перейти к сторис по индексу.
+    /// Перейти к сторис по индексу. Сторис, где показывать нечего (одни пропущенные слайды ленты
+    /// v3), проходится, как в вебе: она просмотрена, дальше — следующая; дальше нечего — закрыть.
     public func open(at index: Int) {
         guard stories.indices.contains(index), index != state.story, !state.isClosing else { return }
-        move(to: index, forward: index > state.story)
+        guard let target = passStories(from: index) else { return close() }
+        guard target != state.story else { return }
+        move(to: target, forward: target > state.story)
     }
 
     /// Перейти к сторис по id.
@@ -427,10 +443,55 @@ extension PersonalizationStoriesViewController {
 
 extension PersonalizationStoriesViewController {
 
-    /// Слайд, с которого открывается сторис: по просмотренности, в пределах сторис.
+    /// Слайд, с которого открывается сторис: по просмотренности, в пределах сторис; пропущенный
+    /// слайд ленты v3 — следующий показываемый. Показывать нечего — запрошенный.
     func startSlideIndex(of story: PersonalizationStory) -> Int {
+        let requested = requestedStart(of: story)
+        guard let index = stories.firstIndex(where: { $0.id == story.id }) else { return requested }
+        return state.shownSlide(story: index, from: requested) ?? requested
+    }
+
+    private func requestedStart(of story: PersonalizationStory) -> Int {
         let requested = startSlide?(story) ?? story.startPosition
         return min(max(requested, 0), story.slides.count - 1)
+    }
+
+    /// В сторис есть что показать с её слайда старта: после него не одни пропущенные слайды.
+    func hasShownSlide(_ index: Int) -> Bool {
+        stories.indices.contains(index) && state.shownSlide(story: index, from: requestedStart(of: stories[index])) != nil
+    }
+
+    /// Сторис для показа, идя вперёд с `index`: первая, где есть что показать. Пройденные — где
+    /// после слайда старта одни пропущенные слайды — досмотрены (`onStoryLeftForward`), как в вебе
+    /// (`next()` проходит их до конца). `nil` — до конца ленты показывать нечего.
+    func passStories(from index: Int) -> Int? {
+        var current = index
+        while stories.indices.contains(current) {
+            if hasShownSlide(current) { return current }
+            onStoryLeftForward?(stories[current], true)
+            current += 1
+        }
+        return nil
+    }
+
+    /// Сторис для показа, идя назад с `index`: сторис, где показывать нечего, — шагом назад, без
+    /// отметок. `nil` — до начала ленты показывать нечего.
+    func previousStory(from index: Int) -> Int? {
+        stride(from: index, through: 0, by: -1).first { hasShownSlide($0) }
+    }
+
+    /// Решить, с какой сторис начать показ, — до показа: сторис, где показывать нечего, проходятся
+    /// вперёд и считаются досмотренными, как в вебе. `false` — показывать нечего: просмотрщик не
+    /// показывают (пустого экрана нет). Зовётся один раз — хостом сессии перед `present` или
+    /// самим просмотрщиком при загрузке.
+    @discardableResult
+    func prepareStart() -> Bool {
+        guard !isStartPrepared else { return hasStart }
+        isStartPrepared = true
+        guard let target = passStories(from: state.story) else { return false }
+        state.begin(story: target)
+        hasStart = true
+        return true
     }
 
     func page(at index: Int) -> PersonalizationStoryPageViewController {
@@ -465,8 +526,16 @@ extension PersonalizationStoriesViewController {
             state.enter(slide: index, mediaReady: page.slideView?.isMediaReady ?? true)
             slideBecameCurrent()
         case .showStory(let index, let forward):
-            if forward { onStoryLeftForward?(page.story, true) }
-            move(to: index, forward: forward)
+            if forward {
+                onStoryLeftForward?(page.story, true)
+                // Сторис, где показывать нечего, проходятся и досмотрены; дальше нечего — закрыть.
+                guard let target = passStories(from: index) else { return close() }
+                move(to: target, forward: true)
+            } else {
+                // Назад через сторис, где показывать нечего, — шагом; до начала нечего — закрыть.
+                guard let target = previousStory(from: index) else { return close() }
+                move(to: target, forward: false)
+            }
         case .restartSlide:
             state.restart()
             page.slideView?.restart()
@@ -477,6 +546,8 @@ extension PersonalizationStoriesViewController {
         case .close:
             // Досмотрен последний слайд последней сторис.
             onStoryLeftForward?(page.story, true)
+            close()
+        case .closeFromStart:
             close()
         case .closeSheet:
             page.slideView?.collapseProducts()
@@ -522,10 +593,10 @@ extension PersonalizationStoriesViewController {
     /// Медиа следующего слайда — в кэш: картинка целиком, у ролика — начало.
     private func prefetch(after page: PersonalizationStoryPageViewController) {
         let next: PersonalizationStorySlide?
-        if page.slideIndex + 1 < page.story.slides.count {
-            next = page.story.slides[page.slideIndex + 1]
-        } else if page.storyIndex + 1 < stories.count {
-            let story = stories[page.storyIndex + 1]
+        if let index = state.shownSlide(story: page.storyIndex, from: page.slideIndex + 1) {
+            next = page.story.slides[index]
+        } else if let index = nextStory(after: page.storyIndex) {
+            let story = stories[index]
             next = story.slides[startSlideIndex(of: story)]
         } else {
             next = nil
@@ -810,14 +881,23 @@ extension PersonalizationStoriesViewController {
 
 extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
+    /// Соседи по свайпу — сторис, где есть что показать: остальные свайп проходит.
     public func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
-        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController, page.storyIndex > 0 else { return nil }
-        return self.page(at: page.storyIndex - 1)
+        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController,
+              page.storyIndex > 0, let index = previousStory(from: page.storyIndex - 1) else { return nil }
+        return self.page(at: index)
     }
 
     public func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
-        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController, page.storyIndex + 1 < stories.count else { return nil }
-        return self.page(at: page.storyIndex + 1)
+        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController,
+              let index = nextStory(after: page.storyIndex) else { return nil }
+        return self.page(at: index)
+    }
+
+    /// Следующая сторис, где есть что показать, без отметок.
+    func nextStory(after index: Int) -> Int? {
+        guard index + 1 < stories.count else { return nil }
+        return (index + 1..<stories.count).first { hasShownSlide($0) }
     }
 
     /// Свайп между сторис — пауза, как удержание; подсмотренная наполовину страница
@@ -831,6 +911,8 @@ extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, 
             if let previous = previousViewControllers.first as? PersonalizationStoryPageViewController,
                previous.storyIndex < page.storyIndex, !state.isClosing {
                 onStoryLeftForward?(previous.story, false)
+                // Пройденные свайпом сторис, где показывать нечего, досмотрены, как в вебе.
+                for index in previous.storyIndex + 1..<page.storyIndex { onStoryLeftForward?(stories[index], true) }
             }
             settle(on: page)
         }

@@ -738,15 +738,20 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(sdk.trackedEvents.count, 1, "the old feed still counts it as a click")
     }
 
-    /// `view` on every show of a v3 slide, the first slide shown again from the start too; the old
-    /// feed sends as on master.
-    func testTheFirstSlideShownAgainSendsViewAgain() throws {
-        func shown(v3: Bool) throws -> [String] {
+    /// Back on the first slide of the first story closes a v3 viewer, as the web (`prev` with
+    /// `i <= 0`), and the story is not counted as watched; the old feed restarts the slide, with no
+    /// repeat `view`.
+    func testBackOnTheFirstSlideClosesAV3ViewerAsTheWeb() throws {
+        func run(v3: Bool) throws -> (shown: [String], closed: Bool, left: [String]) {
             var slide = PersonalizationStorySlide(id: "1", kind: .content)
             slide.isV3 = v3
             let viewer = PersonalizationStoriesViewController(stories: [PersonalizationStory(id: "s", name: "S", slides: [slide])])
             var shown: [String] = []
+            var left: [String] = []
+            var closed = false
             viewer.onSlideView = { _, slide in shown.append(slide.id) }
+            viewer.onStoryLeftForward = { story, _ in left.append(story.id) }
+            viewer.onClose = { closed = true }
             let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
             window.rootViewController = viewer
             window.isHidden = false
@@ -754,16 +759,23 @@ extension PersonalizationStoriesShareTests {
             let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
             viewer.settle(on: page)
             viewer.apply(viewer.state.previous())
-            viewer.apply(viewer.state.previous())
-            return shown
+            return (shown, closed, left)
         }
-        XCTAssertEqual(try shown(v3: true), ["1", "1", "1"], "no client dedupe: the server merges repeats")
-        XCTAssertEqual(try shown(v3: false), ["1"], "the old feed: no view on a restart")
+        let v3 = try run(v3: true)
+        XCTAssertTrue(v3.closed)
+        XCTAssertEqual(v3.shown, ["1"])
+        XCTAssertEqual(v3.left, [], "closing backwards does not watch the story")
+        let old = try run(v3: false)
+        XCTAssertFalse(old.closed, "the old feed restarts the slide")
+        XCTAssertEqual(old.shown, ["1"], "the old feed: no view on a restart")
+        XCTAssertEqual(PersonalizationStoriesViewerState(slideCounts: [2, 1], story: 1, closesFromStart: true).previous(),
+                       .showStory(0, forward: false), "a later story goes back to the one before")
     }
 
-    /// A v3 slide with no media type and no `product` element is skipped, as the web's `next()`;
-    /// `start_position` on a skipped slide is the next one left. The old feed keeps every slide.
-    func testAV3SlideWithoutMediaOrProductIsSkipped() {
+    /// A v3 slide with no media type and no `product` element is skipped, as the web's `next()`: it
+    /// stays in its story with its progress segment, and the viewer passes it. The old feed shows
+    /// every slide.
+    func testAV3SlideWithoutMediaOrProductIsKeptAndPassed() throws {
         let json: [String: Any] = ["id": 1, "start_position": 2, "slides": [
             ["id": 10, "type": "", "elements": [["type": "text_block", "text_input": "Hi"]]],
             ["id": 11, "type": "image", "background": "https://cdn.test/11.jpg"],
@@ -771,17 +783,66 @@ extension PersonalizationStoriesShareTests {
             ["id": 13, "type": "", "elements": [["type": "product", "item": ["id": "1", "name": "Pool"]]]],
             ["id": 14, "type": "video", "background": "https://cdn.test/14.mp4"]
         ]]
-        let v3 = PersonalizationStory(json: json, v3: true)
-        XCTAssertEqual(v3?.slides.map(\.id), ["11", "13", "14"])
-        XCTAssertEqual(v3?.startPosition, 1, "12 is skipped: the product slide after it")
-        var past = json
-        past["start_position"] = 4
-        XCTAssertEqual(PersonalizationStory(json: past, v3: true)?.startPosition, 2, "the same slide after the skipped ones")
-        let old = PersonalizationStory(json: json)
-        XCTAssertEqual(old?.slides.map(\.id), ["10", "11", "12", "13", "14"])
-        XCTAssertEqual(old?.startPosition, 2)
+        let v3 = try XCTUnwrap(PersonalizationStory(json: json, v3: true))
+        XCTAssertEqual(v3.slides.map(\.id), ["10", "11", "12", "13", "14"], "the segments stay")
+        XCTAssertEqual(v3.slides.map(\.isSkipped), [true, false, true, false, false])
+        XCTAssertEqual(v3.startPosition, 2)
+        let viewer = PersonalizationStoriesViewController(stories: [v3])
+        XCTAssertEqual(viewer.startSlideIndex(of: v3), 3, "start_position on a skipped slide: the next shown one")
+        let old = try XCTUnwrap(PersonalizationStory(json: json))
+        XCTAssertEqual(old.slides.map(\.isSkipped), [false, false, false, false, false])
+        XCTAssertEqual(PersonalizationStoriesViewController(stories: [old]).startSlideIndex(of: old), 2)
+
         let empty: [String: Any] = ["stories": [["id": 2, "slides": [["id": 20, "type": ""]]]]]
-        XCTAssertTrue(PersonalizationStory.list(json: empty, v3: true).isEmpty, "nothing left to show")
+        XCTAssertEqual(PersonalizationStory.list(json: empty, v3: true).map(\.id), ["2"], "a story of skipped slides stays in the bar")
+
+        // Forward passes a skipped slide, backward steps over it.
+        var state = PersonalizationStoriesViewerState(slideCounts: [5, 2], skipped: [[0, 2], []], closesFromStart: true)
+        state.enter(story: 0, slide: 1, mediaReady: true)
+        XCTAssertEqual(state.next(), .showSlide(3))
+        state.enter(slide: 3, mediaReady: true)
+        XCTAssertEqual(state.previous(), .showSlide(1))
+        state.enter(slide: 1, mediaReady: true)
+        XCTAssertEqual(state.previous(), .closeFromStart, "slide 0 is skipped: back from the first shown slide")
+        var tail = PersonalizationStoriesViewerState(slideCounts: [3, 1], skipped: [[2], []])
+        tail.enter(story: 0, slide: 1, mediaReady: true)
+        XCTAssertEqual(tail.next(), .showStory(1, forward: true), "a skipped last slide ends the story")
+    }
+
+    /// A story with nothing to show from its start — all its slides skipped, or only skipped ones
+    /// after `start_position` — is passed and watched, as the web; the last one closes the viewer,
+    /// which is never shown empty.
+    func testAStoryWithNothingToShowIsPassedAndWatched() throws {
+        func story(_ id: String, skipped: [Bool], start: Int = 0) -> PersonalizationStory {
+            let slides = skipped.enumerated().map { index, skip -> PersonalizationStorySlide in
+                var slide = PersonalizationStorySlide(id: "\(id)\(index)", kind: skip ? .content : .image, background: "https://cdn.test/\(id).jpg")
+                slide.isV3 = true
+                slide.isSkipped = skip
+                return slide
+            }
+            return PersonalizationStory(id: id, name: id, startPosition: start, slides: slides)
+        }
+        let stories = [story("a", skipped: [true, true]), story("b", skipped: [false, true], start: 1), story("c", skipped: [false])]
+        let viewer = PersonalizationStoriesViewController(stories: stories)
+        var left: [String] = []
+        viewer.onStoryLeftForward = { story, throughEnd in left.append(story.id + (throughEnd ? "!" : "")) }
+        XCTAssertTrue(viewer.prepareStart())
+        XCTAssertEqual(viewer.currentIndex, 2, "a and b (from its start) have nothing to show")
+        XCTAssertEqual(left, ["a!", "b!"], "both passed and watched")
+
+        let nothing = PersonalizationStoriesViewController(stories: [story("x", skipped: [true]), story("y", skipped: [true, true])])
+        XCTAssertFalse(nothing.prepareStart(), "nothing to show: no viewer at all")
+
+        // Forward from a story passes an empty one; the last one empty closes the viewer.
+        let chain = PersonalizationStoriesViewController(stories: [story("p", skipped: [false]), story("q", skipped: [true]), story("r", skipped: [false])])
+        var passed: [String] = []
+        chain.onStoryLeftForward = { story, _ in passed.append(story.id) }
+        XCTAssertEqual(chain.passStories(from: 1), 2)
+        XCTAssertEqual(passed, ["q"])
+        XCTAssertEqual(chain.previousStory(from: 1), 0, "backward steps over it without marks")
+        XCTAssertEqual(passed, ["q"])
+        XCTAssertEqual(chain.nextStory(after: 0), 2, "a swipe goes past it too")
+        XCTAssertNil(PersonalizationStoriesViewController(stories: [story("s", skipped: [false]), story("t", skipped: [true])]).nextStory(after: 0))
     }
 
     /// A v3 story opens at the feed's `start_position`, whatever slides this device saw.
