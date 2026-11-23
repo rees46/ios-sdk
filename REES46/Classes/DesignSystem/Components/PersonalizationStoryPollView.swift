@@ -50,8 +50,8 @@ final class PersonalizationStoryPollView: UIView {
         /// Квадрат буквы и поле ввода.
         static let plate = UIColor(white: 1, alpha: 0.85)
 
-        /// От краёв слайда.
-        static let margin = PersonalizationSpacing.lg  // 12
+        /// От краёв слайда (внутри безопасной зоны) — поле содержимого слайда.
+        static let margin = PersonalizationSpacing.xl  // 16
         static let padding = PersonalizationSpacing.xl2  // 20
         static var cardRadius: CGFloat { PersonalizationRadius.xl6 }  // 24
         static let cardBorderWidth: CGFloat = 1

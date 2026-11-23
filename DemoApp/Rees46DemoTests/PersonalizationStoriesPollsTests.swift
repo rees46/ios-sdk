@@ -1167,8 +1167,8 @@ extension PersonalizationStoriesPollsTests {
         }
         let middle = layout(miniPoll(.singleChoice, yOffset: 35)).card
         XCTAssertEqual(middle.frame.minY, 874 * 0.35, accuracy: 0.5, "y_offset is a share of the slide, like text blocks")
-        XCTAssertEqual(middle.frame.minX, 12, "12 from the edges of the slide")
-        XCTAssertEqual(middle.frame.width, 402 - 24)
+        XCTAssertEqual(middle.frame.minX, 16, "16 from the edges of the slide")
+        XCTAssertEqual(middle.frame.width, 402 - 32)
 
         let low = layout(miniPoll(.singleChoice, yOffset: 90)).card
         XCTAssertEqual(low.frame.maxY, 874 - 16, accuracy: 0.5, "too low — it moves up, whole")
