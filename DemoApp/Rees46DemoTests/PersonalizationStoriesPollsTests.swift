@@ -120,7 +120,6 @@ final class PersonalizationStoriesPollsTests: XCTestCase {
     private func mount(
         _ poll: Poll,
         texts: PersonalizationStoriesTexts = .init(),
-        language: StoryPollTexts.Language = .en,
         storyId: String = "5",
         slideId: String = "101",
         did: String = "",
@@ -134,7 +133,7 @@ final class PersonalizationStoriesPollsTests: XCTestCase {
             slideId: slideId,
             shopId: "shop",
             did: did,
-            texts: StoryPollTexts(host: texts, labels: poll.labels, language: language),
+            texts: StoryPollTexts(host: texts, labels: poll.labels),
             transport: transport,
             defaults: defaults
         )
@@ -560,16 +559,18 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(StoryPollStore.shared.sentEntry(card.controller.place), .init(answer: .init(optionIds: [1]), results: nil))
     }
 
-    /// Labels of the element, then the host's texts, then the SDK's own in the device's language.
-    func testTextsLabelsThenTheHostThenBuiltInsOfTheLanguage() {
+    /// As the web's `createPoll`: `labels` of the element, then the host's texts, then the web's
+    /// English constants whatever the device language; only a non-empty string counts.
+    func testTextsLabelsThenTheHostThenTheWebsEnglishConstants() {
         let host = PersonalizationStoriesTexts(pollReanswerText: "Ещё", pollSubmitText: "Ок", pollErrorText: "Сбой")
-        let english = StoryPollTexts(host: .init(), labels: .init(), language: .en)
-        XCTAssertEqual([english.reanswer, english.submit, english.error], ["Answer again", "Send", "Failed to send the answer. Please try again"])
-        let russian = StoryPollTexts(host: .init(), labels: .init(), language: .ru)
-        XCTAssertEqual([russian.reanswer, russian.submit, russian.error], ["Ответить заново", "Отправить", "Не удалось отправить ответ. Попробуйте еще раз"],
-                       "no English fallback in a Russian interface")
-        XCTAssertEqual(PersonalizationStoriesTexts().pollSubmitText, "", "the host's texts are empty by default: the SDK's own go")
-        let fromHost = StoryPollTexts(host: host, labels: .init(reanswer: "", error: nil, submit: nil), language: .ru)
+        let builtIn = StoryPollTexts(host: .init(), labels: .init())
+        XCTAssertEqual([builtIn.reanswer, builtIn.submit, builtIn.error], ["Answer again", "Send", "Failed to send the answer. Please try again"])
+        XCTAssertEqual([PersonalizationStoriesTexts().pollReanswerText, PersonalizationStoriesTexts().pollSubmitText],
+                       ["Answer again", "Send"], "the host's defaults are the web's, as on master")
+        let empty = StoryPollTexts(host: .init(pollReanswerText: "", pollSubmitText: "", pollErrorText: ""), labels: .init())
+        XCTAssertEqual([empty.reanswer, empty.submit, empty.error], ["Answer again", "Send", "Failed to send the answer. Please try again"],
+                       "empty host texts — the web's constants, not a translation")
+        let fromHost = StoryPollTexts(host: host, labels: .init(reanswer: "", error: nil, submit: nil))
         XCTAssertEqual([fromHost.reanswer, fromHost.submit, fromHost.error], ["Ещё", "Ок", "Сбой"], "empty labels do not count")
         let fromLabels = StoryPollTexts(host: host, labels: .init(reanswer: "Заново", error: "Не ушло", submit: "Отправить"))
         XCTAssertEqual([fromLabels.reanswer, fromLabels.submit, fromLabels.error], ["Заново", "Отправить", "Не ушло"])
@@ -580,8 +581,6 @@ extension PersonalizationStoriesPollsTests {
                                  texts: .init(pollReanswerText: "Answer again"))
         XCTAssertEqual(card.reanswerLink?.title.text, "Ещё раз")
         XCTAssertEqual(mount(miniPoll(.singleChoice, allowReanswer: true, answer: answered.answer)).card.reanswerLink?.title.text, "Answer again")
-        XCTAssertEqual(mount(miniPoll(.singleChoice, allowReanswer: true, answer: answered.answer), language: .ru).card.reanswerLink?.title.text,
-                       "Ответить заново")
     }
 }
 
@@ -627,7 +626,7 @@ extension PersonalizationStoriesPollsTests {
     /// then `thanks_text` — no header, no default thanks, no count of votes.
     func testAnAnsweredChoiceShowsWhatTheWebShows() {
         let results = Poll.Results(total: 1248, options: [.init(id: 1, percent: 52), .init(id: 2, percent: 31), .init(id: 3, percent: 17)])
-        let card = mount(miniPoll(.singleChoice, answer: .init(optionIds: [2]), results: results), language: .ru).card
+        let card = mount(miniPoll(.singleChoice, answer: .init(optionIds: [2]), results: results)).card
         XCTAssertEqual(card.optionRows.map { $0.percentLabel.text }, ["52%", "31%", "17%"])
         XCTAssertEqual(selectedRows(card), [2])
         XCTAssertEqual(card.thanksLabel?.text, "Спасибо!", "the poll's thanks_text")
@@ -950,7 +949,7 @@ extension PersonalizationStoriesPollsTests {
     /// The rate of a band with a question: the question, a field for up to 5000 characters and a
     /// button; the comment goes with the same rate, then the band's success.
     func testTheQuestionOfTheBandAsksForACommentWithTheSameRate() throws {
-        let (card, transport, _) = mount(scalePoll(.nps, bands: followupBands), language: .ru)
+        let (card, transport, _) = mount(scalePoll(.nps, bands: followupBands))
         card.cells[3].sendActions(for: .touchUpInside)
         transport.resolve(0)
         XCTAssertEqual(card.controller.commentQuestion, "Что улучшить?", "trimmed")
@@ -959,7 +958,7 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertNil(input.placeholder, "no placeholder")
         XCTAssertEqual(card.counter?.text, "0/5000")
         let submit = try XCTUnwrap(card.submitButton)
-        XCTAssertEqual(submit.title.text, "Отправить", "the button's own localized label")
+        XCTAssertEqual(submit.title.text, "Send", "the web's submit text: the follow-up has no submit_label")
         XCTAssertFalse(submit.isEnabled)
         XCTAssertNil(card.thanksLabel, "the success comes after the comment")
 

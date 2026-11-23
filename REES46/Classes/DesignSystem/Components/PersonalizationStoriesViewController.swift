@@ -22,7 +22,7 @@ public struct PersonalizationStoriesTexts {
     @_spi(PersonalizationV3) public var shareLabel: String?
     /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи
     /// (и кнопка комментария после оценки), ошибка отправки. Строки `labels` элемента из ленты
-    /// важнее; пустые — свои тексты SDK по языку устройства, русские или английские.
+    /// важнее; пустые — английские тексты веба.
     @_spi(PersonalizationV3) public var pollReanswerText: String
     @_spi(PersonalizationV3) public var pollSubmitText: String
     @_spi(PersonalizationV3) public var pollErrorText: String
@@ -64,9 +64,9 @@ public struct PersonalizationStoriesTexts {
         soundOnLabel: String? = "Sound on",
         soundOffLabel: String? = "Sound off",
         shareLabel: String? = "Share",
-        pollReanswerText: String = "",
-        pollSubmitText: String = "",
-        pollErrorText: String = ""
+        pollReanswerText: String = "Answer again",
+        pollSubmitText: String = "Send",
+        pollErrorText: String = "Failed to send the answer. Please try again"
     ) {
         self.promoCaption = promoCaption
         self.promoCopiedText = promoCopiedText

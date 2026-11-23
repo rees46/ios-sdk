@@ -281,35 +281,29 @@ extension PersonalizationStoryPoll {
     public static let commentMaxLength = 5000
 }
 
-/// Тексты карточки опроса: `labels` элемента, потом тексты хоста (`PersonalizationStoriesTexts`),
-/// потом свои по первому языку устройства — русские или английские. Перекрывает только непустая
-/// строка. Кнопка комментария после оценки — та же подпись отправки: в русском интерфейсе без
-/// своих текстов она «Отправить», а не английская.
+/// Тексты карточки опроса, как `createPoll` веба: `labels` элемента, потом тексты хоста
+/// (`PersonalizationStoriesTexts`), потом свои SDK — английские константы веба (`DEFAULT_POLL_TEXTS`)
+/// при любом языке устройства и приложения. Перекрывает только непустая строка. Кнопка
+/// отправки мини-опроса берёт сначала `submit_label` опроса; кнопка комментария после оценки —
+/// `submit`, как в вебе.
 struct StoryPollTexts: Equatable {
 
-    enum Language: Equatable {
-        case ru, en
-
-        /// По первому языку устройства.
-        static var current: Language {
-            (Locale.preferredLanguages.first ?? "").lowercased().hasPrefix("ru") ? .ru : .en
-        }
-    }
+    /// Свои тексты SDK — как у веба.
+    static let defaultReanswer = "Answer again"
+    static let defaultError = "Failed to send the answer. Please try again"
+    static let defaultSubmit = "Send"
 
     var reanswer: String
     var error: String
     var submit: String
-    let language: Language
 
-    init(host: PersonalizationStoriesTexts, labels: PersonalizationStoryPoll.Labels, language: Language = .current) {
+    init(host: PersonalizationStoriesTexts, labels: PersonalizationStoryPoll.Labels) {
         func pick(_ own: String?, _ host: String, _ fallback: String) -> String {
             [own, host].lazy.compactMap { $0 }.first { !$0.isEmpty } ?? fallback
         }
-        let ru = language == .ru
-        reanswer = pick(labels.reanswer, host.pollReanswerText, ru ? "Ответить заново" : "Answer again")
-        error = pick(labels.error, host.pollErrorText, ru ? "Не удалось отправить ответ. Попробуйте еще раз" : "Failed to send the answer. Please try again")
-        submit = pick(labels.submit, host.pollSubmitText, ru ? "Отправить" : "Send")
-        self.language = language
+        reanswer = pick(labels.reanswer, host.pollReanswerText, Self.defaultReanswer)
+        error = pick(labels.error, host.pollErrorText, Self.defaultError)
+        submit = pick(labels.submit, host.pollSubmitText, Self.defaultSubmit)
     }
 }
 
