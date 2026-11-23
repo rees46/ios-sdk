@@ -397,11 +397,16 @@ final class StoryPollStore {
         sent[place]
     }
 
-    /// Запись устройства: просроченная, без даты или битая удаляется, без `did` — `nil`.
+    /// Запись устройства: просроченная, без даты или битая (не JSON, не объект, без объекта
+    /// `answer`) удаляется, без `did` — `nil`.
     func savedEntry(_ place: Place, in defaults: UserDefaults?) -> Entry? {
-        guard let key = place.key, let defaults, let raw = defaults.string(forKey: key) else { return nil }
-        guard let record = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [String: Any],
-              let answer = PersonalizationStoryPoll.Answer(json: record["answer"]) else { return nil }
+        guard let key = place.key, let defaults, defaults.object(forKey: key) != nil else { return nil }
+        guard let raw = defaults.string(forKey: key),
+              let record = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [String: Any],
+              let answer = PersonalizationStoryPoll.Answer(json: record["answer"]) else {
+            defaults.removeObject(forKey: key)
+            return nil
+        }
         guard let savedAt = StoriesJSON.number(record["saved_at"]),
               now().timeIntervalSince1970 * 1000 - savedAt <= Self.ttl * 1000 else {
             defaults.removeObject(forKey: key)

@@ -888,6 +888,18 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(mount(miniPoll(.singleChoice), did: "d1", defaults: defaults).card.controller.mode, .answered, "89 days — still kept")
     }
 
+    /// A record that cannot be read — not JSON, not an object, no `answer` object, not a string —
+    /// is deleted on read too.
+    func testAnUnparseableRecordIsDeletedOnRead() {
+        let defaults = suite()
+        let now = Date().timeIntervalSince1970 * 1000
+        for broken in ["{not json", "[1,2]", #"{"answer":5,"saved_at":\#(now)}"#, #"{"saved_at":\#(now)}"#, 42] as [Any] {
+            defaults.set(broken, forKey: savedKey)
+            XCTAssertEqual(mount(miniPoll(.singleChoice), did: "d1", defaults: defaults).card.controller.mode, .form, "\(broken)")
+            XCTAssertNil(defaults.object(forKey: savedKey), "\(broken) is deleted")
+        }
+    }
+
     func testNothingIsSavedWithoutADid() {
         let defaults = suite()
         let (card, transport, _) = mount(miniPoll(.singleChoice), did: "", defaults: defaults)
