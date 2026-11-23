@@ -134,12 +134,25 @@ enum PersonalizationStoryColors {
     }
 
     /// Тема кита для текста на цвете, как правило четырёх SDK: светлый текст кита (тёмная тема) или
-    /// тёмный (светлая) — какой контрастнее с цветом по WCAG. Альфа цвета не учитывается.
+    /// тёмный (светлая) — какой контрастнее с цветом по WCAG. Полупрозрачный цвет сначала кладётся
+    /// на чёрный фон просмотрщика.
     static func interfaceStyle(on color: UIColor) -> UIUserInterfaceStyle {
         let text = PersonalizationColor.textPrimary
         let light = text.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
         let dark = text.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
-        return contrast(light, color) > contrast(dark, color) ? .dark : .light
+        let background = overBlack(color)
+        return contrast(light, background) > contrast(dark, background) ? .dark : .light
+    }
+
+    /// Цвет, положенный на чёрный: каналы, умноженные на альфу, непрозрачный.
+    static func overBlack(_ color: UIColor) -> UIColor {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        if !color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            var white: CGFloat = 0
+            color.getWhite(&white, alpha: &alpha)
+            (red, green, blue) = (white, white, white)
+        }
+        return UIColor(red: red * alpha, green: green * alpha, blue: blue * alpha, alpha: 1)
     }
 
     /// Контраст двух цветов по WCAG: от 1 до 21.

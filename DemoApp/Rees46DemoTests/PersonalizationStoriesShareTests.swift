@@ -386,6 +386,30 @@ final class PersonalizationStoriesShareTests: XCTestCase {
         viewer.close()
     }
 
+    /// A link to a story with nothing to show still sends `shared_open`, as the web; the story is
+    /// passed, and with nothing after it no viewer is shown at all.
+    func testALinkToAStoryWithNothingToShowStillReportsTheOpen() throws {
+        let story = """
+        {"status":"success","payload":{"id":7,"stories":[{"id":40,"name":"Text","start_position":0,"slides":[
+            {"id":36,"type":"","elements":[{"type":"text_block","text_input":"Hi"}]},
+            {"id":37,"type":"","background_color":"#FF0000"}]}]}}
+        """
+        let opened = expectation(description: "shared_open")
+        let closed = expectation(description: "onClose")
+        let requests = capture { request in
+            if self.body(request)["event"] as? String == "shared_open" { opened.fulfill() }
+            return (request.httpMethod == "GET" ? Data(story.utf8) : Data("{}".utf8), 200)
+        }
+        let host = PresentingHost()
+        XCTAssertTrue(PersonalizationStories.handleLink(demoLink, sdk: FakeSDK(shopId: "shop"), apiV3Domain: "app.test", from: host,
+                                                        onClose: { closed.fulfill() }))
+        wait(for: [opened, closed], timeout: 5)
+        XCTAssertTrue(host.shown.isEmpty, "never an empty viewer")
+        let sharedOpen = requests().map(body).first { $0["event"] as? String == "shared_open" }
+        XCTAssertEqual(sharedOpen?["story_id"] as? Int, 40)
+        XCTAssertEqual(sharedOpen?["slide_id"] as? String, "36", "passed to its end: its first slide, as the web")
+    }
+
     func testAProductCampaignLinkOpensOnItsSlideThoughTheServerStartsAtTheFirst() throws {
         // The server does not know virtual slides: `slide_id=39_2` still answers `start_position: 0`.
         let story = """
@@ -678,6 +702,9 @@ extension PersonalizationStoriesShareTests {
         XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#666666"]).interfaceStyle, .dark)
         XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "rgb(30, 58, 138)"]).interfaceStyle, .dark)
         XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#FFF"]).interfaceStyle, .light)
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "#FFFFFF33"]).interfaceStyle, .dark,
+                       "a translucent colour is laid over the viewer's black first")
+        XCTAssertEqual(try slide(["id": 1, "type": "", "background_color": "rgba(255, 255, 255, 0.9)"]).interfaceStyle, .light)
 
         let rgba = try XCTUnwrap(PersonalizationStoryColors.parse(css: "rgba(253, 230, 138, 0.5)"))
         XCTAssertEqual(rgba.cgColor.alpha, 0.5, accuracy: 0.01)
@@ -882,10 +909,57 @@ extension PersonalizationStoriesShareTests {
         chain.onStoryLeftForward = { story, _ in passed.append(story.id) }
         XCTAssertEqual(chain.passStories(from: 1), 2)
         XCTAssertEqual(passed, ["q"])
-        XCTAssertEqual(chain.previousStory(from: 1), 0, "backward steps over it without marks")
+        XCTAssertEqual(chain.previousStory(from: 1), 0, "looking backward marks nothing")
         XCTAssertEqual(passed, ["q"])
         XCTAssertEqual(chain.nextStory(after: 0), 2, "a swipe goes past it too")
         XCTAssertNil(PersonalizationStoriesViewController(stories: [story("s", skipped: [false]), story("t", skipped: [true])]).nextStory(after: 0))
+
+        // Stepping back over a story with nothing to show watches it too; nothing before — none.
+        let back = PersonalizationStoriesViewController(stories: [story("u", skipped: [true]), story("v", skipped: [false]),
+                                                                 story("w", skipped: [true]), story("z", skipped: [false])])
+        var stepped: [String] = []
+        back.onStoryLeftForward = { story, throughEnd in stepped.append(story.id + (throughEnd ? "!" : "")) }
+        XCTAssertEqual(back.stepBack(from: 2), 1)
+        XCTAssertEqual(stepped, ["w!"], "stepped over backward: watched, as forward")
+        XCTAssertNil(back.stepBack(from: 0), "nothing before: the viewer closes")
+        XCTAssertEqual(stepped, ["w!", "u!"])
+    }
+
+    /// A back swipe on the first story of a v3 viewer closes it, as the web's `prev` with `i <= 0`;
+    /// the stories before it with nothing to show are watched. A short or a vertical swipe, a later
+    /// story and the old feed do nothing.
+    func testABackSwipeOnTheFirstStoryClosesAV3Viewer() throws {
+        func story(_ id: String, skipped: Bool, v3: Bool = true) -> PersonalizationStory {
+            var slide = PersonalizationStorySlide(id: "\(id)0", kind: skipped ? .content : .image, background: "https://cdn.test/\(id).jpg")
+            slide.isV3 = v3
+            slide.isSkipped = skipped
+            return PersonalizationStory(id: id, name: id, slides: [slide])
+        }
+        func run(_ stories: [PersonalizationStory], start: Int, swipe: CGPoint) throws -> (closed: Bool, left: [String]) {
+            let viewer = PersonalizationStoriesViewController(stories: stories, startIndex: start)
+            var closed = false
+            var left: [String] = []
+            viewer.onClose = { closed = true }
+            viewer.onStoryLeftForward = { story, throughEnd in left.append(story.id + (throughEnd ? "!" : "")) }
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+            window.rootViewController = viewer
+            window.isHidden = false
+            defer { window.isHidden = true }
+            let page = try XCTUnwrap(viewer.pager.viewControllers?.first as? PersonalizationStoryPageViewController)
+            viewer.settle(on: page)
+            viewer.backSwipeEnded(translation: swipe)
+            return (closed, left)
+        }
+        let feed = [story("e", skipped: true), story("f", skipped: false), story("g", skipped: false)]
+        let first = try run(feed, start: 1, swipe: CGPoint(x: 150, y: 10))
+        XCTAssertTrue(first.closed, "f is the first story with something to show")
+        XCTAssertEqual(first.left, ["e!"], "e before it is watched")
+        XCTAssertFalse(try run(feed, start: 1, swipe: CGPoint(x: 60, y: 0)).closed, "too short")
+        XCTAssertFalse(try run(feed, start: 1, swipe: CGPoint(x: 150, y: 300)).closed, "vertical")
+        XCTAssertFalse(try run(feed, start: 1, swipe: CGPoint(x: -150, y: 0)).closed, "forward")
+        XCTAssertFalse(try run(feed, start: 2, swipe: CGPoint(x: 150, y: 0)).closed, "a story before it: the pager goes back")
+        let old = [story("h", skipped: false, v3: false), story("i", skipped: false, v3: false)]
+        XCTAssertFalse(try run(old, start: 0, swipe: CGPoint(x: 150, y: 0)).closed, "the old feed keeps its rules")
     }
 
     /// A v3 story opens at the feed's `start_position`, whatever slides this device saw.

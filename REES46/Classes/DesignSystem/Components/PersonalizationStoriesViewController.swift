@@ -110,7 +110,8 @@ public struct PersonalizationStoriesTexts {
 ///   на экране); не дождались за 10 с или не загрузилось — «Повторить»;
 /// - нажатие в левой трети — назад, в правой — вперёд, в середине — ничего (в RTL края
 ///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала, у ленты v3 —
-///   закрыть, как веб; вперёд после последнего слайда последней сторис — закрыть;
+///   закрыть, как веб (и свайп назад на первой сторис тоже); вперёд после последнего слайда
+///   последней сторис — закрыть;
 /// - пропущенные слайды ленты v3 (`PersonalizationStorySlide.isSkipped`) не показываются: их
 ///   сегмент прогресса остаётся, вперёд их проходят, назад через них шагают; сторис, где с её
 ///   слайда старта показывать нечего, проходится и досмотрена, как в вебе; пустым просмотрщик
@@ -278,6 +279,8 @@ extension PersonalizationStoriesViewController {
         view.addGestureRecognizer(pan)
         // Горизонтальный свайп сторис ждёт, пока не станет ясно, что это не свайп вниз.
         pagerScrollView?.panGestureRecognizer.require(toFail: pan)
+        // Свайп назад на первой сторис — закрыть (лента v3, `backSwipeEnded`).
+        pagerScrollView?.panGestureRecognizer.addTarget(self, action: #selector(pagerPanned(_:)))
         observeSystem()
     }
 
@@ -474,11 +477,45 @@ extension PersonalizationStoriesViewController {
         return nil
     }
 
-    /// Сторис для показа, идя назад с `index`: сторис, где показывать нечего, — шагом назад, без
-    /// отметок. `nil` — до начала ленты показывать нечего.
+    /// Сторис для показа, идя назад с `index`: сторис, где показывать нечего, — шагом назад.
+    /// Только поиск, без отметок; `nil` — до начала ленты показывать нечего.
     func previousStory(from index: Int) -> Int? {
         stride(from: index, through: 0, by: -1).first { hasShownSlide($0) }
     }
+
+    /// Шаг назад с `index`: сторис, где показывать нечего, пройдены и досмотрены, как и вперёд
+    /// (`onStoryLeftForward`). `nil` — до начала ленты показывать нечего: просмотрщик закрывают.
+    func stepBack(from index: Int) -> Int? {
+        let target = previousStory(from: index)
+        markPassed(from: (target ?? -1) + 1, to: index)
+        return target
+    }
+
+    /// Сторис `from...to`, где показывать нечего, пройдены и досмотрены.
+    private func markPassed(from lower: Int, to upper: Int) {
+        guard lower <= upper else { return }
+        for index in lower...upper where stories.indices.contains(index) && !hasShownSlide(index) {
+            onStoryLeftForward?(stories[index], true)
+        }
+    }
+
+    /// Свайп назад кончился: на первой сторис, где есть что показать, у ленты v3 он закрывает
+    /// просмотрщик, как в вебе (`prev` при `i <= 0`); сторис перед ней, где показывать нечего,
+    /// пройдены и досмотрены. `translation` — сдвиг пальца; назад — к началу ленты по направлению
+    /// письма, не короче `backSwipeDistance` и больше по ширине, чем по высоте.
+    func backSwipeEnded(translation: CGPoint) {
+        guard state.closesFromStart, state.canSwipe, !isTransitioning, !isPollEditing,
+              let page = activePage, page.storyIndex == state.story else { return }
+        let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
+        let back = rightToLeft ? -translation.x : translation.x
+        guard back > Self.backSwipeDistance, back > abs(translation.y),
+              page.storyIndex == 0 || previousStory(from: page.storyIndex - 1) == nil else { return }
+        markPassed(from: 0, to: page.storyIndex - 1)
+        close()
+    }
+
+    /// Свайп назад короче этого — не свайп, как `swipeLength` веба.
+    static let backSwipeDistance: CGFloat = 100
 
     /// Решить, с какой сторис начать показ, — до показа: сторис, где показывать нечего, проходятся
     /// вперёд и считаются досмотренными, как в вебе. `false` — показывать нечего: просмотрщик не
@@ -532,8 +569,9 @@ extension PersonalizationStoriesViewController {
                 guard let target = passStories(from: index) else { return close() }
                 move(to: target, forward: true)
             } else {
-                // Назад через сторис, где показывать нечего, — шагом; до начала нечего — закрыть.
-                guard let target = previousStory(from: index) else { return close() }
+                // Назад через сторис, где показывать нечего, — шагом, они досмотрены; до начала
+                // нечего — закрыть.
+                guard let target = stepBack(from: index) else { return close() }
                 move(to: target, forward: false)
             }
         case .restartSlide:
@@ -863,6 +901,11 @@ extension PersonalizationStoriesViewController {
         })
     }
 
+    @objc func pagerPanned(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .ended else { return }
+        backSwipeEnded(translation: gesture.translation(in: view))
+    }
+
     @objc func panned(_ gesture: UIPanGestureRecognizer) {
         let distance = max(0, gesture.translation(in: view).y)
         switch gesture.state {
@@ -918,6 +961,10 @@ extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, 
                 onStoryLeftForward?(previous.story, false)
                 // Пройденные свайпом сторис, где показывать нечего, досмотрены, как в вебе.
                 for index in previous.storyIndex + 1..<page.storyIndex { onStoryLeftForward?(stories[index], true) }
+            } else if let previous = previousViewControllers.first as? PersonalizationStoryPageViewController,
+                      previous.storyIndex > page.storyIndex + 1, !state.isClosing {
+                // Назад — так же: пройденные сторис, где показывать нечего, досмотрены.
+                markPassed(from: page.storyIndex + 1, to: previous.storyIndex - 1)
             }
             settle(on: page)
         }
