@@ -120,6 +120,7 @@ extension PersonalizationStorySlide {
             guard let item, button["item"] == nil else { return button }
             return button.merging(["item": item]) { own, _ in own }
         }
+        let polls = of("poll").compactMap { PersonalizationStoryPoll(json: $0) }
         self.init(
             id: id,
             kind: Self.kind(of: StoriesJSON.string(json["type"]) ?? ""),
@@ -132,8 +133,9 @@ extension PersonalizationStorySlide {
             products: of("products").lazy.compactMap { Products(json: $0) }.first,
             textBlocks: of("text_block").compactMap { TextBlock(json: $0, v3: v3) },
             shareUrl: StoriesJSON.string(json["share_url"]),
-            poll: of("poll").lazy.compactMap { PersonalizationStoryPoll(json: $0) }.first
+            poll: polls.first
         )
+        self.polls = polls
         isV3 = v3
         // Слайд без медиа и без товара веб пропускает (`show()`: `this.next()`).
         isSkipped = v3 && kind == .content && !PersonalizationStory.hasProduct(json)

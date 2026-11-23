@@ -21,8 +21,8 @@ import AVFoundation
 /// слайда (листание по третям, удержание — пауза).
 ///
 /// Остальные слайды: текстовые блоки на `yOffset` процентах высоты слайда во всю ширину
-/// без полей, но целиком между шапкой и кнопками (`place(_:yOffset:)`); карточка опроса — на
-/// своём `y_offset`, как в вебе (`attachPoll`); кнопки Primary LG внизу. Ряд внизу — товары
+/// без полей, но целиком между шапкой и кнопками (`place(_:yOffset:)`); карточки опросов — каждая
+/// на своём `y_offset`, как в вебе (`attachPoll`); кнопки Primary LG внизу. Ряд внизу — товары
 /// (`PersonalizationStoryUsedProducts`) и кнопка звука у видео — есть на любом слайде, где
 /// они нужны, и на товарном тоже.
 ///
@@ -113,14 +113,16 @@ final class PersonalizationStorySlideView: UIView {
     var offsetLimit: NSLayoutYAxisAnchor?
     /// Низы элементов на `yOffset` у слайда без кнопок: идут за безопасной зоной.
     var offsetBottoms: [NSLayoutConstraint] = []
-    /// Карточка опроса слайда, см. `attachPoll`.
-    private(set) var pollView: PersonalizationStoryPollView?
+    /// Карточки опросов слайда, каждая на своём `y_offset`, см. `attachPoll`.
+    private(set) var pollViews: [PersonalizationStoryPollView] = []
+    /// Первая карточка опроса.
+    var pollView: PersonalizationStoryPollView? { pollViews.first }
     /// Шапка слайда (элемент `header`, API v3).
     private(set) var headerView: PersonalizationStoryHeaderView?
-    /// Низ карточки опроса — на 16 выше видимого ряда внизу, без него — выше безопасной зоны.
-    private var pollBottom: NSLayoutConstraint?
-    /// Верх карточки опроса — не выше безопасной зоны (под статус-баром она не встаёт).
-    private var pollTop: NSLayoutConstraint?
+    /// Низы карточек опросов — на 16 выше видимого ряда внизу, без него — выше безопасной зоны.
+    private var pollBottoms: [NSLayoutConstraint] = []
+    /// Верхи карточек опросов — не выше безопасной зоны (под статус-баром они не встают).
+    private var pollTops: [NSLayoutConstraint] = []
     static let pollBottomGap = PersonalizationSpacing.xl  // 16
     /// Верх содержимого: под шапкой слайда, без неё — верх области содержимого.
     var contentTop: NSLayoutYAxisAnchor { headerBottom?.anchor ?? contentGuide.topAnchor }
@@ -231,8 +233,8 @@ final class PersonalizationStorySlideView: UIView {
         for bottom in offsetBottoms {
             bottom.constant = -(safeInsets.bottom + productGroupInset)
         }
-        pollBottom?.constant = -pollBottomInset
-        pollTop?.constant = safeInsets.top
+        pollBottoms.forEach { $0.constant = -pollBottomInset }
+        pollTops.forEach { $0.constant = safeInsets.top }
     }
 
     /// Отступ низа товарного слайда от безопасной зоны: над рядом товаров и звука — его
@@ -922,22 +924,18 @@ extension PersonalizationStorySlideView {
     /// Может уйти под шапку — прогресс, крестик и «Поделиться» остаются поверх и нажимаются. По
     /// ширине — 16 от краёв слайда внутри безопасной зоны, не шире 420, по центру. Лист товаров
     /// её накрывает, «Повторить» — над ней.
+    /// Опросов на слайде может быть несколько — каждый своей карточкой, как в вебе.
     func attachPoll(_ card: PersonalizationStoryPollView) {
-        if let old = pollView {
-            pollBottom = nil
-            pollTop = nil
-            old.removeFromSuperview()
-        }
-        pollView = card
+        pollViews.append(card)
         card.translatesAutoresizingMaskIntoConstraints = false
         insertSubview(card, belowSubview: bottomRow ?? retryButton)
         let offset = UILayoutGuide()
         addLayoutGuide(offset)
         let share = Self.offsetShare(card.controller.poll.yOffset)
         let bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -pollBottomInset)
-        pollBottom = bottom
+        pollBottoms.append(bottom)
         let top = card.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: safeInsets.top)
-        pollTop = top
+        pollTops.append(top)
         NSLayoutConstraint.activate([
             offset.topAnchor.constraint(equalTo: topAnchor),
             share > 0

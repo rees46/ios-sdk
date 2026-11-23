@@ -355,8 +355,13 @@ public struct PersonalizationStorySlide {
     public let textBlocks: [TextBlock]
     /// Своя ссылка слайда для «Поделиться» (`share_url`, API v3); у товарных слайдов её нет.
     @_spi(PersonalizationV3) public let shareUrl: String?
-    /// Опрос слайда (элемент `poll`, только API v3); рисуется и на товарном слайде.
+    /// Опрос слайда (элемент `poll`, только API v3) — первый из `polls`; рисуется и на товарном
+    /// слайде.
     @_spi(PersonalizationV3) public let poll: PersonalizationStoryPoll?
+
+    /// Все опросы слайда, как веб рисует каждый элемент `poll`: каждый — своей карточкой на своём
+    /// `y_offset`. У слайда хоста — его `poll`.
+    @_spi(PersonalizationV3) public internal(set) var polls: [PersonalizationStoryPoll]
 
     /// Шапка слайда (элемент `header`, лента API v3); рисуется над содержимым слайда.
     @_spi(PersonalizationV3) public internal(set) var header: Header?
@@ -418,6 +423,7 @@ public struct PersonalizationStorySlide {
         self.textBlocks = textBlocks
         self.shareUrl = shareUrl
         self.poll = poll
+        self.polls = poll.map { [$0] } ?? []
     }
 
     /// Длительность слайда, когда API её не прислал или прислал ноль — одна на всех платформах.

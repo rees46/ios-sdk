@@ -1163,6 +1163,37 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertTrue(session.makeViewer(stories: [story], startIndex: 0).pollTransport as? FakePollTransport === fake)
     }
 
+    /// Every poll element of a slide is drawn, each as its own card at its own `y_offset`, as the
+    /// web renders each one; the slide stays held while any of them holds it.
+    func testEveryPollOfASlideIsDrawnAtItsOwnOffset() throws {
+        let json: [String: Any] = ["id": 1, "type": "image", "background": "https://cdn.test/1.jpg", "elements": [
+            ["type": "poll", "poll_type": "mini_poll", "y_offset": 10,
+             "poll": ["code": "a", "kind": "single_choice", "options": [["id": 1, "label": "A"]]]],
+            ["type": "poll", "poll_type": "nps", "y_offset": 60, "poll": ["code": "b"]]
+        ]]
+        let slide = try XCTUnwrap(PersonalizationStorySlide(json: json, v3: true))
+        XCTAssertEqual(slide.polls.map(\.code), ["a", "b"])
+        XCTAssertEqual(slide.poll?.code, "a")
+
+        let (viewer, page, window) = try viewer(slides: [slide], transport: FakePollTransport())
+        defer {
+            viewer.close()
+            window.isHidden = true
+        }
+        let cards = try XCTUnwrap(page.slideView?.pollViews)
+        XCTAssertEqual(cards.map(\.controller.poll.code), ["a", "b"])
+        page.view.layoutIfNeeded()
+        XCTAssertEqual(cards[0].frame.minY, max(874 * 0.1, viewer.view.safeAreaInsets.top), accuracy: 0.5)
+        XCTAssertEqual(cards[1].frame.minY, 874 * 0.6, accuracy: 0.5)
+
+        cards[0].controller.isPressed = true
+        cards[1].controller.isPressed = true
+        cards[1].controller.isPressed = false
+        XCTAssertTrue(viewer.state.pauses.contains(.poll), "the first card still holds the slide")
+        cards[0].controller.isPressed = false
+        XCTAssertFalse(viewer.state.pauses.contains(.poll))
+    }
+
     func testATapBesideTheCardOnlyHidesTheKeyboard() throws {
         let slides = [PersonalizationStorySlide(id: "1", kind: .content, poll: miniPoll(.text)), PersonalizationStorySlide(id: "2", kind: .content)]
         let (viewer, page, window) = try viewer(slides: slides, transport: FakePollTransport())

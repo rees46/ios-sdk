@@ -681,7 +681,7 @@ extension PersonalizationStoriesViewController {
     func handleTap(at x: CGFloat, width: CGFloat, from page: PersonalizationStoryPageViewController) {
         guard page === activePage else { return }
         // Открыта клавиатура опроса: тап мимо карточки только прячет её.
-        if page.slideView?.pollView?.dismissKeyboard() == true { return }
+        if page.slideView?.pollViews.contains(where: { $0.dismissKeyboard() }) == true { return }
         let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
         apply(state.tap(x: x, width: width, rightToLeft: rightToLeft))
     }
@@ -769,28 +769,33 @@ extension PersonalizationStoriesViewController {
 
     // MARK: Опрос
 
-    /// Карточка опроса слайда; без опроса или без транспорта — `nil`. Ответ — по
-    /// `StoryPollStore`: этого запуска, иначе из ленты, иначе сохранённый на устройстве.
-    func makePollView(story: PersonalizationStory, slide: PersonalizationStorySlide) -> PersonalizationStoryPollView? {
-        guard let poll = slide.poll, let pollTransport else { return nil }
-        let controller = StoryPollController(
-            poll: poll,
-            storyId: story.id,
-            slideId: slide.id,
-            shopId: pollShopId,
-            did: pollDeviceId(),
-            texts: StoryPollTexts(host: texts, labels: poll.labels),
-            transport: pollTransport,
-            defaults: pollDefaults
-        )
-        return PersonalizationStoryPollView(controller: controller)
+    /// Карточки опросов слайда — по одной на каждый опрос, как в вебе; без транспорта — ни одной.
+    /// Ответ — по `StoryPollStore`: из свежей ленты, иначе этого запуска, иначе из ленты, иначе
+    /// сохранённый на устройстве.
+    func makePollViews(story: PersonalizationStory, slide: PersonalizationStorySlide) -> [PersonalizationStoryPollView] {
+        guard let pollTransport else { return [] }
+        let did = pollDeviceId()
+        return slide.polls.map { poll in
+            let controller = StoryPollController(
+                poll: poll,
+                storyId: story.id,
+                slideId: slide.id,
+                shopId: pollShopId,
+                did: did,
+                texts: StoryPollTexts(host: texts, labels: poll.labels),
+                transport: pollTransport,
+                defaults: pollDefaults
+            )
+            return PersonalizationStoryPollView(controller: controller)
+        }
     }
 
-    /// Карточку держат — слайд стоит на своей причине паузы. Ход вернётся, когда причин не
-    /// останется; при смене слайда причину снимает состояние.
+    /// Карточку держат — слайд стоит на своей причине паузы, пока его держит хоть одна карточка
+    /// слайда. Ход вернётся, когда причин не останется; при смене слайда причину снимает состояние.
     func pollHeld(_ hold: Bool, on page: PersonalizationStoryPageViewController) {
         guard page === activePage, !state.isClosing else { return }
-        setPaused(.poll, hold)
+        let others = page.slideView?.pollViews.contains { $0.controller.isAttached && $0.controller.hold } ?? false
+        setPaused(.poll, hold || others)
     }
 
     /// Курсор в поле опроса: сторис не листаются, свайп вниз не закрывает.
@@ -807,7 +812,7 @@ extension PersonalizationStoriesViewController {
     }
 
     var isPollEditing: Bool {
-        activePage?.slideView?.pollView?.isEditing ?? false
+        activePage?.slideView?.pollViews.contains(where: \.isEditing) ?? false
     }
 
     /// Что уходит в окно «Поделиться»: ссылка после `shareUrlTransform`; не разобравшаяся
@@ -1115,7 +1120,7 @@ extension PersonalizationStoryPageViewController {
             self.viewer?.retryTapped(on: self)
         }
         next.safeInsets = safeInsets
-        if let card = viewer?.makePollView(story: story, slide: slide) {
+        for card in viewer?.makePollViews(story: story, slide: slide) ?? [] {
             card.controller.onHold = { [weak self] hold in
                 guard let self else { return }
                 self.viewer?.pollHeld(hold, on: self)
