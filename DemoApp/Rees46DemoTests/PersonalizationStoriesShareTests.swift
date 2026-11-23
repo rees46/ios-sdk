@@ -901,6 +901,49 @@ extension PersonalizationStoriesShareTests {
                        "a partition of the shop's own needs no scope")
     }
 
+    /// The sound button of a v3 video hides only when the video's tracks are known and none is
+    /// audio; while that is unclear it shows. A hidden button keeps no room at the bottom: the
+    /// buttons come down to 16 above the safe area, and go back up when it shows again.
+    func testAHiddenSoundButtonOfAV3VideoKeepsNoRoom() throws {
+        XCTAssertEqual(PersonalizationStorySlideView.audioTrack([]), .unknown, "no tracks yet")
+        XCTAssertEqual(PersonalizationStorySlideView.audioTrack([.video, nil]), .unknown, "a track not read yet")
+        XCTAssertEqual(PersonalizationStorySlideView.audioTrack([.video]), .absent)
+        XCTAssertEqual(PersonalizationStorySlideView.audioTrack([.video, .audio]), .present)
+
+        func layout(v3: Bool) throws -> (view: PersonalizationStorySlideView, buttons: UIView) {
+            var slide = PersonalizationStorySlide(id: "1", kind: .video, background: "https://video.example/a.mp4", buttons: [.init(title: "Buy")])
+            slide.isV3 = v3
+            let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+            view.safeInsets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+            view.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+            view.layoutIfNeeded()
+            return (view, try XCTUnwrap(view.subviews.first { $0 is UIStackView }))
+        }
+        let (view, buttons) = try layout(v3: true)
+        defer { view.stop() }
+        let sound = try XCTUnwrap(view.soundButton)
+        XCTAssertFalse(sound.isHidden, "unclear yet: shown")
+        XCTAssertEqual(buttons.frame.maxY, 874 - 34 - 64, accuracy: 0.5, "over the row")
+        view.setSoundAvailability(.unknown)
+        XCTAssertFalse(sound.isHidden)
+
+        view.setSoundAvailability(.absent)
+        view.layoutIfNeeded()
+        XCTAssertTrue(sound.isHidden)
+        XCTAssertFalse(view.hasBottomRow)
+        XCTAssertEqual(buttons.frame.maxY, 874 - 34 - 16, accuracy: 0.5, "no room kept for the hidden button")
+
+        view.setSoundAvailability(.present)
+        view.layoutIfNeeded()
+        XCTAssertFalse(sound.isHidden)
+        XCTAssertEqual(buttons.frame.maxY, 874 - 34 - 64, accuracy: 0.5)
+
+        let old = try layout(v3: false).view
+        defer { old.stop() }
+        old.setSoundAvailability(.absent)
+        XCTAssertFalse(old.soundButton?.isHidden ?? true, "the old feed keeps its button")
+    }
+
     /// `header`: icon, title and subtitle; a tap sends `click` and opens the link, as the web.
     func testTheHeaderOfAV3Slide() throws {
         let json: [String: Any] = ["id": 1, "type": "", "elements": [

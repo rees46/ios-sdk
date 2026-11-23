@@ -177,8 +177,8 @@ final class PersonalizationStorySlideView: UIView {
             button.soundOnLabel = texts.soundOn
             button.soundOffLabel = texts.soundOff
             button.onToggle = { [weak self] muted in self?.onMuteToggle?(muted) }
-            // Слайд v3, как в вебе: кнопка звука — только у ролика со звуком, видна, когда он готов.
-            button.isHidden = slide.isV3
+            // Слайд v3: кнопка звука прячется, только когда дорожки ролика известны и звука среди
+            // них нет (`updateSoundButton`); пока неясно — видна.
             soundButton = button
         }
 
@@ -216,7 +216,8 @@ final class PersonalizationStorySlideView: UIView {
     }
 
     /// Поля содержимого от краёв безопасной зоны: 16 по бокам, сверху и снизу;
-    /// нижний ряд (товары, звук) стоит прямо на её нижнем крае, над ним — кнопки.
+    /// нижний ряд (товары, звук) стоит прямо на её нижнем крае, над ним — кнопки. Без видимого
+    /// ряда места под него нет.
     private func applySafeInsets() {
         let side = PersonalizationSpacing.xl  // 16
         guideTop?.constant = safeInsets.top + side
@@ -237,8 +238,17 @@ final class PersonalizationStorySlideView: UIView {
         hasBottomRow ? PersonalizationStoryUsedProducts.rowHeight : PersonalizationSpacing.xl
     }
 
+    /// Внизу виден ряд: переключатель товаров или кнопка звука. Спрятанная кнопка места не держит.
     var hasBottomRow: Bool {
-        slide.products != nil || soundButton != nil
+        slide.products != nil || soundButton.map { !$0.isHidden } ?? false
+    }
+
+    /// Ряд появился или пропал (кнопка звука после дорожек ролика): всё, что стоит над ним, —
+    /// на новое место.
+    func updateBottomRow() {
+        if usedProducts == nil { bottomRow?.isHidden = !hasBottomRow }
+        applySafeInsets()
+        setNeedsLayout()
     }
 
     @objc private func retryTapped() {
@@ -366,7 +376,7 @@ extension PersonalizationStorySlideView {
                 guard let self, self.player?.currentItem === item else { return }
                 switch status {
                 case .readyToPlay:
-                    if self.slide.isV3 { self.soundButton?.isHidden = !Self.hasAudio(item) }
+                    self.updateSoundButton(item)
                     self.markReady()
                 case .failed: self.markFailed()
                 default: break
@@ -376,6 +386,12 @@ extension PersonalizationStorySlideView {
             // Не сразу: сначала доходят свои уведомления (ошибка ролика, смена выхода звука),
             // и ответ просмотрщика трогает плеер уже не внутри уведомления.
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.systemStopDelay) { self?.playbackStatusChanged(player) }
+        }, item.observe(\.tracks, options: [.new]) { [weak self] item, _ in
+            // Дорожки приходят и после готовности: звук проверяется заново.
+            MainThread.run {
+                guard let self, self.player?.currentItem === item else { return }
+                self.updateSoundButton(item)
+            }
         }]
         let center = NotificationCenter.default
         videoObservers = [
@@ -402,9 +418,38 @@ extension PersonalizationStorySlideView {
         onMediaFailed?()
     }
 
-    /// В ролике есть звуковая дорожка.
-    static func hasAudio(_ item: AVPlayerItem) -> Bool {
-        item.tracks.contains { $0.assetTrack?.mediaType == .audio }
+    /// Звук ролика по его дорожкам.
+    enum AudioTrack: Equatable {
+        /// Есть звуковая дорожка.
+        case present
+        /// Дорожки известны, звуковой среди них нет.
+        case absent
+        /// Дорожек ещё нет или они не прочитаны — неясно.
+        case unknown
+    }
+
+    static func audioTrack(_ item: AVPlayerItem) -> AudioTrack {
+        audioTrack(item.tracks.map { $0.assetTrack?.mediaType })
+    }
+
+    /// Типы дорожек ролика; `nil` — дорожка без прочитанного типа.
+    static func audioTrack(_ types: [AVMediaType?]) -> AudioTrack {
+        if types.contains(.audio) { return .present }
+        return types.isEmpty || types.contains(nil) ? .unknown : .absent
+    }
+
+    /// Кнопка звука слайда v3: спрятана, только когда звука в ролике точно нет (веб прячет её и
+    /// без ответа — здесь неясный ответ оставляет кнопку). Старая лента кнопку не прячет.
+    func updateSoundButton(_ item: AVPlayerItem) {
+        setSoundAvailability(Self.audioTrack(item))
+    }
+
+    func setSoundAvailability(_ track: AudioTrack) {
+        guard slide.isV3, let soundButton else { return }
+        let hidden = track == .absent
+        guard soundButton.isHidden != hidden else { return }
+        soundButton.isHidden = hidden
+        updateBottomRow()
     }
 
     /// Сколько ждать, прежде чем счесть паузу плеера делом системы.
