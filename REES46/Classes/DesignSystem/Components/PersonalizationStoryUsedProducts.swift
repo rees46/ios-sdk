@@ -130,6 +130,14 @@ public final class PersonalizationStoryUsedProducts: UIView {
         ])
     }
 
+    /// Свёрнутый ряд берёт касания только переключателем и вью в начале ряда: пустые места
+    /// пропускают их к тому, что под рядом (карточке опроса, слайду). Развёрнутый лист берёт все.
+    public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        guard !isExpanded, let hit, [self, sheet, row, listContainer].contains(where: { $0 === hit }) else { return hit }
+        return nil
+    }
+
     @objc private func toggled() {
         isExpanded.toggle()
         onToggle?(isExpanded)

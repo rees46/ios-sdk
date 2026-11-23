@@ -1208,6 +1208,49 @@ extension PersonalizationStoriesPollsTests {
         XCTAssertEqual(wide.frame.midX, 500, accuracy: 0.5)
     }
 
+    /// The card stays 16 above the bottom row (products toggle, sound button) while the row shows,
+    /// so its lower part (a follow-up's button) is never under the row; the row's empty parts let
+    /// touches through, only its buttons take them.
+    func testTheCardStaysAboveTheBottomRowAndTheRowLetsTouchesThrough() throws {
+        func layout(_ slide: PersonalizationStorySlide) -> (view: PersonalizationStorySlideView, card: PersonalizationStoryPollView) {
+            let view = PersonalizationStorySlideView(slide: slide, texts: .init(), isMuted: true, imageLoader: { _, _ in })
+            view.safeInsets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+            let card = mount(miniPoll(.singleChoice, yOffset: 95)).card
+            view.attachPoll(card)
+            view.frame = CGRect(x: 0, y: 0, width: 402, height: 874)
+            view.layoutIfNeeded()
+            return (view, card)
+        }
+        var video = PersonalizationStorySlide(id: "1", kind: .video, background: "https://video.example/a.mp4", poll: miniPoll(.singleChoice))
+        video.isV3 = true
+        let (sound, card) = layout(video)
+        defer { sound.stop() }
+        XCTAssertEqual(card.frame.maxY, 874 - 34 - 64 - 16, accuracy: 0.5, "16 above the sound row")
+        sound.setSoundAvailability(.absent)
+        sound.layoutIfNeeded()
+        XCTAssertEqual(card.frame.maxY, 874 - 34 - 16, accuracy: 0.5, "no row — 16 above the safe area")
+        sound.setSoundAvailability(.present)
+        sound.layoutIfNeeded()
+        let row = try XCTUnwrap(sound.bottomRow)
+        let empty = row.convert(CGPoint(x: row.bounds.maxX - 20, y: row.bounds.midY), to: sound)
+        XCTAssertFalse(sound.hitTest(empty, with: nil)?.isDescendant(of: row) ?? false, "the row's empty part is not the row's")
+        let button = try XCTUnwrap(sound.soundButton)
+        XCTAssertTrue(sound.hitTest(button.convert(CGPoint(x: 16, y: 16), to: sound), with: nil) === button, "its button is")
+
+        let products = PersonalizationStorySlide(id: "2", kind: .content, products: .init(items: [.init(id: "1", name: "Mouse", price: "1 ₽")]),
+                                                 poll: miniPoll(.singleChoice))
+        let (sheet, sheetCard) = layout(products)
+        XCTAssertEqual(sheetCard.frame.maxY, 874 - 34 - 64 - 16, accuracy: 0.5, "16 above the products toggle")
+        let used = try XCTUnwrap(sheet.usedProducts)
+        let side = used.convert(CGPoint(x: 8, y: used.bounds.maxY - 32), to: sheet)
+        XCTAssertFalse(sheet.hitTest(side, with: nil)?.isDescendant(of: used) ?? false, "a collapsed row lets the touch through")
+        used.isExpanded = true
+        sheet.layoutIfNeeded()
+        let open = used.convert(CGPoint(x: 8, y: used.bounds.maxY - 32), to: sheet)
+        XCTAssertTrue(sheet.hitTest(open, with: nil)?.isDescendant(of: used) ?? false, "the open sheet takes it")
+        XCTAssertEqual(sheetCard.frame.maxY, 874 - 34 - 64 - 16, accuracy: 0.5, "the open sheet covers the card, it does not move it")
+    }
+
     /// The text block keeps to the area between the header and the buttons; the card keeps its
     /// `y_offset` and only the bottom of the slide, as the web's `fittedTop`.
     func testATextBlockAndAPollWithOneOffset() throws {

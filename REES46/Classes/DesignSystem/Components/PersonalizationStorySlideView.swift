@@ -117,7 +117,7 @@ final class PersonalizationStorySlideView: UIView {
     private(set) var pollView: PersonalizationStoryPollView?
     /// Шапка слайда (элемент `header`, API v3).
     private(set) var headerView: PersonalizationStoryHeaderView?
-    /// Низ карточки опроса — на 16 выше низа слайда над безопасной зоной.
+    /// Низ карточки опроса — на 16 выше видимого ряда внизу, без него — выше безопасной зоны.
     private var pollBottom: NSLayoutConstraint?
     static let pollBottomGap = PersonalizationSpacing.xl  // 16
     /// Верх содержимого: под шапкой слайда, без неё — верх области содержимого.
@@ -229,13 +229,20 @@ final class PersonalizationStorySlideView: UIView {
         for bottom in offsetBottoms {
             bottom.constant = -(safeInsets.bottom + productGroupInset)
         }
-        pollBottom?.constant = -(safeInsets.bottom + Self.pollBottomGap)
+        pollBottom?.constant = -pollBottomInset
     }
 
     /// Отступ низа товарного слайда от безопасной зоны: над рядом товаров и звука — его
     /// высота, без ряда — обычное поле 16.
     var productGroupInset: CGFloat {
         hasBottomRow ? PersonalizationStoryUsedProducts.rowHeight : PersonalizationSpacing.xl
+    }
+
+    /// Отступ низа карточки опроса от низа слайда: 16 над свёрнутым рядом внизу (переключатель
+    /// товаров, кнопка звука), когда он виден, иначе 16 над безопасной зоной. Раскрытый лист
+    /// товаров карточку не двигает — накрывает.
+    var pollBottomInset: CGFloat {
+        safeInsets.bottom + (hasBottomRow ? PersonalizationStoryUsedProducts.rowHeight : 0) + Self.pollBottomGap
     }
 
     /// Внизу виден ряд: переключатель товаров или кнопка звука. Спрятанная кнопка места не держит.
@@ -770,7 +777,7 @@ extension PersonalizationStorySlideView {
             usedProducts = used
             row = used
         } else if let soundButton {
-            row = UIView()
+            row = PersonalizationStoryPassThroughView()
             soundButton.translatesAutoresizingMaskIntoConstraints = false
             row.addSubview(soundButton)
             NSLayoutConstraint.activate([
@@ -798,6 +805,15 @@ extension PersonalizationStorySlideView {
     /// Свернуть лист товаров: нажатие мимо него или смена слайда.
     func collapseProducts() {
         usedProducts?.isExpanded = false
+    }
+}
+
+/// Ряд во всю ширину слайда (кнопка звука внизу): пустые места касаний не берут — они достаются
+/// тому, что под рядом, карточке опроса или слайду; берут только кнопки ряда.
+final class PersonalizationStoryPassThroughView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        return hit === self ? nil : hit
     }
 }
 
@@ -897,8 +913,9 @@ extension PersonalizationStorySlideView {
 
     /// Карточка опроса, как в вебе (`fittedTop`): верх — `y_offset` процентов высоты слайда
     /// (зажато в 0...100, без него — 0); не влезает ниже — поднимается, чтобы низ был на 16 выше
-    /// низа слайда (над безопасной зоной), но не выше верха слайда; не влезает совсем —
-    /// прокручивается внутри. Может уйти под шапку — прогресс, крестик и «Поделиться» остаются
+    /// ряда внизу (переключатель товаров, кнопка звука), когда он виден, иначе — безопасной зоны,
+    /// но не выше верха слайда; не влезает совсем — прокручивается внутри. Пустые места ряда
+    /// касаний не берут: под рядом карточка нажимается. Может уйти под шапку — прогресс, крестик и «Поделиться» остаются
     /// поверх и нажимаются. По ширине — 12 от краёв слайда (на 4 шире поля содержимого 16 с каждой
     /// стороны), не шире 420, по центру. Лист товаров её накрывает, «Повторить» — над ней.
     func attachPoll(_ card: PersonalizationStoryPollView) {
@@ -912,7 +929,7 @@ extension PersonalizationStorySlideView {
         let offset = UILayoutGuide()
         addLayoutGuide(offset)
         let share = Self.offsetShare(card.controller.poll.yOffset)
-        let bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -(safeInsets.bottom + Self.pollBottomGap))
+        let bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -pollBottomInset)
         pollBottom = bottom
         NSLayoutConstraint.activate([
             offset.topAnchor.constraint(equalTo: topAnchor),
