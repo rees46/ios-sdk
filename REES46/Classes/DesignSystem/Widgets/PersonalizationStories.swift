@@ -17,7 +17,9 @@ import UIKit
 ///
 /// Просмотренные слайды хранятся по магазину в общем хранилище SDK — том же, что у старых
 /// сторис. Начатая сторис открывается с первого непросмотренного слайда, досмотренная —
-/// с начала; кольцо обложки подсвечивает просмотренные слайды по их номерам.
+/// с начала; кольцо обложки подсвечивает просмотренные слайды по их номерам. Лента API v3 —
+/// как в вебе: сторис открывается на `start_position` ленты, кольцо — по `viewed` ленты и
+/// сторис, из которых за время жизни ленты ушли вперёд (`StoriesFeedProgress`).
 ///
 /// Нажатия на кнопки, товары и промокоды получает `communicationDelegate` — тот же
 /// `StoriesCommunicationProtocol`, что у старых сторис; ссылку SDK открывает, если делегат
@@ -103,6 +105,8 @@ public final class PersonalizationStories: UIView {
     private weak var viewer: PersonalizationStoriesViewController?
     /// API v3 загруженной ленты: события просмотрщика идут туда же.
     private var loadedV3Domain: String?
+    /// Ход по загруженной ленте v3: с какого слайда открывать сторис и что просмотрено.
+    private var progress = StoriesFeedProgress()
     /// Открыть сторис, когда блок загрузится.
     var pendingOpen: ((PersonalizationStories) -> Void)?
 
@@ -268,6 +272,7 @@ extension PersonalizationStories {
             switch result {
             case .success(let stories):
                 self.loadedV3Domain = v3Domain
+                self.progress = StoriesFeedProgress()
                 self.loaded(stories)
             case .failure(let error):
                 self.fail(error)
@@ -324,7 +329,13 @@ extension PersonalizationStories {
         invalidateIntrinsicContentSize()
     }
 
+    /// Обложки: у ленты v3 — по `viewed` ленты и сторис, из которых ушли вперёд, как в вебе;
+    /// у старой — по просмотренным слайдам на устройстве.
     func renderBar() {
+        if loadedV3Domain != nil {
+            bar.items = stories.map { progress.barItem($0) }
+            return
+        }
         let state = StoriesSeenState(sdk: sdk)
         bar.items = stories.map { state.barItem($0) }
     }
@@ -354,8 +365,12 @@ extension PersonalizationStories {
         session.imageLoader = imageLoader
         session.shareUrlTransform = shareUrlTransform
         session.pollTransport = pollTransport
+        session.progress = progress
         session.onSeen = { [weak self] in self?.renderBar() }
         let viewer = session.makeViewer(stories: stories, startIndex: index)
+        // Показывать нечего (одни пропущенные слайды до конца ленты): сторис просмотрены, как в
+        // вебе, а пустой просмотрщик не показывается.
+        guard viewer.prepareStart() else { return renderBar() }
         self.viewer = viewer
         host.personalizationTopmost.present(viewer, animated: true)
     }
@@ -398,7 +413,8 @@ extension PersonalizationStories {
     ///   - onError: блок не загрузился, пуст, нет инстанса или магазин неоднозначен; за
     ///     `loadTimeout` так и не нашлось, откуда показать.
     ///   - onClose: просмотрщик закрылся — крестиком, свайпом, после последнего слайда,
-    ///     перед переходом по ссылке или убранный хостом.
+    ///     перед переходом по ссылке или убранный хостом; у ленты v3 и без показа, если в сторис
+    ///     до конца ленты одни пропущенные слайды (веб их проходит и закрывается).
     public static func show(
         code: String,
         sdk: PersonalizationSDK? = nil,
@@ -472,6 +488,11 @@ extension PersonalizationStories {
             session.pollTransport = pollTransport
             let start = startStoryId.flatMap { id in stories.firstIndex { $0.id == id } } ?? 0
             let viewer = session.makeViewer(stories: stories, startIndex: start)
+            // Показывать нечего — показ кончился, не начавшись: пустой просмотрщик не показывается.
+            guard viewer.prepareStart() else {
+                onClose?()
+                return
+            }
             viewer.onClose = onClose
             host.personalizationTopmost.present(viewer, animated: true)
         } }
@@ -485,7 +506,9 @@ extension PersonalizationStories {
     /// `show`: с первой сторис ответа и со слайда ссылки — он сам, если есть в ответе, иначе
     /// `start_position` сервера, в обход «первого непросмотренного»; следующие сторис — с первого
     /// непросмотренного, как в ленте. Открытый просмотрщик сторис на данных SDK — ленты, `show`
-    /// или другой ссылки — закрывается перед показом. После показа уходит `shared_open`.
+    /// или другой ссылки — закрывается перед показом. После показа уходит `shared_open`; в сторис
+    /// ссылки, где показывать нечего (одни пропущенные слайды), — тоже, как в вебе, а дальше она
+    /// проходится, как в ленте; до конца ответа показывать нечего — `onClose` без показа.
     ///
     /// Возвращает `true`, если это ссылка сторис и задан `apiV3Domain` (параметр, по умолчанию —
     /// глобальный), — дальше всё идёт асинхронно и кончается ровно одним колбэком, как у `show`:
@@ -539,6 +562,16 @@ extension PersonalizationStories {
             session.pollTransport = pollTransport
             let other = StoriesSession.openViewer
             let viewer = session.makeViewer(stories: stories, startIndex: 0, link: link)
+            // Показывать нечего — показ кончился, не начавшись: пустой просмотрщик не показывается.
+            guard viewer.prepareStart() else {
+                // Как веб: ссылку открыли — `shared_open` уходит, хоть показывать и нечего.
+                if let story = viewer.stories.first, !story.slides.isEmpty {
+                    session.sharedOpened(story, story.slides[viewer.startSlideIndex(of: story)])
+                }
+                release()
+                onClose?()
+                return
+            }
             viewer.onClose = {
                 release()
                 onClose?()

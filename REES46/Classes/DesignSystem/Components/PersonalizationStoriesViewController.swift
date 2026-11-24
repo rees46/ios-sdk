@@ -20,8 +20,9 @@ public struct PersonalizationStoriesTexts {
     public var soundOffLabel: String?
     /// VoiceOver: «Поделиться» (API v3).
     @_spi(PersonalizationV3) public var shareLabel: String?
-    /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи,
-    /// ошибка отправки. Строки `labels` элемента из ленты важнее.
+    /// Опросы на слайдах (API v3): ссылка «ответить заново», кнопка отправки без своей подписи
+    /// (и кнопка комментария после оценки), ошибка отправки. Строки `labels` элемента из ленты
+    /// важнее; пустые — английские тексты веба.
     @_spi(PersonalizationV3) public var pollReanswerText: String
     @_spi(PersonalizationV3) public var pollSubmitText: String
     @_spi(PersonalizationV3) public var pollErrorText: String
@@ -108,14 +109,21 @@ public struct PersonalizationStoriesTexts {
 ///   не меньше одного своего круга; отсчёт стартует, когда медиа готово (у GIF — первый кадр
 ///   на экране); не дождались за 10 с или не загрузилось — «Повторить»;
 /// - нажатие в левой трети — назад, в правой — вперёд, в середине — ничего (в RTL края
-///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала; вперёд после
-///   последнего слайда последней сторис — закрыть;
-/// - удержание и свайп — пауза; свайп вниз закрывает, крестик тоже;
+///   наоборот); назад на первом слайде первой сторис — тот же слайд с начала, у ленты v3 —
+///   закрыть, как веб (и свайп назад на первой сторис тоже); вперёд после последнего слайда
+///   последней сторис — закрыть (у ленты v3 и свайп вперёд на последней сторис);
+/// - пропущенные слайды ленты v3 (`PersonalizationStorySlide.isSkipped`) не показываются: их
+///   сегмент прогресса остаётся, вперёд их проходят, назад через них шагают; сторис, где с её
+///   слайда старта показывать нечего, проходится и досмотрена, как в вебе; пустым просмотрщик
+///   не бывает (`prepareStart`);
+/// - удержание и свайп — пауза; свайп вниз закрывает, у ленты v3 — вверх или вниз длиннее 100,
+///   как веб; крестик тоже;
 /// - открытый лист товаров ставит паузу и не даёт листать, нажатие мимо него его закрывает;
 /// - пауза в фоне, при неактивной сцене и под чужим экраном, а также по `pause()` хоста;
 ///   в паузе ролик и GIF стоят на текущем кадре;
 /// - медиа-слайды — в тёмной теме кита, остальные — в теме приложения;
-/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь.
+/// - звук — на весь запуск: выключен при первом открытии, дальше как выбрал пользователь; у ленты
+///   v3 — свой выбор, кнопкой сохранённый в разделе магазина.
 ///
 /// Сеть, трекинг и ссылки — не его дело: наружу отданы колбэки. Данные SDK подключает
 /// виджет `PersonalizationStories`; хост может показать просмотрщик и со своими данными.
@@ -138,11 +146,15 @@ public final class PersonalizationStoriesViewController: UIViewController {
 
     // MARK: - События
 
-    /// Слайд стал текущим на остановившейся странице — событие `view` для трекинга.
+    /// Слайд показан на остановившейся странице — событие `view` для трекинга: на каждый показ,
+    /// и при возврате; у слайда v3 — и при повторе первого слайда с начала.
     public var onSlideView: ((PersonalizationStory, PersonalizationStorySlide) -> Void)?
 
     /// Нажата кнопка слайда.
     public var onButtonTap: ((PersonalizationStory, PersonalizationStorySlide, PersonalizationStorySlide.Button) -> Void)?
+
+    /// Нажата шапка слайда (элемент `header`, API v3).
+    @_spi(PersonalizationV3) public var onHeaderTap: ((PersonalizationStory, PersonalizationStorySlide, PersonalizationStorySlide.Header) -> Void)?
 
     /// Нажат товар: кнопка товарного слайда без своих кнопок, карточка карусели. Картинка
     /// товара не нажимается — касание по ней листает слайд.
@@ -172,18 +184,36 @@ public final class PersonalizationStoriesViewController: UIViewController {
     /// Магазин ответов опросов этого запуска (общих у всех просмотрщиков); виджет ставит свой.
     @_spi(PersonalizationV3) public var pollShopId = ""
 
+    /// Устройство, под которым ответ опроса сохраняется на устройстве (на момент показа слайда);
+    /// пустое — не сохраняется. Виджет ставит `did` своего SDK.
+    var pollDeviceId: () -> String = { "" }
+
+    /// Хранилище магазина для сохранённых ответов опросов; `nil` — только память запуска.
+    var pollDefaults: UserDefaults?
+
     /// Просмотрщик закрывается.
     public var onClose: (() -> Void)?
 
-    /// Видео сейчас без звука: так выбрал пользователь (выбор общий на весь запуск) или звук
-    /// забрала система — выдернули наушники, прервал звонок.
-    public var isMuted: Bool { PersonalizationStoryAudio.shared.isPlaybackMuted }
+    /// Из сторис ушли вперёд: досмотрели последний слайд (`throughEnd`) — к следующей сторис или
+    /// закрытию — или свайпнули к следующей. Лента v3 по нему считает сторис просмотренной.
+    var onStoryLeftForward: ((PersonalizationStory, _ throughEnd: Bool) -> Void)?
+
+    /// Выбор звука этого просмотрщика: общий на весь запуск (старая лента, данные хоста) или
+    /// свой у ленты v3, сохранённый кнопкой в разделе магазина (`StoriesSession`).
+    var muteChoice = PersonalizationStoryAudio.shared.processChoice
+
+    /// Видео сейчас без звука: так выбрал пользователь (у старой ленты выбор общий на весь запуск,
+    /// у ленты v3 — свой) или звук забрала система — выдернули наушники, прервал звонок.
+    public var isMuted: Bool { muteChoice.isMuted || PersonalizationStoryAudio.shared.isSilenced }
 
     var state: PersonalizationStoriesViewerState
     let pager = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal, options: nil)
     var pages: [Int: PersonalizationStoryPageViewController] = [:]
     weak var activePage: PersonalizationStoryPageViewController?
     var isTransitioning = false
+    /// С какой сторис начать, уже решено (`prepareStart`); `hasStart` — есть что показать.
+    private(set) var isStartPrepared = false
+    private(set) var hasStart = false
     var hasAppeared = false
     var isDismissed = false
     var closeCompletions: [() -> Void] = []
@@ -200,7 +230,12 @@ public final class PersonalizationStoriesViewController: UIViewController {
         let requested = stories.indices.contains(startIndex) ? stories[startIndex].id : nil
         self.stories = playable
         let start = playable.firstIndex { $0.id == requested } ?? 0
-        self.state = PersonalizationStoriesViewerState(slideCounts: playable.map(\.slides.count), story: start)
+        self.state = PersonalizationStoriesViewerState(
+            slideCounts: playable.map(\.slides.count),
+            story: start,
+            skipped: playable.map { story in Set(story.slides.indices.filter { story.slides[$0].isSkipped }) },
+            closesFromStart: playable.contains { $0.slides.contains(where: \.isV3) }
+        )
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .fullScreen
         modalPresentationCapturesStatusBarAppearance = true
@@ -235,7 +270,8 @@ extension PersonalizationStoriesViewController {
         pager.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(pager.view)
         pager.didMove(toParent: self)
-        if !stories.isEmpty {
+        if !isStartPrepared { hasStart = prepareStart() }
+        if hasStart {
             pager.setViewControllers([page(at: state.story)], direction: .forward, animated: false)
         }
 
@@ -244,18 +280,20 @@ extension PersonalizationStoriesViewController {
         view.addGestureRecognizer(pan)
         // Горизонтальный свайп сторис ждёт, пока не станет ясно, что это не свайп вниз.
         pagerScrollView?.panGestureRecognizer.require(toFail: pan)
+        // Свайп назад на первой сторис и вперёд на последней — закрыть (лента v3, `swipeEnded`).
+        pagerScrollView?.panGestureRecognizer.addTarget(self, action: #selector(pagerPanned(_:)))
         observeSystem()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        guard !stories.isEmpty else {
+        guard hasStart else {
             close()
             return
         }
         if !hasAppeared {
             hasAppeared = true
-            PersonalizationStoryAudio.shared.begin()
+            PersonalizationStoryAudio.shared.begin(choice: muteChoice)
             startClock()
             if let page = pager.viewControllers?.first as? PersonalizationStoryPageViewController {
                 settle(on: page)
@@ -370,7 +408,7 @@ extension PersonalizationStoriesViewController {
         view.endEditing(true)
         stopClock()
         activePage?.slideView?.pause()
-        if hasAppeared { PersonalizationStoryAudio.shared.end() }
+        if hasAppeared { PersonalizationStoryAudio.shared.end(choice: muteChoice) }
         onClose?()
     }
 
@@ -380,10 +418,13 @@ extension PersonalizationStoriesViewController {
         completions.forEach { $0() }
     }
 
-    /// Перейти к сторис по индексу.
+    /// Перейти к сторис по индексу. Сторис, где показывать нечего (одни пропущенные слайды ленты
+    /// v3), проходится, как в вебе: она просмотрена, дальше — следующая; дальше нечего — закрыть.
     public func open(at index: Int) {
         guard stories.indices.contains(index), index != state.story, !state.isClosing else { return }
-        move(to: index, forward: index > state.story)
+        guard let target = passStories(from: index) else { return close() }
+        guard target != state.story else { return }
+        move(to: target, forward: target > state.story)
     }
 
     /// Перейти к сторис по id.
@@ -406,10 +447,108 @@ extension PersonalizationStoriesViewController {
 
 extension PersonalizationStoriesViewController {
 
-    /// Слайд, с которого открывается сторис: по просмотренности, в пределах сторис.
+    /// Слайд, с которого открывается сторис: по просмотренности, в пределах сторис; пропущенный
+    /// слайд ленты v3 — следующий показываемый. Показывать нечего — запрошенный.
     func startSlideIndex(of story: PersonalizationStory) -> Int {
+        let requested = requestedStart(of: story)
+        guard let index = stories.firstIndex(where: { $0.id == story.id }) else { return requested }
+        return state.shownSlide(story: index, from: requested) ?? requested
+    }
+
+    private func requestedStart(of story: PersonalizationStory) -> Int {
         let requested = startSlide?(story) ?? story.startPosition
         return min(max(requested, 0), story.slides.count - 1)
+    }
+
+    /// В сторис есть что показать с её слайда старта: после него не одни пропущенные слайды.
+    func hasShownSlide(_ index: Int) -> Bool {
+        stories.indices.contains(index) && state.shownSlide(story: index, from: requestedStart(of: stories[index])) != nil
+    }
+
+    /// Сторис для показа, идя вперёд с `index`: первая, где есть что показать. Пройденные — где
+    /// после слайда старта одни пропущенные слайды — досмотрены (`onStoryLeftForward`), как в вебе
+    /// (`next()` проходит их до конца). `nil` — до конца ленты показывать нечего.
+    func passStories(from index: Int) -> Int? {
+        var current = index
+        while stories.indices.contains(current) {
+            if hasShownSlide(current) { return current }
+            onStoryLeftForward?(stories[current], true)
+            current += 1
+        }
+        return nil
+    }
+
+    /// Сторис для показа, идя назад с `index`: сторис, где показывать нечего, — шагом назад.
+    /// Только поиск, без отметок; `nil` — до начала ленты показывать нечего.
+    func previousStory(from index: Int) -> Int? {
+        stride(from: index, through: 0, by: -1).first { hasShownSlide($0) }
+    }
+
+    /// Шаг назад с `index`: сторис, где показывать нечего, пройдены и досмотрены, как и вперёд
+    /// (`onStoryLeftForward`). `nil` — до начала ленты показывать нечего: просмотрщик закрывают.
+    func stepBack(from index: Int) -> Int? {
+        let target = previousStory(from: index)
+        markPassed(from: (target ?? -1) + 1, to: index)
+        return target
+    }
+
+    /// Сторис `from...to`, где показывать нечего, пройдены и досмотрены.
+    private func markPassed(from lower: Int, to upper: Int) {
+        guard lower <= upper else { return }
+        for index in lower...upper where stories.indices.contains(index) && !hasShownSlide(index) {
+            onStoryLeftForward?(stories[index], true)
+        }
+    }
+
+    /// Свайп между сторис кончился там, где листать некуда, — у ленты v3 он закрывает
+    /// просмотрщик, как в вебе. Назад на первой сторис, где есть что показать (`prev` при
+    /// `i <= 0`): сторис перед ней, где показывать нечего, пройдены и досмотрены. Вперёд на
+    /// последней (`next` у последней): она досмотрена (`onStoryLeftForward`, не до конца), сторис
+    /// после неё, где показывать нечего, — тоже. Туда, где сторис есть, листает сам пейджер.
+    /// `translation` — сдвиг пальца: назад — к началу ленты по направлению письма; свайп — не
+    /// короче `swipeDistance` и больше по ширине, чем по высоте.
+    func swipeEnded(translation: CGPoint) {
+        guard state.closesFromStart, state.canSwipe, !isTransitioning, !isPollEditing,
+              let page = activePage, page.storyIndex == state.story else { return }
+        let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
+        let back = rightToLeft ? -translation.x : translation.x
+        guard abs(back) > Self.swipeDistance, abs(back) > abs(translation.y) else { return }
+        if back > 0 {
+            guard page.storyIndex == 0 || previousStory(from: page.storyIndex - 1) == nil else { return }
+            markPassed(from: 0, to: page.storyIndex - 1)
+        } else {
+            guard nextStory(after: page.storyIndex) == nil else { return }
+            onStoryLeftForward?(page.story, false)
+            markPassed(from: page.storyIndex + 1, to: stories.count - 1)
+        }
+        close()
+    }
+
+    /// Свайп короче этого — не свайп, как `swipeLength` веба.
+    static let swipeDistance: CGFloat = 100
+
+    /// Закрывает ли вертикальный свайп просмотрщик. Лента v3 — как веб: вверх или вниз длиннее
+    /// `swipeDistance` и больше по высоте, чем по ширине. Старая — как раньше: вниз длиннее
+    /// `closeDistance` или быстрее `closeVelocity`.
+    func closesOnVerticalSwipe(translation: CGPoint, velocity: CGPoint) -> Bool {
+        if state.closesFromStart {
+            return abs(translation.y) > Self.swipeDistance && abs(translation.y) > abs(translation.x)
+        }
+        return max(0, translation.y) > Self.closeDistance || velocity.y > Self.closeVelocity
+    }
+
+    /// Решить, с какой сторис начать показ, — до показа: сторис, где показывать нечего, проходятся
+    /// вперёд и считаются досмотренными, как в вебе. `false` — показывать нечего: просмотрщик не
+    /// показывают (пустого экрана нет). Зовётся один раз — хостом сессии перед `present` или
+    /// самим просмотрщиком при загрузке.
+    @discardableResult
+    func prepareStart() -> Bool {
+        guard !isStartPrepared else { return hasStart }
+        isStartPrepared = true
+        guard let target = passStories(from: state.story) else { return false }
+        state.begin(story: target)
+        hasStart = true
+        return true
     }
 
     func page(at index: Int) -> PersonalizationStoryPageViewController {
@@ -444,12 +583,29 @@ extension PersonalizationStoriesViewController {
             state.enter(slide: index, mediaReady: page.slideView?.isMediaReady ?? true)
             slideBecameCurrent()
         case .showStory(let index, let forward):
-            move(to: index, forward: forward)
+            if forward {
+                onStoryLeftForward?(page.story, true)
+                // Сторис, где показывать нечего, проходятся и досмотрены; дальше нечего — закрыть.
+                guard let target = passStories(from: index) else { return close() }
+                move(to: target, forward: true)
+            } else {
+                // Назад через сторис, где показывать нечего, — шагом, они досмотрены; до начала
+                // нечего — закрыть.
+                guard let target = stepBack(from: index) else { return close() }
+                move(to: target, forward: false)
+            }
         case .restartSlide:
             state.restart()
             page.slideView?.restart()
             page.navigation.progress.progress = 0
+            // Слайд v3 показан снова — снова `view`: повторы склеивает сервер, как у веба.
+            // Старая лента шлёт как раньше.
+            if let slide = page.currentSlide, slide.isV3 { onSlideView?(page.story, slide) }
         case .close:
+            // Досмотрен последний слайд последней сторис.
+            onStoryLeftForward?(page.story, true)
+            close()
+        case .closeFromStart:
             close()
         case .closeSheet:
             page.slideView?.collapseProducts()
@@ -495,10 +651,10 @@ extension PersonalizationStoriesViewController {
     /// Медиа следующего слайда — в кэш: картинка целиком, у ролика — начало.
     private func prefetch(after page: PersonalizationStoryPageViewController) {
         let next: PersonalizationStorySlide?
-        if page.slideIndex + 1 < page.story.slides.count {
-            next = page.story.slides[page.slideIndex + 1]
-        } else if page.storyIndex + 1 < stories.count {
-            let story = stories[page.storyIndex + 1]
+        if let index = state.shownSlide(story: page.storyIndex, from: page.slideIndex + 1) {
+            next = page.story.slides[index]
+        } else if let index = nextStory(after: page.storyIndex) {
+            let story = stories[index]
             next = story.slides[startSlideIndex(of: story)]
         } else {
             next = nil
@@ -583,7 +739,7 @@ extension PersonalizationStoriesViewController {
     func handleTap(at x: CGFloat, width: CGFloat, from page: PersonalizationStoryPageViewController) {
         guard page === activePage else { return }
         // Открыта клавиатура опроса: тап мимо карточки только прячет её.
-        if page.slideView?.pollView?.dismissKeyboard() == true { return }
+        if page.slideView?.pollViews.contains(where: { $0.dismissKeyboard() }) == true { return }
         let rightToLeft = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
         apply(state.tap(x: x, width: width, rightToLeft: rightToLeft))
     }
@@ -639,6 +795,11 @@ extension PersonalizationStoriesViewController {
         onProductTap?(story, slide, offer)
     }
 
+    func headerTapped(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide, _ header: PersonalizationStorySlide.Header) {
+        guard !state.isClosing else { return }
+        onHeaderTap?(story, slide, header)
+    }
+
     func promoCopied(_ story: PersonalizationStory, _ slide: PersonalizationStorySlide, _ code: String) {
         guard !state.isClosing else { return }
         onPromoCopied?(story, slide, code)
@@ -666,26 +827,33 @@ extension PersonalizationStoriesViewController {
 
     // MARK: Опрос
 
-    /// Карточка опроса слайда; без опроса или без транспорта — `nil`. Ответ этого запуска
-    /// (`StoryPollStore`) важнее ответа из ленты.
-    func makePollView(story: PersonalizationStory, slide: PersonalizationStorySlide) -> PersonalizationStoryPollView? {
-        guard let poll = slide.poll, let pollTransport else { return nil }
-        let controller = StoryPollController(
-            poll: poll,
-            storyId: story.id,
-            slideId: slide.id,
-            shopId: pollShopId,
-            texts: StoryPollTexts(host: texts, labels: poll.labels),
-            transport: pollTransport
-        )
-        return PersonalizationStoryPollView(controller: controller)
+    /// Карточки опросов слайда — по одной на каждый опрос, как в вебе; без транспорта — ни одной.
+    /// Ответ — по `StoryPollStore`: из свежей ленты, иначе этого запуска, иначе из ленты, иначе
+    /// сохранённый на устройстве.
+    func makePollViews(story: PersonalizationStory, slide: PersonalizationStorySlide) -> [PersonalizationStoryPollView] {
+        guard let pollTransport else { return [] }
+        let did = pollDeviceId()
+        return slide.polls.map { poll in
+            let controller = StoryPollController(
+                poll: poll,
+                storyId: story.id,
+                slideId: slide.id,
+                shopId: pollShopId,
+                did: did,
+                texts: StoryPollTexts(host: texts, labels: poll.labels),
+                transport: pollTransport,
+                defaults: pollDefaults
+            )
+            return PersonalizationStoryPollView(controller: controller)
+        }
     }
 
-    /// Карточку держат — слайд стоит на своей причине паузы. Ход вернётся, когда причин не
-    /// останется; при смене слайда причину снимает состояние.
+    /// Карточку держат — слайд стоит на своей причине паузы, пока его держит хоть одна карточка
+    /// слайда. Ход вернётся, когда причин не останется; при смене слайда причину снимает состояние.
     func pollHeld(_ hold: Bool, on page: PersonalizationStoryPageViewController) {
         guard page === activePage, !state.isClosing else { return }
-        setPaused(.poll, hold)
+        let others = page.slideView?.pollViews.contains { $0.controller.isAttached && $0.controller.hold } ?? false
+        setPaused(.poll, hold || others)
     }
 
     /// Курсор в поле опроса: сторис не листаются, свайп вниз не закрывает.
@@ -702,7 +870,7 @@ extension PersonalizationStoriesViewController {
     }
 
     var isPollEditing: Bool {
-        activePage?.slideView?.pollView?.isEditing ?? false
+        activePage?.slideView?.pollViews.contains(where: \.isEditing) ?? false
     }
 
     /// Что уходит в окно «Поделиться»: ссылка после `shareUrlTransform`; не разобравшаяся
@@ -745,7 +913,7 @@ extension PersonalizationStoriesViewController {
         ]
         observers.append(center.addObserver(forName: PersonalizationStoryAudio.didChange, object: nil, queue: .main) { [weak self] _ in
             guard let self else { return }
-            let muted = PersonalizationStoryAudio.shared.isPlaybackMuted
+            let muted = self.isMuted
             self.pages.values.forEach { $0.slideView?.setMuted(muted) }
             // Система могла остановить ролик сама (наушники, прерывание): плеер снова
             // делает то, что велит состояние, и прогресс не расходится с видео.
@@ -753,16 +921,23 @@ extension PersonalizationStoriesViewController {
         })
     }
 
+    @objc func pagerPanned(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .ended else { return }
+        swipeEnded(translation: gesture.translation(in: view))
+    }
+
+    /// Вертикальный свайп: страница идёт за пальцем (у старой ленты — только вниз), отпустили —
+    /// закрыть или вернуть (`closesOnVerticalSwipe`).
     @objc func panned(_ gesture: UIPanGestureRecognizer) {
-        let distance = max(0, gesture.translation(in: view).y)
+        let translation = gesture.translation(in: view)
+        let offset = state.closesFromStart ? translation.y : max(0, translation.y)
         switch gesture.state {
         case .began:
             setPaused(.drag, true)
         case .changed:
-            pager.view.transform = CGAffineTransform(translationX: 0, y: distance)
+            pager.view.transform = CGAffineTransform(translationX: 0, y: offset)
         case .ended, .cancelled, .failed:
-            let velocity = gesture.velocity(in: view).y
-            if gesture.state == .ended, distance > Self.closeDistance || velocity > Self.closeVelocity {
+            if gesture.state == .ended, closesOnVerticalSwipe(translation: translation, velocity: gesture.velocity(in: view)) {
                 close()
             } else {
                 UIView.animate(withDuration: 0.25) { self.pager.view.transform = .identity }
@@ -776,14 +951,23 @@ extension PersonalizationStoriesViewController {
 
 extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
+    /// Соседи по свайпу — сторис, где есть что показать: остальные свайп проходит.
     public func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
-        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController, page.storyIndex > 0 else { return nil }
-        return self.page(at: page.storyIndex - 1)
+        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController,
+              page.storyIndex > 0, let index = previousStory(from: page.storyIndex - 1) else { return nil }
+        return self.page(at: index)
     }
 
     public func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
-        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController, page.storyIndex + 1 < stories.count else { return nil }
-        return self.page(at: page.storyIndex + 1)
+        guard state.canSwipe, let page = viewController as? PersonalizationStoryPageViewController,
+              let index = nextStory(after: page.storyIndex) else { return nil }
+        return self.page(at: index)
+    }
+
+    /// Следующая сторис, где есть что показать, без отметок.
+    func nextStory(after index: Int) -> Int? {
+        guard index + 1 < stories.count else { return nil }
+        return (index + 1..<stories.count).first { hasShownSlide($0) }
     }
 
     /// Свайп между сторис — пауза, как удержание; подсмотренная наполовину страница
@@ -794,6 +978,16 @@ extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, 
 
     public func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
         if completed, let page = pageViewController.viewControllers?.first as? PersonalizationStoryPageViewController {
+            if let previous = previousViewControllers.first as? PersonalizationStoryPageViewController,
+               previous.storyIndex < page.storyIndex, !state.isClosing {
+                onStoryLeftForward?(previous.story, false)
+                // Пройденные свайпом сторис, где показывать нечего, досмотрены, как в вебе.
+                for index in previous.storyIndex + 1..<page.storyIndex { onStoryLeftForward?(stories[index], true) }
+            } else if let previous = previousViewControllers.first as? PersonalizationStoryPageViewController,
+                      previous.storyIndex > page.storyIndex + 1, !state.isClosing {
+                // Назад — так же: пройденные сторис, где показывать нечего, досмотрены.
+                markPassed(from: page.storyIndex + 1, to: previous.storyIndex - 1)
+            }
             settle(on: page)
         }
         setPaused(.drag, false)
@@ -802,12 +996,15 @@ extension PersonalizationStoriesViewController: UIPageViewControllerDataSource, 
 
 extension PersonalizationStoriesViewController: UIGestureRecognizerDelegate {
 
-    /// Свайп закрытия — только вниз, заметно вертикальный и не при открытом листе товаров.
+    /// Свайп закрытия — заметно вертикальный (у старой ленты только вниз) и не при открытом листе
+    /// товаров.
     public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let pan = gestureRecognizer as? UIPanGestureRecognizer, pan.view === view else { return true }
         guard state.canSwipe, !isPollEditing else { return false }
         let velocity = pan.velocity(in: view)
-        return velocity.y > 0 && velocity.y > abs(velocity.x)
+        // Лента v3 закрывается свайпом и вверх, как веб; старая — только вниз.
+        let vertical = state.closesFromStart ? abs(velocity.y) : velocity.y
+        return vertical > 0 && vertical > abs(velocity.x)
     }
 
     /// Касание с карточки опроса свайпом закрытия не становится.
@@ -959,18 +1156,21 @@ extension PersonalizationStoryPageViewController {
         let next = PersonalizationStorySlideView(
             slide: slide,
             texts: viewer?.texts.slideTexts ?? PersonalizationStorySlideView.Texts(),
-            isMuted: PersonalizationStoryAudio.shared.isPlaybackMuted,
+            isMuted: viewer?.isMuted ?? PersonalizationStoryAudio.shared.isPlaybackMuted,
             imageLoader: viewer?.imageLoader
         )
         let story = self.story
         next.onButton = { [weak self] button in self?.viewer?.buttonTapped(story, slide, button) }
         next.onProduct = { [weak self] offer in self?.viewer?.productTapped(story, slide, offer) }
+        next.onHeader = { [weak self] header in self?.viewer?.headerTapped(story, slide, header) }
         next.onPromoCopied = { [weak self] code in self?.viewer?.promoCopied(story, slide, code) }
         next.onProductsToggle = { [weak self] expanded in
             guard let self else { return }
             self.viewer?.productsToggled(expanded, on: self)
         }
-        next.onMuteToggle = { muted in PersonalizationStoryAudio.shared.setMuted(muted) }
+        next.onMuteToggle = { [weak self] muted in
+            PersonalizationStoryAudio.shared.setMuted(muted, choice: self?.viewer?.muteChoice)
+        }
         next.onSystemStop = { [weak self] in
             guard let self else { return }
             self.viewer?.playbackStoppedBySystem(on: self)
@@ -992,7 +1192,7 @@ extension PersonalizationStoryPageViewController {
             self.viewer?.retryTapped(on: self)
         }
         next.safeInsets = safeInsets
-        if let card = viewer?.makePollView(story: story, slide: slide) {
+        for card in viewer?.makePollViews(story: story, slide: slide) ?? [] {
             card.controller.onHold = { [weak self] hold in
                 guard let self else { return }
                 self.viewer?.pollHeld(hold, on: self)

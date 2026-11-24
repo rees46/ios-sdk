@@ -124,6 +124,58 @@ enum PersonalizationStoryColors {
         )
     }
 
+    /// Цвет ленты v3 — один разбор на фон слайда, цвет текста и заливку блока: `#RGB`, `#RRGGBB`,
+    /// `#RRGGBBAA` и `rgb()`/`rgba()` (через запятые или пробелы, альфа после `/`, как в CSS).
+    /// Пусто или мусор — `nil`. Старая лента разбирает только hex (`parse(_:)`).
+    static func parse(css value: String?) -> UIColor? {
+        guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+        if text.lowercased().hasPrefix("rgb") { return CSSColor.parse(text)?.uiColor }
+        return parse(text)
+    }
+
+    /// Тема кита для текста на цвете, как правило четырёх SDK: светлый текст кита (тёмная тема) или
+    /// тёмный (светлая) — какой контрастнее с цветом по WCAG. Полупрозрачный цвет сначала кладётся
+    /// на чёрный фон просмотрщика.
+    static func interfaceStyle(on color: UIColor) -> UIUserInterfaceStyle {
+        let text = PersonalizationColor.textPrimary
+        let light = text.resolvedColor(with: UITraitCollection(userInterfaceStyle: .dark))
+        let dark = text.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+        let background = overBlack(color)
+        return contrast(light, background) > contrast(dark, background) ? .dark : .light
+    }
+
+    /// Цвет, положенный на чёрный: каналы, умноженные на альфу, непрозрачный.
+    static func overBlack(_ color: UIColor) -> UIColor {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        if !color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            var white: CGFloat = 0
+            color.getWhite(&white, alpha: &alpha)
+            (red, green, blue) = (white, white, white)
+        }
+        return UIColor(red: red * alpha, green: green * alpha, blue: blue * alpha, alpha: 1)
+    }
+
+    /// Контраст двух цветов по WCAG: от 1 до 21.
+    static func contrast(_ first: UIColor, _ second: UIColor) -> CGFloat {
+        let one = luminance(first), two = luminance(second)
+        return (max(one, two) + 0.05) / (min(one, two) + 0.05)
+    }
+
+    /// Относительная яркость по WCAG.
+    static func luminance(_ color: UIColor) -> CGFloat {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        if !color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            var white: CGFloat = 0
+            color.getWhite(&white, alpha: &alpha)
+            (red, green, blue) = (white, white, white)
+        }
+        func linear(_ value: CGFloat) -> CGFloat {
+            let value = min(max(value, 0), 1)
+            return value <= 0.03928 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue)
+    }
+
     /// Прозрачность из админки: `"0%"`…`"100%"`. Число без процента — доля, если не больше
     /// единицы, иначе те же проценты. Пусто или мусор — `nil`.
     static func opacity(_ value: String?) -> CGFloat? {
@@ -135,16 +187,34 @@ enum PersonalizationStoryColors {
         return CGFloat(min(max(fraction, 0), 1))
     }
 
-    /// Тёмный ли цвет: по относительной яркости, порог — середина шкалы.
-    static func isDark(_ color: UIColor) -> Bool {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard color.getRed(&r, green: &g, blue: &b, alpha: &a) else {
-            var white: CGFloat = 0
-            color.getWhite(&white, alpha: &a)
-            return white < 0.5
+    /// Прозрачность заливки текстового блока ленты v3, как `calculateOpacity` веба: число в начале
+    /// записи (`parseFloat`) — проценты: `"50"`, `"50%"` и `50` — 0,5, `"0.5"` — 0,005. Нет значения,
+    /// пустая строка, `0` числом (у веба — «нет прозрачности»), не число и вне 0…100 — `nil`: цвет
+    /// как есть.
+    static func cssOpacity(_ value: Any?) -> CGFloat? {
+        let number: Double?
+        switch value {
+        case let flag as NSNumber where flag === kCFBooleanTrue || flag === kCFBooleanFalse:
+            return nil
+        case let numeric as NSNumber:
+            number = numeric.doubleValue == 0 ? nil : numeric.doubleValue
+        case let text as String:
+            number = leadingNumber(text)
+        default:
+            number = nil
         }
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b < 0.5
+        guard let number, number.isFinite, (0...100).contains(number) else { return nil }
+        return CGFloat(number / 100)
     }
+
+    /// Число в начале строки, как `parseFloat`: пробелы впереди пропускаются, хвост (`%`, буквы)
+    /// не мешает; числа нет — `nil`.
+    static func leadingNumber(_ text: String) -> Double? {
+        let trimmed = text.drop(while: { $0.isWhitespace })
+        guard let range = trimmed.range(of: #"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?"#, options: .regularExpression) else { return nil }
+        return Double(trimmed[range])
+    }
+
 }
 
 extension NSLayoutConstraint {
@@ -155,14 +225,51 @@ extension NSLayoutConstraint {
     }
 }
 
-/// Звук сторис на весь запуск приложения.
+/// Выбор звука просмотрщика сторис: выключен ли звук.
 ///
-/// При первом открытии звук выключен; выбор пользователя помнится до конца процесса и
-/// применяется к следующим открытиям. Пока звук выключен, аудиосессия — `.ambient`:
-/// ролики не прерывают музыку других приложений. Включение переводит её в `.playback`
-/// (звук слышен и в беззвучном режиме). Кнопка громкости вверх, нажатая при открытом
-/// просмотрщике, включает звук. Закрытие возвращает категорию, что была до открытия,
-/// и отпускает сессию, давая другим приложениям продолжить.
+/// Старые просмотрщики (старая лента, данные хоста) делят один выбор на весь запуск —
+/// `PersonalizationStoryAudio.shared.processChoice`: при первом открытии звук выключен, дальше —
+/// как выбрал пользователь, до конца процесса. Просмотрщик ленты v3 держит свой, отдельный от него:
+/// при открытии — сохранённый в разделе магазина (как `<prefix>-stories-mute` веба, который помнит
+/// его по сайту), без записи — без звука. Сохраняет только кнопка звука; громкость вверх включает
+/// звук лишь на этот показ.
+final class PersonalizationStoryMuteChoice {
+
+    /// Звук выключен.
+    private(set) var isMuted: Bool
+    /// Где помнится выбор кнопкой; `nil` — до конца процесса.
+    private let store: (defaults: UserDefaults, key: String)?
+
+    /// Выбор без хранилища: так начинается общий выбор запуска.
+    init(isMuted: Bool = true) {
+        self.isMuted = isMuted
+        store = nil
+    }
+
+    /// Выбор, сохранённый под `key` в `defaults`; без записи — без звука.
+    init(defaults: UserDefaults, key: String) {
+        isMuted = defaults.object(forKey: key) as? Bool ?? true
+        store = (defaults, key)
+    }
+
+    /// Ключ выбора в хранилище, если он есть.
+    var key: String? { store?.key }
+
+    /// Новый выбор; `remember` — выбор кнопкой: он сохраняется, если есть где.
+    func set(_ muted: Bool, remember: Bool) {
+        isMuted = muted
+        if remember, let store { store.defaults.set(muted, forKey: store.key) }
+    }
+}
+
+/// Звук сторис: аудиосессия на время показа и выбор пользователя.
+///
+/// Выбор — у просмотрщика (`PersonalizationStoryMuteChoice`): у старых — общий на весь запуск,
+/// у ленты v3 — свой. Слышно по выбору последнего открытого просмотрщика. Пока звук выключен,
+/// аудиосессия — `.ambient`: ролики не прерывают музыку других приложений. Включение переводит её
+/// в `.playback` (звук слышен и в беззвучном режиме). Кнопка громкости вверх, нажатая при открытом
+/// просмотрщике, включает звук. Закрытие возвращает категорию, что была до открытия, и отпускает
+/// сессию, давая другим приложениям продолжить.
 ///
 /// Звук может забрать и система: выдернули наушники, прервал звонок, Siri или чужое
 /// приложение. Тогда текущий показ идёт дальше без звука (`isSilenced`), а выбор
@@ -172,12 +279,15 @@ final class PersonalizationStoryAudio: NSObject {
 
     static let shared = PersonalizationStoryAudio()
 
-    /// Звук сменился: `object` — `PersonalizationStoryAudio`, читать `isPlaybackMuted`.
+    /// Звук сменился: `object` — `PersonalizationStoryAudio`; просмотрщик читает свой `isMuted`.
     /// Приходит и после вмешательства системы — просмотрщик заново запускает ролик.
     static let didChange = Notification.Name("personalization.stories.muteChanged")
 
-    /// Выбор пользователя: звук выключен. Система его не меняет.
-    private(set) var isMuted = true
+    /// Выбор старых просмотрщиков — один на весь запуск.
+    let processChoice = PersonalizationStoryMuteChoice()
+
+    /// Выбор пользователя последнего открытого просмотрщика: звук выключен. Система его не меняет.
+    var isMuted: Bool { choice.isMuted }
 
     /// Звук забрала система — до конца текущего показа или пока пользователь не включит.
     private(set) var isSilenced = false
@@ -185,7 +295,15 @@ final class PersonalizationStoryAudio: NSObject {
     /// Что слышно сейчас: без звука по выбору пользователя или по воле системы.
     var isPlaybackMuted: Bool { isMuted || isSilenced }
 
+    /// Ключ выбора звука просмотрщиков ленты v3 в разделе магазина — как `<prefix>-stories-mute`
+    /// веба, который помнит его по сайту; в разделе нескольких магазинов — со своим магазином
+    /// (`StoragePartition.keyScope`).
+    static let rememberedKey = "personalization_sdk.stories_muted"
+
     private var viewers = 0
+    /// Выборы открытых просмотрщиков по порядку открытия: слышно по последнему.
+    private var choices: [PersonalizationStoryMuteChoice] = []
+    private var choice: PersonalizationStoryMuteChoice { choices.last ?? processChoice }
     private var saved: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)?
     private var volumeObservation: NSKeyValueObservation?
     private var sessionObservers: [NSObjectProtocol] = []
@@ -195,10 +313,19 @@ final class PersonalizationStoryAudio: NSObject {
     /// это не нажатие кнопки.
     private var volumeRoute: [String] = []
 
-    /// Просмотрщик открылся.
-    func begin() {
+    /// Просмотрщик открылся со своим выбором звука; без него — общий выбор запуска.
+    func begin(choice: PersonalizationStoryMuteChoice? = nil) {
+        let choice = choice ?? processChoice
+        let changed = choice !== self.choice
+        choices.append(choice)
         viewers += 1
-        guard viewers == 1 else { return }
+        guard viewers == 1 else {
+            if changed {
+                applyCategory()
+                notify()
+            }
+            return
+        }
         let session = AVAudioSession.sharedInstance()
         saved = (session.category, session.mode, session.categoryOptions)
         applyCategory()
@@ -220,10 +347,20 @@ final class PersonalizationStoryAudio: NSObject {
     }
 
     /// Просмотрщик закрылся: последний возвращает сессию как было.
-    func end() {
+    func end(choice: PersonalizationStoryMuteChoice? = nil) {
+        let choice = choice ?? processChoice
+        let before = self.choice
+        if let index = choices.lastIndex(where: { $0 === choice }) { choices.remove(at: index) }
         guard viewers > 0 else { return }
         viewers -= 1
-        guard viewers == 0 else { return }
+        guard viewers == 0 else {
+            // Слышно снова по выбору оставшегося просмотрщика.
+            if self.choice !== before {
+                applyCategory()
+                notify()
+            }
+            return
+        }
         volumeObservation?.invalidate()
         volumeObservation = nil
         sessionObservers.forEach { NotificationCenter.default.removeObserver($0) }
@@ -238,13 +375,24 @@ final class PersonalizationStoryAudio: NSObject {
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    /// Выбор пользователя — кнопкой или громкостью вверх. Снимает и тишину от системы.
-    func setMuted(_ muted: Bool) {
-        guard muted != isMuted || isSilenced else { return }
-        isMuted = muted
-        isSilenced = false
-        silencedByInterruption = false
-        if viewers > 0 { applyCategory() }
+    /// Выбор пользователя кнопкой звука: у просмотрщика ленты v3 он сохраняется в разделе магазина.
+    /// `choice` — выбор просмотрщика с кнопкой; без него — последнего открытого. Снимает и тишину
+    /// от системы.
+    func setMuted(_ muted: Bool, choice: PersonalizationStoryMuteChoice? = nil) {
+        choose(muted, choice: choice ?? self.choice, remember: true)
+    }
+
+    /// Выбор кнопкой или громкостью: громкость его не сохраняет.
+    private func choose(_ muted: Bool, choice: PersonalizationStoryMuteChoice, remember: Bool) {
+        let changed = muted != choice.isMuted
+        choice.set(muted, remember: remember)
+        let current = choice === self.choice
+        guard changed || (current && isSilenced) else { return }
+        if current {
+            isSilenced = false
+            silencedByInterruption = false
+            if viewers > 0 { applyCategory() }
+        }
         notify()
     }
 
@@ -311,7 +459,7 @@ final class PersonalizationStoryAudio: NSObject {
         let sameRoute = route == volumeRoute
         volumeRoute = route
         guard viewers > 0, sameRoute, new > old else { return }
-        setMuted(false)
+        choose(false, choice: choice, remember: false)
     }
 
     private static func outputs(of session: AVAudioSession) -> [String] {
@@ -332,8 +480,9 @@ final class PersonalizationStoryAudio: NSObject {
 
     /// Только для тестов: как при новом запуске.
     func resetForTesting() {
-        while viewers > 0 { end() }
-        isMuted = true
+        while viewers > 0 { end(choice: choices.last) }
+        choices = []
+        processChoice.set(true, remember: false)
         isSilenced = false
     }
 }

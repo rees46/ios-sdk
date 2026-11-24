@@ -256,13 +256,16 @@ final class PollSubmitButton: UIControl {
     }
 }
 
-/// Цифра на дорожке шкалы; выбранная — в капсуле на всю высоту дорожки, цвета своей полосы,
-/// цифра белая или тёмная — что контрастнее.
+/// Цифра на дорожке шкалы в капсуле тона своей оценки (как цветные ячейки веба): у всех —
+/// подложка тона, выбранная — залита им, цифра белая или тёмная — что контрастнее.
 final class PollScaleCell: UIControl {
+
+    /// Подложка невыбранной цифры — тон оценки с этой прозрачностью.
+    static let tintAlpha: CGFloat = 0.2
 
     let value: Int
     let title = UILabel()
-    /// Заливка капсулы выбранной цифры.
+    /// Цвет тона оценки: заливка выбранной цифры, подложка остальных.
     let fillColor: UIColor
     private let capsule = UIView()
 
@@ -271,8 +274,6 @@ final class PollScaleCell: UIControl {
         self.fillColor = fill
         super.init(frame: .zero)
         capsule.isUserInteractionEnabled = false
-        capsule.backgroundColor = fill
-        capsule.isHidden = true
         addSubview(capsule)
         title.text = String(value)
         title.font = Style.scaleFont
@@ -301,11 +302,14 @@ final class PollScaleCell: UIControl {
         didSet { applyState() }
     }
 
-    /// Капсула выбранной цифры видна.
-    var isCapsuleVisible: Bool { !capsule.isHidden }
+    /// Капсула выбранной цифры залита тоном.
+    var isCapsuleVisible: Bool { isSelected }
+
+    /// Заливка капсулы сейчас.
+    var capsuleColor: UIColor? { capsule.backgroundColor }
 
     private func applyState() {
-        capsule.isHidden = !isSelected
+        capsule.backgroundColor = isSelected ? fillColor : fillColor.withAlphaComponent(Self.tintAlpha)
         title.textColor = isSelected ? Style.contrastingText(on: fillColor) : Style.text
         var traits: UIAccessibilityTraits = .button
         if isSelected { traits.insert(.selected) }

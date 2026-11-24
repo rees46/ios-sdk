@@ -15,14 +15,14 @@ import AVFoundation
 /// Слайд с товаром: заголовок (бренд SemiBold 20 и название SemiBold 16, интерлиньяж 140%,
 /// шаг 8), белая карточка картинки (скругление 12, поле 16, квадрат во всю ширину, картинка
 /// вписана), внизу цена и все кнопки слайда Primary LG, шаг 16; без кнопок — одна
-/// `Texts.productButton`, ведущая на товар. Текстовые блоки на нём не рисуются; промокод
+/// `Texts.productButton`, ведущая на товар (у слайда v3 её нет, как в вебе). Текстовые блоки на нём не рисуются; промокод
 /// первого блока с кодом идёт в блок цены, если у товара своего кода нет. Товар открывают
 /// только кнопки: картинка, заголовок и скидка не нажимаются, касание по ним — касание
 /// слайда (листание по третям, удержание — пауза).
 ///
 /// Остальные слайды: текстовые блоки на `yOffset` процентах высоты слайда во всю ширину
-/// без полей, но целиком между шапкой и кнопками — по одному правилу с карточкой опроса
-/// (`place(_:yOffset:)`); кнопки Primary LG внизу. Ряд внизу — товары
+/// без полей, но целиком между шапкой и кнопками (`place(_:yOffset:)`); карточки опросов — каждая
+/// на своём `y_offset`, как в вебе (`attachPoll`); кнопки Primary LG внизу. Ряд внизу — товары
 /// (`PersonalizationStoryUsedProducts`) и кнопка звука у видео — есть на любом слайде, где
 /// они нужны, и на товарном тоже.
 ///
@@ -63,6 +63,7 @@ final class PersonalizationStorySlideView: UIView {
     }
 
     var onButton: ((PersonalizationStorySlide.Button) -> Void)?
+    var onHeader: ((PersonalizationStorySlide.Header) -> Void)?
     var onProduct: ((PersonalizationStorySlide.Offer) -> Void)?
     var onPromoCopied: ((String) -> Void)?
     var onProductsToggle: ((Bool) -> Void)?
@@ -96,6 +97,8 @@ final class PersonalizationStorySlideView: UIView {
     var usedProducts: PersonalizationStoryUsedProducts?
     /// Просмотрщик велел играть и не велел остановиться.
     private(set) var wantsPlayback = false
+    /// Ролик без звука — как велел просмотрщик.
+    private(set) var isMuted: Bool
     private var reportedSystemStop = false
     private var guideTop: NSLayoutConstraint?
     private var guideBottom: NSLayoutConstraint?
@@ -105,13 +108,25 @@ final class PersonalizationStorySlideView: UIView {
     var productGroupBottom: NSLayoutConstraint?
     /// Ряд товаров и звука: лист товаров накрывает карточку опроса.
     var bottomRow: UIView?
-    /// Верх кнопок слайда (у товарного — цены с кнопками): ниже текстовые блоки и карточка
-    /// опроса не опускаются, см. `place(_:yOffset:)`.
+    /// Верх кнопок слайда (у товарного — цены с кнопками): ниже текстовые блоки не опускаются,
+    /// см. `place(_:yOffset:)`.
     var offsetLimit: NSLayoutYAxisAnchor?
     /// Низы элементов на `yOffset` у слайда без кнопок: идут за безопасной зоной.
     var offsetBottoms: [NSLayoutConstraint] = []
-    /// Карточка опроса слайда, см. `attachPoll`.
-    private(set) var pollView: PersonalizationStoryPollView?
+    /// Карточки опросов слайда, каждая на своём `y_offset`, см. `attachPoll`.
+    private(set) var pollViews: [PersonalizationStoryPollView] = []
+    /// Первая карточка опроса.
+    var pollView: PersonalizationStoryPollView? { pollViews.first }
+    /// Шапка слайда (элемент `header`, API v3).
+    private(set) var headerView: PersonalizationStoryHeaderView?
+    /// Низы карточек опросов — на 16 выше видимого ряда внизу, без него — выше безопасной зоны.
+    private var pollBottoms: [NSLayoutConstraint] = []
+    /// Верхи карточек опросов — не выше безопасной зоны (под статус-баром они не встают).
+    private var pollTops: [NSLayoutConstraint] = []
+    static let pollBottomGap = PersonalizationSpacing.xl  // 16
+    /// Верх содержимого: под шапкой слайда, без неё — верх области содержимого.
+    var contentTop: NSLayoutYAxisAnchor { headerBottom?.anchor ?? contentGuide.topAnchor }
+    private var headerBottom: (anchor: NSLayoutYAxisAnchor, guide: UILayoutGuide)?
 
     init(
         slide: PersonalizationStorySlide,
@@ -123,6 +138,7 @@ final class PersonalizationStorySlideView: UIView {
         self.texts = texts
         self.imageLoader = imageLoader
         self.retryButton = PersonalizationButton(text: texts.retry, size: .md, view: .primary)
+        self.isMuted = isMuted
         super.init(frame: .zero)
         setup(isMuted: isMuted)
     }
@@ -135,9 +151,9 @@ final class PersonalizationStorySlideView: UIView {
 
     private func setup(isMuted: Bool) {
         clipsToBounds = true
-        // Слайд без медиа — всегда Background/Card в теме приложения (белый в светлой,
-        // #1A1A1A в тёмной); у медиа фон — поля вокруг вписанного кадра.
-        backgroundColor = slide.isMedia ? slide.letterboxColor : PersonalizationColor.backgroundCard
+        // Слайд без медиа — Background/Card в теме приложения (белый в светлой, #1A1A1A в
+        // тёмной), у слайда v3 — его `background_color`; у медиа фон — поля вокруг кадра.
+        backgroundColor = slide.fillColor
 
         mediaImage.contentMode = .scaleAspectFit
         mediaImage.clipsToBounds = true
@@ -165,9 +181,12 @@ final class PersonalizationStorySlideView: UIView {
             button.soundOnLabel = texts.soundOn
             button.soundOffLabel = texts.soundOff
             button.onToggle = { [weak self] muted in self?.onMuteToggle?(muted) }
+            // Слайд v3: кнопка звука прячется, только когда дорожки ролика известны и звука среди
+            // них нет (`updateSoundButton`); пока неясно — видна.
             soundButton = button
         }
 
+        buildHeader()
         // Текстовые блоки товарного слайда не рисуются, их промокод — в блоке цены карточки.
         if let offer = slide.cardOffer {
             buildProduct(offer)
@@ -201,7 +220,8 @@ final class PersonalizationStorySlideView: UIView {
     }
 
     /// Поля содержимого от краёв безопасной зоны: 16 по бокам, сверху и снизу;
-    /// нижний ряд (товары, звук) стоит прямо на её нижнем крае, над ним — кнопки.
+    /// нижний ряд (товары, звук) стоит прямо на её нижнем крае, над ним — кнопки. Без видимого
+    /// ряда места под него нет.
     private func applySafeInsets() {
         let side = PersonalizationSpacing.xl  // 16
         guideTop?.constant = safeInsets.top + side
@@ -213,6 +233,8 @@ final class PersonalizationStorySlideView: UIView {
         for bottom in offsetBottoms {
             bottom.constant = -(safeInsets.bottom + productGroupInset)
         }
+        pollBottoms.forEach { $0.constant = -pollBottomInset }
+        pollTops.forEach { $0.constant = safeInsets.top }
     }
 
     /// Отступ низа товарного слайда от безопасной зоны: над рядом товаров и звука — его
@@ -221,8 +243,24 @@ final class PersonalizationStorySlideView: UIView {
         hasBottomRow ? PersonalizationStoryUsedProducts.rowHeight : PersonalizationSpacing.xl
     }
 
+    /// Отступ низа карточки опроса от низа слайда: 16 над свёрнутым рядом внизу (переключатель
+    /// товаров, кнопка звука), когда он виден, иначе 16 над безопасной зоной. Раскрытый лист
+    /// товаров карточку не двигает — накрывает.
+    var pollBottomInset: CGFloat {
+        safeInsets.bottom + (hasBottomRow ? PersonalizationStoryUsedProducts.rowHeight : 0) + Self.pollBottomGap
+    }
+
+    /// Внизу виден ряд: переключатель товаров или кнопка звука. Спрятанная кнопка места не держит.
     var hasBottomRow: Bool {
-        slide.products != nil || soundButton != nil
+        slide.products != nil || soundButton.map { !$0.isHidden } ?? false
+    }
+
+    /// Ряд появился или пропал (кнопка звука после дорожек ролика): всё, что стоит над ним, —
+    /// на новое место.
+    func updateBottomRow() {
+        if usedProducts == nil { bottomRow?.isHidden = !hasBottomRow }
+        applySafeInsets()
+        setNeedsLayout()
     }
 
     @objc private func retryTapped() {
@@ -339,7 +377,7 @@ extension PersonalizationStorySlideView {
         videoLoader = source.loader
         let item = AVPlayerItem(asset: source.asset)
         let player = AVPlayer(playerItem: item)
-        player.isMuted = PersonalizationStoryAudio.shared.isPlaybackMuted
+        player.isMuted = isMuted
         player.actionAtItemEnd = .pause
         videoView.playerLayer.player = player
         self.player = player
@@ -349,7 +387,9 @@ extension PersonalizationStorySlideView {
             MainThread.run {
                 guard let self, self.player?.currentItem === item else { return }
                 switch status {
-                case .readyToPlay: self.markReady()
+                case .readyToPlay:
+                    self.updateSoundButton(item)
+                    self.markReady()
                 case .failed: self.markFailed()
                 default: break
                 }
@@ -358,6 +398,12 @@ extension PersonalizationStorySlideView {
             // Не сразу: сначала доходят свои уведомления (ошибка ролика, смена выхода звука),
             // и ответ просмотрщика трогает плеер уже не внутри уведомления.
             DispatchQueue.main.asyncAfter(deadline: .now() + Self.systemStopDelay) { self?.playbackStatusChanged(player) }
+        }, item.observe(\.tracks, options: [.new]) { [weak self] item, _ in
+            // Дорожки приходят и после готовности: звук проверяется заново.
+            MainThread.run {
+                guard let self, self.player?.currentItem === item else { return }
+                self.updateSoundButton(item)
+            }
         }]
         let center = NotificationCenter.default
         videoObservers = [
@@ -382,6 +428,40 @@ extension PersonalizationStorySlideView {
         player?.pause()
         gifPlayer?.pause()
         onMediaFailed?()
+    }
+
+    /// Звук ролика по его дорожкам.
+    enum AudioTrack: Equatable {
+        /// Есть звуковая дорожка.
+        case present
+        /// Дорожки известны, звуковой среди них нет.
+        case absent
+        /// Дорожек ещё нет или они не прочитаны — неясно.
+        case unknown
+    }
+
+    static func audioTrack(_ item: AVPlayerItem) -> AudioTrack {
+        audioTrack(item.tracks.map { $0.assetTrack?.mediaType })
+    }
+
+    /// Типы дорожек ролика; `nil` — дорожка без прочитанного типа.
+    static func audioTrack(_ types: [AVMediaType?]) -> AudioTrack {
+        if types.contains(.audio) { return .present }
+        return types.isEmpty || types.contains(nil) ? .unknown : .absent
+    }
+
+    /// Кнопка звука слайда v3: спрятана, только когда звука в ролике точно нет (веб прячет её и
+    /// без ответа — здесь неясный ответ оставляет кнопку). Старая лента кнопку не прячет.
+    func updateSoundButton(_ item: AVPlayerItem) {
+        setSoundAvailability(Self.audioTrack(item))
+    }
+
+    func setSoundAvailability(_ track: AudioTrack) {
+        guard slide.isV3, let soundButton else { return }
+        let hidden = track == .absent
+        guard soundButton.isHidden != hidden else { return }
+        soundButton.isHidden = hidden
+        updateBottomRow()
     }
 
     /// Сколько ждать, прежде чем счесть паузу плеера делом системы.
@@ -441,6 +521,7 @@ extension PersonalizationStorySlideView {
     }
 
     func setMuted(_ muted: Bool) {
+        isMuted = muted
         player?.isMuted = muted
         soundButton?.isMuted = muted
     }
@@ -497,9 +578,9 @@ extension PersonalizationStorySlideView {
         price.copiedText = texts.promoCopied
         price.onPromoCopied = { [weak self] code in self?.onPromoCopied?(code) }
 
-        // Все кнопки слайда; без них — одна, ведущая на товар.
+        // Все кнопки слайда; без них — одна, ведущая на товар. У слайда v3 — нет: веб её не рисует.
         var group: [UIView] = [price]
-        if slide.buttons.isEmpty {
+        if slide.buttons.isEmpty, !slide.isV3 {
             let button = PersonalizationButton(text: texts.productButton, size: .lg, view: .primary)
             button.addTarget(self, action: #selector(productButtonTapped), for: .touchUpInside)
             group.append(button)
@@ -524,7 +605,7 @@ extension PersonalizationStorySlideView {
         productGroupBottom = groupBottom
         offsetLimit = bottom.topAnchor
         NSLayoutConstraint.activate([
-            header.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            header.topAnchor.constraint(equalTo: contentTop),
             header.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
             header.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
             groupBottom,
@@ -627,8 +708,34 @@ extension PersonalizationStorySlideView {
             bottom,
             buttons.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
             buttons.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
-            buttons.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor)
+            buttons.topAnchor.constraint(greaterThanOrEqualTo: contentTop)
         ])
+    }
+
+    /// Шапка слайда (элемент `header`) — вверху области содержимого во всю ширину; остальное
+    /// содержимое — под ней.
+    fileprivate func buildHeader() {
+        guard let header = slide.header else { return }
+        let view = PersonalizationStoryHeaderView(header: header, imageLoader: imageLoader)
+        view.addTarget(self, action: #selector(headerTapped), for: .touchUpInside)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(view)
+        let below = UILayoutGuide()
+        addLayoutGuide(below)
+        NSLayoutConstraint.activate([
+            view.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            view.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
+            view.trailingAnchor.constraint(lessThanOrEqualTo: contentGuide.trailingAnchor),
+            below.topAnchor.constraint(equalTo: view.bottomAnchor, constant: PersonalizationSpacing.xl),
+            below.heightAnchor.constraint(equalToConstant: 0)
+        ])
+        headerView = view
+        headerBottom = (below.topAnchor, below)
+    }
+
+    @objc private func headerTapped() {
+        guard let header = slide.header else { return }
+        onHeader?(header)
     }
 
     /// Текстовый блок; с промокодом нажатие копирует код и показывает тост сверху.
@@ -675,7 +782,7 @@ extension PersonalizationStorySlideView {
             usedProducts = used
             row = used
         } else if let soundButton {
-            row = UIView()
+            row = PersonalizationStoryPassThroughView()
             soundButton.translatesAutoresizingMaskIntoConstraints = false
             row.addSubview(soundButton)
             NSLayoutConstraint.activate([
@@ -696,13 +803,22 @@ extension PersonalizationStorySlideView {
             row.leadingAnchor.constraint(equalTo: leadingAnchor),
             row.trailingAnchor.constraint(equalTo: trailingAnchor),
             rowBottom,
-            row.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor)
+            row.topAnchor.constraint(greaterThanOrEqualTo: contentTop)
         ])
     }
 
     /// Свернуть лист товаров: нажатие мимо него или смена слайда.
     func collapseProducts() {
         usedProducts?.isExpanded = false
+    }
+}
+
+/// Ряд во всю ширину слайда (кнопка звука внизу): пустые места касаний не берут — они достаются
+/// тому, что под рядом, карточке опроса или слайду; берут только кнопки ряда.
+final class PersonalizationStoryPassThroughView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hit = super.hitTest(point, with: event)
+        return hit === self ? nil : hit
     }
 }
 
@@ -759,9 +875,9 @@ final class PersonalizationStoryScrimView: UIView {
 
 extension PersonalizationStorySlideView {
 
-    /// Место элемента на `yOffset` — одно правило у текстового блока и карточки опроса, как
-    /// `top: y%` у обоих в одном контейнере слайда в вебе: верх — `yOffset` процентов высоты
-    /// всего слайда (зажато в 0...100, `nil` — 0); потом элемент целиком сдвигается в область
+    /// Место текстового блока на `yOffset`, как `top: y%` в контейнере слайда в вебе: верх —
+    /// `yOffset` процентов высоты всего слайда (зажато в 0...100, `nil` — 0); потом элемент целиком
+    /// сдвигается в область
     /// между шапкой и кнопками (без кнопок — рядом товаров и звука или полем 16): ниже области —
     /// поднимается, выше — встаёт к её верху. Ширина — у вызывающего.
     func place(_ view: UIView, yOffset: CGFloat?) {
@@ -784,7 +900,7 @@ extension PersonalizationStorySlideView {
             // сдвиг; карточку, не влезшую совсем, дальше прокрутка.
             view.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(UILayoutPriority(600)),
             // Под шапку и под кнопки элемент не заезжает.
-            view.topAnchor.constraint(greaterThanOrEqualTo: contentGuide.topAnchor),
+            view.topAnchor.constraint(greaterThanOrEqualTo: contentTop),
             bottom
         ])
     }
@@ -800,19 +916,37 @@ extension PersonalizationStorySlideView {
 
 extension PersonalizationStorySlideView {
 
-    /// Карточка опроса: на `yOffset`, как текстовые блоки (`place(_:yOffset:)`); не влезает
-    /// совсем — прокручивается внутри. По ширине — 12 от краёв слайда (на 4 шире поля
-    /// содержимого 16 с каждой стороны), не шире 420, по центру. Лист товаров её накрывает,
-    /// «Повторить» — над ней.
+    /// Карточка опроса, как в вебе (`fittedTop`): верх — `y_offset` процентов высоты слайда
+    /// (зажато в 0...100, без него — 0); не влезает ниже — поднимается, чтобы низ был на 16 выше
+    /// ряда внизу (переключатель товаров, кнопка звука), когда он виден, иначе — безопасной зоны,
+    /// но не выше верха безопасной зоны (под статус-бар не встаёт); не влезает совсем —
+    /// прокручивается внутри. Пустые места ряда касаний не берут: под рядом карточка нажимается.
+    /// Может уйти под шапку — прогресс, крестик и «Поделиться» остаются поверх и нажимаются. По
+    /// ширине — 16 от краёв слайда внутри безопасной зоны, не шире 420, по центру. Лист товаров
+    /// её накрывает, «Повторить» — над ней.
+    /// Опросов на слайде может быть несколько — каждый своей карточкой, как в вебе.
     func attachPoll(_ card: PersonalizationStoryPollView) {
-        if let old = pollView {
-            offsetBottoms.removeAll { $0.firstItem === old }
-            old.removeFromSuperview()
-        }
-        pollView = card
+        pollViews.append(card)
         card.translatesAutoresizingMaskIntoConstraints = false
         insertSubview(card, belowSubview: bottomRow ?? retryButton)
-        place(card, yOffset: card.controller.poll.yOffset)
+        let offset = UILayoutGuide()
+        addLayoutGuide(offset)
+        let share = Self.offsetShare(card.controller.poll.yOffset)
+        let bottom = card.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -pollBottomInset)
+        pollBottoms.append(bottom)
+        let top = card.topAnchor.constraint(greaterThanOrEqualTo: topAnchor, constant: safeInsets.top)
+        pollTops.append(top)
+        NSLayoutConstraint.activate([
+            offset.topAnchor.constraint(equalTo: topAnchor),
+            share > 0
+                ? offset.heightAnchor.constraint(equalTo: heightAnchor, multiplier: share)
+                : offset.heightAnchor.constraint(equalToConstant: 0),
+            // Слабее высоты по содержимому (700): сначала сдвиг, не влезшую совсем — прокрутка.
+            card.topAnchor.constraint(equalTo: offset.bottomAnchor).withPriority(UILayoutPriority(600)),
+            top,
+            bottom
+        ])
+        // Поле содержимого слайда — то же, что поле карточки.
         let outset = 2 * (PersonalizationSpacing.xl - PersonalizationStoryPollView.Style.margin)
         NSLayoutConstraint.activate([
             card.centerXAnchor.constraint(equalTo: contentGuide.centerXAnchor),
